@@ -1,5 +1,6 @@
 package dev.nthings.tessera.render;
 
+import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.EmptyElement;
@@ -86,12 +87,20 @@ public final class PageCompiler {
     var state = new CompilationState();
 
     // Phase 1: requestLayout (component expansion, view scoping, CSS interning, lexical
-    // deferred resolution)
+    // deferred resolution, and automatic endnotes hoisting)
     ResolvedNode resolvedRoot =
         RenderContext.runRoot(
             styles,
             document.tokens(),
-            () -> requestLayout(document.bodyRoot().intoElement(), state));
+            () -> {
+              ResolvedNode root = requestLayout(document.bodyRoot().intoElement(), state);
+              if (RenderContext.current().hasUnrenderedFootnotes()) {
+                ResolvedNode autoFootnotes =
+                    requestLayout(Footnotes.section().intoElement(), state);
+                state.enqueueDeferred(Integer.MAX_VALUE, autoFootnotes);
+              }
+              return root;
+            });
 
     // Phase 2: prepaint (WCAG/HTML5 validation, invoker target verification, deferred portal
     // hoisting)
@@ -156,6 +165,11 @@ public final class PageCompiler {
 
     if (resolvedDomId != null) {
       attrs.put("id", resolvedDomId);
+    } else {
+      String explicitId = attrs.get("id");
+      if (explicitId != null && !explicitId.isBlank()) {
+        state.registeredDomIds.add(explicitId);
+      }
     }
 
     List<String> generatedClasses =

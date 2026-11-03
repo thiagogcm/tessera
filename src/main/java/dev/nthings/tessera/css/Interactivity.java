@@ -6,14 +6,16 @@ import dev.nthings.tessera.core.TagElement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Stores pseudo-class, group-hover, relational {@code :has()}, {@code @container} queries, and
- * declarative invoker metadata for an element.
+ * Stores pseudo-class, group-hover, relational {@code :has()}, {@code @container} queries,
+ * scroll-driven animations, and declarative invoker metadata for an element.
  */
 public final class Interactivity {
 
@@ -29,6 +31,8 @@ public final class Interactivity {
   private @Nullable StyleRefinement hoverStyle;
   private @Nullable StyleRefinement focusVisibleStyle;
   private @Nullable StyleRefinement activeStyle;
+  private @Nullable StyleRefinement motionSafeStyle;
+  private final Set<String> keyframes = new LinkedHashSet<>();
   private final Map<String, StyleRefinement> groupHoverStyles = new LinkedHashMap<>();
   private final Map<String, StyleRefinement> hasStyles = new LinkedHashMap<>();
   private final List<ContainerRule> containerRules = new ArrayList<>();
@@ -56,6 +60,17 @@ public final class Interactivity {
       activeStyle = new StyleRefinement();
     }
     mutator.apply(activeStyle);
+  }
+
+  public void onMotionSafe(UnaryOperator<StyleRefinement> mutator) {
+    if (motionSafeStyle == null) {
+      motionSafeStyle = new StyleRefinement();
+    }
+    mutator.apply(motionSafeStyle);
+  }
+
+  public void registerKeyframeRule(String keyframeRule) {
+    keyframes.add(keyframeRule);
   }
 
   public void onGroupHover(String groupName, UnaryOperator<StyleRefinement> mutator) {
@@ -107,6 +122,14 @@ public final class Interactivity {
     return activeStyle;
   }
 
+  public @Nullable StyleRefinement motionSafeStyle() {
+    return motionSafeStyle;
+  }
+
+  public Set<String> keyframes() {
+    return Collections.unmodifiableSet(keyframes);
+  }
+
   public Map<String, StyleRefinement> groupHoverStyles() {
     return Collections.unmodifiableMap(groupHoverStyles);
   }
@@ -135,6 +158,7 @@ public final class Interactivity {
     return (hoverStyle != null && !hoverStyle.isEmpty())
         || (focusVisibleStyle != null && !focusVisibleStyle.isEmpty())
         || (activeStyle != null && !activeStyle.isEmpty())
+        || (motionSafeStyle != null && !motionSafeStyle.isEmpty())
         || !groupHoverStyles.isEmpty()
         || !hasStyles.isEmpty();
   }

@@ -48,8 +48,33 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF fixed() {
+    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.FIXED));
+    return self();
+  }
+
   default SELF sticky() {
     style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.STICKY));
+    return self();
+  }
+
+  default SELF insetBlockStart(CssLength length) {
+    style().put(new CssDeclaration.InsetBlockStart(length));
+    return self();
+  }
+
+  default SELF insetInlineStart(CssLength length) {
+    style().put(new CssDeclaration.InsetInlineStart(length));
+    return self();
+  }
+
+  default SELF zIndex(int level) {
+    style().put(new CssDeclaration.ZIndex(level));
+    return self();
+  }
+
+  default SELF overflowAuto() {
+    style().put(new CssDeclaration.Overflow("auto"));
     return self();
   }
 
@@ -88,6 +113,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF itemsBaseline() {
+    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.BASELINE));
+    return self();
+  }
+
   default SELF justifyStart() {
     style().put(new CssDeclaration.JustifyContent(CssDeclaration.Justify.START));
     return self();
@@ -121,6 +151,42 @@ public interface Styled<SELF extends Styled<SELF>> {
   default SELF gridColumns(String template) {
     style().put(new CssDeclaration.GridTemplateColumns(template));
     return self();
+  }
+
+  default SELF gridRows(String template) {
+    style().put(new CssDeclaration.GridTemplateRows(template));
+    return self();
+  }
+
+  default SELF subgridRows(int trackSpan) {
+    if (trackSpan <= 0) {
+      throw new IllegalArgumentException("trackSpan must be > 0");
+    }
+    return grid().gridRow("span " + trackSpan).gridRows("subgrid");
+  }
+
+  default SELF gridColumn(String spanSpec) {
+    style().put(new CssDeclaration.GridColumn(spanSpec));
+    return self();
+  }
+
+  default SELF gridRow(String spanSpec) {
+    style().put(new CssDeclaration.GridRow(spanSpec));
+    return self();
+  }
+
+  default SELF colSpan(int columns) {
+    if (columns <= 0) {
+      throw new IllegalArgumentException("columns must be > 0");
+    }
+    return gridColumn("span " + columns);
+  }
+
+  default SELF rowSpan(int rows) {
+    if (rows <= 0) {
+      throw new IllegalArgumentException("rows must be > 0");
+    }
+    return gridRow("span " + rows);
   }
 
   default SELF gridAutoFit(CssLength minColumnWidth) {
@@ -165,6 +231,21 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF minBlockSize(CssLength length) {
     style().put(new CssDeclaration.MinBlockSize(length));
+    return self();
+  }
+
+  default SELF maxBlockSize(CssLength length) {
+    style().put(new CssDeclaration.MaxBlockSize(length));
+    return self();
+  }
+
+  default SELF aspectRatio(String ratio) {
+    style().put(new CssDeclaration.AspectRatio(ratio));
+    return self();
+  }
+
+  default SELF objectCover() {
+    style().put(new CssDeclaration.ObjectFit("cover"));
     return self();
   }
 
@@ -226,6 +307,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF tabularNums() {
+    style().put(new CssDeclaration.FontVariantNumeric("tabular-nums"));
+    return self();
+  }
+
   default SELF lineHeight(String value) {
     style().put(new CssDeclaration.LineHeight(value));
     return self();
@@ -243,6 +329,39 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF textPretty() {
     style().put(new CssDeclaration.TextWrap(CssDeclaration.TextWrapMode.PRETTY));
+    return self();
+  }
+
+  default SELF highlight(HighlightTone tone) {
+    style().put(new CssDeclaration.Background(tone.toCssBackground()));
+    style().put(new CssDeclaration.PaddingInline(CssLength.rem(0.25)));
+    style().put(new CssDeclaration.BorderRadius(CssLength.rem(0.25)));
+    return self();
+  }
+
+  default SELF underline() {
+    return underline(UnderlineStyle.SOLID, Tokens.ACCENT_PRIMARY);
+  }
+
+  default SELF underline(UnderlineStyle lineStyle, DesignToken colorToken) {
+    style().put(new CssDeclaration.TextDecorationLine("underline"));
+    style().put(new CssDeclaration.TextDecorationStyle(lineStyle.css()));
+    style().put(new CssDeclaration.TextDecorationColor(colorToken.varReference()));
+    style().put(new CssDeclaration.TextDecorationThickness("0.1em"));
+    style().put(new CssDeclaration.TextUnderlineOffset(CssLength.em(0.18)));
+    style().put(new CssDeclaration.TextDecorationSkipInk("auto"));
+    return self();
+  }
+
+  default SELF strikethrough() {
+    return strikethrough(Tokens.TEXT_MUTED);
+  }
+
+  default SELF strikethrough(DesignToken colorToken) {
+    style().put(new CssDeclaration.TextDecorationLine("line-through"));
+    style().put(new CssDeclaration.TextDecorationStyle(UnderlineStyle.SOLID.css()));
+    style().put(new CssDeclaration.TextDecorationColor(colorToken.varReference()));
+    style().put(new CssDeclaration.TextDecorationThickness("0.09em"));
     return self();
   }
 

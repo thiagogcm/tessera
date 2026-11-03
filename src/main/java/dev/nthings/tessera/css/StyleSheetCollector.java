@@ -3,8 +3,10 @@ package dev.nthings.tessera.css;
 import dev.nthings.tessera.core.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Deduplicating stylesheet collector emitting the 7-layer Chrome 156+ cascade: {@code @layer reset,
@@ -16,10 +18,13 @@ public final class StyleSheetCollector {
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
   private final Map<String, String> containerRules = new LinkedHashMap<>();
   private final Map<String, String> viewScopeRules = new LinkedHashMap<>();
+  private final Set<String> keyframeRules = new LinkedHashSet<>();
 
   public List<String> registerElementStyles(
       StyleRefinement baseStyle, Interactivity interactivity) {
     var classNames = new ArrayList<String>(3);
+
+    keyframeRules.addAll(interactivity.keyframes());
 
     if (!baseStyle.isEmpty()) {
       String utilClass = "u-" + Fnv1a64.toBase36Hash(baseStyle.contentHash());
@@ -68,6 +73,10 @@ public final class StyleSheetCollector {
     }
   }
 
+  public void registerKeyframeRule(String keyframeRule) {
+    keyframeRules.add(keyframeRule);
+  }
+
   private static String buildInteractiveBlock(Interactivity interactivity) {
     var sb = new StringBuilder();
     var hover = interactivity.hoverStyle();
@@ -100,6 +109,12 @@ public final class StyleSheetCollector {
             .append('}');
       }
     }
+    var motionSafe = interactivity.motionSafeStyle();
+    if (motionSafe != null && !motionSafe.isEmpty()) {
+      sb.append("@media (prefers-reduced-motion: no-preference){")
+          .append(motionSafe.toCssBlockBody())
+          .append('}');
+    }
     return sb.toString();
   }
 
@@ -121,8 +136,13 @@ public final class StyleSheetCollector {
             + "body{font-family:system-ui,-apple-system,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
             + "[popover=\"hint\"]{position-area:block-start;"
-            + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}"
-            + "}\n");
+            + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}");
+    if (!keyframeRules.isEmpty()) {
+      for (var kf : keyframeRules) {
+        sb.append(kf);
+      }
+    }
+    sb.append("}\n");
 
     // 3. @layer theme
     sb.append("@layer theme{");

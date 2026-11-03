@@ -91,7 +91,7 @@ public final class StatefulTagElement
 
   public StatefulTagElement interestTooltip(UnaryOperator<TagElement> tooltipBuilder) {
     var tooltip =
-        tooltipBuilder.apply(Elements.div().attr("popover", "hint").attr("role", "tooltip"));
+        tooltipBuilder.apply(Elements.span().attr("popover", "hint").attr("role", "tooltip"));
     interactivity().setInterestTooltip(tooltip);
     return this;
   }

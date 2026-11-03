@@ -7,6 +7,10 @@ package dev.nthings.tessera.css;
 public sealed interface CssDeclaration
     permits CssDeclaration.Display,
         CssDeclaration.Position,
+        CssDeclaration.InsetBlockStart,
+        CssDeclaration.InsetInlineStart,
+        CssDeclaration.ZIndex,
+        CssDeclaration.Overflow,
         CssDeclaration.FlexDirection,
         CssDeclaration.FlexWrap,
         CssDeclaration.AlignItems,
@@ -14,6 +18,9 @@ public sealed interface CssDeclaration
         CssDeclaration.FlexGrow,
         CssDeclaration.FlexShrink,
         CssDeclaration.GridTemplateColumns,
+        CssDeclaration.GridTemplateRows,
+        CssDeclaration.GridColumn,
+        CssDeclaration.GridRow,
         CssDeclaration.Gap,
         CssDeclaration.RowGap,
         CssDeclaration.ColumnGap,
@@ -22,6 +29,9 @@ public sealed interface CssDeclaration
         CssDeclaration.MinInlineSize,
         CssDeclaration.MaxInlineSize,
         CssDeclaration.MinBlockSize,
+        CssDeclaration.MaxBlockSize,
+        CssDeclaration.AspectRatio,
+        CssDeclaration.ObjectFit,
         CssDeclaration.PaddingInline,
         CssDeclaration.PaddingBlock,
         CssDeclaration.MarginInline,
@@ -30,9 +40,16 @@ public sealed interface CssDeclaration
         CssDeclaration.Color,
         CssDeclaration.FontSize,
         CssDeclaration.FontWeight,
+        CssDeclaration.FontVariantNumeric,
         CssDeclaration.LineHeight,
         CssDeclaration.TextAlign,
         CssDeclaration.TextWrap,
+        CssDeclaration.TextDecorationLine,
+        CssDeclaration.TextDecorationStyle,
+        CssDeclaration.TextDecorationColor,
+        CssDeclaration.TextDecorationThickness,
+        CssDeclaration.TextUnderlineOffset,
+        CssDeclaration.TextDecorationSkipInk,
         CssDeclaration.Border,
         CssDeclaration.BorderRadius,
         CssDeclaration.BoxShadow,
@@ -41,6 +58,13 @@ public sealed interface CssDeclaration
         CssDeclaration.Opacity,
         CssDeclaration.Cursor,
         CssDeclaration.Transition,
+        CssDeclaration.ViewTimeline,
+        CssDeclaration.ScrollTimeline,
+        CssDeclaration.TimelineScope,
+        CssDeclaration.Animation,
+        CssDeclaration.AnimationDelay,
+        CssDeclaration.AnimationTimeline,
+        CssDeclaration.AnimationRange,
         CssDeclaration.ContainerName,
         CssDeclaration.ContainerType,
         CssDeclaration.AnchorName,
@@ -223,6 +247,54 @@ public sealed interface CssDeclaration
     }
   }
 
+  record InsetBlockStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.INSET_BLOCK_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record InsetInlineStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.INSET_INLINE_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record ZIndex(int level) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.Z_INDEX;
+    }
+
+    @Override
+    public String cssValue() {
+      return Integer.toString(level);
+    }
+  }
+
+  record Overflow(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OVERFLOW;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
   record FlexDirection(Direction direction) implements CssDeclaration {
     @Override
     public CssProperty property() {
@@ -304,6 +376,42 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return template;
+    }
+  }
+
+  record GridTemplateRows(String template) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.GRID_TEMPLATE_ROWS;
+    }
+
+    @Override
+    public String cssValue() {
+      return template;
+    }
+  }
+
+  record GridColumn(String spanSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.GRID_COLUMN;
+    }
+
+    @Override
+    public String cssValue() {
+      return spanSpec;
+    }
+  }
+
+  record GridRow(String spanSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.GRID_ROW;
+    }
+
+    @Override
+    public String cssValue() {
+      return spanSpec;
     }
   }
 
@@ -403,6 +511,42 @@ public sealed interface CssDeclaration
     }
   }
 
+  record MaxBlockSize(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.MAX_BLOCK_SIZE;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record AspectRatio(String ratio) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ASPECT_RATIO;
+    }
+
+    @Override
+    public String cssValue() {
+      return ratio;
+    }
+  }
+
+  record ObjectFit(String fit) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OBJECT_FIT;
+    }
+
+    @Override
+    public String cssValue() {
+      return fit;
+    }
+  }
+
   record PaddingInline(CssLength length) implements CssDeclaration {
     @Override
     public CssProperty property() {
@@ -499,6 +643,18 @@ public sealed interface CssDeclaration
     }
   }
 
+  record FontVariantNumeric(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.FONT_VARIANT_NUMERIC;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
   record LineHeight(String value) implements CssDeclaration {
     @Override
     public CssProperty property() {
@@ -532,6 +688,78 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return mode.css();
+    }
+  }
+
+  record TextDecorationLine(String lineSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_DECORATION_LINE;
+    }
+
+    @Override
+    public String cssValue() {
+      return lineSpec;
+    }
+  }
+
+  record TextDecorationStyle(String styleSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_DECORATION_STYLE;
+    }
+
+    @Override
+    public String cssValue() {
+      return styleSpec;
+    }
+  }
+
+  record TextDecorationColor(String colorSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_DECORATION_COLOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return colorSpec;
+    }
+  }
+
+  record TextDecorationThickness(String thicknessSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_DECORATION_THICKNESS;
+    }
+
+    @Override
+    public String cssValue() {
+      return thicknessSpec;
+    }
+  }
+
+  record TextUnderlineOffset(CssLength offset) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_UNDERLINE_OFFSET;
+    }
+
+    @Override
+    public String cssValue() {
+      return offset.toCss();
+    }
+  }
+
+  record TextDecorationSkipInk(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TEXT_DECORATION_SKIP_INK;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
     }
   }
 
@@ -628,6 +856,90 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return value;
+    }
+  }
+
+  record ViewTimeline(String spec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.VIEW_TIMELINE;
+    }
+
+    @Override
+    public String cssValue() {
+      return spec;
+    }
+  }
+
+  record ScrollTimeline(String spec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_TIMELINE;
+    }
+
+    @Override
+    public String cssValue() {
+      return spec;
+    }
+  }
+
+  record TimelineScope(String scopeIdent) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TIMELINE_SCOPE;
+    }
+
+    @Override
+    public String cssValue() {
+      return scopeIdent;
+    }
+  }
+
+  record Animation(String spec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ANIMATION;
+    }
+
+    @Override
+    public String cssValue() {
+      return spec;
+    }
+  }
+
+  record AnimationDelay(String delayExpr) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ANIMATION_DELAY;
+    }
+
+    @Override
+    public String cssValue() {
+      return delayExpr;
+    }
+  }
+
+  record AnimationTimeline(String timelineSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ANIMATION_TIMELINE;
+    }
+
+    @Override
+    public String cssValue() {
+      return timelineSpec;
+    }
+  }
+
+  record AnimationRange(String rangeSpec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ANIMATION_RANGE;
+    }
+
+    @Override
+    public String cssValue() {
+      return rangeSpec;
     }
   }
 

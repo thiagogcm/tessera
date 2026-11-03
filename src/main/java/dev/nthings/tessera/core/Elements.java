@@ -45,6 +45,10 @@ public final class Elements {
     return new TagElement(HtmlTag.ASIDE);
   }
 
+  public static TagElement hgroup() {
+    return new TagElement(HtmlTag.HGROUP);
+  }
+
   public static TagElement h1() {
     return new TagElement(HtmlTag.H1);
   }
@@ -61,6 +65,14 @@ public final class Elements {
     return new TagElement(HtmlTag.H4);
   }
 
+  public static TagElement h5() {
+    return new TagElement(HtmlTag.H5);
+  }
+
+  public static TagElement h6() {
+    return new TagElement(HtmlTag.H6);
+  }
+
   public static TagElement p() {
     return new TagElement(HtmlTag.P);
   }
@@ -75,6 +87,18 @@ public final class Elements {
 
   public static TagElement li() {
     return new TagElement(HtmlTag.LI);
+  }
+
+  public static TagElement dl() {
+    return new TagElement(HtmlTag.DL);
+  }
+
+  public static TagElement dt() {
+    return new TagElement(HtmlTag.DT);
+  }
+
+  public static TagElement dd() {
+    return new TagElement(HtmlTag.DD);
   }
 
   public static TagElement button() {
@@ -113,8 +137,20 @@ public final class Elements {
         .attr("decoding", "async");
   }
 
+  public static TagElement figure() {
+    return new TagElement(HtmlTag.FIGURE);
+  }
+
+  public static TagElement figcaption() {
+    return new TagElement(HtmlTag.FIGCAPTION);
+  }
+
   public static TagElement table() {
     return new TagElement(HtmlTag.TABLE);
+  }
+
+  public static TagElement caption() {
+    return new TagElement(HtmlTag.CAPTION);
   }
 
   public static TagElement thead() {
@@ -123,6 +159,10 @@ public final class Elements {
 
   public static TagElement tbody() {
     return new TagElement(HtmlTag.TBODY);
+  }
+
+  public static TagElement tfoot() {
+    return new TagElement(HtmlTag.TFOOT);
   }
 
   public static TagElement tr() {
@@ -143,6 +183,50 @@ public final class Elements {
 
   public static TagElement pre() {
     return new TagElement(HtmlTag.PRE);
+  }
+
+  public static TagElement kbd() {
+    return new TagElement(HtmlTag.KBD);
+  }
+
+  public static TagElement mark() {
+    return new TagElement(HtmlTag.MARK);
+  }
+
+  public static TagElement u() {
+    return new TagElement(HtmlTag.U);
+  }
+
+  public static TagElement s() {
+    return new TagElement(HtmlTag.S);
+  }
+
+  public static TagElement del() {
+    return new TagElement(HtmlTag.DEL);
+  }
+
+  public static TagElement ins() {
+    return new TagElement(HtmlTag.INS);
+  }
+
+  public static TagElement sub() {
+    return new TagElement(HtmlTag.SUB);
+  }
+
+  public static TagElement sup() {
+    return new TagElement(HtmlTag.SUP);
+  }
+
+  public static TagElement strong() {
+    return new TagElement(HtmlTag.STRONG);
+  }
+
+  public static TagElement em() {
+    return new TagElement(HtmlTag.EM);
+  }
+
+  public static TagElement small() {
+    return new TagElement(HtmlTag.SMALL);
   }
 
   public static TagElement details() {

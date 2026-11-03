@@ -3,10 +3,18 @@ package dev.nthings.tessera.css;
 /**
  * Canonical CSS property keys in deterministic ordinal order for {@link java.util.EnumMap} storage
  * and FNV-1a hashing.
+ *
+ * <p>Note: {@link #ANIMATION} precedes {@link #ANIMATION_DELAY}, {@link #ANIMATION_TIMELINE}, and
+ * {@link #ANIMATION_RANGE} so the {@code animation} shorthand never resets scroll-driven timeline
+ * or range declarations.
  */
 public enum CssProperty {
   DISPLAY("display"),
   POSITION("position"),
+  INSET_BLOCK_START("inset-block-start"),
+  INSET_INLINE_START("inset-inline-start"),
+  Z_INDEX("z-index"),
+  OVERFLOW("overflow"),
   FLEX_DIRECTION("flex-direction"),
   FLEX_WRAP("flex-wrap"),
   ALIGN_ITEMS("align-items"),
@@ -14,6 +22,9 @@ public enum CssProperty {
   FLEX_GROW("flex-grow"),
   FLEX_SHRINK("flex-shrink"),
   GRID_TEMPLATE_COLUMNS("grid-template-columns"),
+  GRID_TEMPLATE_ROWS("grid-template-rows"),
+  GRID_COLUMN("grid-column"),
+  GRID_ROW("grid-row"),
   GAP("gap"),
   ROW_GAP("row-gap"),
   COLUMN_GAP("column-gap"),
@@ -22,6 +33,9 @@ public enum CssProperty {
   MIN_INLINE_SIZE("min-inline-size"),
   MAX_INLINE_SIZE("max-inline-size"),
   MIN_BLOCK_SIZE("min-block-size"),
+  MAX_BLOCK_SIZE("max-block-size"),
+  ASPECT_RATIO("aspect-ratio"),
+  OBJECT_FIT("object-fit"),
   PADDING_INLINE("padding-inline"),
   PADDING_BLOCK("padding-block"),
   MARGIN_INLINE("margin-inline"),
@@ -30,9 +44,16 @@ public enum CssProperty {
   COLOR("color"),
   FONT_SIZE("font-size"),
   FONT_WEIGHT("font-weight"),
+  FONT_VARIANT_NUMERIC("font-variant-numeric"),
   LINE_HEIGHT("line-height"),
   TEXT_ALIGN("text-align"),
   TEXT_WRAP("text-wrap"),
+  TEXT_DECORATION_LINE("text-decoration-line"),
+  TEXT_DECORATION_STYLE("text-decoration-style"),
+  TEXT_DECORATION_COLOR("text-decoration-color"),
+  TEXT_DECORATION_THICKNESS("text-decoration-thickness"),
+  TEXT_UNDERLINE_OFFSET("text-underline-offset"),
+  TEXT_DECORATION_SKIP_INK("text-decoration-skip-ink"),
   BORDER("border"),
   BORDER_RADIUS("border-radius"),
   BOX_SHADOW("box-shadow"),
@@ -41,6 +62,13 @@ public enum CssProperty {
   OPACITY("opacity"),
   CURSOR("cursor"),
   TRANSITION("transition"),
+  VIEW_TIMELINE("view-timeline"),
+  SCROLL_TIMELINE("scroll-timeline"),
+  TIMELINE_SCOPE("timeline-scope"),
+  ANIMATION("animation"),
+  ANIMATION_DELAY("animation-delay"),
+  ANIMATION_TIMELINE("animation-timeline"),
+  ANIMATION_RANGE("animation-range"),
   CONTAINER_NAME("container-name"),
   CONTAINER_TYPE("container-type"),
   ANCHOR_NAME("anchor-name"),

@@ -2,6 +2,10 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -10,16 +14,34 @@ import java.util.function.Supplier;
  */
 public final class RenderContext {
 
+  public record FootnoteEntry(
+      int number, String slug, String refDomId, String noteDomId, Element content) {}
+
+  private static final class FootnoteState {
+    private final Map<String, FootnoteEntry> entries = new LinkedHashMap<>();
+    private boolean sectionRendered = false;
+  }
+
   private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
 
   private final GlobalElementId viewScope;
   private final StyleSheetCollector styles;
   private final Tokens tokens;
+  private final FootnoteState footnotes;
 
   public RenderContext(GlobalElementId viewScope, StyleSheetCollector styles, Tokens tokens) {
+    this(viewScope, styles, tokens, new FootnoteState());
+  }
+
+  private RenderContext(
+      GlobalElementId viewScope,
+      StyleSheetCollector styles,
+      Tokens tokens,
+      FootnoteState footnotes) {
     this.viewScope = viewScope;
     this.styles = styles;
     this.tokens = tokens;
+    this.footnotes = footnotes;
   }
 
   public static RenderContext current() {
@@ -41,8 +63,33 @@ public final class RenderContext {
     return tokens;
   }
 
+  public FootnoteEntry registerFootnote(String rawId, Element content) {
+    String slug = Fnv1a64.sanitizeIdentifier(rawId);
+    String key = viewScope.domId().isEmpty() ? slug : viewScope.domId() + "--" + slug;
+    return footnotes.entries.computeIfAbsent(
+        key,
+        k -> {
+          int number = footnotes.entries.size() + 1;
+          String refDomId = viewScope.extend(ElementId.of("fnref-" + slug)).domId();
+          String noteDomId = "fn-" + k;
+          return new FootnoteEntry(number, slug, refDomId, noteDomId, content);
+        });
+  }
+
+  public Collection<FootnoteEntry> footnotes() {
+    return Collections.unmodifiableCollection(footnotes.entries.values());
+  }
+
+  public boolean hasUnrenderedFootnotes() {
+    return !footnotes.entries.isEmpty() && !footnotes.sectionRendered;
+  }
+
+  public void markFootnotesRendered() {
+    footnotes.sectionRendered = true;
+  }
+
   public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
-    var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens);
+    var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens, footnotes);
     return ScopedValue.where(CURRENT, childContext).call(work::get);
   }
 

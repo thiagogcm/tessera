@@ -1,0 +1,183 @@
+package dev.nthings.tessera.core;
+
+/** Static factory entry points for building semantic HTML5 elements and deferred overlays. */
+public final class Elements {
+
+  private Elements() {}
+
+  public static TagElement el(HtmlTag tag) {
+    return new TagElement(tag);
+  }
+
+  public static TagElement div() {
+    return new TagElement(HtmlTag.DIV);
+  }
+
+  public static TagElement span() {
+    return new TagElement(HtmlTag.SPAN);
+  }
+
+  public static TagElement main() {
+    return new TagElement(HtmlTag.MAIN);
+  }
+
+  public static TagElement header() {
+    return new TagElement(HtmlTag.HEADER);
+  }
+
+  public static TagElement footer() {
+    return new TagElement(HtmlTag.FOOTER);
+  }
+
+  public static TagElement nav() {
+    return new TagElement(HtmlTag.NAV);
+  }
+
+  public static TagElement section() {
+    return new TagElement(HtmlTag.SECTION);
+  }
+
+  public static TagElement article() {
+    return new TagElement(HtmlTag.ARTICLE);
+  }
+
+  public static TagElement aside() {
+    return new TagElement(HtmlTag.ASIDE);
+  }
+
+  public static TagElement h1() {
+    return new TagElement(HtmlTag.H1);
+  }
+
+  public static TagElement h2() {
+    return new TagElement(HtmlTag.H2);
+  }
+
+  public static TagElement h3() {
+    return new TagElement(HtmlTag.H3);
+  }
+
+  public static TagElement h4() {
+    return new TagElement(HtmlTag.H4);
+  }
+
+  public static TagElement p() {
+    return new TagElement(HtmlTag.P);
+  }
+
+  public static TagElement ul() {
+    return new TagElement(HtmlTag.UL);
+  }
+
+  public static TagElement ol() {
+    return new TagElement(HtmlTag.OL);
+  }
+
+  public static TagElement li() {
+    return new TagElement(HtmlTag.LI);
+  }
+
+  public static TagElement button() {
+    return new TagElement(HtmlTag.BUTTON).attr("type", "button");
+  }
+
+  public static TagElement submitButton() {
+    return new TagElement(HtmlTag.BUTTON).attr("type", "submit");
+  }
+
+  public static TagElement a(String href) {
+    return new TagElement(HtmlTag.A).attr("href", href);
+  }
+
+  public static TagElement dialog() {
+    return new TagElement(HtmlTag.DIALOG);
+  }
+
+  public static TagElement form() {
+    return new TagElement(HtmlTag.FORM);
+  }
+
+  public static TagElement label() {
+    return new TagElement(HtmlTag.LABEL);
+  }
+
+  public static TagElement input(String type) {
+    return new TagElement(HtmlTag.INPUT).attr("type", type);
+  }
+
+  public static TagElement img(String src, String alt) {
+    return new TagElement(HtmlTag.IMG)
+        .attr("src", src)
+        .attr("alt", alt)
+        .attr("loading", "lazy")
+        .attr("decoding", "async");
+  }
+
+  public static TagElement table() {
+    return new TagElement(HtmlTag.TABLE);
+  }
+
+  public static TagElement thead() {
+    return new TagElement(HtmlTag.THEAD);
+  }
+
+  public static TagElement tbody() {
+    return new TagElement(HtmlTag.TBODY);
+  }
+
+  public static TagElement tr() {
+    return new TagElement(HtmlTag.TR);
+  }
+
+  public static TagElement th() {
+    return new TagElement(HtmlTag.TH);
+  }
+
+  public static TagElement td() {
+    return new TagElement(HtmlTag.TD);
+  }
+
+  public static TagElement code() {
+    return new TagElement(HtmlTag.CODE);
+  }
+
+  public static TagElement pre() {
+    return new TagElement(HtmlTag.PRE);
+  }
+
+  public static TagElement details() {
+    return new TagElement(HtmlTag.DETAILS);
+  }
+
+  public static TagElement summary() {
+    return new TagElement(HtmlTag.SUMMARY);
+  }
+
+  public static TagElement br() {
+    return new TagElement(HtmlTag.BR);
+  }
+
+  public static TagElement hr() {
+    return new TagElement(HtmlTag.HR);
+  }
+
+  public static TextElement text(String content) {
+    return new TextElement(content);
+  }
+
+  public static RawHtmlElement rawHtml(String trustedHtml) {
+    return new RawHtmlElement(trustedHtml);
+  }
+
+  public static EmptyElement empty() {
+    return EmptyElement.INSTANCE;
+  }
+
+  public static DeferredElement deferred(IntoElement child) {
+    return new DeferredElement(child.intoElement(), 0);
+  }
+
+  public static DeferredElement deferred(IntoElement child, int priority) {
+    return new DeferredElement(child.intoElement(), priority);
+  }
+}

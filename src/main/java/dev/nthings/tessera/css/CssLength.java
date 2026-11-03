@@ -1,0 +1,126 @@
+package dev.nthings.tessera.css;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
+/** Sealed algebraic CSS length units. */
+public sealed interface CssLength
+    permits CssLength.Px,
+        CssLength.Rem,
+        CssLength.Em,
+        CssLength.Ch,
+        CssLength.Percent,
+        CssLength.Cqi,
+        CssLength.Dvh,
+        CssLength.Auto,
+        CssLength.Fluid {
+
+  String toCss();
+
+  static String formatNumber(double value) {
+    var df = new DecimalFormat("0.###", DecimalFormatSymbols.getInstance(Locale.ROOT));
+    return df.format(value);
+  }
+
+  record Px(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "px";
+    }
+  }
+
+  record Rem(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "rem";
+    }
+  }
+
+  record Em(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "em";
+    }
+  }
+
+  record Ch(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "ch";
+    }
+  }
+
+  record Percent(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "%";
+    }
+  }
+
+  record Cqi(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "cqi";
+    }
+  }
+
+  record Dvh(double value) implements CssLength {
+    @Override
+    public String toCss() {
+      return formatNumber(value) + "dvh";
+    }
+  }
+
+  enum Auto implements CssLength {
+    INSTANCE;
+
+    @Override
+    public String toCss() {
+      return "auto";
+    }
+  }
+
+  record Fluid(CssLength min, CssLength preferred, CssLength max) implements CssLength {
+    @Override
+    public String toCss() {
+      return "--fluid(" + min.toCss() + ", " + preferred.toCss() + ", " + max.toCss() + ")";
+    }
+  }
+
+  static CssLength px(double value) {
+    return new Px(value);
+  }
+
+  static CssLength rem(double value) {
+    return new Rem(value);
+  }
+
+  static CssLength em(double value) {
+    return new Em(value);
+  }
+
+  static CssLength ch(double value) {
+    return new Ch(value);
+  }
+
+  static CssLength pct(double value) {
+    return new Percent(value);
+  }
+
+  static CssLength cqi(double value) {
+    return new Cqi(value);
+  }
+
+  static CssLength dvh(double value) {
+    return new Dvh(value);
+  }
+
+  static CssLength auto() {
+    return Auto.INSTANCE;
+  }
+
+  static CssLength fluid(CssLength min, CssLength preferred, CssLength max) {
+    return new Fluid(min, preferred, max);
+  }
+}

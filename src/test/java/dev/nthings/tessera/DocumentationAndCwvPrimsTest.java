@@ -13,7 +13,9 @@ import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
@@ -217,8 +219,8 @@ class DocumentationAndCwvPrimsTest {
   void compilesDocPagerAndGeneratesSitemapAndSearchIndex(@TempDir Path tempDir) throws Exception {
     var site =
         new SiteDefinition(
-            new dev.nthings.tessera.css.Tokens(),
-            dev.nthings.tessera.render.OutputMode.externalAsset("/assets"),
+            new Tokens(),
+            OutputMode.externalAsset("/assets"),
             List.of(
                 new SiteRoute(
                     "/",

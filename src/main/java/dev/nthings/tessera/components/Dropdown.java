@@ -142,11 +142,7 @@ public final class Dropdown implements RenderView {
                     .borderNone()
                     .textAlign("start")
                     .cursorPointer()
-                    .refine(
-                        r ->
-                            r.put(
-                                new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
-                                    "none"))))
+                    .textDecorationNone())
         .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope .dropdown-hint",

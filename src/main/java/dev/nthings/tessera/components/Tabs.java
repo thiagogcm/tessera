@@ -14,6 +14,7 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -113,7 +114,7 @@ public final class Tabs {
                           s.refine(
                               r ->
                                   r.put(
-                                      new dev.nthings.tessera.css.CssDeclaration.BorderBlockEnd(
+                                      new CssDeclaration.BorderBlockEnd(
                                           "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))))
           .select(
               ":scope a",
@@ -126,11 +127,7 @@ public final class Tabs {
                       .textSize(CssLength.rem(0.875))
                       .fontWeight(500)
                       .whiteSpace("nowrap")
-                      .refine(
-                          r ->
-                              r.put(
-                                  new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
-                                      "none"))))
+                      .textDecorationNone())
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(":scope li.active > a", s -> s.textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
     }
@@ -241,7 +238,7 @@ public final class Tabs {
                           s.refine(
                               r ->
                                   r.put(
-                                      new dev.nthings.tessera.css.CssDeclaration.BorderBlockEnd(
+                                      new CssDeclaration.BorderBlockEnd(
                                           "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))))
           .select(":scope > .tab-panel", s -> s.hidden().p(CssLength.rem(1.25)));
 

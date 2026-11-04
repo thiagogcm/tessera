@@ -123,14 +123,7 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
                     .pt(CssLength.rem(1.5))
                     .borderBlockStartSubtle(Tokens.BORDER_SUBTLE))
         .containerMinInlineSize(
-            CssLength.rem(36),
-            c ->
-                c.root(
-                    s ->
-                        s.style()
-                            .put(
-                                new dev.nthings.tessera.css.CssDeclaration.GridTemplateColumns(
-                                    "repeat(2, 1fr)"))))
+            CssLength.rem(36), c -> c.root(s -> s.gridColumns("repeat(2, 1fr)")))
         .select(
             ":scope > .pager-card",
             s ->
@@ -148,15 +141,8 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
         .select(
             ":scope > .pager-card:hover",
             s -> s.borderSubtle(Tokens.ACCENT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
-        .select(
-            ":scope > .pager-card.pager-prev",
-            s -> s.style().put(new dev.nthings.tessera.css.CssDeclaration.GridColumn("1")))
-        .select(
-            ":scope > .pager-card.pager-next",
-            s ->
-                s.style()
-                    .put(new dev.nthings.tessera.css.CssDeclaration.GridColumn("2"))
-                    .refine(r -> r.textAlign("right")))
+        .select(":scope > .pager-card.pager-prev", s -> s.gridColumn("1"))
+        .select(":scope > .pager-card.pager-next", s -> s.gridColumn("2").textAlign("right"))
         .select(
             ":scope > .pager-card > .pager-hint",
             s -> s.fontSize(CssLength.rem(0.8)).fontWeight(500).textColor(Tokens.TEXT_MUTED))

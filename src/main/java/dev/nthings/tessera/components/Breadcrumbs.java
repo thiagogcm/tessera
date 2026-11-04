@@ -70,15 +70,7 @@ public final class Breadcrumbs implements RenderView {
         .select(
             ":scope li + li::before",
             s -> s.cssContent("\"/\" / \"\"").textColor(Tokens.TEXT_MUTED))
-        .select(
-            ":scope a",
-            s ->
-                s.textColor(Tokens.TEXT_MUTED)
-                    .refine(
-                        r ->
-                            r.put(
-                                new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
-                                    "none"))))
+        .select(":scope a", s -> s.textColor(Tokens.TEXT_MUTED).textDecorationNone())
         .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
         .select(
             ":scope a[aria-current=\"page\"]",

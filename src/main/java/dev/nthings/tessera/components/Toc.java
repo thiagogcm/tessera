@@ -16,6 +16,7 @@ import static dev.nthings.tessera.core.Elements.summary;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
@@ -30,11 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Zero-JavaScript Scroll-Spy Table of Contents and documentation section primitives backed by
- * Chrome 156+ {@code scroll-target-group: auto}, {@code :target-current}, and native HTML {@code
- * <details>} collapsible disclosure.
- */
+/** Scroll-Spy Table of Contents and documentation layout primitives. */
 public final class Toc {
 
   private static final String CHEVRON_SVG =
@@ -45,7 +42,7 @@ public final class Toc {
 
   private Toc() {}
 
-  /** Explicit Table of Contents target entry. */
+  /** Table of Contents item target. */
   public record Item(String targetDomId, String title, int level) {
     public Item {
       Fnv1a64.sanitizeIdentifier(targetDomId);
@@ -63,11 +60,7 @@ public final class Toc {
     }
   }
 
-  /**
-   * Documentation section that automatically registers its heading with {@link RenderContext}
-   * during Phase 1 ({@code requestLayout}) so {@link TableOfContents#fromContext} can populate
-   * links without manual duplication.
-   */
+  /** Section that registers with {@link RenderContext} during layout expansion. */
   public record DocSection(String id, String title, int level, List<Element> body)
       implements RenderOnce {
 
@@ -102,7 +95,7 @@ public final class Toc {
           };
 
       var sectionEl =
-          dev.nthings.tessera.core.Elements.section()
+          Elements.section()
               .attr("id", entry.targetDomId())
               .scrollMarginBlockStart(CssLength.rem(7))
               .flex()
@@ -149,11 +142,7 @@ public final class Toc {
     return new DocLayout(tocId, tocHeading, list);
   }
 
-  /**
-   * Integrated Scroll-Spy Table of Contents {@link RenderView} emitting {@code scroll-target-group:
-   * auto} with continuous vertical track, native collapsible {@code <details>} disclosure, and
-   * active {@code a:target-current} indicators.
-   */
+  /** Scroll-Spy Table of Contents view with collapsible disclosure. */
   public static final class TableOfContents implements RenderView {
 
     private final ElementId id;
@@ -279,10 +268,7 @@ public final class Toc {
     }
   }
 
-  /**
-   * Two-column documentation layout that expands the prose sections before rendering the sticky
-   * collapsible {@link TableOfContents} sidebar with seamless responsive adaptation.
-   */
+  /** Two-column documentation layout with main prose and sticky Table of Contents rail. */
   public record DocLayout(String tocId, String tocHeading, List<Element> sections)
       implements RenderView {
 

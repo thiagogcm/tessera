@@ -1,8 +1,10 @@
 package dev.nthings.tessera.css;
 
+import java.util.EnumMap;
+
 /**
- * Canonical CSS property keys in deterministic ordinal order for {@link java.util.EnumMap} storage
- * and FNV-1a hashing.
+ * Canonical CSS property keys in deterministic ordinal order for {@link EnumMap} storage and FNV-1a
+ * hashing.
  *
  * <p>Note:
  *

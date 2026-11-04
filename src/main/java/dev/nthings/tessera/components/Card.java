@@ -4,9 +4,11 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.FluentBuilder;
+import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -71,9 +73,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
   public Card media(IntoElement mediaElement) {
     Element el = mediaElement.intoElement();
-    if (el instanceof TagElement tag
-        && tag.tag() != dev.nthings.tessera.core.HtmlTag.IMG
-        && tag.tag() != dev.nthings.tessera.core.HtmlTag.PICTURE) {
+    if (el instanceof TagElement tag && tag.tag() != HtmlTag.IMG && tag.tag() != HtmlTag.PICTURE) {
       tag.attr("class", "media");
     }
     this.media = el;
@@ -143,24 +143,14 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .bg(Tokens.SURFACE_CARD)
                     .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
                     .relative())
-        .select(
-            ":scope a.card-link",
-            s ->
-                s.refine(
-                    r ->
-                        r.put(
-                            new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine("none"))))
+        .select(":scope a.card-link", s -> s.textDecorationNone())
         .select(
             ":scope a.card-link:hover",
             s ->
                 s.refine(
                     r ->
-                        r.put(
-                                new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
-                                    "underline"))
-                            .put(
-                                new dev.nthings.tessera.css.CssDeclaration.TextUnderlineOffset(
-                                    CssLength.em(0.2)))))
+                        r.put(new CssDeclaration.TextDecorationLine("underline"))
+                            .put(new CssDeclaration.TextUnderlineOffset(CssLength.em(0.2)))))
         .select(
             ":scope:has(a.card-link) a.card-link::after",
             s -> s.cssContent("\"\"").absolute().inset("0"))

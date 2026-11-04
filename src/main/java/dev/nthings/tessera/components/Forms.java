@@ -11,6 +11,7 @@ import static dev.nthings.tessera.core.Elements.textarea;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
@@ -371,7 +372,7 @@ public final class Forms {
                       .child(selectedcontent()));
 
       for (var opt : standaloneOptions) {
-        var optEl = dev.nthings.tessera.core.Elements.option(opt.value(), opt.label());
+        var optEl = Elements.option(opt.value(), opt.label());
         if (opt.selected()) {
           optEl.attr("selected", "");
         }
@@ -379,9 +380,9 @@ public final class Forms {
       }
 
       for (var group : groups) {
-        var groupEl = dev.nthings.tessera.core.Elements.optgroup(group.label());
+        var groupEl = Elements.optgroup(group.label());
         for (var opt : group.options()) {
-          var optEl = dev.nthings.tessera.core.Elements.option(opt.value(), opt.label());
+          var optEl = Elements.option(opt.value(), opt.label());
           if (opt.selected()) {
             optEl.attr("selected", "");
           }

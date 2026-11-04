@@ -1,5 +1,6 @@
 package dev.nthings.tessera.css;
 
+import dev.nthings.tessera.core.RenderView;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -10,10 +11,10 @@ import org.jspecify.annotations.Nullable;
  * Type-safe builder for {@code @scope ([data-view="..."]) to ([data-view])} rules in {@code @layer
  * components}.
  *
- * <p>Eliminates raw CSS strings inside {@link dev.nthings.tessera.core.RenderView} implementations
- * by expressing {@code :scope}, descendant selectors, {@code @starting-style} entry animations,
- * {@code @container} size and {@code scroll-state(...)} queries, and {@code @media
- * (prefers-reduced-motion: no-preference)} blocks through {@link StyleRefinement}.
+ * <p>Eliminates raw CSS strings inside {@link RenderView} implementations by expressing {@code
+ * :scope}, descendant selectors, {@code @starting-style} entry animations, {@code @container} size
+ * and {@code scroll-state(...)} queries, and {@code @media (prefers-reduced-motion: no-preference)}
+ * blocks through {@link StyleRefinement}.
  */
 public final class ScopeStyle {
 

@@ -12,6 +12,7 @@ import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
+import java.util.List;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 
@@ -77,7 +78,6 @@ class ProseAndCollapsibleTocTest {
     var compiled = PageCompiler.compile(doc);
     var parsed = Jsoup.parse(compiled.html());
 
-    // 1. Ghost section
     var ghostEl = parsed.selectFirst("section#sec-ghost");
     assertThat(ghostEl).isNotNull();
     assertThat(ghostEl.attr("data-surface")).isEqualTo("ghost");
@@ -89,13 +89,11 @@ class ProseAndCollapsibleTocTest {
     assertThat(ghostEl.selectFirst("h2#sec-ghost--heading")).isNotNull();
     assertThat(ghostEl.selectFirst("h2#sec-ghost--heading").text()).isEqualTo("Ghost Section");
 
-    // 2. Card section
     var cardEl = parsed.selectFirst("section#sec-card");
     assertThat(cardEl).isNotNull();
     assertThat(cardEl.attr("data-surface")).isEqualTo("card");
     assertThat(cardEl.selectFirst("h2#sec-card--heading")).isNotNull();
 
-    // 3. Highlight section with level 3 (h3)
     var highlightEl = parsed.selectFirst("section#sec-highlight");
     assertThat(highlightEl).isNotNull();
     assertThat(highlightEl.attr("data-surface")).isEqualTo("highlight");
@@ -115,7 +113,7 @@ class ProseAndCollapsibleTocTest {
   @Test
   void tocCollapsibleMarkupAndChevron() {
     var items =
-        java.util.List.of(
+        List.of(
             Toc.Item.h2("intro", "Introduction"),
             Toc.Item.h3("sub-intro", "Detailed Architecture"),
             Toc.Item.h2("summary", "Summary"));
@@ -155,7 +153,6 @@ class ProseAndCollapsibleTocTest {
     assertThat(links.get(1).attr("href")).isEqualTo("#sub-intro");
     assertThat(links.get(1).attr("data-level")).isEqualTo("3");
 
-    // CSS contains scroll-target-group, target-current, and transition rules
     assertThat(compiled.cssContent()).contains("scroll-target-group:auto");
     assertThat(compiled.cssContent()).contains(":target-current");
     assertThat(compiled.cssContent()).contains("details::details-content");
@@ -186,15 +183,12 @@ class ProseAndCollapsibleTocTest {
     var compiled = PageCompiler.compile(doc);
     var parsed = Jsoup.parse(compiled.html());
 
-    // DocLayout grid container
     var grid = parsed.selectFirst(".doc-grid");
     assertThat(grid).isNotNull();
 
-    // Prose column containing sections
     var proseCol = grid.selectFirst(".doc-prose-col");
     assertThat(proseCol).isNotNull();
 
-    // Sidebar rail containing TableOfContents
     var rail = grid.selectFirst(".doc-toc-rail");
     assertThat(rail).isNotNull();
 
@@ -204,7 +198,6 @@ class ProseAndCollapsibleTocTest {
     var details = nav.selectFirst("details.toc-collapsible-wrapper");
     assertThat(details).isNotNull();
 
-    // ToC links automatically registered from ContentSections with scoped IDs
     var links = details.select("ol > li > a");
     assertThat(links).hasSize(3);
     assertThat(links.get(0).attr("href")).isEqualTo("#my-doc-layout--getting-started");
@@ -215,12 +208,10 @@ class ProseAndCollapsibleTocTest {
     assertThat(links.get(2).text()).isEqualTo("Telemetry & Observability");
     assertThat(links.get(2).attr("data-level")).isEqualTo("3");
 
-    // Sections rendered in prose col with matching IDs
     assertThat(proseCol.selectFirst("section#my-doc-layout--getting-started")).isNotNull();
     assertThat(proseCol.selectFirst("section#my-doc-layout--configuration")).isNotNull();
     assertThat(proseCol.selectFirst("section#my-doc-layout--telemetry-specs")).isNotNull();
 
-    // Check CSS container query for 2-column layout and responsive grid rows
     assertThat(compiled.cssContent()).contains("@container (inline-size >= 48rem)");
     assertThat(compiled.cssContent()).contains("grid-template-columns:minmax(0, 1fr) 15rem");
     assertThat(compiled.cssContent()).contains("grid-row:1");

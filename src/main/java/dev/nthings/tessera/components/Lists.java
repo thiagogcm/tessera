@@ -10,6 +10,7 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,11 +25,11 @@ public final class Lists {
   public record BulletList(List<Element> items) implements RenderOnce {
 
     public static BulletList ofStrings(String... items) {
-      return new BulletList(java.util.Arrays.stream(items).<Element>map(Elements::text).toList());
+      return new BulletList(Arrays.stream(items).<Element>map(Elements::text).toList());
     }
 
     public static BulletList of(IntoElement... items) {
-      return new BulletList(java.util.Arrays.stream(items).map(IntoElement::intoElement).toList());
+      return new BulletList(Arrays.stream(items).map(IntoElement::intoElement).toList());
     }
 
     @Override
@@ -45,12 +46,11 @@ public final class Lists {
   public record NumberedList(List<Element> items) implements RenderOnce {
 
     public static NumberedList ofStrings(String... items) {
-      return new NumberedList(java.util.Arrays.stream(items).<Element>map(Elements::text).toList());
+      return new NumberedList(Arrays.stream(items).<Element>map(Elements::text).toList());
     }
 
     public static NumberedList of(IntoElement... items) {
-      return new NumberedList(
-          java.util.Arrays.stream(items).map(IntoElement::intoElement).toList());
+      return new NumberedList(Arrays.stream(items).map(IntoElement::intoElement).toList());
     }
 
     @Override
@@ -104,12 +104,11 @@ public final class Lists {
   public record StepList(String id, List<Element> steps) implements RenderView {
 
     public static StepList ofStrings(String id, String... steps) {
-      return new StepList(id, java.util.Arrays.stream(steps).<Element>map(Elements::text).toList());
+      return new StepList(id, Arrays.stream(steps).<Element>map(Elements::text).toList());
     }
 
     public static StepList of(String id, IntoElement... steps) {
-      return new StepList(
-          id, java.util.Arrays.stream(steps).map(IntoElement::intoElement).toList());
+      return new StepList(id, Arrays.stream(steps).map(IntoElement::intoElement).toList());
     }
 
     @Override

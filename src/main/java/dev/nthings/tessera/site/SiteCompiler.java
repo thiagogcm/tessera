@@ -1,10 +1,12 @@
 package dev.nthings.tessera.site;
 
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
+import dev.nthings.tessera.render.PageDocument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -243,9 +245,8 @@ public final class SiteCompiler {
     return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
   }
 
-  private static dev.nthings.tessera.render.PageDocument placeholderDocument() {
-    return new dev.nthings.tessera.render.PageDocument(
-        "Placeholder", dev.nthings.tessera.core.Elements.empty());
+  private static PageDocument placeholderDocument() {
+    return new PageDocument("Placeholder", Elements.empty());
   }
 
   private static void validateSiteLinks(Map<String, PageCompiler.PreparedPage> preparedByRoute) {

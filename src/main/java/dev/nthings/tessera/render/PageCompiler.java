@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.RawHtmlElement;
 import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderOnceElement;
 import dev.nthings.tessera.core.RenderViewElement;
 import dev.nthings.tessera.core.StatefulTagElement;
@@ -35,8 +36,8 @@ import org.owasp.encoder.Encode;
  * {@code paint}).
  *
  * <p>Operates on an immutable intermediate {@code ResolvedNode} representation so input {@link
- * Element} and {@link dev.nthings.tessera.core.RenderOnce} trees are never mutated and can be
- * reused across multiple render passes.
+ * Element} and {@link RenderOnce} trees are never mutated and can be reused across multiple render
+ * passes.
  */
 public final class PageCompiler {
 

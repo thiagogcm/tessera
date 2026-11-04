@@ -14,8 +14,8 @@ import org.jspecify.annotations.Nullable;
 /// HTML element node backed by [HtmlTag], [StyleRefinement], and [Interactivity].
 ///
 /// An element gets a scoped DOM id by binding an [ElementRef] ([#id(ElementRef)], [#id(String)]);
-/// features that need the element's own id ([#interestTooltip], [#anchorName()],
-/// [#viewTransitionName]) bind an anonymous ref automatically.
+/// features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an
+/// anonymous ref automatically.
 public final class TagElement
     implements Element,
         InteractiveElement<TagElement>,
@@ -35,7 +35,7 @@ public final class TagElement
   private @Nullable TagElement interestTooltip;
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
-  private @Nullable String viewTransitionClass;
+  private @Nullable TransitionKey transitionKey;
 
   public TagElement(HtmlTag tag) {
     this.tag = tag;
@@ -159,16 +159,13 @@ public final class TagElement
     return anchorTarget;
   }
 
-  /// Unique `view-transition-name` `<class>-<dom id>` plus `view-transition-class: <class>`.
-  public TagElement viewTransitionName(String transitionClass) {
-    ref();
-    String safe = Fnv1a64.sanitizeIdentifier(transitionClass);
-    this.viewTransitionClass = safe;
-    style.put(CssProperty.VIEW_TRANSITION_CLASS, safe);
+  @Override
+  public TagElement transitionKey(TransitionKey key) {
+    this.transitionKey = key;
     return this;
   }
 
-  public @Nullable String viewTransitionClass() {
-    return viewTransitionClass;
+  public @Nullable TransitionKey transitionKey() {
+    return transitionKey;
   }
 }

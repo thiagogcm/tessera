@@ -499,6 +499,12 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  /// Named inline-size query container (`container: <name> / inline-size`).
+  default SELF containerInlineSize(String containerName) {
+    style().put(CssProperty.CONTAINER_NAME, containerName);
+    return containerInlineSize();
+  }
+
   default SELF contentVisibilityAuto(String intrinsicBlockSize) {
     style().put(CssProperty.CONTENT_VISIBILITY, "auto");
     style().put(CssProperty.CONTAIN_INTRINSIC_SIZE, "auto " + intrinsicBlockSize);

@@ -315,19 +315,18 @@ public final class PageCompiler {
       validateImage(attrs, style);
     }
 
-    // transitionKey(...) and viewTransitionName(...) write these declarations.
-    String ident = style.get(CssProperty.VIEW_TRANSITION_NAME);
-    if (ident != null) {
-      if (!state.viewTransitionNames.add(ident)) {
+    TransitionKey transitionKey = tag.transitionKey();
+    if (transitionKey != null) {
+      if (!state.viewTransitionNames.add(transitionKey.name())) {
         throw new AccessibilityViolationException(
             "Duplicate TransitionKey name '"
-                + ident
+                + transitionKey.name()
                 + "' found on the same page. TransitionKey names must be unique per document.");
       }
-      String vtc = style.get(CssProperty.VIEW_TRANSITION_CLASS);
-      state.transitionKeys.add(new TransitionKey(ident, vtc));
-      if (vtc != null) {
-        ctx.styles().registerTransitionClass(vtc);
+      state.transitionKeys.add(transitionKey);
+      String transitionClass = transitionKey.transitionClass();
+      if (transitionClass != null) {
+        ctx.styles().registerTransitionClass(transitionClass);
       }
     }
 
@@ -365,12 +364,12 @@ public final class PageCompiler {
         companionTooltip);
   }
 
-  /// Adds declarations derived from DOM ids (anchor names, unique view-transition names).
+  /// Adds declarations derived from identity: anchor names and view-transition keys.
   private static StyleRefinement withIdentityStyles(
       TagElement tag, @Nullable String domId, CompilationState state) {
     ElementRef anchorTarget = tag.anchorTarget();
-    String transitionClass = tag.viewTransitionClass();
-    if (!tag.isAnchor() && anchorTarget == null && transitionClass == null) {
+    TransitionKey transitionKey = tag.transitionKey();
+    if (!tag.isAnchor() && anchorTarget == null && transitionKey == null) {
       return tag.style();
     }
     var style = new StyleRefinement().mergeFrom(tag.style());
@@ -381,8 +380,12 @@ public final class PageCompiler {
       String usage = "<" + tag.tag().tagName() + "> anchoredTo (anchor must be laid out earlier)";
       style.put(CssProperty.POSITION_ANCHOR, anchorIdent(state.boundDomId(anchorTarget, usage)));
     }
-    if (domId != null && transitionClass != null) {
-      style.put(CssProperty.VIEW_TRANSITION_NAME, transitionClass + "-" + domId);
+    if (transitionKey != null) {
+      style.put(CssProperty.VIEW_TRANSITION_NAME, transitionKey.name());
+      String transitionClass = transitionKey.transitionClass();
+      if (transitionClass != null) {
+        style.put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
+      }
     }
     return style;
   }

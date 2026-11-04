@@ -316,8 +316,7 @@ Any number of elements may reference a ref from anywhere on the page, before or 
 - **CSS Anchor Positioning & View Transitions**:
   - `.anchorName()` (auto-binds a ref; emits `anchor-name: --anchor-<dom-id>`)
   - `.anchoredTo(ElementRef anchor, String positionArea, String tryFallbacks)` (emits `position-anchor`; the anchor must be laid out earlier on the page)
-  - `.viewTransitionName(String transitionClass)` (auto-binds a ref; emits `view-transition-name: <class>-<dom-id>` and `view-transition-class: <class>`)
-  - `.transitionKey(TransitionKey key)` for cross-document morphing between routes
+  - `.transitionKey(TransitionKey key)` for cross-document morphing between routes: stored as a typed key, emitted as `view-transition-name`/`view-transition-class`, and checked unique per page and present on at least two routes
 
 Unbound refs, refs bound to more than one element, and duplicate DOM ids on a page all fail compilation with `AccessibilityViolationException`.
 

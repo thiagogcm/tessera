@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.InteractiveElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.StyleRefinement;
 import java.util.Map;
@@ -67,6 +68,12 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
   @Override
   public StyleRefinement style() {
     return img.style();
+  }
+
+  @Override
+  public Image transitionKey(TransitionKey key) {
+    img.transitionKey(key);
+    return this;
   }
 
   @Override

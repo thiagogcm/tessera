@@ -129,12 +129,16 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
   private static final String MEDIA_CARD = ":scope:has(> img, > picture, > .media)";
 
+  /// Query container name for the card's own width; [CardGrid] switches it off so its cards can
+  /// be subgrids (layout containment would make `grid-template-rows: subgrid` compute to `none`).
+  static final String CONTAINER = "tessera-card";
+
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
-                s.containerInlineSize()
+                s.containerInlineSize(CONTAINER)
                     .flex()
                     .flexCol()
                     .gap(CssLength.rem(0.75))
@@ -184,8 +188,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .rowGap(CssLength.rem(0.75))
                     .itemsStart())
         .select(MEDIA_CARD + " > *", s -> s.gridColumn("1 / -1"))
-        .containerMinInlineSize(
-            CssLength.rem(28),
+        .container(
+            CONTAINER + " (inline-size >= 28rem)",
             c ->
                 c.select(
                         MEDIA_CARD + " > :is(img, picture, .media)",

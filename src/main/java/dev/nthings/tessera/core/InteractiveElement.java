@@ -114,14 +114,9 @@ public interface InteractiveElement<
     return attr("width", Integer.toString(width)).attr("height", Integer.toString(height));
   }
 
-  /// Cross-document view transition identity: emits `view-transition-name` (and class).
-  default SELF transitionKey(TransitionKey key) {
-    style().put(CssProperty.VIEW_TRANSITION_NAME, key.name());
-    if (key.transitionClass() != null) {
-      style().put(CssProperty.VIEW_TRANSITION_CLASS, key.transitionClass());
-    }
-    return self();
-  }
+  /// Cross-document view transition identity: emits `view-transition-name` (and class), checked
+  /// to be unique per page and present on at least two routes of a site.
+  SELF transitionKey(TransitionKey key);
 
   default SELF ariaHidden(boolean hidden) {
     return attr("aria-hidden", Boolean.toString(hidden));

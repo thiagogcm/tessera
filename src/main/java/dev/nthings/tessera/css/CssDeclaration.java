@@ -112,7 +112,11 @@ public sealed interface CssDeclaration
         CssDeclaration.TransitionDuration,
         CssDeclaration.TransitionTimingFunction,
         CssDeclaration.TransitionBehavior,
-        CssDeclaration.WhiteSpace {
+        CssDeclaration.WhiteSpace,
+        CssDeclaration.BorderColor,
+        CssDeclaration.Appearance,
+        CssDeclaration.AccentColor,
+        CssDeclaration.Resize {
 
   CssProperty property();
 
@@ -1556,6 +1560,54 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return mode;
+    }
+  }
+
+  record BorderColor(String color) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_COLOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return color;
+    }
+  }
+
+  record Appearance(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.APPEARANCE;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record AccentColor(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.ACCENT_COLOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record Resize(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.RESIZE;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
     }
   }
 }

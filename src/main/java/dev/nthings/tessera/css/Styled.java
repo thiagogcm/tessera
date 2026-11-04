@@ -695,4 +695,64 @@ public interface Styled<SELF extends Styled<SELF>> {
     style().put(new CssDeclaration.WhiteSpace(mode));
     return self();
   }
+
+  default SELF borderColor(DesignToken token) {
+    style().put(new CssDeclaration.BorderColor(token.varReference()));
+    return self();
+  }
+
+  default SELF borderColor(String color) {
+    style().put(new CssDeclaration.BorderColor(color));
+    return self();
+  }
+
+  default SELF appearance(String value) {
+    style().put(new CssDeclaration.Appearance(value));
+    return self();
+  }
+
+  default SELF appearanceBaseSelect() {
+    return appearance("base-select");
+  }
+
+  default SELF appearanceNone() {
+    return appearance("none");
+  }
+
+  default SELF accentColor(DesignToken token) {
+    style().put(new CssDeclaration.AccentColor(token.varReference()));
+    return self();
+  }
+
+  default SELF accentColor(String value) {
+    style().put(new CssDeclaration.AccentColor(value));
+    return self();
+  }
+
+  default SELF resize(String mode) {
+    style().put(new CssDeclaration.Resize(mode));
+    return self();
+  }
+
+  default SELF resizeVertical() {
+    return resize("vertical");
+  }
+
+  default SELF resizeNone() {
+    return resize("none");
+  }
+
+  default SELF outline(String value) {
+    style().put(new CssDeclaration.Outline(value));
+    return self();
+  }
+
+  default SELF outlineNone() {
+    return outline("none");
+  }
+
+  default SELF outlineOffset(CssLength offset) {
+    style().put(new CssDeclaration.OutlineOffset(offset));
+    return self();
+  }
 }

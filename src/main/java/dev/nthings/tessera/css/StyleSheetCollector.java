@@ -134,6 +134,14 @@ public final class StyleSheetCollector {
     if (active != null && !active.isEmpty()) {
       sb.append("&:active:not(:disabled){").append(active.toCssBlockBody()).append('}');
     }
+    var userInvalid = interactivity.userInvalidStyle();
+    if (userInvalid != null && !userInvalid.isEmpty()) {
+      sb.append("&:user-invalid{").append(userInvalid.toCssBlockBody()).append('}');
+    }
+    var userValid = interactivity.userValidStyle();
+    if (userValid != null && !userValid.isEmpty()) {
+      sb.append("&:user-valid{").append(userValid.toCssBlockBody()).append('}');
+    }
     for (var entry : interactivity.groupHoverStyles().entrySet()) {
       if (!entry.getValue().isEmpty()) {
         sb.append("[data-group=\"")

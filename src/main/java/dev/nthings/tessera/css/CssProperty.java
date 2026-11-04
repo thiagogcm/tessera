@@ -89,6 +89,7 @@ public enum CssProperty {
   TEXT_UNDERLINE_OFFSET("text-underline-offset"),
   TEXT_DECORATION_SKIP_INK("text-decoration-skip-ink"),
   BORDER("border"),
+  BORDER_COLOR("border-color"),
   BORDER_BLOCK_START("border-block-start"),
   BORDER_BLOCK_END("border-block-end"),
   BORDER_INLINE_START("border-inline-start"),
@@ -123,7 +124,10 @@ public enum CssProperty {
   VIEW_TRANSITION_NAME("view-transition-name"),
   VIEW_TRANSITION_CLASS("view-transition-class"),
   CONTENT_VISIBILITY("content-visibility"),
-  CONTAIN_INTRINSIC_SIZE("contain-intrinsic-size");
+  CONTAIN_INTRINSIC_SIZE("contain-intrinsic-size"),
+  APPEARANCE("appearance"),
+  ACCENT_COLOR("accent-color"),
+  RESIZE("resize");
 
   private final String cssName;
 

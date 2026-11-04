@@ -31,6 +31,8 @@ public final class Interactivity {
   private @Nullable StyleRefinement hoverStyle;
   private @Nullable StyleRefinement focusVisibleStyle;
   private @Nullable StyleRefinement activeStyle;
+  private @Nullable StyleRefinement userInvalidStyle;
+  private @Nullable StyleRefinement userValidStyle;
   private @Nullable StyleRefinement motionSafeStyle;
   private final Set<String> keyframes = new LinkedHashSet<>();
   private final Map<String, StyleRefinement> groupHoverStyles = new LinkedHashMap<>();
@@ -60,6 +62,20 @@ public final class Interactivity {
       activeStyle = new StyleRefinement();
     }
     mutator.apply(activeStyle);
+  }
+
+  public void onUserInvalid(UnaryOperator<StyleRefinement> mutator) {
+    if (userInvalidStyle == null) {
+      userInvalidStyle = new StyleRefinement();
+    }
+    mutator.apply(userInvalidStyle);
+  }
+
+  public void onUserValid(UnaryOperator<StyleRefinement> mutator) {
+    if (userValidStyle == null) {
+      userValidStyle = new StyleRefinement();
+    }
+    mutator.apply(userValidStyle);
   }
 
   public void onMotionSafe(UnaryOperator<StyleRefinement> mutator) {
@@ -122,6 +138,14 @@ public final class Interactivity {
     return activeStyle;
   }
 
+  public @Nullable StyleRefinement userInvalidStyle() {
+    return userInvalidStyle;
+  }
+
+  public @Nullable StyleRefinement userValidStyle() {
+    return userValidStyle;
+  }
+
   public @Nullable StyleRefinement motionSafeStyle() {
     return motionSafeStyle;
   }
@@ -158,6 +182,8 @@ public final class Interactivity {
     return (hoverStyle != null && !hoverStyle.isEmpty())
         || (focusVisibleStyle != null && !focusVisibleStyle.isEmpty())
         || (activeStyle != null && !activeStyle.isEmpty())
+        || (userInvalidStyle != null && !userInvalidStyle.isEmpty())
+        || (userValidStyle != null && !userValidStyle.isEmpty())
         || (motionSafeStyle != null && !motionSafeStyle.isEmpty())
         || !groupHoverStyles.isEmpty()
         || !hasStyles.isEmpty();

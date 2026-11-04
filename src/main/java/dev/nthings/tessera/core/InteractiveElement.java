@@ -77,6 +77,16 @@ public interface InteractiveElement<
     return self();
   }
 
+  default SELF userInvalid(UnaryOperator<StyleRefinement> mutator) {
+    interactivity().onUserInvalid(mutator);
+    return self();
+  }
+
+  default SELF userValid(UnaryOperator<StyleRefinement> mutator) {
+    interactivity().onUserValid(mutator);
+    return self();
+  }
+
   default SELF group(String groupName) {
     return attr("data-group", Fnv1a64.sanitizeIdentifier(groupName));
   }

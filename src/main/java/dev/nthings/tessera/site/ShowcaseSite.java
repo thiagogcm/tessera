@@ -23,6 +23,7 @@ import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Dropdown;
 import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Formatting;
+import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Lists.BulletList;
@@ -32,6 +33,7 @@ import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.components.Lists.Term;
 import dev.nthings.tessera.components.Overlays;
 import dev.nthings.tessera.components.ScrollProgressBar;
+import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.SimpleTable;
 import dev.nthings.tessera.components.StickyHeader;
 import dev.nthings.tessera.components.Tabs;
@@ -111,6 +113,45 @@ public final class ShowcaseSite {
                   BuiltinCommand.SHOW_MODAL,
                   "Open Compiler Inspector");
 
+      var searchPalette =
+          SearchPalette.create(
+                  "site-search-palette", "Search documentation, routes, and sections...")
+              .item(
+                  "Pages & Guides",
+                  "Overview & Architecture",
+                  "/",
+                  "Declarative zero-JS HTML & CSS view engine for JDK 25")
+              .item(
+                  "Pages & Guides",
+                  "Service Telemetry",
+                  "/telemetry",
+                  "Container-adaptive data tables, sticky headers, and action dropdowns")
+              .item(
+                  "Pages & Guides",
+                  "Documentation Suite",
+                  "/typography",
+                  "Editorial callouts, accessible code blocks, and scroll-spy ToC")
+              .item(
+                  "Sections & Features",
+                  "Accessible Forms Suite",
+                  "/typography#doc-toc-layout--form-suite",
+                  "CSS Level 4 :user-invalid, HTML switch, and appearance: base-select")
+              .item(
+                  "Sections & Features",
+                  "Semantic Callout Admonitions",
+                  "/typography#doc-toc-layout--admonitions",
+                  "OKLCH tinted callout boxes with accessible SVGs")
+              .item(
+                  "Sections & Features",
+                  "Keyboard-Accessible CodeBlocks",
+                  "/typography#doc-toc-layout--code-blocks",
+                  "Tab-accessible pre, CSS line numbering, and diff markers")
+              .item(
+                  "Sections & Features",
+                  "Pure CSS Scroll-Spy Navigation",
+                  "/typography#doc-toc-layout--scrollspy-mechanics",
+                  "scroll-target-group with :target-current tracking");
+
       var navTabs =
           Tabs.navTabs(
               "primary-nav",
@@ -151,9 +192,11 @@ public final class ShowcaseSite {
                           .itemsCenter()
                           .gap(CssLength.rem(0.5))
                           .children(
+                              searchPalette.triggerButton("site-search-btn", "Search docs..."),
                               quickActions,
                               inspectorDrawer.triggerButton("open-drawer-btn", "Inspector"),
-                              inspectorDrawer.asDeferred(20))));
+                              inspectorDrawer.asDeferred(20),
+                              searchPalette.asDeferred(30))));
 
       var hero =
           section()
@@ -473,6 +516,96 @@ public final class ShowcaseSite {
                         .diffAutoDetect(true)
                         .highlightLines(4, 9)));
 
+    var formSuiteSection =
+        Toc.section(
+            "form-suite",
+            "Accessible Forms & Form Controls",
+            div()
+                .p(CssLength.rem(1.5))
+                .rounded(CssLength.rem(0.75))
+                .bg(Tokens.SURFACE_CARD)
+                .borderSubtle(Tokens.BORDER_SUBTLE)
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(1.25))
+                .children(
+                    p().textColor(Tokens.TEXT_MUTED)
+                        .textSize(CssLength.rem(0.95))
+                        .textPretty()
+                        .text(
+                            "Tessera's Form Controls Suite demonstrates CSS Level 4 :user-invalid / :user-valid validation (suppressing premature errors before blur), HTML <input type=\"checkbox\" switch> toggles, Chrome 156+ appearance: base-select custom styling, and CSS Anchor Positioning tooltips."),
+                    Elements.form()
+                        .flex()
+                        .flexCol()
+                        .gap(CssLength.rem(1))
+                        .children(
+                            div()
+                                .flex()
+                                .flexWrap()
+                                .gap(CssLength.rem(1))
+                                .children(
+                                    div()
+                                        .flexGrow(1)
+                                        .child(
+                                            Forms.field("Full Name", Forms.text("fullName"))
+                                                .id("input-fullname")
+                                                .hint(
+                                                    "Your full legal name as it appears on official documents.")
+                                                .error("Full name is required.")
+                                                .anchorTooltip("Format: First Last")),
+                                    div()
+                                        .flexGrow(1)
+                                        .child(
+                                            Forms.field("Work Email", Forms.email("email"))
+                                                .id("input-email")
+                                                .hint(
+                                                    "We will send deployment telemetry and build notifications.")
+                                                .error(
+                                                    "Please enter a valid work email address (e.g., user@company.com).")
+                                                .anchorTooltip("Format: user@domain.com"))),
+                            div()
+                                .flex()
+                                .flexWrap()
+                                .gap(CssLength.rem(1))
+                                .children(
+                                    div()
+                                        .flexGrow(1)
+                                        .child(
+                                            Forms.field(
+                                                    "Target Deployment Platform",
+                                                    Forms.selectControl("targetPlatform")
+                                                        .id("select-platform")
+                                                        .option(
+                                                            "cloud-run",
+                                                            "Google Cloud Run (Serverless Container)",
+                                                            true)
+                                                        .option(
+                                                            "gke",
+                                                            "Google Kubernetes Engine (GKE Autopilot)")
+                                                        .option(
+                                                            "bare-metal", "Edge On-Premise Worker"))
+                                                .hint(
+                                                    "Select target orchestration runtime with appearance: base-select.")),
+                                    div()
+                                        .flexGrow(1)
+                                        .flex()
+                                        .flexCol()
+                                        .justifyCenter()
+                                        .gap(CssLength.rem(0.75))
+                                        .p(CssLength.rem(0.875))
+                                        .rounded(CssLength.rem(0.5))
+                                        .bg(Tokens.SURFACE_SUBTLE)
+                                        .borderSubtle(Tokens.BORDER_SUBTLE)
+                                        .children(
+                                            Forms.switchField(
+                                                "Enable JIT Telemetry Stream",
+                                                "stream_telemetry",
+                                                true),
+                                            Forms.switchField(
+                                                "Strict WCAG 2.2 AAA Enforcement",
+                                                "wcag_strict",
+                                                true))))));
+
     var inlineFormattingSection =
         Toc.section(
             "inline-formatting",
@@ -566,6 +699,7 @@ public final class ShowcaseSite {
             "On This Page",
             admonitionsSection,
             codeBlocksSection,
+            formSuiteSection,
             inlineFormattingSection,
             stepListSection,
             specsSubSection,

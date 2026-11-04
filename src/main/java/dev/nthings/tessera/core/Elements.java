@@ -129,6 +129,46 @@ public final class Elements {
     return new TagElement(HtmlTag.INPUT).attr("type", type);
   }
 
+  public static TagElement select() {
+    return new TagElement(HtmlTag.SELECT);
+  }
+
+  public static TagElement option() {
+    return new TagElement(HtmlTag.OPTION);
+  }
+
+  public static TagElement option(String value, String text) {
+    return new TagElement(HtmlTag.OPTION).attr("value", value).text(text);
+  }
+
+  public static TagElement optgroup(String label) {
+    return new TagElement(HtmlTag.OPTGROUP).attr("label", label);
+  }
+
+  public static TagElement datalist() {
+    return new TagElement(HtmlTag.DATALIST);
+  }
+
+  public static TagElement selectedcontent() {
+    return new TagElement(HtmlTag.SELECTEDCONTENT);
+  }
+
+  public static TagElement textarea() {
+    return new TagElement(HtmlTag.TEXTAREA);
+  }
+
+  public static TagElement fieldset() {
+    return new TagElement(HtmlTag.FIELDSET);
+  }
+
+  public static TagElement legend() {
+    return new TagElement(HtmlTag.LEGEND);
+  }
+
+  public static TagElement output() {
+    return new TagElement(HtmlTag.OUTPUT);
+  }
+
   public static TagElement img(String src, String alt) {
     return new TagElement(HtmlTag.IMG)
         .attr("src", src)

@@ -22,16 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Accessible Forms and Form Controls Suite backed by CSS Level 4 {@code :user-invalid} / {@code
- * :user-valid} pseudo-classes, HTML {@code <input type="checkbox" switch>}, Chrome 156+ {@code
- * appearance: base-select}, and CSS Anchor Positioning tooltips.
- */
+/// Accessible Forms and Form Controls Suite backed by CSS Level 4 `:user-invalid` / `:user-valid`
+/// pseudo-classes, HTML `<input type="checkbox" switch>`, Chrome 156+ `appearance: base-select`,
+/// and CSS Anchor Positioning tooltips.
 public final class Forms {
 
   private Forms() {}
 
-  /** Creates a styled form input element with default focus and validation styling. */
+  /// Creates a styled form input element with default focus and validation styling.
   public static TagElement inputControl(String name, String type) {
     return input(type)
         .attr("name", name)
@@ -73,7 +71,7 @@ public final class Forms {
     return inputControl(name, "search");
   }
 
-  /** Creates a styled multiline {@code <textarea>} with vertical resize. */
+  /// Creates a styled multiline `<textarea>` with vertical resize.
   public static TagElement textareaControl(String name, int rows) {
     return textarea()
         .attr("name", name)
@@ -94,10 +92,8 @@ public final class Forms {
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
-  /**
-   * Creates a modern binary on/off toggle switch backed by HTML {@code <input type="checkbox"
-   * switch>}.
-   */
+  /// Creates a modern binary on/off toggle switch backed by HTML `<input type="checkbox"
+  /// switch>`.
   public static TagElement switchInput(String name, boolean checked) {
     var sw =
         input("checkbox")
@@ -115,17 +111,17 @@ public final class Forms {
     return sw;
   }
 
-  /** Creates a full accessible field wrapper for an input or control. */
+  /// Creates a full accessible field wrapper for an input or control.
   public static Field field(String labelText, TagElement control) {
     return new Field(labelText, control);
   }
 
-  /** Creates a full accessible field wrapper for a customizable select control. */
+  /// Creates a full accessible field wrapper for a customizable select control.
   public static Field field(String labelText, SelectControl select) {
     return new Field(labelText, select.asTag());
   }
 
-  /** Creates an inline row pairing a label and a switch control. */
+  /// Creates an inline row pairing a label and a switch control.
   public static TagElement switchField(String labelText, String name, boolean checked) {
     String id = "switch-" + Fnv1a64.sanitizeIdentifier(name);
     var sw = switchInput(name, checked).id(id);
@@ -146,12 +142,12 @@ public final class Forms {
         .child(sw);
   }
 
-  /** Creates a customizable {@link SelectControl} with {@code appearance: base-select}. */
+  /// Creates a customizable [SelectControl] with `appearance: base-select`.
   public static SelectControl selectControl(String name) {
     return new SelectControl(name);
   }
 
-  /** Accessible field container providing label, format hints, and error messaging. */
+  /// Accessible field container providing label, format hints, and error messaging.
   public static final class Field implements RenderView {
 
     private final ElementId entityId;
@@ -175,22 +171,20 @@ public final class Forms {
       return this;
     }
 
-    /**
-     * Sets format hint text placed above the input, preventing autocomplete overlays from obscuring
-     * it.
-     */
+    /// Sets format hint text placed above the input, preventing autocomplete overlays from
+    /// obscuring it.
     public Field hint(String hintText) {
       this.hintText = hintText;
       return this;
     }
 
-    /** Sets validation error message text revealed when the field matches {@code :user-invalid}. */
+    /// Sets validation error message text revealed when the field matches `:user-invalid`.
     public Field error(String errorText) {
       this.errorText = errorText;
       return this;
     }
 
-    /** Attaches a CSS Anchor Positioning floating tooltip to this field. */
+    /// Attaches a CSS Anchor Positioning floating tooltip to this field.
     public Field anchorTooltip(String tooltipText) {
       this.anchorTooltipText = tooltipText;
       return this;
@@ -306,10 +300,8 @@ public final class Forms {
     }
   }
 
-  /**
-   * Customizable {@code <select>} component implementing Chrome 156+ {@code appearance:
-   * base-select} and top-layer option picker styling.
-   */
+  /// Customizable `<select>` component implementing Chrome 156+ `appearance: base-select` and
+  /// top-layer option picker styling.
   public static final class SelectControl implements RenderView {
 
     public record OptionItem(String value, String label, boolean selected) {}

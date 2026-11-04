@@ -5,12 +5,10 @@ import dev.nthings.tessera.render.OutputMode;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Multi-page static site specification.
- *
- * <p>Defaults to {@link OutputMode#externalAsset(String)} ({@code "/assets"}) so all pages share a
- * single deduplicated, content-hashed CSS stylesheet across Cross-Document View Transitions.
- */
+/// Multi-page static site specification.
+///
+/// Defaults to [OutputMode#externalAsset(String)] (`"/assets"`) so all pages share a single
+/// deduplicated, content-hashed CSS stylesheet across Cross-Document View Transitions.
 public record SiteDefinition(
     Tokens tokens, OutputMode outputMode, List<SiteRoute> routes, @Nullable String baseUrl) {
 

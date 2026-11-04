@@ -1,11 +1,9 @@
 package dev.nthings.tessera.core;
 
-/**
- * Deterministic 64-bit FNV-1a hashing and DOM/CSS identifier sanitization.
- *
- * <p>Operates strictly on explicit UTF-16 code units and primitive bytes so hashes are identical
- * across JVM invocations.
- */
+/// Deterministic 64-bit FNV-1a hashing and DOM/CSS identifier sanitization.
+///
+/// Operates strictly on explicit UTF-16 code units and primitive bytes so hashes are identical
+/// across JVM invocations.
 public final class Fnv1a64 {
 
   public static final long OFFSET_BASIS = 0xcbf29ce484222325L;

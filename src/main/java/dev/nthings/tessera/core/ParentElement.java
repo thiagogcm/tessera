@@ -6,12 +6,10 @@ import java.util.function.Function;
 import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
-/**
- * Composable child-accumulation contract supporting varargs, collections, and JDK 25 {@link
- * Gatherers} stream pipelines.
- *
- * @param <SELF> concrete element type
- */
+/// Composable child-accumulation contract supporting varargs, collections, and JDK 25 [Gatherers]
+/// stream pipelines.
+///
+/// @param <SELF> concrete element type
 public interface ParentElement<SELF extends ParentElement<SELF>> {
 
   SELF self();

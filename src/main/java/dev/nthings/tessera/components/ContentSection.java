@@ -21,21 +21,19 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Semantic {@code <section>} container with configurable surface elevations ({@link SurfaceKind}),
- * automatic Table of Contents registration, and optional lead text and badges.
- */
+/// Semantic `<section>` container with configurable surface elevations ([SurfaceKind]), automatic
+/// Table of Contents registration, and optional lead text and badges.
 public final class ContentSection implements RenderOnce {
 
-  /** Surface presentation styling. */
+  /// Surface presentation styling.
   public enum SurfaceKind {
-    /** Clean borderless continuous narrative flow (default for docs). */
+    /// Clean borderless continuous narrative flow (default for docs).
     GHOST("ghost"),
-    /** Subtle flat surface with bottom border divider. */
+    /// Subtle flat surface with bottom border divider.
     FLAT("flat"),
-    /** Framed card surface with subtle border and shadow (for interactive widgets and forms). */
+    /// Framed card surface with subtle border and shadow (for interactive widgets and forms).
     CARD("card"),
-    /** Accent-tinted OKLCH highlight surface for key announcements and callouts. */
+    /// Accent-tinted OKLCH highlight surface for key announcements and callouts.
     HIGHLIGHT("highlight");
 
     private final String value;

@@ -12,14 +12,12 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 
-/**
- * State-aware sticky header backed by Chrome 156+ {@code container-type: scroll-state} and {@code
- * @container <name> scroll-state(stuck: top)}.
- *
- * <p>The outer {@code :scope} acts as the {@code position: sticky} scroll-state container, while
- * the inner {@code <header class="sticky-surface">} queries {@code scroll-state(stuck: top)} to
- * apply backdrop blur and elevation shadow only when actively stuck.
- */
+/// State-aware sticky header backed by Chrome 156+ `container-type: scroll-state` and `@container
+/// <name> scroll-state(stuck: top)`.
+///
+/// The outer `:scope` acts as the `position: sticky` scroll-state container, while the inner
+/// `<header class="sticky-surface">` queries `scroll-state(stuck: top)` to apply backdrop blur
+/// and elevation shadow only when actively stuck.
 public final class StickyHeader implements RenderView {
 
   private final ElementId id;

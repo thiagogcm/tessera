@@ -9,13 +9,10 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import java.util.List;
 
-/**
- * Scoped CSS Subgrid container for {@link Card} items.
- *
- * <p>Aligns the 4 canonical card regions ({@code media}, {@code header}, {@code content}, {@code
- * footer}) across sibling cards in the same row using {@code grid-template-rows: subgrid; grid-row:
- * span 4}.
- */
+/// Scoped CSS Subgrid container for [Card] items.
+///
+/// Aligns the 4 canonical card regions (`media`, `header`, `content`, `footer`) across sibling
+/// cards in the same row using `grid-template-rows: subgrid; grid-row: span 4`.
 public record CardGrid(
     String id, CssLength minCardWidth, CssLength gap, List<? extends IntoElement> cards)
     implements RenderView {

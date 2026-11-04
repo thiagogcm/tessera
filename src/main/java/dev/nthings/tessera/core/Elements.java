@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/** Static factory entry points for building semantic HTML5 elements and deferred overlays. */
+/// Static factory entry points for building semantic HTML5 elements and deferred overlays.
 public final class Elements {
 
   private Elements() {}

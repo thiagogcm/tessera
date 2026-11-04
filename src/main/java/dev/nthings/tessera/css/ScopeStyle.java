@@ -1,21 +1,18 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.core.RenderView;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Type-safe builder for {@code @scope ([data-view="..."]) to ([data-view])} rules in {@code @layer
- * components}.
- *
- * <p>Eliminates raw CSS strings inside {@link RenderView} implementations by expressing {@code
- * :scope}, descendant selectors, {@code @starting-style} entry animations, {@code @container} size
- * and {@code scroll-state(...)} queries, and {@code @media (prefers-reduced-motion: no-preference)}
- * blocks through {@link StyleRefinement}.
- */
+/// Type-safe builder for `@scope ([data-view="..."]) to ([data-view])` rules in `@layer
+/// components`.
+///
+/// Eliminates raw CSS strings inside [RenderView] implementations by expressing `:scope`,
+/// descendant selectors, `@starting-style` entry animations, `@container` size and `scroll-
+/// state(...)` queries, and `@media (prefers-reduced-motion: no-preference)` blocks through
+/// [StyleRefinement].
 public final class ScopeStyle {
 
   private final Map<String, StyleRefinement> selectorRules = new LinkedHashMap<>();
@@ -32,10 +29,8 @@ public final class ScopeStyle {
     return this;
   }
 
-  /**
-   * Defines an open/active selector alongside its nested {@code @starting-style} entry transition
-   * block.
-   */
+  /// Defines an open/active selector alongside its nested `@starting-style` entry transition
+  /// block.
   public ScopeStyle selectWithStartingStyle(
       String selector,
       UnaryOperator<StyleRefinement> openMutator,
@@ -56,10 +51,8 @@ public final class ScopeStyle {
     return container("(inline-size < " + maxInlineSize.toCss() + ")", nestedBuilder);
   }
 
-  /**
-   * Emits a {@code @container [<name>] scroll-state(<stateQuery>)} block (e.g., {@code stuck: top},
-   * {@code snapped: inline}, {@code scrollable: block}).
-   */
+  /// Emits a `@container [<name>] scroll-state(<stateQuery>)` block (e.g., `stuck: top`,
+  /// `snapped: inline`, `scrollable: block`).
   public ScopeStyle containerScrollState(
       @Nullable String containerName, String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
     String prefix =
@@ -71,12 +64,12 @@ public final class ScopeStyle {
     return atRule("@container " + condition, nestedBuilder);
   }
 
-  /** Wraps nested rules inside {@code @media (prefers-reduced-motion: no-preference)}. */
+  /// Wraps nested rules inside `@media (prefers-reduced-motion: no-preference)`.
   public ScopeStyle motionSafe(Consumer<ScopeStyle> nestedBuilder) {
     return atRule("@media (prefers-reduced-motion: no-preference)", nestedBuilder);
   }
 
-  /** Wraps nested rules inside {@code @supports not (<condition>)}. */
+  /// Wraps nested rules inside `@supports not (<condition>)`.
   public ScopeStyle supportsNot(String condition, Consumer<ScopeStyle> nestedBuilder) {
     return atRule("@supports not (" + condition + ")", nestedBuilder);
   }

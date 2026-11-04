@@ -1,11 +1,9 @@
 package dev.nthings.tessera.core;
 
-/**
- * Stateless component contract, typically implemented by Java 25 {@code record} types.
- *
- * <p>Consumed during Phase 1 ({@code requestLayout}); contextual tokens and view scope are accessed
- * via {@link RenderContext#current()}.
- */
+/// Stateless component contract, typically implemented by Java 25 `record` types.
+///
+/// Consumed during Phase 1 (`requestLayout`); contextual tokens and view scope are accessed via
+/// [RenderContext#current()].
 @FunctionalInterface
 public interface RenderOnce extends IntoElement {
 

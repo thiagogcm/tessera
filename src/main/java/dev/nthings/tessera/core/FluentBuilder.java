@@ -5,11 +5,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Composable fluent conditional and mapping operations without unchecked self-casts.
- *
- * @param <SELF> concrete element or builder type
- */
+/// Composable fluent conditional and mapping operations without unchecked self-casts.
+///
+/// @param <SELF> concrete element or builder type
 public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
 
   SELF self();

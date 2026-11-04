@@ -8,10 +8,8 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import java.util.List;
 
-/**
- * Responsive CSS Grid component supporting intrinsic {@code auto-fit} columns, container-adaptive
- * multi-column tracks, and bento cell spanning.
- */
+/// Responsive CSS Grid component supporting intrinsic `auto-fit` columns, container-adaptive
+/// multi-column tracks, and bento cell spanning.
 public record Grid(
     String columnsTemplate, CssLength gap, boolean collapseOnNarrow, List<Element> items)
     implements RenderOnce {

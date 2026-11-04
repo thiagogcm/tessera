@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/** Sealed algebraic identifier for stateful elements and scoped views. */
+/// Sealed algebraic identifier for stateful elements and scoped views.
 public sealed interface ElementId permits ElementId.Named, ElementId.Indexed, ElementId.Composite {
 
   String slug();

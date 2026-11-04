@@ -13,11 +13,9 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/**
- * Semantic breadcrumb navigation ({@code <nav aria-label="Breadcrumb"><ol>}) using CSS {@code
- * content: "/" / ""} decorative separators (silent to screen readers) and {@code
- * aria-current="page"} on the terminal item.
- */
+/// Semantic breadcrumb navigation (`<nav aria-label="Breadcrumb"> `) using CSS `content: "/" /
+/// ""` decorative separators (silent to screen readers) and `aria-current="page"` on the terminal
+/// item.
 public final class Breadcrumbs implements RenderView {
 
   public record Crumb(String href, String label) {

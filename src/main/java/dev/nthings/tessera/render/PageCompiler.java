@@ -8,7 +8,6 @@ import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.RawHtmlElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderOnceElement;
 import dev.nthings.tessera.core.RenderViewElement;
 import dev.nthings.tessera.core.StatefulTagElement;
@@ -31,23 +30,16 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
 
-/**
- * Three-phase static HTML5/CSS document compiler ({@code requestLayout} -> {@code prepaint} ->
- * {@code paint}).
- *
- * <p>Operates on an immutable intermediate {@code ResolvedNode} representation so input {@link
- * Element} and {@link RenderOnce} trees are never mutated and can be reused across multiple render
- * passes.
- */
+/// Three-phase static HTML5/CSS document compiler (`requestLayout` -> `prepaint` -> `paint`).
+///
+/// Operates on an immutable intermediate `ResolvedNode` representation so input [Element] and
+/// [RenderOnce] trees are never mutated and can be reused across multiple render passes.
 public final class PageCompiler {
 
   public record CompiledPage(String html, @Nullable String externalCssPath, String cssContent) {}
 
-  /**
-   * Intermediate result after Phase 1 ({@code requestLayout}) and Phase 2 ({@code prepaint}), used
-   * by {@code SiteCompiler} to merge stylesheets and verify cross-page links before Phase 3 ({@code
-   * paint}).
-   */
+  /// Intermediate result after Phase 1 (`requestLayout`) and Phase 2 (`prepaint`), used by
+  /// `SiteCompiler` to merge stylesheets and verify cross-page links before Phase 3 (`paint`).
   public record PreparedPage(
       PageDocument document,
       StyleSheetCollector styles,

@@ -20,10 +20,8 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Accessible keyboard-scrollable code block backed by CSS counter line numbers ({@code
- * counter-increment: code-line}), line highlighting, diff annotations, and optional header bars.
- */
+/// Accessible keyboard-scrollable code block backed by CSS counter line numbers (`counter-
+/// increment: code-line`), line highlighting, diff annotations, and optional header bars.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
   public enum DiffType {

@@ -9,10 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Deduplicating stylesheet collector emitting the 7-layer Chrome 156+ cascade: {@code @layer reset,
- * base, theme, components, utilities, interactive, container;}.
- */
+/// Deduplicating stylesheet collector emitting the 7-layer Chrome 156+ cascade: `@layer reset,
+/// base, theme, components, utilities, interactive, container;`.
 public final class StyleSheetCollector {
 
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
@@ -67,16 +65,14 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  /**
-   * Registers a view's {@code @scope} CSS body using content-addressed deduplication.
-   *
-   * <p>If {@code viewType} has not been registered or was registered with the exact same {@code
-   * scopedCss} body, returns {@code viewType}. If a different {@code scopedCss} body was already
-   * registered under {@code viewType}, qualifies the key as {@code <viewType>-<hash>} so distinct
-   * parameterized rules never overwrite each other.
-   *
-   * @return the resolved {@code data-view} attribute value
-   */
+  /// Registers a view's `@scope` CSS body using content-addressed deduplication.
+  ///
+  /// If `viewType` has not been registered or was registered with the exact same `scopedCss`
+  /// body, returns `viewType`. If a different `scopedCss` body was already registered under
+  /// `viewType`, qualifies the key as `<viewType>-<hash>` so distinct parameterized rules never
+  /// overwrite each other.
+  ///
+  /// @return the resolved `data-view` attribute value
   public String registerViewScope(String viewType, String scopedCss) {
     String safeType = Fnv1a64.sanitizeIdentifier(viewType);
     if (scopedCss.isBlank()) {
@@ -110,7 +106,7 @@ public final class StyleSheetCollector {
     return Collections.unmodifiableSet(transitionClasses);
   }
 
-  /** Merges another collector's rules into this collector in deterministic insertion order. */
+  /// Merges another collector's rules into this collector in deterministic insertion order.
   public void mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);

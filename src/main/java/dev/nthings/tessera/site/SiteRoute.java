@@ -4,7 +4,7 @@ import dev.nthings.tessera.render.PageDocument;
 import java.nio.file.Path;
 import org.jspecify.annotations.Nullable;
 
-/** Represents a single route and its associated {@link PageDocument} in a multi-page site. */
+/// Represents a single route and its associated [PageDocument] in a multi-page site.
 public record SiteRoute(
     String path,
     PageDocument document,

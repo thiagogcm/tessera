@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/** Scroll or view timeline tracking axis ({@code block} or {@code inline}). */
+/// Scroll or view timeline tracking axis (`block` or `inline`).
 public enum TimelineAxis {
   BLOCK("block"),
   INLINE("inline");

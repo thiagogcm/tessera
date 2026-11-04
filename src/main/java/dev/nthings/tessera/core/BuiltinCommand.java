@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/** Native HTML Invoker Commands supported by Chrome 156+ ({@code command} attribute). */
+/// Native HTML Invoker Commands supported by Chrome 156+ (`command` attribute).
 public enum BuiltinCommand {
   SHOW_MODAL("show-modal"),
   CLOSE("close"),

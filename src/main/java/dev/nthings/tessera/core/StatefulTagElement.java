@@ -8,14 +8,12 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Identity-bearing HTML element unlocked via {@link TagElement#id(ElementId)}.
- *
- * <p>Provides compile-time access to Chrome 156+ Invoker Commands ({@code commandfor}/{@code
- * command}), Interest Invokers ({@code interestfor} + {@code <div popover="hint">}), {@code <dialog
- * closedby>}, CSS Anchor Positioning, and Cross-Document View Transitions while retaining all
- * {@link InteractiveElement} and {@link ParentElement} methods.
- */
+/// Identity-bearing HTML element unlocked via [TagElement#id(ElementId)].
+///
+/// Provides compile-time access to Chrome 156+ Invoker Commands (`commandfor`/`command`),
+/// Interest Invokers (`interestfor` + `<div popover="hint">`), `<dialog closedby>`, CSS Anchor
+/// Positioning, and Cross-Document View Transitions while retaining all [InteractiveElement] and
+/// [ParentElement] methods.
 public final class StatefulTagElement
     implements Element,
         InteractiveElement<StatefulTagElement>,

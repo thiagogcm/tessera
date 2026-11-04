@@ -13,10 +13,8 @@ import java.util.Set;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Stores pseudo-class, group-hover, relational {@code :has()}, {@code @container} queries,
- * scroll-driven animations, and declarative invoker metadata for an element.
- */
+/// Stores pseudo-class, group-hover, relational `:has()`, `@container` queries, scroll-driven
+/// animations, and declarative invoker metadata for an element.
 public final class Interactivity {
 
   public record ContainerRule(String containerName, String condition, StyleRefinement style) {

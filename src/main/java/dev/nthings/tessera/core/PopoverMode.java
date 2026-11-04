@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/** Native HTML Popover API modes ({@code popover} attribute). */
+/// Native HTML Popover API modes (`popover` attribute).
 public enum PopoverMode {
   AUTO("auto"),
   MANUAL("manual"),

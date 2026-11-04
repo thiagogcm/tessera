@@ -2,11 +2,9 @@ package dev.nthings.tessera.css;
 
 import java.util.function.UnaryOperator;
 
-/**
- * Composable fluent layout and typography styling trait.
- *
- * @param <SELF> concrete element or style builder type
- */
+/// Composable fluent layout and typography styling trait.
+///
+/// @param <SELF> concrete element or style builder type
 public interface Styled<SELF extends Styled<SELF>> {
 
   SELF self();

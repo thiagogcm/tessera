@@ -10,10 +10,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Implicit lexical render context propagated across component boundaries via JDK 25 {@link
- * ScopedValue}.
- */
+/// Implicit lexical render context propagated across component boundaries via JDK 25
+/// [ScopedValue].
 public final class RenderContext {
 
   public record FootnoteEntry(

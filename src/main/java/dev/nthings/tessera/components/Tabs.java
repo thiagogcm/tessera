@@ -20,12 +20,9 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/**
- * Navigation and in-page content tab components backed by CSS Anchor Positioning ({@code
- * anchor-name}, {@code position-anchor}, {@code anchor(left)}, {@code anchor(right)}, {@code
- * anchor(bottom)}) for animated active tab underlines and {@code :has(> input:checked)} for
- * zero-JavaScript panel switching.
- */
+/// Navigation and in-page content tab components backed by CSS Anchor Positioning (`anchor-name`,
+/// `position-anchor`, `anchor(left)`, `anchor(right)`, `anchor(bottom)`) for animated active tab
+/// underlines and `:has(> input:checked)` for zero-JavaScript panel switching.
 public final class Tabs {
 
   private Tabs() {}
@@ -47,10 +44,8 @@ public final class Tabs {
     return new ContentTabs(ElementId.of(id), panels);
   }
 
-  /**
-   * Route navigation tab bar using CSS Anchor Positioning ({@code ul::before} tethered to {@code
-   * li.active}) and {@code aria-current="page"}.
-   */
+  /// Route navigation tab bar using CSS Anchor Positioning (`ul::before` tethered to `li.active`)
+  /// and `aria-current="page"`.
   public static final class NavTabs implements RenderView {
 
     private final ElementId id;
@@ -146,11 +141,9 @@ public final class Tabs {
     }
   }
 
-  /**
-   * Zero-JavaScript in-page tabbed content widget that switches panels via {@code :has(>
-   * input:checked)} and smoothly slides its active underline across tabs using CSS Anchor
-   * Positioning ({@code transition: inset 0.2s ease}).
-   */
+  /// Zero-JavaScript in-page tabbed content widget that switches panels via `:has(>
+  /// input:checked)` and smoothly slides its active underline across tabs using CSS Anchor
+  /// Positioning (`transition: inset 0.2s ease`).
   public static final class ContentTabs implements RenderView {
 
     private final ElementId id;

@@ -1,22 +1,15 @@
 package dev.nthings.tessera.css;
 
-import java.util.EnumMap;
-
-/**
- * Canonical CSS property keys in deterministic ordinal order for {@link EnumMap} storage and FNV-1a
- * hashing.
- *
- * <p>Note:
- *
- * <ul>
- *   <li>{@link #TRANSITION} precedes {@link #TRANSITION_PROPERTY}, {@link #TRANSITION_DURATION},
- *       {@link #TRANSITION_TIMING_FUNCTION}, and {@link #TRANSITION_BEHAVIOR} so {@code
- *       transition-behavior: allow-discrete} is never reset by the shorthand.
- *   <li>{@link #ANIMATION} precedes {@link #ANIMATION_DELAY}, {@link #ANIMATION_TIMELINE}, and
- *       {@link #ANIMATION_RANGE} so the {@code animation} shorthand never resets scroll-driven
- *       timeline or range declarations.
- * </ul>
- */
+/// Canonical CSS property keys in deterministic ordinal order for [EnumMap] storage and FNV-1a
+/// hashing.
+///
+/// Note:
+///
+/// - [#TRANSITION] precedes [#TRANSITION_PROPERTY], [#TRANSITION_DURATION],
+///   [#TRANSITION_TIMING_FUNCTION], and [#TRANSITION_BEHAVIOR] so `transition-behavior: allow-
+///   discrete` is never reset by the shorthand.
+/// - [#ANIMATION] precedes [#ANIMATION_DELAY], [#ANIMATION_TIMELINE], and [#ANIMATION_RANGE] so
+///   the `animation` shorthand never resets scroll-driven timeline or range declarations.
 public enum CssProperty {
   CONTENT("content"),
   DISPLAY("display"),

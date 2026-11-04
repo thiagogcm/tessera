@@ -9,13 +9,10 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Concrete stateless HTML element node backed by {@link HtmlTag}, {@link StyleRefinement}, and
- * {@link Interactivity}.
- *
- * <p>Promotes to {@link StatefulTagElement} when {@link #id(ElementId)} or {@link #id(String)} is
- * called.
- */
+/// Concrete stateless HTML element node backed by [HtmlTag], [StyleRefinement], and
+/// [Interactivity].
+///
+/// Promotes to [StatefulTagElement] when [#id(ElementId)] or [#id(String)] is called.
 public final class TagElement
     implements Element,
         InteractiveElement<TagElement>,

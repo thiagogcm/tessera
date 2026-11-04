@@ -1,9 +1,7 @@
 package dev.nthings.tessera.css;
 
-/**
- * Semantic highlight color tones backed by {@code color-mix(in oklch, var(--token) 24%,
- * transparent)} so highlights adapt automatically to {@code light-dark()} themes.
- */
+/// Semantic highlight color tones backed by `color-mix(in oklch, var(--token) 24%, transparent)`
+/// so highlights adapt automatically to `light-dark()` themes.
 public enum HighlightTone {
   ACCENT(Tokens.ACCENT_PRIMARY),
   WARNING(Tokens.STATUS_WARNING),

@@ -4,7 +4,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
-/** Sealed algebraic CSS length units. */
+/// Sealed algebraic CSS length units.
 public sealed interface CssLength
     permits CssLength.Px,
         CssLength.Rem,

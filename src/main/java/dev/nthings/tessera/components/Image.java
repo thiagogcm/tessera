@@ -13,19 +13,16 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Core Web Vitals-optimized image component enforcing LCP priority hoisting and layout stability.
- *
- * <ul>
- *   <li>{@link #hero(String, String)} tags the page's primary Largest Contentful Paint candidate,
- *       emitting {@code fetchpriority="high"} and hoisting an explicit {@code <link rel="preload"
- *       as="image">} into the document {@code <head>}.
- *   <li>{@link #of(String, String)} provisions below-the-fold images with {@code loading="lazy"}
- *       and {@code decoding="async"}.
- *   <li>Compile-time Phase 2 enforcement requires either explicit dimensions or a CSS {@code
- *       aspect-ratio} to eliminate Cumulative Layout Shift (CLS).
- * </ul>
- */
+/// Core Web Vitals-optimized image component enforcing LCP priority hoisting and layout
+/// stability.
+///
+/// - [String)][#hero(String,] tags the page's primary Largest Contentful Paint candidate,
+///   emitting `fetchpriority="high"` and hoisting an explicit `<link rel="preload" as="image">`
+///   into the document `<head>`.
+/// - [String)][#of(String,] provisions below-the-fold images with `loading="lazy"` and
+///   `decoding="async"`.
+/// - Compile-time Phase 2 enforcement requires either explicit dimensions or a CSS `aspect-ratio`
+///   to eliminate Cumulative Layout Shift (CLS).
 public final class Image implements RenderOnce, FluentBuilder<Image> {
 
   private final String src;

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/** Semantic HTML5 tags with HTML5 void-element classification. */
+/// Semantic HTML5 tags with HTML5 void-element classification.
 public enum HtmlTag {
   DIV("div", false),
   SPAN("span", false),

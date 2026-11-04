@@ -10,12 +10,10 @@ import dev.nthings.tessera.css.TimelineAxis;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
-/**
- * Shared interactive, attribute, container-query, and scroll-driven animation capabilities
- * implemented by both {@link TagElement} and {@link StatefulTagElement}.
- *
- * @param <SELF> concrete element type
- */
+/// Shared interactive, attribute, container-query, and scroll-driven animation capabilities
+/// implemented by both [TagElement] and [StatefulTagElement].
+///
+/// @param <SELF> concrete element type
 public interface InteractiveElement<
         SELF extends InteractiveElement<SELF> & Styled<SELF> & FluentBuilder<SELF>>
     extends Styled<SELF>, FluentBuilder<SELF> {

@@ -31,12 +31,10 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Zero-JavaScript Client-Side Search UI and Quick Open Command Palette backed by {@code <dialog
- * closedby="any">}, Declarative Invoker Commands ({@code commandfor} / {@code
- * command="show-modal"}), native autocomplete {@code <input type="search" list="...">}, {@code
- * <datalist>}, and smooth {@code @starting-style} transitions.
- */
+/// Zero-JavaScript Client-Side Search UI and Quick Open Command Palette backed by `<dialog
+/// closedby="any">`, Declarative Invoker Commands (`commandfor` / `command="show-modal"`), native
+/// autocomplete `<input type="search" list="...">`, `<datalist>`, and smooth `@starting-style`
+/// transitions.
 public final class SearchPalette implements RenderView {
 
   private static final String SEARCH_ICON_SVG =
@@ -45,7 +43,7 @@ public final class SearchPalette implements RenderView {
           + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
           + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
-  /** Search entry item representation. */
+  /// Search entry item representation.
   public record SearchItem(
       String group,
       String title,
@@ -70,18 +68,14 @@ public final class SearchPalette implements RenderView {
     return new SearchPalette(ElementId.of(id)).placeholder(placeholder);
   }
 
-  /**
-   * Automatically initializes a {@link SearchPalette} indexed from all routes in the given {@link
-   * SiteDefinition}.
-   */
+  /// Automatically initializes a [SearchPalette] indexed from all routes in the given
+  /// [SiteDefinition].
   public static SearchPalette fromSite(SiteDefinition site) {
     return fromRoutes("search-palette", site.routes());
   }
 
-  /**
-   * Initializes a {@link SearchPalette} indexed with the given route list under a "Pages & Guides"
-   * group.
-   */
+  /// Initializes a [SearchPalette] indexed with the given route list under a "Pages & Guides"
+  /// group.
   public static SearchPalette fromRoutes(String id, List<SiteRoute> routes) {
     var palette = new SearchPalette(ElementId.of(id));
     for (var route : routes) {
@@ -126,10 +120,8 @@ public final class SearchPalette implements RenderView {
     return this;
   }
 
-  /**
-   * Creates an accessible header trigger button wired via {@code command="show-modal"} to this
-   * search palette, complete with keyboard shortcut badge.
-   */
+  /// Creates an accessible header trigger button wired via `command="show-modal"` to this search
+  /// palette, complete with keyboard shortcut badge.
   public StatefulTagElement triggerButton(String buttonId, String label) {
     return button()
         .id(buttonId)
@@ -189,7 +181,7 @@ public final class SearchPalette implements RenderView {
     return triggerButton(id.slug() + "-trigger", triggerLabel);
   }
 
-  /** Wraps this search palette in a {@link DeferredElement} to hoist it to the end of body. */
+  /// Wraps this search palette in a [DeferredElement] to hoist it to the end of body.
   public DeferredElement asDeferred(int priority) {
     return deferred(this, priority);
   }

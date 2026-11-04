@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/** Scroll-Spy Table of Contents and documentation layout primitives. */
+/// Scroll-Spy Table of Contents and documentation layout primitives.
 public final class Toc {
 
   private static final String CHEVRON_SVG =
@@ -42,7 +42,7 @@ public final class Toc {
 
   private Toc() {}
 
-  /** Table of Contents item target. */
+  /// Table of Contents item target.
   public record Item(String targetDomId, String title, int level) {
     public Item {
       Fnv1a64.sanitizeIdentifier(targetDomId);
@@ -60,7 +60,7 @@ public final class Toc {
     }
   }
 
-  /** Section that registers with {@link RenderContext} during layout expansion. */
+  /// Section that registers with [RenderContext] during layout expansion.
   public record DocSection(String id, String title, int level, List<Element> body)
       implements RenderOnce {
 
@@ -142,7 +142,7 @@ public final class Toc {
     return new DocLayout(tocId, tocHeading, list);
   }
 
-  /** Scroll-Spy Table of Contents view with collapsible disclosure. */
+  /// Scroll-Spy Table of Contents view with collapsible disclosure.
   public static final class TableOfContents implements RenderView {
 
     private final ElementId id;
@@ -268,7 +268,7 @@ public final class Toc {
     }
   }
 
-  /** Two-column documentation layout with main prose and sticky Table of Contents rail. */
+  /// Two-column documentation layout with main prose and sticky Table of Contents rail.
   public record DocLayout(String tocId, String tocHeading, List<Element> sections)
       implements RenderView {
 

@@ -2,10 +2,8 @@ package dev.nthings.tessera.core;
 
 import java.util.Map;
 
-/**
- * Declarative custom action contract that compiles to custom {@code --namespace-name} Invoker
- * Commands.
- */
+/// Declarative custom action contract that compiles to custom `--namespace-name` Invoker
+/// Commands.
 public interface Action {
 
   String namespace();

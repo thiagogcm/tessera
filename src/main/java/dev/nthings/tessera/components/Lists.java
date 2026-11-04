@@ -13,11 +13,8 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Semantic HTML5 list primitives: {@link BulletList} ({@code <ul>}), {@link NumberedList} ({@code
- * <ol>}), {@link DescriptionList} ({@code <dl>}), and {@link StepList} (numbered steps powered by
- * Chrome 156+ {@code sibling-index()}).
- */
+/// Semantic HTML5 list primitives: [BulletList] (` `), [NumberedList] (` `), [DescriptionList]
+/// (`<dl>`), and [StepList] (numbered steps powered by Chrome 156+ `sibling-index()`).
 public final class Lists {
 
   private Lists() {}

@@ -9,11 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Sparse, cascade-mergeable collection of {@link CssDeclaration} values and scoped CSS custom
- * properties backed by an {@link EnumMap} for O(1) property overrides and deterministic
- * ordinal-ordered hashing.
- */
+/// Sparse, cascade-mergeable collection of [CssDeclaration] values and scoped CSS custom
+/// properties backed by an [EnumMap] for O(1) property overrides and deterministic ordinal-
+/// ordered hashing.
 public final class StyleRefinement
     implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
 

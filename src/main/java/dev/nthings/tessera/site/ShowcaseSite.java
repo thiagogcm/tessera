@@ -57,10 +57,8 @@ import java.nio.file.Path;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Multi-page flagship showcase site demonstrating Tessera's Chrome 156+ (Baseline 2026+)
- * capabilities across {@code /}, {@code /telemetry}, and {@code /typography}.
- */
+/// Multi-page flagship showcase site demonstrating Tessera's Chrome 156+ (Baseline 2026+)
+/// capabilities across `/`, `/telemetry`, and `/typography`.
 public final class ShowcaseSite {
 
   public record ServiceMetric(

@@ -21,10 +21,8 @@ import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Editorial callout admonition emitting an accessible {@code <aside role="note">} tinted with
- * adaptive {@code color-mix(in oklch, var(--token) 14%, var(--surface-card))} tokens.
- */
+/// Editorial callout admonition emitting an accessible `<aside role="note">` tinted with adaptive
+/// `color-mix(in oklch, var(--token) 14%, var(--surface-card))` tokens.
 public final class Callout implements RenderView, FluentBuilder<Callout> {
 
   public enum Tone {

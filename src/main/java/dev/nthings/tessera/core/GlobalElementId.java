@@ -1,9 +1,7 @@
 package dev.nthings.tessera.core;
 
-/**
- * Globally unique, collision-free path identifier formed by folding a chain of {@link ElementId}
- * values along active {@link RenderView} boundaries.
- */
+/// Globally unique, collision-free path identifier formed by folding a chain of [ElementId]
+/// values along active [RenderView] boundaries.
 public record GlobalElementId(long pathHash, String domId) {
 
   public static final GlobalElementId ROOT = new GlobalElementId(Fnv1a64.OFFSET_BASIS, "");

@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Registry of design tokens emitted into {@code @layer theme}. */
+/// Registry of design tokens emitted into `@layer theme`.
 public final class Tokens {
 
   public static final DesignToken SURFACE_CANVAS =

@@ -15,11 +15,9 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Pure CSS scroll-snap carousel backed by Chrome 156+ {@code scroll-snap-type: x mandatory}, {@code
- * container-type: scroll-state} with {@code @container scroll-state(snapped: x)}, and native {@code
- * scroll-marker-group: after} / {@code ::scroll-marker:target-current} pagination dots.
- */
+/// Pure CSS scroll-snap carousel backed by Chrome 156+ `scroll-snap-type: x mandatory`,
+/// `container-type: scroll-state` with `@container scroll-state(snapped: x)`, and native `scroll-
+/// marker-group: after` / `::scroll-marker:target-current` pagination dots.
 public final class Carousel implements RenderView {
 
   public record Slide(String title, String summary, Element content) {

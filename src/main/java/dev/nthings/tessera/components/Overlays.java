@@ -23,11 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Zero-JavaScript top-layer {@link Modal} and slide-over {@link Drawer} components backed by {@code
- * <dialog closedby="any">}, Declarative Invoker Commands ({@code commandfor} / {@code
- * command="show-modal"}), {@code @starting-style}, and {@code transition-behavior: allow-discrete}.
- */
+/// Zero-JavaScript top-layer [Modal] and slide-over [Drawer] components backed by `<dialog
+/// closedby="any">`, Declarative Invoker Commands (`commandfor` / `command="show-modal"`),
+/// `@starting-style`, and `transition-behavior: allow-discrete`.
 public final class Overlays {
 
   private Overlays() {}
@@ -49,10 +47,8 @@ public final class Overlays {
     return new Drawer(ElementId.of(id), title, side);
   }
 
-  /**
-   * Top-layer modal dialog ({@code <dialog closedby="any">}) with smooth {@code @starting-style}
-   * scale/fade transitions and {@code ::backdrop} dimming.
-   */
+  /// Top-layer modal dialog (`<dialog closedby="any">`) with smooth `@starting-style` scale/fade
+  /// transitions and `::backdrop` dimming.
   public static final class Modal implements RenderView {
 
     private final ElementId id;
@@ -94,7 +90,7 @@ public final class Overlays {
       return this;
     }
 
-    /** Creates a trigger button wired via {@code command="show-modal"} to this modal. */
+    /// Creates a trigger button wired via `command="show-modal"` to this modal.
     public StatefulTagElement triggerButton(String buttonId, String label) {
       return button()
           .id(buttonId)
@@ -111,7 +107,7 @@ public final class Overlays {
           .text(label);
     }
 
-    /** Wraps this modal in a {@link DeferredElement} to hoist it to the end of {@code <body>}. */
+    /// Wraps this modal in a [DeferredElement] to hoist it to the end of `<body>`.
     public DeferredElement asDeferred(int priority) {
       return deferred(this, priority);
     }
@@ -235,11 +231,9 @@ public final class Overlays {
     }
   }
 
-  /**
-   * Top-layer slide-over sheet ({@code <dialog closedby="any">}) docked to the inline-start or
-   * inline-end viewport edge and animated via {@code translate} + {@code @starting-style} + {@code
-   * transition-behavior: allow-discrete}.
-   */
+  /// Top-layer slide-over sheet (`<dialog closedby="any">`) docked to the inline-start or inline-
+  /// end viewport edge and animated via `translate` + `@starting-style` + `transition-behavior:
+  /// allow-discrete`.
   public static final class Drawer implements RenderView {
 
     private final ElementId id;

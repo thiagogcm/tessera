@@ -2,17 +2,13 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.ScopeStyle;
 
-/**
- * Scoped view boundary representing a persistent domain entity with isolated {@code @scope} styles
- * and a dedicated {@link GlobalElementId} namespace.
- *
- * <ul>
- *   <li>{@link #viewType()} identifies the component type for {@code data-view} and deduplicates
- *       identical {@code @scope} blocks across all instances of the view.
- *   <li>{@link #entityId()} identifies the specific instance for {@link GlobalElementId} path
- *       folding and {@code data-view-id}.
- * </ul>
- */
+/// Scoped view boundary representing a persistent domain entity with isolated `@scope` styles and
+/// a dedicated [GlobalElementId] namespace.
+///
+/// - [#viewType()] identifies the component type for `data-view` and deduplicates identical
+///   `@scope` blocks across all instances of the view.
+/// - [#entityId()] identifies the specific instance for [GlobalElementId] path folding and `data-
+///   view-id`.
 public interface RenderView extends IntoElement {
 
   ElementId entityId();

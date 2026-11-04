@@ -16,20 +16,16 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Semantic 4-region card component ({@code media}, {@code header}, {@code content}, {@code footer})
- * implementing modern container-aware and subgrid-compatible layout patterns.
- *
- * <ul>
- *   <li>Uses {@code <article>} (or {@code <label>} for choice cards) as root with direct child
- *       regions in source order.
- *   <li>Adapts to wide containers via {@code @container} + {@code :has(> img, > picture, > .media)}
- *       so only cards with media switch to a side-by-side column layout.
- *   <li>Supports {@link Interaction.Content}, {@link Interaction.StretchedLink} ({@code
- *       a.card-link::after} with {@code z-index: 1} on secondary controls), and {@link
- *       Interaction.Choice} ({@code :has(> input:checked)} without layout-shifting border widths).
- * </ul>
- */
+/// Semantic 4-region card component (`media`, `header`, `content`, `footer`) implementing modern
+/// container-aware and subgrid-compatible layout patterns.
+///
+/// - Uses `<article>` (or `<label>` for choice cards) as root with direct child regions in source
+///   order.
+/// - Adapts to wide containers via `@container` + `:has(> img, > picture, > .media)` so only
+///   cards with media switch to a side-by-side column layout.
+/// - Supports [Interaction.Content], [Interaction.StretchedLink] (`a.card-link::after` with
+///   `z-index: 1` on secondary controls), and [Interaction.Choice] (`:has(> input:checked)`
+///   without layout-shifting border widths).
 public final class Card implements RenderView, FluentBuilder<Card> {
 
   public sealed interface Interaction

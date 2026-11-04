@@ -24,17 +24,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Multi-page static site compiler.
- *
- * <ul>
- *   <li>Executes Phase 1 & Phase 2 concurrently across all routes on JDK 25 Virtual Threads.
- *   <li>Deterministically merges each route's {@link StyleSheetCollector} in route declaration
- *       order into a single shared site stylesheet.
- *   <li>Verifies internal {@code <a href="/...">} route links and {@code #fragment} target IDs
- *       across the site before running Phase 3 ({@code paint}).
- * </ul>
- */
+/// Multi-page static site compiler.
+///
+/// - Executes Phase 1 & Phase 2 concurrently across all routes on JDK 25 Virtual Threads.
+/// - Deterministically merges each route's [StyleSheetCollector] in route declaration order into
+///   a single shared site stylesheet.
+/// - Verifies internal `<a href="/...">` route links and `#fragment` target IDs across the site
+///   before running Phase 3 (`paint`).
 public final class SiteCompiler {
 
   public record CompiledSite(

@@ -17,10 +17,8 @@ import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Editorial documentation pager providing prev/next navigation cards between site documentation
- * routes.
- */
+/// Editorial documentation pager providing prev/next navigation cards between site documentation
+/// routes.
 public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
   public record PageRef(String href, String title) {}

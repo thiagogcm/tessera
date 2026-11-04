@@ -1,9 +1,7 @@
 package dev.nthings.tessera.css;
 
-/**
- * Compositor-friendly scroll-driven reveal and exit presets ({@code opacity}, {@code transform})
- * linked to {@code animation-timeline: view()}.
- */
+/// Compositor-friendly scroll-driven reveal and exit presets (`opacity`, `transform`) linked to
+/// `animation-timeline: view()`.
 public enum ScrollReveal {
   FADE_IN("tessera-fade-in", "@keyframes tessera-fade-in{from{opacity:0}to{opacity:1}}"),
   FADE_UP(

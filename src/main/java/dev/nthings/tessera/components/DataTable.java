@@ -15,20 +15,16 @@ import java.util.List;
 import java.util.function.Function;
 import org.owasp.encoder.Encode;
 
-/**
- * Strongly typed, responsive data table component ({@code DataTable<T>}).
- *
- * <ul>
- *   <li>Wraps the semantic {@code <table>} in a keyboard-scrollable {@code <div tabindex="0"
- *       role="region" aria-labelledby="...">} container with {@code container-type: inline-size}.
- *   <li>Emits sticky column headers ({@code thead}) and sticky row headers ({@code tbody th}).
- *   <li>Transforms into a mobile-friendly stacked card layout inside narrow containers ({@code
- *       @container (inline-size < breakpoint)}) by hiding {@code thead} and injecting {@code
- *       --label-N} CSS variables into {@code td:nth-child(N)::before}.
- * </ul>
- *
- * @param <T> row model type
- */
+/// Strongly typed, responsive data table component (`DataTable<T>`).
+///
+/// - Wraps the semantic `<table>` in a keyboard-scrollable `<div tabindex="0" role="region" aria-
+///   labelledby="...">` container with `container-type: inline-size`.
+/// - Emits sticky column headers (`thead`) and sticky row headers (`tbody th`).
+/// - Transforms into a mobile-friendly stacked card layout inside narrow containers (`@container
+///   (inline-size < breakpoint)`) by hiding `thead` and injecting `--label-N` CSS variables into
+///   `td:nth-child(N)::before`.
+///
+/// @param <T> row model type
 public record DataTable<T>(
     String id, String captionText, List<Column<T>> columns, List<T> rows, CssLength stackBreakpoint)
     implements RenderView {

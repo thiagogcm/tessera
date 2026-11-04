@@ -1,9 +1,6 @@
 package dev.nthings.tessera.css;
 
-/**
- * Sealed algebraic representation of individual CSS declarations mapped 1-to-1 to {@link
- * CssProperty}.
- */
+/// Sealed algebraic representation of individual CSS declarations mapped 1-to-1 to [CssProperty].
 public sealed interface CssDeclaration
     permits CssDeclaration.Content,
         CssDeclaration.Display,

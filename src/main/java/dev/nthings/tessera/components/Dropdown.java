@@ -19,12 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/**
- * Viewport-aware popover action dropdown backed by Declarative Invoker Commands ({@code commandfor}
- * / {@code command="toggle-popover"}), implicit CSS Anchor Positioning ({@code position-area:
- * block-end span-inline-end}, {@code position-try-fallbacks: flip-block, flip-inline, flip-block
- * flip-inline}), and {@code @starting-style} top-layer entry/exit transitions.
- */
+/// Viewport-aware popover action dropdown backed by Declarative Invoker Commands (`commandfor` /
+/// `command="toggle-popover"`), implicit CSS Anchor Positioning (`position-area: block-end span-
+/// inline-end`, `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`), and
+/// `@starting-style` top-layer entry/exit transitions.
 public final class Dropdown implements RenderView {
 
   private final ElementId id;

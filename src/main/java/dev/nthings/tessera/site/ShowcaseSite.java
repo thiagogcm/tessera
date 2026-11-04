@@ -17,6 +17,7 @@ import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CardGrid;
 import dev.nthings.tessera.components.Carousel;
 import dev.nthings.tessera.components.CodeBlock;
+import dev.nthings.tessera.components.ContentSection;
 import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DataTable.Column;
 import dev.nthings.tessera.components.DocPager;
@@ -470,228 +471,191 @@ public final class ShowcaseSite {
                         .overflowClip());
 
     var admonitionsSection =
-        Toc.section(
-            "admonitions",
-            "Editorial Callouts & Admonitions",
-            div()
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(1))
-                .children(
-                    Callout.note(
-                        "Tessera compiles statically to zero-runtime HTML5 and CSS Level 4/5. No client-side JS hydrate pass is executed."),
-                    Callout.tip(
-                        "Chrome 156+ natively animates ::details-content when interpolate-size: allow-keywords is active."),
-                    Callout.important(
-                        "All <img> elements require explicit width/height or CSS aspect-ratio to eliminate Cumulative Layout Shift (CLS)."),
-                    Callout.warning(
-                        "JDK preview features are disallowed in production builds for long-term ABI stability."),
-                    Callout.caution(
-                        "Destructive actions should always declare dialog closedby=\"none\" to prevent accidental dismissal.")));
+        ContentSection.ghost("admonitions", "Editorial Callouts & Admonitions")
+            .badge("SEMANTIC")
+            .leadText(
+                "Prose callouts and structural alerts rendered with zero-runtime CSS Level 4 styling.")
+            .child(
+                div()
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(1))
+                    .children(
+                        Callout.note(
+                            "Tessera compiles statically to zero-runtime HTML5 and CSS Level 4/5. No client-side JS hydrate pass is executed."),
+                        Callout.tip(
+                            "Chrome 156+ natively animates ::details-content when interpolate-size: allow-keywords is active."),
+                        Callout.important(
+                            "All <img> elements require explicit width/height or CSS aspect-ratio to eliminate Cumulative Layout Shift (CLS)."),
+                        Callout.warning(
+                            "JDK preview features are disallowed in production builds for long-term ABI stability."),
+                        Callout.caution(
+                            "Destructive actions should always declare dialog closedby=\"none\" to prevent accidental dismissal.")));
 
     var codeBlocksSection =
-        Toc.section(
-            "code-blocks",
-            "Accessible Keyboard-Scrollable Code Blocks",
-            div()
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(1))
-                .children(
-                    p().text(
-                            "Scrollable <pre tabindex=\"0\"> with CSS counter-increment line numbering, diff markers, and line highlighting:"),
-                    CodeBlock.ofLines(
-                            "package dev.nthings.tessera.site;",
-                            "",
-                            "// Three-phase static compiler pipeline",
-                            "public class ShowcaseSite {",
-                            "+   // Phase 1: Layout expansion & token hoisting",
-                            "+   PreparedPage prepared = PageCompiler.prepare(document);",
-                            "-   // Legacy single-pass unvalidated rendering",
-                            "-   String rawHtml = LegacyEngine.render(document);",
-                            "    CompiledSite site = SiteCompiler.compile(definition);",
-                            "}")
-                        .filename("ShowcaseSite.java")
-                        .language("java")
-                        .diffAutoDetect(true)
-                        .highlightLines(4, 9)));
+        ContentSection.ghost("code-blocks", "Accessible Keyboard-Scrollable Code Blocks")
+            .badge("KEYBOARD NAV")
+            .leadText(
+                "Scrollable <pre tabindex=\"0\"> with CSS counter-increment line numbering, diff markers, and line highlighting.")
+            .child(
+                CodeBlock.ofLines(
+                        "package dev.nthings.tessera.site;",
+                        "",
+                        "// Three-phase static compiler pipeline",
+                        "public class ShowcaseSite {",
+                        "+   // Phase 1: Layout expansion & token hoisting",
+                        "+   PreparedPage prepared = PageCompiler.prepare(document);",
+                        "-   // Legacy single-pass unvalidated rendering",
+                        "-   String rawHtml = LegacyEngine.render(document);",
+                        "    CompiledSite site = SiteCompiler.compile(definition);",
+                        "}")
+                    .filename("ShowcaseSite.java")
+                    .language("java")
+                    .diffAutoDetect(true)
+                    .highlightLines(4, 9));
 
     var formSuiteSection =
-        Toc.section(
-            "form-suite",
-            "Accessible Forms & Form Controls",
-            div()
-                .p(CssLength.rem(1.5))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(1.25))
-                .children(
-                    p().textColor(Tokens.TEXT_MUTED)
-                        .textSize(CssLength.rem(0.95))
-                        .textPretty()
-                        .text(
-                            "Tessera's Form Controls Suite demonstrates CSS Level 4 :user-invalid / :user-valid validation (suppressing premature errors before blur), HTML <input type=\"checkbox\" switch> toggles, Chrome 156+ appearance: base-select custom styling, and CSS Anchor Positioning tooltips."),
-                    Elements.form()
-                        .flex()
-                        .flexCol()
-                        .gap(CssLength.rem(1))
-                        .children(
-                            div()
-                                .flex()
-                                .flexWrap()
-                                .gap(CssLength.rem(1))
-                                .children(
-                                    div()
-                                        .flexGrow(1)
-                                        .child(
-                                            Forms.field("Full Name", Forms.text("fullName"))
-                                                .id("input-fullname")
-                                                .hint(
-                                                    "Your full legal name as it appears on official documents.")
-                                                .error("Full name is required.")
-                                                .anchorTooltip("Format: First Last")),
-                                    div()
-                                        .flexGrow(1)
-                                        .child(
-                                            Forms.field("Work Email", Forms.email("email"))
-                                                .id("input-email")
-                                                .hint(
-                                                    "We will send deployment telemetry and build notifications.")
-                                                .error(
-                                                    "Please enter a valid work email address (e.g., user@company.com).")
-                                                .anchorTooltip("Format: user@domain.com"))),
-                            div()
-                                .flex()
-                                .flexWrap()
-                                .gap(CssLength.rem(1))
-                                .children(
-                                    div()
-                                        .flexGrow(1)
-                                        .child(
-                                            Forms.field(
-                                                    "Target Deployment Platform",
-                                                    Forms.selectControl("targetPlatform")
-                                                        .id("select-platform")
-                                                        .option(
-                                                            "cloud-run",
-                                                            "Google Cloud Run (Serverless Container)",
-                                                            true)
-                                                        .option(
-                                                            "gke",
-                                                            "Google Kubernetes Engine (GKE Autopilot)")
-                                                        .option(
-                                                            "bare-metal", "Edge On-Premise Worker"))
-                                                .hint(
-                                                    "Select target orchestration runtime with appearance: base-select.")),
-                                    div()
-                                        .flexGrow(1)
-                                        .flex()
-                                        .flexCol()
-                                        .justifyCenter()
-                                        .gap(CssLength.rem(0.75))
-                                        .p(CssLength.rem(0.875))
-                                        .rounded(CssLength.rem(0.5))
-                                        .bg(Tokens.SURFACE_SUBTLE)
-                                        .borderSubtle(Tokens.BORDER_SUBTLE)
-                                        .children(
-                                            Forms.switchField(
-                                                "Enable JIT Telemetry Stream",
-                                                "stream_telemetry",
-                                                true),
-                                            Forms.switchField(
-                                                "Strict WCAG 2.2 AAA Enforcement",
-                                                "wcag_strict",
-                                                true))))));
+        ContentSection.card("form-suite", "Accessible Forms & Form Controls")
+            .badge("BASELINE 2026")
+            .leadText(
+                "Tessera's Form Controls Suite demonstrates CSS Level 4 :user-invalid / :user-valid validation (suppressing premature errors before blur), HTML <input type=\"checkbox\" switch> toggles, Chrome 156+ appearance: base-select custom styling, and CSS Anchor Positioning tooltips.")
+            .child(
+                Elements.form()
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(1))
+                    .children(
+                        div()
+                            .flex()
+                            .flexWrap()
+                            .gap(CssLength.rem(1))
+                            .children(
+                                div()
+                                    .flexGrow(1)
+                                    .child(
+                                        Forms.field("Full Name", Forms.text("fullName"))
+                                            .id("input-fullname")
+                                            .hint(
+                                                "Your full legal name as it appears on official documents.")
+                                            .error("Full name is required.")
+                                            .anchorTooltip("Format: First Last")),
+                                div()
+                                    .flexGrow(1)
+                                    .child(
+                                        Forms.field("Work Email", Forms.email("email"))
+                                            .id("input-email")
+                                            .hint(
+                                                "We will send deployment telemetry and build notifications.")
+                                            .error(
+                                                "Please enter a valid work email address (e.g., user@company.com).")
+                                            .anchorTooltip("Format: user@domain.com"))),
+                        div()
+                            .flex()
+                            .flexWrap()
+                            .gap(CssLength.rem(1))
+                            .children(
+                                div()
+                                    .flexGrow(1)
+                                    .child(
+                                        Forms.field(
+                                                "Target Deployment Platform",
+                                                Forms.selectControl("targetPlatform")
+                                                    .id("select-platform")
+                                                    .option(
+                                                        "cloud-run",
+                                                        "Google Cloud Run (Serverless Container)",
+                                                        true)
+                                                    .option(
+                                                        "gke",
+                                                        "Google Kubernetes Engine (GKE Autopilot)")
+                                                    .option("bare-metal", "Edge On-Premise Worker"))
+                                            .hint(
+                                                "Select target orchestration runtime with appearance: base-select.")),
+                                div()
+                                    .flexGrow(1)
+                                    .flex()
+                                    .flexCol()
+                                    .justifyCenter()
+                                    .gap(CssLength.rem(0.75))
+                                    .p(CssLength.rem(0.875))
+                                    .rounded(CssLength.rem(0.5))
+                                    .bg(Tokens.SURFACE_SUBTLE)
+                                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                                    .children(
+                                        Forms.switchField(
+                                            "Enable JIT Telemetry Stream",
+                                            "stream_telemetry",
+                                            true),
+                                        Forms.switchField(
+                                            "Strict WCAG 2.2 AAA Enforcement",
+                                            "wcag_strict",
+                                            true)))));
 
     var inlineFormattingSection =
-        Toc.section(
-            "inline-formatting",
-            "Inline Formatting & Interactive Citations",
-            div()
-                .p(CssLength.rem(1.5))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
-                .child(
-                    p().textPretty()
-                        .children(
-                            text("Tessera combines "),
-                            Formatting.highlight("OKLCH adaptive highlights", HighlightTone.ACCENT),
-                            text(", "),
-                            Formatting.underline(
-                                "CSS Text Decoration Level 4 wavy underlines",
-                                UnderlineStyle.WAVY,
-                                Tokens.STATUS_WARNING),
-                            text(", "),
-                            Formatting.strikethrough("legacy polyfill shims"),
-                            text(", diff markers ("),
-                            Formatting.deleted("String viewScopeRule()"),
-                            text(" -> "),
-                            Formatting.inserted("void configureScope(ScopeStyle)"),
-                            text("), inline code "),
-                            Formatting.inlineCode("ScopedValue<RenderContext>"),
-                            text(", and keyboard shortcuts like "),
-                            Formatting.keybinding("Ctrl+Shift+P"),
-                            Footnotes.ref(
-                                "scoped-values",
-                                "JEP 506 Scoped Values propagate RenderContext lexically without parameter drilling."),
-                            text(" alongside native CSS Cascade Layers"),
-                            Footnotes.ref(
-                                "cascade-layers",
-                                "The 7-layer cascade guarantees @layer interactive and @layer container override @layer utilities."))));
+        ContentSection.ghost("inline-formatting", "Inline Formatting & Interactive Citations")
+            .badge("TYPOGRAPHY")
+            .child(
+                p().textPretty()
+                    .children(
+                        text("Tessera combines "),
+                        Formatting.highlight("OKLCH adaptive highlights", HighlightTone.ACCENT),
+                        text(", "),
+                        Formatting.underline(
+                            "CSS Text Decoration Level 4 wavy underlines",
+                            UnderlineStyle.WAVY,
+                            Tokens.STATUS_WARNING),
+                        text(", "),
+                        Formatting.strikethrough("legacy polyfill shims"),
+                        text(", diff markers ("),
+                        Formatting.deleted("String viewScopeRule()"),
+                        text(" -> "),
+                        Formatting.inserted("void configureScope(ScopeStyle)"),
+                        text("), inline code "),
+                        Formatting.inlineCode("ScopedValue<RenderContext>"),
+                        text(", and keyboard shortcuts like "),
+                        Formatting.keybinding("Ctrl+Shift+P"),
+                        Footnotes.ref(
+                            "scoped-values",
+                            "JEP 506 Scoped Values propagate RenderContext lexically without parameter drilling."),
+                        text(" alongside native CSS Cascade Layers"),
+                        Footnotes.ref(
+                            "cascade-layers",
+                            "The 7-layer cascade guarantees @layer interactive and @layer container override @layer utilities.")));
 
     var stepListSection =
-        Toc.section(
-            "step-progression",
-            "Sibling-Index Step Progression",
-            div()
-                .p(CssLength.rem(1.25))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
-                .child(
-                    StepList.ofStrings(
-                        "pipeline-steps",
-                        "Phase 1: requestLayout (Expand & Intern)",
-                        "Phase 2: prepaint (WCAG & Link Integrity)",
-                        "Phase 3: paint (Streaming OWASP Encode)")));
+        ContentSection.ghost("step-progression", "Sibling-Index Step Progression")
+            .child(
+                StepList.ofStrings(
+                    "pipeline-steps",
+                    "Phase 1: requestLayout (Expand & Intern)",
+                    "Phase 2: prepaint (WCAG & Link Integrity)",
+                    "Phase 3: paint (Streaming OWASP Encode)"));
 
     var specsSubSection =
-        Toc.subsection(
-            "platform-specs",
-            "Platform & Compiler Specifications",
-            div()
-                .p(CssLength.rem(1.25))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(0.75))
-                .children(
-                    DescriptionList.of(
-                        Term.of("Java Baseline", "JDK 25 LTS"),
-                        Term.of("Browser Target", "Chrome 156+"),
-                        Term.of("Nullness Contract", "JSpecify @NullMarked + NullAway")),
-                    BulletList.ofStrings("Content-addressed @scope", "Shared CSS site bundle"),
-                    NumberedList.ofStrings("Zero preview flags", "Zero warning suppressions")));
+        ContentSection.ghost("platform-specs", "Platform & Compiler Specifications")
+            .level(3)
+            .child(
+                div()
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(0.75))
+                    .children(
+                        DescriptionList.of(
+                            Term.of("Java Baseline", "JDK 25 LTS"),
+                            Term.of("Browser Target", "Chrome 156+"),
+                            Term.of("Nullness Contract", "JSpecify @NullMarked + NullAway")),
+                        BulletList.ofStrings("Content-addressed @scope", "Shared CSS site bundle"),
+                        NumberedList.ofStrings("Zero preview flags", "Zero warning suppressions")));
 
     var scrollSpySection =
-        Toc.section(
-            "scrollspy-mechanics",
-            "Pure CSS Scroll-Spy Navigation",
-            div()
-                .p(CssLength.rem(1.25))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
-                .child(
-                    p().textPretty()
-                        .text(
-                            "The sticky 'On This Page' sidebar on the right sets scroll-target-group: auto on its <nav> container and styles a:target-current with a high-contrast accent border, bold weight, and OKLCH surface tint as sections scroll through the viewport.")));
+        ContentSection.highlight("scrollspy-mechanics", "Pure CSS Scroll-Spy Navigation")
+            .badge("PURE CSS")
+            .leadText(
+                "Modern platform-native scroll tracking without scroll listeners or IntersectionObserver.")
+            .child(
+                p().textPretty()
+                    .text(
+                        "The sticky 'On This Page' sidebar on the right sets scroll-target-group: auto on its <nav> container and styles a:target-current with a high-contrast accent border, bold weight, and OKLCH surface tint as sections scroll through the viewport."));
 
     var docLayout =
         Toc.docLayout(

@@ -2,6 +2,7 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.aside;
+import static dev.nthings.tessera.core.Elements.details;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h2;
 import static dev.nthings.tessera.core.Elements.h3;
@@ -9,7 +10,9 @@ import static dev.nthings.tessera.core.Elements.h4;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
+import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
+import static dev.nthings.tessera.core.Elements.summary;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
@@ -29,9 +32,16 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Zero-JavaScript Scroll-Spy Table of Contents and documentation section primitives backed by
- * Chrome 156+ {@code scroll-target-group: auto} and {@code :target-current}.
+ * Chrome 156+ {@code scroll-target-group: auto}, {@code :target-current}, and native HTML {@code
+ * <details>} collapsible disclosure.
  */
 public final class Toc {
+
+  private static final String CHEVRON_SVG =
+      "<svg class=\"toc-chevron\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\""
+          + " stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\""
+          + " stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"9 18 15 12 9"
+          + " 6\"/></svg>";
 
   private Toc() {}
 
@@ -74,9 +84,21 @@ public final class Toc {
       var entry = RenderContext.current().registerTocEntry(id, title, level);
       TagElement heading =
           switch (level) {
-            case 2 -> h2().textSize(CssLength.rem(1.375)).fontWeight(700).text(title);
-            case 3 -> h3().textSize(CssLength.rem(1.125)).fontWeight(600).text(title);
-            default -> h4().textSize(CssLength.rem(1)).fontWeight(600).text(title);
+            case 2 ->
+                h2().attr("id", entry.targetDomId() + "--heading")
+                    .textSize(CssLength.rem(1.375))
+                    .fontWeight(700)
+                    .text(title);
+            case 3 ->
+                h3().attr("id", entry.targetDomId() + "--heading")
+                    .textSize(CssLength.rem(1.125))
+                    .fontWeight(600)
+                    .text(title);
+            default ->
+                h4().attr("id", entry.targetDomId() + "--heading")
+                    .textSize(CssLength.rem(1))
+                    .fontWeight(600)
+                    .text(title);
           };
 
       var sectionEl =
@@ -128,8 +150,9 @@ public final class Toc {
   }
 
   /**
-   * Scroll-Spy Table of Contents {@link RenderView} emitting {@code scroll-target-group: auto} on
-   * the {@code <nav>} container and styling active links via {@code a:target-current}.
+   * Integrated Scroll-Spy Table of Contents {@link RenderView} emitting {@code scroll-target-group:
+   * auto} with continuous vertical track, native collapsible {@code <details>} disclosure, and
+   * active {@code a:target-current} indicators.
    */
   public static final class TableOfContents implements RenderView {
 
@@ -158,16 +181,38 @@ public final class Toc {
       scope
           .root(
               s ->
-                  s.scrollTargetGroupAuto()
-                      .sticky()
-                      .insetBlockStart(CssLength.rem(6.75))
-                      .flex()
+                  s.flex()
                       .flexCol()
-                      .gap(CssLength.rem(0.625))
-                      .p(CssLength.rem(1))
-                      .bg(Tokens.SURFACE_CARD)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .rounded(CssLength.rem(0.75)))
+                      .gap(CssLength.rem(0.5))
+                      .p(CssLength.px(0))
+                      .bgRaw("transparent")
+                      .borderNone())
+          .select(
+              ":scope .toc-summary",
+              s ->
+                  s.flex()
+                      .itemsCenter()
+                      .justifyBetween()
+                      .py(CssLength.rem(0.35))
+                      .px(CssLength.rem(0.25))
+                      .listStyleNone()
+                      .cursorPointer()
+                      .textColor(Tokens.TEXT_MUTED)
+                      .fontSize(CssLength.rem(0.75))
+                      .fontWeight(700))
+          .select(":scope .toc-summary:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
+          .select(":scope .toc-summary::-webkit-details-marker", s -> s.hidden())
+          .select(":scope .toc-chevron", s -> s.transition("transform 0.2s ease"))
+          .select(":scope[open] .toc-chevron", s -> s.transform("rotate(90deg)"))
+          .select(
+              ":scope details::details-content",
+              s -> s.transition("block-size 0.3s ease, content-visibility 0.3s allow-discrete"))
+          .select(
+              ":scope .toc-collapsible-wrapper",
+              s ->
+                  s.scrollTargetGroupAuto()
+                      .borderInlineStartSubtle(Tokens.BORDER_SUBTLE)
+                      .ps(CssLength.rem(0.25)))
           .select(
               ":scope ol",
               s -> s.listStyleNone().flex().flexCol().gap(CssLength.rem(0.125)).p(CssLength.px(0)))
@@ -175,20 +220,16 @@ public final class Toc {
               ":scope a",
               s ->
                   s.block()
-                      .py(CssLength.rem(0.375))
+                      .py(CssLength.rem(0.35))
                       .px(CssLength.rem(0.75))
                       .textColor(Tokens.TEXT_MUTED)
-                      .textSize(CssLength.rem(0.875))
-                      .borderInlineStartSubtle(Tokens.BORDER_SUBTLE)
+                      .textSize(CssLength.rem(0.85))
                       .rounded(CssLength.rem(0.25))
-                      .refine(
-                          r ->
-                              r.put(
-                                  new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
-                                      "none"))))
+                      .textDecorationNone()
+                      .transition("color 0.15s ease, background 0.15s ease"))
           .select(
               ":scope a[data-level=\"3\"]",
-              s -> s.ps(CssLength.rem(1.5)).textSize(CssLength.rem(0.8125)))
+              s -> s.ps(CssLength.rem(1.5)).textSize(CssLength.rem(0.8)))
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(
               ":scope a:target-current",
@@ -221,22 +262,26 @@ public final class Toc {
                         .text(item.title())));
       }
 
-      return nav()
-          .ariaLabel(heading)
-          .children(
-              span()
-                  .textSize(CssLength.rem(0.75))
-                  .fontWeight(700)
-                  .textColor(Tokens.TEXT_MUTED)
-                  .text(heading),
-              list);
+      var summaryEl =
+          summary()
+              .attr("class", "toc-summary")
+              .child(span().attr("class", "toc-title").text(heading))
+              .child(rawHtml(CHEVRON_SVG));
+
+      var detailsEl =
+          details()
+              .attr("open", "")
+              .attr("class", "toc-collapsible-wrapper")
+              .child(summaryEl)
+              .child(list);
+
+      return nav().attr("class", "toc-container").ariaLabel(heading).child(detailsEl);
     }
   }
 
   /**
    * Two-column documentation layout that expands the prose sections before rendering the sticky
-   * {@link TableOfContents} sidebar so all section headings are registered in {@link RenderContext}
-   * during Phase 1.
+   * collapsible {@link TableOfContents} sidebar with seamless responsive adaptation.
    */
   public record DocLayout(String tocId, String tocHeading, List<Element> sections)
       implements RenderView {
@@ -259,29 +304,72 @@ public final class Toc {
     public void configureScope(ScopeStyle scope) {
       scope
           .root(s -> s.flex().flexCol().gap(CssLength.rem(2)).containerInlineSize())
-          .select(":scope > .doc-grid", s -> s.flex().flexCol().gap(CssLength.rem(2)))
+          .select(
+              ":scope > .doc-grid",
+              s -> s.grid().gridColumns("minmax(0, 1fr)").gap(CssLength.rem(1.5)))
+          .select(
+              ":scope > .doc-grid > aside",
+              s ->
+                  s.gridRow("1")
+                      .bg(Tokens.SURFACE_CARD)
+                      .borderSubtle(Tokens.BORDER_SUBTLE)
+                      .rounded(CssLength.rem(0.5))
+                      .p(CssLength.rem(0.75)))
+          .select(
+              ":scope > .doc-grid > .doc-prose-col",
+              s ->
+                  s.gridRow("2")
+                      .flex()
+                      .flexCol()
+                      .gap(CssLength.rem(2.5))
+                      .inlineSize(CssLength.pct(100))
+                      .minInlineSize(CssLength.px(0))
+                      .maxInlineSize(CssLength.ch(75))
+                      .textColor(Tokens.TEXT_PRIMARY)
+                      .lineHeight("1.75"))
+          .select(
+              ":scope .doc-prose-col p:not([class])",
+              s ->
+                  s.mb(CssLength.rem(1.125))
+                      .fontSize(CssLength.rem(1.05))
+                      .textColor(Tokens.TEXT_PRIMARY)
+                      .lineHeight("1.75"))
           .containerMinInlineSize(
-              CssLength.rem(42),
+              CssLength.rem(48),
               c ->
                   c.select(
                           ":scope > .doc-grid",
                           s ->
-                              s.grid()
-                                  .gridColumns("minmax(0, 1fr) 15.5rem")
+                              s.gridColumns("minmax(0, 1fr) 15rem")
                                   .itemsStart()
-                                  .gap(CssLength.rem(2)))
+                                  .gap(CssLength.rem(2.5)))
+                      .select(
+                          ":scope > .doc-grid > .doc-prose-col",
+                          s ->
+                              s.gridColumn("1")
+                                  .gridRow("1")
+                                  .inlineSize(CssLength.pct(100))
+                                  .minInlineSize(CssLength.px(0))
+                                  .maxInlineSize(CssLength.ch(75)))
                       .select(
                           ":scope > .doc-grid > aside",
-                          s -> s.sticky().insetBlockStart(CssLength.rem(6.75))));
+                          s ->
+                              s.gridColumn("2")
+                                  .gridRow("1")
+                                  .sticky()
+                                  .insetBlockStart(CssLength.rem(6.75))
+                                  .bgRaw("transparent")
+                                  .borderNone()
+                                  .p(CssLength.px(0))));
     }
 
     @Override
     public Element render() {
-      var proseCol = div().flex().flexCol().gap(CssLength.rem(2.5));
+      var proseCol = div().attr("class", "doc-prose-col").flex().flexCol().gap(CssLength.rem(2.5));
       for (var sec : sections) {
         proseCol.child(sec);
       }
-      var sidebar = aside().child(fromContext(tocId, tocHeading));
+      var sidebar = aside().attr("class", "doc-toc-rail").child(fromContext(tocId, tocHeading));
       return div().child(div().attr("class", "doc-grid").children(proseCol, sidebar));
     }
   }

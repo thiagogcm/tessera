@@ -187,7 +187,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
 
   @Override
   public Element render() {
-    String displayTitle = customTitle != null ? customTitle : tone.defaultTitle();
+    var displayTitle = customTitle != null ? customTitle : tone.defaultTitle();
     var header =
         div()
             .attr("class", "callout-header")
@@ -198,7 +198,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
 
     var content = div().attr("class", "callout-content").children(children);
 
-    String bgValue =
+    var bgValue =
         "color-mix(in oklab, "
             + tone.token().varReference()
             + " 14%, "

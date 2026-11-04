@@ -22,7 +22,7 @@ final class DocsPage {
   private DocsPage() {}
 
   static Page page() {
-    List<Demo> demos = List.of(heroImage(), tableOfContents(), footnotes(), steps());
+    var demos = List.of(heroImage(), tableOfContents(), footnotes(), steps());
     return new Page(
         PATH,
         "Docs",

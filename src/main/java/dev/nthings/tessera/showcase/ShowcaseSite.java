@@ -47,11 +47,11 @@ public final class ShowcaseSite {
   }
 
   public static void main(String[] args) throws InterruptedException {
-    Path outputDir = Path.of("target/site");
-    boolean serve = false;
-    int port = 8080;
+    var outputDir = Path.of("target/site");
+    var serve = false;
+    var port = 8080;
 
-    for (int i = 0; i < args.length; i++) {
+    for (var i = 0; i < args.length; i++) {
       switch (args[i]) {
         case "--output" -> {
           if (++i == args.length) {
@@ -71,7 +71,7 @@ public final class ShowcaseSite {
       }
     }
 
-    SiteCompiler.CompiledSite compiled = SiteCompiler.compile(createDefinition());
+    var compiled = SiteCompiler.compile(createDefinition());
     SiteCompiler.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "

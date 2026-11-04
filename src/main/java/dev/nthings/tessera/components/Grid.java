@@ -39,7 +39,7 @@ public record Grid(
     if (count <= 0) {
       throw new IllegalArgumentException("Grid column count must be > 0");
     }
-    String template = "repeat(" + count + ", minmax(0, 1fr))";
+    var template = "repeat(" + count + ", minmax(0, 1fr))";
     return new Grid(
         template, gap, count > 1, items.stream().map(IntoElement::intoElement).toList());
   }

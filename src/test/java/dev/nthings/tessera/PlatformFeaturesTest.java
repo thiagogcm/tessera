@@ -100,8 +100,8 @@ class PlatformFeaturesTest {
                                 "g", CssLength.rem(15), CssLength.rem(1), p().text("b"))))));
     var site = SiteCompiler.compile(SiteDefinition.of(routes));
 
-    String viewA = viewKey(site.pagesByRoute().get("/").html(), "card-grid");
-    String viewB = viewKey(site.pagesByRoute().get("/b").html(), "card-grid");
+    var viewA = viewKey(site.pagesByRoute().get("/").html(), "card-grid");
+    var viewB = viewKey(site.pagesByRoute().get("/b").html(), "card-grid");
     assertThat(viewA).isNotEqualTo(viewB);
     assertThat(site.sharedCssContent())
         .contains("@scope ([data-view=\"" + viewA + "\"])")
@@ -137,7 +137,7 @@ class PlatformFeaturesTest {
         PageCompiler.compile(
             new PageDocument(
                 "R", main().child(p().revealOnce(ScrollReveal.FADE_UP).text("hello"))));
-    String rule =
+    var rule =
         CssBlocks.classRule(
             compiled.cssContent(),
             CssBlocks.generatedClass(

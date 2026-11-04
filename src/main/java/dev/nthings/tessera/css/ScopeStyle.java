@@ -80,10 +80,10 @@ public final class ScopeStyle {
   public String toCssBody() {
     var sb = new StringBuilder();
     for (var entry : selectorRules.entrySet()) {
-      String selector = entry.getKey();
-      StyleRefinement base = entry.getValue();
-      StyleRefinement starting = startingStyleRules.get(selector);
-      boolean hasBase = !base.isEmpty();
+      var selector = entry.getKey();
+      var base = entry.getValue();
+      var starting = startingStyleRules.get(selector);
+      var hasBase = !base.isEmpty();
       if (starting != null && starting.isEmpty()) {
         starting = null;
       }
@@ -102,7 +102,7 @@ public final class ScopeStyle {
       }
     }
     for (var entry : atRuleBlocks.entrySet()) {
-      String body = entry.getValue().toCssBody();
+      var body = entry.getValue().toCssBody();
       if (!body.isEmpty()) {
         sb.append(entry.getKey()).append('{').append(body).append('}');
       }

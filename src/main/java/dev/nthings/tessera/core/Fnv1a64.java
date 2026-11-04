@@ -16,25 +16,25 @@ public final class Fnv1a64 {
   }
 
   public static long updateInt(long hash, int value) {
-    long h = hash;
-    for (int shift = 0; shift < 32; shift += 8) {
+    var h = hash;
+    for (var shift = 0; shift < 32; shift += 8) {
       h = updateByte(h, (value >>> shift) & 0xFF);
     }
     return h;
   }
 
   public static long updateLong(long hash, long value) {
-    long h = hash;
-    for (int shift = 0; shift < 64; shift += 8) {
+    var h = hash;
+    for (var shift = 0; shift < 64; shift += 8) {
       h = updateByte(h, (int) ((value >>> shift) & 0xFFL));
     }
     return h;
   }
 
   public static long updateChars(long hash, CharSequence chars) {
-    long h = hash;
+    var h = hash;
     for (int i = 0, len = chars.length(); i < len; i++) {
-      char c = chars.charAt(i);
+      var c = chars.charAt(i);
       h = updateByte(h, c & 0xFF);
       h = updateByte(h, (c >>> 8) & 0xFF);
     }
@@ -51,7 +51,7 @@ public final class Fnv1a64 {
     }
     var sb = new StringBuilder(raw.length());
     for (int i = 0, len = raw.length(); i < len; i++) {
-      char c = raw.charAt(i);
+      var c = raw.charAt(i);
       if ((c >= 'a' && c <= 'z')
           || (c >= 'A' && c <= 'Z')
           || (c >= '0' && c <= '9')
@@ -71,7 +71,7 @@ public final class Fnv1a64 {
     }
     var sb = new StringBuilder(camelOrPascal.length() + 4);
     for (int i = 0, len = camelOrPascal.length(); i < len; i++) {
-      char c = camelOrPascal.charAt(i);
+      var c = camelOrPascal.charAt(i);
       if (c >= 'A' && c <= 'Z') {
         if (i > 0) {
           sb.append('-');

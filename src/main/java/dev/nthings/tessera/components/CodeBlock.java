@@ -35,7 +35,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   }
 
   public static CodeBlock of(String code) {
-    String normalized = code.replace("\r\n", "\n").replace('\r', '\n');
+    var normalized = code.replace("\r\n", "\n").replace('\r', '\n');
     return new CodeBlock(Arrays.asList(normalized.split("\n", -1)));
   }
 
@@ -63,21 +63,21 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   }
 
   public CodeBlock highlightLines(int... lineNumbers) {
-    for (int line : lineNumbers) {
+    for (var line : lineNumbers) {
       this.highlightedLines.add(line);
     }
     return this;
   }
 
   public CodeBlock addedLines(int... lineNumbers) {
-    for (int line : lineNumbers) {
+    for (var line : lineNumbers) {
       this.addedLines.add(line);
     }
     return this;
   }
 
   public CodeBlock deletedLines(int... lineNumbers) {
-    for (int line : lineNumbers) {
+    for (var line : lineNumbers) {
       this.deletedLines.add(line);
     }
     return this;
@@ -170,13 +170,13 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
     var codeEl = code().attr("class", "code-lines");
 
-    for (int i = 0; i < lines.size(); i++) {
-      int lineNum = i + 1;
-      String rawLine = lines.get(i);
-      String content = rawLine.isEmpty() ? " " : rawLine;
+    for (var i = 0; i < lines.size(); i++) {
+      var lineNum = i + 1;
+      var rawLine = lines.get(i);
+      var content = rawLine.isEmpty() ? " " : rawLine;
 
-      boolean isAdd = addedLines.contains(lineNum);
-      boolean isDel = deletedLines.contains(lineNum);
+      var isAdd = addedLines.contains(lineNum);
+      var isDel = deletedLines.contains(lineNum);
       if (diffAutoDetect) {
         if (rawLine.startsWith("+")) {
           isAdd = true;
@@ -184,7 +184,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
           isDel = true;
         }
       }
-      boolean isHighlight = highlightedLines.contains(lineNum);
+      var isHighlight = highlightedLines.contains(lineNum);
 
       var lineSpan = span().attr("class", "code-line");
       if (isAdd) {

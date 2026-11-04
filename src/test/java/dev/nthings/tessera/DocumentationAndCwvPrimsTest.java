@@ -221,7 +221,7 @@ class DocumentationAndCwvPrimsTest {
         .contains("<loc>https://tessera.dev/</loc>")
         .contains("<loc>https://tessera.dev/guide</loc>");
 
-    String index = compiledSite.searchIndexJson().replaceAll("\\s", "");
+    var index = compiledSite.searchIndexJson().replaceAll("\\s", "");
     assertThat(index)
         .contains("\"path\":\"/guide\",\"title\":\"GettingStarted\"")
         .contains("{\"id\":\"config\",\"title\":\"Configuration\",\"level\":3}");

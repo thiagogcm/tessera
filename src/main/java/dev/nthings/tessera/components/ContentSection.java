@@ -105,7 +105,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   public Element render() {
     var entry = Toc.register(rawId, title, level);
 
-    TagElement heading =
+    var heading =
         sectionHeading(
             level, entry.targetDomId(), title, level == 2 ? 1.625 : level == 3 ? 1.25 : 1.05);
 
@@ -175,7 +175,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
 
   /// Builds the `<h2>`–`<h4>` heading for a TOC-registered section, id'd `<sectionDomId>--heading`.
   static TagElement sectionHeading(int level, String sectionDomId, String title, double sizeRem) {
-    TagElement heading =
+    var heading =
         switch (level) {
           case 2 -> h2();
           case 3 -> h3();

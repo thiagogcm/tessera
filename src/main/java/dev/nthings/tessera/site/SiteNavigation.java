@@ -20,7 +20,7 @@ public final class SiteNavigation {
   public static SearchPalette searchPalette(String id, List<SiteRoute> routes) {
     var palette = SearchPalette.create(id);
     for (var route : routes) {
-      String title = route.displayTitle();
+      var title = route.displayTitle();
       palette.item("Pages & Guides", title, route.path(), route.description(), route.path());
     }
     return palette;
@@ -28,9 +28,9 @@ public final class SiteNavigation {
 
   /// Previous/next pager for `currentPath` in route declaration order.
   public static DocPager docPager(SiteDefinition site, String currentPath) {
-    String normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
-    List<SiteRoute> routes = site.routes();
-    int index = routes.stream().map(SiteRoute::path).toList().indexOf(normalizedCurrent);
+    var normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
+    var routes = site.routes();
+    var index = routes.stream().map(SiteRoute::path).toList().indexOf(normalizedCurrent);
     if (index < 0) {
       throw new IllegalArgumentException("No route registered at " + normalizedCurrent);
     }

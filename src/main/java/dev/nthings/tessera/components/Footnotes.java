@@ -38,9 +38,9 @@ public final class Footnotes {
   private static Entry register(String rawId, Element content) {
     var ctx = RenderContext.current();
     var registry = ctx.document(REGISTRY);
-    ElementId local = ElementId.of(rawId);
-    String slug = local.slug();
-    String key = ctx.viewScope().extend(local).domId();
+    var local = ElementId.of(rawId);
+    var slug = local.slug();
+    var key = ctx.viewScope().extend(local).domId();
     var entry =
         new Entry(
             registry.entries.size() + 1,
@@ -79,7 +79,7 @@ public final class Footnotes {
     @Override
     public Element render() {
       var entry = register(id, content);
-      String label = "[" + entry.number() + "]";
+      var label = "[" + entry.number() + "]";
       var triggerLink =
           Elements.a("#" + entry.noteDomId())
               .id("fnlink-" + entry.slug())

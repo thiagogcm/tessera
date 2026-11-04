@@ -27,23 +27,23 @@ public final class StyleSheetCollector {
     keyframeRules.addAll(interactivity.keyframes());
 
     if (!baseStyle.isEmpty()) {
-      String utilClass = "u-" + Fnv1a64.toBase36Hash(baseStyle.contentHash());
+      var utilClass = "u-" + Fnv1a64.toBase36Hash(baseStyle.contentHash());
       utilityRules.computeIfAbsent(
           utilClass, k -> "." + k + "{" + baseStyle.toCssBlockBody() + "}");
       classNames.add(utilClass);
     }
 
     if (interactivity.hasInteractiveStyles()) {
-      String body = buildInteractiveBlock(interactivity);
-      long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, body);
-      String interactiveClass = "i-" + Fnv1a64.toBase36Hash(hash);
+      var body = buildInteractiveBlock(interactivity);
+      var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, body);
+      var interactiveClass = "i-" + Fnv1a64.toBase36Hash(hash);
       interactiveRules.computeIfAbsent(interactiveClass, k -> "." + k + "{" + body + "}");
       classNames.add(interactiveClass);
     }
 
     for (var rule : interactivity.containerRules()) {
       if (!rule.style().isEmpty()) {
-        String cqClass = "cq-" + Fnv1a64.toBase36Hash(rule.contentHash());
+        var cqClass = "cq-" + Fnv1a64.toBase36Hash(rule.contentHash());
         containerRules.computeIfAbsent(
             cqClass,
             k ->
@@ -71,12 +71,12 @@ public final class StyleSheetCollector {
   ///
   /// @return the resolved `data-view` attribute value
   public String registerViewScope(String viewType, String scopedCss) {
-    String safeType = Fnv1a64.sanitizeIdentifier(viewType);
+    var safeType = Fnv1a64.sanitizeIdentifier(viewType);
     if (scopedCss.isBlank()) {
       return safeType;
     }
-    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
-    String key = safeType + "-" + Fnv1a64.toBase36Hash(hash);
+    var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
+    var key = safeType + "-" + Fnv1a64.toBase36Hash(hash);
     viewScopeBodies.putIfAbsent(key, scopedCss);
     return key;
   }

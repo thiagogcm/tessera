@@ -58,9 +58,9 @@ public record SiteAsset(String path, String contentType, byte[] content) {
   }
 
   static String contentTypeFor(String path) {
-    String name = path.toLowerCase(Locale.ROOT);
-    int dot = name.lastIndexOf('.');
-    String ext = dot >= 0 ? name.substring(dot + 1) : "";
+    var name = path.toLowerCase(Locale.ROOT);
+    var dot = name.lastIndexOf('.');
+    var ext = dot >= 0 ? name.substring(dot + 1) : "";
     return switch (ext) {
       case "svg" -> "image/svg+xml";
       case "png" -> "image/png";

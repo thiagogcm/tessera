@@ -26,7 +26,6 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
-import java.util.List;
 
 /// Site chrome shared by every route: sticky header with navigation, search palette, quick
 /// actions and inspector drawer; page heading; previous/next pager; footer.
@@ -38,7 +37,7 @@ record Shell(Page page) implements RenderOnce {
 
   @Override
   public Element render() {
-    List<Page> pages = ShowcaseSite.pages();
+    var pages = ShowcaseSite.pages();
     var inspector =
         Overlays.drawer("inspector", "Compiler & Cascade Inspector")
             .subtitle("What every page compiles to")
@@ -117,7 +116,7 @@ record Shell(Page page) implements RenderOnce {
                                     search.asDeferred(30))),
                     div().overflowXAuto().child(nav)));
 
-    int index = pages.indexOf(page);
+    var index = pages.indexOf(page);
     var pager =
         DocPager.of(
             index > 0 ? pageRef(pages.get(index - 1)) : null,

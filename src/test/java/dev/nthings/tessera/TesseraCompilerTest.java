@@ -34,7 +34,6 @@ import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import java.util.Map;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -145,19 +144,18 @@ class TesseraCompilerTest {
   @DisplayName("Compiles a view with scoped ids, invokers, tooltips, actions and portals")
   void compilesBaselineDocument() {
     var doc = new PageDocument("en", "Tessera Workspace", new WorkspacePanelView("core"));
-    PageCompiler.CompiledPage compiled =
-        PageCompiler.compile(doc, new Tokens(), OutputMode.inlineStyle());
+    var compiled = PageCompiler.compile(doc, new Tokens(), OutputMode.inlineStyle());
 
     assertThat(compiled.externalCssPath()).isNull();
-    Document parsed = Jsoup.parse(compiled.html());
-    String css = compiled.cssContent();
+    var parsed = Jsoup.parse(compiled.html());
+    var css = compiled.cssContent();
 
     // The view's scoped rules are keyed by its data-view value
     var mainEl = parsed.selectFirst("main[data-view-id=workspace-core]");
     assertThat(css).contains("@scope ([data-view=\"" + mainEl.attr("data-view") + "\"])");
 
     // onContainer rules land in the container layer, applied through a generated class
-    String cqClass = CssBlocks.generatedClass(mainEl.selectFirst("section").className(), "cq-");
+    var cqClass = CssBlocks.generatedClass(mainEl.selectFirst("section").className(), "cq-");
     assertThat(CssBlocks.block(css, "@layer container{"))
         .contains("@container metric-card (inline-size >= 320px){." + cqClass + "{");
 
@@ -191,7 +189,7 @@ class TesseraCompilerTest {
         new PageDocument(
             "Q&A <draft>",
             main().children(p().attr("title", "say \"hi\"").text("<script>alert(1)</script>")));
-    String html = PageCompiler.compile(doc).html();
+    var html = PageCompiler.compile(doc).html();
 
     assertThat(html)
         .contains("<title>Q&amp;A &lt;draft&gt;</title>")
@@ -214,7 +212,7 @@ class TesseraCompilerTest {
                 deferred(div().id("toast-high-2").text("High 2"), 20));
 
     var compiled = PageCompiler.compile(new PageDocument("Portals", root));
-    Document parsed = Jsoup.parse(compiled.html());
+    var parsed = Jsoup.parse(compiled.html());
     var bodyChildren = parsed.body().children();
 
     assertThat(bodyChildren).hasSize(4);
@@ -231,7 +229,7 @@ class TesseraCompilerTest {
         PageCompiler.compile(doc, new Tokens(), OutputMode.externalAsset("/static/assets/"));
 
     assertThat(compiled.externalCssPath()).startsWith("/static/assets/styles-").endsWith(".css");
-    Document parsed = Jsoup.parse(compiled.html());
+    var parsed = Jsoup.parse(compiled.html());
     var link = parsed.selectFirst("head > link[rel=stylesheet]");
     assertThat(link).isNotNull();
     assertThat(link.attr("href")).isEqualTo(compiled.externalCssPath());

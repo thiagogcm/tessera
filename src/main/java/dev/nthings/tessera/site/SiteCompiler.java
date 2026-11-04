@@ -56,7 +56,7 @@ public final class SiteCompiler {
     }
 
     private @Nullable String textFile(String path) {
-      SiteAsset file = files.get(path);
+      var file = files.get(path);
       return file == null ? null : new String(file.contentView(), StandardCharsets.UTF_8);
     }
   }
@@ -67,7 +67,7 @@ public final class SiteCompiler {
   private SiteCompiler() {}
 
   public static CompiledSite compile(SiteDefinition site) {
-    List<SiteRoute> routes = site.routes();
+    var routes = site.routes();
     var seenPaths = new LinkedHashSet<String>(routes.size());
     var preparedByRoute = new LinkedHashMap<String, PageCompiler.PreparedPage>(routes.size());
 
@@ -82,10 +82,10 @@ public final class SiteCompiler {
     }
 
     var siteHead = site.linkSpeculation().headElements();
-    List<PageCompiler.PreparedPage> preparedPages =
+    var preparedPages =
         parallelMap(
             routes, route -> PageCompiler.prepare(route.document(), site.tokens(), siteHead));
-    for (int i = 0; i < routes.size(); i++) {
+    for (var i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
@@ -100,23 +100,23 @@ public final class SiteCompiler {
     for (var prepared : preparedPages) {
       sharedCollector.mergeFrom(prepared.styles());
     }
-    String sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
+    var sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
 
-    List<PageCompiler.CompiledPage> painted =
+    var painted =
         parallelMap(
             preparedPages,
             prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
     var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
-    for (int i = 0; i < routes.size(); i++) {
+    for (var i = 0; i < routes.size(); i++) {
       compiledPages.put(routes.get(i).path(), painted.get(i));
     }
     // Every page is painted with the same output mode and stylesheet, so they share one path.
-    String sharedCssPath = painted.getFirst().externalCssPath();
+    var sharedCssPath = painted.getFirst().externalCssPath();
 
     if (sharedCssPath != null) {
       addFile(files, seenPaths, SiteAsset.text(sharedCssPath, sharedCssContent));
     }
-    String baseUrl = site.baseUrl();
+    var baseUrl = site.baseUrl();
     if (baseUrl != null) {
       addFile(files, seenPaths, SiteAsset.text(SITEMAP_PATH, generateSitemapXml(baseUrl, routes)));
     }
@@ -143,7 +143,7 @@ public final class SiteCompiler {
   private static <T, R> List<R> parallelMap(List<T> inputs, Function<T, R> fn) {
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var futures = new ArrayList<Future<R>>(inputs.size());
-      for (T input : inputs) {
+      for (var input : inputs) {
         futures.add(executor.submit(() -> fn.apply(input)));
       }
       var results = new ArrayList<R>(futures.size());
@@ -180,11 +180,11 @@ public final class SiteCompiler {
   }
 
   private static void writeFile(Path root, Path relative, byte[] content) throws IOException {
-    Path target = root.resolve(relative).normalize();
+    var target = root.resolve(relative).normalize();
     if (!target.startsWith(root.normalize())) {
       throw new IllegalArgumentException("Output escapes the site directory: " + relative);
     }
-    Path parent = target.getParent();
+    var parent = target.getParent();
     if (parent != null) {
       Files.createDirectories(parent);
     }
@@ -195,7 +195,7 @@ public final class SiteCompiler {
       Map<String, PageCompiler.PreparedPage> preparedByRoute) {
     var routesByKey = new LinkedHashMap<TransitionKey, Set<String>>();
     for (var entry : preparedByRoute.entrySet()) {
-      String routePath = entry.getKey();
+      var routePath = entry.getKey();
       for (var key : entry.getValue().transitionKeys()) {
         routesByKey.computeIfAbsent(key, _ -> new LinkedHashSet<>()).add(routePath);
       }
@@ -219,7 +219,7 @@ public final class SiteCompiler {
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     for (var route : routes) {
-      String loc = baseUrl + route.path();
+      var loc = baseUrl + route.path();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");
@@ -232,19 +232,19 @@ public final class SiteCompiler {
       List<SiteRoute> routes, List<PageCompiler.PreparedPage> preparedPages) {
     var sb = new StringBuilder(2048);
     sb.append("[\n");
-    for (int i = 0; i < routes.size(); i++) {
+    for (var i = 0; i < routes.size(); i++) {
       var route = routes.get(i);
-      String title = route.displayTitle();
+      var title = route.displayTitle();
       sb.append("  {\n");
       sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
       sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
-      String routeDesc = route.description();
+      var routeDesc = route.description();
       if (routeDesc != null) {
         sb.append(",\n    \"description\": \"").append(escapeJson(routeDesc)).append("\"");
       }
       sb.append(",\n    \"headings\": [");
-      List<Toc.Item> tocs = Toc.entries(preparedPages.get(i).documentState());
-      for (int j = 0; j < tocs.size(); j++) {
+      var tocs = Toc.entries(preparedPages.get(i).documentState());
+      for (var j = 0; j < tocs.size(); j++) {
         var toc = tocs.get(j);
         if (j > 0) sb.append(", ");
         sb.append("{\"id\": \"")
@@ -273,21 +273,21 @@ public final class SiteCompiler {
   private static void validateSiteLinks(
       Map<String, PageCompiler.PreparedPage> preparedByRoute, Set<String> assetPaths) {
     for (var entry : preparedByRoute.entrySet()) {
-      String sourceRoute = entry.getKey();
-      PageCompiler.PreparedPage sourcePage = entry.getValue();
+      var sourceRoute = entry.getKey();
+      var sourcePage = entry.getValue();
 
-      for (String href : sourcePage.outgoingHrefs()) {
+      for (var href : sourcePage.outgoingHrefs()) {
         // Same-page `#fragment` links are already validated by PageCompiler.prepare.
         if (href.startsWith("/") && !href.startsWith("//")) {
-          int hashIdx = href.indexOf('#');
-          String rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
-          String fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";
+          var hashIdx = href.indexOf('#');
+          var rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
+          var fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";
           if (assetPaths.contains(rawPath)) {
             continue;
           }
-          String targetRoute = SiteRoute.normalizeRoutePath(rawPath);
+          var targetRoute = SiteRoute.normalizeRoutePath(rawPath);
 
-          PageCompiler.PreparedPage targetPage = preparedByRoute.get(targetRoute);
+          var targetPage = preparedByRoute.get(targetRoute);
           if (targetPage == null) {
             throw new AccessibilityViolationException(
                 "Route \""

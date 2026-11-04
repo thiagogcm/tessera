@@ -71,7 +71,7 @@ final class MotionPage {
 
   private static Demo stagger() {
     var row = div().flex().flexWrap().gap(CssLength.rem(0.5));
-    for (int i = 1; i <= 8; i++) {
+    for (var i = 1; i <= 8; i++) {
       row.child(
           Demo.surface(span().px(CssLength.rem(0.75)).py(CssLength.rem(0.375)), CssLength.px(999))
               .revealOnce(ScrollReveal.FADE_UP)

@@ -90,8 +90,8 @@ class ProseAndCollapsibleTocTest {
     var parsed =
         Jsoup.parse(PageCompiler.compile(new PageDocument("Docs", main().child(layout))).html());
 
-    String first = Toc.DocLayout.sectionDomId("my-doc", "getting-started");
-    String second = Toc.DocLayout.sectionDomId("my-doc", "telemetry");
+    var first = Toc.DocLayout.sectionDomId("my-doc", "getting-started");
+    var second = Toc.DocLayout.sectionDomId("my-doc", "telemetry");
     var links = parsed.select(".doc-toc-rail nav a");
     assertThat(links)
         .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))

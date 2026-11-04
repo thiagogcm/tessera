@@ -17,7 +17,7 @@ public final class Interactivity {
 
   public record ContainerRule(String containerName, String condition, StyleRefinement style) {
     public long contentHash() {
-      long h = Fnv1a64.OFFSET_BASIS;
+      var h = Fnv1a64.OFFSET_BASIS;
       h = Fnv1a64.updateChars(h, containerName);
       h = Fnv1a64.updateChars(h, condition);
       return Fnv1a64.updateLong(h, style.contentHash());

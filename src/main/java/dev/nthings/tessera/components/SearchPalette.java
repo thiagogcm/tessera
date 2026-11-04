@@ -180,7 +180,7 @@ public final class SearchPalette implements RenderView {
     var datalistEl = datalist().id(datalist);
     for (var entry : groupedItems.entrySet()) {
       for (var item : entry.getValue()) {
-        String label = item.title() + " (" + entry.getKey() + ")";
+        var label = item.title() + " (" + entry.getKey() + ")";
         datalistEl.child(option(item.href(), label));
       }
     }

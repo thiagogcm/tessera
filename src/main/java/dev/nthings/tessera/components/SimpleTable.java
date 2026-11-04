@@ -4,7 +4,6 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ public final class SimpleTable implements RenderOnce {
 
   @Override
   public Element render() {
-    TagElement table =
+    var table =
         Elements.table()
             .fullWidth()
             .maxInlineSize(CssLength.pct(100))

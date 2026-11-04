@@ -20,7 +20,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
@@ -52,7 +51,7 @@ public final class Toc {
   /// Registers a heading for context-driven TOCs; its DOM id is `rawId` in the current scope.
   static Item register(String rawId, String title, int level) {
     var ctx = RenderContext.current();
-    String domId = ctx.viewScope().extend(ElementId.of(rawId)).domId();
+    var domId = ctx.viewScope().extend(ElementId.of(rawId)).domId();
     var item = new Item(domId, title, level);
     if (ctx.document(REGISTRY).entries.putIfAbsent(domId, item) != null) {
       throw new IllegalArgumentException("Duplicate section id '" + domId + "' on the same page");
@@ -62,7 +61,7 @@ public final class Toc {
 
   /// Headings registered on a compiled page, in document order (e.g. for search indexes).
   public static List<Item> entries(DocumentState state) {
-    Registry registry = state.get(REGISTRY);
+    var registry = state.get(REGISTRY);
     return registry == null ? List.of() : List.copyOf(registry.entries.values());
   }
 
@@ -93,7 +92,7 @@ public final class Toc {
     @Override
     public Element render() {
       var entry = register(id, title, level);
-      TagElement heading =
+      var heading =
           ContentSection.sectionHeading(
               level, entry.targetDomId(), title, level == 2 ? 1.375 : level == 3 ? 1.125 : 1);
 

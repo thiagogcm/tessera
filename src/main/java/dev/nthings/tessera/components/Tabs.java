@@ -102,7 +102,7 @@ public final class Tabs {
     public Element render() {
       var list = ul();
       for (var item : items) {
-        boolean isActive = item.href().equals(activeHref);
+        var isActive = item.href().equals(activeHref);
         var link =
             a(item.href()).when(isActive, el -> el.attr("aria-current", "page")).text(item.label());
         var liEl = li().when(isActive, el -> el.attr("class", "active")).child(link);
@@ -178,8 +178,8 @@ public final class Tabs {
       anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent)
           .select(":scope > .tab-panel", s -> s.hidden().p(CssLength.rem(1.25)));
 
-      for (int i = 0; i < panels.size(); i++) {
-        int tabIndex = i + 1;
+      for (var i = 0; i < panels.size(); i++) {
+        var tabIndex = i + 1;
         scope.select(
             ":scope:has(> .tab-bar > .tab-label[data-tab=\""
                 + tabIndex
@@ -195,8 +195,8 @@ public final class Tabs {
       var tabBar = div().attr("class", "tab-bar");
       var root = div().child(tabBar);
 
-      for (int i = 0; i < panels.size(); i++) {
-        int tabIndex = i + 1;
+      for (var i = 0; i < panels.size(); i++) {
+        var tabIndex = i + 1;
         var panel = panels.get(i);
         var radio =
             input("radio")

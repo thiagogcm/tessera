@@ -23,7 +23,6 @@ import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import java.util.List;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -45,11 +44,11 @@ class FoundationalComponentsTest {
 
     var compiled = PageCompiler.compile(new PageDocument("Tables", main().child(dataTable)));
 
-    String css = compiled.cssContent();
+    var css = compiled.cssContent();
     assertThat(css).doesNotContain("\"Region \"AZ\"\"");
     assertThat(css).contains("td:nth-child(2)::before").doesNotContain("td:nth-child(1)::before");
 
-    Document doc = Jsoup.parse(compiled.html());
+    var doc = Jsoup.parse(compiled.html());
     var region = doc.selectFirst("div[role=region][tabindex=0]");
     assertThat(region.attr("aria-labelledby")).isEqualTo(region.selectFirst("caption").id());
     assertThat(region.select("tbody th[scope=row]"))
@@ -95,7 +94,7 @@ class FoundationalComponentsTest {
                             textOnlyCard,
                             choiceCard))));
 
-    Document doc = Jsoup.parse(compiled.html());
+    var doc = Jsoup.parse(compiled.html());
 
     // Media card: direct <img>, <hgroup> with the stretched link, single unwrapped <p>, <footer>
     var media = doc.selectFirst("[data-view-id=feature-cards--card-architecture]");
@@ -125,9 +124,9 @@ class FoundationalComponentsTest {
         PageCompiler.compile(
             new PageDocument("Scroll Animations", main().children(progress, revealSection)));
 
-    String css = compiled.cssContent();
-    Document doc = Jsoup.parse(compiled.html());
-    String revealRule =
+    var css = compiled.cssContent();
+    var doc = Jsoup.parse(compiled.html());
+    var revealRule =
         CssBlocks.classRule(
             css, CssBlocks.generatedClass(doc.selectFirst("section").className(), "i-"));
     assertThat(CssBlocks.block(revealRule, "@media (prefers-reduced-motion: no-preference){"))
@@ -135,8 +134,8 @@ class FoundationalComponentsTest {
     assertThat(css).contains("@keyframes tessera-fade-up{");
 
     // The animation shorthand resets animation-timeline, so it must be emitted first
-    int animIdx = css.indexOf("animation:tessera-scroll-progress");
-    int timelineIdx = css.indexOf("animation-timeline:scroll(root block)");
+    var animIdx = css.indexOf("animation:tessera-scroll-progress");
+    var timelineIdx = css.indexOf("animation-timeline:scroll(root block)");
     assertThat(animIdx).isPositive().isLessThan(timelineIdx);
 
     assertThat(doc.getElementById("top-progress").attr("aria-hidden")).isEqualTo("true");
@@ -158,7 +157,7 @@ class FoundationalComponentsTest {
                 Footnotes.ref("fn-2", "Second footnote."));
 
     var compiled = PageCompiler.compile(new PageDocument("Prose", main().child(prose)));
-    Document doc = Jsoup.parse(compiled.html());
+    var doc = Jsoup.parse(compiled.html());
 
     assertThat(doc.selectFirst("main p").children())
         .extracting(e -> e.tagName())

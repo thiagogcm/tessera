@@ -276,7 +276,7 @@ public final class Overlays {
 
     @Override
     public void configureScope(ScopeStyle scope) {
-      String offscreenTranslate = side == DrawerSide.INLINE_START ? "-100% 0" : "100% 0";
+      var offscreenTranslate = side == DrawerSide.INLINE_START ? "-100% 0" : "100% 0";
       scope
           .root(
               s -> {

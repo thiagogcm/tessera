@@ -27,7 +27,7 @@ class SiteCompilerAndScopeStyleTest {
   @Test
   @DisplayName("Views with identical scoped CSS share one @scope block and one data-view key")
   void deduplicatesScopeStylesAndQualifiesViews() {
-    List<Column<String>> columns =
+    var columns =
         List.of(
             Column.<String>rowHeader("Key", s -> text(s)), Column.<String>text("Value", s -> s));
     var compiled =
@@ -41,14 +41,14 @@ class SiteCompilerAndScopeStyleTest {
                         new DataTable<>("a", "A", columns, List.of("row-a")),
                         new DataTable<>("b", "B", columns, List.of("row-b", "row-c")))));
 
-    String css = compiled.cssContent();
+    var css = compiled.cssContent();
     var doc = Jsoup.parse(compiled.html());
     for (var pair :
         List.of(List.of("card-one", "card-two"), List.of("datatable-a", "datatable-b"))) {
-      String key = doc.selectFirst("[data-view-id=" + pair.get(0) + "]").attr("data-view");
+      var key = doc.selectFirst("[data-view-id=" + pair.get(0) + "]").attr("data-view");
       assertThat(doc.selectFirst("[data-view-id=" + pair.get(1) + "]").attr("data-view"))
           .isEqualTo(key);
-      String scope = "@scope ([data-view=\"" + key + "\"])";
+      var scope = "@scope ([data-view=\"" + key + "\"])";
       assertThat(css.indexOf(scope)).isPositive().isEqualTo(css.lastIndexOf(scope));
     }
   }
@@ -57,7 +57,7 @@ class SiteCompilerAndScopeStyleTest {
   @DisplayName("The showcase site compiles: every link, anchor, a11y and transition check passes")
   void compilesShowcaseSite() {
     var site = SiteCompiler.compile(ShowcaseSite.createDefinition());
-    String css = site.sharedCssPath();
+    var css = site.sharedCssPath();
     assertThat(site.pagesByRoute().values())
         .allSatisfy(page -> assertThat(page.html()).contains("href=\"" + css + "\""));
   }

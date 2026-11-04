@@ -6,7 +6,6 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -204,7 +203,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
   @Override
   public Element render() {
-    TagElement root =
+    var root =
         switch (interaction) {
           case Interaction.Choice choice -> {
             var input =
@@ -224,7 +223,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
     // Region 2: Header (direct heading or <hgroup> when subtitle is present)
     if (!headingText.isEmpty()) {
-      Element headingInner =
+      var headingInner =
           switch (interaction) {
             case Interaction.StretchedLink(var href) ->
                 Elements.a(href)
@@ -233,7 +232,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .text(headingText);
             case Interaction.Content _, Interaction.Choice _ -> Elements.text(headingText);
           };
-      TagElement h3 = Elements.h3().textBalance().child(headingInner);
+      var h3 = Elements.h3().textBalance().child(headingInner);
       if (subtitleText != null) {
         root.child(
             Elements.hgroup()

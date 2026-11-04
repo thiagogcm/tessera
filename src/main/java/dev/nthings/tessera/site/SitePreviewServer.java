@@ -2,9 +2,7 @@ package dev.nthings.tessera.site;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import dev.nthings.tessera.render.PageCompiler;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -47,24 +45,24 @@ public final class SitePreviewServer implements AutoCloseable {
 
   private static void handleRequest(SiteCompiler.CompiledSite site, HttpExchange exchange)
       throws IOException {
-    String requestPath = exchange.getRequestURI().getPath();
+    var requestPath = exchange.getRequestURI().getPath();
     if (requestPath == null || requestPath.isBlank()) {
       requestPath = "/";
     }
 
-    SiteAsset file = site.files().get(requestPath);
+    var file = site.files().get(requestPath);
     if (file != null) {
       sendBytes(exchange, 200, file.contentType(), file.contentView());
       return;
     }
 
-    String withoutIndex =
+    var withoutIndex =
         requestPath.endsWith("/index.html")
             ? requestPath.substring(0, requestPath.length() - "/index.html".length())
             : requestPath;
-    String normalized = SiteRoute.normalizeRoutePath(withoutIndex.isEmpty() ? "/" : withoutIndex);
+    var normalized = SiteRoute.normalizeRoutePath(withoutIndex.isEmpty() ? "/" : withoutIndex);
 
-    PageCompiler.CompiledPage page = site.pagesByRoute().get(normalized);
+    var page = site.pagesByRoute().get(normalized);
     if (page != null) {
       sendResponse(exchange, 200, "text/html; charset=utf-8", page.html());
       return;
@@ -83,7 +81,7 @@ public final class SitePreviewServer implements AutoCloseable {
     exchange.getResponseHeaders().set("Content-Type", contentType);
     exchange.getResponseHeaders().set("Cache-Control", "no-store");
     exchange.sendResponseHeaders(status, bytes.length);
-    try (OutputStream os = exchange.getResponseBody()) {
+    try (var os = exchange.getResponseBody()) {
       os.write(bytes);
     }
   }

@@ -146,9 +146,9 @@ class FormsAndSearchPaletteTest {
     assertThat(input.attr("aria-errormessage")).isEqualTo(error.id());
 
     // The tooltip is anchor-positioned against the input's anchor name
-    String css = compiled.cssContent();
+    var css = compiled.cssContent();
     var tooltip = parsed.selectFirst(".field-anchor-tooltip[role=tooltip]");
-    String anchor = "--anchor-" + input.id();
+    var anchor = "--anchor-" + input.id();
     assertThat(CssBlocks.classRule(css, CssBlocks.generatedClass(input.className(), "u-")))
         .contains("anchor-name:" + anchor);
     assertThat(CssBlocks.classRule(css, CssBlocks.generatedClass(tooltip.className(), "u-")))

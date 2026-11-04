@@ -6,7 +6,6 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
@@ -103,7 +102,7 @@ public record DataTable<T>(
             ":scope table",
             s -> {
               s.fullWidth().borderSeparateZero().textAlign("start");
-              for (int i = 0; i < columns.size(); i++) {
+              for (var i = 0; i < columns.size(); i++) {
                 s.customProperty(
                     "--label-" + (i + 1),
                     "\"" + Encode.forCssString(columns.get(i).header()) + "\"");
@@ -139,8 +138,8 @@ public record DataTable<T>(
 
     // Column alignment once per column instead of a utility class on every cell; START is
     // inherited from the table.
-    for (int i = 0; i < columns.size(); i++) {
-      CellAlign align = columns.get(i).align();
+    for (var i = 0; i < columns.size(); i++) {
+      var align = columns.get(i).align();
       if (align != CellAlign.START) {
         scope.select(
             ":scope tr > :nth-child(" + (i + 1) + ")",
@@ -173,9 +172,9 @@ public record DataTable<T>(
                           .zIndex(2)
                           .bg(Tokens.SURFACE_SUBTLE));
 
-          for (int i = 0; i < columns.size(); i++) {
+          for (var i = 0; i < columns.size(); i++) {
             if (!columns.get(i).rowHeader()) {
-              int colIndex = i + 1;
+              var colIndex = i + 1;
               c.select(
                   ":scope td:nth-child(" + colIndex + ")::before",
                   s ->
@@ -200,7 +199,7 @@ public record DataTable<T>(
     for (var item : rows) {
       var tr = Elements.tr();
       for (var col : columns) {
-        TagElement cell = col.rowHeader() ? Elements.th().attr("scope", "row") : Elements.td();
+        var cell = col.rowHeader() ? Elements.th().attr("scope", "row") : Elements.td();
         tr.child(cell.child(col.cellExtractor().apply(item)));
       }
       tbody.child(tr);

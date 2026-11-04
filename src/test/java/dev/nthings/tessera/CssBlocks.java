@@ -23,13 +23,13 @@ final class CssBlocks {
 
   /// The brace-balanced body following the first occurrence of `opening` (which ends with `{`).
   static String block(String css, String opening) {
-    int start = css.indexOf(opening);
+    var start = css.indexOf(opening);
     if (start < 0) {
       throw new AssertionError("No block starting with " + opening);
     }
-    int depth = 0;
-    for (int i = start + opening.length() - 1; i < css.length(); i++) {
-      char c = css.charAt(i);
+    var depth = 0;
+    for (var i = start + opening.length() - 1; i < css.length(); i++) {
+      var c = css.charAt(i);
       if (c == '{') {
         depth++;
       } else if (c == '}' && --depth == 0) {

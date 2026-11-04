@@ -72,8 +72,8 @@ public final class Breadcrumbs implements RenderView {
   @Override
   public Element render() {
     var list = ol();
-    for (int i = 0; i < crumbs.size(); i++) {
-      boolean isCurrent = i == crumbs.size() - 1;
+    for (var i = 0; i < crumbs.size(); i++) {
+      var isCurrent = i == crumbs.size() - 1;
       var crumb = crumbs.get(i);
       var link =
           a(crumb.href())

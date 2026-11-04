@@ -23,7 +23,7 @@ public final class DocumentState {
 
   /// State stored under `key`, or `null` if no component on the page created it.
   public <T> @Nullable T get(DocumentKey<T> key) {
-    Object value = values.get(key);
+    var value = values.get(key);
     return value != null ? key.cast(value) : null;
   }
 

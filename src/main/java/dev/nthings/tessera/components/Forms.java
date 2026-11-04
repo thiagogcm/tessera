@@ -189,7 +189,7 @@ public final class Forms {
 
     @Override
     public Element render() {
-      ElementRef ctrl = control.ref();
+      var ctrl = control.ref();
 
       var container = div().attr("class", "field-container");
 

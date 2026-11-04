@@ -88,7 +88,7 @@ public final class PageCompiler {
       implements Comparable<ResolvedDeferred> {
     @Override
     public int compareTo(ResolvedDeferred other) {
-      int cmp = Integer.compare(this.priority, other.priority);
+      var cmp = Integer.compare(this.priority, other.priority);
       return cmp != 0 ? cmp : Long.compare(this.sequence, other.sequence);
     }
   }
@@ -122,8 +122,8 @@ public final class PageCompiler {
     }
 
     String bind(ElementRef ref, ViewScope scope, HtmlTag tag) {
-      ElementId local = ref.localId();
-      String domId = scope.extend(local != null ? local : nextAutoId(tag.tagName())).domId();
+      var local = ref.localId();
+      var domId = scope.extend(local != null ? local : nextAutoId(tag.tagName())).domId();
       if (boundDomIds.putIfAbsent(ref, domId) != null) {
         throw new AccessibilityViolationException(
             ref + " is bound to more than one element on the same page");
@@ -133,7 +133,7 @@ public final class PageCompiler {
     }
 
     String boundDomId(ElementRef ref, String usage) {
-      String domId = boundDomIds.get(ref);
+      var domId = boundDomIds.get(ref);
       if (domId == null) {
         throw new AccessibilityViolationException(
             usage + " references " + ref + ", which is not bound to any element on this page");
@@ -154,8 +154,8 @@ public final class PageCompiler {
   }
 
   public static CompiledPage compile(PageDocument document, Tokens tokens, OutputMode outputMode) {
-    PreparedPage prepared = prepare(document, tokens, List.of());
-    String cssContent = prepared.styles().toCssStylesheet(tokens);
+    var prepared = prepare(document, tokens, List.of());
+    var cssContent = prepared.styles().toCssStylesheet(tokens);
     return paintPrepared(prepared, cssContent, outputMode);
   }
 
@@ -169,16 +169,16 @@ public final class PageCompiler {
     record Phase1Result(ResolvedNode root, List<ResolvedNode> headNodes, DocumentState state) {}
 
     // Phase 1: requestLayout, then late elements, then end-of-document sections
-    Phase1Result p1 =
+    var p1 =
         RenderContext.runRoot(
             styles,
             tokens,
             () -> {
               siteHead.forEach(RenderContext.current()::contributeHead);
-              ResolvedNode root = requestLayout(document.bodyRoot().intoElement(), state);
+              var root = requestLayout(document.bodyRoot().intoElement(), state);
               resolveLateElements(state);
-              DocumentState docState = RenderContext.current().documentState();
-              int resolvedSections = 0;
+              var docState = RenderContext.current().documentState();
+              var resolvedSections = 0;
               List<Supplier<? extends IntoElement>> sections;
               while ((sections = docState.documentEndSections()).size() > resolvedSections) {
                 var section = sections.get(resolvedSections++);
@@ -188,7 +188,7 @@ public final class PageCompiler {
               }
               // Indexed: laying out a head element may contribute further head elements.
               var headNodes = new ArrayList<ResolvedNode>();
-              for (int i = 0; i < docState.headElements().size(); i++) {
+              for (var i = 0; i < docState.headElements().size(); i++) {
                 headNodes.add(requestLayout(docState.headElements().get(i), state));
                 resolveLateElements(state);
               }
@@ -196,10 +196,10 @@ public final class PageCompiler {
             });
 
     // Phase 2: prepaint
-    List<ResolvedNode> bodyNodes = prepaint(p1.root(), state);
+    var bodyNodes = prepaint(p1.root(), state);
     var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
     for (var head : p1.headNodes()) {
-      ResolvedNode linked = link(head, state);
+      var linked = link(head, state);
       validateNodeTree(linked, state);
       headNodes.add(linked);
     }
@@ -218,7 +218,7 @@ public final class PageCompiler {
   public static CompiledPage paintPrepared(
       PreparedPage prepared, String cssContent, OutputMode outputMode) {
     var htmlBuffer = new StringBuilder(4096);
-    String externalCssPath =
+    var externalCssPath =
         paint(
             prepared.document(),
             prepared.bodyNodes(),
@@ -236,13 +236,13 @@ public final class PageCompiler {
       case TextElement(var content) -> new ResolvedText(content);
       case RawHtmlElement(var html) -> new ResolvedRaw(html);
       case DeferredElement(var child, int priority) -> {
-        ResolvedNode resolvedDeferredChild = requestLayout(child, state);
+        var resolvedDeferredChild = requestLayout(child, state);
         state.enqueueDeferred(priority, resolvedDeferredChild);
         yield ResolvedEmpty.INSTANCE;
       }
       case RenderOnceElement(var component) -> requestLayout(component.render(), state);
       case LateElement(var content) -> {
-        int slot = state.lateSlots.size();
+        var slot = state.lateSlots.size();
         state.lateSlots.add(null);
         state.pendingLate.add(
             () ->
@@ -251,18 +251,18 @@ public final class PageCompiler {
         yield new ResolvedSlot(slot);
       }
       case RenderViewElement(var view) -> {
-        ElementId entityId = view.entityId();
+        var entityId = view.entityId();
         yield ctx.withViewScope(
             entityId != null ? entityId : state.nextAutoId(view.viewType()),
             () -> {
-              String instanceScopeId = RenderContext.current().viewScope().domId();
+              var instanceScopeId = RenderContext.current().viewScope().domId();
               var scope = new ScopeStyle();
               view.configureScope(scope);
-              String resolvedViewType =
+              var resolvedViewType =
                   RenderContext.current()
                       .styles()
                       .registerViewScope(view.viewType(), scope.toCssBody());
-              ResolvedNode inner = requestLayout(view.render(), state);
+              var inner = requestLayout(view.render(), state);
               return attachViewScopeAttributes(inner, resolvedViewType, instanceScopeId);
             });
       }
@@ -296,26 +296,26 @@ public final class PageCompiler {
     var ctx = RenderContext.current();
     var attrs = new LinkedHashMap<>(tag.attributes());
 
-    String domId = forcedDomId;
-    ElementRef ref = tag.boundRef();
+    var domId = forcedDomId;
+    var ref = tag.boundRef();
     if (domId == null && ref != null) {
       domId = state.bind(ref, ctx.viewScope(), tag.tag());
     }
     if (domId != null) {
       attrs.put("id", domId);
     } else {
-      String explicitId = attrs.get("id");
+      var explicitId = attrs.get("id");
       if (explicitId != null && !explicitId.isBlank()) {
         state.registerDomId(explicitId);
       }
     }
 
-    StyleRefinement style = withIdentityStyles(tag, domId, state);
+    var style = withIdentityStyles(tag, domId, state);
     if (tag.tag() == HtmlTag.IMG) {
       validateImage(attrs, style);
     }
 
-    TransitionKey transitionKey = tag.transitionKey();
+    var transitionKey = tag.transitionKey();
     if (transitionKey != null) {
       if (!state.viewTransitionNames.add(transitionKey.name())) {
         throw new AccessibilityViolationException(
@@ -324,16 +324,16 @@ public final class PageCompiler {
                 + "' found on the same page. TransitionKey names must be unique per document.");
       }
       state.transitionKeys.add(transitionKey);
-      String transitionClass = transitionKey.transitionClass();
+      var transitionClass = transitionKey.transitionClass();
       if (transitionClass != null) {
         ctx.styles().registerTransitionClass(transitionClass);
       }
     }
 
-    List<String> generatedClasses = ctx.styles().registerElementStyles(style, tag.interactivity());
+    var generatedClasses = ctx.styles().registerElementStyles(style, tag.interactivity());
     if (!generatedClasses.isEmpty()) {
-      String existingClass = attrs.get("class");
-      String joined = String.join(" ", generatedClasses);
+      var existingClass = attrs.get("class");
+      var joined = String.join(" ", generatedClasses);
       attrs.put(
           "class",
           existingClass == null || existingClass.isBlank() ? joined : existingClass + " " + joined);
@@ -342,7 +342,7 @@ public final class PageCompiler {
     ResolvedTag companionTooltip = null;
     var tooltipElement = tag.interestTooltip();
     if (tooltipElement != null && domId != null) {
-      String tooltipDomId = domId + "--tooltip";
+      var tooltipDomId = domId + "--tooltip";
       attrs.put("interestfor", tooltipDomId);
       state.registerDomId(tooltipDomId);
       companionTooltip = resolveTag(tooltipElement, tooltipDomId, state);
@@ -350,7 +350,7 @@ public final class PageCompiler {
 
     var resolvedChildren = new ArrayList<ResolvedNode>(tag.childrenList().size());
     for (var child : tag.childrenList()) {
-      ResolvedNode resolvedChild = requestLayout(child, state);
+      var resolvedChild = requestLayout(child, state);
       if (!(resolvedChild instanceof ResolvedEmpty)) {
         resolvedChildren.add(resolvedChild);
       }
@@ -367,8 +367,8 @@ public final class PageCompiler {
   /// Adds declarations derived from identity: anchor names and view-transition keys.
   private static StyleRefinement withIdentityStyles(
       TagElement tag, @Nullable String domId, CompilationState state) {
-    ElementRef anchorTarget = tag.anchorTarget();
-    TransitionKey transitionKey = tag.transitionKey();
+    var anchorTarget = tag.anchorTarget();
+    var transitionKey = tag.transitionKey();
     if (!tag.isAnchor() && anchorTarget == null && transitionKey == null) {
       return tag.style();
     }
@@ -377,12 +377,12 @@ public final class PageCompiler {
       style.put(CssProperty.ANCHOR_NAME, anchorIdent(domId));
     }
     if (anchorTarget != null) {
-      String usage = "<" + tag.tag().tagName() + "> anchoredTo (anchor must be laid out earlier)";
+      var usage = "<" + tag.tag().tagName() + "> anchoredTo (anchor must be laid out earlier)";
       style.put(CssProperty.POSITION_ANCHOR, anchorIdent(state.boundDomId(anchorTarget, usage)));
     }
     if (transitionKey != null) {
       style.put(CssProperty.VIEW_TRANSITION_NAME, transitionKey.name());
-      String transitionClass = transitionKey.transitionClass();
+      var transitionClass = transitionKey.transitionClass();
       if (transitionClass != null) {
         style.put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
       }
@@ -396,7 +396,7 @@ public final class PageCompiler {
 
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   private static void validateImage(Map<String, String> attrs, StyleRefinement style) {
-    String alt = attrs.get("alt");
+    var alt = attrs.get("alt");
     if (alt == null) {
       throw new AccessibilityViolationException(
           "<img> element is missing a required 'alt' attribute");
@@ -407,7 +407,7 @@ public final class PageCompiler {
       throw new AccessibilityViolationException(
           "Decorative <img> with empty alt=\"\" must declare role=\"presentation\" or aria-hidden=\"true\"");
     }
-    boolean hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
+    var hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
     if (!hasWidthAndHeight && style.get(CssProperty.ASPECT_RATIO) == null) {
       throw new AccessibilityViolationException(
           "<img> element with src=\""
@@ -428,7 +428,7 @@ public final class PageCompiler {
   /// every ref on the page is bound.
   private static ResolvedNode link(ResolvedNode node, CompilationState state) {
     if (node instanceof ResolvedSlot(int index)) {
-      ResolvedNode content = state.lateSlots.get(index);
+      var content = state.lateSlots.get(index);
       if (content == null) {
         throw new IllegalStateException("Late element was linked before it was laid out");
       }
@@ -437,7 +437,7 @@ public final class PageCompiler {
     if (!(node instanceof ResolvedTag tag)) {
       return node;
     }
-    Map<String, String> attrs = tag.attributes();
+    var attrs = tag.attributes();
     if (!tag.idReferences().isEmpty()) {
       var linked = new LinkedHashMap<>(attrs);
       tag.idReferences()
@@ -494,8 +494,8 @@ public final class PageCompiler {
   }
 
   private static void validateTagAccessibility(ResolvedTag tag, CompilationState state) {
-    Map<String, String> attrs = tag.attributes();
-    Set<String> registeredDomIds = state.registeredDomIds;
+    var attrs = tag.attributes();
+    var registeredDomIds = state.registeredDomIds;
 
     if (tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) {
       if (!hasAccessibleLabel(tag)) {
@@ -506,18 +506,18 @@ public final class PageCompiler {
       }
     }
 
-    for (String urlAttribute : URL_ATTRIBUTES) {
-      String url = attrs.get(urlAttribute);
+    for (var urlAttribute : URL_ATTRIBUTES) {
+      var url = attrs.get(urlAttribute);
       if (url != null && !url.isBlank()) {
         state.outgoingHrefs.add(url);
       }
     }
 
     if (tag.tag() == HtmlTag.A) {
-      String href = attrs.get("href");
+      var href = attrs.get("href");
       if (href != null) {
         if (href.startsWith("#") && href.length() > 1) {
-          String fragment = href.substring(1);
+          var fragment = href.substring(1);
           if (!registeredDomIds.contains(fragment)) {
             throw new AccessibilityViolationException(
                 "Anchor link href=\""
@@ -528,7 +528,7 @@ public final class PageCompiler {
       }
     }
 
-    String commandFor = attrs.get("commandfor");
+    var commandFor = attrs.get("commandfor");
     if (commandFor != null && !registeredDomIds.contains(commandFor)) {
       throw new AccessibilityViolationException(
           "Invoker attribute commandfor=\""
@@ -536,7 +536,7 @@ public final class PageCompiler {
               + "\" references a non-existent target ID in the document");
     }
 
-    String interestFor = attrs.get("interestfor");
+    var interestFor = attrs.get("interestfor");
     if (interestFor != null && !registeredDomIds.contains(interestFor)) {
       throw new AccessibilityViolationException(
           "Interest invoker attribute interestfor=\""
@@ -546,7 +546,7 @@ public final class PageCompiler {
   }
 
   private static boolean hasAccessibleLabel(ResolvedTag tag) {
-    Map<String, String> attrs = tag.attributes();
+    var attrs = tag.attributes();
     if (isNonBlank(attrs.get("aria-label"))
         || isNonBlank(attrs.get("aria-labelledby"))
         || isNonBlank(attrs.get("title"))) {
@@ -557,7 +557,7 @@ public final class PageCompiler {
 
   private static boolean containsReadableText(List<ResolvedNode> children) {
     for (var child : children) {
-      boolean found =
+      var found =
           switch (child) {
             case ResolvedText(var text) -> !text.isBlank();
             case ResolvedRaw(var raw) -> !raw.isBlank();
@@ -612,8 +612,8 @@ public final class PageCompiler {
         out.append("</style>\n");
       }
       case OutputMode.ExternalAsset(var basePath) -> {
-        long cssHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, cssContent);
-        String normalizedBase =
+        var cssHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, cssContent);
+        var normalizedBase =
             basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
         externalCssPath = normalizedBase + "/styles-" + Fnv1a64.toBase36Hash(cssHash) + ".css";
         out.append("<link rel=\"stylesheet\" href=\"");
@@ -639,7 +639,7 @@ public final class PageCompiler {
       case ResolvedTag tag -> {
         out.append('<').append(tag.tag().tagName());
         for (var attr : tag.attributes().entrySet()) {
-          String value = attr.getValue();
+          var value = attr.getValue();
           out.append(' ').append(attr.getKey());
           if (!value.isEmpty()) {
             out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');

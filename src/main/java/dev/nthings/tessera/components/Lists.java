@@ -45,8 +45,7 @@ public final class Lists {
 
     @Override
     public Element render() {
-      TagElement ul =
-          Elements.ul().flex().flexCol().gap(CssLength.rem(0.5)).px(CssLength.rem(1.25));
+      var ul = Elements.ul().flex().flexCol().gap(CssLength.rem(0.5)).px(CssLength.rem(1.25));
       ul.children(listItems(items));
       return ul;
     }
@@ -64,7 +63,7 @@ public final class Lists {
 
     @Override
     public Element render() {
-      TagElement ol =
+      var ol =
           Elements.ol()
               .flex()
               .flexCol()
@@ -94,7 +93,7 @@ public final class Lists {
 
     @Override
     public Element render() {
-      TagElement dl =
+      var dl =
           Elements.dl()
               .grid()
               .gridColumns("minmax(8rem, max-content) 1fr")

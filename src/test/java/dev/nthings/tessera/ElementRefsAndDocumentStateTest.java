@@ -153,10 +153,10 @@ class ElementRefsAndDocumentStateTest {
   @DisplayName("Builds are reproducible and compiling never mutates the input tree")
   void deterministicAutoIds() {
     var button = button().attr("class", "custom").px(CssLength.rem(1)).text("Go");
-    Element body = main().children(Callout.note("one"), Callout.tip("two"), button);
-    String first = PageCompiler.compile(new PageDocument("T", body)).html();
-    String second = PageCompiler.compile(new PageDocument("T", body)).html();
-    String rebuilt =
+    var body = main().children(Callout.note("one"), Callout.tip("two"), button);
+    var first = PageCompiler.compile(new PageDocument("T", body)).html();
+    var second = PageCompiler.compile(new PageDocument("T", body)).html();
+    var rebuilt =
         PageCompiler.compile(
                 new PageDocument(
                     "T",

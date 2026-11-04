@@ -19,7 +19,7 @@ record Page(
   static final String TOC_ID = "toc";
 
   static Page ofDemos(String path, String navLabel, String title, String summary, Demo... demos) {
-    List<Demo> sections = List.of(demos);
+    var sections = List.of(demos);
     return new Page(path, navLabel, title, summary, sections, () -> docLayout(sections));
   }
 

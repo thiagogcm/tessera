@@ -186,7 +186,7 @@ public interface InteractiveElement<
   }
 
   default SELF container(String containerName) {
-    String safeName = Fnv1a64.sanitizeIdentifier(containerName);
+    var safeName = Fnv1a64.sanitizeIdentifier(containerName);
     style().put(CssProperty.CONTAINER_NAME, safeName);
     style().put(CssProperty.CONTAINER_TYPE, "inline-size");
     return self();
@@ -255,7 +255,7 @@ public interface InteractiveElement<
   }
 
   default SELF viewTimeline(String name, TimelineAxis axis) {
-    String ident = "--" + Fnv1a64.sanitizeIdentifier(name);
+    var ident = "--" + Fnv1a64.sanitizeIdentifier(name);
     style().put(CssProperty.VIEW_TIMELINE, ident + " " + axis.css());
     return self();
   }

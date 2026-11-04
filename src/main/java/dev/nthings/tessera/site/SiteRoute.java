@@ -24,7 +24,7 @@ public record SiteRoute(
     if (rawPath.isBlank()) {
       throw new IllegalArgumentException("Route path cannot be blank");
     }
-    String p = rawPath.trim();
+    var p = rawPath.trim();
     if (!p.startsWith("/")) {
       p = "/" + p;
     }
@@ -44,7 +44,7 @@ public record SiteRoute(
     if ("/".equals(routePath)) {
       return Path.of("index.html");
     }
-    String stripped = routePath.substring(1);
+    var stripped = routePath.substring(1);
     if (stripped.endsWith(".html")) {
       return Path.of(stripped);
     }

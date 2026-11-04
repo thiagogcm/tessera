@@ -35,7 +35,7 @@ public final class StyleRefinement
   }
 
   public StyleRefinement customProperty(String name, String value) {
-    String normalized = name.startsWith("--") ? name : "--" + Fnv1a64.sanitizeIdentifier(name);
+    var normalized = name.startsWith("--") ? name : "--" + Fnv1a64.sanitizeIdentifier(name);
     customProperties.put(normalized, value);
     return this;
   }
@@ -55,7 +55,7 @@ public final class StyleRefinement
   }
 
   public long contentHash() {
-    long hash = Fnv1a64.OFFSET_BASIS;
+    var hash = Fnv1a64.OFFSET_BASIS;
     for (var entry : declarations.entrySet()) {
       hash = Fnv1a64.updateInt(hash, entry.getKey().ordinal());
       hash = Fnv1a64.updateChars(hash, entry.getValue());

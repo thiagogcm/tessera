@@ -51,7 +51,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   private @Nullable String badge;
   private final List<Element> children = new ArrayList<>();
 
-  public ContentSection(String id, String title) {
+  private ContentSection(String id, String title) {
     this.rawId = Fnv1a64.sanitizeIdentifier(id);
     this.title = title;
   }

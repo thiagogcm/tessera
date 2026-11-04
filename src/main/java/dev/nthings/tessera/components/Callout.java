@@ -73,7 +73,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
   private @Nullable String customTitle;
   private final List<Element> children = new ArrayList<>();
 
-  public Callout(Tone tone) {
+  private Callout(Tone tone) {
     this.tone = tone;
   }
 

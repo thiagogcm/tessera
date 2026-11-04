@@ -38,7 +38,7 @@ public final class SiteNavigation {
       }
     }
     if (currentIdx < 0) {
-      return new DocPager();
+      return DocPager.of(null, null);
     }
     DocPager.PageRef prev = null;
     if (currentIdx > 0) {
@@ -52,6 +52,6 @@ public final class SiteNavigation {
       String title = n.displayTitle();
       next = new DocPager.PageRef(n.path(), title);
     }
-    return new DocPager(prev, next);
+    return DocPager.of(prev, next);
   }
 }

@@ -30,7 +30,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   private @Nullable String language;
   private boolean diffAutoDetect = false;
 
-  public CodeBlock(List<String> lines) {
+  private CodeBlock(List<String> lines) {
     this.lines.addAll(lines);
   }
 

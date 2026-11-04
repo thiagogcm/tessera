@@ -18,10 +18,6 @@ public record Grid(
   private static final String GRID_CONTAINER = "tessera-grid";
   private static final CssLength MULTI_COL_MIN_WIDTH = CssLength.rem(36);
 
-  public Grid(String columnsTemplate, CssLength gap, List<Element> items) {
-    this(columnsTemplate, gap, false, items);
-  }
-
   public static Grid autoFit(CssLength minColumnWidth, CssLength gap, IntoElement... items) {
     return autoFit(minColumnWidth, gap, List.of(items));
   }

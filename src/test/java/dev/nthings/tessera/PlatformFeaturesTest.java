@@ -10,8 +10,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.nthings.tessera.components.CardGrid;
 import dev.nthings.tessera.components.Carousel;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScrollReveal;
+import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
@@ -85,15 +89,14 @@ class PlatformFeaturesTest {
                     "A",
                     main()
                         .child(
-                            new CardGrid(
-                                "g", CssLength.rem(18), CssLength.rem(1), p().text("a"))))),
+                            CardGrid.of("g", CssLength.rem(18), CssLength.rem(1), p().text("a"))))),
             new SiteRoute(
                 "/b",
                 new PageDocument(
                     "B",
                     main()
                         .child(
-                            new CardGrid(
+                            CardGrid.of(
                                 "g", CssLength.rem(15), CssLength.rem(1), p().text("b"))))));
     var site = SiteCompiler.compile(SiteDefinition.of(routes));
 
@@ -109,6 +112,24 @@ class PlatformFeaturesTest {
 
   private static String viewKey(String html, String viewType) {
     return Jsoup.parse(html).selectFirst("[data-view^=" + viewType + "-]").attr("data-view");
+  }
+
+  @Test
+  @DisplayName("Site tokens drive both rendering and the shared stylesheet of every page")
+  void siteTokensReachRenderingAndCss() {
+    var brand = new DesignToken("brand-hue", "oklch(60% 0.2 300)");
+    RenderOnce tokenProbe =
+        () ->
+            p().text(RenderContext.current().tokens().all().contains(brand) ? "brand" : "default");
+    var site =
+        SiteCompiler.compile(
+            SiteDefinition.builder()
+                .tokens(new Tokens().register(brand))
+                .route(new SiteRoute("/", new PageDocument("Home", main().child(tokenProbe))))
+                .build());
+
+    assertThat(site.pagesByRoute().get("/").html()).contains("<p>brand</p>");
+    assertThat(site.sharedCssContent()).contains("--brand-hue:oklch(60% 0.2 300)");
   }
 
   @Test

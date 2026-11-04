@@ -17,8 +17,13 @@ public record CardGrid(
     String id, CssLength minCardWidth, CssLength gap, List<? extends IntoElement> cards)
     implements RenderView {
 
-  public CardGrid(String id, CssLength minCardWidth, CssLength gap, IntoElement... cards) {
-    this(id, minCardWidth, gap, List.of(cards));
+  public CardGrid {
+    cards = List.copyOf(cards);
+  }
+
+  public static CardGrid of(
+      String id, CssLength minCardWidth, CssLength gap, IntoElement... cards) {
+    return new CardGrid(id, minCardWidth, gap, List.of(cards));
   }
 
   @Override

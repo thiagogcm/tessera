@@ -108,8 +108,7 @@ final class OverviewPage {
         .flexCol()
         .gap(CssLength.rem(2.5))
         .children(
-            new CardGrid(
-                "areas", CssLength.rem(18), CssLength.rem(1.25), cards.toArray(IntoElement[]::new)),
+            new CardGrid("areas", CssLength.rem(18), CssLength.rem(1.25), cards),
             block(
                 "How it compiles",
                 CodeBlock.ofLines(

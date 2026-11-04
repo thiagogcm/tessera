@@ -30,7 +30,7 @@ public final class Dropdown implements RenderView {
   private final String triggerLabel;
   private final List<Element> items = new ArrayList<>();
 
-  public Dropdown(String id, String triggerLabel) {
+  private Dropdown(String id, String triggerLabel) {
     this.id = ElementId.of(id);
     this.triggerLabel = triggerLabel;
   }

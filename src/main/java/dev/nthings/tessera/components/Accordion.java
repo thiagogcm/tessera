@@ -40,7 +40,7 @@ public final class Accordion implements RenderView {
   private final boolean exclusive;
   private final List<Item> items = new ArrayList<>();
 
-  public Accordion(String id, boolean exclusive) {
+  private Accordion(String id, boolean exclusive) {
     this.id = ElementId.of(id);
     this.groupName = Fnv1a64.sanitizeIdentifier(id);
     this.exclusive = exclusive;

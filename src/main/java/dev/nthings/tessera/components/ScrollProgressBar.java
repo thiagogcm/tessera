@@ -20,10 +20,6 @@ public record ScrollProgressBar(
   private static final String PROGRESS_KEYFRAME =
       "@keyframes tessera-scroll-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}";
 
-  public ScrollProgressBar() {
-    this("reading-progress", Tokens.ACCENT_PRIMARY, CssLength.rem(0.25), TimelineAxis.BLOCK);
-  }
-
   public ScrollProgressBar(String id) {
     this(id, Tokens.ACCENT_PRIMARY, CssLength.rem(0.25), TimelineAxis.BLOCK);
   }

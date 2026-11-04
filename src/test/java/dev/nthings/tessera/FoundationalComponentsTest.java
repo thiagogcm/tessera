@@ -117,7 +117,7 @@ class FoundationalComponentsTest {
             .choiceRadio("plan", "pro", true);
 
     var cardGrid =
-        new CardGrid(
+        CardGrid.of(
             "feature-cards",
             CssLength.rem(18),
             CssLength.rem(1.25),

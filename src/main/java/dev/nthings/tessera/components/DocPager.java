@@ -21,11 +21,7 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
   private @Nullable PageRef prev;
   private @Nullable PageRef next;
 
-  public DocPager() {
-    this(null, null);
-  }
-
-  public DocPager(@Nullable PageRef prev, @Nullable PageRef next) {
+  private DocPager(@Nullable PageRef prev, @Nullable PageRef next) {
     this.prev = prev;
     this.next = next;
   }

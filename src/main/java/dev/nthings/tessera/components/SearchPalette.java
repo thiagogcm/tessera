@@ -56,7 +56,7 @@ public final class SearchPalette implements RenderView {
   private String triggerLabel = "Search docs...";
   private final Map<String, List<SearchItem>> groupedItems = new LinkedHashMap<>();
 
-  public SearchPalette(ElementId id) {
+  private SearchPalette(ElementId id) {
     this.id = id;
   }
 

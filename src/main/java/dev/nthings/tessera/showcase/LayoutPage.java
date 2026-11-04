@@ -79,7 +79,7 @@ final class LayoutPage {
                 + "containers.")
         .features("@container", ":has()", "subgrid", "stretched link ::after")
         .example(
-            new CardGrid(
+            CardGrid.of(
                 "card-variants",
                 CssLength.rem(15),
                 CssLength.rem(1),

@@ -42,7 +42,7 @@ public final class Carousel implements RenderView {
   private final String ariaLabel;
   private final List<Slide> slides = new ArrayList<>();
 
-  public Carousel(String id, String ariaLabel) {
+  private Carousel(String id, String ariaLabel) {
     this.id = ElementId.of(id);
     this.ariaLabel = ariaLabel;
   }

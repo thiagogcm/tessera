@@ -48,7 +48,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   private final List<Element> footerActions = new ArrayList<>();
   private Interaction interaction = Interaction.Content.INSTANCE;
 
-  public Card(String id) {
+  private Card(String id) {
     this.id = id;
   }
 

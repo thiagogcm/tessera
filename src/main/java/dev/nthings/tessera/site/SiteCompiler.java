@@ -82,7 +82,8 @@ public final class SiteCompiler {
 
     var siteHead = site.linkSpeculation().headElements();
     List<PageCompiler.PreparedPage> preparedPages =
-        parallelMap(routes, route -> PageCompiler.prepare(route.document(), siteHead));
+        parallelMap(
+            routes, route -> PageCompiler.prepare(route.document(), site.tokens(), siteHead));
     for (int i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }

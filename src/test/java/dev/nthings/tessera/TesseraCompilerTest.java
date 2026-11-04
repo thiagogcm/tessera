@@ -186,7 +186,8 @@ class TesseraCompilerTest {
     var view = new WorkspacePanelView("core", cards);
     var doc = new PageDocument("en", "Tessera Workspace", view);
 
-    PageCompiler.CompiledPage compiled = PageCompiler.compile(doc, OutputMode.inlineStyle());
+    PageCompiler.CompiledPage compiled =
+        PageCompiler.compile(doc, new Tokens(), OutputMode.inlineStyle());
 
     assertThat(compiled.externalCssPath()).isNull();
     assertThat(compiled.cssContent())
@@ -281,7 +282,8 @@ class TesseraCompilerTest {
   @DisplayName("Emits external hashed stylesheet and head link")
   void emitsExternalHashedStylesheet() {
     var doc = new PageDocument("External CSS", main().p(CssLength.rem(2)).text("Hello"));
-    var compiled = PageCompiler.compile(doc, OutputMode.externalAsset("/static/assets/"));
+    var compiled =
+        PageCompiler.compile(doc, new Tokens(), OutputMode.externalAsset("/static/assets/"));
 
     assertThat(compiled.externalCssPath()).startsWith("/static/assets/styles-").endsWith(".css");
     Document parsed = Jsoup.parse(compiled.html());

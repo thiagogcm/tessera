@@ -27,7 +27,7 @@ public final class Breadcrumbs implements RenderView {
   private final ElementId id;
   private final List<Crumb> crumbs;
 
-  public Breadcrumbs(String id, List<Crumb> crumbs) {
+  private Breadcrumbs(String id, List<Crumb> crumbs) {
     if (crumbs.isEmpty()) {
       throw new IllegalArgumentException("Breadcrumbs requires at least 1 Crumb");
     }

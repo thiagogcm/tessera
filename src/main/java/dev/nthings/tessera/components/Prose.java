@@ -21,7 +21,7 @@ public final class Prose implements RenderView, ParentElement<Prose> {
   private final List<Element> children = new ArrayList<>();
   private CssLength maxMeasure = CssLength.ch(75);
 
-  public Prose(ElementId id) {
+  private Prose(ElementId id) {
     this.id = id;
   }
 

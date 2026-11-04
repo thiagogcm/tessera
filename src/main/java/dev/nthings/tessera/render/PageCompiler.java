@@ -23,6 +23,7 @@ import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.Tokens;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
@@ -149,23 +150,21 @@ public final class PageCompiler {
 
   private PageCompiler() {}
 
+  /// Compiles `document` with the default [Tokens] and an inline `<style>`.
   public static CompiledPage compile(PageDocument document) {
-    return compile(document, OutputMode.inlineStyle());
+    return compile(document, new Tokens(), OutputMode.inlineStyle());
   }
 
-  public static CompiledPage compile(PageDocument document, OutputMode outputMode) {
-    PreparedPage prepared = prepare(document);
-    String cssContent = prepared.styles().toCssStylesheet(document.tokens());
+  public static CompiledPage compile(PageDocument document, Tokens tokens, OutputMode outputMode) {
+    PreparedPage prepared = prepare(document, tokens, List.of());
+    String cssContent = prepared.styles().toCssStylesheet(tokens);
     return paintPrepared(prepared, cssContent, outputMode);
   }
 
-  public static PreparedPage prepare(PageDocument document) {
-    return prepare(document, List.of());
-  }
-
-  /// Prepares `document` with `siteHead` elements (shared by every page of a site) placed in
-  /// `<head>` ahead of anything the page contributes.
-  public static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
+  /// Runs layout and prepaint for `document` under `tokens`, with `siteHead` elements (shared by
+  /// every page of a site) placed in `<head>` ahead of anything the page contributes.
+  public static PreparedPage prepare(
+      PageDocument document, Tokens tokens, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheetCollector();
     var state = new CompilationState();
 
@@ -175,7 +174,7 @@ public final class PageCompiler {
     Phase1Result p1 =
         RenderContext.runRoot(
             styles,
-            document.tokens(),
+            tokens,
             () -> {
               siteHead.forEach(RenderContext.current()::contributeHead);
               ResolvedNode root = requestLayout(document.bodyRoot().intoElement(), state);

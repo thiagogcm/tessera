@@ -246,7 +246,9 @@ public final class SiteCompiler {
       var tocs = Toc.entries(preparedPages.get(i).documentState());
       for (var j = 0; j < tocs.size(); j++) {
         var toc = tocs.get(j);
-        if (j > 0) sb.append(", ");
+        if (j > 0) {
+          sb.append(", ");
+        }
         sb.append("{\"id\": \"")
             .append(escapeJson(toc.targetDomId()))
             .append("\", \"title\": \"")

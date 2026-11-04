@@ -68,7 +68,7 @@
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
         <module name="NeedBraces">
-            <property name="tokens" value="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_WHILE"/>
+            <property name="tokens" value="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_IF, LITERAL_WHILE"/>
         </module>
 
         <!-- Docs use JEP 467 Markdown comments (///), not legacy /** */ blocks -->

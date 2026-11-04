@@ -86,7 +86,7 @@ Tessera includes a comprehensive catalog of accessible, responsive components:
 
 | Category | Components | Highlights |
 | :--- | :--- | :--- |
-| **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnotes` | Subgrid alignment, typography scales, line numbering, language tags, and **zero-JS declarative copy button** (`commandfor`). |
+| **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnotes` | Subgrid alignment, typography scales, line numbering, and language tags. |
 | **Status & Badges** | `Badge`, `Pill` | OKLCH tinted, outline, and solid variants across 6 semantic tones, status dot indicators, anchor link support. |
 | **Navigation** | `Breadcrumbs`, `DocPager`, `StickyHeader`, `Toc` | Accessible breadcrumbs, pagination, sticky subgrid headers, and collapsible table of contents with integrated scrollspy. |
 | **Overlays & Popovers** | `Overlays` (`Modal`, `Drawer`), `Dropdown` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
@@ -152,21 +152,7 @@ public record MetricCard(String title, String value, Badge badge) implements Ren
 }
 ```
 
-### 2. Zero-JS Declarative Copy Button with CodeBlock
-
-```java
-// Emits a syntax block with a language tag and a zero-JS clipboard copy button
-// (enabled by default) wired via commandfor="<code-id>" command="--tessera-copy":
-CodeBlock.of("""
-    public static void main(String[] args) {
-      System.out.println("Hello, Tessera!");
-    }
-    """)
-    .language("java")
-    .highlightLines(2);
-```
-
-### 3. Badges & Pills
+### 2. Badges & Pills
 
 ```java
 // Badges with semantic tones and variants
@@ -179,7 +165,7 @@ Pill.accent("Baseline 2026+");
 Pill.neutral("JDK 25");
 ```
 
-### 4. Native Dialogs with Invoker Commands
+### 3. Native Dialogs with Invoker Commands
 
 ```java
 var modal = Overlays.modal("confirm", "Confirm action")

@@ -14,7 +14,7 @@ import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class BadgesAndCopyButtonTest {
+class BadgesTest {
 
   private static Document render(IntoElement... content) {
     return Jsoup.parse(
@@ -98,59 +98,16 @@ class BadgesAndCopyButtonTest {
   }
 
   @Test
-  @DisplayName("CodeBlock includes declarative copy button wired via commandfor")
-  void codeBlockIncludesDeclarativeCopyButton() {
+  @DisplayName("CodeBlock header renders the language as a pill badge")
+  void codeBlockHeaderRendersLanguagePill() {
     var block =
-        CodeBlock.ofLines("const greeting = 'hello';", "console.log(greeting);")
-            .filename("index.js")
-            .language("javascript");
+        CodeBlock.ofLines("const greeting = 'hello';").filename("index.js").language("javascript");
 
     var doc = render(block);
 
-    var btn = doc.selectFirst("button.code-copy-btn");
-    assertThat(btn).isNotNull();
-    assertThat(btn.attr("type")).isEqualTo("button");
-    assertThat(btn.attr("aria-label")).isEqualTo("Copy code to clipboard");
-    assertThat(btn.attr("command")).isEqualTo("--tessera-copy");
-
-    // Must target the code element by registered DOM ID
-    var targetId = btn.attr("commandfor");
-    assertThat(targetId).isNotBlank();
-
-    var codeEl = doc.getElementById(targetId);
-    assertThat(codeEl).isNotNull();
-    assertThat(codeEl.hasClass("code-lines")).isTrue();
-
-    // Check icons and label texts
-    assertThat(btn.selectFirst(".copy-icon")).isNotNull();
-    assertThat(btn.selectFirst(".copied-icon")).isNotNull();
-    assertThat(btn.selectFirst(".copy-text").text()).isEqualTo("Copy");
-    assertThat(btn.selectFirst(".copied-text").text()).isEqualTo("Copied!");
-
-    // Check language badge in header actions
-    var langPill = doc.selectFirst(".code-header-actions .badge.is-pill");
+    assertThat(doc.selectFirst(".code-header .code-filename").text()).isEqualTo("index.js");
+    var langPill = doc.selectFirst(".code-header .badge.is-pill");
     assertThat(langPill).isNotNull();
     assertThat(langPill.text()).isEqualTo("javascript");
-  }
-
-  @Test
-  @DisplayName("CodeBlock without header renders floating copy button")
-  void codeBlockWithoutHeaderRendersFloatingCopyButton() {
-    var block = CodeBlock.ofLines("echo 'hello'");
-    var doc = render(block);
-
-    assertThat(doc.select(".code-header")).isEmpty();
-    var btn = doc.selectFirst("button.code-copy-btn.is-floating");
-    assertThat(btn).isNotNull();
-    assertThat(btn.attr("command")).isEqualTo("--tessera-copy");
-  }
-
-  @Test
-  @DisplayName("CodeBlock copy button can be disabled")
-  void codeBlockCopyButtonCanBeDisabled() {
-    var block = CodeBlock.ofLines("echo 'no copy'").copyButton(false);
-    var doc = render(block);
-
-    assertThat(doc.select("button.code-copy-btn")).isEmpty();
   }
 }

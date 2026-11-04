@@ -20,10 +20,4 @@ public interface Action {
   default Map<String, String> payloadAttributes() {
     return Map.of();
   }
-
-  static Action of(String namespace, String name) {
-    return new SimpleAction(namespace, name);
-  }
 }
-
-record SimpleAction(String namespace, String name) implements Action {}

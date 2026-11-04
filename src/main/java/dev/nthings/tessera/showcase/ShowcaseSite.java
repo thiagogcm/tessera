@@ -54,9 +54,10 @@ public final class ShowcaseSite {
     for (int i = 0; i < args.length; i++) {
       switch (args[i]) {
         case "--output" -> {
-          if (i + 1 < args.length) {
-            outputDir = Path.of(args[++i]);
+          if (++i == args.length) {
+            throw new IllegalArgumentException("--output requires a directory");
           }
+          outputDir = Path.of(args[i]);
         }
         case "--serve" -> {
           serve = true;
@@ -64,12 +65,9 @@ public final class ShowcaseSite {
             port = Integer.parseInt(args[++i]);
           }
         }
-        case "--port" -> {
-          if (i + 1 < args.length) {
-            port = Integer.parseInt(args[++i]);
-          }
-        }
-        default -> {}
+        default ->
+            throw new IllegalArgumentException(
+                "Unknown option " + args[i] + "; usage: [--output <dir>] [--serve [port]]");
       }
     }
 

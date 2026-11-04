@@ -47,7 +47,7 @@ record Shell(Page page) implements RenderOnce {
                     Term.of(
                         "Cascade",
                         "@layer reset, base, theme, components, utilities, interactive, container"),
-                    Term.of("Isolation", "@scope ([data-view]) to ([data-view])"),
+                    Term.of("Isolation", "@scope ([data-view]) to (:scope [data-view] > *)"),
                     Term.of("Top layer", "<dialog>, [popover], @starting-style"),
                     Term.of("JavaScript", "None — invokers, popovers and CSS only")),
                 SimpleTable.create()

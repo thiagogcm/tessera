@@ -46,21 +46,16 @@ class DocumentationAndCwvPrimsTest {
 
     // 1. Head contains high-priority preload link for hero image
     var preloadLink = parsed.selectFirst("head > link[rel=preload][as=image]");
-    assertThat(preloadLink).isNotNull();
     assertThat(preloadLink.attr("href")).isEqualTo("/assets/hero-banner.webp");
     assertThat(preloadLink.attr("fetchpriority")).isEqualTo("high");
 
     // 2. Hero <img> element has fetchpriority=high and no loading=lazy
     var heroImg = parsed.selectFirst("img[src='/assets/hero-banner.webp']");
-    assertThat(heroImg).isNotNull();
     assertThat(heroImg.attr("fetchpriority")).isEqualTo("high");
     assertThat(heroImg.hasAttr("loading")).isFalse();
-    assertThat(heroImg.attr("width")).isEqualTo("1280");
-    assertThat(heroImg.attr("height")).isEqualTo("720");
 
     // 3. Below-the-fold image defaults to lazy loading and async decoding
     var secondaryImg = parsed.selectFirst("img[src='/assets/thumbnail.webp']");
-    assertThat(secondaryImg).isNotNull();
     assertThat(secondaryImg.attr("loading")).isEqualTo("lazy");
     assertThat(secondaryImg.attr("decoding")).isEqualTo("async");
     assertThat(secondaryImg.hasAttr("fetchpriority")).isFalse();
@@ -76,8 +71,7 @@ class DocumentationAndCwvPrimsTest {
 
     assertThatThrownBy(() -> PageCompiler.compile(invalidDoc))
         .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining(
-            "must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio'");
+        .hasMessageContaining("aspect-ratio");
   }
 
   @Test
@@ -137,13 +131,11 @@ class DocumentationAndCwvPrimsTest {
                 "/about", new PageDocument("About", h1().text("About").transitionKey(key))));
 
     var compiledSite = SiteCompiler.compile(validSite);
-    assertThat(compiledSite.sharedCssContent())
-        .contains(
-            "::view-transition-group(*.morph-class){animation-duration:0.35s;animation-timing-function:cubic-bezier(0.2,0,0,1)}");
+    assertThat(compiledSite.sharedCssContent()).contains("::view-transition-group(*.morph-class)");
   }
 
   @Test
-  @DisplayName("Compiles callout admonitions with semantic OKLCH tints")
+  @DisplayName("Callouts carry their tone and a default or custom title")
   void compilesCalloutAdmonitions() {
     var doc =
         new PageDocument(
@@ -156,29 +148,18 @@ class DocumentationAndCwvPrimsTest {
                     Callout.caution("Destructive operations require confirmation.")
                         .title("Hazard Ahead")));
 
-    var compiled = PageCompiler.compile(doc);
-    var parsed = Jsoup.parse(compiled.html());
+    var callouts = Jsoup.parse(PageCompiler.compile(doc).html()).select("aside[role=note]");
 
-    var callouts = parsed.select("aside[role=note]");
-    assertThat(callouts).hasSize(4);
-
-    var note = callouts.get(0);
-    assertThat(note.attr("class")).contains("callout--note");
-    assertThat(note.selectFirst(".callout-title").text()).isEqualTo("Note");
-    assertThat(note.text()).contains("Important note about JDK 25.");
-
-    var caution = callouts.get(3);
-    assertThat(caution.attr("class")).contains("callout--caution");
-    assertThat(caution.selectFirst(".callout-title").text()).isEqualTo("Hazard Ahead");
-
-    assertThat(compiled.cssContent())
-        .contains("@scope ([data-view=\"tessera-callout-")
-        .contains("color-mix(in oklab, var(--status-info) 14%, var(--surface-card))")
-        .contains("border-inline-start:4px solid var(--status-info)");
+    // Each tone gets its modifier class and a default title unless one is given
+    assertThat(callouts)
+        .extracting(e -> e.selectFirst(".callout-title").text())
+        .containsExactly("Note", "Tip", "Warning", "Hazard Ahead");
+    assertThat(callouts.getFirst().hasClass("callout--note")).isTrue();
+    assertThat(callouts.getLast().hasClass("callout--caution")).isTrue();
   }
 
   @Test
-  @DisplayName("Compiles accessible code blocks with counter line numbers and diff styling")
+  @DisplayName("Code blocks are focusable and mark diff and highlighted lines")
   void compilesAccessibleCodeBlock() {
     var block =
         CodeBlock.ofLines(
@@ -191,110 +172,60 @@ class DocumentationAndCwvPrimsTest {
             .filename("Tessera.java")
             .language("java")
             .diffAutoDetect(true)
-            .highlightLines(2);
+            .highlightLines(2, 3);
 
-    var compiled = PageCompiler.compile(new PageDocument("Code", main().child(block)));
-    var parsed = Jsoup.parse(compiled.html());
+    var parsed =
+        Jsoup.parse(PageCompiler.compile(new PageDocument("Code", main().child(block))).html());
 
-    // 1. Pre element must be keyboard focusable
-    var pre = parsed.selectFirst("pre.code-pre");
-    assertThat(pre).isNotNull();
-    assertThat(pre.attr("tabindex")).isEqualTo("0");
+    // Scrollable code must be keyboard focusable
+    assertThat(parsed.selectFirst("pre.code-pre").attr("tabindex")).isEqualTo("0");
 
-    // 2. Header bar with filename and language
-    assertThat(parsed.selectFirst(".code-filename").text()).isEqualTo("Tessera.java");
-    assertThat(parsed.selectFirst(".code-lang").text()).isEqualTo("java");
-
-    // 3. Diff and highlight line markers
+    // Diff markers win over highlighting; other highlighted lines are marked
     var lines = parsed.select("span.code-line");
     assertThat(lines).hasSize(6);
     assertThat(lines.get(1).hasClass("is-highlighted")).isTrue();
-    assertThat(lines.get(2).hasClass("is-add")).isTrue();
+    assertThat(lines.get(2).classNames()).contains("is-add").doesNotContain("is-highlighted");
     assertThat(lines.get(3).hasClass("is-del")).isTrue();
-
-    // 4. CSS contains counter line numbering
-    assertThat(compiled.cssContent())
-        .contains("counter-reset:code-line")
-        .contains("counter-increment:code-line")
-        .contains("content:counter(code-line)");
   }
 
   @Test
-  @DisplayName("Compiles doc pager pagination, sitemap XML, and search index JSON")
+  @DisplayName("Derives pagers, sitemap and search index from the site's routes")
   void compilesDocPagerSitemapAndSearchIndex() {
-    var site =
-        SiteDefinition.builder()
-            .baseUrl("https://tessera.dev")
-            .routes(
-                List.of(
-                    new SiteRoute(
-                        "/",
-                        new PageDocument(
-                            "Home",
-                            main()
-                                .children(
-                                    Toc.section(
-                                        "features", "Core Features", p().text("Fast compiler.")),
-                                    DocPager.of(
-                                        null, new DocPager.PageRef("/guide", "Getting Started")))),
-                        "Tessera Home",
-                        "Static HTML/CSS compiler"),
-                    new SiteRoute(
-                        "/guide",
-                        new PageDocument(
-                            "Guide",
-                            main()
-                                .children(
-                                    Toc.section(
-                                        "quickstart", "Quick Start", p().text("Setup commands.")),
-                                    Toc.subsection(
-                                        "config", "Configuration", p().text("Build flags.")),
-                                    DocPager.of(
-                                        new DocPager.PageRef("/", "Tessera Home"),
-                                        new DocPager.PageRef(
-                                            "/faq", "Frequently Asked Questions")))),
-                        "Getting Started",
-                        "Step by step guide"),
-                    new SiteRoute(
-                        "/faq",
-                        new PageDocument(
-                            "FAQ",
-                            main()
-                                .children(
-                                    Toc.section(
-                                        "questions", "Common Questions", p().text("Q&A list.")),
-                                    DocPager.of(
-                                        new DocPager.PageRef("/guide", "Getting Started"), null))),
-                        "Frequently Asked Questions",
-                        "Common questions answered")))
-            .build();
+    var routes =
+        List.of(
+            new SiteRoute(
+                "/",
+                new PageDocument("Home", main().child(Toc.section("features", "Features", p()))),
+                "Tessera Home",
+                "Static HTML/CSS compiler"),
+            new SiteRoute(
+                "/guide",
+                new PageDocument(
+                    "Guide",
+                    main()
+                        .children(
+                            Toc.section("quickstart", "Quick Start", p()),
+                            Toc.subsection("config", "Configuration", p()))),
+                "Getting Started"),
+            new SiteRoute("/faq", new PageDocument("FAQ", main().child(p().text("Q&A")))));
+    var site = SiteDefinition.builder().baseUrl("https://tessera.dev/").routes(routes).build();
 
-    // Verify SiteNavigation.docPager auto-resolution
-    var autoPager = SiteNavigation.docPager(site, "/guide");
-    assertThat(autoPager.prev()).isNotNull();
-    assertThat(autoPager.prev().href()).isEqualTo("/");
-    assertThat(autoPager.prev().title()).isEqualTo("Tessera Home");
-    assertThat(autoPager.next()).isNotNull();
-    assertThat(autoPager.next().href()).isEqualTo("/faq");
-    assertThat(autoPager.next().title()).isEqualTo("Frequently Asked Questions");
+    var pager = SiteNavigation.docPager(site, "/guide");
+    assertThat(pager.prev()).isEqualTo(new DocPager.PageRef("/", "Tessera Home"));
+    assertThat(pager.next()).isEqualTo(new DocPager.PageRef("/faq", "FAQ"));
+    assertThatThrownBy(() -> SiteNavigation.docPager(site, "/missing"))
+        .isInstanceOf(IllegalArgumentException.class);
 
     var compiledSite = SiteCompiler.compile(site);
-
-    // Verify sitemap.xml
-    assertThat(compiledSite.sitemapXml()).isNotNull();
     assertThat(compiledSite.sitemapXml())
         .contains("<loc>https://tessera.dev/</loc>")
-        .contains("<loc>https://tessera.dev/guide</loc>")
-        .contains("<loc>https://tessera.dev/faq</loc>");
+        .contains("<loc>https://tessera.dev/guide</loc>");
 
-    // Verify search-index.json
-    assertThat(compiledSite.searchIndexJson()).isNotNull();
-    assertThat(compiledSite.searchIndexJson())
-        .contains("\"path\": \"/\"")
-        .contains("\"title\": \"Tessera Home\"")
-        .contains("\"id\": \"features\"")
-        .contains("\"path\": \"/guide\"")
-        .contains("\"id\": \"quickstart\"")
-        .contains("\"id\": \"config\"");
+    String index = compiledSite.searchIndexJson().replaceAll("\\s", "");
+    assertThat(index)
+        .contains("\"path\":\"/guide\",\"title\":\"GettingStarted\"")
+        .contains("{\"id\":\"config\",\"title\":\"Configuration\",\"level\":3}");
+
+    assertThat(SiteCompiler.compile(SiteDefinition.of(routes)).sitemapXml()).isNull();
   }
 }

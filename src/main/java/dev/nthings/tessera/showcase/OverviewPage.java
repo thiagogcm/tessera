@@ -6,8 +6,8 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 
 import dev.nthings.tessera.components.Card;
-import dev.nthings.tessera.components.CardGrid;
 import dev.nthings.tessera.components.CodeBlock;
+import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Lists.DescriptionList;
 import dev.nthings.tessera.components.Lists.Term;
@@ -108,7 +108,7 @@ final class OverviewPage {
         .flexCol()
         .gap(CssLength.rem(2.5))
         .children(
-            new CardGrid("areas", CssLength.rem(18), CssLength.rem(1.25), cards),
+            Grid.autoFit(CssLength.rem(18), CssLength.rem(1.25), cards),
             block(
                 "How it compiles",
                 CodeBlock.ofLines(

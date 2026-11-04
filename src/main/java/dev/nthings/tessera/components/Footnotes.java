@@ -4,7 +4,6 @@ import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
@@ -39,19 +38,19 @@ public final class Footnotes {
   private static Entry register(String rawId, Element content) {
     var ctx = RenderContext.current();
     var registry = ctx.document(REGISTRY);
-    String slug = Fnv1a64.sanitizeIdentifier(rawId);
-    String scope = ctx.viewScope().domId();
-    String key = scope.isEmpty() ? slug : scope + "--" + slug;
+    ElementId local = ElementId.of(rawId);
+    String slug = local.slug();
+    String key = ctx.viewScope().extend(local).domId();
     var entry =
-        registry.entries.computeIfAbsent(
-            key,
-            k ->
-                new Entry(
-                    registry.entries.size() + 1,
-                    slug,
-                    ctx.viewScope().extend(ElementId.of("fnref-" + slug)).domId(),
-                    "fn-" + k,
-                    content));
+        new Entry(
+            registry.entries.size() + 1,
+            slug,
+            ctx.viewScope().extend(ElementId.of("fnref-" + slug)).domId(),
+            "fn-" + key,
+            content);
+    if (registry.entries.putIfAbsent(key, entry) != null) {
+      throw new IllegalArgumentException("Duplicate footnote id '" + key + "' on the same page");
+    }
     // Without an explicit section on the page, endnotes are appended after all content.
     ctx.atDocumentEnd(
         REGISTRY,

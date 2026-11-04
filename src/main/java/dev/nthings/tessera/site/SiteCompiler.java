@@ -43,6 +43,7 @@ public final class SiteCompiler {
       SequencedMap<String, SiteAsset> files) {
 
     public CompiledSite {
+      pagesByRoute = Collections.unmodifiableMap(new LinkedHashMap<>(pagesByRoute));
       files = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(files));
     }
 
@@ -106,29 +107,25 @@ public final class SiteCompiler {
             preparedPages,
             prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
     var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
-    String sharedCssPath = null;
     for (int i = 0; i < routes.size(); i++) {
-      PageCompiler.CompiledPage compiled = painted.get(i);
-      compiledPages.put(routes.get(i).path(), compiled);
-      if (sharedCssPath == null && compiled.externalCssPath() != null) {
-        sharedCssPath = compiled.externalCssPath();
-      }
+      compiledPages.put(routes.get(i).path(), painted.get(i));
     }
+    // Every page is painted with the same output mode and stylesheet, so they share one path.
+    String sharedCssPath = painted.getFirst().externalCssPath();
 
     if (sharedCssPath != null) {
       addFile(files, seenPaths, SiteAsset.text(sharedCssPath, sharedCssContent));
     }
     String baseUrl = site.baseUrl();
-    if (baseUrl != null && !baseUrl.isBlank()) {
+    if (baseUrl != null) {
       addFile(files, seenPaths, SiteAsset.text(SITEMAP_PATH, generateSitemapXml(baseUrl, routes)));
     }
     addFile(
         files,
         seenPaths,
-        SiteAsset.text(SEARCH_INDEX_PATH, generateSearchIndexJson(routes, preparedByRoute)));
+        SiteAsset.text(SEARCH_INDEX_PATH, generateSearchIndexJson(routes, preparedPages)));
 
-    return new CompiledSite(
-        Collections.unmodifiableMap(compiledPages), sharedCssPath, sharedCssContent, files);
+    return new CompiledSite(compiledPages, sharedCssPath, sharedCssContent, files);
   }
 
   /// Registers `file`, rejecting a path already taken by a route or another file.
@@ -158,11 +155,10 @@ public final class SiteCompiler {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Site compilation interrupted", e);
     } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof RuntimeException re) {
-        throw re;
+      if (e.getCause() instanceof RuntimeException unchecked) {
+        throw unchecked;
       }
-      throw new IllegalStateException("Site compilation failed", cause);
+      throw new IllegalStateException("Site compilation failed", e.getCause());
     }
   }
 
@@ -223,7 +219,7 @@ public final class SiteCompiler {
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     for (var route : routes) {
-      String loc = baseUrl + ("/".equals(route.path()) ? "/" : route.path());
+      String loc = baseUrl + route.path();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");
@@ -233,12 +229,11 @@ public final class SiteCompiler {
   }
 
   private static String generateSearchIndexJson(
-      List<SiteRoute> routes, Map<String, PageCompiler.PreparedPage> preparedByRoute) {
+      List<SiteRoute> routes, List<PageCompiler.PreparedPage> preparedPages) {
     var sb = new StringBuilder(2048);
     sb.append("[\n");
     for (int i = 0; i < routes.size(); i++) {
       var route = routes.get(i);
-      var prepared = preparedByRoute.get(route.path());
       String title = route.displayTitle();
       sb.append("  {\n");
       sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
@@ -248,19 +243,17 @@ public final class SiteCompiler {
         sb.append(",\n    \"description\": \"").append(escapeJson(routeDesc)).append("\"");
       }
       sb.append(",\n    \"headings\": [");
-      if (prepared != null) {
-        List<Toc.Item> tocs = Toc.entries(prepared.documentState());
-        for (int j = 0; j < tocs.size(); j++) {
-          var toc = tocs.get(j);
-          if (j > 0) sb.append(", ");
-          sb.append("{\"id\": \"")
-              .append(escapeJson(toc.targetDomId()))
-              .append("\", \"title\": \"")
-              .append(escapeJson(toc.title()))
-              .append("\", \"level\": ")
-              .append(toc.level())
-              .append("}");
-        }
+      List<Toc.Item> tocs = Toc.entries(preparedPages.get(i).documentState());
+      for (int j = 0; j < tocs.size(); j++) {
+        var toc = tocs.get(j);
+        if (j > 0) sb.append(", ");
+        sb.append("{\"id\": \"")
+            .append(escapeJson(toc.targetDomId()))
+            .append("\", \"title\": \"")
+            .append(escapeJson(toc.title()))
+            .append("\", \"level\": ")
+            .append(toc.level())
+            .append("}");
       }
       sb.append("]\n");
       sb.append("  }");
@@ -292,8 +285,7 @@ public final class SiteCompiler {
           if (assetPaths.contains(rawPath)) {
             continue;
           }
-          String targetRoute =
-              rawPath.isEmpty() ? sourceRoute : SiteRoute.normalizeRoutePath(rawPath);
+          String targetRoute = SiteRoute.normalizeRoutePath(rawPath);
 
           PageCompiler.PreparedPage targetPage = preparedByRoute.get(targetRoute);
           if (targetPage == null) {

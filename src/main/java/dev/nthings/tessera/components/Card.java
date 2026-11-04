@@ -127,6 +127,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return ElementId.of("card-" + id);
   }
 
+  private static final String MEDIA_CARD = ":scope:has(> img, > picture, > .media)";
+
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
@@ -163,22 +165,37 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             s ->
                 s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
                     .bg(Tokens.SURFACE_SUBTLE))
+        // Fixed region rows, so sibling cards line up when a CardGrid makes them subgrids
+        // (ignored while the card lays out as a flex column).
+        .select(":scope > :is(img, picture, .media, input)", s -> s.gridRow("1"))
+        .select(":scope > :is(h3, hgroup)", s -> s.gridRow("2"))
+        .select(
+            ":scope > :not(img, picture, .media, input, h3, hgroup, footer)", s -> s.gridRow("3"))
+        .select(":scope > footer", s -> s.gridRow("4"))
+        // Media cards: a two-column template whose children span both columns until the card
+        // itself is wide enough (the card is the query container for its children, not for
+        // itself, so the template cannot be conditional).
+        .select(
+            MEDIA_CARD,
+            s ->
+                s.grid()
+                    .gridColumns("minmax(10rem, 35%) 1fr")
+                    .colGap(CssLength.rem(1.25))
+                    .rowGap(CssLength.rem(0.75))
+                    .itemsStart())
+        .select(MEDIA_CARD + " > *", s -> s.gridColumn("1 / -1"))
         .containerMinInlineSize(
             CssLength.rem(28),
             c ->
                 c.select(
-                        ":scope:has(> img,> picture,> .media)",
-                        s ->
-                            s.grid()
-                                .gridColumns("minmax(10rem, 35%) 1fr")
-                                .colGap(CssLength.rem(1.25))
-                                .itemsStart())
-                    .select(
-                        ":scope:has(> img,> picture,> .media) > :is(img,picture,.media)",
+                        MEDIA_CARD + " > :is(img, picture, .media)",
                         s -> s.gridColumn("1").gridRow("1 / span 3"))
+                    .select(MEDIA_CARD + " > :not(img, picture, .media)", s -> s.gridColumn("2"))
+                    .select(MEDIA_CARD + " > :is(h3, hgroup)", s -> s.gridRow("1"))
                     .select(
-                        ":scope:has(> img,> picture,> .media) > :not(img,picture,.media)",
-                        s -> s.gridColumn("2")));
+                        MEDIA_CARD + " > :not(img, picture, .media, h3, hgroup, footer)",
+                        s -> s.gridRow("2"))
+                    .select(MEDIA_CARD + " > footer", s -> s.gridRow("3")));
   }
 
   @Override
@@ -213,7 +230,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             case Interaction.Content _, Interaction.Choice _ -> Elements.text(headingText);
           };
       TagElement h3 = Elements.h3().textBalance().child(headingInner);
-      if (subtitleText != null && !subtitleText.isBlank()) {
+      if (subtitleText != null) {
         root.child(
             Elements.hgroup()
                 .children(

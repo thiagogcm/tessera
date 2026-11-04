@@ -10,7 +10,6 @@ import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
@@ -52,7 +51,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   private final List<Element> children = new ArrayList<>();
 
   private ContentSection(String id, String title) {
-    this.rawId = Fnv1a64.sanitizeIdentifier(id);
+    this.rawId = id;
     this.title = title;
   }
 

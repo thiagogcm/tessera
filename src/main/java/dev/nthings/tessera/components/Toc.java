@@ -16,7 +16,6 @@ import dev.nthings.tessera.core.DocumentState;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
@@ -54,7 +53,11 @@ public final class Toc {
   static Item register(String rawId, String title, int level) {
     var ctx = RenderContext.current();
     String domId = ctx.viewScope().extend(ElementId.of(rawId)).domId();
-    return ctx.document(REGISTRY).entries.computeIfAbsent(domId, id -> new Item(id, title, level));
+    var item = new Item(domId, title, level);
+    if (ctx.document(REGISTRY).entries.putIfAbsent(domId, item) != null) {
+      throw new IllegalArgumentException("Duplicate section id '" + domId + "' on the same page");
+    }
+    return item;
   }
 
   /// Headings registered on a compiled page, in document order (e.g. for search indexes).
@@ -66,7 +69,6 @@ public final class Toc {
   /// Table of Contents item target.
   public record Item(String targetDomId, String title, int level) {
     public Item {
-      Fnv1a64.sanitizeIdentifier(targetDomId);
       ContentSection.checkHeadingLevel(level);
     }
 
@@ -84,7 +86,6 @@ public final class Toc {
       implements RenderOnce {
 
     public DocSection {
-      Fnv1a64.sanitizeIdentifier(id);
       ContentSection.checkHeadingLevel(level);
       body = List.copyOf(body);
     }

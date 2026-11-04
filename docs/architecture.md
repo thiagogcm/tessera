@@ -127,7 +127,7 @@ public sealed interface Element extends IntoElement
 2. **`RenderView` (Scoped Entity Boundary)**:
    - Represents an isolated UI module with an optional `ElementId entityId()` (default `null`: the compiler assigns a deterministic `<viewType>-<n>` per page), a shared component `viewType()` (defaulting to kebab-case of the class name, e.g., `Card` $\rightarrow$ `"card"`, cached per class in a `ClassValue`), and optional view-scoped CSS rules configured via a type-safe **`ScopeStyle`** builder (`configureScope(ScopeStyle scope)`).
    - Only `RenderView` boundaries extend the lexical `ViewScope` in `RenderContext`, so element ids bound inside a view share a deterministic view-level namespace regardless of how many intermediate `<div>` wrappers surround them.
-   - Emits `data-view="<resolved-view-type>"` (for shared `@scope ([data-view="<view-type>"]) to ([data-view])` CSS rules) and `data-view-id="<instance-scope-id>"` (for instance-level DOM identification).
+   - Emits `data-view="<resolved-view-type>"` (for shared `@scope ([data-view="<view-type>"]) to (:scope [data-view] > *)` CSS rules) and `data-view-id="<instance-scope-id>"` (for instance-level DOM identification).
 
 ```java
 public interface RenderView extends IntoElement {
@@ -350,7 +350,7 @@ public @Nullable String get(CssProperty property) { return declarations.get(prop
 `RenderView` components author their `@scope` rules via `ScopeStyle` (`configureScope(ScopeStyle scope)`), which expresses `:scope` root declarations (`root(UnaryOperator<StyleRefinement>)`), nested child rules (`select(selector, UnaryOperator<StyleRefinement>)`), top-layer `@starting-style` entry rules (`selectWithStartingStyle(selector, openMutator, startingMutator)`), scoped `@container` size and scroll-state queries (`containerMinInlineSize`, `containerMaxInlineSize`, `containerScrollState`, `container`), motion-safe gating (`motionSafe`), and feature fallbacks (`supportsNot`). The compiler builds the scope and calls `scope.toCssBody()`; views do not render CSS themselves.
 
 `StyleSheetCollector.registerViewScope(viewType, scopedCss)` performs content-addressed `@scope` deduplication:
-- View keys are content-addressed: a `RenderView` whose `ScopeStyle` produces CSS gets `data-view="<viewType>-<hash(body)>"`. All instances sharing the same CSS body emit a single `@scope ([data-view="<viewType>-<hash>"]) to ([data-view])` block in `@layer components`; parameterized instances with distinct rules get distinct keys, on any page, so per-page stylesheets merge without conflicts. Views without scoped CSS keep the bare `data-view="<viewType>"` as a scope boundary.
+- View keys are content-addressed: a `RenderView` whose `ScopeStyle` produces CSS gets `data-view="<viewType>-<hash(body)>"`. All instances sharing the same CSS body emit a single `@scope ([data-view="<viewType>-<hash>"]) to (:scope [data-view] > *)` block in `@layer components`; parameterized instances with distinct rules get distinct keys, on any page, so per-page stylesheets merge without conflicts. Views without scoped CSS keep the bare `data-view="<viewType>"` as a scope boundary.
 
 ### 5.4 Deterministic 7-Layer CSS Cascade (`@layer`)
 
@@ -363,7 +363,7 @@ In CSS Cascade Layers, layer order takes precedence over selector specificity, a
 1. **`@layer reset`**: Box-sizing/margin reset, `interpolate-size: allow-keywords` and `color-scheme: light dark` on `:root`, and responsive media defaults.
 2. **`@layer base`**: `@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }` with `::view-transition-group(*.<class>)` timing for registered transition classes, body defaults, `dialog { margin: auto }`, and collected `@keyframes`.
 3. **`@layer theme`**: Reactive design tokens (`--surface-canvas`, `--text-primary`, etc.) via native `light-dark(...)` and the CSS custom `@function --fluid(...)`.
-4. **`@layer components`**: Deduplicated donut-scoped `@scope ([data-view="<view-type>"]) to ([data-view])` rules emitted by `RenderView` components via `ScopeStyle`.
+4. **`@layer components`**: Deduplicated donut-scoped `@scope ([data-view="<view-type>"]) to (:scope [data-view] > *)` rules (the limit is inclusive: a view can lay out the root elements of nested views, never their insides) emitted by `RenderView` components via `ScopeStyle`.
 5. **`@layer utilities`**: Deduplicated atomic utility classes (`.u-<hash>`) generated from `StyleRefinement`.
 6. **`@layer interactive`**: State rules (`.i-<hash>`): `&:hover:not(:disabled)`, `&:focus-visible`, `&:active:not(:disabled)`, `&:user-invalid`, `&:user-valid`, `[data-group="..."]:hover &`, `&:has(...)`, and `@media (prefers-reduced-motion: no-preference)` scroll-driven animations, guaranteed to win over base `@layer utilities`.
 7. **`@layer container`**: `@container <name> (inline-size >= ...)` and `@container <name> style(...)` rules (`.cq-<hash>`), guaranteed to win over base `@layer utilities` despite identical `(0,1,0)` class selector specificity.

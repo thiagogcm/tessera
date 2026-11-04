@@ -2,7 +2,6 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.Fnv1a64;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,14 +52,6 @@ public final class StyleRefinement
 
   public @Nullable String get(CssProperty property) {
     return declarations.get(property);
-  }
-
-  public Map<CssProperty, String> declarations() {
-    return Collections.unmodifiableMap(declarations);
-  }
-
-  public Map<String, String> customProperties() {
-    return Collections.unmodifiableMap(customProperties);
   }
 
   public long contentHash() {

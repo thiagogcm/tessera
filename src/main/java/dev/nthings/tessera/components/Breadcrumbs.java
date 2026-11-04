@@ -32,7 +32,7 @@ public final class Breadcrumbs implements RenderView {
       throw new IllegalArgumentException("Breadcrumbs requires at least 1 Crumb");
     }
     this.id = ElementId.of(id);
-    this.crumbs = List.copyOf(crumbs);
+    this.crumbs = crumbs;
   }
 
   public static Breadcrumbs of(String id, Crumb... crumbs) {

@@ -5,7 +5,6 @@ import static dev.nthings.tessera.core.Elements.header;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
@@ -26,7 +25,7 @@ public final class StickyHeader implements RenderView {
 
   public StickyHeader(String id, IntoElement content) {
     this.id = ElementId.of(id);
-    this.containerName = "sticky-" + Fnv1a64.sanitizeIdentifier(id);
+    this.containerName = "sticky-" + this.id.slug();
     this.content = content.intoElement();
   }
 

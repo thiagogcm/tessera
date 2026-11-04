@@ -30,28 +30,16 @@ public final class SiteNavigation {
   public static DocPager docPager(SiteDefinition site, String currentPath) {
     String normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
     List<SiteRoute> routes = site.routes();
-    int currentIdx = -1;
-    for (int i = 0; i < routes.size(); i++) {
-      if (routes.get(i).path().equals(normalizedCurrent)) {
-        currentIdx = i;
-        break;
-      }
+    int index = routes.stream().map(SiteRoute::path).toList().indexOf(normalizedCurrent);
+    if (index < 0) {
+      throw new IllegalArgumentException("No route registered at " + normalizedCurrent);
     }
-    if (currentIdx < 0) {
-      return DocPager.of(null, null);
-    }
-    DocPager.PageRef prev = null;
-    if (currentIdx > 0) {
-      SiteRoute p = routes.get(currentIdx - 1);
-      String title = p.displayTitle();
-      prev = new DocPager.PageRef(p.path(), title);
-    }
-    DocPager.PageRef next = null;
-    if (currentIdx < routes.size() - 1) {
-      SiteRoute n = routes.get(currentIdx + 1);
-      String title = n.displayTitle();
-      next = new DocPager.PageRef(n.path(), title);
-    }
-    return DocPager.of(prev, next);
+    return DocPager.of(
+        index > 0 ? pageRef(routes.get(index - 1)) : null,
+        index < routes.size() - 1 ? pageRef(routes.get(index + 1)) : null);
+  }
+
+  private static DocPager.PageRef pageRef(SiteRoute route) {
+    return new DocPager.PageRef(route.path(), route.displayTitle());
   }
 }

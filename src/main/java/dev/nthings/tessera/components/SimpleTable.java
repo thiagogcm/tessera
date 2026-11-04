@@ -59,7 +59,7 @@ public final class SimpleTable implements RenderOnce {
             .borderSubtle(Tokens.BORDER_SUBTLE)
             .rounded(CssLength.rem(0.5));
 
-    if (caption != null && !caption.isBlank()) {
+    if (caption != null) {
       table.child(
           Elements.caption()
               .py(CssLength.rem(0.5))

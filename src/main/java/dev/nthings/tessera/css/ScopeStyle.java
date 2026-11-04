@@ -4,9 +4,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import org.jspecify.annotations.Nullable;
 
-/// Type-safe builder for `@scope ([data-view="..."]) to ([data-view])` rules in `@layer
+/// Type-safe builder for `@scope ([data-view="..."]) to (:scope [data-view] > *)` rules in `@layer
 /// components`.
 ///
 /// Eliminates raw CSS strings inside [dev.nthings.tessera.core.RenderView] implementations by
@@ -51,13 +50,16 @@ public final class ScopeStyle {
     return container("(inline-size < " + maxInlineSize.toCss() + ")", nestedBuilder);
   }
 
-  /// Emits a `@container [<name>] scroll-state(<stateQuery>)` block (e.g., `stuck: top`,
-  /// `snapped: inline`, `scrollable: block`).
+  /// Emits a `@container scroll-state(<stateQuery>)` block (e.g., `stuck: top`,
+  /// `snapped: inline`, `scrollable: block`) against the nearest scroll-state container.
+  public ScopeStyle containerScrollState(String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
+    return container("scroll-state(" + stateQuery + ")", nestedBuilder);
+  }
+
+  /// Emits a `@container <name> scroll-state(<stateQuery>)` block.
   public ScopeStyle containerScrollState(
-      @Nullable String containerName, String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
-    String prefix =
-        (containerName == null || containerName.isBlank()) ? "" : containerName.trim() + " ";
-    return container(prefix + "scroll-state(" + stateQuery + ")", nestedBuilder);
+      String containerName, String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
+    return container(containerName + " scroll-state(" + stateQuery + ")", nestedBuilder);
   }
 
   public ScopeStyle container(String condition, Consumer<ScopeStyle> nestedBuilder) {
@@ -75,12 +77,6 @@ public final class ScopeStyle {
     return this;
   }
 
-  public boolean isEmpty() {
-    return selectorRules.values().stream().allMatch(StyleRefinement::isEmpty)
-        && startingStyleRules.values().stream().allMatch(StyleRefinement::isEmpty)
-        && atRuleBlocks.values().stream().allMatch(ScopeStyle::isEmpty);
-  }
-
   public String toCssBody() {
     var sb = new StringBuilder();
     for (var entry : selectorRules.entrySet()) {
@@ -88,13 +84,15 @@ public final class ScopeStyle {
       StyleRefinement base = entry.getValue();
       StyleRefinement starting = startingStyleRules.get(selector);
       boolean hasBase = !base.isEmpty();
-      boolean hasStarting = starting != null && !starting.isEmpty();
-      if (hasBase || hasStarting) {
+      if (starting != null && starting.isEmpty()) {
+        starting = null;
+      }
+      if (hasBase || starting != null) {
         sb.append(selector).append('{');
         if (hasBase) {
           sb.append(base.toCssBlockBody());
         }
-        if (hasStarting && starting != null) {
+        if (starting != null) {
           if (hasBase) {
             sb.append(';');
           }

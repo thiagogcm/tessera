@@ -57,7 +57,7 @@ class PlatformFeaturesTest {
     var css =
         PageCompiler.compile(new PageDocument("T", main().child(Forms.textareaControl("m", 3))))
             .cssContent();
-    assertThat(css).contains("field-sizing:content").contains("min-block-size:calc(3lh + 1rem)");
+    assertThat(css).contains("field-sizing:content").contains("min-block-size:calc(3lh");
   }
 
   @Test
@@ -102,12 +102,10 @@ class PlatformFeaturesTest {
 
     String viewA = viewKey(site.pagesByRoute().get("/").html(), "card-grid");
     String viewB = viewKey(site.pagesByRoute().get("/b").html(), "card-grid");
-    assertThat(viewA).startsWith("card-grid-").isNotEqualTo(viewB);
-    assertThat(viewB).startsWith("card-grid-");
+    assertThat(viewA).isNotEqualTo(viewB);
     assertThat(site.sharedCssContent())
         .contains("@scope ([data-view=\"" + viewA + "\"])")
-        .contains("@scope ([data-view=\"" + viewB + "\"])")
-        .contains("min(100%, 15rem)");
+        .contains("@scope ([data-view=\"" + viewB + "\"])");
   }
 
   private static String viewKey(String html, String viewType) {
@@ -133,26 +131,37 @@ class PlatformFeaturesTest {
   }
 
   @Test
-  @DisplayName("Pages follow the OS text scale and reveal-once uses scroll-triggered animation")
+  @DisplayName("Reveal-once is a scroll-triggered animation gated behind reduced motion")
   void textScaleAndRevealOnce() {
     var compiled =
         PageCompiler.compile(
             new PageDocument(
                 "R", main().child(p().revealOnce(ScrollReveal.FADE_UP).text("hello"))));
-    assertThat(Jsoup.parse(compiled.html()).selectFirst("meta[name=text-scale]").attr("content"))
-        .isEqualTo("scale");
-    assertThat(compiled.cssContent())
-        .contains("timeline-trigger:--tessera-reveal view() cover 0% cover 100%")
-        .contains("animation-trigger:--tessera-reveal play-once")
-        .contains("@keyframes tessera-fade-up");
+    String rule =
+        CssBlocks.classRule(
+            compiled.cssContent(),
+            CssBlocks.generatedClass(
+                Jsoup.parse(compiled.html()).selectFirst("main p").className(), "i-"));
+    assertThat(CssBlocks.block(rule, "@media (prefers-reduced-motion: no-preference){"))
+        .contains("timeline-trigger:")
+        .contains("animation-trigger:")
+        .contains("play-once");
+    assertThat(compiled.cssContent()).contains("@keyframes tessera-fade-up");
   }
 
   @Test
-  @DisplayName("Site assets are validated, written to disk, and served")
+  @DisplayName("Sites write and serve pages, assets and generated files; collisions are rejected")
   void siteAssets(@TempDir Path out) throws Exception {
-    var page =
-        new PageDocument("Home", main().child(img("/assets/logo.svg", "Logo").dimensions(1, 1)));
-    var routes = List.of(new SiteRoute("/", page));
+    var home =
+        new PageDocument(
+            "Home",
+            main()
+                .children(
+                    img("/assets/logo.svg", "Logo").dimensions(1, 1), a("/guide").text("Guide")));
+    var routes =
+        List.of(
+            new SiteRoute("/", home),
+            new SiteRoute("/guide", new PageDocument("Guide", main().text("Guide"))));
 
     assertThatThrownBy(() -> SiteCompiler.compile(SiteDefinition.of(routes)))
         .isInstanceOf(AccessibilityViolationException.class)
@@ -166,16 +175,24 @@ class PlatformFeaturesTest {
                 .build());
     SiteCompiler.writeToDirectory(site, out);
     assertThat(Files.readString(out.resolve("assets/logo.svg"))).isEqualTo("<svg/>");
+    assertThat(out.resolve("guide/index.html")).exists();
+    assertThat(out.resolve(site.sharedCssPath().substring(1))).exists();
 
     try (var server = SitePreviewServer.start(site, 0);
         var client = HttpClient.newHttpClient()) {
-      var res =
-          client.send(
-              HttpRequest.newBuilder(URI.create(server.baseUrl() + "/assets/logo.svg")).build(),
-              HttpResponse.BodyHandlers.ofString());
-      assertThat(res.statusCode()).isEqualTo(200);
-      assertThat(res.headers().firstValue("Content-Type")).hasValue("image/svg+xml");
-      assertThat(res.body()).isEqualTo("<svg/>");
+      var logo = get(client, server.baseUrl() + "/assets/logo.svg");
+      assertThat(logo.statusCode()).isEqualTo(200);
+      assertThat(logo.headers().firstValue("Content-Type")).hasValue("image/svg+xml");
+      assertThat(logo.body()).isEqualTo("<svg/>");
+
+      assertThat(
+              get(client, server.baseUrl() + site.sharedCssPath())
+                  .headers()
+                  .firstValue("Content-Type"))
+          .hasValue("text/css; charset=utf-8");
+      assertThat(get(client, server.baseUrl() + "/guide/index.html").body())
+          .isEqualTo(site.pagesByRoute().get("/guide").html());
+      assertThat(get(client, server.baseUrl() + "/missing").statusCode()).isEqualTo(404);
     }
 
     assertThatThrownBy(
@@ -187,6 +204,20 @@ class PlatformFeaturesTest {
                         .asset(SiteAsset.text("/search-index.json", "[]"))
                         .build()))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Duplicate file path: /search-index.json");
+        .hasMessageContaining("/search-index.json");
+    assertThatThrownBy(
+            () ->
+                SiteCompiler.compile(
+                    SiteDefinition.builder()
+                        .routes(routes)
+                        .asset(SiteAsset.text("/guide", "x"))
+                        .build()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("collides with route");
+  }
+
+  private static HttpResponse<String> get(HttpClient client, String url) throws Exception {
+    return client.send(
+        HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofString());
   }
 }

@@ -8,7 +8,6 @@ import static dev.nthings.tessera.core.Elements.summary;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
@@ -42,7 +41,7 @@ public final class Accordion implements RenderView {
 
   private Accordion(String id, boolean exclusive) {
     this.id = ElementId.of(id);
-    this.groupName = Fnv1a64.sanitizeIdentifier(id);
+    this.groupName = this.id.slug();
     this.exclusive = exclusive;
   }
 

@@ -154,7 +154,6 @@ public final class Carousel implements RenderView {
             m ->
                 m.select(":scope", s -> s.scrollBehaviorSmooth())
                     .containerScrollState(
-                        null,
                         "snapped: x",
                         c ->
                             c.select(

@@ -24,8 +24,6 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -103,7 +101,7 @@ public final class PageCompiler {
     private final Set<String> viewTransitionNames = new LinkedHashSet<>();
     private final Map<ElementRef, String> boundDomIds = new IdentityHashMap<>();
     private final Map<String, Integer> autoIdCounters = new HashMap<>();
-    private final List<ResolvedNode> lateSlots = new ArrayList<>();
+    private final List<@Nullable ResolvedNode> lateSlots = new ArrayList<>();
     private final ArrayDeque<Runnable> pendingLate = new ArrayDeque<>();
     private long deferredSequence = 0L;
 
@@ -188,9 +186,11 @@ public final class PageCompiler {
                     Integer.MAX_VALUE, requestLayout(section.get().intoElement(), state));
                 resolveLateElements(state);
               }
+              // Indexed: laying out a head element may contribute further head elements.
               var headNodes = new ArrayList<ResolvedNode>();
-              for (var head : docState.headElements()) {
-                headNodes.add(requestLayout(head, state));
+              for (int i = 0; i < docState.headElements().size(); i++) {
+                headNodes.add(requestLayout(docState.headElements().get(i), state));
+                resolveLateElements(state);
               }
               return new Phase1Result(root, headNodes, docState);
             });
@@ -243,7 +243,7 @@ public final class PageCompiler {
       case RenderOnceElement(var component) -> requestLayout(component.render(), state);
       case LateElement(var content) -> {
         int slot = state.lateSlots.size();
-        state.lateSlots.add(ResolvedEmpty.INSTANCE);
+        state.lateSlots.add(null);
         state.pendingLate.add(
             () ->
                 state.lateSlots.set(
@@ -425,7 +425,11 @@ public final class PageCompiler {
   /// every ref on the page is bound.
   private static ResolvedNode link(ResolvedNode node, CompilationState state) {
     if (node instanceof ResolvedSlot(int index)) {
-      return link(state.lateSlots.get(index), state);
+      ResolvedNode content = state.lateSlots.get(index);
+      if (content == null) {
+        throw new IllegalStateException("Late element was linked before it was laid out");
+      }
+      return link(content, state);
     }
     if (!(node instanceof ResolvedTag tag)) {
       return node;
@@ -459,14 +463,9 @@ public final class PageCompiler {
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
     var bodyNodes = new ArrayList<ResolvedNode>();
-    if (!(root instanceof ResolvedEmpty)) {
-      bodyNodes.add(link(root, state));
-    }
-    while (!state.deferredQueue.isEmpty()) {
-      ResolvedDeferred deferred = state.deferredQueue.poll();
-      if (deferred != null && !(deferred.node() instanceof ResolvedEmpty)) {
-        bodyNodes.add(link(deferred.node(), state));
-      }
+    bodyNodes.add(link(root, state));
+    for (ResolvedDeferred deferred; (deferred = state.deferredQueue.poll()) != null; ) {
+      bodyNodes.add(link(deferred.node(), state));
     }
     for (var node : bodyNodes) {
       validateNodeTree(node, state);
@@ -587,52 +586,48 @@ public final class PageCompiler {
       String cssContent,
       OutputMode outputMode,
       List<ResolvedNode> headNodes,
-      Appendable out) {
-    try {
-      out.append("<!doctype html>\n<html lang=\"");
-      out.append(Encode.forHtmlAttribute(doc.lang()));
-      out.append("\">\n<head>\n<meta charset=\"utf-8\">\n");
-      out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-      // rem-based layouts follow the OS text size setting, not only the browser's.
-      out.append("<meta name=\"text-scale\" content=\"scale\">\n");
-      out.append("<title>");
-      out.append(Encode.forHtmlContent(doc.title()));
-      out.append("</title>\n");
-      for (var head : headNodes) {
-        paintNode(head, out);
-        out.append('\n');
-      }
-
-      String externalCssPath = null;
-      switch (outputMode) {
-        case OutputMode.InlineStyle _ -> {
-          out.append("<style>\n");
-          out.append(cssContent);
-          out.append("</style>\n");
-        }
-        case OutputMode.ExternalAsset(var basePath) -> {
-          long cssHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, cssContent);
-          String normalizedBase =
-              basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
-          externalCssPath = normalizedBase + "/styles-" + Fnv1a64.toBase36Hash(cssHash) + ".css";
-          out.append("<link rel=\"stylesheet\" href=\"");
-          out.append(Encode.forHtmlAttribute(externalCssPath));
-          out.append("\">\n");
-        }
-      }
-
-      out.append("</head>\n<body>\n");
-      for (var node : bodyNodes) {
-        paintNode(node, out);
-      }
-      out.append("\n</body>\n</html>\n");
-      return externalCssPath;
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
+      StringBuilder out) {
+    out.append("<!doctype html>\n<html lang=\"");
+    out.append(Encode.forHtmlAttribute(doc.lang()));
+    out.append("\">\n<head>\n<meta charset=\"utf-8\">\n");
+    out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
+    // rem-based layouts follow the OS text size setting, not only the browser's.
+    out.append("<meta name=\"text-scale\" content=\"scale\">\n");
+    out.append("<title>");
+    out.append(Encode.forHtmlContent(doc.title()));
+    out.append("</title>\n");
+    for (var head : headNodes) {
+      paintNode(head, out);
+      out.append('\n');
     }
+
+    String externalCssPath = null;
+    switch (outputMode) {
+      case OutputMode.InlineStyle _ -> {
+        out.append("<style>\n");
+        out.append(cssContent);
+        out.append("</style>\n");
+      }
+      case OutputMode.ExternalAsset(var basePath) -> {
+        long cssHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, cssContent);
+        String normalizedBase =
+            basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
+        externalCssPath = normalizedBase + "/styles-" + Fnv1a64.toBase36Hash(cssHash) + ".css";
+        out.append("<link rel=\"stylesheet\" href=\"");
+        out.append(Encode.forHtmlAttribute(externalCssPath));
+        out.append("\">\n");
+      }
+    }
+
+    out.append("</head>\n<body>\n");
+    for (var node : bodyNodes) {
+      paintNode(node, out);
+    }
+    out.append("\n</body>\n</html>\n");
+    return externalCssPath;
   }
 
-  private static void paintNode(ResolvedNode node, Appendable out) throws IOException {
+  private static void paintNode(ResolvedNode node, StringBuilder out) {
     switch (node) {
       case ResolvedEmpty _ -> {}
       case ResolvedSlot _ -> throw unlinked();

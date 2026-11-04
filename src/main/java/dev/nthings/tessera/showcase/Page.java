@@ -5,22 +5,22 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import java.util.List;
 import java.util.function.Supplier;
-import org.jspecify.annotations.Nullable;
 
-/// Showcase route: navigation metadata plus either demo sections (laid out with a scroll-spy
-/// table of contents) or custom content.
+/// Showcase route: navigation metadata, the demo sections it indexes for search, and its body
+/// (by default the demos in a scroll-spy documentation layout).
 record Page(
     String path,
     String navLabel,
     String title,
     String summary,
     List<Demo> demos,
-    @Nullable Supplier<? extends IntoElement> customContent) {
+    Supplier<? extends IntoElement> body) {
 
   static final String TOC_ID = "toc";
 
   static Page ofDemos(String path, String navLabel, String title, String summary, Demo... demos) {
-    return new Page(path, navLabel, title, summary, List.of(demos), null);
+    List<Demo> sections = List.of(demos);
+    return new Page(path, navLabel, title, summary, sections, () -> docLayout(sections));
   }
 
   static Page custom(
@@ -33,11 +33,7 @@ record Page(
   }
 
   Element content() {
-    var custom = customContent;
-    if (custom != null) {
-      return custom.get().intoElement();
-    }
-    return docLayout(demos);
+    return body.get().intoElement();
   }
 
   /// The showcase's scroll-spy documentation layout around `sections`.

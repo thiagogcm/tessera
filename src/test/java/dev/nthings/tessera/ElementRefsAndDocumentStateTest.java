@@ -17,6 +17,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
@@ -127,15 +128,47 @@ class ElementRefsAndDocumentStateTest {
 
     assertThat(parsed.select("aside[role=doc-endnotes]")).hasSize(1);
     assertThat(parsed.select("aside[role=doc-endnotes] li")).hasSize(2);
-    assertThat(parsed.select("aside[role=doc-endnotes]").first().previousElementSibling()).isNull();
+    assertThat(parsed.selectFirst("main > :first-child").attr("role")).isEqualTo("doc-endnotes");
   }
 
   @Test
-  @DisplayName("Builds are reproducible: auto view ids are deterministic")
+  @DisplayName("Reusing a footnote or section id on one page fails with a clear error")
+  void rejectsDuplicateFootnoteAndSectionIds() {
+    assertThatThrownBy(
+            () -> render(main().children(Footnotes.ref("n", "One"), Footnotes.ref("n", "Two"))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Duplicate footnote id");
+    assertThatThrownBy(
+            () ->
+                render(
+                    main()
+                        .children(
+                            Toc.section("intro", "Intro", p()),
+                            Toc.section("intro", "Again", p()))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Duplicate section id");
+  }
+
+  @Test
+  @DisplayName("Builds are reproducible and compiling never mutates the input tree")
   void deterministicAutoIds() {
-    Element body = main().children(Callout.note("one"), Callout.tip("two"));
+    var button = button().attr("class", "custom").px(CssLength.rem(1)).text("Go");
+    Element body = main().children(Callout.note("one"), Callout.tip("two"), button);
     String first = PageCompiler.compile(new PageDocument("T", body)).html();
     String second = PageCompiler.compile(new PageDocument("T", body)).html();
-    assertThat(first).isEqualTo(second).contains("data-view-id=\"tessera-callout-1\"");
+    String rebuilt =
+        PageCompiler.compile(
+                new PageDocument(
+                    "T",
+                    main()
+                        .children(
+                            Callout.note("one"),
+                            Callout.tip("two"),
+                            button().attr("class", "custom").px(CssLength.rem(1)).text("Go"))))
+            .html();
+
+    assertThat(second).isEqualTo(first);
+    assertThat(rebuilt).isEqualTo(first);
+    assertThat(button.attributes().get("class")).isEqualTo("custom");
   }
 }

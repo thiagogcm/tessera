@@ -35,9 +35,6 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   }
 
   public static CodeBlock of(String code) {
-    if (code == null) {
-      return new CodeBlock(List.of(""));
-    }
     String normalized = code.replace("\r\n", "\n").replace('\r', '\n');
     return new CodeBlock(Arrays.asList(normalized.split("\n", -1)));
   }

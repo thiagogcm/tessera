@@ -27,9 +27,12 @@ public record SiteDefinition(
     routes = List.copyOf(routes);
     assets = List.copyOf(assets);
     if (baseUrl != null) {
-      baseUrl = baseUrl.trim();
+      baseUrl = baseUrl.strip();
       if (baseUrl.endsWith("/")) {
         baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+      }
+      if (baseUrl.isEmpty()) {
+        throw new IllegalArgumentException("Site baseUrl must be an absolute origin");
       }
     }
   }

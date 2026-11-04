@@ -3,7 +3,6 @@ package dev.nthings.tessera.css;
 import dev.nthings.tessera.core.Fnv1a64;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -42,24 +41,22 @@ public final class StyleSheetCollector {
       classNames.add(interactiveClass);
     }
 
-    if (interactivity.hasContainerRules()) {
-      for (var rule : interactivity.containerRules()) {
-        if (!rule.style().isEmpty()) {
-          String cqClass = "cq-" + Fnv1a64.toBase36Hash(rule.contentHash());
-          containerRules.computeIfAbsent(
-              cqClass,
-              k ->
-                  "@container "
-                      + rule.containerName()
-                      + " "
-                      + rule.condition()
-                      + "{."
-                      + k
-                      + "{"
-                      + rule.style().toCssBlockBody()
-                      + "}}");
-          classNames.add(cqClass);
-        }
+    for (var rule : interactivity.containerRules()) {
+      if (!rule.style().isEmpty()) {
+        String cqClass = "cq-" + Fnv1a64.toBase36Hash(rule.contentHash());
+        containerRules.computeIfAbsent(
+            cqClass,
+            k ->
+                "@container "
+                    + rule.containerName()
+                    + " "
+                    + rule.condition()
+                    + "{."
+                    + k
+                    + "{"
+                    + rule.style().toCssBlockBody()
+                    + "}}");
+        classNames.add(cqClass);
       }
     }
 
@@ -84,18 +81,8 @@ public final class StyleSheetCollector {
     return key;
   }
 
-  public void registerKeyframeRule(String keyframeRule) {
-    keyframeRules.add(keyframeRule);
-  }
-
   public void registerTransitionClass(String transitionClass) {
-    if (transitionClass != null && !transitionClass.isBlank()) {
-      transitionClasses.add(Fnv1a64.sanitizeIdentifier(transitionClass));
-    }
-  }
-
-  public Set<String> transitionClasses() {
-    return Collections.unmodifiableSet(transitionClasses);
+    transitionClasses.add(transitionClass);
   }
 
   /// Merges another collector's rules into this collector in deterministic insertion order.
@@ -170,7 +157,7 @@ public final class StyleSheetCollector {
       for (var entry : viewScopeBodies.entrySet()) {
         sb.append("@scope ([data-view=\"")
             .append(entry.getKey())
-            .append("\"]) to ([data-view]){")
+            .append("\"]) to (:scope [data-view] > *){")
             .append(entry.getValue())
             .append('}');
       }

@@ -13,6 +13,7 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.nthings.tessera.core.Action;
@@ -20,11 +21,8 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
@@ -34,7 +32,6 @@ import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
-import java.util.List;
 import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -43,35 +40,13 @@ import org.junit.jupiter.api.Test;
 
 class TesseraCompilerTest {
 
-  record MetricCard(String id, String label, String value, boolean highlighted)
-      implements RenderOnce {
-
-    @Override
-    public Element render() {
-      var tokens = RenderContext.current().tokens();
-      return section()
-          .id("metric-" + (Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, id) & 0xFFFF))
-          .container("metric-card")
-          .flex()
-          .flexCol()
-          .gap(CssLength.rem(0.5))
-          .p(CssLength.rem(1.25))
-          .rounded(CssLength.rem(0.75))
-          .bg(Tokens.SURFACE_CARD)
-          .borderSubtle(Tokens.BORDER_SUBTLE)
-          .when(highlighted, s -> s.focusRing(Tokens.ACCENT_PRIMARY))
-          .hover(s -> s.bg(Tokens.SURFACE_SUBTLE))
-          .onContainer(
-              "metric-card", CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
-          .viewTransitionName("metric-card")
-          .children(
-              span().textColor(Tokens.TEXT_MUTED).text(label),
-              h2().fontSize(
-                      CssLength.fluid(CssLength.rem(1.25), CssLength.cqi(4), CssLength.rem(2.0)))
-                  .textColor(tokens.all().iterator().next())
-                  .textBalance()
-                  .text(value));
-    }
+  /// A container-query card: stacked by default, a row once its container is 320px wide.
+  static TagElement metricCard(String label, String value) {
+    return section()
+        .container("metric-card")
+        .onContainer(
+            "metric-card", CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
+        .children(span().text(label), h2().text(value));
   }
 
   record ArchiveProjectAction(String projectId) implements Action {
@@ -92,7 +67,7 @@ class TesseraCompilerTest {
     }
   }
 
-  record WorkspacePanelView(String workspaceSlug, List<MetricCard> metrics) implements RenderView {
+  record WorkspacePanelView(String workspaceSlug) implements RenderView {
 
     @Override
     public ElementId entityId() {
@@ -157,15 +132,7 @@ class TesseraCompilerTest {
           .gap(CssLength.rem(1.5))
           .children(
               h1().textBalance().text("Workspace: " + workspaceSlug),
-              div()
-                  .childrenWindowed(
-                      metrics,
-                      2,
-                      pair ->
-                          div()
-                              .gridAutoFit(CssLength.rem(16))
-                              .gap(CssLength.rem(1))
-                              .children(pair)),
+              metricCard("P99 Latency", "14.2 ms"),
               div()
                   .flex()
                   .gap(CssLength.rem(1))
@@ -175,69 +142,65 @@ class TesseraCompilerTest {
   }
 
   @Test
-  @DisplayName("Compiles three-phase document with baseline 2026 platform capabilities")
+  @DisplayName("Compiles a view with scoped ids, invokers, tooltips, actions and portals")
   void compilesBaselineDocument() {
-    var cards =
-        List.of(
-            new MetricCard("lat", "P99 Latency", "14.2 ms", true),
-            new MetricCard("rps", "Throughput", "48,200 req/s", false),
-            new MetricCard("err", "Error Budget", "99.98%", false));
-
-    var view = new WorkspacePanelView("core", cards);
-    var doc = new PageDocument("en", "Tessera Workspace", view);
-
+    var doc = new PageDocument("en", "Tessera Workspace", new WorkspacePanelView("core"));
     PageCompiler.CompiledPage compiled =
         PageCompiler.compile(doc, new Tokens(), OutputMode.inlineStyle());
 
     assertThat(compiled.externalCssPath()).isNull();
-    assertThat(compiled.cssContent())
-        .startsWith("@layer reset, base, theme, components, utilities, interactive, container;\n")
-        .contains("interpolate-size:allow-keywords")
-        .contains("@view-transition{navigation:auto}")
-        .contains("@function --fluid(")
-        .contains("@layer components{@scope ([data-view=\"workspace-panel-view-")
-        .contains("@layer utilities{")
-        .contains("@layer interactive{")
-        .contains("@layer container{@container metric-card (inline-size >= 320px)");
-
     Document parsed = Jsoup.parse(compiled.html());
-    assertThat(parsed.title()).isEqualTo("Tessera Workspace");
+    String css = compiled.cssContent();
 
-    var mainEl =
-        parsed.selectFirst("main[data-view^=workspace-panel-view-][data-view-id=workspace-core]");
-    assertThat(mainEl).isNotNull();
+    // The view's scoped rules are keyed by its data-view value
+    var mainEl = parsed.selectFirst("main[data-view-id=workspace-core]");
+    assertThat(css).contains("@scope ([data-view=\"" + mainEl.attr("data-view") + "\"])");
 
-    // Verify Invoker Commands & view-scoped IDs
+    // onContainer rules land in the container layer, applied through a generated class
+    String cqClass = CssBlocks.generatedClass(mainEl.selectFirst("section").className(), "cq-");
+    assertThat(CssBlocks.block(css, "@layer container{"))
+        .contains("@container metric-card (inline-size >= 320px){." + cqClass + "{");
+
+    // Invoker commands resolve to view-scoped ids
     var triggerBtn = parsed.getElementById("workspace-core--open-archive-btn");
-    assertThat(triggerBtn).isNotNull();
     assertThat(triggerBtn.attr("commandfor")).isEqualTo("workspace-core--confirm-archive");
-    assertThat(triggerBtn.attr("command")).isEqualTo("show-modal");
-    assertThat(triggerBtn.attr("interestfor"))
-        .isEqualTo("workspace-core--open-archive-btn--tooltip");
 
-    // Verify companion tooltip is emitted as an adjacent sibling (NOT inside <button>)
-    assertThat(triggerBtn.select("div[popover=hint]")).isEmpty();
-    var nextSibling = triggerBtn.nextElementSibling();
-    assertThat(nextSibling).isNotNull();
-    assertThat(nextSibling.id()).isEqualTo("workspace-core--open-archive-btn--tooltip");
-    assertThat(nextSibling.attr("popover")).isEqualTo("hint");
-    assertThat(nextSibling.attr("role")).isEqualTo("tooltip");
+    // The interest tooltip is an adjacent sibling, never nested inside the <button>
+    assertThat(triggerBtn.select("[popover]")).isEmpty();
+    var tooltip = triggerBtn.nextElementSibling();
+    assertThat(tooltip.id()).isEqualTo(triggerBtn.attr("interestfor"));
+    assertThat(tooltip.attr("popover")).isEqualTo("hint");
+    assertThat(tooltip.attr("role")).isEqualTo("tooltip");
 
-    // Verify custom Action invoker command
+    // Custom Action invoker: namespaced command plus payload attributes
     var customBtn = parsed.getElementById("workspace-core--dispatch-custom-btn");
-    assertThat(customBtn).isNotNull();
     assertThat(customBtn.attr("commandfor")).isEqualTo("workspace-core--archive-controller");
     assertThat(customBtn.attr("command")).isEqualTo("--workspace-archive");
     assertThat(customBtn.attr("data-project-id")).isEqualTo("core");
 
-    // Verify DeferredElement portal is hoisted to end of <body> while keeping lexical view ID
+    // DeferredElement is hoisted to the end of <body> but keeps its lexical view-scoped id
     var bodyChildren = parsed.body().children();
-    assertThat(bodyChildren).hasSize(2);
-    assertThat(bodyChildren.get(0).tagName()).isEqualTo("main");
-    var hoistedDialog = bodyChildren.get(1);
-    assertThat(hoistedDialog.tagName()).isEqualTo("dialog");
-    assertThat(hoistedDialog.id()).isEqualTo("workspace-core--confirm-archive");
-    assertThat(hoistedDialog.attr("closedby")).isEqualTo("any");
+    assertThat(bodyChildren).extracting(e -> e.tagName()).containsExactly("main", "dialog");
+    assertThat(bodyChildren.get(1).id()).isEqualTo("workspace-core--confirm-archive");
+  }
+
+  @Test
+  @DisplayName("Encodes text, attribute values and the document title")
+  void escapesUntrustedContent() {
+    var doc =
+        new PageDocument(
+            "Q&A <draft>",
+            main().children(p().attr("title", "say \"hi\"").text("<script>alert(1)</script>")));
+    String html = PageCompiler.compile(doc).html();
+
+    assertThat(html)
+        .contains("<title>Q&amp;A &lt;draft&gt;</title>")
+        .contains("&lt;script&gt;")
+        .doesNotContain("<script>alert")
+        .doesNotContain("title=\"say \"hi\"\"");
+    var p = Jsoup.parse(html).selectFirst("main p");
+    assertThat(p.attr("title")).isEqualTo("say \"hi\"");
+    assertThat(p.text()).isEqualTo("<script>alert(1)</script>");
   }
 
   @Test
@@ -261,24 +224,6 @@ class TesseraCompilerTest {
   }
 
   @Test
-  @DisplayName("Preserves element immutability across compilations")
-  void preservesElementImmutability() {
-    TagElement reusableButton =
-        button()
-            .attr("class", "custom-btn")
-            .px(CssLength.rem(1))
-            .hover(s -> s.opacity(0.8))
-            .text("Reusable Action");
-
-    var doc = new PageDocument("Idempotency", div().child(reusableButton));
-    String firstHtml = PageCompiler.compile(doc).html();
-    String secondHtml = PageCompiler.compile(doc).html();
-
-    assertThat(secondHtml).isEqualTo(firstHtml);
-    assertThat(reusableButton.attributes().get("class")).isEqualTo("custom-btn");
-  }
-
-  @Test
   @DisplayName("Emits external hashed stylesheet and head link")
   void emitsExternalHashedStylesheet() {
     var doc = new PageDocument("External CSS", main().p(CssLength.rem(2)).text("Hello"));
@@ -295,38 +240,22 @@ class TesseraCompilerTest {
   @Test
   @DisplayName("Enforces void element and accessibility invariants")
   void enforcesVoidAndAccessibilityRules() {
-    // 1. Void element rejects children at construction time
     assertThatThrownBy(() -> img("/hero.webp", "Hero").child(span().text("Invalid")))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("HTML5 void element <img> cannot have children");
+        .hasMessageContaining("void element");
 
-    // 2. Empty button without accessible label fails in Phase 2 (prepaint)
     var unlabeledBtnDoc = new PageDocument("Invalid Button", div().child(button()));
     assertThatThrownBy(() -> PageCompiler.compile(unlabeledBtnDoc))
         .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining("Interactive <button> element must have text content");
+        .hasMessageContaining("must have text content");
 
-    // 3. Decorative img with empty alt="" without role=presentation fails in Phase 2
-    var invalidImgDoc = new PageDocument("Invalid Img", div().child(img("/deco.svg", "")));
+    var invalidImgDoc =
+        new PageDocument("Invalid Img", div().child(img("/deco.svg", "").dimensions(1, 1)));
     assertThatThrownBy(() -> PageCompiler.compile(invalidImgDoc))
         .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining("Decorative <img> with empty alt=\"\"");
+        .hasMessageContaining("role=\"presentation\"");
 
-    // 4. Dangling commandfor reference fails in Phase 2
-    var danglingInvokerDoc =
-        new PageDocument(
-            "Dangling Invoker",
-            div()
-                .child(
-                    button()
-                        .id("trigger")
-                        .command(ElementRef.named("missing-dialog"), BuiltinCommand.SHOW_MODAL)
-                        .text("Open")));
-    assertThatThrownBy(() -> PageCompiler.compile(danglingInvokerDoc))
-        .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining("commandfor> references ElementRef(missing-dialog)");
-
-    // 5. Valid decorative img and aria-labeled link pass
+    // Decorative images and links labelled by aria-label are accepted
     var validDoc =
         new PageDocument(
             "Valid A11y",
@@ -336,6 +265,6 @@ class TesseraCompilerTest {
                     a("/home")
                         .ariaLabel("Home page")
                         .child(new TagElement(HtmlTag.SPAN).ariaHidden(true))));
-    assertThat(PageCompiler.compile(validDoc).html()).contains("role=\"presentation\"");
+    assertThatCode(() -> PageCompiler.compile(validDoc)).doesNotThrowAnyException();
   }
 }

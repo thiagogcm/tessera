@@ -90,8 +90,4 @@ public final class Interactivity {
   public boolean hasInteractiveStyles() {
     return states.values().stream().anyMatch(style -> !style.isEmpty());
   }
-
-  public boolean hasContainerRules() {
-    return !containerRules.isEmpty();
-  }
 }

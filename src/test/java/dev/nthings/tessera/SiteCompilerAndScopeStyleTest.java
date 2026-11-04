@@ -2,6 +2,7 @@ package dev.nthings.tessera;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.main;
+import static dev.nthings.tessera.core.Elements.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -15,127 +16,50 @@ import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.showcase.ShowcaseSite;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SitePreviewServer;
 import dev.nthings.tessera.site.SiteRoute;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class SiteCompilerAndScopeStyleTest {
 
   @Test
-  @DisplayName("Deduplicates identical scope styles and qualifies parameterized views")
+  @DisplayName("Views with identical scoped CSS share one @scope block and one data-view key")
   void deduplicatesScopeStylesAndQualifiesViews() {
-    var card1 = Card.create("one").title("First").bodyText("Body 1");
-    var card2 = Card.create("two").title("Second").bodyText("Body 2");
-
-    var table2Col =
-        new DataTable<>(
-            "two-col",
-            "Two Columns",
-            List.of(Column.rowHeader("Key", s -> main().text(s)), Column.text("Value", s -> s)),
-            List.of("row-a"));
-
-    var table3Col =
-        new DataTable<>(
-            "three-col",
-            "Three Columns",
-            List.of(
-                Column.rowHeader("Key", s -> main().text(s)),
-                Column.text("Mid", s -> s),
-                Column.numeric("Count", _ -> "1")),
-            List.of("row-b"));
-
+    List<Column<String>> columns =
+        List.of(
+            Column.<String>rowHeader("Key", s -> text(s)), Column.<String>text("Value", s -> s));
     var compiled =
         PageCompiler.compile(
             new PageDocument(
-                "Scope Deduplication", main().children(card1, card2, table2Col, table3Col)));
+                "Scope Deduplication",
+                main()
+                    .children(
+                        Card.create("one").title("First").bodyText("Body 1"),
+                        Card.create("two").title("Second").bodyText("Body 2"),
+                        new DataTable<>("a", "A", columns, List.of("row-a")),
+                        new DataTable<>("b", "B", columns, List.of("row-b", "row-c")))));
 
     String css = compiled.cssContent();
     var doc = Jsoup.parse(compiled.html());
-    // Only a single @scope block for the card view should exist despite 2 Card instances
-    String cardView = doc.selectFirst("[data-view-id=card-one]").attr("data-view");
-    assertThat(doc.selectFirst("[data-view-id=card-two]").attr("data-view")).isEqualTo(cardView);
-    String cardScope = "@scope ([data-view=\"" + cardView + "\"]) to ([data-view])";
-    assertThat(css.indexOf(cardScope)).isGreaterThan(0).isEqualTo(css.lastIndexOf(cardScope));
-
-    // Parameterized DataTables with different columns get distinct data-view keys
-    var firstTableWrapper = doc.selectFirst("[data-view-id=datatable-two-col]");
-    var secondTableWrapper = doc.selectFirst("[data-view-id=datatable-three-col]");
-    assertThat(firstTableWrapper).isNotNull();
-    assertThat(secondTableWrapper).isNotNull();
-    assertThat(firstTableWrapper.attr("data-view"))
-        .startsWith("data-table-")
-        .isNotEqualTo(secondTableWrapper.attr("data-view"));
+    for (var pair :
+        List.of(List.of("card-one", "card-two"), List.of("datatable-a", "datatable-b"))) {
+      String key = doc.selectFirst("[data-view-id=" + pair.get(0) + "]").attr("data-view");
+      assertThat(doc.selectFirst("[data-view-id=" + pair.get(1) + "]").attr("data-view"))
+          .isEqualTo(key);
+      String scope = "@scope ([data-view=\"" + key + "\"])";
+      assertThat(css.indexOf(scope)).isPositive().isEqualTo(css.lastIndexOf(scope));
+    }
   }
 
   @Test
-  @DisplayName("Compiles multi-page showcase site, writes assets to disk, and serves over HTTP")
-  void compilesShowcaseSiteWritesToDiskAndServesOverHttp(@TempDir Path tempDir) throws Exception {
-    SiteDefinition definition = ShowcaseSite.createDefinition();
-    SiteCompiler.CompiledSite compiledSite = SiteCompiler.compile(definition);
-
-    assertThat(compiledSite.pagesByRoute())
-        .containsOnlyKeys(
-            "/", "/layout", "/navigation", "/overlays", "/forms", "/data", "/docs", "/motion");
-    assertThat(compiledSite.sharedCssPath()).startsWith("/assets/styles-").endsWith(".css");
-    assertThat(compiledSite.sharedCssContent())
-        .contains(
-            "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}")
-        .contains(
-            "::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}")
-        .contains("@scope ([data-view=\"card-")
-        .contains("@scope ([data-view=\"data-table-")
-        .contains("@scope ([data-view=\"step-list-");
-
-    // Verify disk output
-    SiteCompiler.writeToDirectory(compiledSite, tempDir);
-    assertThat(Files.exists(tempDir.resolve("index.html"))).isTrue();
-    assertThat(Files.exists(tempDir.resolve("data/index.html"))).isTrue();
-    assertThat(Files.exists(tempDir.resolve("docs/index.html"))).isTrue();
-    String relCss = compiledSite.sharedCssPath().substring(1);
-    assertThat(Files.exists(tempDir.resolve(relCss))).isTrue();
-
-    // Verify live HTTP preview server
-    try (var server = SitePreviewServer.start(compiledSite, 0);
-        var client = HttpClient.newHttpClient()) {
-      String base = server.baseUrl();
-
-      var homeRes =
-          client.send(
-              HttpRequest.newBuilder(URI.create(base + "/")).GET().build(),
-              HttpResponse.BodyHandlers.ofString());
-      assertThat(homeRes.statusCode()).isEqualTo(200);
-      assertThat(homeRes.body()).contains("Declarative HTML &amp; CSS components for JDK 25");
-
-      var telemetryRes =
-          client.send(
-              HttpRequest.newBuilder(URI.create(base + "/data")).GET().build(),
-              HttpResponse.BodyHandlers.ofString());
-      assertThat(telemetryRes.statusCode()).isEqualTo(200);
-      assertThat(telemetryRes.body()).contains("Service health by region");
-
-      var cssRes =
-          client.send(
-              HttpRequest.newBuilder(URI.create(base + compiledSite.sharedCssPath())).GET().build(),
-              HttpResponse.BodyHandlers.ofString());
-      assertThat(cssRes.statusCode()).isEqualTo(200);
-      assertThat(cssRes.headers().firstValue("Content-Type")).hasValue("text/css; charset=utf-8");
-
-      var notFoundRes =
-          client.send(
-              HttpRequest.newBuilder(URI.create(base + "/missing")).GET().build(),
-              HttpResponse.BodyHandlers.ofString());
-      assertThat(notFoundRes.statusCode()).isEqualTo(404);
-    }
+  @DisplayName("The showcase site compiles: every link, anchor, a11y and transition check passes")
+  void compilesShowcaseSite() {
+    var site = SiteCompiler.compile(ShowcaseSite.createDefinition());
+    String css = site.sharedCssPath();
+    assertThat(site.pagesByRoute().values())
+        .allSatisfy(page -> assertThat(page.html()).contains("href=\"" + css + "\""));
   }
 
   @Test

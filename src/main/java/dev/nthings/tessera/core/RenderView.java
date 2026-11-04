@@ -1,29 +1,28 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.ScopeStyle;
+import org.jspecify.annotations.Nullable;
 
 /// Scoped view boundary representing a persistent domain entity with isolated `@scope` styles and
-/// a dedicated [GlobalElementId] namespace.
+/// a dedicated [ViewScope] namespace.
 ///
 /// - [#viewType()] identifies the component type for `data-view` and deduplicates identical
 ///   `@scope` blocks across all instances of the view.
-/// - [#entityId()] identifies the specific instance for [GlobalElementId] path folding and
+/// - [#entityId()] identifies the specific instance for [ViewScope] path folding and
 ///   `data-view-id`.
 public interface RenderView extends IntoElement {
 
-  ElementId entityId();
+  /// Instance id within the enclosing view scope; `null` lets the compiler assign
+  /// `<viewType>-<n>` deterministically per page.
+  default @Nullable ElementId entityId() {
+    return null;
+  }
 
   default String viewType() {
     return ViewTypes.DEFAULT_NAMES.get(getClass());
   }
 
   default void configureScope(ScopeStyle scope) {}
-
-  default String viewScopeRule() {
-    var scope = new ScopeStyle();
-    configureScope(scope);
-    return scope.toCssBody();
-  }
 
   Element render();
 

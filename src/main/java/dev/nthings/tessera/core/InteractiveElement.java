@@ -1,17 +1,19 @@
 package dev.nthings.tessera.core;
 
-import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.TimelineAxis;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
-/// Shared interactive, attribute, container-query, and scroll-driven animation capabilities
-/// implemented by both [TagElement] and [StatefulTagElement].
+/// Shared interactive, attribute, id-reference, container-query, and scroll-driven animation
+/// capabilities of element builders.
 ///
 /// @param <SELF> concrete element type
 public interface InteractiveElement<
@@ -21,6 +23,9 @@ public interface InteractiveElement<
   Interactivity interactivity();
 
   Map<String, String> attributes();
+
+  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler.
+  Map<String, IdReference> idReferences();
 
   default SELF attr(String name, String value) {
     attributes().put(name, value);
@@ -40,8 +45,82 @@ public interface InteractiveElement<
     return attr("aria-label", label);
   }
 
-  default SELF ariaLabelledBy(String elementId) {
-    return attr("aria-labelledby", elementId);
+  /// Sets `attribute` to the DOM ids of `targets` once they are bound on the page.
+  default SELF idRef(String attribute, ElementRef... targets) {
+    return idRef(attribute, new IdReference("", List.of(targets)));
+  }
+
+  private SELF idRef(String attribute, IdReference reference) {
+    // Reserve the attribute's position so resolved ids keep declaration order.
+    attributes().putIfAbsent(attribute, "");
+    idReferences().put(attribute, reference);
+    return self();
+  }
+
+  default SELF ariaLabelledBy(ElementRef... labels) {
+    return idRef("aria-labelledby", labels);
+  }
+
+  default SELF ariaDescribedBy(ElementRef... descriptions) {
+    return idRef("aria-describedby", descriptions);
+  }
+
+  default SELF ariaErrorMessage(ElementRef message) {
+    return idRef("aria-errormessage", message);
+  }
+
+  default SELF labelFor(ElementRef control) {
+    return idRef("for", control);
+  }
+
+  default SELF list(ElementRef datalist) {
+    return idRef("list", datalist);
+  }
+
+  /// Same-page fragment link: `href="#<target dom id>"`.
+  default SELF href(ElementRef target) {
+    return idRef("href", new IdReference("#", List.of(target)));
+  }
+
+  /// Chrome 156+ Invoker Command: `commandfor` + `command`.
+  default SELF command(ElementRef target, BuiltinCommand command) {
+    return idRef("commandfor", target).attr("command", command.wireValue());
+  }
+
+  /// Custom `--namespace-name` Invoker Command plus the action's payload attributes.
+  default SELF dispatchAction(ElementRef target, Action action) {
+    idRef("commandfor", target).attr("command", action.toCustomCommand());
+    action.payloadAttributes().forEach(this::attr);
+    return self();
+  }
+
+  default SELF popover(PopoverMode mode) {
+    return attr("popover", mode.wireValue());
+  }
+
+  default SELF dialogClosedByAny() {
+    return attr("closedby", "any");
+  }
+
+  default SELF dialogClosedByCloseRequest() {
+    return attr("closedby", "closerequest");
+  }
+
+  default SELF dialogClosedByNone() {
+    return attr("closedby", "none");
+  }
+
+  default SELF dimensions(int width, int height) {
+    return attr("width", Integer.toString(width)).attr("height", Integer.toString(height));
+  }
+
+  /// Cross-document view transition identity: emits `view-transition-name` (and class).
+  default SELF transitionKey(TransitionKey key) {
+    style().put(CssProperty.VIEW_TRANSITION_NAME, key.name());
+    if (key.transitionClass() != null) {
+      style().put(CssProperty.VIEW_TRANSITION_CLASS, key.transitionClass());
+    }
+    return self();
   }
 
   default SELF ariaHidden(boolean hidden) {
@@ -61,27 +140,27 @@ public interface InteractiveElement<
   }
 
   default SELF hover(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onHover(mutator);
+    interactivity().on(InteractiveState.HOVER, mutator);
     return self();
   }
 
   default SELF focusVisible(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onFocusVisible(mutator);
+    interactivity().on(InteractiveState.FOCUS_VISIBLE, mutator);
     return self();
   }
 
   default SELF active(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onActive(mutator);
+    interactivity().on(InteractiveState.ACTIVE, mutator);
     return self();
   }
 
   default SELF userInvalid(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onUserInvalid(mutator);
+    interactivity().on(InteractiveState.USER_INVALID, mutator);
     return self();
   }
 
   default SELF userValid(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onUserValid(mutator);
+    interactivity().on(InteractiveState.USER_VALID, mutator);
     return self();
   }
 
@@ -90,19 +169,20 @@ public interface InteractiveElement<
   }
 
   default SELF groupHover(String groupName, UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onGroupHover(Fnv1a64.sanitizeIdentifier(groupName), mutator);
+    interactivity()
+        .on(InteractiveState.GROUP_HOVER, Fnv1a64.sanitizeIdentifier(groupName), mutator);
     return self();
   }
 
   default SELF whenHas(String relativeSelector, UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onHas(relativeSelector, mutator);
+    interactivity().on(InteractiveState.HAS, relativeSelector, mutator);
     return self();
   }
 
   default SELF container(String containerName) {
     String safeName = Fnv1a64.sanitizeIdentifier(containerName);
-    style().put(new CssDeclaration.ContainerName(safeName));
-    style().put(new CssDeclaration.ContainerType(CssDeclaration.ContainerKind.INLINE_SIZE));
+    style().put(CssProperty.CONTAINER_NAME, safeName);
+    style().put(CssProperty.CONTAINER_TYPE, "inline-size");
     return self();
   }
 
@@ -143,17 +223,18 @@ public interface InteractiveElement<
   private SELF scrollDriven(ScrollReveal preset, TimelineAxis axis, String fill, String phase) {
     interactivity().registerKeyframeRule(preset.keyframeRule());
     interactivity()
-        .onMotionSafe(
+        .on(
+            InteractiveState.MOTION_SAFE,
             s ->
-                s.put(new CssDeclaration.Animation(preset.keyframeName() + " auto linear " + fill))
-                    .put(new CssDeclaration.AnimationTimeline("view(" + axis.css() + ")"))
-                    .put(new CssDeclaration.AnimationRange(phase + " 0% " + phase + " 100%")));
+                s.put(CssProperty.ANIMATION, preset.keyframeName() + " auto linear " + fill)
+                    .put(CssProperty.ANIMATION_TIMELINE, "view(" + axis.css() + ")")
+                    .put(CssProperty.ANIMATION_RANGE, phase + " 0% " + phase + " 100%"));
     return self();
   }
 
   default SELF viewTimeline(String name, TimelineAxis axis) {
     String ident = "--" + Fnv1a64.sanitizeIdentifier(name);
-    style().put(new CssDeclaration.ViewTimeline(ident + " " + axis.css()));
+    style().put(CssProperty.VIEW_TIMELINE, ident + " " + axis.css());
     return self();
   }
 
@@ -162,11 +243,12 @@ public interface InteractiveElement<
       throw new IllegalArgumentException("stepMilliseconds must be >= 0");
     }
     interactivity()
-        .onMotionSafe(
+        .on(
+            InteractiveState.MOTION_SAFE,
             s ->
                 s.put(
-                    new CssDeclaration.AnimationDelay(
-                        "calc((sibling-index() - 1) * " + stepMilliseconds + "ms)")));
+                    CssProperty.ANIMATION_DELAY,
+                    "calc((sibling-index() - 1) * " + stepMilliseconds + "ms)"));
     return self();
   }
 }

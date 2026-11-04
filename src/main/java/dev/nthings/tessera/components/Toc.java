@@ -11,6 +11,8 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.DocumentKey;
+import dev.nthings.tessera.core.DocumentState;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
@@ -25,8 +27,9 @@ import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
+import java.util.Map;
 
 /// Scroll-Spy Table of Contents and documentation layout primitives.
 public final class Toc {
@@ -37,7 +40,27 @@ public final class Toc {
           + " stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"9 18 15 12 9"
           + " 6\"/></svg>";
 
+  private static final class Registry {
+    private final Map<String, Item> entries = new LinkedHashMap<>();
+  }
+
+  private static final DocumentKey<Registry> REGISTRY =
+      DocumentKey.of("toc", Registry.class, Registry::new);
+
   private Toc() {}
+
+  /// Registers a heading for context-driven TOCs; its DOM id is `rawId` in the current scope.
+  static Item register(String rawId, String title, int level) {
+    var ctx = RenderContext.current();
+    String domId = ctx.viewScope().extend(ElementId.of(rawId)).domId();
+    return ctx.document(REGISTRY).entries.computeIfAbsent(domId, id -> new Item(id, title, level));
+  }
+
+  /// Headings registered on a compiled page, in document order (e.g. for search indexes).
+  public static List<Item> entries(DocumentState state) {
+    Registry registry = state.get(REGISTRY);
+    return registry == null ? List.of() : List.copyOf(registry.entries.values());
+  }
 
   /// Table of Contents item target.
   public record Item(String targetDomId, String title, int level) {
@@ -67,7 +90,7 @@ public final class Toc {
 
     @Override
     public Element render() {
-      var entry = RenderContext.current().registerTocEntry(id, title, level);
+      var entry = register(id, title, level);
       TagElement heading =
           ContentSection.sectionHeading(
               level, entry.targetDomId(), title, level == 2 ? 1.375 : level == 3 ? 1.125 : 1);
@@ -102,12 +125,16 @@ public final class Toc {
     return new DocSection(id, title, level, list);
   }
 
-  public static TableOfContents fromContext(String id, String heading) {
-    return new TableOfContents(ElementId.of(id), heading, null);
+  /// TOC of every section registered on the page, resolved after layout so it may precede them.
+  public static Element fromContext(String id, String heading) {
+    return Elements.late(
+        () ->
+            new TableOfContents(
+                ElementId.of(id), heading, entries(RenderContext.current().documentState())));
   }
 
   public static TableOfContents of(String id, String heading, List<Item> explicitItems) {
-    return new TableOfContents(ElementId.of(id), heading, List.copyOf(explicitItems));
+    return new TableOfContents(ElementId.of(id), heading, explicitItems);
   }
 
   public static DocLayout docLayout(String tocId, String tocHeading, IntoElement... sections) {
@@ -123,12 +150,12 @@ public final class Toc {
 
     private final ElementId id;
     private final String heading;
-    private final @Nullable List<Item> explicitItems;
+    private final List<Item> items;
 
-    public TableOfContents(ElementId id, String heading, @Nullable List<Item> explicitItems) {
+    public TableOfContents(ElementId id, String heading, List<Item> items) {
       this.id = id;
       this.heading = heading;
-      this.explicitItems = explicitItems;
+      this.items = List.copyOf(items);
     }
 
     @Override
@@ -183,13 +210,13 @@ public final class Toc {
                       .py(CssLength.rem(0.35))
                       .px(CssLength.rem(0.75))
                       .textColor(Tokens.TEXT_MUTED)
-                      .textSize(CssLength.rem(0.85))
+                      .fontSize(CssLength.rem(0.85))
                       .rounded(CssLength.rem(0.25))
                       .textDecorationNone()
                       .transition("color 0.15s ease, background 0.15s ease"))
           .select(
               ":scope a[data-level=\"3\"]",
-              s -> s.ps(CssLength.rem(1.5)).textSize(CssLength.rem(0.8)))
+              s -> s.ps(CssLength.rem(1.5)).fontSize(CssLength.rem(0.8)))
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(
               ":scope a:target-current",
@@ -202,19 +229,8 @@ public final class Toc {
 
     @Override
     public Element render() {
-      List<Item> resolvedItems;
-      if (explicitItems != null) {
-        resolvedItems = explicitItems;
-      } else {
-        var contextEntries = RenderContext.current().tocEntries();
-        resolvedItems = new ArrayList<>(contextEntries.size());
-        for (var e : contextEntries) {
-          resolvedItems.add(new Item(e.targetDomId(), e.title(), e.level()));
-        }
-      }
-
       var list = ol();
-      for (var item : resolvedItems) {
+      for (var item : items) {
         list.child(
             li().child(
                     a("#" + item.targetDomId())

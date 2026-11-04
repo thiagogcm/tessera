@@ -20,6 +20,7 @@ import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SiteNavigation;
 import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 import org.jsoup.Jsoup;
@@ -239,8 +240,7 @@ class DocumentationAndCwvPrimsTest {
                                 DocPager.of(
                                     null, new DocPager.PageRef("/guide", "Getting Started")))),
                     "Tessera Home",
-                    "Static HTML/CSS compiler",
-                    1),
+                    "Static HTML/CSS compiler"),
                 new SiteRoute(
                     "/guide",
                     new PageDocument(
@@ -254,8 +254,7 @@ class DocumentationAndCwvPrimsTest {
                                     new DocPager.PageRef("/", "Tessera Home"),
                                     new DocPager.PageRef("/faq", "Frequently Asked Questions")))),
                     "Getting Started",
-                    "Step by step guide",
-                    2),
+                    "Step by step guide"),
                 new SiteRoute(
                     "/faq",
                     new PageDocument(
@@ -266,12 +265,11 @@ class DocumentationAndCwvPrimsTest {
                                 DocPager.of(
                                     new DocPager.PageRef("/guide", "Getting Started"), null))),
                     "Frequently Asked Questions",
-                    "Common questions answered",
-                    3)),
+                    "Common questions answered")),
             "https://tessera.dev");
 
-    // Verify DocPager.fromSite auto-resolution
-    var autoPager = DocPager.fromSite(site, "/guide");
+    // Verify SiteNavigation.docPager auto-resolution
+    var autoPager = SiteNavigation.docPager(site, "/guide");
     assertThat(autoPager.prev()).isNotNull();
     assertThat(autoPager.prev().href()).isEqualTo("/");
     assertThat(autoPager.prev().title()).isEqualTo("Tessera Home");

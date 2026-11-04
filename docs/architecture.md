@@ -2,30 +2,32 @@
 
 > [!IMPORTANT]
 > **Target Environment & Compiler Invariants**
-> - **Java Runtime**: **JDK 25 LTS** (`--release 25`), utilizing JEP 506 `ScopedValue`, JEP 485 `Stream::gather` (`Gatherers`), sealed Algebraic Data Types (ADTs), pattern matching with record patterns, and JEP 513 flexible constructor bodies.
+> - **Java Runtime**: **JDK 25 LTS** (`--release 25`), utilizing JEP 506 `ScopedValue`, sealed Algebraic Data Types (ADTs), pattern matching with record patterns, unnamed variables (`_`), and JEP 467 Markdown documentation comments (`///`).
 > - **Browser Baseline**: **Chrome 156+ (Baseline 2026+)**. Native browser capabilities are emitted directly without legacy polyfills or fallback shims.
-> - **Compiler Strictness**: `javac -Xlint:all -Werror` paired with Error Prone + NullAway (`@NullMarked` JSpecify mode). **`@SuppressWarnings` is strictly prohibited across the entire codebase.**
+> - **Compiler Strictness**: forked `javac` with `-Xlint:all -Xdoclint:all/protected,-missing -Werror`, paired with Error Prone + NullAway (`@NullMarked` JSpecify mode). Checkstyle bans legacy `/** */` comments (use `///`), and SpotBugs runs at `effort=Max`, `threshold=Low`. **`@SuppressWarnings` is strictly prohibited across the entire codebase** (`just no-suppress-warnings`).
 
 ---
 
 ## 1. Architectural Synthesis
 
-Tessera is a declarative, multi-phase HTML/CSS view engine for JDK 25 that separates **component composition**, **scoped entity boundaries**, **algebraic style refinements**, and **multi-phase document emission**.
+Tessera is a declarative, multi-phase HTML/CSS view engine for JDK 25 that separates **component composition**, **scoped entity boundaries**, **linker-style element identity**, **algebraic style refinements**, and **multi-phase document emission**.
 
 ```mermaid
 flowchart LR
     subgraph Composition["1. Declarative Tree (Java 25)"]
         RO["RenderOnce\n(Stateless Record Component)"]
         RV["RenderView\n(Scoped Entity Boundary)"]
-        TE["TagElement / StatefulTagElement\n(HtmlTag + InteractiveElement + StyleRefinement)"]
+        TE["TagElement\n(HtmlTag + InteractiveElement + StyleRefinement)"]
+        ER["ElementRef / IdReference\n(DOM identity handles)"]
         RO -->|intoElement| TE
         RV -->|ScopedValue<RenderContext>| TE
+        TE -->|id / command / labelFor / href| ER
     end
 
     subgraph Pipeline["2. Three-Phase Document Compiler"]
-        P1["Phase 1: requestLayout\n• Expand RenderOnce & RenderView\n• Fold FNV-1a GlobalElementIds\n• Intern CSS declarations & @scope\n• Traverse DeferredElement in lexical scope"]
-        P2["Phase 2: prepaint\n• Verify Invoker Command targets\n• Validate WCAG / ARIA invariants\n• Drain PriorityQueue<ResolvedDeferred>"]
-        P3["Phase 3: paint\n• Emit @layer stylesheet or <link>\n• Stream HTML via OWASP Encode\n• Emit adjacent sibling hint popovers"]
+        P1["Phase 1: requestLayout\n• Expand RenderOnce & RenderView\n• Bind ElementRefs to ViewScope DOM ids\n• Intern CSS rules & @scope\n• Resolve LateElements & document-end sections"]
+        P2["Phase 2: prepaint\n• Link IdReferences to bound DOM ids\n• Drain PriorityQueue<ResolvedDeferred>\n• Validate WCAG / ARIA / invoker targets"]
+        P3["Phase 3: paint\n• Emit head contributions\n• Emit @layer stylesheet or <link>\n• Stream HTML via OWASP Encode\n• Emit adjacent sibling hint popovers"]
         P1 --> P2 --> P3
     end
 
@@ -41,13 +43,14 @@ flowchart LR
 
 | Architectural Pillar | Tessera Realization (JDK 25 + Chrome 156+) |
 | :--- | :--- |
-| **Dual Component Model** | **`RenderOnce`** (stateless `record` components consumed in a single pass) + **`RenderView`** (stateful/scoped domain boundaries wrapped with `[data-view="<view-type>"]`, `[data-view-id="<scope-id>"]`, and type-safe `ScopeStyle` `@scope` CSS isolation). |
-| **Multi-Phase Compilation** | Three-phase immutable pipeline producing `ResolvedNode` trees: **`requestLayout`** (tree expansion, `ScopedValue` ID scoping, CSS rule & `@scope` deduplication, lexical deferred traversal) $\rightarrow$ **`prepaint`** (accessibility, invoker target, & cross-route link verification, priority-sorted deferred hoisting) $\rightarrow$ **`paint`** (streaming HTML/CSS emission & shared multi-page CSS bundling via `SiteCompiler`). |
-| **Type-Safe State Promotion** | Concrete **`TagElement`** (supported by an `HtmlTag` enum with void-element awareness) promotes to **`StatefulTagElement`** via `.id(...)`, unlocking `commandfor`/`command`, `interestfor`, `popover`, and `closedby` APIs while sharing all interactive and layout capabilities through **`InteractiveElement<SELF>`**. |
+| **Dual Component Model** | **`RenderOnce`** (stateless `record` components consumed in a single pass) + **`RenderView`** (scoped domain boundaries wrapped with `[data-view="<view-type>"]`, `[data-view-id="<scope-id>"]`, and type-safe `ScopeStyle` `@scope` CSS isolation). |
+| **Multi-Phase Compilation** | Three-phase immutable pipeline producing `ResolvedNode` trees: **`requestLayout`** (tree expansion, `ScopedValue` view scoping, `ElementRef` binding, CSS rule & `@scope` deduplication, lexical deferred traversal, late-element resolution) $\rightarrow$ **`prepaint`** (id-reference linking, priority-sorted deferred hoisting, accessibility & invoker target verification) $\rightarrow$ **`paint`** (streaming HTML/CSS emission & shared multi-page CSS bundling via `SiteCompiler`). |
+| **Linker-Style Element Identity** | A single concrete **`TagElement`** (backed by an `HtmlTag` enum with void-element awareness) receives a DOM id by binding an **`ElementRef`** identity handle (`id(ElementRef)` / `id(String)`). References to other elements (`commandfor`, `for`, `aria-*`, `list`, `href="#…"`) are **`IdReference`** values resolved by the compiler like linker symbols; unbound refs, refs bound twice, and duplicate DOM ids fail compilation. |
 | **Zero-Warning Self-Typing** | Every fluent trait (`FluentBuilder<SELF>`, `Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) exposes `SELF self()`, overridden by concrete classes (`return this;`) with zero unchecked `(SELF) this` casts. |
-| **Algebraic CSS Engine** | Sealed **`CssDeclaration`** hierarchy stored in an `EnumMap<CssProperty, CssDeclaration>` inside **`StyleRefinement`** for $O(1)$ cascade merging and byte-level deterministic FNV-1a hashing. |
+| **Algebraic CSS Engine** | `StyleRefinement` stores declarations in an `EnumMap<CssProperty, String>` for $O(1)$ cascade merging and byte-level deterministic FNV-1a hashing; lengths are a sealed `CssLength` ADT. |
 | **Ordered CSS Cascade Layers** | Deterministic 7-layer cascade (`@layer reset, base, theme, components, utilities, interactive, container;`) ensuring pseudo-class states (`@layer interactive`) and `@container` queries (`@layer container`) always override base atomic utilities (`@layer utilities`). |
-| **Scoped Lexical Context** | JDK 25 **`ScopedValue<RenderContext>`** (JEP 506) propagates the current `GlobalElementId` view path, `StyleSheetCollector`, and design token registry implicitly across `RenderOnce::render()` and `RenderView::render()`. |
+| **Scoped Lexical Context** | JDK 25 **`ScopedValue<RenderContext>`** (JEP 506) propagates the current `ViewScope`, `StyleSheetCollector`, design token registry, and per-page `DocumentState` implicitly across `RenderOnce::render()` and `RenderView::render()`. |
+| **Component-Owned Document Hooks** | Components keep their own per-page registries behind private `DocumentKey`s and extend the page via `contributeHead(...)`, `atDocumentEnd(...)`, and `Elements.late(...)`, so `render/PageCompiler` has no dependency on `components`. |
 
 ---
 
@@ -58,9 +61,11 @@ Tessera maintains a minimal, zero-reflection dependency footprint:
 | Dependency | Maven Coordinates | Scope | Architectural Purpose |
 | :--- | :--- | :--- | :--- |
 | **JSpecify** | `org.jspecify:jspecify:1.0.0` | `compile` | `@NullMarked` package-level nullness contracts and `@Nullable` type-use annotations. |
-| **OWASP Java Encoder** | `org.owasp.encoder:encoder:1.3.1` | `compile` | Zero-allocation, context-sensitive streaming encoding directly into `Appendable`/`Writer` (`Encode.forHtmlContent`, `Encode.forHtmlAttribute`, `Encode.forCssString`, `Encode.forUriComponent`). |
+| **OWASP Java Encoder** | `org.owasp.encoder:encoder:1.3.1` | `compile` | Context-sensitive encoding of HTML content, attributes, and XML (`Encode.forHtmlContent`, `Encode.forHtmlAttribute`, `Encode.forXmlContent`). |
 | **Error Prone + NullAway** | `com.google.errorprone:error_prone_core:2.51.0` + `com.uber.nullaway:nullaway:0.14.3` | `annotationProcessorPaths` | Enforces compile-time null-safety across all `@NullMarked` packages without runtime overhead. |
 | **JUnit Jupiter 6 + AssertJ + Jsoup** | `org.junit.jupiter:junit-jupiter:6.1.3` + `org.assertj:assertj-core:3.27.7` + `org.jsoup:jsoup:1.23.2` | `test` | Structural HTML5/CSS verification in tests. |
+
+Build-only quality gates (no runtime footprint): `maven-compiler-plugin` runs a **forked** `javac` (in-process compilation silently ignores `-Xdoclint`), Checkstyle `14.4.0` (`config/checkstyle/checkstyle.xml`, `validate` phase), SpotBugs `4.10.5` (`config/spotbugs/spotbugs-exclude.xml`, `verify` phase), Spotless with google-java-format, and JaCoCo.
 
 ---
 
@@ -71,43 +76,26 @@ Tessera maintains a minimal, zero-reflection dependency footprint:
 All packages declare `@NullMarked` in `package-info.java`. Every fluent trait derives from `FluentBuilder<SELF>`, which relies on `SELF self()` implemented by concrete leaf classes (`return this;`), eliminating unchecked casts and `@SuppressWarnings("unchecked")`.
 
 ```java
-package dev.nthings.tessera.core;
-
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import org.jspecify.annotations.Nullable;
-
 public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
 
-    SELF self();
+  SELF self();
 
-    default SELF when(boolean condition, Function<SELF, SELF> then) {
-        return condition ? then.apply(self()) : self();
-    }
+  default SELF when(boolean condition, Function<SELF, SELF> then) {
+    return condition ? then.apply(self()) : self();
+  }
 
-    default SELF whenElse(
-            boolean condition,
-            Function<SELF, SELF> then,
-            Function<SELF, SELF> otherwise) {
-        return condition ? then.apply(self()) : otherwise.apply(self());
-    }
+  default SELF whenElse(
+      boolean condition, Function<SELF, SELF> then, Function<SELF, SELF> otherwise) {
+    return condition ? then.apply(self()) : otherwise.apply(self());
+  }
 
-    default <T> SELF whenPresent(
-            @Nullable T value,
-            BiFunction<SELF, T, SELF> then) {
-        return value != null ? then.apply(self(), value) : self();
-    }
+  default <T> SELF whenPresent(@Nullable T value, BiFunction<SELF, T, SELF> then) {
+    return value != null ? then.apply(self(), value) : self();
+  }
 
-    default <T> SELF whenOptional(
-            Optional<T> optional,
-            BiFunction<SELF, T, SELF> then) {
-        return optional.map(v -> then.apply(self(), v)).orElseGet(this::self);
-    }
-
-    default SELF map(Function<SELF, SELF> mapper) {
-        return mapper.apply(self());
-    }
+  default SELF map(Function<SELF, SELF> mapper) {
+    return mapper.apply(self());
+  }
 }
 ```
 
@@ -116,403 +104,255 @@ public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
 Every renderable unit implements `IntoElement`. `Element` is a `sealed` interface permitting only the known structural node types, enabling exhaustive `switch` expressions across all three compiler phases:
 
 ```java
-package dev.nthings.tessera.core;
-
-@FunctionalInterface
-public interface IntoElement {
-    Element intoElement();
-}
-
 public sealed interface Element extends IntoElement
-        permits TagElement, StatefulTagElement, TextElement, RawHtmlElement,
-                DeferredElement, EmptyElement, RenderOnceElement, RenderViewElement {
+    permits TagElement,
+        TextElement,
+        RawHtmlElement,
+        DeferredElement,
+        LateElement,
+        EmptyElement,
+        RenderOnceElement,
+        RenderViewElement {
 
-    @Override
-    default Element intoElement() {
-        return this;
-    }
+  @Override
+  default Element intoElement() {
+    return this;
+  }
 }
 ```
 
 1. **`RenderOnce` (Stateless Value Component)**:
    - Modelled as a Java 25 `record` implementing `RenderOnce`.
-   - `Element render()` takes zero arguments and accesses contextual tokens or scoped state via `RenderContext.current()`.
+   - `Element render()` takes zero arguments and accesses contextual tokens, view scope, or per-page state via `RenderContext.current()`.
 2. **`RenderView` (Scoped Entity Boundary)**:
-   - Represents an isolated UI module with a stable `ElementId entityId()`, a shared component `viewType()` (defaulting to kebab-case of the class name, e.g., `Card` $\rightarrow$ `"card"`), optional view-scoped CSS rules configured via a type-safe **`ScopeStyle`** builder (`configureScope(ScopeStyle scope)`), and its own `GlobalElementId` namespace.
-   - Only `RenderView` boundaries advance the lexical `GlobalElementId` path in `RenderContext`, ensuring that `StatefulTagElement` IDs inside a view share a deterministic view-level namespace regardless of how many intermediate `<div>` wrappers surround them.
+   - Represents an isolated UI module with an optional `ElementId entityId()` (default `null`: the compiler assigns a deterministic `<viewType>-<n>` per page), a shared component `viewType()` (defaulting to kebab-case of the class name, e.g., `Card` $\rightarrow$ `"card"`, cached per class in a `ClassValue`), and optional view-scoped CSS rules configured via a type-safe **`ScopeStyle`** builder (`configureScope(ScopeStyle scope)`).
+   - Only `RenderView` boundaries extend the lexical `ViewScope` in `RenderContext`, so element ids bound inside a view share a deterministic view-level namespace regardless of how many intermediate `<div>` wrappers surround them.
    - Emits `data-view="<resolved-view-type>"` (for shared `@scope ([data-view="<view-type>"]) to ([data-view])` CSS rules) and `data-view-id="<instance-scope-id>"` (for instance-level DOM identification).
 
 ```java
-package dev.nthings.tessera.core;
-
-import dev.nthings.tessera.css.ScopeStyle;
-
-@FunctionalInterface
-public interface RenderOnce extends IntoElement {
-
-    Element render();
-
-    @Override
-    default Element intoElement() {
-        return new RenderOnceElement(this);
-    }
-}
-
 public interface RenderView extends IntoElement {
 
-    ElementId entityId();
+  /// Instance id within the enclosing view scope; `null` lets the compiler assign
+  /// `<viewType>-<n>` deterministically per page.
+  default @Nullable ElementId entityId() {
+    return null;
+  }
 
-    default String viewType() {
-        return Fnv1a64.camelToKebab(getClass().getSimpleName());
-    }
+  default String viewType() {
+    return ViewTypes.DEFAULT_NAMES.get(getClass());
+  }
 
-    default void configureScope(ScopeStyle scope) {}
+  default void configureScope(ScopeStyle scope) {}
 
-    default String viewScopeRule() {
-        var scope = new ScopeStyle();
-        configureScope(scope);
-        return scope.isEmpty() ? "" : scope.toCssRuleBody();
-    }
+  Element render();
 
-    Element render();
-
-    @Override
-    default Element intoElement() {
-        return new RenderViewElement(this);
-    }
+  @Override
+  default Element intoElement() {
+    return new RenderViewElement(this);
+  }
 }
 ```
 
-### 3.3 Deterministic Byte-Level `Fnv1a64` & `GlobalElementId`
+### 3.3 Deterministic `Fnv1a64`, `ElementId`, & `ViewScope`
 
-`Enum.hashCode()` (derived from `Object.hashCode()`) is non-deterministic across JVM processes. Tessera uses a zero-allocation byte-level 64-bit FNV-1a utility (`Fnv1a64`) over explicit UTF-16 code units and primitive `long` values, and sanitizes all DOM/CSS identifier segments to `[a-zA-Z0-9_-]`.
+`Enum.hashCode()` (derived from `Object.hashCode()`) is non-deterministic across JVM processes. Tessera uses a byte-level 64-bit FNV-1a utility (`Fnv1a64`) over explicit UTF-16 code units and primitive `int`/`long` values (`updateByte`, `updateInt`, `updateLong`, `updateChars`, `toBase36Hash`), sanitizes all DOM/CSS identifier segments to `[a-zA-Z0-9_-]` (`sanitizeIdentifier`), and derives default view types with `toKebabCase`.
+
+`ElementId` is a plain sanitized slug, and `ViewScope` is the DOM id prefix formed by joining the `ElementId` of every enclosing `RenderView` with `--` (which `ElementId` therefore reserves by collapsing runs of `-`):
 
 ```java
-package dev.nthings.tessera.core;
+public record ElementId(String slug) {
 
-public final class Fnv1a64 {
-    public static final long OFFSET_BASIS = 0xcbf29ce484222325L;
-    private static final long PRIME = 0x100000001b3L;
+  public ElementId {
+    slug = Fnv1a64.sanitizeIdentifier(slug).replaceAll("-{2,}", "-");
+  }
 
-    private Fnv1a64() {}
-
-    public static long updateByte(long hash, int b) {
-        return (hash ^ (b & 0xFFL)) * PRIME;
-    }
-
-    public static long updateChars(long hash, CharSequence cs) {
-        long h = hash;
-        for (int i = 0, len = cs.length(); i < len; i++) {
-            char c = cs.charAt(i);
-            h = updateByte(h, c & 0xFF);
-            h = updateByte(h, (c >>> 8) & 0xFF);
-        }
-        return h;
-    }
-
-    public static long updateLong(long hash, long value) {
-        long h = hash;
-        for (int shift = 0; shift < 64; shift += 8) {
-            h = updateByte(h, (int) (value >>> shift));
-        }
-        return h;
-    }
-
-    public static String toBase36Hash(long hash) {
-        return Long.toUnsignedString(hash, 36);
-    }
-
-    public static String sanitizeIdentifier(String raw) {
-        if (raw.isEmpty()) {
-            throw new IllegalArgumentException("Identifier cannot be empty");
-        }
-        var sb = new StringBuilder(raw.length());
-        for (int i = 0; i < raw.length(); i++) {
-            char c = raw.charAt(i);
-            if ((c >= 'a' && c <= 'z')
-                    || (c >= 'A' && c <= 'Z')
-                    || (c >= '0' && c <= '9')
-                    || c == '_'
-                    || c == '-') {
-                sb.append(c);
-            } else {
-                sb.append('-');
-            }
-        }
-        return sb.toString();
-    }
+  public static ElementId of(String name) {
+    return new ElementId(name);
+  }
 }
-```
 
-`ElementId` is a `sealed` ADT with deterministic FNV-1a hashing (`foldHash(long seed)`), and `GlobalElementId` folds the active `RenderView` hierarchy path into collision-free DOM IDs and CSS `--anchor-<id>` custom idents:
+public record ViewScope(String domId) {
 
-```java
-package dev.nthings.tessera.core;
+  public static final ViewScope ROOT = new ViewScope("");
 
-public sealed interface ElementId
-        permits ElementId.Named, ElementId.Indexed, ElementId.Composite {
-
-    String slug();
-    long foldHash(long seed);
-
-    record Named(String name) implements ElementId {
-        public Named {
-            Fnv1a64.sanitizeIdentifier(name);
-        }
-
-        @Override
-        public String slug() {
-            return Fnv1a64.sanitizeIdentifier(name);
-        }
-
-        @Override
-        public long foldHash(long seed) {
-            long h = Fnv1a64.updateByte(seed, 1);
-            return Fnv1a64.updateChars(h, name);
-        }
-    }
-
-    record Indexed(String prefix, long index) implements ElementId {
-        public Indexed {
-            Fnv1a64.sanitizeIdentifier(prefix);
-        }
-
-        @Override
-        public String slug() {
-            return Fnv1a64.sanitizeIdentifier(prefix) + "-" + index;
-        }
-
-        @Override
-        public long foldHash(long seed) {
-            long h = Fnv1a64.updateByte(seed, 2);
-            h = Fnv1a64.updateChars(h, prefix);
-            return Fnv1a64.updateLong(h, index);
-        }
-    }
-
-    record Composite(ElementId namespace, ElementId local) implements ElementId {
-        @Override
-        public String slug() {
-            return namespace.slug() + "-" + local.slug();
-        }
-
-        @Override
-        public long foldHash(long seed) {
-            long h = Fnv1a64.updateByte(seed, 3);
-            h = namespace.foldHash(h);
-            return local.foldHash(h);
-        }
-    }
-
-    static ElementId of(String name) {
-        return new Named(name);
-    }
-
-    static ElementId of(String prefix, long index) {
-        return new Indexed(prefix, index);
-    }
+  public ViewScope extend(ElementId childId) {
+    return new ViewScope(domId.isEmpty() ? childId.slug() : domId + "--" + childId.slug());
+  }
 }
 ```
 
 ### 3.4 Lexical Context Propagation via JDK 25 `ScopedValue`
 
+`RenderContext` carries the active `ViewScope`, the page's `StyleSheetCollector` and `Tokens`, and a `DocumentState` shared by every context of one compilation:
+
 ```java
-package dev.nthings.tessera.core;
-
-import dev.nthings.tessera.css.StyleSheetCollector;
-import dev.nthings.tessera.css.Tokens;
-import java.util.function.Supplier;
-
 public final class RenderContext {
 
-    private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
+  private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
 
-    private final GlobalElementId viewScope;
-    private final StyleSheetCollector styles;
-    private final Tokens tokens;
+  private final ViewScope viewScope;
+  private final StyleSheetCollector styles;
+  private final Tokens tokens;
+  private final DocumentState docState;
 
-    public RenderContext(GlobalElementId viewScope, StyleSheetCollector styles, Tokens tokens) {
-        this.viewScope = viewScope;
-        this.styles = styles;
-        this.tokens = tokens;
-    }
+  public static RenderContext current() { /* orElseThrow outside a PageCompiler pass */ }
 
-    public static RenderContext current() {
-        return CURRENT.orElseThrow(() ->
-                new IllegalStateException("RenderContext accessed outside an active PageCompiler pass"));
-    }
+  /// Per-page state for `key`, created on first use.
+  public <T> T document(DocumentKey<T> key) { return docState.getOrCreate(key); }
 
-    public GlobalElementId viewScope() {
-        return viewScope;
-    }
+  /// Adds `element` to the page's `<head>` (after `<title>`).
+  public void contributeHead(IntoElement element) { ... }
 
-    public StyleSheetCollector styles() {
-        return styles;
-    }
+  /// Appends `section` to the end of `<body>` after layout; only the first registration per
+  /// `owner` counts.
+  public void atDocumentEnd(DocumentKey<?> owner, Supplier<? extends IntoElement> section) { ... }
 
-    public Tokens tokens() {
-        return tokens;
-    }
+  /// Runs `work` with this context current again (used to resolve LateElements in place).
+  public <R> R reenter(Supplier<R> work) { return ScopedValue.where(CURRENT, this).call(work::get); }
 
-    public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
-        var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens);
-        return ScopedValue.where(CURRENT, childContext).call(work::get);
-    }
+  public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
+    var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens, docState);
+    return ScopedValue.where(CURRENT, childContext).call(work::get);
+  }
 
-    public static <R> R runRoot(StyleSheetCollector styles, Tokens tokens, Supplier<R> work) {
-        var rootContext = new RenderContext(GlobalElementId.ROOT, styles, tokens);
-        return ScopedValue.where(CURRENT, rootContext).call(work::get);
-    }
+  public static <R> R runRoot(StyleSheetCollector styles, Tokens tokens, Supplier<R> work) {
+    var rootContext = new RenderContext(ViewScope.ROOT, styles, tokens);
+    return ScopedValue.where(CURRENT, rootContext).call(work::get);
+  }
 }
 ```
+
+### 3.5 Document Hooks: `DocumentKey`, `DocumentState`, & `LateElement`
+
+- **`DocumentKey<T>`** (`DocumentKey.of(name, type, initial)`) is a typed, identity-compared slot of per-page state. Components keep their keys `private`, so only they can read their registry.
+- **`DocumentState`** holds the keyed values (`get(key)` returns `null` when no component on the page created it), the `<head>` contributions (`headElements()`), and the end-of-document sections (`documentEndSections()`, in registration order).
+- **`LateElement`** (`Elements.late(Supplier<? extends IntoElement>)`) is a placeholder resolved after the rest of the page's layout, **in the `RenderContext` captured where it appears**, so its content can read registries filled by elements placed anywhere on the page (e.g., a table of contents placed before the sections it lists).
+
+Footnotes, Toc, and Image each keep their own registry this way (see Section 7); `PreparedPage.documentState()` exposes the final state to `SiteCompiler`, which reads search-index headings via `Toc.entries(DocumentState)`.
 
 ---
 
-## 4. Element Hierarchy, Shared `InteractiveElement`, & State Promotion
+## 4. Element Hierarchy, Shared `InteractiveElement`, & Element Identity
 
 ### 4.1 `HtmlTag` with Void-Element Enforcement
 
-`HtmlTag` enumerates semantic HTML5 tags and tracks whether a tag is an HTML5 void element (`IMG`, `INPUT`, `BR`, `HR`, `META`, `LINK`, `SOURCE`, `TRACK`). Attempting to append child elements to a void element fails immediately in `TagElement.appendChild` with `IllegalStateException`, and Phase 3 omits closing tags for void elements.
+`HtmlTag` enumerates semantic HTML5 tags and tracks whether a tag is an HTML5 void element (`INPUT`, `IMG`, `SOURCE`, `TRACK`, `BR`, `HR`, `META`, `LINK`). Attempting to append child elements to a void element fails immediately in `TagElement.appendChild` with `IllegalStateException`, and Phase 3 omits closing tags for void elements.
 
 ### 4.2 Shared `InteractiveElement<SELF>` Trait
 
-Both `TagElement` and `StatefulTagElement` implement `InteractiveElement<SELF>`, `Styled<SELF>`, `ParentElement<SELF>`, and `FluentBuilder<SELF>`. Promoting an element via `.id("card")` to `StatefulTagElement` preserves full access to `.hover(...)`, `.focusVisible(...)`, `.active(...)`, `.group(...)`, `.groupHover(...)`, `.whenHas(...)`, `.container(...)`, `.onContainer(...)`, `.onContainerStyle(...)`, `.attr(...)`, and `.boolAttr(...)` regardless of method call ordering.
+`TagElement` implements `InteractiveElement<TagElement>`, `ParentElement<TagElement>`, and `FluentBuilder<TagElement>` (`InteractiveElement` extends `Styled<SELF>`); `components.Image` implements the same trait by delegating to its inner `<img>`. The trait exposes attributes, id references, Invoker Commands, popover/dialog control, pseudo-class states, group hover, `:has()`, container queries, and scroll-driven animations regardless of method call ordering.
 
 ```java
-package dev.nthings.tessera.core;
+public interface InteractiveElement<
+        SELF extends InteractiveElement<SELF> & Styled<SELF> & FluentBuilder<SELF>>
+    extends Styled<SELF>, FluentBuilder<SELF> {
 
-import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Interactivity;
-import dev.nthings.tessera.css.StyleRefinement;
-import dev.nthings.tessera.css.Styled;
-import java.util.Map;
-import java.util.function.UnaryOperator;
+  Interactivity interactivity();
 
-public interface InteractiveElement<SELF extends InteractiveElement<SELF> & Styled<SELF> & FluentBuilder<SELF>>
-        extends Styled<SELF>, FluentBuilder<SELF> {
+  Map<String, String> attributes();
 
-    Interactivity interactivity();
-    Map<String, String> attributes();
+  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler.
+  Map<String, IdReference> idReferences();
 
-    default SELF attr(String name, String value) {
-        attributes().put(name, value);
-        return self();
-    }
+  default SELF idRef(String attribute, ElementRef... targets) {
+    return idRef(attribute, new IdReference("", List.of(targets)));
+  }
 
-    default SELF boolAttr(String name, boolean enabled) {
-        if (enabled) {
-            attributes().put(name, "");
-        } else {
-            attributes().remove(name);
-        }
-        return self();
-    }
+  default SELF ariaLabelledBy(ElementRef... labels) { return idRef("aria-labelledby", labels); }
+  default SELF ariaDescribedBy(ElementRef... descriptions) { ... }
+  default SELF ariaErrorMessage(ElementRef message) { ... }
+  default SELF labelFor(ElementRef control) { return idRef("for", control); }
+  default SELF list(ElementRef datalist) { return idRef("list", datalist); }
 
-    default SELF ariaLabel(String label) {
-        return attr("aria-label", label);
-    }
+  /// Same-page fragment link: `href="#<target dom id>"`.
+  default SELF href(ElementRef target) {
+    return idRef("href", new IdReference("#", List.of(target)));
+  }
 
-    default SELF role(String role) {
-        return attr("role", role);
-    }
+  /// Chrome 156+ Invoker Command: `commandfor` + `command`.
+  default SELF command(ElementRef target, BuiltinCommand command) {
+    return idRef("commandfor", target).attr("command", command.wireValue());
+  }
 
-    default SELF hover(UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onHover(mutator);
-        return self();
-    }
+  default SELF hover(UnaryOperator<StyleRefinement> mutator) {
+    interactivity().on(InteractiveState.HOVER, mutator);
+    return self();
+  }
 
-    default SELF focusVisible(UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onFocusVisible(mutator);
-        return self();
-    }
-
-    default SELF active(UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onActive(mutator);
-        return self();
-    }
-
-    default SELF group(String groupName) {
-        return attr("data-group", Fnv1a64.sanitizeIdentifier(groupName));
-    }
-
-    default SELF groupHover(String groupName, UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onGroupHover(Fnv1a64.sanitizeIdentifier(groupName), mutator);
-        return self();
-    }
-
-    default SELF whenHas(String relativeSelector, UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onHas(relativeSelector, mutator);
-        return self();
-    }
-
-    default SELF container(String containerName) {
-        String safeName = Fnv1a64.sanitizeIdentifier(containerName);
-        style().put(new dev.nthings.tessera.css.CssDeclaration.ContainerName(safeName));
-        style().put(new dev.nthings.tessera.css.CssDeclaration.ContainerType(
-                dev.nthings.tessera.css.CssDeclaration.ContainerKind.INLINE_SIZE));
-        return self();
-    }
-
-    default SELF onContainer(
-            String containerName,
-            CssLength minInlineSize,
-            UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onContainerMinWidth(
-                Fnv1a64.sanitizeIdentifier(containerName), minInlineSize, mutator);
-        return self();
-    }
-
-    default SELF onContainerStyle(
-            String containerName,
-            String customProperty,
-            String expectedValue,
-            UnaryOperator<StyleRefinement> mutator) {
-        interactivity().onContainerStyleQuery(
-                Fnv1a64.sanitizeIdentifier(containerName), customProperty, expectedValue, mutator);
-        return self();
-    }
+  default SELF container(String containerName) {
+    String safeName = Fnv1a64.sanitizeIdentifier(containerName);
+    style().put(CssProperty.CONTAINER_NAME, safeName);
+    style().put(CssProperty.CONTAINER_TYPE, "inline-size");
+    return self();
+  }
+  // ... attr, boolAttr, ariaLabel, role, title, tabIndex, popover, dialogClosedBy*, focusVisible,
+  // active, userInvalid, userValid, group, groupHover, whenHas, onContainer, onContainerStyle,
+  // scrollReveal, scrollExit, viewTimeline, staggerBySiblingIndex, transitionKey
 }
 ```
 
-### 4.3 `StatefulTagElement` & Baseline 2026+ Invoker Capabilities
+An `IdReference(prefix, targets)` reserves the attribute's position in `attributes()` (so resolved ids keep declaration order) and is folded into a space-separated list of resolved DOM ids during the Phase 2 link pass.
 
-Calling `tagElement.id("confirm-archive")` or `tagElement.id(ElementId.of("row", index))` returns a `StatefulTagElement` carrying a deterministic `ElementId`. `StatefulTagElement` unlocks ID-dependent Chrome 156+ capabilities and supports referencing targets either by `StatefulTagElement` instance or by `ElementId`/`String` (enabling self-targeting buttons inside a `<dialog>` before the parent dialog variable is bound):
+### 4.3 `ElementRef` Binding & Baseline 2026+ Invoker Capabilities
+
+An element gets a DOM id by binding an `ElementRef`, an identity handle compared by instance:
+
+- `ElementRef.named("confirm-archive")`: DOM id ends in the sanitized name within the bind site's `ViewScope`.
+- `ElementRef.anonymous()`: local id assigned by the compiler as `<tag>-<n>`, deterministic per page.
+- `tagElement.id(ElementRef)` binds a ref (re-binding the same element to a different ref throws); `tagElement.id(String)` binds a fresh `ElementRef.named(...)`; `tagElement.ref()` returns the element's ref, binding an anonymous one if none was set.
+
+Any number of elements may reference a ref from anywhere on the page, before or after its bind site (enabling a close button inside a `<dialog>` to target the dialog being built):
 
 - **Declarative Invoker Commands (`commandfor` / `command`)**:
-  - `.command(StatefulTagElement target, BuiltinCommand command)`
-  - `.command(ElementId targetId, BuiltinCommand command)`
-  - `.command(String targetName, BuiltinCommand command)`
-  - `.dispatchAction(StatefulTagElement target, Action action)`
+  - `.command(ElementRef target, BuiltinCommand command)` / `.command(TagElement target, BuiltinCommand command)`
+  - `.dispatchAction(ElementRef target, Action action)` / `.dispatchAction(TagElement target, Action action)` (custom `--namespace-name` commands plus payload attributes)
+- **Labels & Relationships**: `.labelFor(...)`, `.list(...)`, `.ariaLabelledBy(...)`, `.ariaDescribedBy(...)`, `.ariaErrorMessage(...)`, `.href(ElementRef)`.
 - **Interest Invokers (`interestfor` + `<span popover="hint">`)**:
-  - `.interestTooltip(UnaryOperator<TagElement> tooltipBuilder)`: Attaches `interestfor="<global-id>--tooltip"` to the trigger and emits a phrasing-safe companion `<span id="<global-id>--tooltip" popover="hint" role="tooltip">` **as an adjacent following sibling** in the DOM (preserving the HTML5 phrasing content model of `<button>`, `<a>`, `<p>`, and `<sup>`).
+  - `.interestTooltip(UnaryOperator<TagElement> tooltipBuilder)`: auto-binds the trigger's ref, attaches `interestfor="<dom-id>--tooltip"`, and emits a phrasing-safe companion `<span id="<dom-id>--tooltip" popover="hint" role="tooltip">` **as an adjacent following sibling** in the DOM (preserving the HTML5 phrasing content model of `<button>`, `<a>`, `<p>`, and `<sup>`). The base tooltip is positioned with `position-area: block-start; position-try-fallbacks: flip-block, flip-inline; margin: 0.25rem` unless the builder overrides it.
 - **Popover & `<dialog closedby>` Control**:
   - `.popover(PopoverMode mode)` (`auto`, `manual`, `hint`)
   - `.dialogClosedByAny()` (`closedby="any"`), `.dialogClosedByCloseRequest()` (`closedby="closerequest"`), `.dialogClosedByNone()` (`closedby="none"`)
 - **CSS Anchor Positioning & View Transitions**:
-  - `.anchorName()` (emits `anchor-name: --anchor-<id>`)
-  - `.anchoredTo(StatefulTagElement anchor, String positionArea, String tryFallbacks)`
-  - `.viewTransitionName(String transitionClass)`
+  - `.anchorName()` (auto-binds a ref; emits `anchor-name: --anchor-<dom-id>`)
+  - `.anchoredTo(ElementRef anchor, String positionArea, String tryFallbacks)` (emits `position-anchor`; the anchor must be laid out earlier on the page)
+  - `.viewTransitionName(String transitionClass)` (auto-binds a ref; emits `view-transition-name: <class>-<dom-id>` and `view-transition-class: <class>`)
+  - `.transitionKey(TransitionKey key)` for cross-document morphing between routes
+
+Unbound refs, refs bound to more than one element, and duplicate DOM ids on a page all fail compilation with `AccessibilityViolationException`.
 
 ---
 
 ## 5. Algebraic CSS Engine, `ScopeStyle`, & 7-Layer Cascade (`dev.nthings.tessera.css`)
 
-### 5.1 Sealed `CssDeclaration` Hierarchy & `EnumMap` Storage
+### 5.1 `CssProperty` Keys & `EnumMap` Storage
 
-Every CSS property is represented by a `CssProperty` enum constant and a `sealed` `CssDeclaration` record. `StyleRefinement` stores declarations inside an `EnumMap<CssProperty, CssDeclaration>`:
+Every CSS property is a `CssProperty` enum constant whose CSS name is derived from the constant name (`POSITION_TRY_FALLBACKS` $\rightarrow$ `position-try-fallbacks`). `StyleRefinement` stores raw values in an `EnumMap<CssProperty, String>` plus a separate map of scoped custom properties:
+
+```java
+private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
+
+public StyleRefinement put(CssProperty property, String value) { ... }
+public StyleRefinement put(CssProperty property, CssLength value) { return put(property, value.toCss()); }
+public @Nullable String get(CssProperty property) { return declarations.get(property); }
+```
 
 - **Merging (`mergeFrom`)**: `declarations.putAll(other.declarations)` runs in $O(1)$ per set property.
-- **Deterministic Hashing**: Iterates `declarations.entrySet()` in natural `CssProperty` ordinal order and folds each property ordinal and CSS value string into `Fnv1a64`.
+- **Deterministic Hashing (`contentHash`)**: Iterates `declarations` in `CssProperty` ordinal order and folds each ordinal (`updateInt`) and value string into `Fnv1a64`. Ordinal order is also emission order, so shorthands (`TRANSITION`, `ANIMATION`) precede their longhands and never reset them.
+- **Lengths**: `CssLength` is a sealed ADT of `Dimension(double value, Unit unit)` (`PX`, `REM`, `EM`, `CH`, `PERCENT`, `CQI`, `DVH`), `Auto`, `Fluid(min, preferred, max)` (emits `--fluid(...)`), and `Expr(String)`, built via `CssLength.rem(...)`, `px(...)`, etc.
 
-### 5.2 Type-Safe `ScopeStyle` Builder & Content-Addressed `@scope` Deduplication
+### 5.2 `Interactivity` & `InteractiveState`
 
-`RenderView` components author their `@scope` rules via `ScopeStyle` (`configureScope(ScopeStyle scope)`), which reuses `Styled<ScopeStyle>` for `:scope` root declarations, nested child rules (`select(selector, Consumer<StyleRefinement>)`), top-layer `@starting-style` entry rules (`selectWithStartingStyle(selector, openRules, startingRules)`), scoped `@container` size and scroll-state queries (`containerMinInlineSize`, `containerMaxInlineSize`, `containerScrollState`), motion-safe gating (`motionSafe`), and feature fallbacks (`supportsNot`).
+`Interactivity` stores an element's pseudo-state styles in a `SortedMap<StateRule, StyleRefinement>`, keyed by `StateRule(InteractiveState state, String argument)` and ordered by state, then argument, for deterministic emission. `InteractiveState` declaration order is emission order (`HOVER`, `FOCUS_VISIBLE`, `ACTIVE`, `USER_INVALID`, `USER_VALID`, `GROUP_HOVER`, `HAS`, `MOTION_SAFE`), so later states win the cascade at equal specificity. It also holds registered `@keyframes` rules and `ContainerRule`s (`@container` size and style queries); it holds no invoker or tooltip metadata.
+
+### 5.3 Type-Safe `ScopeStyle` Builder & Content-Addressed `@scope` Deduplication
+
+`RenderView` components author their `@scope` rules via `ScopeStyle` (`configureScope(ScopeStyle scope)`), which expresses `:scope` root declarations (`root(UnaryOperator<StyleRefinement>)`), nested child rules (`select(selector, UnaryOperator<StyleRefinement>)`), top-layer `@starting-style` entry rules (`selectWithStartingStyle(selector, openMutator, startingMutator)`), scoped `@container` size and scroll-state queries (`containerMinInlineSize`, `containerMaxInlineSize`, `containerScrollState`, `container`), motion-safe gating (`motionSafe`), and feature fallbacks (`supportsNot`). The compiler builds the scope and calls `scope.toCssBody()`; views do not render CSS themselves.
 
 `StyleSheetCollector.registerViewScope(viewType, scopedCss)` performs content-addressed `@scope` deduplication:
 - All instances of a `RenderView` sharing the same CSS body emit a single `@scope ([data-view="<viewType>"]) to ([data-view])` block in `@layer components` and share `data-view="<viewType>"`.
 - Parameterized `RenderView` instances whose `ScopeStyle` produces distinct CSS rules receive a disambiguated `data-view="<viewType>-<hash>"` attribute so distinct rules never collide.
 
-### 5.3 Deterministic 7-Layer CSS Cascade (`@layer`)
+### 5.4 Deterministic 7-Layer CSS Cascade (`@layer`)
 
 In CSS Cascade Layers, layer order takes precedence over selector specificity, and `@container` queries contribute `(0,0,0)` to selector specificity. Tessera therefore emits a 7-layer cascade header:
 
@@ -520,40 +360,56 @@ In CSS Cascade Layers, layer order takes precedence over selector specificity, a
 @layer reset, base, theme, components, utilities, interactive, container;
 ```
 
-1. **`@layer reset`**: Box-sizing reset and `interpolate-size: allow-keywords` on `:root` for intrinsic `height: auto` transitions.
-2. **`@layer base`**: Document defaults, `@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }`, and default anchor positioning for companion hint popovers (`[popover="hint"] { position-area: block-start; position-try-fallbacks: flip-block, flip-inline; margin: 0.25rem; }`).
-3. **`@layer theme`**: Reactive design tokens (`--surface`, `--text-primary`, etc.) via native `light-dark(...)` and CSS custom `@function` definitions (`@function --fluid(...)`).
+1. **`@layer reset`**: Box-sizing/margin reset, `interpolate-size: allow-keywords` and `color-scheme: light dark` on `:root`, and responsive media defaults.
+2. **`@layer base`**: `@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }` with `::view-transition-group(*.<class>)` timing for registered transition classes, body defaults, `dialog { margin: auto }`, and collected `@keyframes`.
+3. **`@layer theme`**: Reactive design tokens (`--surface-canvas`, `--text-primary`, etc.) via native `light-dark(...)` and the CSS custom `@function --fluid(...)`.
 4. **`@layer components`**: Deduplicated donut-scoped `@scope ([data-view="<view-type>"]) to ([data-view])` rules emitted by `RenderView` components via `ScopeStyle`.
 5. **`@layer utilities`**: Deduplicated atomic utility classes (`.u-<hash>`) generated from `StyleRefinement`.
-6. **`@layer interactive`**: Pseudo-class and relational rules (`&:hover:not(:disabled)`, `&:focus-visible`, `&:active:not(:disabled)`, `[data-group="..."]:hover &`, `&:has(...)`), guaranteed to win over base `@layer utilities`.
-7. **`@layer container`**: `@container <name> (inline-size >= ...)` and `@container <name> style(...)` rules, guaranteed to win over base `@layer utilities` despite identical `(0,1,0)` class selector specificity.
+6. **`@layer interactive`**: State rules (`.i-<hash>`): `&:hover:not(:disabled)`, `&:focus-visible`, `&:active:not(:disabled)`, `&:user-invalid`, `&:user-valid`, `[data-group="..."]:hover &`, `&:has(...)`, and `@media (prefers-reduced-motion: no-preference)` scroll-driven animations, guaranteed to win over base `@layer utilities`.
+7. **`@layer container`**: `@container <name> (inline-size >= ...)` and `@container <name> style(...)` rules (`.cq-<hash>`), guaranteed to win over base `@layer utilities` despite identical `(0,1,0)` class selector specificity.
 
 ---
 
 ## 6. Three-Phase Compilation Pipeline (`dev.nthings.tessera.render`)
 
-`PageCompiler.compile(PageDocument, OutputMode)` executes three sequential, side-effect-free phases over an immutable intermediate `ResolvedNode` representation (leaving input `TagElement` and `RenderOnce` instances untouched and reusable across renders):
+`PageCompiler.compile(PageDocument, OutputMode)` executes three sequential phases over an immutable intermediate `ResolvedNode` representation (leaving input `TagElement` and `RenderOnce` instances untouched and reusable across renders). `PageCompiler.prepare(PageDocument)` runs Phases 1–2 and returns a `PreparedPage`; `paintPrepared(...)` runs Phase 3. The `render` package depends only on `core` and `css`, never on `components`.
 
-### Phase 1: `requestLayout` (Expansion, Lexical Scoping, & Style Interning)
-- Recursively expands `RenderOnce` and `RenderView` nodes.
-- When entering a `RenderView`, pushes `view.entityId()` onto `RenderContext.current().viewScope()` via `ScopedValue.where(...)`, registers the view's `ScopeStyle` rule via `StyleSheetCollector.registerViewScope(view.viewType(), scopedRule)` in `@layer components`, and attaches both `data-view="<resolved-view-type>"` and `data-view-id="<instance-scope-id>"` to the view's root element.
-- Resolves every `StatefulTagElement` DOM ID as `RenderContext.current().viewScope().extend(stateful.elementId())` and records it in the document's registered ID table.
-- Interns each node's `StyleRefinement` and `Interactivity` into `StyleSheetCollector`, assigning deterministic `.u-<hash>` and `.i-<hash>` class names.
-- Recursively resolves any attached `interestTooltip` element so its styles and children are interned during Phase 1, attaching the resulting `ResolvedNode` as the trigger's companion sibling.
-- Traverses `DeferredElement` children **immediately inside their active lexical `ScopedValue<RenderContext>`** (preserving their enclosing `RenderView` ID prefix and `@scope` attribution) and enqueues `ResolvedDeferred(priority, insertionSequence, resolvedChild)` into a deterministic `PriorityQueue`.
+```java
+public record PreparedPage(
+    PageDocument document,
+    StyleSheetCollector styles,
+    List<ResolvedNode> bodyNodes,
+    Set<String> registeredDomIds,
+    Set<String> outgoingHrefs,
+    Set<TransitionKey> transitionKeys,
+    List<ResolvedNode> headNodes,
+    DocumentState documentState) {}
+```
 
-### Phase 2: `prepaint` (Static Accessibility & Invoker Verification)
-- Walks the `ResolvedNode` tree and all queued `ResolvedDeferred` portals to enforce compile-time HTML5/WCAG invariants (throwing `AccessibilityViolationException` on failure):
-  1. `<img>` elements must declare `alt` (empty `alt=""` permitted only when `role="presentation"` or `aria-hidden="true"`).
-  2. Interactive elements (`<button>`, `<a>`) with neither text descendants nor accessible labels (`aria-label`, `aria-labelledby`, `title`) are rejected.
-  3. Every `commandfor="<target-id>"`, `interestfor="<target-id>"`, and intra-document `<a href="#<target-id>">` attribute is verified against the set of resolved DOM IDs in the document so dangling invoker or scroll-spy references fail at compile time.
-- Drains the `PriorityQueue<ResolvedDeferred>` in `(priority ASC, insertionSequence ASC)` order and appends the hoisted overlay nodes to the root `<body>` container.
+### Phase 1: `requestLayout` (Expansion, Lexical Scoping, Binding, & Style Interning)
+- Runs inside `RenderContext.runRoot(...)` and recursively expands `RenderOnce` and `RenderView` nodes.
+- When entering a `RenderView`, extends the `ViewScope` with `view.entityId()` (or a compiler-assigned `<viewType>-<n>` when it is `null`) via `withViewScope(...)`, configures a fresh `ScopeStyle`, registers its CSS body via `StyleSheetCollector.registerViewScope(view.viewType(), scope.toCssBody())` in `@layer components`, and attaches `data-view` and `data-view-id` to the view's root element (wrapping it in a `<div>` if the root is not a tag).
+- Binds every `TagElement`'s `ElementRef`: the DOM id is `viewScope.extend(localId)` at the bind site (anonymous refs get `<tag>-<n>`). Literal `id` attributes are registered too; duplicate DOM ids and refs bound twice throw `AccessibilityViolationException`.
+- Adds id-derived styles: `anchor-name: --anchor-<dom-id>`, `position-anchor` for `anchoredTo` targets (already bound), and unique `view-transition-name`s; a `TransitionKey` name may appear at most once per page.
+- Validates `<img>` elements as they resolve: `alt` is required (empty `alt=""` only with `role="presentation"` or `aria-hidden="true"`), and either `width` + `height` or CSS `aspect-ratio` must be declared to prevent CLS.
+- Interns each node's `StyleRefinement` and `Interactivity` into `StyleSheetCollector`, assigning deterministic `.u-<hash>`, `.i-<hash>`, and `.cq-<hash>` class names.
+- Resolves any attached `interestTooltip` element (DOM id `<dom-id>--tooltip`) so its styles are interned during Phase 1, attaching the result as the trigger's companion sibling.
+- Traverses `DeferredElement` children **immediately inside their active lexical `ScopedValue<RenderContext>`** (preserving their enclosing view scope and `@scope` attribution) and enqueues `ResolvedDeferred(priority, sequence, node)` into a deterministic `PriorityQueue`.
+- Leaves a `ResolvedSlot` for each `LateElement`; after the body is laid out, resolves late elements in their captured contexts (`ctx.reenter(...)`), then lays out every `atDocumentEnd(...)` section (enqueued last, repeating while sections register more sections), then lays out the `contributeHead(...)` elements.
+
+### Phase 2: `prepaint` (Linking, Hoisting, & Static Verification)
+- **Link pass**: substitutes late-element slots and folds every pending `IdReference` into its attribute (`prefix` + space-separated resolved DOM ids). A reference to a ref that was never bound on the page throws `AccessibilityViolationException`. Head nodes are linked the same way.
+- Drains the `PriorityQueue<ResolvedDeferred>` in `(priority ASC, sequence ASC)` order and appends the hoisted overlay nodes after the body root.
+- Walks the linked tree to enforce compile-time HTML5/WCAG invariants (throwing `AccessibilityViolationException` on failure):
+  1. Interactive elements (`<button>`, `<a>`) with neither readable text descendants nor accessible labels (`aria-label`, `aria-labelledby`, `title`) are rejected.
+  2. Every `commandfor`, `interestfor`, and intra-document `<a href="#<target-id>">` value is verified against the page's registered DOM ids, so literal-string references that bypass `ElementRef` also fail at compile time.
+  3. Every `<a href>` is recorded in `outgoingHrefs` for site-wide verification.
 
 ### Phase 3: `paint` (Streaming HTML & CSS Emission)
-- Streams `<!doctype html>` and the document tree to any `Appendable` using `org.owasp.encoder.Encode`.
-- Emits void elements (`<img>`, `<input>`, `<br>`, `<hr>`, `<meta>`, `<link>`, `<source>`, `<track>`) without closing tags.
+- Streams `<!doctype html>`, `<meta charset>`, the viewport meta, `<title>`, the linked head contributions, then the stylesheet, to any `Appendable` using `org.owasp.encoder.Encode`.
+- Emits void elements (`<input>`, `<img>`, `<source>`, `<track>`, `<br>`, `<hr>`, `<meta>`, `<link>`) without closing tags.
 - Emits companion `interestfor` `<span id="<id>--tooltip" popover="hint" role="tooltip">` elements immediately after their trigger's closing tag as adjacent siblings.
-- Supports both `OutputMode.InlineStyle` (single-file `<style>` in `<head>`) and `OutputMode.ExternalAsset` (content-hashed `/assets/styles-<hash>.css` `<link rel="stylesheet">` plus stylesheet payload in `CompiledPage`).
+- Supports both `OutputMode.InlineStyle` (single-file `<style>` in `<head>`) and `OutputMode.ExternalAsset(assetBasePath)` (content-hashed `<assetBasePath>/styles-<hash>.css` `<link rel="stylesheet">`), returning `CompiledPage(html, externalCssPath, cssContent)`.
 
 ---
 
@@ -563,14 +419,15 @@ Tessera provides a canonical library of zero-JavaScript UI components built on t
 
 | Component | Type | Baseline 2026+ Platform Mechanics |
 | :--- | :--- | :--- |
-| **`DataTable<T>` & `SimpleTable`** | `RenderView` / `RenderOnce` | Focusable `<div tabindex="0" role="region" aria-labelledby="...">` container (`container-type: inline-size; overflow: auto`), sticky `thead` & `tbody th[scope="row"]`, `font-variant-numeric: tabular-nums` numeric columns, and `@container (inline-size < breakpoint)` stacked card layout injecting `--label-N` CSS variables into `td:nth-child(N)::before`. |
+| **`DataTable<T>` & `SimpleTable`** | `RenderView` / `RenderOnce` | Focusable `<div tabindex="0" role="region" aria-labelledby="...">` container (labelled by the caption's `ElementRef`; `container-type: inline-size; overflow: auto`), sticky `thead` & `tbody th[scope="row"]`, `font-variant-numeric: tabular-nums` numeric columns, and `@container (inline-size < breakpoint)` stacked card layout injecting `--label-N` CSS variables into `td:nth-child(N)::before`. |
 | **`Card` & `CardGrid`** | `RenderView` | 4 direct-child regions (`media`, `header`, `content`, `footer`) inside `<article>` or `<label>`. Adapts to wide containers via `@container` + `:has(> img, > picture, > .media)`. Supports `Content`, `StretchedLink` (`a.card-link::after` with `z-index: 1` elevation on secondary controls), and `Choice` (`:has(> input:checked)`), and aligns tracks across columns via `grid-template-rows: subgrid; grid-row: span 4` in `CardGrid`. |
 | **`Grid`** | `RenderOnce` | Intrinsic `repeat(auto-fit, minmax(min(100%, <min>), 1fr))` responsive grids, fixed column grids, and bento cell spanning (`colSpan`, `rowSpan`). |
 | **Scroll-Driven Animations** | `InteractiveElement` + `ScrollProgressBar` | Compositor-only `@keyframes` (`opacity`, `transform`) bound to `animation-timeline: view(block|inline)` (`entry` / `exit` ranges), `animation-timeline: scroll(root block)` (`ScrollProgressBar` with `aria-hidden="true"`), and staggered delays via `sibling-index()`, all gated inside `@media (prefers-reduced-motion: no-preference)`. `CssProperty.ANIMATION` precedes `ANIMATION_DELAY`, `ANIMATION_TIMELINE`, and `ANIMATION_RANGE` so shorthand declarations never reset timeline bindings. |
 | **`Lists` (`BulletList`, `NumberedList`, `DescriptionList`, `StepList`)** | `RenderOnce` / `RenderView` | Semantic `<ul>`, `<ol>`, `<dl>` (`<dt>`/`<dd>`), and `StepList` using Chrome 156+ `sibling-index()` and `sibling-count()` to compute dynamic `color-mix(in oklch, ...)` step badges. |
-| **`Footnotes` (`FootnoteRef`, `FootnotesSection`)** | `RenderOnce` / `RenderView` | Phase 1 auto-numbered citations (`RenderContext.registerFootnote`) emitting `<sup id="fnref-...">` + `<a role="doc-noteref" interestfor="...">` with an adjacent `<span popover="hint" role="tooltip">` preview, paired with an explicit or auto-hoisted `<aside role="doc-endnotes">` section with bidirectional `role="doc-backlink"` links and `:target` highlight styling. |
+| **`Footnotes` (`FootnoteRef`, `FootnotesSection`)** | `RenderOnce` / `RenderView` | `Footnotes.ref(...)` auto-numbers citations in a private `DocumentKey` registry during Phase 1, emitting `<sup id="fnref-...">` + `<a role="doc-noteref">` with an `interestTooltip` preview. `Footnotes.section(...)` renders the `<aside role="doc-endnotes">` list through `Elements.late(...)` so it lists every reference regardless of placement; without an explicit section, one is appended via `atDocumentEnd(...)`. Bidirectional `role="doc-backlink"` links and `:target` highlight styling. |
 | **`Formatting`** | Static Factory + `Styled` | Semantic `<mark>`, `<u>`, `<s>`, `<del>`, `<ins>`, `<code>`, `<kbd>` paired with CSS Text Decoration Level 4 (`text-decoration-line`, `text-decoration-style: solid/wavy/dashed/dotted/double`, `text-decoration-color`, `text-decoration-thickness`, `text-underline-offset`, `text-decoration-skip-ink: auto`) and `color-mix(in oklch, var(--token) 24%, transparent)` adaptive highlights. |
-| **`Toc` (`DocSection`, `TableOfContents`, `DocLayout`)** | `RenderOnce` / `RenderView` | Dual-mode Scroll-Spy Table of Contents: auto-collected via `Toc.section(...)` / `Toc.subsection(...)` in `RenderContext` or explicitly constructed via `Toc.of(...)`. Emits `<nav data-view="table-of-contents">` with `scroll-target-group: auto` and styles `:scope a:target-current` with `Tokens.ACCENT_PRIMARY`, `font-weight: 600`, a `3px solid` `border-inline-start` indicator bar, and an OKLCH surface tint. |
+| **`Toc` (`DocSection`, `TableOfContents`, `DocLayout`)** | `RenderOnce` / `RenderView` | Dual-mode Scroll-Spy Table of Contents: `Toc.section(...)` / `Toc.subsection(...)` register headings in a private `DocumentKey` registry and `Toc.fromContext(...)` renders them via `Elements.late(...)` (so the TOC may precede its sections), or explicitly via `Toc.of(...)`. `Toc.entries(DocumentState)` exposes the headings to `SiteCompiler`. Emits a `nav` with `scroll-target-group: auto` and styles `:scope a:target-current` with `Tokens.ACCENT_PRIMARY`, `font-weight: 600`, a `3px solid` `border-inline-start` indicator bar, and an OKLCH surface tint. |
+| **`Image`** | `RenderOnce` + `InteractiveElement` | `<img loading="lazy" decoding="async">` with validated positive `dimensions(...)`. `Image.hero(...)` sets `fetchpriority="high"`, drops lazy loading, and contributes a `<link rel="preload" as="image">` to `<head>` via `contributeHead(...)`; a private `DocumentKey` slot allows only one hero per page. |
 | **`Overlays` (`Modal`, `Drawer`)** | `RenderView` | Top-layer `<dialog closedby="any">` overlays invoked declaratively via `commandfor` / `command="show-modal"` and closed via `command="close"`, Escape, or backdrop light-dismiss. Animated in and out of the top layer via `@starting-style`, `transition-property: ..., display, overlay`, and `transition-behavior: allow-discrete` inside `@media (prefers-reduced-motion: no-preference)`. |
 | **`Dropdown`** | `RenderView` | Viewport-aware popover action menu (`<button commandfor="..." command="toggle-popover">` + adjacent sibling `<div popover="auto">` without false ARIA menu roles) tethered via implicit CSS Anchor Positioning (`position-area: block-end span-inline-end; inset: auto; position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`) and `@starting-style` + `allow-discrete`. |
 | **`Accordion`** | `RenderView` | Semantic `<details>` + `<summary>` disclosure groups supporting mutually exclusive accordions via shared `name="<group>"` attributes while keeping hidden content searchable via native Find-in-Page (`hidden="until-found"` behavior). Animates `::details-content` from `block-size: 0; overflow: clip` to `block-size: auto` via `:root { interpolate-size: allow-keywords }` and `transition-behavior: allow-discrete`. |
@@ -583,14 +440,15 @@ Tessera provides a canonical library of zero-JavaScript UI components built on t
 
 ## 8. Multi-Page Site Compiler & Preview Server (`dev.nthings.tessera.site`)
 
-- **`SiteRoute` & `SiteDefinition`**: Defines normalized route paths (`/`, `/telemetry`, `/typography`) mapped to output locations (`index.html`, `telemetry/index.html`) and shared `Tokens`.
+- **`SiteRoute` & `SiteDefinition`**: `SiteRoute(path, document, title, description)` normalizes route paths (`/`, `/telemetry`, `/typography`) and maps them to output locations (`index.html`, `telemetry/index.html`). `SiteDefinition(tokens, outputMode, routes, baseUrl)` defaults to `OutputMode.externalAsset("/assets")` so all pages share one stylesheet.
+- **`SiteNavigation`**: Builds route-derived navigation components: `searchPalette(SiteDefinition)` / `searchPalette(id, routes)` (a `SearchPalette` indexed under "Pages & Guides") and `docPager(SiteDefinition, currentPath)` (previous/next `DocPager` in route declaration order).
 - **`SiteCompiler`**:
-  1. Executes Phase 1 (`requestLayout`) and Phase 2 (`prepaint`) concurrently across all routes using `Executors.newVirtualThreadPerTaskExecutor()`.
-  2. Performs **cross-route link and `#fragment` verification**: validates every internal `<a href="/...">` and `<a href="#...">` against the site's registered routes and each target route's resolved DOM IDs (`registeredIds()`), failing at compile time with `AccessibilityViolationException` if a route or anchor target is missing.
-  3. Merges all per-page `StyleSheetCollector` instances in deterministic route order into a single content-addressed `/assets/styles-<hash>.css` bundle, then streams all HTML routes with `<link rel="stylesheet" href="/assets/styles-<hash>.css">`.
-  4. `CompiledSite.writeToDirectory(Path outputDir)` writes all HTML routes and the shared CSS asset to disk.
+  1. Rejects duplicate route paths, then executes Phase 1 and Phase 2 (`PageCompiler.prepare`) concurrently across all routes using `Executors.newVirtualThreadPerTaskExecutor()`, preserving route order.
+  2. Performs **cross-route link and `#fragment` verification**: validates every internal `<a href="/...">` against the site's registered routes and each target route's `registeredDomIds()`, failing with `AccessibilityViolationException` if a route or anchor target is missing (same-page fragments are already verified by `PageCompiler`).
+  3. Verifies that every `TransitionKey` appears on at least two distinct routes, enabling cross-document morphing.
+  4. Merges all per-page `StyleSheetCollector` instances in deterministic route order into a single content-addressed `/assets/styles-<hash>.css` bundle, then paints all routes concurrently with `<link rel="stylesheet" href="/assets/styles-<hash>.css">`.
+  5. Generates `sitemap.xml` when a `baseUrl` is set, and `search-index.json` with each route's path, title, description, and headings from `Toc.entries(prepared.documentState())`.
+  6. `SiteCompiler.writeToDirectory(CompiledSite, Path)` writes all HTML routes, the shared CSS asset, the sitemap, and the search index to disk.
 - **`SitePreviewServer` & `ShowcaseSite`**:
-  - Zero-dependency `com.sun.net.httpserver.HttpServer` backed by JDK 25 Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`) serving compiled routes in memory with `Cache-Control: public, max-age=31536000, immutable` for hashed CSS assets.
-  - `ShowcaseSite` (`just site` and `just demo`) provides a 3-route interactive showcase (`/`, `/telemetry`, `/typography`) exercising every Tessera primitive and component.
-
-
+  - Zero-dependency `com.sun.net.httpserver.HttpServer` bound to `127.0.0.1` and backed by JDK 25 Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`), serving compiled routes, the shared stylesheet, `sitemap.xml`, and `search-index.json` from memory with `Cache-Control: no-store`.
+  - `ShowcaseSite` (`just site` writes `target/site`; `just demo` also serves it via `--serve <port>`) provides a 3-route interactive showcase (`/`, `/telemetry`, `/typography`) exercising every Tessera primitive and component.

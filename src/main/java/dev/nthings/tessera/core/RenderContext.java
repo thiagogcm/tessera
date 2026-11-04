@@ -2,46 +2,25 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
-import org.jspecify.annotations.Nullable;
 
 /// Implicit lexical render context propagated across component boundaries via JDK 25
 /// [ScopedValue].
 public final class RenderContext {
 
-  public record FootnoteEntry(
-      int number, String slug, String refDomId, String noteDomId, Element content) {}
-
-  public record TocEntry(String targetDomId, String title, int level) {}
-
-  private static final class DocumentState {
-    private final Map<String, FootnoteEntry> footnotes = new LinkedHashMap<>();
-    private boolean footnotesRendered = false;
-    private final Map<String, TocEntry> tocEntries = new LinkedHashMap<>();
-    private @Nullable String heroImageHref = null;
-  }
-
   private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
 
-  private final GlobalElementId viewScope;
+  private final ViewScope viewScope;
   private final StyleSheetCollector styles;
   private final Tokens tokens;
   private final DocumentState docState;
 
-  public RenderContext(GlobalElementId viewScope, StyleSheetCollector styles, Tokens tokens) {
+  public RenderContext(ViewScope viewScope, StyleSheetCollector styles, Tokens tokens) {
     this(viewScope, styles, tokens, new DocumentState());
   }
 
   private RenderContext(
-      GlobalElementId viewScope,
-      StyleSheetCollector styles,
-      Tokens tokens,
-      DocumentState docState) {
+      ViewScope viewScope, StyleSheetCollector styles, Tokens tokens, DocumentState docState) {
     this.viewScope = viewScope;
     this.styles = styles;
     this.tokens = tokens;
@@ -55,7 +34,7 @@ public final class RenderContext {
                 "RenderContext accessed outside an active PageCompiler pass"));
   }
 
-  public GlobalElementId viewScope() {
+  public ViewScope viewScope() {
     return viewScope;
   }
 
@@ -67,54 +46,29 @@ public final class RenderContext {
     return tokens;
   }
 
-  public FootnoteEntry registerFootnote(String rawId, Element content) {
-    String slug = Fnv1a64.sanitizeIdentifier(rawId);
-    String key = viewScope.domId().isEmpty() ? slug : viewScope.domId() + "--" + slug;
-    return docState.footnotes.computeIfAbsent(
-        key,
-        k -> {
-          int number = docState.footnotes.size() + 1;
-          String refDomId = viewScope.extend(ElementId.of("fnref-" + slug)).domId();
-          String noteDomId = "fn-" + k;
-          return new FootnoteEntry(number, slug, refDomId, noteDomId, content);
-        });
+  /// Per-page state for `key`, created on first use.
+  public <T> T document(DocumentKey<T> key) {
+    return docState.getOrCreate(key);
   }
 
-  public Collection<FootnoteEntry> footnotes() {
-    return Collections.unmodifiableCollection(docState.footnotes.values());
+  /// Adds `element` to the page's `<head>` (after `<title>`).
+  public void contributeHead(IntoElement element) {
+    docState.contributeHead(element.intoElement());
   }
 
-  public boolean hasUnrenderedFootnotes() {
-    return !docState.footnotes.isEmpty() && !docState.footnotesRendered;
+  /// Appends `section` to the end of `<body>` after layout; only the first registration per
+  /// `owner` counts.
+  public void atDocumentEnd(DocumentKey<?> owner, Supplier<? extends IntoElement> section) {
+    docState.atDocumentEnd(owner, section);
   }
 
-  public void markFootnotesRendered() {
-    docState.footnotesRendered = true;
+  public DocumentState documentState() {
+    return docState;
   }
 
-  public TocEntry registerTocEntry(String rawId, String title, int level) {
-    String domId = viewScope.extend(ElementId.of(rawId)).domId();
-    return docState.tocEntries.computeIfAbsent(domId, id -> new TocEntry(id, title, level));
-  }
-
-  public List<TocEntry> tocEntries() {
-    return List.copyOf(docState.tocEntries.values());
-  }
-
-  public void registerHeroImage(String href) {
-    if (docState.heroImageHref != null) {
-      throw new IllegalStateException(
-          "Only one hero image allowed per page: already registered '"
-              + docState.heroImageHref
-              + "', cannot register '"
-              + href
-              + "'");
-    }
-    docState.heroImageHref = href;
-  }
-
-  public @Nullable String heroImageHref() {
-    return docState.heroImageHref;
+  /// Runs `work` with this context current again (used to resolve [LateElement]s in place).
+  public <R> R reenter(Supplier<R> work) {
+    return ScopedValue.where(CURRENT, this).call(work::get);
   }
 
   public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
@@ -123,7 +77,7 @@ public final class RenderContext {
   }
 
   public static <R> R runRoot(StyleSheetCollector styles, Tokens tokens, Supplier<R> work) {
-    var rootContext = new RenderContext(GlobalElementId.ROOT, styles, tokens);
+    var rootContext = new RenderContext(ViewScope.ROOT, styles, tokens);
     return ScopedValue.where(CURRENT, rootContext).call(work::get);
   }
 }

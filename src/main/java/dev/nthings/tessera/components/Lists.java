@@ -140,7 +140,7 @@ public final class Lists {
           .select(
               ":scope > li::before",
               s ->
-                  s.cssContent("counter(step)")
+                  s.content("counter(step)")
                       .inlineFlex()
                       .itemsCenter()
                       .justifyCenter()

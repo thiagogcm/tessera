@@ -19,6 +19,7 @@ import dev.nthings.tessera.core.Action;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
@@ -27,6 +28,7 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.OutputMode;
@@ -48,7 +50,7 @@ class TesseraCompilerTest {
     public Element render() {
       var tokens = RenderContext.current().tokens();
       return section()
-          .id(ElementId.of("metric", Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, id) & 0xFFFF))
+          .id("metric-" + (Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, id) & 0xFFFF))
           .container("metric-card")
           .flex()
           .flexCol()
@@ -64,7 +66,7 @@ class TesseraCompilerTest {
           .viewTransitionName("metric-card")
           .children(
               span().textColor(Tokens.TEXT_MUTED).text(label),
-              h2().textSize(
+              h2().fontSize(
                       CssLength.fluid(CssLength.rem(1.25), CssLength.cqi(4), CssLength.rem(2.0)))
                   .textColor(tokens.all().iterator().next())
                   .textBalance()
@@ -98,15 +100,16 @@ class TesseraCompilerTest {
     }
 
     @Override
-    public String viewScopeRule() {
-      return ":scope { display: grid; gap: 1.5rem; }";
+    public void configureScope(ScopeStyle scope) {
+      scope.root(s -> s.grid().gap(CssLength.rem(1.5)));
     }
 
     @Override
     public Element render() {
+      var confirmRef = ElementRef.named("confirm-archive");
       var confirmModal =
           dialog()
-              .id("confirm-archive")
+              .id(confirmRef)
               .dialogClosedByAny()
               .p(CssLength.rem(1.5))
               .rounded(CssLength.rem(0.75))
@@ -120,7 +123,7 @@ class TesseraCompilerTest {
                       .children(
                           button()
                               .id("cancel-archive")
-                              .command("confirm-archive", BuiltinCommand.REQUEST_CLOSE)
+                              .command(confirmRef, BuiltinCommand.REQUEST_CLOSE)
                               .text("Cancel")));
 
       var openModalTrigger =
@@ -316,11 +319,11 @@ class TesseraCompilerTest {
                 .child(
                     button()
                         .id("trigger")
-                        .command("missing-dialog", BuiltinCommand.SHOW_MODAL)
+                        .command(ElementRef.named("missing-dialog"), BuiltinCommand.SHOW_MODAL)
                         .text("Open")));
     assertThatThrownBy(() -> PageCompiler.compile(danglingInvokerDoc))
         .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining("commandfor=\"missing-dialog\"");
+        .hasMessageContaining("commandfor> references ElementRef(missing-dialog)");
 
     // 5. Valid decorative img and aria-labeled link pass
     var validDoc =

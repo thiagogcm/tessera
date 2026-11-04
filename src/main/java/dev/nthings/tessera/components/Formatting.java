@@ -73,7 +73,7 @@ public final class Formatting {
         .px(CssLength.rem(0.35))
         .py(CssLength.rem(0.1))
         .rounded(CssLength.rem(0.25))
-        .textSize(CssLength.em(0.9))
+        .fontSize(CssLength.em(0.9))
         .text(codeText);
   }
 
@@ -84,7 +84,7 @@ public final class Formatting {
         .px(CssLength.rem(0.4))
         .py(CssLength.rem(0.1))
         .rounded(CssLength.rem(0.25))
-        .textSize(CssLength.em(0.85))
+        .fontSize(CssLength.em(0.85))
         .shadow("0 1px 0 " + Tokens.BORDER_SUBTLE.varReference())
         .text(keys);
   }

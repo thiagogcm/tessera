@@ -8,8 +8,8 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -30,7 +30,7 @@ public final class Carousel implements RenderView {
               .flexCol()
               .gap(CssLength.rem(0.5))
               .children(
-                  h3().textSize(CssLength.rem(1.125)).textBalance().text(title),
+                  h3().fontSize(CssLength.rem(1.125)).textBalance().text(title),
                   p().textColor(Tokens.TEXT_MUTED).textPretty().text(summary)));
     }
 
@@ -88,11 +88,7 @@ public final class Carousel implements RenderView {
                     .inlineSize(CssLength.expr("min(22rem, 82%)"))
                     .scrollSnapAlign("center")
                     .counterIncrement("carousel-item")
-                    .refine(
-                        r ->
-                            r.put(
-                                new CssDeclaration.ContainerType(
-                                    CssDeclaration.ContainerKind.SCROLL_STATE))))
+                    .refine(r -> r.put(CssProperty.CONTAINER_TYPE, "scroll-state")))
         .select(
             ":scope > .carousel-item > .carousel-card",
             s ->
@@ -114,7 +110,7 @@ public final class Carousel implements RenderView {
         .select(
             ":scope > .carousel-item::scroll-marker",
             s ->
-                s.cssContent("\"\" / \"Slide \" counter(carousel-item)")
+                s.content("\"\" / \"Slide \" counter(carousel-item)")
                     .inlineSize(CssLength.rem(0.625))
                     .blockSize(CssLength.rem(0.625))
                     .rounded(CssLength.px(999))

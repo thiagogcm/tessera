@@ -18,13 +18,13 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.StatefulTagElement;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,6 +52,7 @@ public final class SearchPalette implements RenderView {
       @Nullable String badge) {}
 
   private final ElementId id;
+  private final ElementRef dialog = ElementRef.named("dialog");
   private String placeholder = "Search documentation, routes, and sections...";
   private String triggerLabel = "Search docs...";
   private final Map<String, List<SearchItem>> groupedItems = new LinkedHashMap<>();
@@ -66,23 +67,6 @@ public final class SearchPalette implements RenderView {
 
   public static SearchPalette create(String id, String placeholder) {
     return new SearchPalette(ElementId.of(id)).placeholder(placeholder);
-  }
-
-  /// Automatically initializes a [SearchPalette] indexed from all routes in the given
-  /// [SiteDefinition].
-  public static SearchPalette fromSite(SiteDefinition site) {
-    return fromRoutes("search-palette", site.routes());
-  }
-
-  /// Initializes a [SearchPalette] indexed with the given route list under a "Pages & Guides"
-  /// group.
-  public static SearchPalette fromRoutes(String id, List<SiteRoute> routes) {
-    var palette = new SearchPalette(ElementId.of(id));
-    for (var route : routes) {
-      String title = route.displayTitle();
-      palette.item("Pages & Guides", title, route.path(), route.description(), route.path());
-    }
-    return palette;
   }
 
   public SearchPalette placeholder(String placeholder) {
@@ -122,11 +106,10 @@ public final class SearchPalette implements RenderView {
 
   /// Creates an accessible header trigger button wired via `command="show-modal"` to this search
   /// palette, complete with keyboard shortcut badge.
-  public StatefulTagElement triggerButton(String buttonId, String label) {
+  public TagElement triggerButton(String buttonId, String label) {
     return button()
         .id(buttonId)
-        .attr("commandfor", id.slug())
-        .attr("command", BuiltinCommand.SHOW_MODAL.wireValue())
+        .command(dialog, BuiltinCommand.SHOW_MODAL)
         .ariaLabel(label + " (Press Ctrl+K or / to open)")
         .attr("accesskey", "k")
         .flex()
@@ -177,7 +160,7 @@ public final class SearchPalette implements RenderView {
                         .text("K")));
   }
 
-  public StatefulTagElement triggerButton() {
+  public TagElement triggerButton() {
     return triggerButton(id.slug() + "-trigger", triggerLabel);
   }
 
@@ -193,10 +176,8 @@ public final class SearchPalette implements RenderView {
 
   @Override
   public Element render() {
-    String datalistId = id.slug() + "-datalist";
-    String inputId = id.slug() + "-input";
-
-    var datalistEl = datalist().attr("id", datalistId);
+    var datalist = ElementRef.named("datalist");
+    var datalistEl = datalist().id(datalist);
     for (var entry : groupedItems.entrySet()) {
       for (var item : entry.getValue()) {
         String label = item.title() + " (" + entry.getKey() + ")";
@@ -210,18 +191,17 @@ public final class SearchPalette implements RenderView {
             .child(rawHtml(SEARCH_ICON_SVG))
             .child(
                 input("search")
-                    .attr("id", inputId)
+                    .id("input")
                     .attr("class", "palette-input")
                     .attr("name", "q")
                     .attr("placeholder", placeholder)
                     .attr("autocomplete", "off")
-                    .attr("list", datalistId)
+                    .list(datalist)
                     .ariaLabel("Search query"))
             .child(
                 button()
                     .attr("class", "palette-close")
-                    .attr("commandfor", id.slug())
-                    .attr("command", BuiltinCommand.CLOSE.wireValue())
+                    .command(dialog, BuiltinCommand.CLOSE)
                     .ariaLabel("Close search palette")
                     .child(kbd().attr("class", "palette-esc-kbd").text("Esc")));
 
@@ -276,9 +256,9 @@ public final class SearchPalette implements RenderView {
                     .child(kbd().attr("class", "palette-hint-kbd").text("esc"))
                     .child(span().text("close")));
 
-    return dialog()
-        .attr("id", id.slug())
-        .attr("closedby", "any")
+    return Elements.dialog()
+        .id(dialog)
+        .dialogClosedByAny()
         .ariaLabel("Quick open command palette")
         .child(headerEl)
         .child(datalistEl)

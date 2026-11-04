@@ -9,6 +9,7 @@ import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SiteNavigation;
 import dev.nthings.tessera.site.SiteRoute;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +36,7 @@ class FormsAndSearchPaletteTest {
     // Trigger button has declarative invoker attributes and accesskey
     var button = parsed.selectFirst("button#open-search");
     assertThat(button).isNotNull();
-    assertThat(button.attr("commandfor")).isEqualTo("site-search");
+    assertThat(button.attr("commandfor")).isEqualTo("site-search--dialog");
     assertThat(button.attr("command")).isEqualTo("show-modal");
     assertThat(button.attr("accesskey")).isEqualTo("k");
     assertThat(button.select("kbd")).hasSize(2);
@@ -43,7 +44,7 @@ class FormsAndSearchPaletteTest {
     assertThat(button.select("kbd").get(1).text()).isEqualTo("K");
 
     // Dialog element in top layer with closedby="any"
-    var dialog = parsed.selectFirst("dialog#site-search");
+    var dialog = parsed.selectFirst("dialog#site-search--dialog");
     assertThat(dialog).isNotNull();
     assertThat(dialog.attr("closedby")).isEqualTo("any");
     assertThat(dialog.attr("aria-label")).isEqualTo("Quick open command palette");
@@ -51,7 +52,7 @@ class FormsAndSearchPaletteTest {
     // Close button inside header
     var closeBtn = dialog.selectFirst(".palette-close");
     assertThat(closeBtn).isNotNull();
-    assertThat(closeBtn.attr("commandfor")).isEqualTo("site-search");
+    assertThat(closeBtn.attr("commandfor")).isEqualTo("site-search--dialog");
     assertThat(closeBtn.attr("command")).isEqualTo("close");
   }
 
@@ -69,13 +70,13 @@ class FormsAndSearchPaletteTest {
     var parsed = Jsoup.parse(compiled.html());
 
     // Native search input with list attribute
-    var input = parsed.selectFirst("dialog#cmd-palette input[type=search]");
+    var input = parsed.selectFirst("dialog#cmd-palette--dialog input[type=search]");
     assertThat(input).isNotNull();
-    assertThat(input.attr("list")).isEqualTo("cmd-palette-datalist");
+    assertThat(input.attr("list")).isEqualTo("cmd-palette--datalist");
     assertThat(input.attr("autocomplete")).isEqualTo("off");
 
     // Datalist with all options for zero-JS autocomplete
-    var datalist = parsed.selectFirst("datalist#cmd-palette-datalist");
+    var datalist = parsed.selectFirst("datalist#cmd-palette--datalist");
     assertThat(datalist).isNotNull();
     var options = datalist.select("option");
     assertThat(options).hasSize(3);
@@ -85,10 +86,10 @@ class FormsAndSearchPaletteTest {
     assertThat(options.get(2).attr("value")).isEqualTo("/theme");
 
     // Grouped links
-    var groups = parsed.select("dialog#cmd-palette .palette-group");
+    var groups = parsed.select("dialog#cmd-palette--dialog .palette-group");
     assertThat(groups).hasSize(2);
 
-    var itemLinks = parsed.select("dialog#cmd-palette a.palette-item");
+    var itemLinks = parsed.select("dialog#cmd-palette--dialog a.palette-item");
     assertThat(itemLinks).hasSize(3);
     assertThat(itemLinks.get(0).attr("href")).isEqualTo("/telemetry");
     assertThat(itemLinks.get(0).selectFirst(".palette-item-title").text()).isEqualTo("Telemetry");
@@ -97,16 +98,17 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  @DisplayName("SearchPalette.fromSite automatically crawls site routes into autocomplete entries")
+  @DisplayName(
+      "SiteNavigation.searchPalette automatically crawls site routes into autocomplete entries")
   void searchPaletteCrawlsSiteRoutes() {
     var doc1 = new PageDocument("Home Page", div().id("home-root"));
     var doc2 = new PageDocument("Documentation", div().id("docs-root"));
 
     var site =
         new SiteDefinition(
-            new SiteRoute("/", doc1, "Home"), new SiteRoute("/docs", doc2, "Documentation", 1));
+            new SiteRoute("/", doc1, "Home"), new SiteRoute("/docs", doc2, "Documentation"));
 
-    var palette = SearchPalette.fromSite(site);
+    var palette = SiteNavigation.searchPalette(site);
     var compiled = PageCompiler.compile(new PageDocument("Site Search", main().child(palette)));
     var parsed = Jsoup.parse(compiled.html());
 
@@ -176,7 +178,7 @@ class FormsAndSearchPaletteTest {
     var compiled = PageCompiler.compile(doc);
     var parsed = Jsoup.parse(compiled.html());
 
-    var select = parsed.selectFirst("select#select-theme");
+    var select = parsed.selectFirst("select#select-theme_mode--select-theme");
     assertThat(select).isNotNull();
     assertThat(select.attr("name")).isEqualTo("theme_mode");
 
@@ -211,22 +213,22 @@ class FormsAndSearchPaletteTest {
     var parsed = Jsoup.parse(compiled.html());
 
     // Label correctly wired to input ID
-    var label = parsed.selectFirst("label[for=user-field]");
+    var label = parsed.selectFirst("label[for=form-field-1--user-field]");
     assertThat(label).isNotNull();
     assertThat(label.text()).isEqualTo("Username");
 
     // Hint placed above input and linked via aria-describedby
-    var hint = parsed.selectFirst("span#user-field-hint");
+    var hint = parsed.selectFirst("span#form-field-1--hint");
     assertThat(hint).isNotNull();
     assertThat(hint.text()).isEqualTo("Enter 3-20 characters without spaces.");
 
-    var input = parsed.selectFirst("input#user-field");
+    var input = parsed.selectFirst("input#form-field-1--user-field");
     assertThat(input).isNotNull();
-    assertThat(input.attr("aria-describedby")).isEqualTo("user-field-hint");
-    assertThat(input.attr("aria-errormessage")).isEqualTo("user-field-error");
+    assertThat(input.attr("aria-describedby")).isEqualTo("form-field-1--hint");
+    assertThat(input.attr("aria-errormessage")).isEqualTo("form-field-1--error");
 
     // Error element placed after input
-    var error = parsed.selectFirst("div#user-field-error");
+    var error = parsed.selectFirst("div#form-field-1--error");
     assertThat(error).isNotNull();
     assertThat(error.text()).contains("Username is already taken or invalid.");
 

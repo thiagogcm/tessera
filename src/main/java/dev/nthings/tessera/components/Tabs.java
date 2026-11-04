@@ -13,8 +13,8 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
@@ -91,7 +91,7 @@ public final class Tabs {
                       .py(CssLength.rem(0.375))
                       .rounded(CssLength.rem(0.375))
                       .textColor(Tokens.TEXT_MUTED)
-                      .textSize(CssLength.rem(0.875))
+                      .fontSize(CssLength.rem(0.875))
                       .fontWeight(500)
                       .whiteSpace("nowrap")
                       .textDecorationNone())
@@ -231,7 +231,7 @@ public final class Tabs {
         .select(
             barSelector,
             s ->
-                s.cssContent("\"\"")
+                s.content("\"\"")
                     .absolute()
                     .positionAnchor(anchorIdent)
                     .insetBlockStart(CssLength.expr("calc(anchor(bottom) - 2px)"))
@@ -249,7 +249,7 @@ public final class Tabs {
                         s.refine(
                             r ->
                                 r.put(
-                                    new CssDeclaration.BorderBlockEnd(
-                                        "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))));
+                                    CssProperty.BORDER_BLOCK_END,
+                                    "2px solid " + Tokens.ACCENT_PRIMARY.varReference()))));
   }
 }

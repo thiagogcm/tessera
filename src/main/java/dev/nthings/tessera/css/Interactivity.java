@@ -1,20 +1,18 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Fnv1a64;
-import dev.nthings.tessera.core.TagElement;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.UnaryOperator;
-import org.jspecify.annotations.Nullable;
 
-/// Stores pseudo-class, group-hover, relational `:has()`, `@container` queries, scroll-driven
-/// animations, and declarative invoker metadata for an element.
+/// Stores pseudo-class, group-hover, relational `:has()`, `@container` query, and scroll-driven
+/// animation styles for an element.
 public final class Interactivity {
 
   public record ContainerRule(String containerName, String condition, StyleRefinement style) {
@@ -26,75 +24,37 @@ public final class Interactivity {
     }
   }
 
-  private @Nullable StyleRefinement hoverStyle;
-  private @Nullable StyleRefinement focusVisibleStyle;
-  private @Nullable StyleRefinement activeStyle;
-  private @Nullable StyleRefinement userInvalidStyle;
-  private @Nullable StyleRefinement userValidStyle;
-  private @Nullable StyleRefinement motionSafeStyle;
+  /// Interactive state rule key; ordered by state, then argument, for deterministic emission.
+  public record StateRule(InteractiveState state, String argument)
+      implements Comparable<StateRule> {
+    private static final Comparator<StateRule> ORDER =
+        Comparator.comparing(StateRule::state).thenComparing(StateRule::argument);
+
+    @Override
+    public int compareTo(StateRule other) {
+      return ORDER.compare(this, other);
+    }
+
+    String openRule() {
+      return state.openRule(argument);
+    }
+  }
+
+  private final SortedMap<StateRule, StyleRefinement> states = new TreeMap<>();
   private final Set<String> keyframes = new LinkedHashSet<>();
-  private final Map<String, StyleRefinement> groupHoverStyles = new LinkedHashMap<>();
-  private final Map<String, StyleRefinement> hasStyles = new LinkedHashMap<>();
   private final List<ContainerRule> containerRules = new ArrayList<>();
 
-  private @Nullable ElementId commandTargetId;
-  private @Nullable String commandAction;
-  private @Nullable TagElement interestTooltip;
-
-  public void onHover(UnaryOperator<StyleRefinement> mutator) {
-    if (hoverStyle == null) {
-      hoverStyle = new StyleRefinement();
-    }
-    mutator.apply(hoverStyle);
+  public void on(InteractiveState state, UnaryOperator<StyleRefinement> mutator) {
+    on(state, "", mutator);
   }
 
-  public void onFocusVisible(UnaryOperator<StyleRefinement> mutator) {
-    if (focusVisibleStyle == null) {
-      focusVisibleStyle = new StyleRefinement();
-    }
-    mutator.apply(focusVisibleStyle);
-  }
-
-  public void onActive(UnaryOperator<StyleRefinement> mutator) {
-    if (activeStyle == null) {
-      activeStyle = new StyleRefinement();
-    }
-    mutator.apply(activeStyle);
-  }
-
-  public void onUserInvalid(UnaryOperator<StyleRefinement> mutator) {
-    if (userInvalidStyle == null) {
-      userInvalidStyle = new StyleRefinement();
-    }
-    mutator.apply(userInvalidStyle);
-  }
-
-  public void onUserValid(UnaryOperator<StyleRefinement> mutator) {
-    if (userValidStyle == null) {
-      userValidStyle = new StyleRefinement();
-    }
-    mutator.apply(userValidStyle);
-  }
-
-  public void onMotionSafe(UnaryOperator<StyleRefinement> mutator) {
-    if (motionSafeStyle == null) {
-      motionSafeStyle = new StyleRefinement();
-    }
-    mutator.apply(motionSafeStyle);
+  public void on(InteractiveState state, String argument, UnaryOperator<StyleRefinement> mutator) {
+    mutator.apply(
+        states.computeIfAbsent(new StateRule(state, argument), _ -> new StyleRefinement()));
   }
 
   public void registerKeyframeRule(String keyframeRule) {
     keyframes.add(keyframeRule);
-  }
-
-  public void onGroupHover(String groupName, UnaryOperator<StyleRefinement> mutator) {
-    var refinement = groupHoverStyles.computeIfAbsent(groupName, _ -> new StyleRefinement());
-    mutator.apply(refinement);
-  }
-
-  public void onHas(String relativeSelector, UnaryOperator<StyleRefinement> mutator) {
-    var refinement = hasStyles.computeIfAbsent(relativeSelector, _ -> new StyleRefinement());
-    mutator.apply(refinement);
   }
 
   public void onContainerMinWidth(
@@ -115,76 +75,20 @@ public final class Interactivity {
             containerName, "style(" + customProperty + ": " + expectedValue + ")", style));
   }
 
-  public void setCommandTarget(ElementId targetId, String command) {
-    this.commandTargetId = targetId;
-    this.commandAction = command;
-  }
-
-  public void setInterestTooltip(TagElement tooltip) {
-    this.interestTooltip = tooltip;
-  }
-
-  public @Nullable StyleRefinement hoverStyle() {
-    return hoverStyle;
-  }
-
-  public @Nullable StyleRefinement focusVisibleStyle() {
-    return focusVisibleStyle;
-  }
-
-  public @Nullable StyleRefinement activeStyle() {
-    return activeStyle;
-  }
-
-  public @Nullable StyleRefinement userInvalidStyle() {
-    return userInvalidStyle;
-  }
-
-  public @Nullable StyleRefinement userValidStyle() {
-    return userValidStyle;
-  }
-
-  public @Nullable StyleRefinement motionSafeStyle() {
-    return motionSafeStyle;
+  public SortedMap<StateRule, StyleRefinement> states() {
+    return Collections.unmodifiableSortedMap(states);
   }
 
   public Set<String> keyframes() {
     return Collections.unmodifiableSet(keyframes);
   }
 
-  public Map<String, StyleRefinement> groupHoverStyles() {
-    return Collections.unmodifiableMap(groupHoverStyles);
-  }
-
-  public Map<String, StyleRefinement> hasStyles() {
-    return Collections.unmodifiableMap(hasStyles);
-  }
-
   public List<ContainerRule> containerRules() {
     return Collections.unmodifiableList(containerRules);
   }
 
-  public @Nullable ElementId commandTargetId() {
-    return commandTargetId;
-  }
-
-  public @Nullable String commandAction() {
-    return commandAction;
-  }
-
-  public @Nullable TagElement interestTooltip() {
-    return interestTooltip;
-  }
-
   public boolean hasInteractiveStyles() {
-    return (hoverStyle != null && !hoverStyle.isEmpty())
-        || (focusVisibleStyle != null && !focusVisibleStyle.isEmpty())
-        || (activeStyle != null && !activeStyle.isEmpty())
-        || (userInvalidStyle != null && !userInvalidStyle.isEmpty())
-        || (userValidStyle != null && !userValidStyle.isEmpty())
-        || (motionSafeStyle != null && !motionSafeStyle.isEmpty())
-        || !groupHoverStyles.isEmpty()
-        || !hasStyles.isEmpty();
+    return states.values().stream().anyMatch(style -> !style.isEmpty());
   }
 
   public boolean hasContainerRules() {

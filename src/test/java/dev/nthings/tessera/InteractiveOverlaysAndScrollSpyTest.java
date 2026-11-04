@@ -56,7 +56,7 @@ class InteractiveOverlaysAndScrollSpyTest {
         Dropdown.create("actions-menu", "Actions")
             .linkItem("/logs", "View Logs", "G L")
             .separator()
-            .commandItem("open-deploy", modal.entityId(), BuiltinCommand.SHOW_MODAL, "Deploy Now");
+            .commandItem("open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now");
 
     var page =
         main()
@@ -77,8 +77,8 @@ class InteractiveOverlaysAndScrollSpyTest {
         .contains("position-try-fallbacks:flip-block, flip-inline, flip-block flip-inline");
 
     var doc = Jsoup.parse(compiled.html());
-    var modalEl = doc.selectFirst("dialog#confirm-deploy[closedby=any]");
-    var drawerEl = doc.selectFirst("dialog#inspector[closedby=any]");
+    var modalEl = doc.selectFirst("dialog#confirm-deploy--dialog[closedby=any]");
+    var drawerEl = doc.selectFirst("dialog#inspector--dialog[closedby=any]");
     assertThat(modalEl).isNotNull();
     assertThat(drawerEl).isNotNull();
 

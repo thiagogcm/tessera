@@ -5,16 +5,11 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.FluentBuilder;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
-import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Editorial documentation pager providing prev/next navigation cards between site documentation
@@ -25,7 +20,6 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
   private @Nullable PageRef prev;
   private @Nullable PageRef next;
-  private final String instanceId;
 
   public DocPager() {
     this(null, null);
@@ -34,7 +28,6 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
   public DocPager(@Nullable PageRef prev, @Nullable PageRef next) {
     this.prev = prev;
     this.next = next;
-    this.instanceId = "docpager-" + Fnv1a64.toBase36Hash(System.nanoTime());
   }
 
   public static DocPager of(@Nullable PageRef prev, @Nullable PageRef next) {
@@ -47,34 +40,6 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
   public static DocPager next(String href, String title) {
     return new DocPager(null, new PageRef(href, title));
-  }
-
-  public static DocPager fromSite(SiteDefinition site, String currentPath) {
-    String normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
-    List<SiteRoute> routes = site.routes();
-    int currentIdx = -1;
-    for (int i = 0; i < routes.size(); i++) {
-      if (routes.get(i).path().equals(normalizedCurrent)) {
-        currentIdx = i;
-        break;
-      }
-    }
-    if (currentIdx < 0) {
-      return new DocPager();
-    }
-    PageRef prev = null;
-    if (currentIdx > 0) {
-      SiteRoute p = routes.get(currentIdx - 1);
-      String title = p.displayTitle();
-      prev = new PageRef(p.path(), title);
-    }
-    PageRef next = null;
-    if (currentIdx < routes.size() - 1) {
-      SiteRoute n = routes.get(currentIdx + 1);
-      String title = n.displayTitle();
-      next = new PageRef(n.path(), title);
-    }
-    return new DocPager(prev, next);
   }
 
   @Override
@@ -103,11 +68,6 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
   @Override
   public String viewType() {
     return "tessera-doc-pager";
-  }
-
-  @Override
-  public ElementId entityId() {
-    return ElementId.of(instanceId);
   }
 
   @Override

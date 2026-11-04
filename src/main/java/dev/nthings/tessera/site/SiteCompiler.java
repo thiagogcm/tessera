@@ -1,6 +1,6 @@
 package dev.nthings.tessera.site;
 
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import org.owasp.encoder.Encode;
 
 /// Multi-page static site compiler.
 ///
@@ -37,15 +38,7 @@ public final class SiteCompiler {
       @Nullable String sharedCssPath,
       String sharedCssContent,
       @Nullable String sitemapXml,
-      @Nullable String searchIndexJson) {
-
-    public CompiledSite(
-        Map<String, PageCompiler.CompiledPage> pagesByRoute,
-        @Nullable String sharedCssPath,
-        String sharedCssContent) {
-      this(pagesByRoute, sharedCssPath, sharedCssContent, null, null);
-    }
-  }
+      @Nullable String searchIndexJson) {}
 
   private SiteCompiler() {}
 
@@ -199,7 +192,7 @@ public final class SiteCompiler {
     for (var route : routes) {
       String loc = baseUrl + ("/".equals(route.path()) ? "/" : route.path());
       sb.append("  <url>\n");
-      sb.append("    <loc>").append(loc).append("</loc>\n");
+      sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");
     }
     sb.append("</urlset>\n");
@@ -223,7 +216,7 @@ public final class SiteCompiler {
       }
       sb.append(",\n    \"headings\": [");
       if (prepared != null) {
-        List<RenderContext.TocEntry> tocs = prepared.tocEntries();
+        List<Toc.Item> tocs = Toc.entries(prepared.documentState());
         for (int j = 0; j < tocs.size(); j++) {
           var toc = tocs.get(j);
           if (j > 0) sb.append(", ");

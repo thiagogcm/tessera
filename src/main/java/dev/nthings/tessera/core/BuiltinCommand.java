@@ -1,19 +1,17 @@
 package dev.nthings.tessera.core;
 
+import java.util.Locale;
+
 /// Native HTML Invoker Commands supported by Chrome 156+ (`command` attribute).
 public enum BuiltinCommand {
-  SHOW_MODAL("show-modal"),
-  CLOSE("close"),
-  REQUEST_CLOSE("request-close"),
-  TOGGLE_POPOVER("toggle-popover"),
-  SHOW_POPOVER("show-popover"),
-  HIDE_POPOVER("hide-popover");
+  SHOW_MODAL,
+  CLOSE,
+  REQUEST_CLOSE,
+  TOGGLE_POPOVER,
+  SHOW_POPOVER,
+  HIDE_POPOVER;
 
-  private final String wireValue;
-
-  BuiltinCommand(String wireValue) {
-    this.wireValue = wireValue;
-  }
+  private final String wireValue = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
   public String wireValue() {
     return wireValue;

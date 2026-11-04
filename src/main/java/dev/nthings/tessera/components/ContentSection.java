@@ -11,36 +11,32 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Fnv1a64;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Semantic `<section>` container with configurable surface elevations ([SurfaceKind]), automatic
 /// Table of Contents registration, and optional lead text and badges.
-public final class ContentSection implements RenderOnce {
+public final class ContentSection implements RenderOnce, ParentElement<ContentSection> {
 
   /// Surface presentation styling.
   public enum SurfaceKind {
     /// Clean borderless continuous narrative flow (default for docs).
-    GHOST("ghost"),
+    GHOST,
     /// Subtle flat surface with bottom border divider.
-    FLAT("flat"),
+    FLAT,
     /// Framed card surface with subtle border and shadow (for interactive widgets and forms).
-    CARD("card"),
+    CARD,
     /// Accent-tinted OKLCH highlight surface for key announcements and callouts.
-    HIGHLIGHT("highlight");
+    HIGHLIGHT;
 
-    private final String value;
-
-    SurfaceKind(String value) {
-      this.value = value;
-    }
+    private final String value = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
     public String wireValue() {
       return value;
@@ -96,21 +92,19 @@ public final class ContentSection implements RenderOnce {
     return this;
   }
 
-  public ContentSection child(IntoElement child) {
-    this.children.add(child.intoElement());
-    return this;
-  }
-
-  public ContentSection children(IntoElement... children) {
-    for (var child : children) {
-      this.children.add(child.intoElement());
-    }
+  @Override
+  public ContentSection self() {
     return this;
   }
 
   @Override
+  public void appendChild(Element child) {
+    children.add(child);
+  }
+
+  @Override
   public Element render() {
-    var entry = RenderContext.current().registerTocEntry(rawId, title, level);
+    var entry = Toc.register(rawId, title, level);
 
     TagElement heading =
         sectionHeading(
@@ -190,7 +184,7 @@ public final class ContentSection implements RenderOnce {
         };
     return heading
         .attr("id", sectionDomId + "--heading")
-        .textSize(CssLength.rem(sizeRem))
+        .fontSize(CssLength.rem(sizeRem))
         .fontWeight(level == 2 ? 700 : 600)
         .text(title);
   }

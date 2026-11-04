@@ -6,26 +6,18 @@ import org.jspecify.annotations.Nullable;
 
 /// Represents a single route and its associated [PageDocument] in a multi-page site.
 public record SiteRoute(
-    String path,
-    PageDocument document,
-    @Nullable String title,
-    @Nullable String description,
-    int navOrder) {
+    String path, PageDocument document, @Nullable String title, @Nullable String description) {
 
   public SiteRoute {
     path = normalizeRoutePath(path);
   }
 
   public SiteRoute(String path, PageDocument document) {
-    this(path, document, null, null, 0);
+    this(path, document, null, null);
   }
 
   public SiteRoute(String path, PageDocument document, String title) {
-    this(path, document, title, null, 0);
-  }
-
-  public SiteRoute(String path, PageDocument document, String title, int navOrder) {
-    this(path, document, title, null, navOrder);
+    this(path, document, title, null);
   }
 
   public static String normalizeRoutePath(String rawPath) {
@@ -45,10 +37,6 @@ public record SiteRoute(
   /// Route title if set, otherwise the document title.
   public String displayTitle() {
     return title != null ? title : document.title();
-  }
-
-  public Path toRelativeOutputPath() {
-    return outputPathFor(path);
   }
 
   /// Maps a normalized route path to its output file relative to the site root.

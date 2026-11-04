@@ -6,11 +6,10 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.FluentBuilder;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
@@ -23,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 
 /// Editorial callout admonition emitting an accessible `<aside role="note">` tinted with adaptive
 /// `color-mix(in oklch, var(--token) 14%, var(--surface-card))` tokens.
-public final class Callout implements RenderView, FluentBuilder<Callout> {
+public final class Callout implements RenderView, FluentBuilder<Callout>, ParentElement<Callout> {
 
   public enum Tone {
     NOTE(
@@ -73,15 +72,9 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
   private final Tone tone;
   private @Nullable String customTitle;
   private final List<Element> children = new ArrayList<>();
-  private final String instanceId;
 
   public Callout(Tone tone) {
     this.tone = tone;
-    this.instanceId =
-        "callout-"
-            + tone.name().toLowerCase(Locale.ROOT)
-            + "-"
-            + Fnv1a64.toBase36Hash(System.nanoTime());
   }
 
   public static Callout note(String text) {
@@ -142,16 +135,9 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
     return this;
   }
 
-  public Callout child(IntoElement child) {
-    this.children.add(child.intoElement());
-    return this;
-  }
-
-  public Callout children(IntoElement... elements) {
-    for (var el : elements) {
-      this.children.add(el.intoElement());
-    }
-    return this;
+  @Override
+  public void appendChild(Element child) {
+    children.add(child);
   }
 
   public Tone tone() {
@@ -161,11 +147,6 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
   @Override
   public String viewType() {
     return "tessera-callout";
-  }
-
-  @Override
-  public ElementId entityId() {
-    return ElementId.of(instanceId);
   }
 
   @Override

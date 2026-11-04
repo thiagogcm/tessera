@@ -5,16 +5,7 @@ import java.math.RoundingMode;
 
 /// Sealed algebraic CSS length units.
 public sealed interface CssLength
-    permits CssLength.Px,
-        CssLength.Rem,
-        CssLength.Em,
-        CssLength.Ch,
-        CssLength.Percent,
-        CssLength.Cqi,
-        CssLength.Dvh,
-        CssLength.Auto,
-        CssLength.Fluid,
-        CssLength.Expr {
+    permits CssLength.Dimension, CssLength.Auto, CssLength.Fluid, CssLength.Expr {
 
   String toCss();
 
@@ -26,52 +17,31 @@ public sealed interface CssLength
         .toPlainString();
   }
 
-  record Px(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "px";
+  /// Numeric length in a CSS unit.
+  enum Unit {
+    PX("px"),
+    REM("rem"),
+    EM("em"),
+    CH("ch"),
+    PERCENT("%"),
+    CQI("cqi"),
+    DVH("dvh");
+
+    private final String suffix;
+
+    Unit(String suffix) {
+      this.suffix = suffix;
+    }
+
+    public String suffix() {
+      return suffix;
     }
   }
 
-  record Rem(double value) implements CssLength {
+  record Dimension(double value, Unit unit) implements CssLength {
     @Override
     public String toCss() {
-      return formatNumber(value) + "rem";
-    }
-  }
-
-  record Em(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "em";
-    }
-  }
-
-  record Ch(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "ch";
-    }
-  }
-
-  record Percent(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "%";
-    }
-  }
-
-  record Cqi(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "cqi";
-    }
-  }
-
-  record Dvh(double value) implements CssLength {
-    @Override
-    public String toCss() {
-      return formatNumber(value) + "dvh";
+      return formatNumber(value) + unit.suffix();
     }
   }
 
@@ -99,31 +69,31 @@ public sealed interface CssLength
   }
 
   static CssLength px(double value) {
-    return new Px(value);
+    return new Dimension(value, Unit.PX);
   }
 
   static CssLength rem(double value) {
-    return new Rem(value);
+    return new Dimension(value, Unit.REM);
   }
 
   static CssLength em(double value) {
-    return new Em(value);
+    return new Dimension(value, Unit.EM);
   }
 
   static CssLength ch(double value) {
-    return new Ch(value);
+    return new Dimension(value, Unit.CH);
   }
 
   static CssLength pct(double value) {
-    return new Percent(value);
+    return new Dimension(value, Unit.PERCENT);
   }
 
   static CssLength cqi(double value) {
-    return new Cqi(value);
+    return new Dimension(value, Unit.CQI);
   }
 
   static CssLength dvh(double value) {
-    return new Dvh(value);
+    return new Dimension(value, Unit.DVH);
   }
 
   static CssLength auto() {

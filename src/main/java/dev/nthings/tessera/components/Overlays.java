@@ -13,9 +13,11 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.StatefulTagElement;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -52,6 +54,7 @@ public final class Overlays {
   public static final class Modal implements RenderView {
 
     private final ElementId id;
+    private final ElementRef dialog = ElementRef.named("dialog");
     private final String title;
     private @Nullable String description;
     private final List<Element> bodyNodes = new ArrayList<>();
@@ -91,8 +94,13 @@ public final class Overlays {
     }
 
     /// Creates a trigger button wired via `command="show-modal"` to this modal.
-    public StatefulTagElement triggerButton(String buttonId, String label) {
-      return showModalTrigger(id, buttonId, label);
+    public TagElement triggerButton(String buttonId, String label) {
+      return showModalTrigger(dialog, buttonId, label);
+    }
+
+    /// The `<dialog>` element, for invokers placed outside this view.
+    public ElementRef dialogRef() {
+      return dialog;
     }
 
     /// Wraps this modal in a [DeferredElement] to hoist it to the end of `<body>`.
@@ -154,20 +162,18 @@ public final class Overlays {
 
     @Override
     public Element render() {
-      String dialogDomId = id.slug();
-
       var headerEl =
           header()
               .flex()
               .flexCol()
               .gap(CssLength.rem(0.25))
-              .child(h2().textSize(CssLength.rem(1.25)).textBalance().text(title))
+              .child(h2().fontSize(CssLength.rem(1.25)).textBalance().text(title))
               .whenPresent(
                   description,
                   (h, desc) ->
                       h.child(
                           p().textColor(Tokens.TEXT_MUTED)
-                              .textSize(CssLength.rem(0.875))
+                              .fontSize(CssLength.rem(0.875))
                               .text(desc)));
 
       var contentEl = div().flex().flexCol().gap(CssLength.rem(0.75));
@@ -175,9 +181,8 @@ public final class Overlays {
 
       var closeBtn =
           button()
-              .attr("id", dialogDomId + "--close")
-              .attr("commandfor", dialogDomId)
-              .attr("command", BuiltinCommand.CLOSE.wireValue())
+              .id("close")
+              .command(dialog, BuiltinCommand.CLOSE)
               .px(CssLength.rem(0.875))
               .py(CssLength.rem(0.5))
               .rounded(CssLength.rem(0.375))
@@ -198,9 +203,9 @@ public final class Overlays {
       footerEl.children(footerActions);
       footerEl.child(closeBtn);
 
-      return dialog()
-          .attr("id", dialogDomId)
-          .attr("closedby", "any")
+      return Elements.dialog()
+          .id(dialog)
+          .dialogClosedByAny()
           .child(
               div()
                   .flex()
@@ -216,6 +221,7 @@ public final class Overlays {
   public static final class Drawer implements RenderView {
 
     private final ElementId id;
+    private final ElementRef dialog = ElementRef.named("dialog");
     private final String title;
     private final DrawerSide side;
     private @Nullable String subtitle;
@@ -245,8 +251,13 @@ public final class Overlays {
       return this;
     }
 
-    public StatefulTagElement triggerButton(String buttonId, String label) {
-      return showModalTrigger(id, buttonId, label);
+    public TagElement triggerButton(String buttonId, String label) {
+      return showModalTrigger(dialog, buttonId, label);
+    }
+
+    /// The `<dialog>` element, for invokers placed outside this view.
+    public ElementRef dialogRef() {
+      return dialog;
     }
 
     public DeferredElement asDeferred(int priority) {
@@ -318,13 +329,10 @@ public final class Overlays {
 
     @Override
     public Element render() {
-      String dialogDomId = id.slug();
-
       var closeBtn =
           button()
-              .attr("id", dialogDomId + "--close")
-              .attr("commandfor", dialogDomId)
-              .attr("command", BuiltinCommand.CLOSE.wireValue())
+              .id("close")
+              .command(dialog, BuiltinCommand.CLOSE)
               .px(CssLength.rem(0.75))
               .py(CssLength.rem(0.375))
               .rounded(CssLength.rem(0.375))
@@ -347,33 +355,31 @@ public final class Overlays {
                       .flex()
                       .flexCol()
                       .gap(CssLength.rem(0.125))
-                      .child(h2().textSize(CssLength.rem(1.125)).text(title))
+                      .child(h2().fontSize(CssLength.rem(1.125)).text(title))
                       .whenPresent(
                           subtitle,
                           (d, sub) ->
                               d.child(
                                   p().textColor(Tokens.TEXT_MUTED)
-                                      .textSize(CssLength.rem(0.8125))
+                                      .fontSize(CssLength.rem(0.8125))
                                       .text(sub))),
                   closeBtn);
 
       var contentEl = div().flex().flexCol().gap(CssLength.rem(1)).py(CssLength.rem(1));
       contentEl.children(bodyNodes);
 
-      return dialog()
-          .attr("id", dialogDomId)
-          .attr("closedby", "any")
+      return Elements.dialog()
+          .id(dialog)
+          .dialogClosedByAny()
           .child(
               div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));
     }
   }
 
-  private static StatefulTagElement showModalTrigger(
-      ElementId dialogId, String buttonId, String label) {
+  private static TagElement showModalTrigger(ElementRef dialog, String buttonId, String label) {
     return button()
         .id(buttonId)
-        .attr("commandfor", dialogId.slug())
-        .attr("command", BuiltinCommand.SHOW_MODAL.wireValue())
+        .command(dialog, BuiltinCommand.SHOW_MODAL)
         .px(CssLength.rem(0.875))
         .py(CssLength.rem(0.5))
         .rounded(CssLength.rem(0.5))

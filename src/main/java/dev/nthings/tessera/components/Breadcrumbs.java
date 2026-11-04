@@ -58,11 +58,10 @@ public final class Breadcrumbs implements RenderView {
                     .gap(CssLength.rem(0.5))
                     .p(CssLength.px(0))
                     .m(CssLength.px(0))
-                    .textSize(CssLength.rem(0.875)))
+                    .fontSize(CssLength.rem(0.875)))
         .select(":scope li", s -> s.inlineFlex().itemsCenter().gap(CssLength.rem(0.5)))
         .select(
-            ":scope li + li::before",
-            s -> s.cssContent("\"/\" / \"\"").textColor(Tokens.TEXT_MUTED))
+            ":scope li + li::before", s -> s.content("\"/\" / \"\"").textColor(Tokens.TEXT_MUTED))
         .select(":scope a", s -> s.textColor(Tokens.TEXT_MUTED).textDecorationNone())
         .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
         .select(

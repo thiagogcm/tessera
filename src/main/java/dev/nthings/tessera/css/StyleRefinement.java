@@ -2,21 +2,18 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.Fnv1a64;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Sparse, cascade-mergeable collection of [CssDeclaration] values and scoped CSS custom
-/// properties backed by an [EnumMap] for O(1) property overrides and deterministic
-/// ordinal-ordered hashing.
+/// Sparse, cascade-mergeable CSS declarations (property → value) and scoped custom properties,
+/// backed by an [EnumMap] for O(1) overrides and deterministic ordinal-ordered hashing.
 public final class StyleRefinement
     implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
 
-  private final EnumMap<CssProperty, CssDeclaration> declarations =
-      new EnumMap<>(CssProperty.class);
+  private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
 
   @Override
@@ -29,9 +26,13 @@ public final class StyleRefinement
     return this;
   }
 
-  public StyleRefinement put(CssDeclaration declaration) {
-    declarations.put(declaration.property(), declaration);
+  public StyleRefinement put(CssProperty property, String value) {
+    declarations.put(property, value);
     return this;
+  }
+
+  public StyleRefinement put(CssProperty property, CssLength value) {
+    return put(property, value.toCss());
   }
 
   public StyleRefinement customProperty(String name, String value) {
@@ -50,15 +51,11 @@ public final class StyleRefinement
     return declarations.isEmpty() && customProperties.isEmpty();
   }
 
-  public @Nullable CssDeclaration get(CssProperty property) {
+  public @Nullable String get(CssProperty property) {
     return declarations.get(property);
   }
 
-  public Collection<CssDeclaration> declarations() {
-    return Collections.unmodifiableCollection(declarations.values());
-  }
-
-  public Map<CssProperty, CssDeclaration> asMap() {
+  public Map<CssProperty, String> declarations() {
     return Collections.unmodifiableMap(declarations);
   }
 
@@ -70,7 +67,7 @@ public final class StyleRefinement
     long hash = Fnv1a64.OFFSET_BASIS;
     for (var entry : declarations.entrySet()) {
       hash = Fnv1a64.updateInt(hash, entry.getKey().ordinal());
-      hash = Fnv1a64.updateChars(hash, entry.getValue().cssValue());
+      hash = Fnv1a64.updateChars(hash, entry.getValue());
     }
     for (var entry : customProperties.entrySet()) {
       hash = Fnv1a64.updateChars(hash, entry.getKey());
@@ -81,11 +78,11 @@ public final class StyleRefinement
 
   public String toCssBlockBody() {
     var sb = new StringBuilder();
-    for (var decl : declarations.values()) {
+    for (var entry : declarations.entrySet()) {
       if (!sb.isEmpty()) {
         sb.append(';');
       }
-      sb.append(decl.toCssRule());
+      sb.append(entry.getKey().cssName()).append(':').append(entry.getValue());
     }
     for (var entry : customProperties.entrySet()) {
       if (!sb.isEmpty()) {

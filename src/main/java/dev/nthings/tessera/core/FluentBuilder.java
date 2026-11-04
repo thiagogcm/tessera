@@ -1,6 +1,5 @@
 package dev.nthings.tessera.core;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -23,13 +22,6 @@ public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
 
   default <T> SELF whenPresent(@Nullable T value, BiFunction<SELF, T, SELF> then) {
     return value != null ? then.apply(self(), value) : self();
-  }
-
-  default <T> SELF whenOptional(Optional<T> optional, BiFunction<SELF, T, SELF> then) {
-    if (optional.isPresent()) {
-      return then.apply(self(), optional.get());
-    }
-    return self();
   }
 
   default SELF map(Function<SELF, SELF> mapper) {

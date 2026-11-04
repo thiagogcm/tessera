@@ -1,32 +1,42 @@
 package dev.nthings.tessera.render;
 
-import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.core.DeferredElement;
+import dev.nthings.tessera.core.DocumentState;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.EmptyElement;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.IdReference;
+import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.LateElement;
 import dev.nthings.tessera.core.RawHtmlElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnceElement;
 import dev.nthings.tessera.core.RenderViewElement;
-import dev.nthings.tessera.core.StatefulTagElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.css.CssDeclaration;
+import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
 
@@ -48,38 +58,21 @@ public final class PageCompiler {
       Set<String> registeredDomIds,
       Set<String> outgoingHrefs,
       Set<TransitionKey> transitionKeys,
-      @Nullable String heroImagePreloadHref,
-      List<RenderContext.TocEntry> tocEntries) {
-
-    public PreparedPage(
-        PageDocument document,
-        StyleSheetCollector styles,
-        List<ResolvedNode> bodyNodes,
-        Set<String> registeredDomIds,
-        Set<String> outgoingHrefs) {
-      this(document, styles, bodyNodes, registeredDomIds, outgoingHrefs, Set.of(), null, List.of());
-    }
-  }
+      List<ResolvedNode> headNodes,
+      DocumentState documentState) {}
 
   public sealed interface ResolvedNode
-      permits ResolvedTag, ResolvedText, ResolvedRaw, ResolvedEmpty {}
+      permits ResolvedTag, ResolvedText, ResolvedRaw, ResolvedEmpty, ResolvedSlot {}
 
+  /// Resolved element; `idReferences` are pending until the prepaint link pass folds them into
+  /// `attributes`.
   public record ResolvedTag(
       HtmlTag tag,
       Map<String, String> attributes,
+      Map<String, IdReference> idReferences,
       List<ResolvedNode> children,
-      @Nullable ResolvedTag companionSibling,
-      boolean hasAspectRatio)
-      implements ResolvedNode {
-
-    public ResolvedTag(
-        HtmlTag tag,
-        Map<String, String> attributes,
-        List<ResolvedNode> children,
-        @Nullable ResolvedTag companionSibling) {
-      this(tag, attributes, children, companionSibling, false);
-    }
-  }
+      @Nullable ResolvedTag companionSibling)
+      implements ResolvedNode {}
 
   public record ResolvedText(String content) implements ResolvedNode {}
 
@@ -88,6 +81,9 @@ public final class PageCompiler {
   public enum ResolvedEmpty implements ResolvedNode {
     INSTANCE
   }
+
+  /// Position of a [LateElement]; replaced by its resolved content in the link pass.
+  public record ResolvedSlot(int index) implements ResolvedNode {}
 
   private record ResolvedDeferred(int priority, long sequence, ResolvedNode node)
       implements Comparable<ResolvedDeferred> {
@@ -104,10 +100,46 @@ public final class PageCompiler {
     private final Set<String> outgoingHrefs = new LinkedHashSet<>();
     private final Set<TransitionKey> transitionKeys = new LinkedHashSet<>();
     private final Set<String> viewTransitionNames = new LinkedHashSet<>();
+    private final Map<ElementRef, String> boundDomIds = new IdentityHashMap<>();
+    private final Map<String, Integer> autoIdCounters = new HashMap<>();
+    private final List<ResolvedNode> lateSlots = new ArrayList<>();
+    private final ArrayDeque<Runnable> pendingLate = new ArrayDeque<>();
     private long deferredSequence = 0L;
 
     void enqueueDeferred(int priority, ResolvedNode node) {
       deferredQueue.add(new ResolvedDeferred(priority, deferredSequence++, node));
+    }
+
+    /// Deterministic per-page `<prefix>-<n>` local id.
+    ElementId nextAutoId(String prefix) {
+      return ElementId.of(prefix + "-" + autoIdCounters.merge(prefix, 1, Integer::sum));
+    }
+
+    void registerDomId(String domId) {
+      if (!registeredDomIds.add(domId)) {
+        throw new AccessibilityViolationException(
+            "Duplicate DOM id '" + domId + "' on the same page");
+      }
+    }
+
+    String bind(ElementRef ref, ViewScope scope, HtmlTag tag) {
+      ElementId local = ref.localId();
+      String domId = scope.extend(local != null ? local : nextAutoId(tag.tagName())).domId();
+      if (boundDomIds.putIfAbsent(ref, domId) != null) {
+        throw new AccessibilityViolationException(
+            ref + " is bound to more than one element on the same page");
+      }
+      registerDomId(domId);
+      return domId;
+    }
+
+    String boundDomId(ElementRef ref, String usage) {
+      String domId = boundDomIds.get(ref);
+      if (domId == null) {
+        throw new AccessibilityViolationException(
+            usage + " references " + ref + ", which is not bound to any element on this page");
+      }
+      return domId;
     }
   }
 
@@ -127,31 +159,38 @@ public final class PageCompiler {
     var styles = new StyleSheetCollector();
     var state = new CompilationState();
 
-    record Phase1Result(
-        ResolvedNode root,
-        @Nullable String heroImageHref,
-        List<RenderContext.TocEntry> tocEntries) {}
+    record Phase1Result(ResolvedNode root, List<ResolvedNode> headNodes, DocumentState state) {}
 
-    // Phase 1: requestLayout
+    // Phase 1: requestLayout, then late elements, then end-of-document sections
     Phase1Result p1 =
         RenderContext.runRoot(
             styles,
             document.tokens(),
             () -> {
               ResolvedNode root = requestLayout(document.bodyRoot().intoElement(), state);
-              if (RenderContext.current().hasUnrenderedFootnotes()) {
-                ResolvedNode autoFootnotes =
-                    requestLayout(Footnotes.section().intoElement(), state);
-                state.enqueueDeferred(Integer.MAX_VALUE, autoFootnotes);
+              resolveLateElements(state);
+              DocumentState docState = RenderContext.current().documentState();
+              int resolvedSections = 0;
+              List<Supplier<? extends IntoElement>> sections;
+              while ((sections = docState.documentEndSections()).size() > resolvedSections) {
+                var section = sections.get(resolvedSections++);
+                state.enqueueDeferred(
+                    Integer.MAX_VALUE, requestLayout(section.get().intoElement(), state));
+                resolveLateElements(state);
               }
-              return new Phase1Result(
-                  root,
-                  RenderContext.current().heroImageHref(),
-                  RenderContext.current().tocEntries());
+              var headNodes = new ArrayList<ResolvedNode>();
+              for (var head : docState.headElements()) {
+                headNodes.add(requestLayout(head, state));
+              }
+              return new Phase1Result(root, headNodes, docState);
             });
 
     // Phase 2: prepaint
     List<ResolvedNode> bodyNodes = prepaint(p1.root(), state);
+    var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
+    for (var head : p1.headNodes()) {
+      headNodes.add(link(head, state));
+    }
 
     return new PreparedPage(
         document,
@@ -160,8 +199,8 @@ public final class PageCompiler {
         Collections.unmodifiableSet(state.registeredDomIds),
         Collections.unmodifiableSet(state.outgoingHrefs),
         Collections.unmodifiableSet(state.transitionKeys),
-        p1.heroImageHref(),
-        p1.tocEntries());
+        Collections.unmodifiableList(headNodes),
+        p1.state());
   }
 
   public static CompiledPage paintPrepared(
@@ -173,7 +212,7 @@ public final class PageCompiler {
             prepared.bodyNodes(),
             cssContent,
             outputMode,
-            prepared.heroImagePreloadHref(),
+            prepared.headNodes(),
             htmlBuffer);
     return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
   }
@@ -190,24 +229,32 @@ public final class PageCompiler {
         yield ResolvedEmpty.INSTANCE;
       }
       case RenderOnceElement(var component) -> requestLayout(component.render(), state);
-      case RenderViewElement(var view) ->
-          ctx.withViewScope(
-              view.entityId(),
-              () -> {
-                String instanceScopeId = RenderContext.current().viewScope().domId();
-                String resolvedViewType =
-                    RenderContext.current()
-                        .styles()
-                        .registerViewScope(view.viewType(), view.viewScopeRule());
-                ResolvedNode inner = requestLayout(view.render(), state);
-                return attachViewScopeAttributes(inner, resolvedViewType, instanceScopeId);
-              });
-      case TagElement tag -> resolveTag(tag, null, state);
-      case StatefulTagElement stateful -> {
-        String domId = ctx.viewScope().extend(stateful.elementId()).domId();
-        state.registeredDomIds.add(domId);
-        yield resolveTag(stateful.delegate(), domId, state);
+      case LateElement(var content) -> {
+        int slot = state.lateSlots.size();
+        state.lateSlots.add(ResolvedEmpty.INSTANCE);
+        state.pendingLate.add(
+            () ->
+                state.lateSlots.set(
+                    slot, ctx.reenter(() -> requestLayout(content.get().intoElement(), state))));
+        yield new ResolvedSlot(slot);
       }
+      case RenderViewElement(var view) -> {
+        ElementId entityId = view.entityId();
+        yield ctx.withViewScope(
+            entityId != null ? entityId : state.nextAutoId(view.viewType()),
+            () -> {
+              String instanceScopeId = RenderContext.current().viewScope().domId();
+              var scope = new ScopeStyle();
+              view.configureScope(scope);
+              String resolvedViewType =
+                  RenderContext.current()
+                      .styles()
+                      .registerViewScope(view.viewType(), scope.toCssBody());
+              ResolvedNode inner = requestLayout(view.render(), state);
+              return attachViewScopeAttributes(inner, resolvedViewType, instanceScopeId);
+            });
+      }
+      case TagElement tag -> resolveTag(tag, null, state);
     };
   }
 
@@ -220,55 +267,59 @@ public final class PageCompiler {
       return new ResolvedTag(
           tag.tag(),
           Collections.unmodifiableMap(updatedAttrs),
+          tag.idReferences(),
           tag.children(),
-          tag.companionSibling(),
-          tag.hasAspectRatio());
+          tag.companionSibling());
     }
     var wrapperAttrs = new LinkedHashMap<String, String>(2);
     wrapperAttrs.put("data-view", viewType);
     wrapperAttrs.put("data-view-id", instanceScopeId);
     return new ResolvedTag(
-        HtmlTag.DIV, Collections.unmodifiableMap(wrapperAttrs), List.of(node), null, false);
+        HtmlTag.DIV, Collections.unmodifiableMap(wrapperAttrs), Map.of(), List.of(node), null);
   }
 
+  /// Resolves `tag`; `forcedDomId` (already registered) overrides ref binding for companions.
   private static ResolvedTag resolveTag(
-      TagElement tag, @Nullable String resolvedDomId, CompilationState state) {
+      TagElement tag, @Nullable String forcedDomId, CompilationState state) {
     var ctx = RenderContext.current();
     var attrs = new LinkedHashMap<>(tag.attributes());
 
-    if (resolvedDomId != null) {
-      attrs.put("id", resolvedDomId);
+    String domId = forcedDomId;
+    ElementRef ref = tag.boundRef();
+    if (domId == null && ref != null) {
+      domId = state.bind(ref, ctx.viewScope(), tag.tag());
+    }
+    if (domId != null) {
+      attrs.put("id", domId);
     } else {
       String explicitId = attrs.get("id");
       if (explicitId != null && !explicitId.isBlank()) {
-        state.registeredDomIds.add(explicitId);
+        state.registerDomId(explicitId);
       }
     }
 
-    boolean hasAspectRatio = tag.style().get(CssProperty.ASPECT_RATIO) != null;
+    StyleRefinement style = withIdentityStyles(tag, domId, state);
+    if (tag.tag() == HtmlTag.IMG) {
+      validateImage(attrs, style);
+    }
 
-    // TagElement.transitionKey(...) writes these declarations, so the style is the single source.
-    if (tag.style().get(CssProperty.VIEW_TRANSITION_NAME)
-        instanceof CssDeclaration.ViewTransitionName(var ident)) {
+    // transitionKey(...) and viewTransitionName(...) write these declarations.
+    String ident = style.get(CssProperty.VIEW_TRANSITION_NAME);
+    if (ident != null) {
       if (!state.viewTransitionNames.add(ident)) {
         throw new AccessibilityViolationException(
             "Duplicate TransitionKey name '"
                 + ident
                 + "' found on the same page. TransitionKey names must be unique per document.");
       }
-      String vtc =
-          tag.style().get(CssProperty.VIEW_TRANSITION_CLASS)
-                  instanceof CssDeclaration.ViewTransitionClass(var cls)
-              ? cls
-              : null;
+      String vtc = style.get(CssProperty.VIEW_TRANSITION_CLASS);
       state.transitionKeys.add(new TransitionKey(ident, vtc));
       if (vtc != null) {
         ctx.styles().registerTransitionClass(vtc);
       }
     }
 
-    List<String> generatedClasses =
-        ctx.styles().registerElementStyles(tag.style(), tag.interactivity());
+    List<String> generatedClasses = ctx.styles().registerElementStyles(style, tag.interactivity());
     if (!generatedClasses.isEmpty()) {
       String existingClass = attrs.get("class");
       String joined = String.join(" ", generatedClasses);
@@ -277,20 +328,12 @@ public final class PageCompiler {
           existingClass == null || existingClass.isBlank() ? joined : existingClass + " " + joined);
     }
 
-    var commandTargetId = tag.interactivity().commandTargetId();
-    var commandAction = tag.interactivity().commandAction();
-    if (commandTargetId != null && commandAction != null) {
-      String targetDomId = ctx.viewScope().extend(commandTargetId).domId();
-      attrs.put("commandfor", targetDomId);
-      attrs.put("command", commandAction);
-    }
-
     ResolvedTag companionTooltip = null;
-    var tooltipElement = tag.interactivity().interestTooltip();
-    if (tooltipElement != null && resolvedDomId != null) {
-      String tooltipDomId = resolvedDomId + "--tooltip";
+    var tooltipElement = tag.interestTooltip();
+    if (tooltipElement != null && domId != null) {
+      String tooltipDomId = domId + "--tooltip";
       attrs.put("interestfor", tooltipDomId);
-      state.registeredDomIds.add(tooltipDomId);
+      state.registerDomId(tooltipDomId);
       companionTooltip = resolveTag(tooltipElement, tooltipDomId, state);
     }
 
@@ -305,33 +348,124 @@ public final class PageCompiler {
     return new ResolvedTag(
         tag.tag(),
         Collections.unmodifiableMap(attrs),
+        Map.copyOf(tag.idReferences()),
         Collections.unmodifiableList(resolvedChildren),
-        companionTooltip,
-        hasAspectRatio);
+        companionTooltip);
+  }
+
+  /// Adds declarations derived from DOM ids (anchor names, unique view-transition names).
+  private static StyleRefinement withIdentityStyles(
+      TagElement tag, @Nullable String domId, CompilationState state) {
+    ElementRef anchorTarget = tag.anchorTarget();
+    String transitionClass = tag.viewTransitionClass();
+    if (!tag.isAnchor() && anchorTarget == null && transitionClass == null) {
+      return tag.style();
+    }
+    var style = new StyleRefinement().mergeFrom(tag.style());
+    if (domId != null && tag.isAnchor()) {
+      style.put(CssProperty.ANCHOR_NAME, anchorIdent(domId));
+    }
+    if (anchorTarget != null) {
+      String usage = "<" + tag.tag().tagName() + "> anchoredTo (anchor must be laid out earlier)";
+      style.put(CssProperty.POSITION_ANCHOR, anchorIdent(state.boundDomId(anchorTarget, usage)));
+    }
+    if (domId != null && transitionClass != null) {
+      style.put(CssProperty.VIEW_TRANSITION_NAME, transitionClass + "-" + domId);
+    }
+    return style;
+  }
+
+  private static String anchorIdent(String domId) {
+    return "--anchor-" + domId;
+  }
+
+  /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
+  private static void validateImage(Map<String, String> attrs, StyleRefinement style) {
+    String alt = attrs.get("alt");
+    if (alt == null) {
+      throw new AccessibilityViolationException(
+          "<img> element is missing a required 'alt' attribute");
+    }
+    if (alt.isEmpty()
+        && !"presentation".equals(attrs.get("role"))
+        && !"true".equals(attrs.get("aria-hidden"))) {
+      throw new AccessibilityViolationException(
+          "Decorative <img> with empty alt=\"\" must declare role=\"presentation\" or aria-hidden=\"true\"");
+    }
+    boolean hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
+    if (!hasWidthAndHeight && style.get(CssProperty.ASPECT_RATIO) == null) {
+      throw new AccessibilityViolationException(
+          "<img> element with src=\""
+              + attrs.getOrDefault("src", "")
+              + "\" must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio' to"
+              + " prevent Cumulative Layout Shift (CLS)");
+    }
+  }
+
+  private static void resolveLateElements(CompilationState state) {
+    Runnable next;
+    while ((next = state.pendingLate.poll()) != null) {
+      next.run();
+    }
+  }
+
+  /// Substitutes late-element slots and folds pending [IdReference]s into attributes, now that
+  /// every ref on the page is bound.
+  private static ResolvedNode link(ResolvedNode node, CompilationState state) {
+    if (node instanceof ResolvedSlot(int index)) {
+      return link(state.lateSlots.get(index), state);
+    }
+    if (!(node instanceof ResolvedTag tag)) {
+      return node;
+    }
+    Map<String, String> attrs = tag.attributes();
+    if (!tag.idReferences().isEmpty()) {
+      var linked = new LinkedHashMap<>(attrs);
+      tag.idReferences()
+          .forEach(
+              (name, reference) -> {
+                var ids = new ArrayList<String>(reference.targets().size());
+                for (var target : reference.targets()) {
+                  ids.add(state.boundDomId(target, "<" + tag.tag().tagName() + " " + name + ">"));
+                }
+                linked.put(name, reference.prefix() + String.join(" ", ids));
+              });
+      attrs = Collections.unmodifiableMap(linked);
+    }
+    var children = new ArrayList<ResolvedNode>(tag.children().size());
+    for (var child : tag.children()) {
+      children.add(link(child, state));
+    }
+    var companion = tag.companionSibling();
+    return new ResolvedTag(
+        tag.tag(),
+        attrs,
+        Map.of(),
+        Collections.unmodifiableList(children),
+        companion != null ? (ResolvedTag) link(companion, state) : null);
   }
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
-    validateNodeTree(root, state);
-
     var bodyNodes = new ArrayList<ResolvedNode>();
     if (!(root instanceof ResolvedEmpty)) {
-      bodyNodes.add(root);
+      bodyNodes.add(link(root, state));
     }
-
     while (!state.deferredQueue.isEmpty()) {
       ResolvedDeferred deferred = state.deferredQueue.poll();
       if (deferred != null && !(deferred.node() instanceof ResolvedEmpty)) {
-        validateNodeTree(deferred.node(), state);
-        bodyNodes.add(deferred.node());
+        bodyNodes.add(link(deferred.node(), state));
       }
     }
-
+    for (var node : bodyNodes) {
+      validateNodeTree(node, state);
+    }
     return Collections.unmodifiableList(bodyNodes);
   }
 
   private static void validateNodeTree(ResolvedNode node, CompilationState state) {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
+      case ResolvedSlot _ -> throw unlinked();
       case ResolvedTag tag -> {
         validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
@@ -348,30 +482,6 @@ public final class PageCompiler {
   private static void validateTagAccessibility(ResolvedTag tag, CompilationState state) {
     Map<String, String> attrs = tag.attributes();
     Set<String> registeredDomIds = state.registeredDomIds;
-
-    if (tag.tag() == HtmlTag.IMG) {
-      String alt = attrs.get("alt");
-      if (alt == null) {
-        throw new AccessibilityViolationException(
-            "<img> element is missing a required 'alt' attribute");
-      }
-      if (alt.isEmpty()
-          && !"presentation".equals(attrs.get("role"))
-          && !"true".equals(attrs.get("aria-hidden"))) {
-        throw new AccessibilityViolationException(
-            "Decorative <img> with empty alt=\"\" must declare role=\"presentation\" or aria-hidden=\"true\"");
-      }
-      boolean hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
-      boolean hasAspectRatio =
-          tag.hasAspectRatio()
-              || (attrs.containsKey("style") && attrs.get("style").contains("aspect-ratio"));
-      if (!hasWidthAndHeight && !hasAspectRatio) {
-        throw new AccessibilityViolationException(
-            "<img> element with src=\""
-                + attrs.getOrDefault("src", "")
-                + "\" must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio' to prevent Cumulative Layout Shift (CLS)");
-      }
-    }
 
     if (tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) {
       if (!hasAccessibleLabel(tag)) {
@@ -432,6 +542,7 @@ public final class PageCompiler {
             case ResolvedText(var text) -> !text.isBlank();
             case ResolvedRaw(var raw) -> !raw.isBlank();
             case ResolvedEmpty _ -> false;
+            case ResolvedSlot _ -> throw unlinked();
             case ResolvedTag nested ->
                 (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
                     || isNonBlank(nested.attributes().get("aria-label"))
@@ -444,6 +555,10 @@ public final class PageCompiler {
     return false;
   }
 
+  private static IllegalStateException unlinked() {
+    return new IllegalStateException("Late-element slot reached validation/paint before linking");
+  }
+
   private static boolean isNonBlank(@Nullable String value) {
     return value != null && !value.isBlank();
   }
@@ -453,7 +568,7 @@ public final class PageCompiler {
       List<ResolvedNode> bodyNodes,
       String cssContent,
       OutputMode outputMode,
-      @Nullable String heroImagePreloadHref,
+      List<ResolvedNode> headNodes,
       Appendable out) {
     try {
       out.append("<!doctype html>\n<html lang=\"");
@@ -463,10 +578,9 @@ public final class PageCompiler {
       out.append("<title>");
       out.append(Encode.forHtmlContent(doc.title()));
       out.append("</title>\n");
-      if (heroImagePreloadHref != null && !heroImagePreloadHref.isBlank()) {
-        out.append("<link rel=\"preload\" as=\"image\" href=\"");
-        out.append(Encode.forHtmlAttribute(heroImagePreloadHref));
-        out.append("\" fetchpriority=\"high\">\n");
+      for (var head : headNodes) {
+        paintNode(head, out);
+        out.append('\n');
       }
 
       String externalCssPath = null;
@@ -501,6 +615,7 @@ public final class PageCompiler {
   private static void paintNode(ResolvedNode node, Appendable out) throws IOException {
     switch (node) {
       case ResolvedEmpty _ -> {}
+      case ResolvedSlot _ -> throw unlinked();
       case ResolvedText(var content) -> out.append(Encode.forHtmlContent(content));
       case ResolvedRaw(var trustedHtml) -> out.append(trustedHtml);
       case ResolvedTag tag -> {

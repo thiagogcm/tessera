@@ -4,12 +4,11 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.FluentBuilder;
-import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.css.CssDeclaration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -67,12 +66,15 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
-  public Card media(IntoElement mediaElement) {
-    Element el = mediaElement.intoElement();
-    if (el instanceof TagElement tag && tag.tag() != HtmlTag.IMG && tag.tag() != HtmlTag.PICTURE) {
-      tag.attr("class", "media");
-    }
-    this.media = el;
+  /// Image media rendered as the card's direct `<img>` child.
+  public Card media(Image image) {
+    this.media = image.intoElement();
+    return this;
+  }
+
+  /// Arbitrary media (video, figure, illustration) wrapped in a `div.media` region.
+  public Card media(IntoElement mediaContent) {
+    this.media = Elements.div().attr("class", "media").child(mediaContent);
     return this;
   }
 
@@ -145,12 +147,12 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             s ->
                 s.refine(
                     r ->
-                        r.put(new CssDeclaration.TextDecorationLine("underline"))
-                            .put(new CssDeclaration.TextUnderlineOffset(CssLength.em(0.2)))))
+                        r.put(CssProperty.TEXT_DECORATION_LINE, "underline")
+                            .put(CssProperty.TEXT_UNDERLINE_OFFSET, CssLength.em(0.2))))
         .select(
             ":scope:has(a.card-link) a.card-link::after",
-            s -> s.cssContent("\"\"").absolute().inset("0"))
-        .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.focusOutlineNone())
+            s -> s.content("\"\"").absolute().inset("0"))
+        .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.outlineNone())
         .select(":scope:has(a.card-link:focus-visible)", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .select(":scope:has(a.card-link:hover)", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
@@ -218,7 +220,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     h3,
                     Elements.p()
                         .textColor(Tokens.TEXT_MUTED)
-                        .textSize(CssLength.rem(0.875))
+                        .fontSize(CssLength.rem(0.875))
                         .text(subtitleText)));
       } else {
         root.child(h3);

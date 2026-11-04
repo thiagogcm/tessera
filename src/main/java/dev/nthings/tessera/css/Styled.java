@@ -16,178 +16,173 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF cssContent(String value) {
-    style().put(new CssDeclaration.Content(value));
-    return self();
-  }
-
   default SELF flex() {
-    style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.FLEX));
+    style().put(CssProperty.DISPLAY, "flex");
     return self();
   }
 
   default SELF inlineFlex() {
-    style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.INLINE_FLEX));
+    style().put(CssProperty.DISPLAY, "inline-flex");
     return self();
   }
 
   default SELF grid() {
-    style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.GRID));
+    style().put(CssProperty.DISPLAY, "grid");
     return self();
   }
 
   default SELF block() {
-    style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.BLOCK));
+    style().put(CssProperty.DISPLAY, "block");
     return self();
   }
 
   default SELF hidden() {
-    style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.NONE));
+    style().put(CssProperty.DISPLAY, "none");
     return self();
   }
 
   default SELF relative() {
-    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.RELATIVE));
+    style().put(CssProperty.POSITION, "relative");
     return self();
   }
 
   default SELF absolute() {
-    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.ABSOLUTE));
+    style().put(CssProperty.POSITION, "absolute");
     return self();
   }
 
   default SELF fixed() {
-    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.FIXED));
+    style().put(CssProperty.POSITION, "fixed");
     return self();
   }
 
   default SELF sticky() {
-    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.STICKY));
+    style().put(CssProperty.POSITION, "sticky");
     return self();
   }
 
   default SELF inset(String value) {
-    style().put(new CssDeclaration.Inset(value));
+    style().put(CssProperty.INSET, value);
     return self();
   }
 
   default SELF insetBlockStart(CssLength length) {
-    style().put(new CssDeclaration.InsetBlockStart(length));
+    style().put(CssProperty.INSET_BLOCK_START, length);
     return self();
   }
 
   default SELF insetInlineStart(CssLength length) {
-    style().put(new CssDeclaration.InsetInlineStart(length));
+    style().put(CssProperty.INSET_INLINE_START, length);
     return self();
   }
 
   default SELF zIndex(int level) {
-    style().put(new CssDeclaration.ZIndex(level));
+    style().put(CssProperty.Z_INDEX, Integer.toString(level));
     return self();
   }
 
   default SELF overflowAuto() {
-    style().put(new CssDeclaration.Overflow("auto"));
+    style().put(CssProperty.OVERFLOW, "auto");
     return self();
   }
 
   default SELF listStyleNone() {
-    style().put(new CssDeclaration.ListStyle("none"));
+    style().put(CssProperty.LIST_STYLE, "none");
     return self();
   }
 
   default SELF counterReset(String counterName) {
-    style().put(new CssDeclaration.CounterReset(counterName));
+    style().put(CssProperty.COUNTER_RESET, counterName);
     return self();
   }
 
   default SELF counterIncrement(String counterName) {
-    style().put(new CssDeclaration.CounterIncrement(counterName));
+    style().put(CssProperty.COUNTER_INCREMENT, counterName);
     return self();
   }
 
   default SELF content(String value) {
-    style().put(new CssDeclaration.Content(value));
+    style().put(CssProperty.CONTENT, value);
     return self();
   }
 
   default SELF flexRow() {
-    style().put(new CssDeclaration.FlexDirection(CssDeclaration.Direction.ROW));
+    style().put(CssProperty.FLEX_DIRECTION, "row");
     return self();
   }
 
   default SELF flexCol() {
-    style().put(new CssDeclaration.FlexDirection(CssDeclaration.Direction.COLUMN));
+    style().put(CssProperty.FLEX_DIRECTION, "column");
     return self();
   }
 
   default SELF flexWrap() {
-    style().put(new CssDeclaration.FlexWrap(CssDeclaration.Wrap.WRAP));
+    style().put(CssProperty.FLEX_WRAP, "wrap");
     return self();
   }
 
   default SELF itemsStart() {
-    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.START));
+    style().put(CssProperty.ALIGN_ITEMS, "flex-start");
     return self();
   }
 
   default SELF itemsCenter() {
-    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.CENTER));
+    style().put(CssProperty.ALIGN_ITEMS, "center");
     return self();
   }
 
   default SELF itemsEnd() {
-    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.END));
+    style().put(CssProperty.ALIGN_ITEMS, "flex-end");
     return self();
   }
 
   default SELF itemsStretch() {
-    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.STRETCH));
+    style().put(CssProperty.ALIGN_ITEMS, "stretch");
     return self();
   }
 
   default SELF itemsBaseline() {
-    style().put(new CssDeclaration.AlignItems(CssDeclaration.Alignment.BASELINE));
+    style().put(CssProperty.ALIGN_ITEMS, "baseline");
     return self();
   }
 
   default SELF justifyStart() {
-    style().put(new CssDeclaration.JustifyContent(CssDeclaration.Justify.START));
+    style().put(CssProperty.JUSTIFY_CONTENT, "flex-start");
     return self();
   }
 
   default SELF justifyCenter() {
-    style().put(new CssDeclaration.JustifyContent(CssDeclaration.Justify.CENTER));
+    style().put(CssProperty.JUSTIFY_CONTENT, "center");
     return self();
   }
 
   default SELF justifyEnd() {
-    style().put(new CssDeclaration.JustifyContent(CssDeclaration.Justify.END));
+    style().put(CssProperty.JUSTIFY_CONTENT, "flex-end");
     return self();
   }
 
   default SELF justifyBetween() {
-    style().put(new CssDeclaration.JustifyContent(CssDeclaration.Justify.BETWEEN));
+    style().put(CssProperty.JUSTIFY_CONTENT, "space-between");
     return self();
   }
 
   default SELF flexGrow(int factor) {
-    style().put(new CssDeclaration.FlexGrow(factor));
+    style().put(CssProperty.FLEX_GROW, Integer.toString(factor));
     return self();
   }
 
   default SELF flexShrink(int factor) {
-    style().put(new CssDeclaration.FlexShrink(factor));
+    style().put(CssProperty.FLEX_SHRINK, Integer.toString(factor));
     return self();
   }
 
   default SELF gridColumns(String template) {
-    style().put(new CssDeclaration.GridTemplateColumns(template));
+    style().put(CssProperty.GRID_TEMPLATE_COLUMNS, template);
     return self();
   }
 
   default SELF gridRows(String template) {
-    style().put(new CssDeclaration.GridTemplateRows(template));
+    style().put(CssProperty.GRID_TEMPLATE_ROWS, template);
     return self();
   }
 
@@ -199,12 +194,12 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF gridColumn(String spanSpec) {
-    style().put(new CssDeclaration.GridColumn(spanSpec));
+    style().put(CssProperty.GRID_COLUMN, spanSpec);
     return self();
   }
 
   default SELF gridRow(String spanSpec) {
-    style().put(new CssDeclaration.GridRow(spanSpec));
+    style().put(CssProperty.GRID_ROW, spanSpec);
     return self();
   }
 
@@ -223,62 +218,61 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF gridAutoFit(CssLength minColumnWidth) {
-    return grid()
-        .gridColumns("repeat(auto-fit, minmax(min(100%, " + minColumnWidth.toCss() + "), 1fr))");
+    return grid().gridColumns(autoFitTracks(minColumnWidth));
   }
 
   default SELF gap(CssLength length) {
-    style().put(new CssDeclaration.Gap(length));
+    style().put(CssProperty.GAP, length);
     return self();
   }
 
   default SELF rowGap(CssLength length) {
-    style().put(new CssDeclaration.RowGap(length));
+    style().put(CssProperty.ROW_GAP, length);
     return self();
   }
 
   default SELF colGap(CssLength length) {
-    style().put(new CssDeclaration.ColumnGap(length));
+    style().put(CssProperty.COLUMN_GAP, length);
     return self();
   }
 
   default SELF inlineSize(CssLength length) {
-    style().put(new CssDeclaration.InlineSize(length));
+    style().put(CssProperty.INLINE_SIZE, length);
     return self();
   }
 
   default SELF blockSize(CssLength length) {
-    style().put(new CssDeclaration.BlockSize(length));
+    style().put(CssProperty.BLOCK_SIZE, length);
     return self();
   }
 
   default SELF minInlineSize(CssLength length) {
-    style().put(new CssDeclaration.MinInlineSize(length));
+    style().put(CssProperty.MIN_INLINE_SIZE, length);
     return self();
   }
 
   default SELF maxInlineSize(CssLength length) {
-    style().put(new CssDeclaration.MaxInlineSize(length));
+    style().put(CssProperty.MAX_INLINE_SIZE, length);
     return self();
   }
 
   default SELF minBlockSize(CssLength length) {
-    style().put(new CssDeclaration.MinBlockSize(length));
+    style().put(CssProperty.MIN_BLOCK_SIZE, length);
     return self();
   }
 
   default SELF maxBlockSize(CssLength length) {
-    style().put(new CssDeclaration.MaxBlockSize(length));
+    style().put(CssProperty.MAX_BLOCK_SIZE, length);
     return self();
   }
 
   default SELF aspectRatio(String ratio) {
-    style().put(new CssDeclaration.AspectRatio(ratio));
+    style().put(CssProperty.ASPECT_RATIO, ratio);
     return self();
   }
 
   default SELF objectCover() {
-    style().put(new CssDeclaration.ObjectFit("cover"));
+    style().put(CssProperty.OBJECT_FIT, "cover");
     return self();
   }
 
@@ -287,12 +281,12 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF px(CssLength length) {
-    style().put(new CssDeclaration.PaddingInline(length));
+    style().put(CssProperty.PADDING_INLINE, length);
     return self();
   }
 
   default SELF py(CssLength length) {
-    style().put(new CssDeclaration.PaddingBlock(length));
+    style().put(CssProperty.PADDING_BLOCK, length);
     return self();
   }
 
@@ -301,22 +295,22 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF pt(CssLength length) {
-    style().put(new CssDeclaration.PaddingBlockStart(length));
+    style().put(CssProperty.PADDING_BLOCK_START, length);
     return self();
   }
 
   default SELF ps(CssLength length) {
-    style().put(new CssDeclaration.PaddingInlineStart(length));
+    style().put(CssProperty.PADDING_INLINE_START, length);
     return self();
   }
 
   default SELF mx(CssLength length) {
-    style().put(new CssDeclaration.MarginInline(length));
+    style().put(CssProperty.MARGIN_INLINE, length);
     return self();
   }
 
   default SELF my(CssLength length) {
-    style().put(new CssDeclaration.MarginBlock(length));
+    style().put(CssProperty.MARGIN_BLOCK, length);
     return self();
   }
 
@@ -325,88 +319,84 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF mt(CssLength length) {
-    style().put(new CssDeclaration.MarginBlockStart(length));
+    style().put(CssProperty.MARGIN_BLOCK_START, length);
     return self();
   }
 
   default SELF mb(CssLength length) {
-    style().put(new CssDeclaration.MarginBlockEnd(length));
+    style().put(CssProperty.MARGIN_BLOCK_END, length);
     return self();
   }
 
   default SELF bg(DesignToken token) {
-    style().put(new CssDeclaration.Background(token.varReference()));
+    style().put(CssProperty.BACKGROUND, token.varReference());
     return self();
   }
 
   default SELF bgRaw(String colorValue) {
-    style().put(new CssDeclaration.Background(colorValue));
+    style().put(CssProperty.BACKGROUND, colorValue);
     return self();
   }
 
   default SELF textColor(DesignToken token) {
-    style().put(new CssDeclaration.Color(token.varReference()));
+    style().put(CssProperty.COLOR, token.varReference());
     return self();
   }
 
   default SELF textColorRaw(String colorValue) {
-    style().put(new CssDeclaration.Color(colorValue));
-    return self();
-  }
-
-  default SELF textSize(CssLength size) {
-    style().put(new CssDeclaration.FontSize(size));
+    style().put(CssProperty.COLOR, colorValue);
     return self();
   }
 
   default SELF fontSize(CssLength size) {
-    return textSize(size);
+    style().put(CssProperty.FONT_SIZE, size);
+    return self();
   }
 
   default SELF textDecorationNone() {
-    style().put(new CssDeclaration.TextDecorationLine("none"));
+    style().put(CssProperty.TEXT_DECORATION_LINE, "none");
     return self();
   }
 
   default SELF fontFamily(String family) {
-    style().put(new CssDeclaration.FontFamily(family));
+    style().put(CssProperty.FONT_FAMILY, family);
     return self();
   }
 
   default SELF fontWeight(int weight) {
-    style().put(new CssDeclaration.FontWeight(weight));
+    style().put(CssProperty.FONT_WEIGHT, Integer.toString(weight));
     return self();
   }
 
   default SELF tabularNums() {
-    style().put(new CssDeclaration.FontVariantNumeric("tabular-nums"));
+    style().put(CssProperty.FONT_VARIANT_NUMERIC, "tabular-nums");
     return self();
   }
 
   default SELF lineHeight(String value) {
-    style().put(new CssDeclaration.LineHeight(value));
+    style().put(CssProperty.LINE_HEIGHT, value);
     return self();
   }
 
   default SELF textAlign(String alignment) {
-    style().put(new CssDeclaration.TextAlign(alignment));
+    style().put(CssProperty.TEXT_ALIGN, alignment);
     return self();
   }
 
   default SELF textBalance() {
-    style().put(new CssDeclaration.TextWrap(CssDeclaration.TextWrapMode.BALANCE));
+    style().put(CssProperty.TEXT_WRAP, "balance");
     return self();
   }
 
   default SELF textPretty() {
-    style().put(new CssDeclaration.TextWrap(CssDeclaration.TextWrapMode.PRETTY));
+    style().put(CssProperty.TEXT_WRAP, "pretty");
     return self();
   }
 
   default SELF highlight(HighlightTone tone) {
-    style().put(new CssDeclaration.Background(tone.toCssBackground()));
-    style().put(new CssDeclaration.PaddingInline(CssLength.rem(0.25)));
-    style().put(new CssDeclaration.BorderRadius(CssLength.rem(0.25)));
+    style().put(CssProperty.BACKGROUND, tone.toCssBackground());
+    style().put(CssProperty.PADDING_INLINE, CssLength.rem(0.25));
+    style().put(CssProperty.BORDER_RADIUS, CssLength.rem(0.25));
     return self();
   }
 
@@ -415,12 +405,12 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF underline(UnderlineStyle lineStyle, DesignToken colorToken) {
-    style().put(new CssDeclaration.TextDecorationLine("underline"));
-    style().put(new CssDeclaration.TextDecorationStyle(lineStyle.css()));
-    style().put(new CssDeclaration.TextDecorationColor(colorToken.varReference()));
-    style().put(new CssDeclaration.TextDecorationThickness("0.1em"));
-    style().put(new CssDeclaration.TextUnderlineOffset(CssLength.em(0.18)));
-    style().put(new CssDeclaration.TextDecorationSkipInk("auto"));
+    style().put(CssProperty.TEXT_DECORATION_LINE, "underline");
+    style().put(CssProperty.TEXT_DECORATION_STYLE, lineStyle.css());
+    style().put(CssProperty.TEXT_DECORATION_COLOR, colorToken.varReference());
+    style().put(CssProperty.TEXT_DECORATION_THICKNESS, "0.1em");
+    style().put(CssProperty.TEXT_UNDERLINE_OFFSET, CssLength.em(0.18));
+    style().put(CssProperty.TEXT_DECORATION_SKIP_INK, "auto");
     return self();
   }
 
@@ -429,283 +419,275 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF strikethrough(DesignToken colorToken) {
-    style().put(new CssDeclaration.TextDecorationLine("line-through"));
-    style().put(new CssDeclaration.TextDecorationStyle(UnderlineStyle.SOLID.css()));
-    style().put(new CssDeclaration.TextDecorationColor(colorToken.varReference()));
-    style().put(new CssDeclaration.TextDecorationThickness("0.09em"));
+    style().put(CssProperty.TEXT_DECORATION_LINE, "line-through");
+    style().put(CssProperty.TEXT_DECORATION_STYLE, UnderlineStyle.SOLID.css());
+    style().put(CssProperty.TEXT_DECORATION_COLOR, colorToken.varReference());
+    style().put(CssProperty.TEXT_DECORATION_THICKNESS, "0.09em");
     return self();
   }
 
   default SELF border(String borderSpec) {
-    style().put(new CssDeclaration.Border(borderSpec));
+    style().put(CssProperty.BORDER, borderSpec);
     return self();
   }
 
   default SELF borderSubtle(DesignToken borderToken) {
-    style().put(new CssDeclaration.Border("1px solid " + borderToken.varReference()));
+    style().put(CssProperty.BORDER, "1px solid " + borderToken.varReference());
     return self();
   }
 
   default SELF borderBlockStartSubtle(DesignToken borderToken) {
-    style().put(new CssDeclaration.BorderBlockStart("1px solid " + borderToken.varReference()));
+    style().put(CssProperty.BORDER_BLOCK_START, "1px solid " + borderToken.varReference());
     return self();
   }
 
   default SELF borderBlockEndSubtle(DesignToken borderToken) {
-    style().put(new CssDeclaration.BorderBlockEnd("1px solid " + borderToken.varReference()));
+    style().put(CssProperty.BORDER_BLOCK_END, "1px solid " + borderToken.varReference());
     return self();
   }
 
   default SELF borderSeparateZero() {
-    style().put(new CssDeclaration.BorderCollapse("separate"));
-    style().put(new CssDeclaration.BorderSpacing("0"));
+    style().put(CssProperty.BORDER_COLLAPSE, "separate");
+    style().put(CssProperty.BORDER_SPACING, "0");
     return self();
   }
 
   default SELF rounded(CssLength radius) {
-    style().put(new CssDeclaration.BorderRadius(radius));
+    style().put(CssProperty.BORDER_RADIUS, radius);
     return self();
   }
 
   default SELF shadow(String shadowSpec) {
-    style().put(new CssDeclaration.BoxShadow(shadowSpec));
+    style().put(CssProperty.BOX_SHADOW, shadowSpec);
     return self();
   }
 
   default SELF focusRing(DesignToken accentToken) {
-    style().put(new CssDeclaration.Outline("2px solid " + accentToken.varReference()));
-    style().put(new CssDeclaration.OutlineOffset(CssLength.px(2)));
-    return self();
-  }
-
-  default SELF focusOutlineNone() {
-    style().put(new CssDeclaration.Outline("none"));
+    style().put(CssProperty.OUTLINE, "2px solid " + accentToken.varReference());
+    style().put(CssProperty.OUTLINE_OFFSET, CssLength.px(2));
     return self();
   }
 
   default SELF opacity(double value) {
-    style().put(new CssDeclaration.Opacity(value));
+    style().put(CssProperty.OPACITY, CssLength.formatNumber(value));
     return self();
   }
 
   default SELF cursorPointer() {
-    style().put(new CssDeclaration.Cursor("pointer"));
+    style().put(CssProperty.CURSOR, "pointer");
     return self();
   }
 
   default SELF transition(String value) {
-    style().put(new CssDeclaration.Transition(value));
+    style().put(CssProperty.TRANSITION, value);
     return self();
   }
 
   default SELF containerInlineSize() {
-    style().put(new CssDeclaration.ContainerType(CssDeclaration.ContainerKind.INLINE_SIZE));
+    style().put(CssProperty.CONTAINER_TYPE, "inline-size");
     return self();
   }
 
   default SELF contentVisibilityAuto(String intrinsicBlockSize) {
-    style().put(new CssDeclaration.ContentVisibility("auto"));
-    style().put(new CssDeclaration.ContainIntrinsicSize("auto " + intrinsicBlockSize));
+    style().put(CssProperty.CONTENT_VISIBILITY, "auto");
+    style().put(CssProperty.CONTAIN_INTRINSIC_SIZE, "auto " + intrinsicBlockSize);
     return self();
   }
 
   default SELF contentVisibility(String mode) {
-    style().put(new CssDeclaration.ContentVisibility(mode));
+    style().put(CssProperty.CONTENT_VISIBILITY, mode);
     return self();
   }
 
   default SELF insetBlockEnd(CssLength length) {
-    style().put(new CssDeclaration.InsetBlockEnd(length));
+    style().put(CssProperty.INSET_BLOCK_END, length);
     return self();
   }
 
   default SELF insetInlineEnd(CssLength length) {
-    style().put(new CssDeclaration.InsetInlineEnd(length));
+    style().put(CssProperty.INSET_INLINE_END, length);
     return self();
   }
 
   default SELF overflowClip() {
-    style().put(new CssDeclaration.Overflow("clip"));
+    style().put(CssProperty.OVERFLOW, "clip");
     return self();
   }
 
   default SELF overflowHidden() {
-    style().put(new CssDeclaration.Overflow("hidden"));
+    style().put(CssProperty.OVERFLOW, "hidden");
     return self();
   }
 
   default SELF overflowVisible() {
-    style().put(new CssDeclaration.Overflow("visible"));
+    style().put(CssProperty.OVERFLOW, "visible");
     return self();
   }
 
   default SELF overflowXAuto() {
-    style().put(new CssDeclaration.OverflowX("auto"));
+    style().put(CssProperty.OVERFLOW_X, "auto");
     return self();
   }
 
   default SELF overflowYAuto() {
-    style().put(new CssDeclaration.OverflowY("auto"));
+    style().put(CssProperty.OVERFLOW_Y, "auto");
     return self();
   }
 
   default SELF overflowAnchorNone() {
-    style().put(new CssDeclaration.OverflowAnchor("none"));
+    style().put(CssProperty.OVERFLOW_ANCHOR, "none");
     return self();
   }
 
   default SELF scrollBehaviorSmooth() {
-    style().put(new CssDeclaration.ScrollBehavior("smooth"));
+    style().put(CssProperty.SCROLL_BEHAVIOR, "smooth");
     return self();
   }
 
   default SELF scrollSnapType(String spec) {
-    style().put(new CssDeclaration.ScrollSnapType(spec));
+    style().put(CssProperty.SCROLL_SNAP_TYPE, spec);
     return self();
   }
 
   default SELF scrollSnapAlign(String align) {
-    style().put(new CssDeclaration.ScrollSnapAlign(align));
+    style().put(CssProperty.SCROLL_SNAP_ALIGN, align);
     return self();
   }
 
   default SELF scrollMarginBlockStart(CssLength length) {
-    style().put(new CssDeclaration.ScrollMarginBlockStart(length));
+    style().put(CssProperty.SCROLL_MARGIN_BLOCK_START, length);
     return self();
   }
 
   default SELF scrollTargetGroupAuto() {
-    style().put(new CssDeclaration.ScrollTargetGroup("auto"));
+    style().put(CssProperty.SCROLL_TARGET_GROUP, "auto");
     return self();
   }
 
   default SELF scrollMarkerGroup(String position) {
-    style().put(new CssDeclaration.ScrollMarkerGroup(position));
+    style().put(CssProperty.SCROLL_MARKER_GROUP, position);
     return self();
   }
 
   default SELF overscrollBehaviorX(String mode) {
-    style().put(new CssDeclaration.OverscrollBehaviorX(mode));
+    style().put(CssProperty.OVERSCROLL_BEHAVIOR_X, mode);
     return self();
   }
 
   default SELF scrollbarWidthNone() {
-    style().put(new CssDeclaration.ScrollbarWidth("none"));
+    style().put(CssProperty.SCROLLBAR_WIDTH, "none");
     return self();
   }
 
   default SELF ms(CssLength length) {
-    style().put(new CssDeclaration.MarginInlineStart(length));
+    style().put(CssProperty.MARGIN_INLINE_START, length);
     return self();
   }
 
   default SELF me(CssLength length) {
-    style().put(new CssDeclaration.MarginInlineEnd(length));
+    style().put(CssProperty.MARGIN_INLINE_END, length);
     return self();
   }
 
   default SELF borderInlineStart(String spec) {
-    style().put(new CssDeclaration.BorderInlineStart(spec));
+    style().put(CssProperty.BORDER_INLINE_START, spec);
     return self();
   }
 
   default SELF borderInlineStartSubtle(DesignToken borderToken) {
-    style().put(new CssDeclaration.BorderInlineStart("1px solid " + borderToken.varReference()));
+    style().put(CssProperty.BORDER_INLINE_START, "1px solid " + borderToken.varReference());
     return self();
   }
 
   default SELF borderNone() {
-    style().put(new CssDeclaration.Border("none"));
+    style().put(CssProperty.BORDER, "none");
     return self();
   }
 
   default SELF backdropFilter(String filter) {
-    style().put(new CssDeclaration.BackdropFilter(filter));
+    style().put(CssProperty.BACKDROP_FILTER, filter);
     return self();
   }
 
   default SELF transform(String value) {
-    style().put(new CssDeclaration.Transform(value));
+    style().put(CssProperty.TRANSFORM, value);
     return self();
   }
 
   default SELF translate(String value) {
-    style().put(new CssDeclaration.Translate(value));
+    style().put(CssProperty.TRANSLATE, value);
     return self();
   }
 
   default SELF transitionProperty(String properties) {
-    style().put(new CssDeclaration.TransitionProperty(properties));
+    style().put(CssProperty.TRANSITION_PROPERTY, properties);
     return self();
   }
 
   default SELF transitionDuration(String duration) {
-    style().put(new CssDeclaration.TransitionDuration(duration));
+    style().put(CssProperty.TRANSITION_DURATION, duration);
     return self();
   }
 
   default SELF transitionTimingFunction(String easing) {
-    style().put(new CssDeclaration.TransitionTimingFunction(easing));
+    style().put(CssProperty.TRANSITION_TIMING_FUNCTION, easing);
     return self();
   }
 
   default SELF transitionAllowDiscrete() {
-    style().put(new CssDeclaration.TransitionBehavior("allow-discrete"));
+    style().put(CssProperty.TRANSITION_BEHAVIOR, "allow-discrete");
     return self();
   }
 
   default SELF containerScrollState(String containerName) {
-    style().put(new CssDeclaration.ContainerName(containerName));
-    style().put(new CssDeclaration.ContainerType(CssDeclaration.ContainerKind.SCROLL_STATE));
+    style().put(CssProperty.CONTAINER_NAME, containerName);
+    style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
     return self();
   }
 
   default SELF containerScrollStateInlineSize(String containerName) {
-    style().put(new CssDeclaration.ContainerName(containerName));
-    style()
-        .put(
-            new CssDeclaration.ContainerType(
-                CssDeclaration.ContainerKind.SCROLL_STATE_INLINE_SIZE));
+    style().put(CssProperty.CONTAINER_NAME, containerName);
+    style().put(CssProperty.CONTAINER_TYPE, "scroll-state inline-size");
     return self();
   }
 
   default SELF anchorName(String customIdent) {
-    style().put(new CssDeclaration.AnchorName(customIdent));
+    style().put(CssProperty.ANCHOR_NAME, customIdent);
     return self();
   }
 
   default SELF positionAnchor(String customIdent) {
-    style().put(new CssDeclaration.PositionAnchor(customIdent));
+    style().put(CssProperty.POSITION_ANCHOR, customIdent);
     return self();
   }
 
   default SELF positionArea(String area) {
-    style().put(new CssDeclaration.PositionArea(area));
+    style().put(CssProperty.POSITION_AREA, area);
     return self();
   }
 
   default SELF positionTryFallbacks(String fallbacks) {
-    style().put(new CssDeclaration.PositionTryFallbacks(fallbacks));
+    style().put(CssProperty.POSITION_TRY_FALLBACKS, fallbacks);
     return self();
   }
 
   default SELF whiteSpace(String mode) {
-    style().put(new CssDeclaration.WhiteSpace(mode));
+    style().put(CssProperty.WHITE_SPACE, mode);
     return self();
   }
 
   default SELF borderColor(DesignToken token) {
-    style().put(new CssDeclaration.BorderColor(token.varReference()));
+    style().put(CssProperty.BORDER_COLOR, token.varReference());
     return self();
   }
 
   default SELF borderColor(String color) {
-    style().put(new CssDeclaration.BorderColor(color));
+    style().put(CssProperty.BORDER_COLOR, color);
     return self();
   }
 
   default SELF appearance(String value) {
-    style().put(new CssDeclaration.Appearance(value));
+    style().put(CssProperty.APPEARANCE, value);
     return self();
   }
 
@@ -718,17 +700,17 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF accentColor(DesignToken token) {
-    style().put(new CssDeclaration.AccentColor(token.varReference()));
+    style().put(CssProperty.ACCENT_COLOR, token.varReference());
     return self();
   }
 
   default SELF accentColor(String value) {
-    style().put(new CssDeclaration.AccentColor(value));
+    style().put(CssProperty.ACCENT_COLOR, value);
     return self();
   }
 
   default SELF resize(String mode) {
-    style().put(new CssDeclaration.Resize(mode));
+    style().put(CssProperty.RESIZE, mode);
     return self();
   }
 
@@ -741,7 +723,7 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF outline(String value) {
-    style().put(new CssDeclaration.Outline(value));
+    style().put(CssProperty.OUTLINE, value);
     return self();
   }
 
@@ -750,7 +732,12 @@ public interface Styled<SELF extends Styled<SELF>> {
   }
 
   default SELF outlineOffset(CssLength offset) {
-    style().put(new CssDeclaration.OutlineOffset(offset));
+    style().put(CssProperty.OUTLINE_OFFSET, offset);
     return self();
+  }
+
+  /// `grid-template-columns` value for responsive auto-fit tracks at least `minColumnWidth` wide.
+  static String autoFitTracks(CssLength minColumnWidth) {
+    return "repeat(auto-fit, minmax(min(100%, " + minColumnWidth.toCss() + "), 1fr))";
   }
 }

@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Styled;
 import java.util.List;
 
 /// Responsive CSS Grid component supporting intrinsic `auto-fit` columns, container-adaptive
@@ -27,8 +28,11 @@ public record Grid(
 
   public static Grid autoFit(
       CssLength minColumnWidth, CssLength gap, List<? extends IntoElement> items) {
-    String template = "repeat(auto-fit, minmax(min(100%, " + minColumnWidth.toCss() + "), 1fr))";
-    return new Grid(template, gap, false, items.stream().map(IntoElement::intoElement).toList());
+    return new Grid(
+        Styled.autoFitTracks(minColumnWidth),
+        gap,
+        false,
+        items.stream().map(IntoElement::intoElement).toList());
   }
 
   public static Grid columns(int count, CssLength gap, IntoElement... items) {

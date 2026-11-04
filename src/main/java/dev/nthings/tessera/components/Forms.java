@@ -11,6 +11,7 @@ import static dev.nthings.tessera.core.Elements.textarea;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.RenderView;
@@ -96,8 +97,7 @@ public final class Forms {
 
   /// Creates an inline row pairing a label and a switch control.
   public static TagElement switchField(String labelText, String name, boolean checked) {
-    String id = "switch-" + Fnv1a64.sanitizeIdentifier(name);
-    var sw = switchInput(name, checked).id(id);
+    var sw = switchInput(name, checked).id("switch-" + name);
     return div()
         .flex()
         .itemsCenter()
@@ -106,7 +106,7 @@ public final class Forms {
         .py(CssLength.rem(0.25))
         .child(
             label()
-                .attr("for", id)
+                .labelFor(sw.ref())
                 .fontSize(CssLength.rem(0.875))
                 .fontWeight(500)
                 .textColor(Tokens.TEXT_PRIMARY)
@@ -123,10 +123,8 @@ public final class Forms {
   /// Accessible field container providing label, format hints, and error messaging.
   public static final class Field implements RenderView {
 
-    private final ElementId entityId;
     private final String labelText;
     private final TagElement control;
-    private @Nullable String id;
     private @Nullable String hintText;
     private @Nullable String errorText;
     private @Nullable String anchorTooltipText;
@@ -134,13 +132,11 @@ public final class Forms {
     public Field(String labelText, TagElement control) {
       this.labelText = labelText;
       this.control = control;
-      String name = control.attributes().get("name");
-      this.entityId =
-          ElementId.of("field-" + (name != null ? name : Fnv1a64.sanitizeIdentifier(labelText)));
     }
 
-    public Field id(String id) {
-      this.id = id;
+    /// Names the control's DOM id (scoped to this field) instead of a compiler-assigned one.
+    public Field id(String name) {
+      control.id(name);
       return this;
     }
 
@@ -164,37 +160,30 @@ public final class Forms {
     }
 
     @Override
-    public ElementId entityId() {
-      return entityId;
-    }
-
-    @Override
     public String viewType() {
       return "form-field";
     }
 
     @Override
     public Element render() {
-      String ctrlId = id != null ? id : entityId.slug() + "-ctrl";
-      control.attr("id", ctrlId);
+      ElementRef ctrl = control.ref();
 
       var container = div().attr("class", "field-container");
 
       // 1. Label
-      var labelEl = label().attr("for", ctrlId).attr("class", "field-label").text(labelText);
+      var labelEl = label().labelFor(ctrl).attr("class", "field-label").text(labelText);
       container.child(labelEl);
 
       // 2. Format hint placed above input per modern guidance
       if (hintText != null) {
-        String hintId = ctrlId + "-hint";
-        container.child(span().attr("id", hintId).attr("class", "field-hint").text(hintText));
-        control.attr("aria-describedby", hintId);
+        var hint = ElementRef.named("hint");
+        container.child(span().id(hint).attr("class", "field-hint").text(hintText));
+        control.ariaDescribedBy(hint);
       }
 
-      // 3. Optional anchor tooltip ident
-      String anchorIdent = "--anchor-" + ctrlId;
+      // 3. Optional anchor for the floating tooltip
       if (anchorTooltipText != null) {
-        control.anchorName(anchorIdent);
+        control.anchorName();
       }
 
       // 4. Control
@@ -202,11 +191,11 @@ public final class Forms {
 
       // 5. Error message placed immediately after control for adjacent sibling styling
       if (errorText != null) {
-        String errorId = ctrlId + "-error";
-        control.attr("aria-errormessage", errorId);
+        var error = ElementRef.named("error");
+        control.ariaErrorMessage(error);
         var errEl =
             div()
-                .attr("id", errorId)
+                .id(error)
                 .attr("class", "field-error")
                 .child(span().ariaHidden(true).text("⚠ "))
                 .child(span().text(errorText));
@@ -219,9 +208,7 @@ public final class Forms {
             div()
                 .attr("class", "field-anchor-tooltip")
                 .role("tooltip")
-                .positionAnchor(anchorIdent)
-                .positionArea("top span-right")
-                .positionTryFallbacks("flip-block, flip-inline")
+                .anchoredTo(ctrl, "top span-right", "flip-block, flip-inline")
                 .text(anchorTooltipText);
         container.child(tooltipEl);
       }
@@ -326,7 +313,7 @@ public final class Forms {
       var sel =
           select()
               .attr("name", name)
-              .attr("id", id != null ? id : entityId.slug())
+              .id(id != null ? id : "control")
               .attr("class", "base-select-control")
               .child(
                   button()

@@ -1,18 +1,16 @@
 package dev.nthings.tessera.css;
 
+import java.util.Locale;
+
 /// CSS Text Decoration Level 4 line styles for underlines and strikethroughs.
 public enum UnderlineStyle {
-  SOLID("solid"),
-  WAVY("wavy"),
-  DASHED("dashed"),
-  DOTTED("dotted"),
-  DOUBLE("double");
+  SOLID,
+  WAVY,
+  DASHED,
+  DOTTED,
+  DOUBLE;
 
-  private final String css;
-
-  UnderlineStyle(String css) {
-    this.css = css;
-  }
+  private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
   public String css() {
     return css;

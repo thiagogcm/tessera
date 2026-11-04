@@ -108,7 +108,7 @@ public final class ShowcaseSite {
               .separator()
               .commandItem(
                   "open-inspector",
-                  inspectorDrawer.entityId(),
+                  inspectorDrawer.dialogRef(),
                   BuiltinCommand.SHOW_MODAL,
                   "Open Compiler Inspector");
 
@@ -181,7 +181,7 @@ public final class ShowcaseSite {
                           .textColor(Tokens.TEXT_PRIMARY)
                           .textDecorationNone()
                           .fontWeight(700)
-                          .textSize(CssLength.rem(1.0625))
+                          .fontSize(CssLength.rem(1.0625))
                           .whiteSpace("nowrap")
                           .text("Tessera // JDK 25")
                           .transitionKey(TransitionKey.of("site-brand", "brand-morph")),
@@ -205,13 +205,13 @@ public final class ShowcaseSite {
               .py(CssLength.rem(1))
               .whenPresent(breadcrumbs, (sec, bc) -> sec.child(bc))
               .children(
-                  h1().textSize(
+                  h1().fontSize(
                           CssLength.fluid(
                               CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.65)))
                       .textBalance()
                       .text(pageHeading),
                   p().textColor(Tokens.TEXT_MUTED)
-                      .textSize(CssLength.rem(1.125))
+                      .fontSize(CssLength.rem(1.125))
                       .textPretty()
                       .text(subtitle));
 
@@ -236,7 +236,7 @@ public final class ShowcaseSite {
                   .py(CssLength.rem(2))
                   .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
                   .textColor(Tokens.TEXT_MUTED)
-                  .textSize(CssLength.rem(0.875))
+                  .fontSize(CssLength.rem(0.875))
                   .text("Compiled with Tessera on JDK 25 targeting Chrome 156+ (Baseline 2026)."));
     }
   }
@@ -252,20 +252,17 @@ public final class ShowcaseSite {
                 "/",
                 buildOverviewPage(),
                 "Tessera Showcase — Overview & Architecture",
-                "Declarative zero-JS HTML & CSS view engine for JDK 25",
-                1),
+                "Declarative zero-JS HTML & CSS view engine for JDK 25"),
             new SiteRoute(
                 "/telemetry",
                 buildTelemetryPage(),
                 "Telemetry & Responsive DataTables",
-                "Container-adaptive data tables, sticky headers, and action dropdowns",
-                2),
+                "Container-adaptive data tables, sticky headers, and action dropdowns"),
             new SiteRoute(
                 "/typography",
                 buildTypographyPage(),
                 "Documentation, Lists & Scroll-Spy ToC",
-                "Editorial callouts, accessible code blocks, footnotes, and scroll-target-group navigation",
-                3)),
+                "Editorial callouts, accessible code blocks, footnotes, and scroll-target-group navigation")),
         "http://localhost:8188");
   }
 
@@ -421,7 +418,7 @@ public final class ShowcaseSite {
                         .scrollReveal(ScrollReveal.FADE_UP)
                         .staggerBySiblingIndex(60)
                         .children(
-                            h2().textSize(CssLength.rem(1.125)).text("Global Fleet Health"),
+                            h2().fontSize(CssLength.rem(1.125)).text("Global Fleet Health"),
                             p().textColor(Tokens.TEXT_MUTED)
                                 .text("All 4 regional clusters operating within error budget.")))
                 .intoElement(),
@@ -462,11 +459,9 @@ public final class ShowcaseSite {
             .dimensions(1200, 480)
             .aspectRatio("5 / 2")
             .transitionKey(TransitionKey.of("typography-hero", "hero-morph"))
-            .style(
-                s ->
-                    s.rounded(CssLength.rem(0.75))
-                        .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .overflowClip());
+            .rounded(CssLength.rem(0.75))
+            .borderSubtle(Tokens.BORDER_SUBTLE)
+            .overflowClip();
 
     var admonitionsSection =
         ContentSection.ghost("admonitions", "Editorial Callouts & Admonitions")

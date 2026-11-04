@@ -70,15 +70,11 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
-    String normalized = requestPath;
-    if (normalized.endsWith("/index.html")) {
-      normalized = normalized.substring(0, normalized.length() - "/index.html".length());
-      if (normalized.isEmpty()) {
-        normalized = "/";
-      }
-    } else if (normalized.length() > 1 && normalized.endsWith("/")) {
-      normalized = normalized.substring(0, normalized.length() - 1);
-    }
+    String withoutIndex =
+        requestPath.endsWith("/index.html")
+            ? requestPath.substring(0, requestPath.length() - "/index.html".length())
+            : requestPath;
+    String normalized = SiteRoute.normalizeRoutePath(withoutIndex.isEmpty() ? "/" : withoutIndex);
 
     PageCompiler.CompiledPage page = site.pagesByRoute().get(normalized);
     if (page != null) {

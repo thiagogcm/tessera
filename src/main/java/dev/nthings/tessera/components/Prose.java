@@ -5,6 +5,7 @@ import static dev.nthings.tessera.core.Elements.div;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -14,7 +15,7 @@ import java.util.List;
 
 /// Editorial typographic container providing proportional vertical rhythm, fluid font sizing, and
 /// optimal reading line-length (measure) for documentation and narrative prose.
-public final class Prose implements RenderView {
+public final class Prose implements RenderView, ParentElement<Prose> {
 
   private final ElementId id;
   private final List<Element> children = new ArrayList<>();
@@ -34,16 +35,14 @@ public final class Prose implements RenderView {
     return new Prose(ElementId.of(id));
   }
 
-  public Prose child(IntoElement child) {
-    this.children.add(child.intoElement());
+  @Override
+  public Prose self() {
     return this;
   }
 
-  public Prose children(IntoElement... children) {
-    for (var child : children) {
-      this.children.add(child.intoElement());
-    }
-    return this;
+  @Override
+  public void appendChild(Element child) {
+    children.add(child);
   }
 
   public Prose maxMeasure(CssLength measure) {

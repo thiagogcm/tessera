@@ -2,14 +2,14 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
@@ -85,7 +85,7 @@ public record DataTable<T>(
 
   @Override
   public ElementId entityId() {
-    return ElementId.of("datatable-" + Fnv1a64.sanitizeIdentifier(id));
+    return ElementId.of("datatable-" + id);
   }
 
   @Override
@@ -135,54 +135,63 @@ public record DataTable<T>(
                     .zIndex(1)
                     .bg(Tokens.SURFACE_CARD)
                     .fontWeight(600))
-        .containerMaxInlineSize(
-            stackBreakpoint,
-            c -> {
-              c.select(
-                      ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
-                      s -> s.block())
-                  .select(":scope thead", s -> s.hidden())
-                  .select(
-                      ":scope tr",
-                      s ->
-                          s.m(CssLength.rem(0.75))
-                              .borderSubtle(Tokens.BORDER_SUBTLE)
-                              .rounded(CssLength.rem(0.5)))
-                  .select(
-                      ":scope tbody th",
-                      s ->
-                          s.sticky()
-                              .insetBlockStart(CssLength.px(0))
-                              .zIndex(2)
-                              .bg(Tokens.SURFACE_SUBTLE));
+        .select(":scope thead th", s -> s.textColor(Tokens.TEXT_MUTED));
 
-              for (int i = 0; i < columns.size(); i++) {
-                if (!columns.get(i).rowHeader()) {
-                  int colIndex = i + 1;
-                  c.select(
-                      ":scope td:nth-child(" + colIndex + ")::before",
-                      s ->
-                          s.cssContent("var(--label-" + colIndex + ") \": \"")
-                              .fontWeight(600)
-                              .textColor(Tokens.TEXT_MUTED));
-                }
-              }
-            });
+    // Column alignment once per column instead of a utility class on every cell; START is
+    // inherited from the table.
+    for (int i = 0; i < columns.size(); i++) {
+      CellAlign align = columns.get(i).align();
+      if (align != CellAlign.START) {
+        scope.select(
+            ":scope tr > :nth-child(" + (i + 1) + ")",
+            s ->
+                s.textAlign(align.textAlign())
+                    .when(align.tabularNums(), StyleRefinement::tabularNums));
+      }
+    }
+
+    scope.containerMaxInlineSize(
+        stackBreakpoint,
+        c -> {
+          c.select(
+                  ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
+                  s -> s.block())
+              .select(":scope thead", s -> s.hidden())
+              .select(
+                  ":scope tr",
+                  s ->
+                      s.m(CssLength.rem(0.75))
+                          .borderSubtle(Tokens.BORDER_SUBTLE)
+                          .rounded(CssLength.rem(0.5)))
+              .select(
+                  ":scope tbody th",
+                  s ->
+                      s.sticky()
+                          .insetBlockStart(CssLength.px(0))
+                          .zIndex(2)
+                          .bg(Tokens.SURFACE_SUBTLE));
+
+          for (int i = 0; i < columns.size(); i++) {
+            if (!columns.get(i).rowHeader()) {
+              int colIndex = i + 1;
+              c.select(
+                  ":scope td:nth-child(" + colIndex + ")::before",
+                  s ->
+                      s.content("var(--label-" + colIndex + ") \": \"")
+                          .fontWeight(600)
+                          .textColor(Tokens.TEXT_MUTED));
+            }
+          }
+        });
   }
 
   @Override
   public Element render() {
-    String captionDomId =
-        RenderContext.current().viewScope().extend(ElementId.of("caption")).domId();
+    var caption = ElementRef.named("caption");
 
     var headerRow = Elements.tr();
     for (var col : columns) {
-      headerRow.child(
-          Elements.th()
-              .attr("scope", "col")
-              .textAlign(col.align().textAlign())
-              .textColor(Tokens.TEXT_MUTED)
-              .text(col.header()));
+      headerRow.child(Elements.th().attr("scope", "col").text(col.header()));
     }
 
     var tbody = Elements.tbody();
@@ -190,10 +199,7 @@ public record DataTable<T>(
       var tr = Elements.tr();
       for (var col : columns) {
         TagElement cell = col.rowHeader() ? Elements.th().attr("scope", "row") : Elements.td();
-        cell.textAlign(col.align().textAlign())
-            .when(col.align().tabularNums(), TagElement::tabularNums)
-            .child(col.cellExtractor().apply(item));
-        tr.child(cell);
+        tr.child(cell.child(col.cellExtractor().apply(item)));
       }
       tbody.child(tr);
     }
@@ -201,10 +207,10 @@ public record DataTable<T>(
     var table =
         Elements.table()
             .children(
-                Elements.caption().id("caption").text(captionText),
+                Elements.caption().id(caption).text(captionText),
                 Elements.thead().child(headerRow),
                 tbody);
 
-    return Elements.div().tabIndex(0).role("region").ariaLabelledBy(captionDomId).child(table);
+    return Elements.div().tabIndex(0).role("region").ariaLabelledBy(caption).child(table);
   }
 }

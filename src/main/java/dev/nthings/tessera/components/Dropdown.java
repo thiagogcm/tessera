@@ -9,6 +9,7 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderView;
@@ -52,13 +53,12 @@ public final class Dropdown implements RenderView {
   }
 
   public Dropdown commandItem(
-      String buttonId, ElementId targetId, BuiltinCommand command, String label) {
+      String buttonId, ElementRef target, BuiltinCommand command, String label) {
     var btn =
         button()
             .id(buttonId)
             .attr("class", "dropdown-item")
-            .attr("commandfor", targetId.slug())
-            .attr("command", command.wireValue())
+            .command(target, command)
             .child(span().text(label));
     items.add(btn);
     return this;
@@ -127,7 +127,7 @@ public final class Dropdown implements RenderView {
                     .rounded(CssLength.rem(0.375))
                     .bgRaw("transparent")
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .textSize(CssLength.rem(0.875))
+                    .fontSize(CssLength.rem(0.875))
                     .borderNone()
                     .textAlign("start")
                     .cursorPointer()
@@ -135,7 +135,7 @@ public final class Dropdown implements RenderView {
         .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope .dropdown-hint",
-            s -> s.textColor(Tokens.TEXT_MUTED).textSize(CssLength.rem(0.75)).ms(CssLength.auto()))
+            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(CssLength.rem(0.75)).ms(CssLength.auto()))
         .motionSafe(
             m ->
                 m.select(
@@ -155,12 +155,12 @@ public final class Dropdown implements RenderView {
 
   @Override
   public Element render() {
-    ElementId panelId = ElementId.of("panel");
+    var panel = ElementRef.named("panel");
     var trigger =
         button()
             .id("trigger")
             .attr("class", "dropdown-trigger")
-            .command(panelId, BuiltinCommand.TOGGLE_POPOVER)
+            .command(panel, BuiltinCommand.TOGGLE_POPOVER)
             .children(
                 span().text(triggerLabel),
                 span().ariaHidden(true).textColor(Tokens.TEXT_MUTED).text("▾"));
@@ -168,8 +168,6 @@ public final class Dropdown implements RenderView {
     var itemsWrapper = div().attr("class", "dropdown-panel-items");
     itemsWrapper.children(items);
 
-    var panel = div().id(panelId).popover(PopoverMode.AUTO).child(itemsWrapper);
-
-    return div().children(trigger, panel);
+    return div().children(trigger, div().id(panel).popover(PopoverMode.AUTO).child(itemsWrapper));
   }
 }

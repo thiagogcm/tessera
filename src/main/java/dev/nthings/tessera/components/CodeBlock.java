@@ -6,9 +6,7 @@ import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.FluentBuilder;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -24,12 +22,6 @@ import org.jspecify.annotations.Nullable;
 /// (`counter-increment: code-line`), line highlighting, diff annotations, and optional header bars.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
-  public enum DiffType {
-    NONE,
-    ADD,
-    DELETE
-  }
-
   private final List<String> lines = new ArrayList<>();
   private final Set<Integer> highlightedLines = new LinkedHashSet<>();
   private final Set<Integer> addedLines = new LinkedHashSet<>();
@@ -37,11 +29,9 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   private @Nullable String filename;
   private @Nullable String language;
   private boolean diffAutoDetect = false;
-  private final String instanceId;
 
   public CodeBlock(List<String> lines) {
     this.lines.addAll(lines);
-    this.instanceId = "code-" + Fnv1a64.toBase36Hash(System.nanoTime());
   }
 
   public static CodeBlock of(String code) {
@@ -104,11 +94,6 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   @Override
   public String viewType() {
     return "tessera-code-block";
-  }
-
-  @Override
-  public ElementId entityId() {
-    return ElementId.of(instanceId);
   }
 
   @Override

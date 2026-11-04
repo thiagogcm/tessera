@@ -119,50 +119,14 @@ public final class StyleSheetCollector {
 
   private static String buildInteractiveBlock(Interactivity interactivity) {
     var sb = new StringBuilder();
-    var hover = interactivity.hoverStyle();
-    if (hover != null && !hover.isEmpty()) {
-      sb.append("&:hover:not(:disabled){").append(hover.toCssBlockBody()).append('}');
-    }
-    var focusVisible = interactivity.focusVisibleStyle();
-    if (focusVisible != null && !focusVisible.isEmpty()) {
-      sb.append("&:focus-visible{").append(focusVisible.toCssBlockBody()).append('}');
-    }
-    var active = interactivity.activeStyle();
-    if (active != null && !active.isEmpty()) {
-      sb.append("&:active:not(:disabled){").append(active.toCssBlockBody()).append('}');
-    }
-    var userInvalid = interactivity.userInvalidStyle();
-    if (userInvalid != null && !userInvalid.isEmpty()) {
-      sb.append("&:user-invalid{").append(userInvalid.toCssBlockBody()).append('}');
-    }
-    var userValid = interactivity.userValidStyle();
-    if (userValid != null && !userValid.isEmpty()) {
-      sb.append("&:user-valid{").append(userValid.toCssBlockBody()).append('}');
-    }
-    for (var entry : interactivity.groupHoverStyles().entrySet()) {
-      if (!entry.getValue().isEmpty()) {
-        sb.append("[data-group=\"")
-            .append(entry.getKey())
-            .append("\"]:hover &{")
-            .append(entry.getValue().toCssBlockBody())
-            .append('}');
-      }
-    }
-    for (var entry : interactivity.hasStyles().entrySet()) {
-      if (!entry.getValue().isEmpty()) {
-        sb.append("&:has(")
-            .append(entry.getKey())
-            .append("){")
-            .append(entry.getValue().toCssBlockBody())
-            .append('}');
-      }
-    }
-    var motionSafe = interactivity.motionSafeStyle();
-    if (motionSafe != null && !motionSafe.isEmpty()) {
-      sb.append("@media (prefers-reduced-motion: no-preference){")
-          .append(motionSafe.toCssBlockBody())
-          .append('}');
-    }
+    interactivity
+        .states()
+        .forEach(
+            (rule, style) -> {
+              if (!style.isEmpty()) {
+                sb.append(rule.openRule()).append(style.toCssBlockBody()).append('}');
+              }
+            });
     return sb.toString();
   }
 
@@ -192,8 +156,6 @@ public final class StyleSheetCollector {
     sb.append(
         "body{font-family:system-ui,-apple-system,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
-            + "[popover=\"hint\"]{position-area:block-start;"
-            + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}"
             + "dialog{margin:auto}");
     keyframeRules.forEach(sb::append);
     sb.append("}\n");

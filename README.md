@@ -89,7 +89,7 @@ Tessera includes a comprehensive catalog of accessible, responsive components:
 | **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnotes` | Subgrid alignment, typography scales, line numbering, language tags, and **zero-JS declarative copy button** (`commandfor`). |
 | **Status & Badges** | `Badge`, `Pill` | OKLCH tinted, outline, and solid variants across 6 semantic tones, status dot indicators, anchor link support. |
 | **Navigation** | `Breadcrumbs`, `DocPager`, `StickyHeader`, `Toc` | Accessible breadcrumbs, pagination, sticky subgrid headers, and collapsible table of contents with integrated scrollspy. |
-| **Overlays & Popovers** | `Overlays` (`Modal`, `Popover`), `Dropdown`, `InterestHint` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
+| **Overlays & Popovers** | `Overlays` (`Modal`, `Drawer`), `Dropdown` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
 | **Forms & Input** | `Forms`, `SearchPalette` | Floating labels, native validation states, modal command palette with keyboard shortcuts. |
 | **Data Presentation** | `SimpleTable`, `DataTable`, `Card`, `CardGrid` | Responsive tables, card grids with CSS subgrid alignment, hover elevation. |
 | **Layout & Containers** | `ContentSection`, `Grid`, `Image`, `Lists`, `Accordion`, `Tabs`, `Carousel` | Responsive columns, scroll reveals, lazy and high-priority LCP image loading, pure CSS accordions and carousels. |
@@ -134,47 +134,20 @@ just format
 ### 1. Defining a Scoped Component (`RenderView`)
 
 ```java
-public final class MetricCard implements RenderView {
-  private final String title;
-  private final String value;
-  private final Badge badge;
-
-  public MetricCard(String title, String value, Badge badge) {
-    this.title = title;
-    this.value = value;
-    this.badge = badge;
-  }
-
+public record MetricCard(String title, String value, Badge badge) implements RenderView {
   @Override
-  public String viewType() {
-    return "metric-card";
-  }
-
-  @Override
-  public ScopeStyle scopeStyle() {
-    return ScopeStyle.builder("[data-view=\"metric-card\"]")
-        .rule(":scope",
-            "display: flex;",
-            "flex-direction: column;",
-            "gap: var(--space-sm);",
-            "padding: var(--space-md);",
-            "border-radius: var(--radius-md);",
-            "background: light-dark(oklch(0.98 0 0), oklch(0.2 0 0));",
-            "border: 1px solid light-dark(oklch(0.9 0 0), oklch(0.3 0 0));")
-        .rule(".metric-value",
-            "font-size: var(--font-2xl);",
-            "font-weight: 700;",
-            "color: var(--color-foreground);")
-        .build();
+  public void configureScope(ScopeStyle scope) {
+    scope
+        .root(s -> s.flexCol().gap(CssLength.rem(0.5)))
+        .select(".metric-value", s -> s.fontSize(CssLength.rem(1.5)).fontWeight(700));
   }
 
   @Override
   public Element render() {
     return div()
-        .child(div().style("display: flex; justify-content: space-between;")
-            .child(span().text(title))
-            .child(badge))
-        .child(div().className("metric-value").text(value));
+        .child(div().children(span().text(title), badge))
+        .child(div().attr("class", "metric-value").text(value))
+        .intoElement();
   }
 }
 ```
@@ -182,25 +155,24 @@ public final class MetricCard implements RenderView {
 ### 2. Zero-JS Declarative Copy Button with CodeBlock
 
 ```java
-// Emits a syntax block with language tag and a zero-JS clipboard copy button
-// wired via commandfor="<code-id>" command="--tessera-copy":
+// Emits a syntax block with a language tag and a zero-JS clipboard copy button
+// (enabled by default) wired via commandfor="<code-id>" command="--tessera-copy":
 CodeBlock.of("""
     public static void main(String[] args) {
       System.out.println("Hello, Tessera!");
     }
     """)
     .language("java")
-    .copyButton(true)
-    .lineNumbers(true);
+    .highlightLines(2);
 ```
 
 ### 3. Badges & Pills
 
 ```java
 // Badges with semantic tones and variants
-Badge.of("Production", Badge.Tone.SUCCESS).solid().dot();
-Badge.of("Deprecated", Badge.Tone.WARNING).outline();
-Badge.of("v0.1.0", Badge.Tone.INFO).pill();
+Badge.success("Production").solid().dot();
+Badge.warning("Deprecated").outline();
+Badge.info("v0.1.0").pill();
 
 // Ergonomic Pill factory
 Pill.accent("Baseline 2026+");
@@ -210,17 +182,12 @@ Pill.neutral("JDK 25");
 ### 4. Native Dialogs with Invoker Commands
 
 ```java
-ElementRef dialogRef = ElementRef.named("confirm-dialog");
+var modal = Overlays.modal("confirm", "Confirm action")
+    .bodyText("Are you sure you want to proceed?")
+    .closeLabel("Cancel");
 
-// Trigger button wired declaratively
-Button.accent("Delete Item")
-    .command(dialogRef, BuiltinCommand.SHOW_MODAL);
-
-// Native dialog with light dismiss
-Modal.of(dialogRef, "Confirm Action",
-    p().text("Are you sure you want to proceed?"),
-    Button.neutral("Cancel").command(dialogRef, BuiltinCommand.CLOSE),
-    Button.danger("Confirm").type("submit"));
+// The trigger's commandfor is resolved by the Linker to the dialog's scoped id.
+main().children(modal.triggerButton("open-confirm", "Delete item"), modal.asDeferred(10));
 ```
 
 ---

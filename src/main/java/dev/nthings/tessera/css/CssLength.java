@@ -14,7 +14,8 @@ public sealed interface CssLength
         CssLength.Cqi,
         CssLength.Dvh,
         CssLength.Auto,
-        CssLength.Fluid {
+        CssLength.Fluid,
+        CssLength.Expr {
 
   String toCss();
 
@@ -88,6 +89,13 @@ public sealed interface CssLength
     }
   }
 
+  record Expr(String expression) implements CssLength {
+    @Override
+    public String toCss() {
+      return expression;
+    }
+  }
+
   static CssLength px(double value) {
     return new Px(value);
   }
@@ -122,5 +130,9 @@ public sealed interface CssLength
 
   static CssLength fluid(CssLength min, CssLength preferred, CssLength max) {
     return new Fluid(min, preferred, max);
+  }
+
+  static CssLength expr(String expression) {
+    return new Expr(expression);
   }
 }

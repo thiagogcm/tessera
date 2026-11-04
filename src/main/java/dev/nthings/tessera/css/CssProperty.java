@@ -4,9 +4,16 @@ package dev.nthings.tessera.css;
  * Canonical CSS property keys in deterministic ordinal order for {@link java.util.EnumMap} storage
  * and FNV-1a hashing.
  *
- * <p>Note: {@link #ANIMATION} precedes {@link #ANIMATION_DELAY}, {@link #ANIMATION_TIMELINE}, and
- * {@link #ANIMATION_RANGE} so the {@code animation} shorthand never resets scroll-driven timeline
- * or range declarations.
+ * <p>Note:
+ *
+ * <ul>
+ *   <li>{@link #TRANSITION} precedes {@link #TRANSITION_PROPERTY}, {@link #TRANSITION_DURATION},
+ *       {@link #TRANSITION_TIMING_FUNCTION}, and {@link #TRANSITION_BEHAVIOR} so {@code
+ *       transition-behavior: allow-discrete} is never reset by the shorthand.
+ *   <li>{@link #ANIMATION} precedes {@link #ANIMATION_DELAY}, {@link #ANIMATION_TIMELINE}, and
+ *       {@link #ANIMATION_RANGE} so the {@code animation} shorthand never resets scroll-driven
+ *       timeline or range declarations.
+ * </ul>
  */
 public enum CssProperty {
   CONTENT("content"),
@@ -14,9 +21,22 @@ public enum CssProperty {
   POSITION("position"),
   INSET("inset"),
   INSET_BLOCK_START("inset-block-start"),
+  INSET_BLOCK_END("inset-block-end"),
   INSET_INLINE_START("inset-inline-start"),
+  INSET_INLINE_END("inset-inline-end"),
   Z_INDEX("z-index"),
   OVERFLOW("overflow"),
+  OVERFLOW_X("overflow-x"),
+  OVERFLOW_Y("overflow-y"),
+  OVERFLOW_ANCHOR("overflow-anchor"),
+  SCROLL_BEHAVIOR("scroll-behavior"),
+  SCROLL_SNAP_TYPE("scroll-snap-type"),
+  SCROLL_SNAP_ALIGN("scroll-snap-align"),
+  SCROLL_MARGIN_BLOCK_START("scroll-margin-block-start"),
+  SCROLL_TARGET_GROUP("scroll-target-group"),
+  SCROLL_MARKER_GROUP("scroll-marker-group"),
+  OVERSCROLL_BEHAVIOR_X("overscroll-behavior-x"),
+  SCROLLBAR_WIDTH("scrollbar-width"),
   LIST_STYLE("list-style"),
   COUNTER_RESET("counter-reset"),
   COUNTER_INCREMENT("counter-increment"),
@@ -49,7 +69,10 @@ public enum CssProperty {
   MARGIN_BLOCK("margin-block"),
   MARGIN_BLOCK_START("margin-block-start"),
   MARGIN_BLOCK_END("margin-block-end"),
+  MARGIN_INLINE_START("margin-inline-start"),
+  MARGIN_INLINE_END("margin-inline-end"),
   BACKGROUND("background"),
+  BACKDROP_FILTER("backdrop-filter"),
   COLOR("color"),
   FONT_SIZE("font-size"),
   FONT_WEIGHT("font-weight"),
@@ -66,6 +89,7 @@ public enum CssProperty {
   BORDER("border"),
   BORDER_BLOCK_START("border-block-start"),
   BORDER_BLOCK_END("border-block-end"),
+  BORDER_INLINE_START("border-inline-start"),
   BORDER_COLLAPSE("border-collapse"),
   BORDER_SPACING("border-spacing"),
   BORDER_RADIUS("border-radius"),
@@ -73,8 +97,14 @@ public enum CssProperty {
   OUTLINE("outline"),
   OUTLINE_OFFSET("outline-offset"),
   OPACITY("opacity"),
+  TRANSFORM("transform"),
+  TRANSLATE("translate"),
   CURSOR("cursor"),
   TRANSITION("transition"),
+  TRANSITION_PROPERTY("transition-property"),
+  TRANSITION_DURATION("transition-duration"),
+  TRANSITION_TIMING_FUNCTION("transition-timing-function"),
+  TRANSITION_BEHAVIOR("transition-behavior"),
   VIEW_TIMELINE("view-timeline"),
   SCROLL_TIMELINE("scroll-timeline"),
   TIMELINE_SCOPE("timeline-scope"),

@@ -1,24 +1,23 @@
 package dev.nthings.tessera.site;
 
-import static dev.nthings.tessera.core.Elements.a;
-import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.deferred;
-import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.h1;
 import static dev.nthings.tessera.core.Elements.h2;
-import static dev.nthings.tessera.core.Elements.header;
-import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.text;
 
+import dev.nthings.tessera.components.Accordion;
+import dev.nthings.tessera.components.Breadcrumbs;
+import dev.nthings.tessera.components.Breadcrumbs.Crumb;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CardGrid;
+import dev.nthings.tessera.components.Carousel;
 import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DataTable.Column;
+import dev.nthings.tessera.components.Dropdown;
 import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Grid;
@@ -27,8 +26,14 @@ import dev.nthings.tessera.components.Lists.DescriptionList;
 import dev.nthings.tessera.components.Lists.NumberedList;
 import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.components.Lists.Term;
+import dev.nthings.tessera.components.Overlays;
 import dev.nthings.tessera.components.ScrollProgressBar;
 import dev.nthings.tessera.components.SimpleTable;
+import dev.nthings.tessera.components.StickyHeader;
+import dev.nthings.tessera.components.Tabs;
+import dev.nthings.tessera.components.Tabs.NavItem;
+import dev.nthings.tessera.components.Tabs.TabPanel;
+import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
@@ -41,6 +46,7 @@ import dev.nthings.tessera.css.UnderlineStyle;
 import dev.nthings.tessera.render.PageDocument;
 import java.nio.file.Path;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Multi-page flagship showcase site demonstrating Tessera's Chrome 156+ (Baseline 2026+)
@@ -51,44 +57,93 @@ public final class ShowcaseSite {
   public record ServiceMetric(
       String service, String region, String p99Latency, String throughput, String availability) {}
 
-  record ShellLayout(String activePath, String pageHeading, String subtitle, Element content)
+  record ShellLayout(
+      String activePath,
+      String pageHeading,
+      String subtitle,
+      @Nullable Breadcrumbs breadcrumbs,
+      Element content)
       implements RenderOnce {
 
     @Override
     public Element render() {
-      var navBar =
-          header()
-              .sticky()
-              .insetBlockStart(CssLength.px(0))
-              .zIndex(20)
-              .bg(Tokens.SURFACE_CARD)
-              .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
-              .px(CssLength.rem(2))
-              .py(CssLength.rem(1))
-              .flex()
-              .itemsCenter()
-              .justifyBetween()
-              .children(
-                  span().fontWeight(700).textSize(CssLength.rem(1.125)).text("Tessera // JDK 25"),
-                  nav()
-                      .ariaLabel("Primary navigation")
-                      .flex()
-                      .gap(CssLength.rem(1.25))
-                      .children(
-                          navLink("/", "Overview & Cards", activePath),
-                          navLink("/telemetry", "Telemetry & DataTables", activePath),
-                          navLink("/typography", "Typography & Footnotes", activePath)));
+      var inspectorDrawer =
+          Overlays.drawer("inspector-drawer", "Compiler & Cascade Inspector")
+              .subtitle("Live Chrome 156+ Baseline 2026 Runtime")
+              .body(
+                  DescriptionList.of(
+                      Term.of("Cascade Order", "reset..container (7 layers)"),
+                      Term.of("Scoped Isolation", "@scope ([data-view]) to ([data-view])"),
+                      Term.of("Top-Layer Motion", "@starting-style + allow-discrete"),
+                      Term.of("Scroll Queries", "@container scroll-state(stuck: top)")),
+                  SimpleTable.create()
+                      .caption("Phase Invariants")
+                      .headers("Phase", "Responsibility")
+                      .row("1. requestLayout", "Expand views & intern FNV-1a styles")
+                      .row("2. prepaint", "Verify WCAG, Invokers & cross-route #fragments")
+                      .row("3. paint", "Stream OWASP-encoded HTML5 & shared CSS"));
+
+      var quickActions =
+          Dropdown.create("quick-actions", "Quick Actions")
+              .linkItem("/", "Overview & Overlays", "G O")
+              .linkItem("/telemetry", "Service Telemetry", "G T")
+              .linkItem("/typography", "Docs & Scroll-Spy ToC", "G D")
+              .separator()
+              .commandItem(
+                  "open-inspector",
+                  inspectorDrawer.entityId(),
+                  BuiltinCommand.SHOW_MODAL,
+                  "Open Compiler Inspector");
+
+      var navTabs =
+          Tabs.navTabs(
+              "primary-nav",
+              "Primary navigation",
+              activePath,
+              List.of(
+                  new NavItem("/", "Overview & Overlays"),
+                  new NavItem("/telemetry", "Telemetry & DataTables"),
+                  new NavItem("/typography", "Docs & Scroll-Spy ToC")));
+
+      var stickyNav =
+          new StickyHeader(
+              "site-header",
+              div()
+                  .maxInlineSize(CssLength.rem(72))
+                  .mx(CssLength.auto())
+                  .px(CssLength.rem(2))
+                  .py(CssLength.rem(0.75))
+                  .flex()
+                  .flexWrap()
+                  .itemsCenter()
+                  .justifyBetween()
+                  .gap(CssLength.rem(1))
+                  .children(
+                      span()
+                          .fontWeight(700)
+                          .textSize(CssLength.rem(1.125))
+                          .text("Tessera // JDK 25"),
+                      navTabs,
+                      div()
+                          .flex()
+                          .itemsCenter()
+                          .gap(CssLength.rem(0.5))
+                          .children(
+                              quickActions,
+                              inspectorDrawer.triggerButton("open-drawer-btn", "Inspector"),
+                              inspectorDrawer.asDeferred(20))));
 
       var hero =
           section()
               .flex()
               .flexCol()
               .gap(CssLength.rem(0.5))
-              .py(CssLength.rem(1.5))
+              .py(CssLength.rem(1))
+              .whenPresent(breadcrumbs, (sec, bc) -> sec.child(bc))
               .children(
                   h1().textSize(
                           CssLength.fluid(
-                              CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.75)))
+                              CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.65)))
                       .textBalance()
                       .text(pageHeading),
                   p().textColor(Tokens.TEXT_MUTED)
@@ -97,9 +152,10 @@ public final class ShowcaseSite {
                       .text(subtitle));
 
       return div()
+          .overflowAnchorNone()
           .children(
               new ScrollProgressBar("page-reading-progress"),
-              navBar,
+              stickyNav,
               Elements.main()
                   .maxInlineSize(CssLength.rem(72))
                   .mx(CssLength.auto())
@@ -119,20 +175,6 @@ public final class ShowcaseSite {
                   .textSize(CssLength.rem(0.875))
                   .text("Compiled with Tessera on JDK 25 targeting Chrome 156+ (Baseline 2026)."));
     }
-
-    private static Element navLink(String href, String label, String activePath) {
-      boolean active = href.equals(activePath);
-      return a(href)
-          .px(CssLength.rem(0.75))
-          .py(CssLength.rem(0.375))
-          .rounded(CssLength.rem(0.5))
-          .fontWeight(active ? 600 : 400)
-          .whenElse(
-              active,
-              el -> el.bg(Tokens.SURFACE_SUBTLE).textColor(Tokens.ACCENT_PRIMARY),
-              el -> el.textColor(Tokens.TEXT_PRIMARY).hover(s -> s.bg(Tokens.SURFACE_SUBTLE)))
-          .text(label);
-    }
   }
 
   private ShowcaseSite() {}
@@ -146,30 +188,12 @@ public final class ShowcaseSite {
 
   private static PageDocument buildOverviewPage() {
     var inspectModal =
-        dialog()
-            .id("architecture-modal")
-            .dialogClosedByAny()
-            .p(CssLength.rem(1.75))
-            .maxInlineSize(CssLength.rem(32))
-            .rounded(CssLength.rem(0.75))
-            .bg(Tokens.SURFACE_CARD)
-            .borderSubtle(Tokens.BORDER_SUBTLE)
-            .children(
-                h2().textBalance().text("Three-Phase Static Pipeline"),
-                p().py(CssLength.rem(0.75))
-                    .textPretty()
-                    .text(
-                        "Phase 1 expands RenderOnce and RenderView trees, Phase 2 verifies WCAG and Invoker Command integrity, and Phase 3 streams HTML/CSS."),
-                button()
-                    .id("close-architecture-modal")
-                    .command("architecture-modal", BuiltinCommand.REQUEST_CLOSE)
-                    .px(CssLength.rem(1))
-                    .py(CssLength.rem(0.5))
-                    .rounded(CssLength.rem(0.5))
-                    .bg(Tokens.ACCENT_PRIMARY)
-                    .textColorRaw("white")
-                    .cursorPointer()
-                    .text("Close Dialog"));
+        Overlays.modal("architecture-modal", "Three-Phase Static Pipeline")
+            .description(
+                "Zero-JS <dialog closedby=\"any\"> with @starting-style entry/exit transitions")
+            .bodyText(
+                "Phase 1 expands RenderOnce and RenderView trees, Phase 2 verifies WCAG, Invoker Commands, and cross-route #fragment integrity, and Phase 3 streams HTML/CSS.")
+            .closeLabel("Close Dialog");
 
     var cardGrid =
         new CardGrid(
@@ -183,28 +207,20 @@ public final class ShowcaseSite {
                     "Sticky row and column headers that automatically collapse into labeled cards inside narrow containers.")
                 .stretchedLink("/telemetry")
                 .action(
-                    button()
-                        .id("open-arch-modal")
-                        .command(inspectModal, BuiltinCommand.SHOW_MODAL)
+                    inspectModal
+                        .triggerButton("open-arch-modal", "Inspect Pipeline")
                         .interestTooltip(
                             tip ->
                                 tip.p(CssLength.rem(0.5))
                                     .bg(Tokens.SURFACE_SUBTLE)
                                     .rounded(CssLength.rem(0.375))
-                                    .text("Opens native <dialog closedby=\"any\">"))
-                        .px(CssLength.rem(0.75))
-                        .py(CssLength.rem(0.375))
-                        .rounded(CssLength.rem(0.375))
-                        .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .bg(Tokens.SURFACE_SUBTLE)
-                        .cursorPointer()
-                        .text("Inspect Pipeline"))
-                .action(deferred(inspectModal, 10)),
+                                    .text("Opens native <dialog closedby=\"any\">")))
+                .action(inspectModal.asDeferred(10)),
             Card.create("typography-card")
-                .title("Typography, Lists & Footnotes")
-                .subtitle("Digital publishing & CSS Text Decoration L4")
+                .title("Typography, Lists & Scroll-Spy ToC")
+                .subtitle("Digital publishing & scroll-target-group")
                 .bodyText(
-                    "Auto-numbered footnotes with interestfor hover previews, sibling-index() step lists, and OKLCH highlights.")
+                    "Auto-numbered footnotes with interestfor hover previews, sibling-index() step lists, and :target-current Scroll-Spy navigation.")
                 .stretchedLink("/typography")
                 .action(span().textColor(Tokens.TEXT_MUTED).text("Zero JavaScript")),
             Card.create("edition-choice")
@@ -214,12 +230,66 @@ public final class ShowcaseSite {
                     "Select this card to test :has(> input:checked) styling without layout shift.")
                 .choiceCheckbox("baseline-opt-in", "chrome-156", true));
 
+    var phaseTabs =
+        Tabs.contentTabs(
+            "compiler-phases",
+            List.of(
+                TabPanel.of(
+                    "1. requestLayout",
+                    p().textPretty()
+                        .text(
+                            "Expands stateless RenderOnce records and scoped RenderView boundaries using JEP 506 ScopedValue<RenderContext>, folding deterministic FNV-1a 64-bit hashes and interning ScopeStyle rules.")),
+                TabPanel.of(
+                    "2. prepaint",
+                    p().textPretty()
+                        .text(
+                            "Enforces WCAG accessibility contracts, verifies every commandfor and interestfor DOM target, and validates cross-route links and #fragment anchors in parallel across Virtual Threads.")),
+                TabPanel.of(
+                    "3. paint",
+                    p().textPretty()
+                        .text(
+                            "Streams HTML5 and a single deduplicated 7-layer CSS bundle (@layer reset..container) with OWASP context-sensitive encoding."))));
+
+    var accordion =
+        Accordion.exclusive("architecture-faq")
+            .item(
+                "Why use <details name=\"...\"> with ::details-content?",
+                "Shared name attributes create mutually exclusive accordions natively, while ::details-content paired with interpolate-size: allow-keywords animates block-size from 0 to auto and preserves native 'Find in page' searchability.",
+                true)
+            .item(
+                "How do Modal, Drawer, and Dropdown animate without JavaScript?",
+                "Top-layer elements (<dialog> and [popover]) use @starting-style for entry keyframes and transition-behavior: allow-discrete on display and overlay so exit transitions complete before top-layer removal.",
+                false)
+            .item(
+                "How does the Scroll-Spy Table of Contents track visible sections?",
+                "Applying scroll-target-group: auto on the <nav> container instructs Chrome 156+ to match :target-current on the anchor link whose target section is currently in view.",
+                false);
+
+    var carousel =
+        Carousel.create("platform-highlights", "Chrome 156+ Platform Capabilities")
+            .slide(
+                "Scroll-State Container Queries",
+                "Query stuck: top on sticky headers and snapped: x on scroll-snap carousel items without scroll event listeners.")
+            .slide(
+                "CSS Anchor Positioning",
+                "Tether popovers with flip-block / flip-inline fallbacks and smoothly slide active tab underlines using anchor(left) and anchor(right).")
+            .slide(
+                "Declarative Invoker Commands",
+                "Open modals (command=\"show-modal\"), toggle popovers (command=\"toggle-popover\"), and trigger interestfor hover previews declaratively.");
+
+    var interactiveGrid = Grid.autoFit(CssLength.rem(24), CssLength.rem(1.5), phaseTabs, accordion);
+
     var body =
         new ShellLayout(
             "/",
             "Declarative HTML & CSS View Engine for JDK 25",
-            "Multi-phase static compilation backed by @layer, @scope, @container, and native Invoker Commands.",
-            div().flex().flexCol().gap(CssLength.rem(2)).children(cardGrid));
+            "Multi-phase static compilation backed by @layer, @scope, @container, @starting-style, and native Invoker Commands.",
+            null,
+            div()
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(2.25))
+                .children(cardGrid, interactiveGrid, carousel));
 
     return new PageDocument("Tessera — Overview", body);
   }
@@ -276,75 +346,81 @@ public final class ShowcaseSite {
                 .scrollReveal(ScrollReveal.FADE_UP)
                 .staggerBySiblingIndex(60));
 
+    var breadcrumbs =
+        Breadcrumbs.of(
+            "telemetry-crumbs",
+            Crumb.of("/", "Tessera"),
+            Crumb.of("/telemetry", "Telemetry & DataTables"));
+
     var body =
         new ShellLayout(
             "/telemetry",
             "Telemetry & Responsive DataTables",
             "Resize the viewport or container below 36rem to observe the @container stacked-card transformation.",
+            breadcrumbs,
             div().flex().flexCol().gap(CssLength.rem(2)).children(dataTable, bentoSummary));
 
     return new PageDocument("Tessera — Telemetry", body);
   }
 
   private static PageDocument buildTypographyPage() {
-    var proseSection =
-        section()
-            .p(CssLength.rem(1.5))
-            .rounded(CssLength.rem(0.75))
-            .bg(Tokens.SURFACE_CARD)
-            .borderSubtle(Tokens.BORDER_SUBTLE)
-            .flex()
-            .flexCol()
-            .gap(CssLength.rem(1))
-            .children(
-                h2().textSize(CssLength.rem(1.25))
-                    .text("Inline Formatting & Interactive Citations"),
-                p().textPretty()
-                    .children(
-                        text("Tessera combines "),
-                        Formatting.highlight("OKLCH adaptive highlights", HighlightTone.ACCENT),
-                        text(", "),
-                        Formatting.underline(
-                            "CSS Text Decoration Level 4 wavy underlines",
-                            UnderlineStyle.WAVY,
-                            Tokens.STATUS_WARNING),
-                        text(", "),
-                        Formatting.strikethrough("legacy polyfill shims"),
-                        text(", diff markers ("),
-                        Formatting.deleted("String viewScopeRule()"),
-                        text(" -> "),
-                        Formatting.inserted("void configureScope(ScopeStyle)"),
-                        text("), inline code "),
-                        Formatting.inlineCode("ScopedValue<RenderContext>"),
-                        text(", and keyboard shortcuts like "),
-                        Formatting.keybinding("Ctrl+Shift+P"),
-                        Footnotes.ref(
-                            "scoped-values",
-                            "JEP 506 Scoped Values propagate RenderContext lexically without parameter drilling."),
-                        text(" alongside native CSS Cascade Layers"),
-                        Footnotes.ref(
-                            "cascade-layers",
-                            "The 7-layer cascade guarantees @layer interactive and @layer container override @layer utilities.")));
+    var inlineFormattingSection =
+        Toc.section(
+            "inline-formatting",
+            "Inline Formatting & Interactive Citations",
+            div()
+                .p(CssLength.rem(1.5))
+                .rounded(CssLength.rem(0.75))
+                .bg(Tokens.SURFACE_CARD)
+                .borderSubtle(Tokens.BORDER_SUBTLE)
+                .child(
+                    p().textPretty()
+                        .children(
+                            text("Tessera combines "),
+                            Formatting.highlight("OKLCH adaptive highlights", HighlightTone.ACCENT),
+                            text(", "),
+                            Formatting.underline(
+                                "CSS Text Decoration Level 4 wavy underlines",
+                                UnderlineStyle.WAVY,
+                                Tokens.STATUS_WARNING),
+                            text(", "),
+                            Formatting.strikethrough("legacy polyfill shims"),
+                            text(", diff markers ("),
+                            Formatting.deleted("String viewScopeRule()"),
+                            text(" -> "),
+                            Formatting.inserted("void configureScope(ScopeStyle)"),
+                            text("), inline code "),
+                            Formatting.inlineCode("ScopedValue<RenderContext>"),
+                            text(", and keyboard shortcuts like "),
+                            Formatting.keybinding("Ctrl+Shift+P"),
+                            Footnotes.ref(
+                                "scoped-values",
+                                "JEP 506 Scoped Values propagate RenderContext lexically without parameter drilling."),
+                            text(" alongside native CSS Cascade Layers"),
+                            Footnotes.ref(
+                                "cascade-layers",
+                                "The 7-layer cascade guarantees @layer interactive and @layer container override @layer utilities."))));
 
-    var listsGrid =
-        Grid.autoFit(
-            CssLength.rem(20),
-            CssLength.rem(1.25),
+    var stepListSection =
+        Toc.section(
+            "step-progression",
+            "Sibling-Index Step Progression",
             div()
                 .p(CssLength.rem(1.25))
                 .rounded(CssLength.rem(0.75))
                 .bg(Tokens.SURFACE_CARD)
                 .borderSubtle(Tokens.BORDER_SUBTLE)
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(0.75))
-                .children(
-                    h2().textSize(CssLength.rem(1.125)).text("Sibling-Index Step List"),
+                .child(
                     StepList.ofStrings(
                         "pipeline-steps",
                         "Phase 1: requestLayout (Expand & Intern)",
                         "Phase 2: prepaint (WCAG & Link Integrity)",
-                        "Phase 3: paint (Streaming OWASP Encode)")),
+                        "Phase 3: paint (Streaming OWASP Encode)")));
+
+    var specsSubSection =
+        Toc.subsection(
+            "platform-specs",
+            "Platform & Compiler Specifications",
             div()
                 .p(CssLength.rem(1.25))
                 .rounded(CssLength.rem(0.75))
@@ -354,7 +430,6 @@ public final class ShowcaseSite {
                 .flexCol()
                 .gap(CssLength.rem(0.75))
                 .children(
-                    h2().textSize(CssLength.rem(1.125)).text("Platform Specifications"),
                     DescriptionList.of(
                         Term.of("Java Baseline", "JDK 25 LTS"),
                         Term.of("Browser Target", "Chrome 156+"),
@@ -362,18 +437,45 @@ public final class ShowcaseSite {
                     BulletList.ofStrings("Content-addressed @scope", "Shared CSS site bundle"),
                     NumberedList.ofStrings("Zero preview flags", "Zero warning suppressions")));
 
+    var scrollSpySection =
+        Toc.section(
+            "scrollspy-mechanics",
+            "Pure CSS Scroll-Spy Navigation",
+            div()
+                .p(CssLength.rem(1.25))
+                .rounded(CssLength.rem(0.75))
+                .bg(Tokens.SURFACE_CARD)
+                .borderSubtle(Tokens.BORDER_SUBTLE)
+                .child(
+                    p().textPretty()
+                        .text(
+                            "The sticky 'On This Page' sidebar on the right sets scroll-target-group: auto on its <nav> container and styles a:target-current with a high-contrast accent border, bold weight, and OKLCH surface tint as sections scroll through the viewport.")));
+
+    var docLayout =
+        Toc.docLayout(
+            "doc-toc",
+            "On This Page",
+            inlineFormattingSection,
+            stepListSection,
+            specsSubSection,
+            scrollSpySection,
+            Footnotes.section());
+
+    var breadcrumbs =
+        Breadcrumbs.of(
+            "typography-crumbs",
+            Crumb.of("/", "Tessera"),
+            Crumb.of("/typography", "Docs & Scroll-Spy ToC"));
+
     var body =
         new ShellLayout(
             "/typography",
-            "Typography, Lists & Dual-Mode Footnotes",
-            "Hover or focus the [1] and [2] superscripts for instant interestfor previews, or click to jump to endnotes.",
-            div()
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(2))
-                .children(proseSection, listsGrid, Footnotes.section()));
+            "Documentation, Lists & Scroll-Spy ToC",
+            "Scroll through the sections to observe :target-current Scroll-Spy tracking, or hover [1] and [2] for instant interestfor previews.",
+            breadcrumbs,
+            docLayout.intoElement());
 
-    return new PageDocument("Tessera — Typography & Footnotes", body);
+    return new PageDocument("Tessera — Documentation & Typography", body);
   }
 
   public static void main(String[] args) throws InterruptedException {

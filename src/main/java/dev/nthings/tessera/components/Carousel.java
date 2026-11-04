@@ -1,0 +1,158 @@
+package dev.nthings.tessera.components;
+
+import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.h3;
+import static dev.nthings.tessera.core.Elements.p;
+
+import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssDeclaration;
+import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Tokens;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Pure CSS scroll-snap carousel backed by Chrome 156+ {@code scroll-snap-type: x mandatory}, {@code
+ * container-type: scroll-state} with {@code @container scroll-state(snapped: x)}, and native {@code
+ * scroll-marker-group: after} / {@code ::scroll-marker:target-current} pagination dots.
+ */
+public final class Carousel implements RenderView {
+
+  public record Slide(String title, String summary, Element content) {
+    public static Slide ofText(String title, String summary) {
+      return new Slide(
+          title,
+          summary,
+          div()
+              .flex()
+              .flexCol()
+              .gap(CssLength.rem(0.5))
+              .children(
+                  h3().textSize(CssLength.rem(1.125)).textBalance().text(title),
+                  p().textColor(Tokens.TEXT_MUTED).textPretty().text(summary)));
+    }
+
+    public static Slide of(String title, String summary, IntoElement content) {
+      return new Slide(title, summary, content.intoElement());
+    }
+  }
+
+  private final ElementId id;
+  private final String ariaLabel;
+  private final List<Slide> slides = new ArrayList<>();
+
+  public Carousel(String id, String ariaLabel) {
+    this.id = ElementId.of(id);
+    this.ariaLabel = ariaLabel;
+  }
+
+  public static Carousel create(String id, String ariaLabel) {
+    return new Carousel(id, ariaLabel);
+  }
+
+  public Carousel slide(String title, String summary) {
+    slides.add(Slide.ofText(title, summary));
+    return this;
+  }
+
+  public Carousel slide(String title, String summary, IntoElement content) {
+    slides.add(Slide.of(title, summary, content));
+    return this;
+  }
+
+  @Override
+  public ElementId entityId() {
+    return id;
+  }
+
+  @Override
+  public String viewType() {
+    return "carousel";
+  }
+
+  @Override
+  public void configureScope(ScopeStyle scope) {
+    scope
+        .root(
+            s ->
+                s.flex()
+                    .gap(CssLength.rem(1))
+                    .overflowXAuto()
+                    .scrollSnapType("x mandatory")
+                    .scrollMarkerGroup("after")
+                    .overscrollBehaviorX("contain")
+                    .scrollbarWidthNone()
+                    .py(CssLength.rem(0.5)))
+        .select(
+            ":scope > .carousel-item",
+            s ->
+                s.flexShrink(0)
+                    .inlineSize(CssLength.expr("min(22rem, 82%)"))
+                    .scrollSnapAlign("center")
+                    .refine(
+                        r ->
+                            r.put(
+                                new CssDeclaration.ContainerType(
+                                    CssDeclaration.ContainerKind.SCROLL_STATE))))
+        .select(
+            ":scope > .carousel-item > .carousel-card",
+            s ->
+                s.p(CssLength.rem(1.25))
+                    .blockSize(CssLength.pct(100))
+                    .rounded(CssLength.rem(0.75))
+                    .bg(Tokens.SURFACE_CARD)
+                    .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
+                    .transition(
+                        "border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease"))
+        .select(
+            ":scope::scroll-marker-group",
+            s ->
+                s.flex()
+                    .itemsCenter()
+                    .justifyCenter()
+                    .gap(CssLength.rem(0.5))
+                    .pt(CssLength.rem(0.75)))
+        .select(
+            ":scope > .carousel-item::scroll-marker",
+            s ->
+                s.cssContent("\"\"")
+                    .inlineSize(CssLength.rem(0.625))
+                    .blockSize(CssLength.rem(0.625))
+                    .rounded(CssLength.px(999))
+                    .bg(Tokens.BORDER_SUBTLE)
+                    .borderNone()
+                    .cursorPointer()
+                    .transition("inline-size 0.2s ease, background-color 0.2s ease"))
+        .select(
+            ":scope > .carousel-item::scroll-marker:target-current",
+            s -> s.bg(Tokens.ACCENT_PRIMARY).inlineSize(CssLength.rem(1.5)))
+        .motionSafe(
+            m ->
+                m.select(":scope", s -> s.scrollBehaviorSmooth())
+                    .containerScrollState(
+                        null,
+                        "snapped: x",
+                        c ->
+                            c.select(
+                                ":scope > .carousel-item > .carousel-card",
+                                s ->
+                                    s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
+                                        .shadow("0 12px 24px -6px oklch(0% 0 0 / 0.14)"))));
+  }
+
+  @Override
+  public Element render() {
+    var track = div().role("region").ariaLabel(ariaLabel);
+    for (var slide : slides) {
+      track.child(
+          div()
+              .attr("class", "carousel-item")
+              .child(div().attr("class", "carousel-card").child(slide.content())));
+    }
+    return track;
+  }
+}

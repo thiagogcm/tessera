@@ -87,7 +87,30 @@ public sealed interface CssDeclaration
         CssDeclaration.ViewTransitionName,
         CssDeclaration.ViewTransitionClass,
         CssDeclaration.ContentVisibility,
-        CssDeclaration.ContainIntrinsicSize {
+        CssDeclaration.ContainIntrinsicSize,
+        CssDeclaration.InsetBlockEnd,
+        CssDeclaration.InsetInlineEnd,
+        CssDeclaration.OverflowX,
+        CssDeclaration.OverflowY,
+        CssDeclaration.OverflowAnchor,
+        CssDeclaration.ScrollBehavior,
+        CssDeclaration.ScrollSnapType,
+        CssDeclaration.ScrollSnapAlign,
+        CssDeclaration.ScrollMarginBlockStart,
+        CssDeclaration.ScrollTargetGroup,
+        CssDeclaration.ScrollMarkerGroup,
+        CssDeclaration.OverscrollBehaviorX,
+        CssDeclaration.ScrollbarWidth,
+        CssDeclaration.MarginInlineStart,
+        CssDeclaration.MarginInlineEnd,
+        CssDeclaration.BorderInlineStart,
+        CssDeclaration.BackdropFilter,
+        CssDeclaration.Transform,
+        CssDeclaration.Translate,
+        CssDeclaration.TransitionProperty,
+        CssDeclaration.TransitionDuration,
+        CssDeclaration.TransitionTimingFunction,
+        CssDeclaration.TransitionBehavior {
 
   CssProperty property();
 
@@ -223,6 +246,8 @@ public sealed interface CssDeclaration
   enum ContainerKind {
     INLINE_SIZE("inline-size"),
     SIZE("size"),
+    SCROLL_STATE("scroll-state"),
+    SCROLL_STATE_INLINE_SIZE("scroll-state inline-size"),
     NORMAL("normal");
 
     private final String css;
@@ -1229,6 +1254,282 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return size;
+    }
+  }
+
+  record InsetBlockEnd(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.INSET_BLOCK_END;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record InsetInlineEnd(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.INSET_INLINE_END;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record OverflowX(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OVERFLOW_X;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record OverflowY(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OVERFLOW_Y;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record OverflowAnchor(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OVERFLOW_ANCHOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record ScrollBehavior(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_BEHAVIOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record ScrollSnapType(String spec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_SNAP_TYPE;
+    }
+
+    @Override
+    public String cssValue() {
+      return spec;
+    }
+  }
+
+  record ScrollSnapAlign(String align) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_SNAP_ALIGN;
+    }
+
+    @Override
+    public String cssValue() {
+      return align;
+    }
+  }
+
+  record ScrollMarginBlockStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_MARGIN_BLOCK_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record ScrollTargetGroup(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_TARGET_GROUP;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record ScrollMarkerGroup(String position) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLL_MARKER_GROUP;
+    }
+
+    @Override
+    public String cssValue() {
+      return position;
+    }
+  }
+
+  record OverscrollBehaviorX(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.OVERSCROLL_BEHAVIOR_X;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
+    }
+  }
+
+  record ScrollbarWidth(String width) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.SCROLLBAR_WIDTH;
+    }
+
+    @Override
+    public String cssValue() {
+      return width;
+    }
+  }
+
+  record MarginInlineStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.MARGIN_INLINE_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record MarginInlineEnd(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.MARGIN_INLINE_END;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record BorderInlineStart(String spec) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_INLINE_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return spec;
+    }
+  }
+
+  record BackdropFilter(String filter) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BACKDROP_FILTER;
+    }
+
+    @Override
+    public String cssValue() {
+      return filter;
+    }
+  }
+
+  record Transform(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSFORM;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record Translate(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSLATE;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record TransitionProperty(String properties) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSITION_PROPERTY;
+    }
+
+    @Override
+    public String cssValue() {
+      return properties;
+    }
+  }
+
+  record TransitionDuration(String duration) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSITION_DURATION;
+    }
+
+    @Override
+    public String cssValue() {
+      return duration;
+    }
+  }
+
+  record TransitionTimingFunction(String easing) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSITION_TIMING_FUNCTION;
+    }
+
+    @Override
+    public String cssValue() {
+      return easing;
+    }
+  }
+
+  record TransitionBehavior(String behavior) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.TRANSITION_BEHAVIOR;
+    }
+
+    @Override
+    public String cssValue() {
+      return behavior;
     }
   }
 }

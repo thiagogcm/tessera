@@ -313,6 +313,15 @@ public final class PageCompiler {
       String href = attrs.get("href");
       if (href != null && !href.isBlank()) {
         state.outgoingHrefs.add(href);
+        if (href.startsWith("#") && href.length() > 1) {
+          String fragment = href.substring(1);
+          if (!registeredDomIds.contains(fragment)) {
+            throw new AccessibilityViolationException(
+                "Anchor link href=\""
+                    + href
+                    + "\" references a non-existent fragment ID in the document");
+          }
+        }
       }
     }
 

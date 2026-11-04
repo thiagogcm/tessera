@@ -491,4 +491,184 @@ public interface Styled<SELF extends Styled<SELF>> {
     style().put(new CssDeclaration.ContainIntrinsicSize("auto " + intrinsicBlockSize));
     return self();
   }
+
+  default SELF contentVisibility(String mode) {
+    style().put(new CssDeclaration.ContentVisibility(mode));
+    return self();
+  }
+
+  default SELF insetBlockEnd(CssLength length) {
+    style().put(new CssDeclaration.InsetBlockEnd(length));
+    return self();
+  }
+
+  default SELF insetInlineEnd(CssLength length) {
+    style().put(new CssDeclaration.InsetInlineEnd(length));
+    return self();
+  }
+
+  default SELF overflowClip() {
+    style().put(new CssDeclaration.Overflow("clip"));
+    return self();
+  }
+
+  default SELF overflowHidden() {
+    style().put(new CssDeclaration.Overflow("hidden"));
+    return self();
+  }
+
+  default SELF overflowVisible() {
+    style().put(new CssDeclaration.Overflow("visible"));
+    return self();
+  }
+
+  default SELF overflowXAuto() {
+    style().put(new CssDeclaration.OverflowX("auto"));
+    return self();
+  }
+
+  default SELF overflowYAuto() {
+    style().put(new CssDeclaration.OverflowY("auto"));
+    return self();
+  }
+
+  default SELF overflowAnchorNone() {
+    style().put(new CssDeclaration.OverflowAnchor("none"));
+    return self();
+  }
+
+  default SELF scrollBehaviorSmooth() {
+    style().put(new CssDeclaration.ScrollBehavior("smooth"));
+    return self();
+  }
+
+  default SELF scrollSnapType(String spec) {
+    style().put(new CssDeclaration.ScrollSnapType(spec));
+    return self();
+  }
+
+  default SELF scrollSnapAlign(String align) {
+    style().put(new CssDeclaration.ScrollSnapAlign(align));
+    return self();
+  }
+
+  default SELF scrollMarginBlockStart(CssLength length) {
+    style().put(new CssDeclaration.ScrollMarginBlockStart(length));
+    return self();
+  }
+
+  default SELF scrollTargetGroupAuto() {
+    style().put(new CssDeclaration.ScrollTargetGroup("auto"));
+    return self();
+  }
+
+  default SELF scrollMarkerGroup(String position) {
+    style().put(new CssDeclaration.ScrollMarkerGroup(position));
+    return self();
+  }
+
+  default SELF overscrollBehaviorX(String mode) {
+    style().put(new CssDeclaration.OverscrollBehaviorX(mode));
+    return self();
+  }
+
+  default SELF scrollbarWidthNone() {
+    style().put(new CssDeclaration.ScrollbarWidth("none"));
+    return self();
+  }
+
+  default SELF ms(CssLength length) {
+    style().put(new CssDeclaration.MarginInlineStart(length));
+    return self();
+  }
+
+  default SELF me(CssLength length) {
+    style().put(new CssDeclaration.MarginInlineEnd(length));
+    return self();
+  }
+
+  default SELF borderInlineStart(String spec) {
+    style().put(new CssDeclaration.BorderInlineStart(spec));
+    return self();
+  }
+
+  default SELF borderInlineStartSubtle(DesignToken borderToken) {
+    style().put(new CssDeclaration.BorderInlineStart("1px solid " + borderToken.varReference()));
+    return self();
+  }
+
+  default SELF borderNone() {
+    style().put(new CssDeclaration.Border("none"));
+    return self();
+  }
+
+  default SELF backdropFilter(String filter) {
+    style().put(new CssDeclaration.BackdropFilter(filter));
+    return self();
+  }
+
+  default SELF transform(String value) {
+    style().put(new CssDeclaration.Transform(value));
+    return self();
+  }
+
+  default SELF translate(String value) {
+    style().put(new CssDeclaration.Translate(value));
+    return self();
+  }
+
+  default SELF transitionProperty(String properties) {
+    style().put(new CssDeclaration.TransitionProperty(properties));
+    return self();
+  }
+
+  default SELF transitionDuration(String duration) {
+    style().put(new CssDeclaration.TransitionDuration(duration));
+    return self();
+  }
+
+  default SELF transitionTimingFunction(String easing) {
+    style().put(new CssDeclaration.TransitionTimingFunction(easing));
+    return self();
+  }
+
+  default SELF transitionAllowDiscrete() {
+    style().put(new CssDeclaration.TransitionBehavior("allow-discrete"));
+    return self();
+  }
+
+  default SELF containerScrollState(String containerName) {
+    style().put(new CssDeclaration.ContainerName(containerName));
+    style().put(new CssDeclaration.ContainerType(CssDeclaration.ContainerKind.SCROLL_STATE));
+    return self();
+  }
+
+  default SELF containerScrollStateInlineSize(String containerName) {
+    style().put(new CssDeclaration.ContainerName(containerName));
+    style()
+        .put(
+            new CssDeclaration.ContainerType(
+                CssDeclaration.ContainerKind.SCROLL_STATE_INLINE_SIZE));
+    return self();
+  }
+
+  default SELF anchorName(String customIdent) {
+    style().put(new CssDeclaration.AnchorName(customIdent));
+    return self();
+  }
+
+  default SELF positionAnchor(String customIdent) {
+    style().put(new CssDeclaration.PositionAnchor(customIdent));
+    return self();
+  }
+
+  default SELF positionArea(String area) {
+    style().put(new CssDeclaration.PositionArea(area));
+    return self();
+  }
+
+  default SELF positionTryFallbacks(String fallbacks) {
+    style().put(new CssDeclaration.PositionTryFallbacks(fallbacks));
+    return self();
+  }
 }

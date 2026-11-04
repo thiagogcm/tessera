@@ -5,6 +5,7 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -17,9 +18,12 @@ public final class RenderContext {
   public record FootnoteEntry(
       int number, String slug, String refDomId, String noteDomId, Element content) {}
 
-  private static final class FootnoteState {
-    private final Map<String, FootnoteEntry> entries = new LinkedHashMap<>();
-    private boolean sectionRendered = false;
+  public record TocEntry(String targetDomId, String title, int level) {}
+
+  private static final class DocumentState {
+    private final Map<String, FootnoteEntry> footnotes = new LinkedHashMap<>();
+    private boolean footnotesRendered = false;
+    private final Map<String, TocEntry> tocEntries = new LinkedHashMap<>();
   }
 
   private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
@@ -27,21 +31,21 @@ public final class RenderContext {
   private final GlobalElementId viewScope;
   private final StyleSheetCollector styles;
   private final Tokens tokens;
-  private final FootnoteState footnotes;
+  private final DocumentState docState;
 
   public RenderContext(GlobalElementId viewScope, StyleSheetCollector styles, Tokens tokens) {
-    this(viewScope, styles, tokens, new FootnoteState());
+    this(viewScope, styles, tokens, new DocumentState());
   }
 
   private RenderContext(
       GlobalElementId viewScope,
       StyleSheetCollector styles,
       Tokens tokens,
-      FootnoteState footnotes) {
+      DocumentState docState) {
     this.viewScope = viewScope;
     this.styles = styles;
     this.tokens = tokens;
-    this.footnotes = footnotes;
+    this.docState = docState;
   }
 
   public static RenderContext current() {
@@ -66,10 +70,10 @@ public final class RenderContext {
   public FootnoteEntry registerFootnote(String rawId, Element content) {
     String slug = Fnv1a64.sanitizeIdentifier(rawId);
     String key = viewScope.domId().isEmpty() ? slug : viewScope.domId() + "--" + slug;
-    return footnotes.entries.computeIfAbsent(
+    return docState.footnotes.computeIfAbsent(
         key,
         k -> {
-          int number = footnotes.entries.size() + 1;
+          int number = docState.footnotes.size() + 1;
           String refDomId = viewScope.extend(ElementId.of("fnref-" + slug)).domId();
           String noteDomId = "fn-" + k;
           return new FootnoteEntry(number, slug, refDomId, noteDomId, content);
@@ -77,19 +81,28 @@ public final class RenderContext {
   }
 
   public Collection<FootnoteEntry> footnotes() {
-    return Collections.unmodifiableCollection(footnotes.entries.values());
+    return Collections.unmodifiableCollection(docState.footnotes.values());
   }
 
   public boolean hasUnrenderedFootnotes() {
-    return !footnotes.entries.isEmpty() && !footnotes.sectionRendered;
+    return !docState.footnotes.isEmpty() && !docState.footnotesRendered;
   }
 
   public void markFootnotesRendered() {
-    footnotes.sectionRendered = true;
+    docState.footnotesRendered = true;
+  }
+
+  public TocEntry registerTocEntry(String rawId, String title, int level) {
+    String domId = viewScope.extend(ElementId.of(rawId)).domId();
+    return docState.tocEntries.computeIfAbsent(domId, id -> new TocEntry(id, title, level));
+  }
+
+  public List<TocEntry> tocEntries() {
+    return List.copyOf(docState.tocEntries.values());
   }
 
   public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
-    var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens, footnotes);
+    var childContext = new RenderContext(viewScope.extend(viewEntityId), styles, tokens, docState);
     return ScopedValue.where(CURRENT, childContext).call(work::get);
   }
 

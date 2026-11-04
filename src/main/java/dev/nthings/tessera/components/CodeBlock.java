@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Accessible keyboard-scrollable code block backed by CSS counter line numbers (`counter-
-/// increment: code-line`), line highlighting, diff annotations, and optional header bars.
+/// Accessible keyboard-scrollable code block backed by CSS counter line numbers
+/// (`counter-increment: code-line`), line highlighting, diff annotations, and optional header bars.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
   public enum DiffType {
@@ -160,17 +160,13 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                     .opacity(0.6))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-highlighted",
-            s -> s.bgRaw("color-mix(in oklch, var(--accent-primary) 15%, transparent)"))
+            s -> s.bgRaw(Tokens.ACCENT_PRIMARY.mixTransparent(15)))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-add",
-            s ->
-                s.bgRaw("color-mix(in oklch, var(--status-success) 16%, transparent)")
-                    .textColor(Tokens.STATUS_SUCCESS))
+            s -> s.bgRaw(Tokens.STATUS_SUCCESS.mixTransparent(16)).textColor(Tokens.STATUS_SUCCESS))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-del",
-            s ->
-                s.bgRaw("color-mix(in oklch, var(--status-danger) 16%, transparent)")
-                    .textColor(Tokens.STATUS_DANGER));
+            s -> s.bgRaw(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER));
   }
 
   @Override
@@ -224,7 +220,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     var preEl =
         pre()
             .attr("class", "code-pre")
-            .attr("tabindex", "0")
+            .tabIndex(0)
             .refine(
                 s ->
                     s.fontFamily("ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace")

@@ -65,13 +65,13 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
     PageRef prev = null;
     if (currentIdx > 0) {
       SiteRoute p = routes.get(currentIdx - 1);
-      String title = p.title() != null ? p.title() : p.document().title();
+      String title = p.displayTitle();
       prev = new PageRef(p.path(), title);
     }
     PageRef next = null;
     if (currentIdx < routes.size() - 1) {
       SiteRoute n = routes.get(currentIdx + 1);
-      String title = n.title() != null ? n.title() : n.document().title();
+      String title = n.displayTitle();
       next = new PageRef(n.path(), title);
     }
     return new DocPager(prev, next);
@@ -151,7 +151,7 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
   @Override
   public Element render() {
-    var navEl = nav().attr("aria-label", "Documentation navigation").attr("class", "doc-pager");
+    var navEl = nav().ariaLabel("Documentation navigation").attr("class", "doc-pager");
 
     if (prev != null) {
       var prevCard =

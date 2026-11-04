@@ -16,10 +16,10 @@ import org.jspecify.annotations.Nullable;
 /// Core Web Vitals-optimized image component enforcing LCP priority hoisting and layout
 /// stability.
 ///
-/// - [String)][#hero(String,] tags the page's primary Largest Contentful Paint candidate,
+/// - [#hero(String, String)] tags the page's primary Largest Contentful Paint candidate,
 ///   emitting `fetchpriority="high"` and hoisting an explicit `<link rel="preload" as="image">`
 ///   into the document `<head>`.
-/// - [String)][#of(String,] provisions below-the-fold images with `loading="lazy"` and
+/// - [#of(String, String)] provisions below-the-fold images with `loading="lazy"` and
 ///   `decoding="async"`.
 /// - Compile-time Phase 2 enforcement requires either explicit dimensions or a CSS `aspect-ratio`
 ///   to eliminate Cumulative Layout Shift (CLS).
@@ -119,9 +119,6 @@ public final class Image implements RenderOnce, FluentBuilder<Image> {
     if (hero) {
       img.attr("fetchpriority", "high");
       img.attributes().remove("loading");
-    } else {
-      img.attr("loading", "lazy");
-      img.attr("decoding", "async");
     }
     if (width != null && height != null) {
       img.dimensions(width, height);

@@ -33,7 +33,8 @@ import org.owasp.encoder.Encode;
 /// Three-phase static HTML5/CSS document compiler (`requestLayout` -> `prepaint` -> `paint`).
 ///
 /// Operates on an immutable intermediate `ResolvedNode` representation so input [Element] and
-/// [RenderOnce] trees are never mutated and can be reused across multiple render passes.
+/// [dev.nthings.tessera.core.RenderOnce] trees are never mutated and can be reused across multiple
+/// render passes.
 public final class PageCompiler {
 
   public record CompiledPage(String html, @Nullable String externalCssPath, String cssContent) {}
@@ -246,33 +247,23 @@ public final class PageCompiler {
 
     boolean hasAspectRatio = tag.style().get(CssProperty.ASPECT_RATIO) != null;
 
-    TransitionKey tk = tag.transitionKey();
-    if (tk != null) {
-      if (!state.viewTransitionNames.add(tk.name())) {
+    // TagElement.transitionKey(...) writes these declarations, so the style is the single source.
+    if (tag.style().get(CssProperty.VIEW_TRANSITION_NAME)
+        instanceof CssDeclaration.ViewTransitionName(var ident)) {
+      if (!state.viewTransitionNames.add(ident)) {
         throw new AccessibilityViolationException(
             "Duplicate TransitionKey name '"
-                + tk.name()
+                + ident
                 + "' found on the same page. TransitionKey names must be unique per document.");
       }
-      state.transitionKeys.add(tk);
-      if (tk.transitionClass() != null) {
-        ctx.styles().registerTransitionClass(tk.transitionClass());
-      }
-    } else {
-      var vtnDecl = tag.style().get(CssProperty.VIEW_TRANSITION_NAME);
-      if (vtnDecl instanceof CssDeclaration.ViewTransitionName(var ident)) {
-        if (!state.viewTransitionNames.add(ident)) {
-          throw new AccessibilityViolationException(
-              "Duplicate view-transition-name '"
-                  + ident
-                  + "' found on the same page. TransitionKey names must be unique per document.");
-        }
-        var vtcDecl = tag.style().get(CssProperty.VIEW_TRANSITION_CLASS);
-        String vtc = (vtcDecl instanceof CssDeclaration.ViewTransitionClass(var cls)) ? cls : null;
-        state.transitionKeys.add(new TransitionKey(ident, vtc));
-        if (vtc != null) {
-          ctx.styles().registerTransitionClass(vtc);
-        }
+      String vtc =
+          tag.style().get(CssProperty.VIEW_TRANSITION_CLASS)
+                  instanceof CssDeclaration.ViewTransitionClass(var cls)
+              ? cls
+              : null;
+      state.transitionKeys.add(new TransitionKey(ident, vtc));
+      if (vtc != null) {
+        ctx.styles().registerTransitionClass(vtc);
       }
     }
 

@@ -13,8 +13,8 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 
 /// Dual-mode Footnote system combining inline `interestfor` hover/focus preview popovers with
-/// auto-numbered, bidirectionally linked WAI-ARIA Digital Publishing endnotes (`role="doc-
-/// endnotes"`).
+/// auto-numbered, bidirectionally linked WAI-ARIA Digital Publishing endnotes
+/// (`role="doc-endnotes"`).
 public final class Footnotes {
 
   private Footnotes() {}

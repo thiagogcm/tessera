@@ -71,10 +71,10 @@
             <property name="tokens" value="LITERAL_DO, LITERAL_ELSE, LITERAL_FOR, LITERAL_WHILE"/>
         </module>
 
-        <!-- Javadoc for public types -->
-        <module name="JavadocType">
-            <property name="scope" value="public"/>
-            <property name="allowMissingParamTags" value="true"/>
+        <!-- Docs use JEP 467 Markdown comments (///), not legacy /** */ blocks -->
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="^\s*/\*\*"/>
+            <property name="message" value="Use /// Markdown doc comments instead of /** */."/>
         </module>
     </module>
 </module>

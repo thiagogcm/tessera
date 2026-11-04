@@ -20,9 +20,9 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Viewport-aware popover action dropdown backed by Declarative Invoker Commands (`commandfor` /
-/// `command="toggle-popover"`), implicit CSS Anchor Positioning (`position-area: block-end span-
-/// inline-end`, `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`), and
-/// `@starting-style` top-layer entry/exit transitions.
+/// `command="toggle-popover"`), implicit CSS Anchor Positioning (`position-area: block-end
+/// span-inline-end`, `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`),
+/// and `@starting-style` top-layer entry/exit transitions.
 public final class Dropdown implements RenderView {
 
   private final ElementId id;
@@ -46,11 +46,7 @@ public final class Dropdown implements RenderView {
             .whenPresent(
                 shortcutHint,
                 (el, hint) ->
-                    el.child(
-                        span()
-                            .attr("class", "dropdown-hint")
-                            .attr("aria-hidden", "true")
-                            .text(hint)));
+                    el.child(span().attr("class", "dropdown-hint").ariaHidden(true).text(hint)));
     items.add(link);
     return this;
   }
@@ -82,11 +78,6 @@ public final class Dropdown implements RenderView {
   @Override
   public ElementId entityId() {
     return id;
-  }
-
-  @Override
-  public String viewType() {
-    return "dropdown";
   }
 
   @Override
@@ -172,12 +163,10 @@ public final class Dropdown implements RenderView {
             .command(panelId, BuiltinCommand.TOGGLE_POPOVER)
             .children(
                 span().text(triggerLabel),
-                span().attr("aria-hidden", "true").textColor(Tokens.TEXT_MUTED).text("▾"));
+                span().ariaHidden(true).textColor(Tokens.TEXT_MUTED).text("▾"));
 
     var itemsWrapper = div().attr("class", "dropdown-panel-items");
-    for (var item : items) {
-      itemsWrapper.child(item);
-    }
+    itemsWrapper.children(items);
 
     var panel = div().id(panelId).popover(PopoverMode.AUTO).child(itemsWrapper);
 

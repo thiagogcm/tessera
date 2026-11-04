@@ -1,12 +1,10 @@
 package dev.nthings.tessera.site;
 
-import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageDocument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /// Multi-page static site compiler.
@@ -55,27 +54,15 @@ public final class SiteCompiler {
     var seenPaths = new LinkedHashSet<String>(routes.size());
     var preparedByRoute = new LinkedHashMap<String, PageCompiler.PreparedPage>(routes.size());
 
-    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      var futures = new ArrayList<Future<PageCompiler.PreparedPage>>(routes.size());
-      for (var route : routes) {
-        if (!seenPaths.add(route.path())) {
-          throw new IllegalArgumentException("Duplicate route path: " + route.path());
-        }
-        futures.add(executor.submit(() -> PageCompiler.prepare(route.document())));
+    for (var route : routes) {
+      if (!seenPaths.add(route.path())) {
+        throw new IllegalArgumentException("Duplicate route path: " + route.path());
       }
-
-      for (int i = 0; i < routes.size(); i++) {
-        preparedByRoute.put(routes.get(i).path(), futures.get(i).get());
-      }
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException("Site compilation interrupted", e);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof RuntimeException re) {
-        throw re;
-      }
-      throw new IllegalStateException("Site compilation failed", cause);
+    }
+    List<PageCompiler.PreparedPage> preparedPages =
+        parallelMap(routes, route -> PageCompiler.prepare(route.document()));
+    for (int i = 0; i < routes.size(); i++) {
+      preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
     // Verify cross-route links and #fragment targets
@@ -91,12 +78,15 @@ public final class SiteCompiler {
     }
     String sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
 
+    List<PageCompiler.CompiledPage> painted =
+        parallelMap(
+            preparedPages,
+            prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
     var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
     String sharedCssPath = null;
-    for (var entry : preparedByRoute.entrySet()) {
-      PageCompiler.CompiledPage compiled =
-          PageCompiler.paintPrepared(entry.getValue(), sharedCssContent, site.outputMode());
-      compiledPages.put(entry.getKey(), compiled);
+    for (int i = 0; i < routes.size(); i++) {
+      PageCompiler.CompiledPage compiled = painted.get(i);
+      compiledPages.put(routes.get(i).path(), compiled);
       if (sharedCssPath == null && compiled.externalCssPath() != null) {
         sharedCssPath = compiled.externalCssPath();
       }
@@ -118,12 +108,35 @@ public final class SiteCompiler {
         searchIndexJson);
   }
 
+  /// Applies `fn` to every input on virtual threads, returning results in input order.
+  private static <T, R> List<R> parallelMap(List<T> inputs, Function<T, R> fn) {
+    try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+      var futures = new ArrayList<Future<R>>(inputs.size());
+      for (T input : inputs) {
+        futures.add(executor.submit(() -> fn.apply(input)));
+      }
+      var results = new ArrayList<R>(futures.size());
+      for (var future : futures) {
+        results.add(future.get());
+      }
+      return results;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new IllegalStateException("Site compilation interrupted", e);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof RuntimeException re) {
+        throw re;
+      }
+      throw new IllegalStateException("Site compilation failed", cause);
+    }
+  }
+
   public static void writeToDirectory(CompiledSite compiledSite, Path outputDirectory) {
     try {
       Files.createDirectories(outputDirectory);
       for (var entry : compiledSite.pagesByRoute().entrySet()) {
-        var route = new SiteRoute(entry.getKey(), placeholderDocument());
-        Path pageFile = outputDirectory.resolve(route.toRelativeOutputPath());
+        Path pageFile = outputDirectory.resolve(SiteRoute.outputPathFor(entry.getKey()));
         Path parent = pageFile.getParent();
         if (parent != null) {
           Files.createDirectories(parent);
@@ -200,11 +213,7 @@ public final class SiteCompiler {
     for (int i = 0; i < routes.size(); i++) {
       var route = routes.get(i);
       var prepared = preparedByRoute.get(route.path());
-      String routeTitle = route.title();
-      String title =
-          routeTitle != null
-              ? routeTitle
-              : (prepared != null ? prepared.document().title() : route.path());
+      String title = route.displayTitle();
       sb.append("  {\n");
       sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
       sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
@@ -242,27 +251,14 @@ public final class SiteCompiler {
     return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
   }
 
-  private static PageDocument placeholderDocument() {
-    return new PageDocument("Placeholder", Elements.empty());
-  }
-
   private static void validateSiteLinks(Map<String, PageCompiler.PreparedPage> preparedByRoute) {
     for (var entry : preparedByRoute.entrySet()) {
       String sourceRoute = entry.getKey();
       PageCompiler.PreparedPage sourcePage = entry.getValue();
 
       for (String href : sourcePage.outgoingHrefs()) {
-        if (href.startsWith("#")) {
-          String fragment = href.substring(1);
-          if (!fragment.isEmpty() && !sourcePage.registeredDomIds().contains(fragment)) {
-            throw new AccessibilityViolationException(
-                "Route \""
-                    + sourceRoute
-                    + "\" contains broken same-page fragment link href=\""
-                    + href
-                    + "\"");
-          }
-        } else if (href.startsWith("/") && !href.startsWith("//")) {
+        // Same-page `#fragment` links are already validated by PageCompiler.prepare.
+        if (href.startsWith("/") && !href.startsWith("//")) {
           int hashIdx = href.indexOf('#');
           String rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
           String fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";

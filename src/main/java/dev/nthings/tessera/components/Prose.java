@@ -26,9 +26,7 @@ public final class Prose implements RenderView {
 
   public static Prose of(IntoElement... elements) {
     var prose = new Prose(ElementId.of("prose"));
-    for (var el : elements) {
-      prose.child(el);
-    }
+    prose.children(elements);
     return prose;
   }
 
@@ -66,9 +64,7 @@ public final class Prose implements RenderView {
   @Override
   public Element render() {
     var container = div().attr("class", "prose-canvas").flex().flexCol().gap(CssLength.rem(2.5));
-    for (var child : children) {
-      container.child(child);
-    }
+    container.children(children);
     return container;
   }
 

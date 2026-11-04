@@ -9,10 +9,10 @@ import org.jspecify.annotations.Nullable;
 /// Type-safe builder for `@scope ([data-view="..."]) to ([data-view])` rules in `@layer
 /// components`.
 ///
-/// Eliminates raw CSS strings inside [RenderView] implementations by expressing `:scope`,
-/// descendant selectors, `@starting-style` entry animations, `@container` size and `scroll-
-/// state(...)` queries, and `@media (prefers-reduced-motion: no-preference)` blocks through
-/// [StyleRefinement].
+/// Eliminates raw CSS strings inside [dev.nthings.tessera.core.RenderView] implementations by
+/// expressing `:scope`, descendant selectors, `@starting-style` entry animations, `@container` size
+/// and `scroll-state(...)` queries, and `@media (prefers-reduced-motion: no-preference)` blocks
+/// through [StyleRefinement].
 public final class ScopeStyle {
 
   private final Map<String, StyleRefinement> selectorRules = new LinkedHashMap<>();
@@ -109,8 +109,9 @@ public final class ScopeStyle {
       }
     }
     for (var entry : atRuleBlocks.entrySet()) {
-      if (!entry.getValue().isEmpty()) {
-        sb.append(entry.getKey()).append('{').append(entry.getValue().toCssBody()).append('}');
+      String body = entry.getValue().toCssBody();
+      if (!body.isEmpty()) {
+        sb.append(entry.getKey()).append('{').append(body).append('}');
       }
     }
     return sb.toString();

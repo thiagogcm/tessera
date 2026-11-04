@@ -92,19 +92,7 @@ public final class Overlays {
 
     /// Creates a trigger button wired via `command="show-modal"` to this modal.
     public StatefulTagElement triggerButton(String buttonId, String label) {
-      return button()
-          .id(buttonId)
-          .attr("commandfor", id.slug())
-          .attr("command", BuiltinCommand.SHOW_MODAL.wireValue())
-          .px(CssLength.rem(0.875))
-          .py(CssLength.rem(0.5))
-          .rounded(CssLength.rem(0.5))
-          .borderSubtle(Tokens.BORDER_SUBTLE)
-          .bg(Tokens.SURFACE_SUBTLE)
-          .textColor(Tokens.TEXT_PRIMARY)
-          .fontWeight(600)
-          .cursorPointer()
-          .text(label);
+      return showModalTrigger(id, buttonId, label);
     }
 
     /// Wraps this modal in a [DeferredElement] to hoist it to the end of `<body>`.
@@ -115,11 +103,6 @@ public final class Overlays {
     @Override
     public ElementId entityId() {
       return id;
-    }
-
-    @Override
-    public String viewType() {
-      return "modal";
     }
 
     @Override
@@ -188,9 +171,7 @@ public final class Overlays {
                               .text(desc)));
 
       var contentEl = div().flex().flexCol().gap(CssLength.rem(0.75));
-      for (var node : bodyNodes) {
-        contentEl.child(node);
-      }
+      contentEl.children(bodyNodes);
 
       var closeBtn =
           button()
@@ -214,9 +195,7 @@ public final class Overlays {
               .justifyEnd()
               .gap(CssLength.rem(0.75))
               .pt(CssLength.rem(0.5));
-      for (var action : footerActions) {
-        footerEl.child(action);
-      }
+      footerEl.children(footerActions);
       footerEl.child(closeBtn);
 
       return dialog()
@@ -231,9 +210,9 @@ public final class Overlays {
     }
   }
 
-  /// Top-layer slide-over sheet (`<dialog closedby="any">`) docked to the inline-start or inline-
-  /// end viewport edge and animated via `translate` + `@starting-style` + `transition-behavior:
-  /// allow-discrete`.
+  /// Top-layer slide-over sheet (`<dialog closedby="any">`) docked to the inline-start or
+  /// inline-end viewport edge and animated via `translate` + `@starting-style` +
+  /// `transition-behavior: allow-discrete`.
   public static final class Drawer implements RenderView {
 
     private final ElementId id;
@@ -267,19 +246,7 @@ public final class Overlays {
     }
 
     public StatefulTagElement triggerButton(String buttonId, String label) {
-      return button()
-          .id(buttonId)
-          .attr("commandfor", id.slug())
-          .attr("command", BuiltinCommand.SHOW_MODAL.wireValue())
-          .px(CssLength.rem(0.875))
-          .py(CssLength.rem(0.5))
-          .rounded(CssLength.rem(0.5))
-          .borderSubtle(Tokens.BORDER_SUBTLE)
-          .bg(Tokens.SURFACE_SUBTLE)
-          .textColor(Tokens.TEXT_PRIMARY)
-          .fontWeight(600)
-          .cursorPointer()
-          .text(label);
+      return showModalTrigger(id, buttonId, label);
     }
 
     public DeferredElement asDeferred(int priority) {
@@ -391,9 +358,7 @@ public final class Overlays {
                   closeBtn);
 
       var contentEl = div().flex().flexCol().gap(CssLength.rem(1)).py(CssLength.rem(1));
-      for (var node : bodyNodes) {
-        contentEl.child(node);
-      }
+      contentEl.children(bodyNodes);
 
       return dialog()
           .attr("id", dialogDomId)
@@ -401,5 +366,22 @@ public final class Overlays {
           .child(
               div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));
     }
+  }
+
+  private static StatefulTagElement showModalTrigger(
+      ElementId dialogId, String buttonId, String label) {
+    return button()
+        .id(buttonId)
+        .attr("commandfor", dialogId.slug())
+        .attr("command", BuiltinCommand.SHOW_MODAL.wireValue())
+        .px(CssLength.rem(0.875))
+        .py(CssLength.rem(0.5))
+        .rounded(CssLength.rem(0.5))
+        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .bg(Tokens.SURFACE_SUBTLE)
+        .textColor(Tokens.TEXT_PRIMARY)
+        .fontWeight(600)
+        .cursorPointer()
+        .text(label);
   }
 }

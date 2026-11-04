@@ -85,63 +85,43 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
   }
 
   public static Callout note(String text) {
-    return new Callout(Tone.NOTE).child(Elements.p().text(text));
+    return of(Tone.NOTE, text);
   }
 
   public static Callout note(IntoElement... elements) {
-    var c = new Callout(Tone.NOTE);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return of(Tone.NOTE, elements);
   }
 
   public static Callout tip(String text) {
-    return new Callout(Tone.TIP).child(Elements.p().text(text));
+    return of(Tone.TIP, text);
   }
 
   public static Callout tip(IntoElement... elements) {
-    var c = new Callout(Tone.TIP);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return of(Tone.TIP, elements);
   }
 
   public static Callout important(String text) {
-    return new Callout(Tone.IMPORTANT).child(Elements.p().text(text));
+    return of(Tone.IMPORTANT, text);
   }
 
   public static Callout important(IntoElement... elements) {
-    var c = new Callout(Tone.IMPORTANT);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return of(Tone.IMPORTANT, elements);
   }
 
   public static Callout warning(String text) {
-    return new Callout(Tone.WARNING).child(Elements.p().text(text));
+    return of(Tone.WARNING, text);
   }
 
   public static Callout warning(IntoElement... elements) {
-    var c = new Callout(Tone.WARNING);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return of(Tone.WARNING, elements);
   }
 
   public static Callout caution(String text) {
-    return new Callout(Tone.CAUTION).child(Elements.p().text(text));
+    return of(Tone.CAUTION, text);
   }
 
   public static Callout caution(IntoElement... elements) {
-    var c = new Callout(Tone.CAUTION);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return of(Tone.CAUTION, elements);
   }
 
   public static Callout of(Tone tone, String text) {
@@ -149,11 +129,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
   }
 
   public static Callout of(Tone tone, IntoElement... elements) {
-    var c = new Callout(tone);
-    for (var el : elements) {
-      c.child(el);
-    }
-    return c;
+    return new Callout(tone).children(elements);
   }
 
   @Override
@@ -239,16 +215,17 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
                 span().attr("class", "callout-icon").child(rawHtml(tone.iconSvg())),
                 span().attr("class", "callout-title").text(displayTitle));
 
-    var content = div().attr("class", "callout-content");
-    for (var c : children) {
-      content.child(c);
-    }
+    var content = div().attr("class", "callout-content").children(children);
 
     String bgValue =
-        "color-mix(in oklch, " + tone.token().varReference() + " 14%, var(--surface-card))";
+        "color-mix(in oklch, "
+            + tone.token().varReference()
+            + " 14%, "
+            + Tokens.SURFACE_CARD.varReference()
+            + ")";
 
     return aside()
-        .attr("role", "note")
+        .role("note")
         .attr("class", "callout callout--" + tone.name().toLowerCase(Locale.ROOT))
         .bgRaw(bgValue)
         .borderInlineStart("4px solid " + tone.token().varReference())

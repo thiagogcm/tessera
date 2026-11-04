@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /// Pure CSS scroll-snap carousel backed by Chrome 156+ `scroll-snap-type: x mandatory`,
-/// `container-type: scroll-state` with `@container scroll-state(snapped: x)`, and native `scroll-
-/// marker-group: after` / `::scroll-marker:target-current` pagination dots.
+/// `container-type: scroll-state` with `@container scroll-state(snapped: x)`, and native
+/// `scroll-marker-group: after` / `::scroll-marker:target-current` pagination dots.
 public final class Carousel implements RenderView {
 
   public record Slide(String title, String summary, Element content) {
@@ -65,11 +65,6 @@ public final class Carousel implements RenderView {
   @Override
   public ElementId entityId() {
     return id;
-  }
-
-  @Override
-  public String viewType() {
-    return "carousel";
   }
 
   @Override

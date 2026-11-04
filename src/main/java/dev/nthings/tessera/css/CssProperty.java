@@ -1,13 +1,13 @@
 package dev.nthings.tessera.css;
 
-/// Canonical CSS property keys in deterministic ordinal order for [EnumMap] storage and FNV-1a
-/// hashing.
+/// Canonical CSS property keys in deterministic ordinal order for [java.util.EnumMap] storage and
+/// FNV-1a hashing.
 ///
 /// Note:
 ///
 /// - [#TRANSITION] precedes [#TRANSITION_PROPERTY], [#TRANSITION_DURATION],
-///   [#TRANSITION_TIMING_FUNCTION], and [#TRANSITION_BEHAVIOR] so `transition-behavior: allow-
-///   discrete` is never reset by the shorthand.
+///   [#TRANSITION_TIMING_FUNCTION], and [#TRANSITION_BEHAVIOR] so `transition-behavior:
+///   allow-discrete` is never reset by the shorthand.
 /// - [#ANIMATION] precedes [#ANIMATION_DELAY], [#ANIMATION_TIMELINE], and [#ANIMATION_RANGE] so
 ///   the `animation` shorthand never resets scroll-driven timeline or range declarations.
 public enum CssProperty {

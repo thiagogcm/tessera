@@ -129,16 +129,7 @@ public interface InteractiveElement<
   }
 
   default SELF scrollReveal(ScrollReveal preset, TimelineAxis axis) {
-    interactivity().registerKeyframeRule(preset.keyframeRule());
-    interactivity()
-        .onMotionSafe(
-            s ->
-                s.put(
-                        new CssDeclaration.Animation(
-                            preset.keyframeName() + " auto linear backwards"))
-                    .put(new CssDeclaration.AnimationTimeline("view(" + axis.css() + ")"))
-                    .put(new CssDeclaration.AnimationRange("entry 0% entry 100%")));
-    return self();
+    return scrollDriven(preset, axis, "backwards", "entry");
   }
 
   default SELF scrollExit(ScrollReveal preset) {
@@ -146,13 +137,17 @@ public interface InteractiveElement<
   }
 
   default SELF scrollExit(ScrollReveal preset, TimelineAxis axis) {
+    return scrollDriven(preset, axis, "forwards", "exit");
+  }
+
+  private SELF scrollDriven(ScrollReveal preset, TimelineAxis axis, String fill, String phase) {
     interactivity().registerKeyframeRule(preset.keyframeRule());
     interactivity()
         .onMotionSafe(
             s ->
-                s.put(new CssDeclaration.Animation(preset.keyframeName() + " auto linear forwards"))
+                s.put(new CssDeclaration.Animation(preset.keyframeName() + " auto linear " + fill))
                     .put(new CssDeclaration.AnimationTimeline("view(" + axis.css() + ")"))
-                    .put(new CssDeclaration.AnimationRange("exit 0% exit 100%")));
+                    .put(new CssDeclaration.AnimationRange(phase + " 0% " + phase + " 100%")));
     return self();
   }
 

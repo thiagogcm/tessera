@@ -79,7 +79,7 @@ public final class SearchPalette implements RenderView {
   public static SearchPalette fromRoutes(String id, List<SiteRoute> routes) {
     var palette = new SearchPalette(ElementId.of(id));
     for (var route : routes) {
-      String title = route.title() != null ? route.title() : route.document().title();
+      String title = route.displayTitle();
       palette.item("Pages & Guides", title, route.path(), route.description(), route.path());
     }
     return palette;
@@ -192,11 +192,6 @@ public final class SearchPalette implements RenderView {
   }
 
   @Override
-  public String viewType() {
-    return "search-palette";
-  }
-
-  @Override
   public Element render() {
     String datalistId = id.slug() + "-datalist";
     String inputId = id.slug() + "-input";
@@ -224,7 +219,6 @@ public final class SearchPalette implements RenderView {
                     .ariaLabel("Search query"))
             .child(
                 button()
-                    .attr("type", "button")
                     .attr("class", "palette-close")
                     .attr("commandfor", id.slug())
                     .attr("command", BuiltinCommand.CLOSE.wireValue())

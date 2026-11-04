@@ -1,8 +1,7 @@
 package dev.nthings.tessera.css;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /// Sealed algebraic CSS length units.
 public sealed interface CssLength
@@ -19,9 +18,12 @@ public sealed interface CssLength
 
   String toCss();
 
+  /// Formats `value` with at most three fraction digits (half-even) and no trailing zeros.
   static String formatNumber(double value) {
-    var df = new DecimalFormat("0.###", DecimalFormatSymbols.getInstance(Locale.ROOT));
-    return df.format(value);
+    return new BigDecimal(value)
+        .setScale(3, RoundingMode.HALF_EVEN)
+        .stripTrailingZeros()
+        .toPlainString();
   }
 
   record Px(double value) implements CssLength {

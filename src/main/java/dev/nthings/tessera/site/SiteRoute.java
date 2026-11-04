@@ -42,11 +42,21 @@ public record SiteRoute(
     return p;
   }
 
+  /// Route title if set, otherwise the document title.
+  public String displayTitle() {
+    return title != null ? title : document.title();
+  }
+
   public Path toRelativeOutputPath() {
-    if ("/".equals(path)) {
+    return outputPathFor(path);
+  }
+
+  /// Maps a normalized route path to its output file relative to the site root.
+  public static Path outputPathFor(String routePath) {
+    if ("/".equals(routePath)) {
       return Path.of("index.html");
     }
-    String stripped = path.substring(1);
+    String stripped = routePath.substring(1);
     if (stripped.endsWith(".html")) {
       return Path.of(stripped);
     }

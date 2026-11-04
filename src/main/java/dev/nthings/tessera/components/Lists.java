@@ -12,30 +12,42 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
-/// Semantic HTML5 list primitives: [BulletList] (` `), [NumberedList] (` `), [DescriptionList]
-/// (`<dl>`), and [StepList] (numbered steps powered by Chrome 156+ `sibling-index()`).
+/// Semantic HTML5 list primitives: [BulletList] (`<ul>`), [NumberedList] (`<ol>`),
+/// [DescriptionList] (`<dl>`), and [StepList] (numbered steps powered by Chrome 156+
+/// `sibling-index()`).
 public final class Lists {
 
   private Lists() {}
 
+  private static List<Element> texts(String... items) {
+    return Arrays.stream(items).<Element>map(Elements::text).toList();
+  }
+
+  private static List<Element> elements(IntoElement... items) {
+    return Arrays.stream(items).map(IntoElement::intoElement).toList();
+  }
+
+  private static Stream<TagElement> listItems(List<Element> items) {
+    return items.stream().map(item -> Elements.li().child(item));
+  }
+
   public record BulletList(List<Element> items) implements RenderOnce {
 
     public static BulletList ofStrings(String... items) {
-      return new BulletList(Arrays.stream(items).<Element>map(Elements::text).toList());
+      return new BulletList(texts(items));
     }
 
     public static BulletList of(IntoElement... items) {
-      return new BulletList(Arrays.stream(items).map(IntoElement::intoElement).toList());
+      return new BulletList(elements(items));
     }
 
     @Override
     public Element render() {
       TagElement ul =
           Elements.ul().flex().flexCol().gap(CssLength.rem(0.5)).px(CssLength.rem(1.25));
-      for (var item : items) {
-        ul.child(Elements.li().child(item));
-      }
+      ul.children(listItems(items));
       return ul;
     }
   }
@@ -43,11 +55,11 @@ public final class Lists {
   public record NumberedList(List<Element> items) implements RenderOnce {
 
     public static NumberedList ofStrings(String... items) {
-      return new NumberedList(Arrays.stream(items).<Element>map(Elements::text).toList());
+      return new NumberedList(texts(items));
     }
 
     public static NumberedList of(IntoElement... items) {
-      return new NumberedList(Arrays.stream(items).map(IntoElement::intoElement).toList());
+      return new NumberedList(elements(items));
     }
 
     @Override
@@ -59,9 +71,7 @@ public final class Lists {
               .gap(CssLength.rem(0.5))
               .px(CssLength.rem(1.25))
               .tabularNums();
-      for (var item : items) {
-        ol.child(Elements.li().child(item));
-      }
+      ol.children(listItems(items));
       return ol;
     }
   }
@@ -101,11 +111,11 @@ public final class Lists {
   public record StepList(String id, List<Element> steps) implements RenderView {
 
     public static StepList ofStrings(String id, String... steps) {
-      return new StepList(id, Arrays.stream(steps).<Element>map(Elements::text).toList());
+      return new StepList(id, texts(steps));
     }
 
     public static StepList of(String id, IntoElement... steps) {
-      return new StepList(id, Arrays.stream(steps).map(IntoElement::intoElement).toList());
+      return new StepList(id, elements(steps));
     }
 
     @Override
@@ -140,19 +150,18 @@ public final class Lists {
                       .fontWeight(600)
                       .tabularNums()
                       .bgRaw(
-                          "color-mix(in oklch, var(--accent-primary) "
+                          "color-mix(in oklch, "
+                              + Tokens.ACCENT_PRIMARY.varReference()
+                              + " "
                               + "calc(20% + (60% * var(--step-index) / var(--step-total))), "
-                              + "var(--surface-subtle))")
+                              + Tokens.SURFACE_SUBTLE.varReference()
+                              + ")")
                       .textColor(Tokens.TEXT_PRIMARY));
     }
 
     @Override
     public Element render() {
-      TagElement ol = Elements.ol();
-      for (var step : steps) {
-        ol.child(Elements.li().child(step));
-      }
-      return ol;
+      return Elements.ol().children(listItems(steps));
     }
   }
 }

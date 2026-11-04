@@ -17,8 +17,8 @@ import org.owasp.encoder.Encode;
 
 /// Strongly typed, responsive data table component (`DataTable<T>`).
 ///
-/// - Wraps the semantic `<table>` in a keyboard-scrollable `<div tabindex="0" role="region" aria-
-///   labelledby="...">` container with `container-type: inline-size`.
+/// - Wraps the semantic `<table>` in a keyboard-scrollable `<div tabindex="0" role="region"
+///   aria-labelledby="...">` container with `container-type: inline-size`.
 /// - Emits sticky column headers (`thead`) and sticky row headers (`tbody th`).
 /// - Transforms into a mobile-friendly stacked card layout inside narrow containers (`@container
 ///   (inline-size < breakpoint)`) by hiding `thead` and injecting `--label-N` CSS variables into

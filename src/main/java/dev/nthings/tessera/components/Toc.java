@@ -4,9 +4,6 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.aside;
 import static dev.nthings.tessera.core.Elements.details;
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.h2;
-import static dev.nthings.tessera.core.Elements.h3;
-import static dev.nthings.tessera.core.Elements.h4;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
@@ -46,9 +43,7 @@ public final class Toc {
   public record Item(String targetDomId, String title, int level) {
     public Item {
       Fnv1a64.sanitizeIdentifier(targetDomId);
-      if (level < 2 || level > 4) {
-        throw new IllegalArgumentException("Heading level must be between 2 and 4");
-      }
+      ContentSection.checkHeadingLevel(level);
     }
 
     public static Item h2(String targetDomId, String title) {
@@ -66,9 +61,7 @@ public final class Toc {
 
     public DocSection {
       Fnv1a64.sanitizeIdentifier(id);
-      if (level < 2 || level > 4) {
-        throw new IllegalArgumentException("DocSection level must be between 2 and 4");
-      }
+      ContentSection.checkHeadingLevel(level);
       body = List.copyOf(body);
     }
 
@@ -76,23 +69,8 @@ public final class Toc {
     public Element render() {
       var entry = RenderContext.current().registerTocEntry(id, title, level);
       TagElement heading =
-          switch (level) {
-            case 2 ->
-                h2().attr("id", entry.targetDomId() + "--heading")
-                    .textSize(CssLength.rem(1.375))
-                    .fontWeight(700)
-                    .text(title);
-            case 3 ->
-                h3().attr("id", entry.targetDomId() + "--heading")
-                    .textSize(CssLength.rem(1.125))
-                    .fontWeight(600)
-                    .text(title);
-            default ->
-                h4().attr("id", entry.targetDomId() + "--heading")
-                    .textSize(CssLength.rem(1))
-                    .fontWeight(600)
-                    .text(title);
-          };
+          ContentSection.sectionHeading(
+              level, entry.targetDomId(), title, level == 2 ? 1.375 : level == 3 ? 1.125 : 1);
 
       var sectionEl =
           Elements.section()
@@ -102,9 +80,7 @@ public final class Toc {
               .flexCol()
               .gap(CssLength.rem(0.75))
               .child(heading);
-      for (var child : body) {
-        sectionEl.child(child);
-      }
+      sectionEl.children(body);
       return sectionEl;
     }
   }
@@ -158,11 +134,6 @@ public final class Toc {
     @Override
     public ElementId entityId() {
       return id;
-    }
-
-    @Override
-    public String viewType() {
-      return "table-of-contents";
     }
 
     @Override
@@ -282,11 +253,6 @@ public final class Toc {
     }
 
     @Override
-    public String viewType() {
-      return "doc-layout";
-    }
-
-    @Override
     public void configureScope(ScopeStyle scope) {
       scope
           .root(s -> s.flex().flexCol().gap(CssLength.rem(2)).containerInlineSize())
@@ -352,9 +318,7 @@ public final class Toc {
     @Override
     public Element render() {
       var proseCol = div().attr("class", "doc-prose-col").flex().flexCol().gap(CssLength.rem(2.5));
-      for (var sec : sections) {
-        proseCol.child(sec);
-      }
+      proseCol.children(sections);
       var sidebar = aside().attr("class", "doc-toc-rail").child(fromContext(tocId, tocHeading));
       return div().child(div().attr("class", "doc-grid").children(proseCol, sidebar));
     }

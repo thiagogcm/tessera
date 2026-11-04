@@ -85,7 +85,7 @@ public final class Formatting {
         .py(CssLength.rem(0.1))
         .rounded(CssLength.rem(0.25))
         .textSize(CssLength.em(0.85))
-        .shadow("0 1px 0 var(--border-subtle)")
+        .shadow("0 1px 0 " + Tokens.BORDER_SUBTLE.varReference())
         .text(keys);
   }
 }

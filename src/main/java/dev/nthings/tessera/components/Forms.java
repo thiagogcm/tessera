@@ -17,6 +17,8 @@ import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,19 +33,8 @@ public final class Forms {
 
   /// Creates a styled form input element with default focus and validation styling.
   public static TagElement inputControl(String name, String type) {
-    return input(type)
-        .attr("name", name)
-        .px(CssLength.rem(0.875))
-        .py(CssLength.rem(0.5))
-        .rounded(CssLength.rem(0.5))
-        .borderSubtle(Tokens.BORDER_SUBTLE)
-        .bg(Tokens.SURFACE_CARD)
-        .textColor(Tokens.TEXT_PRIMARY)
-        .fontSize(CssLength.rem(0.875))
-        .focusVisible(
-            s ->
-                s.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                    .outlineOffset(CssLength.px(1)))
+    return controlChrome(input(type).attr("name", name))
+        .focusVisible(Forms::controlFocusRing)
         .userInvalid(
             s ->
                 s.borderColor(Tokens.STATUS_DANGER)
@@ -73,21 +64,10 @@ public final class Forms {
 
   /// Creates a styled multiline `<textarea>` with vertical resize.
   public static TagElement textareaControl(String name, int rows) {
-    return textarea()
-        .attr("name", name)
+    return controlChrome(textarea().attr("name", name))
         .attr("rows", Integer.toString(rows))
-        .px(CssLength.rem(0.875))
-        .py(CssLength.rem(0.5))
-        .rounded(CssLength.rem(0.5))
-        .borderSubtle(Tokens.BORDER_SUBTLE)
-        .bg(Tokens.SURFACE_CARD)
-        .textColor(Tokens.TEXT_PRIMARY)
-        .fontSize(CssLength.rem(0.875))
         .resizeVertical()
-        .focusVisible(
-            s ->
-                s.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                    .outlineOffset(CssLength.px(1)))
+        .focusVisible(Forms::controlFocusRing)
         .userInvalid(s -> s.borderColor(Tokens.STATUS_DANGER))
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
@@ -95,20 +75,13 @@ public final class Forms {
   /// Creates a modern binary on/off toggle switch backed by HTML `<input type="checkbox"
   /// switch>`.
   public static TagElement switchInput(String name, boolean checked) {
-    var sw =
-        input("checkbox")
-            .attr("name", name)
-            .attr("switch", "")
-            .accentColor(Tokens.ACCENT_PRIMARY)
-            .cursorPointer()
-            .focusVisible(
-                s ->
-                    s.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                        .outlineOffset(CssLength.px(2)));
-    if (checked) {
-      sw.attr("checked", "");
-    }
-    return sw;
+    return input("checkbox")
+        .attr("name", name)
+        .attr("switch", "")
+        .boolAttr("checked", checked)
+        .accentColor(Tokens.ACCENT_PRIMARY)
+        .cursorPointer()
+        .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY));
   }
 
   /// Creates a full accessible field wrapper for an input or control.
@@ -219,8 +192,8 @@ public final class Forms {
       }
 
       // 3. Optional anchor tooltip ident
+      String anchorIdent = "--anchor-" + ctrlId;
       if (anchorTooltipText != null) {
-        String anchorIdent = "--anchor-" + ctrlId;
         control.anchorName(anchorIdent);
       }
 
@@ -242,7 +215,6 @@ public final class Forms {
 
       // 6. Anchor-positioned floating tooltip
       if (anchorTooltipText != null) {
-        String anchorIdent = "--anchor-" + ctrlId;
         var tooltipEl =
             div()
                 .attr("class", "field-anchor-tooltip")
@@ -358,28 +330,14 @@ public final class Forms {
               .attr("class", "base-select-control")
               .child(
                   button()
-                      .attr("type", "button")
                       .attr("class", "select-trigger")
                       .ariaLabel("Select " + name)
                       .child(selectedcontent()));
 
-      for (var opt : standaloneOptions) {
-        var optEl = Elements.option(opt.value(), opt.label());
-        if (opt.selected()) {
-          optEl.attr("selected", "");
-        }
-        sel.child(optEl);
-      }
-
+      standaloneOptions.forEach(opt -> sel.child(optionElement(opt)));
       for (var group : groups) {
         var groupEl = Elements.optgroup(group.label());
-        for (var opt : group.options()) {
-          var optEl = Elements.option(opt.value(), opt.label());
-          if (opt.selected()) {
-            optEl.attr("selected", "");
-          }
-          groupEl.child(optEl);
-        }
+        group.options().forEach(opt -> groupEl.child(optionElement(opt)));
         sel.child(groupEl);
       }
 
@@ -393,22 +351,8 @@ public final class Forms {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(
-              s ->
-                  s.appearanceBaseSelect()
-                      .px(CssLength.rem(0.875))
-                      .py(CssLength.rem(0.5))
-                      .rounded(CssLength.rem(0.5))
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .bg(Tokens.SURFACE_CARD)
-                      .textColor(Tokens.TEXT_PRIMARY)
-                      .fontSize(CssLength.rem(0.875))
-                      .cursorPointer())
-          .select(
-              ":scope:focus-visible",
-              f ->
-                  f.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                      .outlineOffset(CssLength.px(1)))
+          .root(s -> controlChrome(s.appearanceBaseSelect()).cursorPointer())
+          .select(":scope:focus-visible", Forms::controlFocusRing)
           .select(
               ":scope::picker(select)",
               s ->
@@ -431,5 +375,26 @@ public final class Forms {
           .select(":scope option::checkmark", s -> s.textColor(Tokens.ACCENT_PRIMARY))
           .select(":scope::picker-icon", s -> s.textColor(Tokens.TEXT_MUTED));
     }
+  }
+
+  /// Shared padding, border, surface and type styling for text-like form controls.
+  private static <S extends Styled<S>> S controlChrome(S control) {
+    return control
+        .px(CssLength.rem(0.875))
+        .py(CssLength.rem(0.5))
+        .rounded(CssLength.rem(0.5))
+        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .bg(Tokens.SURFACE_CARD)
+        .textColor(Tokens.TEXT_PRIMARY)
+        .fontSize(CssLength.rem(0.875));
+  }
+
+  private static StyleRefinement controlFocusRing(StyleRefinement s) {
+    return s.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
+        .outlineOffset(CssLength.px(1));
+  }
+
+  private static TagElement optionElement(SelectControl.OptionItem opt) {
+    return Elements.option(opt.value(), opt.label()).boolAttr("selected", opt.selected());
   }
 }

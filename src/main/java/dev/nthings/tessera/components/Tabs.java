@@ -11,7 +11,6 @@ import static dev.nthings.tessera.core.Elements.ul;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
-import dev.nthings.tessera.core.Fnv1a64;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssDeclaration;
@@ -68,11 +67,6 @@ public final class Tabs {
     }
 
     @Override
-    public String viewType() {
-      return "nav-tabs";
-    }
-
-    @Override
     public void configureScope(ScopeStyle scope) {
       scope
           .root(s -> s.inlineFlex().maxInlineSize(CssLength.pct(100)))
@@ -87,30 +81,8 @@ public final class Tabs {
                       .relative()
                       .p(CssLength.px(0))
                       .m(CssLength.px(0)))
-          .select(":scope li.active", s -> s.anchorName(anchorIdent))
-          .select(
-              ":scope ul::before",
-              s ->
-                  s.cssContent("\"\"")
-                      .absolute()
-                      .positionAnchor(anchorIdent)
-                      .insetBlockStart(CssLength.expr("calc(anchor(bottom) - 2px)"))
-                      .insetInlineStart(CssLength.expr("anchor(left)"))
-                      .insetInlineEnd(CssLength.expr("anchor(right)"))
-                      .blockSize(CssLength.px(2))
-                      .bg(Tokens.ACCENT_PRIMARY))
-          .motionSafe(m -> m.select(":scope ul::before", s -> s.transition("inset 0.2s ease")))
-          .supportsNot(
-              "position-anchor: auto",
-              f ->
-                  f.select(
-                      ":scope ul li.active",
-                      s ->
-                          s.refine(
-                              r ->
-                                  r.put(
-                                      new CssDeclaration.BorderBlockEnd(
-                                          "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))))
+          .select(":scope li.active", s -> s.anchorName(anchorIdent));
+      anchorUnderline(scope, ":scope ul::before", ":scope ul li.active", anchorIdent)
           .select(
               ":scope a",
               s ->
@@ -156,19 +128,14 @@ public final class Tabs {
         throw new IllegalArgumentException("ContentTabs requires at least 1 TabPanel");
       }
       this.id = id;
-      this.radioGroupName = "tabs-" + Fnv1a64.sanitizeIdentifier(id.slug());
-      this.anchorIdent = "--active-tab-" + Fnv1a64.sanitizeIdentifier(id.slug());
+      this.radioGroupName = "tabs-" + id.slug();
+      this.anchorIdent = "--active-tab-" + id.slug();
       this.panels = List.copyOf(panels);
     }
 
     @Override
     public ElementId entityId() {
       return id;
-    }
-
-    @Override
-    public String viewType() {
-      return "content-tabs";
     }
 
     @Override
@@ -208,31 +175,12 @@ public final class Tabs {
           .select(":scope > .tab-bar > .tab-label > input[type=\"radio\"]", s -> s.hidden())
           .select(
               ":scope > .tab-bar > .tab-label:has(> input:checked)",
-              s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600))
-          .select(
+              s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
+      anchorUnderline(
+              scope,
               ":scope > .tab-bar::before",
-              s ->
-                  s.cssContent("\"\"")
-                      .absolute()
-                      .positionAnchor(anchorIdent)
-                      .insetBlockStart(CssLength.expr("calc(anchor(bottom) - 2px)"))
-                      .insetInlineStart(CssLength.expr("anchor(left)"))
-                      .insetInlineEnd(CssLength.expr("anchor(right)"))
-                      .blockSize(CssLength.px(2))
-                      .bg(Tokens.ACCENT_PRIMARY))
-          .motionSafe(
-              m -> m.select(":scope > .tab-bar::before", s -> s.transition("inset 0.2s ease")))
-          .supportsNot(
-              "position-anchor: auto",
-              f ->
-                  f.select(
-                      ":scope > .tab-bar > .tab-label:has(> input:checked)",
-                      s ->
-                          s.refine(
-                              r ->
-                                  r.put(
-                                      new CssDeclaration.BorderBlockEnd(
-                                          "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))))
+              ":scope > .tab-bar > .tab-label:has(> input:checked)",
+              anchorIdent)
           .select(":scope > .tab-panel", s -> s.hidden().p(CssLength.rem(1.25)));
 
       for (int i = 0; i < panels.size(); i++) {
@@ -273,5 +221,35 @@ public final class Tabs {
       }
       return root;
     }
+  }
+
+  /// Anchor-positioned sliding underline under `activeSelector`, with a static border fallback
+  /// where CSS Anchor Positioning is unsupported.
+  private static ScopeStyle anchorUnderline(
+      ScopeStyle scope, String barSelector, String activeSelector, String anchorIdent) {
+    return scope
+        .select(
+            barSelector,
+            s ->
+                s.cssContent("\"\"")
+                    .absolute()
+                    .positionAnchor(anchorIdent)
+                    .insetBlockStart(CssLength.expr("calc(anchor(bottom) - 2px)"))
+                    .insetInlineStart(CssLength.expr("anchor(left)"))
+                    .insetInlineEnd(CssLength.expr("anchor(right)"))
+                    .blockSize(CssLength.px(2))
+                    .bg(Tokens.ACCENT_PRIMARY))
+        .motionSafe(m -> m.select(barSelector, s -> s.transition("inset 0.2s ease")))
+        .supportsNot(
+            "position-anchor: auto",
+            f ->
+                f.select(
+                    activeSelector,
+                    s ->
+                        s.refine(
+                            r ->
+                                r.put(
+                                    new CssDeclaration.BorderBlockEnd(
+                                        "2px solid " + Tokens.ACCENT_PRIMARY.varReference())))));
   }
 }

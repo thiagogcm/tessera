@@ -2,6 +2,7 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.core.Fnv1a64;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -194,11 +195,7 @@ public final class StyleSheetCollector {
             + "[popover=\"hint\"]{position-area:block-start;"
             + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}"
             + "dialog{margin:auto}");
-    if (!keyframeRules.isEmpty()) {
-      for (var kf : keyframeRules) {
-        sb.append(kf);
-      }
-    }
+    keyframeRules.forEach(sb::append);
     sb.append("}\n");
 
     // 3. @layer theme
@@ -227,32 +224,23 @@ public final class StyleSheetCollector {
     }
 
     // 5. @layer utilities
-    if (!utilityRules.isEmpty()) {
-      sb.append("@layer utilities{");
-      for (var rule : utilityRules.values()) {
-        sb.append(rule);
-      }
-      sb.append("}\n");
-    }
+    appendLayer(sb, "utilities", utilityRules.values());
 
     // 6. @layer interactive
-    if (!interactiveRules.isEmpty()) {
-      sb.append("@layer interactive{");
-      for (var rule : interactiveRules.values()) {
-        sb.append(rule);
-      }
-      sb.append("}\n");
-    }
+    appendLayer(sb, "interactive", interactiveRules.values());
 
     // 7. @layer container
-    if (!containerRules.isEmpty()) {
-      sb.append("@layer container{");
-      for (var rule : containerRules.values()) {
-        sb.append(rule);
-      }
-      sb.append("}\n");
-    }
+    appendLayer(sb, "container", containerRules.values());
 
     return sb.toString();
+  }
+
+  private static void appendLayer(StringBuilder sb, String layer, Collection<String> rules) {
+    if (rules.isEmpty()) {
+      return;
+    }
+    sb.append("@layer ").append(layer).append('{');
+    rules.forEach(sb::append);
+    sb.append("}\n");
   }
 }

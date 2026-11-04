@@ -20,6 +20,6 @@ public enum HighlightTone {
   }
 
   public String toCssBackground() {
-    return "color-mix(in oklch, " + token.varReference() + " 24%, transparent)";
+    return token.mixTransparent(24);
   }
 }

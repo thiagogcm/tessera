@@ -70,11 +70,6 @@ public final class Accordion implements RenderView {
   }
 
   @Override
-  public String viewType() {
-    return "accordion";
-  }
-
-  @Override
   public void configureScope(ScopeStyle scope) {
     scope
         .root(
@@ -137,10 +132,7 @@ public final class Accordion implements RenderView {
                   summary()
                       .children(
                           span().text(item.summaryTitle()),
-                          span()
-                              .attr("class", "accordion-chevron")
-                              .attr("aria-hidden", "true")
-                              .text("▾")),
+                          span().attr("class", "accordion-chevron").ariaHidden(true).text("▾")),
                   div().attr("class", "accordion-body").child(item.content()));
       root.child(detailsEl);
     }

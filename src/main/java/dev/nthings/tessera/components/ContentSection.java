@@ -77,10 +77,7 @@ public final class ContentSection implements RenderOnce {
   }
 
   public ContentSection level(int headingLevel) {
-    if (headingLevel < 2 || headingLevel > 4) {
-      throw new IllegalArgumentException("Heading level must be between 2 and 4");
-    }
-    this.level = headingLevel;
+    this.level = checkHeadingLevel(headingLevel);
     return this;
   }
 
@@ -116,23 +113,8 @@ public final class ContentSection implements RenderOnce {
     var entry = RenderContext.current().registerTocEntry(rawId, title, level);
 
     TagElement heading =
-        switch (level) {
-          case 2 ->
-              h2().attr("id", entry.targetDomId() + "--heading")
-                  .textSize(CssLength.rem(1.625))
-                  .fontWeight(700)
-                  .text(title);
-          case 3 ->
-              h3().attr("id", entry.targetDomId() + "--heading")
-                  .textSize(CssLength.rem(1.25))
-                  .fontWeight(600)
-                  .text(title);
-          default ->
-              h4().attr("id", entry.targetDomId() + "--heading")
-                  .textSize(CssLength.rem(1.05))
-                  .fontWeight(600)
-                  .text(title);
-        };
+        sectionHeading(
+            level, entry.targetDomId(), title, level == 2 ? 1.625 : level == 3 ? 1.25 : 1.05);
 
     var headerEl =
         header().attr("class", "section-header").flex().flexCol().gap(CssLength.rem(0.35));
@@ -158,9 +140,7 @@ public final class ContentSection implements RenderOnce {
     }
 
     var bodyContainer = div().attr("class", "section-body").flex().flexCol().gap(CssLength.rem(1));
-    for (var child : children) {
-      bodyContainer.child(child);
-    }
+    bodyContainer.children(children);
 
     var sectionEl =
         section()
@@ -191,5 +171,27 @@ public final class ContentSection implements RenderOnce {
     }
 
     return sectionEl.child(headerEl).child(bodyContainer);
+  }
+
+  static int checkHeadingLevel(int level) {
+    if (level < 2 || level > 4) {
+      throw new IllegalArgumentException("Heading level must be between 2 and 4");
+    }
+    return level;
+  }
+
+  /// Builds the `<h2>`–`<h4>` heading for a TOC-registered section, id'd `<sectionDomId>--heading`.
+  static TagElement sectionHeading(int level, String sectionDomId, String title, double sizeRem) {
+    TagElement heading =
+        switch (level) {
+          case 2 -> h2();
+          case 3 -> h3();
+          default -> h4();
+        };
+    return heading
+        .attr("id", sectionDomId + "--heading")
+        .textSize(CssLength.rem(sizeRem))
+        .fontWeight(level == 2 ? 700 : 600)
+        .text(title);
   }
 }

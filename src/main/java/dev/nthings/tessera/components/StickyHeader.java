@@ -36,11 +36,6 @@ public final class StickyHeader implements RenderView {
   }
 
   @Override
-  public String viewType() {
-    return "sticky-header";
-  }
-
-  @Override
   public void configureScope(ScopeStyle scope) {
     scope
         .root(
@@ -62,7 +57,7 @@ public final class StickyHeader implements RenderView {
                 c.select(
                     ":scope > .sticky-surface",
                     s ->
-                        s.bgRaw("color-mix(in oklch, var(--surface-card) 88%, transparent)")
+                        s.bgRaw(Tokens.SURFACE_CARD.mixTransparent(88))
                             .backdropFilter("blur(12px)")
                             .shadow("0 6px 20px -4px oklch(0% 0 0 / 0.14)")));
   }

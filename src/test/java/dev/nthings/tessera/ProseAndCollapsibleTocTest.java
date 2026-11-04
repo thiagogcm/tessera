@@ -14,12 +14,14 @@ import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import java.util.List;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ProseAndCollapsibleTocTest {
 
   @Test
-  void proseRendersWithMaxMeasureAndTypographyScope() {
+  @DisplayName("Prose container enforces reading measure and fluid editorial typography")
+  void proseRendersWithMaxMeasureAndTypography() {
     var prose =
         Prose.create("prose-spec")
             .maxMeasure(CssLength.ch(75))
@@ -45,7 +47,8 @@ class ProseAndCollapsibleTocTest {
   }
 
   @Test
-  void contentSectionSurfacesAndSemanticStructure() {
+  @DisplayName("ContentSection renders polymorphic surfaces with badges and headings")
+  void contentSectionSurfacesAndStructure() {
     var ghost =
         ContentSection.ghost("sec-ghost", "Ghost Section")
             .badge("EDITORIAL")
@@ -91,7 +94,8 @@ class ProseAndCollapsibleTocTest {
   }
 
   @Test
-  void contentSectionLevelValidation() {
+  @DisplayName("ContentSection validates heading levels between 2 and 4")
+  void contentSectionValidatesHeadingLevels() {
     assertThatThrownBy(() -> ContentSection.create("bad", "Bad").level(1))
         .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> ContentSection.create("bad", "Bad").level(5))
@@ -99,7 +103,8 @@ class ProseAndCollapsibleTocTest {
   }
 
   @Test
-  void tocCollapsibleMarkupAndChevron() {
+  @DisplayName("Table of contents renders collapsible details with animated chevron")
+  void tableOfContentsCollapsibleDetailsAndChevron() {
     var items =
         List.of(
             Toc.Item.h2("intro", "Introduction"),
@@ -148,7 +153,9 @@ class ProseAndCollapsibleTocTest {
   }
 
   @Test
-  void docLayoutFullPipelineWithProseAndContentSections() {
+  @DisplayName(
+      "DocLayout integrates responsive prose column and sticky sidebar rail via container queries")
+  void docLayoutIntegratesProseAndSidebarRail() {
     var s1 =
         ContentSection.ghost("getting-started", "Getting Started")
             .badge("GUIDE")

@@ -25,13 +25,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class SiteCompilerAndScopeStyleTest {
 
   @Test
-  void deduplicatesIdenticalScopeStylesAndQualifiesDistinctParameterizedViews() {
+  @DisplayName("Deduplicates identical scope styles and qualifies parameterized views")
+  void deduplicatesScopeStylesAndQualifiesViews() {
     var card1 = Card.create("one").title("First").bodyText("Body 1");
     var card2 = Card.create("two").title("Second").bodyText("Body 2");
 
@@ -74,8 +76,8 @@ class SiteCompilerAndScopeStyleTest {
   }
 
   @Test
-  void compilesMultiPageShowcaseSiteWritesToDiskAndServesOverHttp(@TempDir Path tempDir)
-      throws Exception {
+  @DisplayName("Compiles multi-page showcase site, writes assets to disk, and serves over HTTP")
+  void compilesShowcaseSiteWritesToDiskAndServesOverHttp(@TempDir Path tempDir) throws Exception {
     SiteDefinition definition = ShowcaseSite.createDefinition();
     SiteCompiler.CompiledSite compiledSite = SiteCompiler.compile(definition);
 
@@ -133,7 +135,8 @@ class SiteCompilerAndScopeStyleTest {
   }
 
   @Test
-  void rejectsBrokenCrossRouteLinksAndMissingAnchorsAtCompileTime() {
+  @DisplayName("Rejects broken cross-route links and missing anchors at compile time")
+  void rejectsBrokenCrossRouteLinksAndAnchors() {
     var brokenRouteSite =
         new SiteDefinition(
             new SiteRoute(

@@ -11,12 +11,14 @@ import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class FormsAndSearchPaletteTest {
 
   @Test
-  void searchPaletteDeclarativeDialogAndInvokerCommands() {
+  @DisplayName("Search palette renders top-layer dialog with declarative invoker commands")
+  void searchPaletteDeclarativeDialogAndCommands() {
     var palette =
         SearchPalette.create("site-search")
             .placeholder("Search documentation...")
@@ -54,7 +56,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void searchPaletteNativeDatalistAndGroupedLinks() {
+  @DisplayName("Search palette provides native datalist autocomplete and grouped navigation links")
+  void searchPaletteDatalistAndGroupedLinks() {
     var palette =
         SearchPalette.create("cmd-palette")
             .item("Routes", "Telemetry", "/telemetry", "Real-time metrics")
@@ -94,7 +97,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void searchPaletteFromSiteCrawlsRoutes() {
+  @DisplayName("SearchPalette.fromSite automatically crawls site routes into autocomplete entries")
+  void searchPaletteCrawlsSiteRoutes() {
     var doc1 = new PageDocument("Home Page", div().id("home-root"));
     var doc2 = new PageDocument("Documentation", div().id("docs-root"));
 
@@ -115,7 +119,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void accessibleFormsInputControlsAndPseudoClasses() {
+  @DisplayName("Accessible form inputs emit :user-invalid and :user-valid validation rules")
+  void formInputControlsEmitValidationPseudoClasses() {
     var emailInput = Forms.email("user_email");
     var doc = new PageDocument("Forms Test", main().child(emailInput));
     var compiled = PageCompiler.compile(doc);
@@ -132,7 +137,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void accessibleFormsSwitchControl() {
+  @DisplayName("Form switch control renders native checkbox switch with accessible label pairing")
+  void formSwitchControlAndLabel() {
     var switchCtrl = Forms.switchInput("enable_notifications", true);
     var switchRow = Forms.switchField("Receive updates", "updates", false);
 
@@ -157,7 +163,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void accessibleFormsCustomBaseSelect() {
+  @DisplayName("Custom base select renders appearance: base-select with button and selectedcontent")
+  void formCustomBaseSelect() {
     var customSelect =
         Forms.selectControl("theme_mode")
             .id("select-theme")
@@ -189,7 +196,8 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  void accessibleFormsFieldWrapperWithHintsErrorsAndAnchorTooltips() {
+  @DisplayName("Form field wrapper wires accessible labels, hints, errors, and anchor tooltips")
+  void formFieldWrapperWiresHintsErrorsAndTooltips() {
     var usernameInput = Forms.text("username");
     var field =
         Forms.field("Username", usernameInput)

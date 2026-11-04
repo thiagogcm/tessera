@@ -23,12 +23,14 @@ import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import java.util.List;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class InteractiveOverlaysAndScrollSpyTest {
 
   @Test
-  void tableOfContentsRejectsDanglingFragmentIds() {
+  @DisplayName("Table of contents rejects dangling fragment IDs during prepaint")
+  void rejectsDanglingFragmentIds() {
     var brokenToc =
         Toc.of("broken-toc", "Contents", List.of(Toc.Item.h2("missing-section", "Missing")));
     assertThatThrownBy(
@@ -38,7 +40,8 @@ class InteractiveOverlaysAndScrollSpyTest {
   }
 
   @Test
-  void compilesModalDrawerAndDropdownWithStartingStyleAndAllowDiscrete() {
+  @DisplayName("Compiles modal, drawer, and dropdown with starting-style transitions")
+  void compilesOverlaysAndDropdown() {
     var modal =
         Overlays.modal("confirm-deploy", "Confirm Deployment")
             .description("Production rollout")
@@ -89,7 +92,8 @@ class InteractiveOverlaysAndScrollSpyTest {
   }
 
   @Test
-  void compilesAccordionTabsBreadcrumbsStickyHeaderAndCarousel() {
+  @DisplayName("Compiles accordion, tabs, breadcrumbs, sticky header, and carousel")
+  void compilesInteractiveSuite() {
     var sticky = new StickyHeader("top-bar", div().text("Sticky Top Bar"));
     var crumbs =
         Breadcrumbs.of("crumbs", Crumb.of("/", "Home"), Crumb.of("/components", "Components"));

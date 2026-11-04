@@ -23,12 +23,14 @@ import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class DocumentationAndCwvPrimsTest {
 
   @Test
-  void imageComponentEnforcesLcpPreloadAndClsDimensions() {
+  @DisplayName("Enforces LCP preload and CLS dimensions on image components")
+  void enforcesLcpPreloadAndClsDimensions() {
     var doc =
         new PageDocument(
             "LCP Image Test",
@@ -66,7 +68,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void imageMissingBothDimensionsAndAspectRatioFailsInPrepaint() {
+  @DisplayName("Rejects images missing both dimensions and aspect ratio in prepaint")
+  void rejectsImageMissingDimensionsAndAspectRatio() {
     var invalidDoc =
         new PageDocument(
             "CLS Violation",
@@ -79,7 +82,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void duplicateHeroImagesOnSamePageThrowsIllegalStateException() {
+  @DisplayName("Rejects multiple hero images on the same page")
+  void rejectsDuplicateHeroImagesOnSamePage() {
     var duplicateHeroDoc =
         new PageDocument(
             "Multiple Heroes",
@@ -94,7 +98,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void transitionKeyEnforcesPerPageUniqueness() {
+  @DisplayName("Enforces per-page uniqueness for view transition keys")
+  void enforcesPerPageTransitionKeyUniqueness() {
     var key = TransitionKey.of("hero-title");
     var doc =
         new PageDocument(
@@ -110,7 +115,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void siteCompilerEnforcesTransitionKeyMultiRouteAppearance() {
+  @DisplayName("Enforces view transition keys appear across multiple distinct routes")
+  void enforcesMultiRouteTransitionKeyAppearance() {
     var key = TransitionKey.of("page-title-morph", "morph-class");
 
     // Route 1 declares key, Route 2 does NOT -> failure
@@ -138,7 +144,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void compilesCalloutAdmonitionsWithSemanticOklchTint() {
+  @DisplayName("Compiles callout admonitions with semantic OKLCH tints")
+  void compilesCalloutAdmonitions() {
     var doc =
         new PageDocument(
             "Admonitions",
@@ -172,7 +179,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void compilesAccessibleCodeBlockWithCounterLineNumbers() {
+  @DisplayName("Compiles accessible code blocks with counter line numbers and diff styling")
+  void compilesAccessibleCodeBlock() {
     var block =
         CodeBlock.ofLines(
                 "public class Tessera {",
@@ -213,7 +221,8 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void compilesDocPagerAndGeneratesSitemapAndSearchIndex() {
+  @DisplayName("Compiles doc pager pagination, sitemap XML, and search index JSON")
+  void compilesDocPagerSitemapAndSearchIndex() {
     var site =
         new SiteDefinition(
             new Tokens(),

@@ -33,6 +33,7 @@ import dev.nthings.tessera.render.PageDocument;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class FoundationalComponentsTest {
@@ -40,7 +41,8 @@ class FoundationalComponentsTest {
   record ServiceRow(String service, String region, String p99Latency, String availability) {}
 
   @Test
-  void compilesResponsiveDataTableAndSimpleTable() {
+  @DisplayName("Compiles responsive DataTable and SimpleTable with container queries")
+  void compilesTables() {
     var rows =
         List.of(
             new ServiceRow("auth-edge", "us-east-1", "4.8 ms", "99.99%"),
@@ -90,7 +92,8 @@ class FoundationalComponentsTest {
   }
 
   @Test
-  void compilesCardsAndSubgridCardGridWithThreeInteractionModes() {
+  @DisplayName("Compiles cards and subgrid card grid across interaction modes")
+  void compilesCardsAndGrids() {
     var mediaCard =
         Card.create("architecture")
             .mediaImg("/assets/arch.webp", "Architecture diagram", "16 / 9")
@@ -166,7 +169,8 @@ class FoundationalComponentsTest {
   }
 
   @Test
-  void compilesScrollDrivenAnimationsWithReducedMotionGateAndProperPropertyOrder() {
+  @DisplayName("Compiles scroll-driven animations with reduced motion gating")
+  void compilesScrollDrivenAnimations() {
     var progress = new ScrollProgressBar("top-progress");
     var revealSection =
         Elements.section()
@@ -202,7 +206,8 @@ class FoundationalComponentsTest {
   }
 
   @Test
-  void compilesListsInlineFormattingAndAutoHoistedFootnotes() {
+  @DisplayName("Compiles semantic lists, inline formatting, and hoisted footnotes")
+  void compilesListsFormattingAndFootnotes() {
     var prose =
         p().children(
                 text("Tessera supports "),

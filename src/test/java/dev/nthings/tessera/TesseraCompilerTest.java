@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class TesseraCompilerTest {
@@ -171,7 +172,8 @@ class TesseraCompilerTest {
   }
 
   @Test
-  void compilesThreePhaseDocumentWithBaseline2026Capabilities() {
+  @DisplayName("Compiles three-phase document with baseline 2026 platform capabilities")
+  void compilesBaselineDocument() {
     var cards =
         List.of(
             new MetricCard("lat", "P99 Latency", "14.2 ms", true),
@@ -236,7 +238,8 @@ class TesseraCompilerTest {
   }
 
   @Test
-  void ordersDeferredPortalsByPriorityAndFifoSequence() {
+  @DisplayName("Orders deferred portals by priority and sequence")
+  void ordersDeferredPortals() {
     var root =
         div()
             .children(
@@ -255,7 +258,8 @@ class TesseraCompilerTest {
   }
 
   @Test
-  void doesNotMutateInputElementsAcrossMultipleCompilations() {
+  @DisplayName("Preserves element immutability across compilations")
+  void preservesElementImmutability() {
     TagElement reusableButton =
         button()
             .attr("class", "custom-btn")
@@ -272,7 +276,8 @@ class TesseraCompilerTest {
   }
 
   @Test
-  void supportsExternalAssetOutputModeWithDeterministicHash() {
+  @DisplayName("Emits external hashed stylesheet and head link")
+  void emitsExternalHashedStylesheet() {
     var doc = new PageDocument("External CSS", main().p(CssLength.rem(2)).text("Hello"));
     var compiled = PageCompiler.compile(doc, OutputMode.externalAsset("/static/assets/"));
 
@@ -284,7 +289,8 @@ class TesseraCompilerTest {
   }
 
   @Test
-  void enforcesVoidElementAndAccessibilityInvariants() {
+  @DisplayName("Enforces void element and accessibility invariants")
+  void enforcesVoidAndAccessibilityRules() {
     // 1. Void element rejects children at construction time
     assertThatThrownBy(() -> img("/hero.webp", "Hero").child(span().text("Invalid")))
         .isInstanceOf(IllegalStateException.class)

@@ -36,6 +36,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF inlineBlock() {
+    style().put(CssProperty.DISPLAY, "inline-block");
+    return self();
+  }
+
   default SELF hidden() {
     style().put(CssProperty.DISPLAY, "none");
     return self();

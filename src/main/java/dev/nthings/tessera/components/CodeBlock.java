@@ -1,14 +1,18 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.code;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.pre;
+import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -19,7 +23,8 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// Accessible keyboard-scrollable code block backed by CSS counter line numbers
-/// (`counter-increment: code-line`), line highlighting, diff annotations, and optional header bars.
+/// (`counter-increment: code-line`), line highlighting, diff annotations, declarative copy buttons,
+/// and optional header bars.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
   private final List<String> lines = new ArrayList<>();
@@ -29,6 +34,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   private @Nullable String filename;
   private @Nullable String language;
   private boolean diffAutoDetect = false;
+  private boolean copyButton = true;
 
   private CodeBlock(List<String> lines) {
     this.lines.addAll(lines);
@@ -88,6 +94,15 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     return this;
   }
 
+  public CodeBlock copyButton(boolean enabled) {
+    this.copyButton = enabled;
+    return this;
+  }
+
+  public boolean hasCopyButton() {
+    return copyButton;
+  }
+
   @Override
   public String viewType() {
     return "tessera-code-block";
@@ -98,7 +113,8 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     scope
         .root(
             s ->
-                s.my(CssLength.rem(1.25))
+                s.relative()
+                    .my(CssLength.rem(1.25))
                     .rounded(CssLength.rem(0.5))
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .bg(Tokens.SURFACE_CARD)
@@ -118,6 +134,65 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
         .select(
             ":scope > .code-header > .code-filename",
             s -> s.fontWeight(600).textColor(Tokens.TEXT_PRIMARY))
+        .select(
+            ":scope > .code-header > .code-header-actions",
+            s -> s.flex().itemsCenter().gap(CssLength.rem(0.5)))
+        .select(
+            ":scope .code-copy-btn",
+            s ->
+                s.inlineFlex()
+                    .itemsCenter()
+                    .gap(CssLength.rem(0.35))
+                    .px(CssLength.rem(0.5))
+                    .py(CssLength.rem(0.25))
+                    .rounded(CssLength.rem(0.375))
+                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .bg(Tokens.SURFACE_CARD)
+                    .textColor(Tokens.TEXT_MUTED)
+                    .fontSize(CssLength.rem(0.75))
+                    .lineHeight("1")
+                    .cursorPointer()
+                    .refine(
+                        r ->
+                            r.put(
+                                CssProperty.TRANSITION,
+                                "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease")))
+        .select(
+            ":scope .code-copy-btn:hover",
+            s -> s.bg(Tokens.SURFACE_SUBTLE).textColor(Tokens.TEXT_PRIMARY))
+        .select(
+            ":scope .code-copy-btn.is-floating",
+            s ->
+                s.absolute()
+                    .insetBlockStart(CssLength.rem(0.5))
+                    .insetInlineEnd(CssLength.rem(0.5))
+                    .zIndex(2)
+                    .opacity(0.6)
+                    .refine(r -> r.put(CssProperty.TRANSITION, "opacity 0.15s ease")))
+        .select(":scope:hover .code-copy-btn.is-floating", s -> s.opacity(1.0))
+        .select(":scope:focus-within .code-copy-btn.is-floating", s -> s.opacity(1.0))
+        .select(
+            ":scope .code-copy-btn .copied-icon, :scope .code-copy-btn .copied-text",
+            s -> s.hidden())
+        .select(
+            ":scope .code-copy-btn .copy-icon, :scope .code-copy-btn .copy-text",
+            s -> s.inlineBlock())
+        .select(
+            ":scope .code-copy-btn:active .copy-icon, :scope .code-copy-btn:active .copy-text",
+            s -> s.hidden())
+        .select(
+            ":scope .code-copy-btn:active .copied-icon, :scope .code-copy-btn:active .copied-text",
+            s -> s.inlineBlock().textColor(Tokens.STATUS_SUCCESS))
+        .select(
+            ":scope .code-copy-btn:active",
+            s ->
+                s.bgRaw(Tokens.STATUS_SUCCESS.mixTransparent(14))
+                    .textColor(Tokens.STATUS_SUCCESS)
+                    .refine(
+                        r ->
+                            r.put(
+                                CssProperty.BORDER,
+                                "1px solid " + Tokens.STATUS_SUCCESS.mixTransparent(32))))
         .select(
             ":scope > .code-pre",
             s ->
@@ -154,6 +229,29 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   @Override
   public Element render() {
     var wrapper = div().attr("class", "code-block-wrapper");
+    var codeRef = ElementRef.named("code");
+
+    var copyBtn =
+        button()
+            .attr("type", "button")
+            .attr("class", "code-copy-btn")
+            .attr("aria-label", "Copy code to clipboard")
+            .command(codeRef, "--tessera-copy")
+            .child(
+                rawHtml(
+                    "<svg class=\"copy-icon\" width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\""
+                        + " stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\""
+                        + " stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"5\""
+                        + " width=\"9\" height=\"9\" rx=\"1.5\"/><path d=\"M11 5V3a1.5 1.5 0 0"
+                        + " 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v6.5A1.5 1.5 0 0 0 3 11h2\"/></svg>"))
+            .child(
+                rawHtml(
+                    "<svg class=\"copied-icon\" width=\"13\" height=\"13\" viewBox=\"0 0 16 16\" fill=\"none\""
+                        + " stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\""
+                        + " stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"3.5"
+                        + " 8.5 6.5 11.5 12.5 4.5\"/></svg>"))
+            .child(span().attr("class", "copy-text").text("Copy"))
+            .child(span().attr("class", "copied-text").text("Copied!"));
 
     if (filename != null || language != null) {
       var header = div().attr("class", "code-header");
@@ -162,13 +260,21 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
       } else {
         header.child(span());
       }
+      var actions = div().attr("class", "code-header-actions");
       if (language != null) {
-        header.child(span().attr("class", "code-lang").text(language));
+        actions.child(span().attr("class", "code-lang").child(Pill.neutral(language).sm()));
       }
+      if (copyButton) {
+        actions.child(copyBtn);
+      }
+      header.child(actions);
       wrapper.child(header);
+    } else if (copyButton) {
+      copyBtn.attr("class", "code-copy-btn is-floating");
+      wrapper.child(copyBtn);
     }
 
-    var codeEl = code().attr("class", "code-lines");
+    var codeEl = code().attr("class", "code-lines").id(codeRef);
 
     for (var i = 0; i < lines.size(); i++) {
       var lineNum = i + 1;

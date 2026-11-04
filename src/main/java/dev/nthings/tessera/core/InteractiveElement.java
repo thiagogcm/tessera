@@ -87,6 +87,11 @@ public interface InteractiveElement<
     return idRef("commandfor", target).attr("command", command.wireValue());
   }
 
+  /// Custom or native Invoker Command: `commandfor` + `command`.
+  default SELF command(ElementRef target, String customCommand) {
+    return idRef("commandfor", target).attr("command", customCommand);
+  }
+
   /// Custom `--namespace-name` Invoker Command plus the action's payload attributes.
   default SELF dispatchAction(ElementRef target, Action action) {
     idRef("commandfor", target).attr("command", action.toCustomCommand());

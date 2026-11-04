@@ -1,9 +1,11 @@
 package dev.nthings.tessera.showcase;
 
+import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 
+import dev.nthings.tessera.components.Badge;
 import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CardGrid;
@@ -16,6 +18,7 @@ import dev.nthings.tessera.components.Lists.DescriptionList;
 import dev.nthings.tessera.components.Lists.NumberedList;
 import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.components.Lists.Term;
+import dev.nthings.tessera.components.Pill;
 import dev.nthings.tessera.components.Prose;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
@@ -33,12 +36,13 @@ final class LayoutPage {
         "Layout",
         "Layout & content",
         "Responsive grids and cards that adapt to their container, editorial prose, semantic lists, "
-            + "callouts, and inline formatting.",
+            + "callouts, badges, and inline formatting.",
         grid(),
         cards(),
         prose(),
         lists(),
         callouts(),
+        badges(),
         formatting());
   }
 
@@ -163,6 +167,45 @@ final class LayoutPage {
             Callout.warning("Warnings point out risks."),
             Callout.caution("Cautions mark actions with negative consequences."))
         .code("Callout.tip(\"Tips suggest a better way to do something.\");");
+  }
+
+  private static Demo badges() {
+    return Demo.of("badges", "Badges & pills")
+        .summary(
+            "Compact semantic labels and pills with adaptive OKLCH tints, status dots, and "
+                + "outline/solid variants.")
+        .features("OKLCH color-mix", "border-radius: 9999px", "status dots")
+        .surface(SurfaceKind.FLAT)
+        .example(
+            div()
+                .flex()
+                .flexWrap()
+                .itemsCenter()
+                .gap(CssLength.rem(0.5))
+                .children(
+                    Badge.neutral("Neutral"),
+                    Badge.accent("Accent"),
+                    Badge.success("Success"),
+                    Badge.warning("Warning"),
+                    Badge.danger("Danger"),
+                    Badge.info("Info")),
+            div()
+                .flex()
+                .flexWrap()
+                .itemsCenter()
+                .gap(CssLength.rem(0.5))
+                .children(
+                    Pill.accent("Pill").outline(),
+                    Pill.success("Live").dot(),
+                    Pill.warning("Beta"),
+                    Pill.danger("Critical").solid(),
+                    Pill.info("v0.1.0"),
+                    Badge.accent("Interactive link →").pill().href("/docs")))
+        .code(
+            "Badge.accent(\"Accent\");",
+            "Pill.success(\"Live\").dot();",
+            "Pill.warning(\"Beta\").outline();",
+            "Badge.accent(\"Link\").pill().href(\"/docs\");");
   }
 
   private static Demo formatting() {

@@ -81,9 +81,10 @@ final class DataPage {
   private static Demo codeBlock() {
     return Demo.of("code-block", "Code block")
         .summary(
-            "A focusable, scrollable <pre> with CSS counter line numbers, highlighted lines, and "
-                + "+/- diff markers detected automatically.")
-        .features("counter-increment", "tabindex=\"0\" region", "white-space: pre")
+            "A focusable, scrollable <pre> with CSS counter line numbers, highlighted lines, "
+                + "+/- diff markers detected automatically, and a zero-JS declarative copy button.")
+        .features(
+            "counter-increment", "tabindex=\"0\" region", "commandfor copy", "declarative invoker")
         .example(
             CodeBlock.ofLines(
                     "public Element render() {",

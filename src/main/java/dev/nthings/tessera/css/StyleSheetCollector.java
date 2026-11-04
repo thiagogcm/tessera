@@ -17,7 +17,7 @@ public final class StyleSheetCollector {
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
   private final Map<String, String> containerRules = new LinkedHashMap<>();
-  private final Map<String, String> viewScopeRules = new LinkedHashMap<>();
+  private final Map<String, String> viewScopeBodies = new LinkedHashMap<>();
   private final Set<String> keyframeRules = new LinkedHashSet<>();
 
   public List<String> registerElementStyles(
@@ -65,16 +65,46 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  public void registerViewScope(String viewScopeId, String scopedCss) {
-    if (!scopedCss.isBlank()) {
-      viewScopeRules.putIfAbsent(
-          viewScopeId,
-          "@scope ([data-view=\"" + viewScopeId + "\"]) to ([data-view]){" + scopedCss + "}");
+  /**
+   * Registers a view's {@code @scope} CSS body using content-addressed deduplication.
+   *
+   * <p>If {@code viewType} has not been registered or was registered with the exact same {@code
+   * scopedCss} body, returns {@code viewType}. If a different {@code scopedCss} body was already
+   * registered under {@code viewType}, qualifies the key as {@code <viewType>-<hash>} so distinct
+   * parameterized rules never overwrite each other.
+   *
+   * @return the resolved {@code data-view} attribute value
+   */
+  public String registerViewScope(String viewType, String scopedCss) {
+    String safeType = Fnv1a64.sanitizeIdentifier(viewType);
+    if (scopedCss.isBlank()) {
+      return safeType;
     }
+    String existing = viewScopeBodies.get(safeType);
+    if (existing == null) {
+      viewScopeBodies.put(safeType, scopedCss);
+      return safeType;
+    }
+    if (existing.equals(scopedCss)) {
+      return safeType;
+    }
+    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
+    String qualifiedKey = safeType + "-" + Fnv1a64.toBase36Hash(hash);
+    viewScopeBodies.putIfAbsent(qualifiedKey, scopedCss);
+    return qualifiedKey;
   }
 
   public void registerKeyframeRule(String keyframeRule) {
     keyframeRules.add(keyframeRule);
+  }
+
+  /** Merges another collector's rules into this collector in deterministic insertion order. */
+  public void mergeFrom(StyleSheetCollector other) {
+    other.utilityRules.forEach(utilityRules::putIfAbsent);
+    other.interactiveRules.forEach(interactiveRules::putIfAbsent);
+    other.containerRules.forEach(containerRules::putIfAbsent);
+    other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
+    keyframeRules.addAll(other.keyframeRules);
   }
 
   private static String buildInteractiveBlock(Interactivity interactivity) {
@@ -132,7 +162,7 @@ public final class StyleSheetCollector {
     // 2. @layer base
     sb.append(
         "@layer base{"
-            + "@view-transition{navigation:auto}"
+            + "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}}"
             + "body{font-family:system-ui,-apple-system,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
             + "[popover=\"hint\"]{position-area:block-start;"
@@ -157,10 +187,14 @@ public final class StyleSheetCollector {
     sb.append("}}\n");
 
     // 4. @layer components
-    if (!viewScopeRules.isEmpty()) {
+    if (!viewScopeBodies.isEmpty()) {
       sb.append("@layer components{");
-      for (var rule : viewScopeRules.values()) {
-        sb.append(rule);
+      for (var entry : viewScopeBodies.entrySet()) {
+        sb.append("@scope ([data-view=\"")
+            .append(entry.getKey())
+            .append("\"]) to ([data-view]){")
+            .append(entry.getValue())
+            .append('}');
       }
       sb.append("}\n");
     }

@@ -9,6 +9,7 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
@@ -92,61 +93,85 @@ public record DataTable<T>(
   }
 
   @Override
-  public String viewScopeRule() {
-    var sb = new StringBuilder(1024);
-    sb.append(
-        ":scope{"
-            + "overflow:auto;max-inline-size:100%;max-block-size:min(36rem,80dvh);"
-            + "container-type:inline-size;border:1px solid var(--border-subtle);"
-            + "border-radius:0.75rem;background:var(--surface-card)"
-            + "}"
-            + ":scope table{"
-            + "inline-size:100%;border-collapse:separate;border-spacing:0;"
-            + "text-align:start");
+  public void configureScope(ScopeStyle scope) {
+    scope
+        .root(
+            s ->
+                s.overflowAuto()
+                    .maxInlineSize(CssLength.pct(100))
+                    .containerInlineSize()
+                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .rounded(CssLength.rem(0.75))
+                    .bg(Tokens.SURFACE_CARD))
+        .select(
+            ":scope table",
+            s -> {
+              s.fullWidth().borderSeparateZero().textAlign("start");
+              for (int i = 0; i < columns.size(); i++) {
+                s.customProperty(
+                    "--label-" + (i + 1),
+                    "\"" + Encode.forCssString(columns.get(i).header()) + "\"");
+              }
+              return s;
+            })
+        .select(
+            ":scope caption",
+            s ->
+                s.px(CssLength.rem(1))
+                    .py(CssLength.rem(0.875))
+                    .fontWeight(600)
+                    .textAlign("start")
+                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
+        .select(
+            ":scope thead",
+            s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(2).bg(Tokens.SURFACE_SUBTLE))
+        .select(
+            ":scope th, :scope td",
+            s ->
+                s.px(CssLength.rem(1))
+                    .py(CssLength.rem(0.75))
+                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
+        .select(
+            ":scope tbody th",
+            s ->
+                s.sticky()
+                    .insetInlineStart(CssLength.px(0))
+                    .zIndex(1)
+                    .bg(Tokens.SURFACE_CARD)
+                    .fontWeight(600))
+        .containerMaxInlineSize(
+            stackBreakpoint,
+            c -> {
+              c.select(
+                      ":scope table, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
+                      s -> s.block())
+                  .select(":scope thead", s -> s.hidden())
+                  .select(
+                      ":scope tr",
+                      s ->
+                          s.m(CssLength.rem(0.75))
+                              .borderSubtle(Tokens.BORDER_SUBTLE)
+                              .rounded(CssLength.rem(0.5)))
+                  .select(
+                      ":scope tbody th",
+                      s ->
+                          s.sticky()
+                              .insetBlockStart(CssLength.px(0))
+                              .zIndex(2)
+                              .bg(Tokens.SURFACE_SUBTLE));
 
-    for (int i = 0; i < columns.size(); i++) {
-      sb.append(";--label-")
-          .append(i + 1)
-          .append(":\"")
-          .append(Encode.forCssString(columns.get(i).header()))
-          .append('"');
-    }
-    sb.append(
-        "}"
-            + ":scope caption{"
-            + "padding:0.875rem 1rem;font-weight:600;text-align:start;"
-            + "border-block-end:1px solid var(--border-subtle)"
-            + "}"
-            + ":scope thead{"
-            + "position:sticky;inset-block-start:0;z-index:2;background:var(--surface-subtle)"
-            + "}"
-            + ":scope th,:scope td{"
-            + "padding:0.75rem 1rem;border-block-end:1px solid var(--border-subtle)"
-            + "}"
-            + ":scope tbody th{"
-            + "position:sticky;inset-inline-start:0;z-index:1;"
-            + "background:var(--surface-card);font-weight:600"
-            + "}"
-            + "@container (inline-size < "
-            + stackBreakpoint.toCss()
-            + "){"
-            + ":scope table,:scope thead,:scope tbody,:scope tr,:scope th,:scope td{display:block}"
-            + ":scope thead{display:none}"
-            + ":scope tr{margin:0.75rem;border:1px solid var(--border-subtle);border-radius:0.5rem}"
-            + ":scope tbody th{position:sticky;inset-block-start:0;z-index:2;background:var(--surface-subtle)}");
-
-    for (int i = 0; i < columns.size(); i++) {
-      if (!columns.get(i).rowHeader()) {
-        int colIndex = i + 1;
-        sb.append(":scope td:nth-child(")
-            .append(colIndex)
-            .append(")::before{content:var(--label-")
-            .append(colIndex)
-            .append(") \": \";font-weight:600;color:var(--text-muted)}");
-      }
-    }
-    sb.append('}');
-    return sb.toString();
+              for (int i = 0; i < columns.size(); i++) {
+                if (!columns.get(i).rowHeader()) {
+                  int colIndex = i + 1;
+                  c.select(
+                      ":scope td:nth-child(" + colIndex + ")::before",
+                      s ->
+                          s.cssContent("var(--label-" + colIndex + ") \": \"")
+                              .fontWeight(600)
+                              .textColor(Tokens.TEXT_MUTED));
+                }
+              }
+            });
   }
 
   @Override

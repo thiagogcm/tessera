@@ -39,21 +39,33 @@ public final class PageCompiler {
 
   public record CompiledPage(String html, @Nullable String externalCssPath, String cssContent) {}
 
-  private sealed interface ResolvedNode
+  /**
+   * Intermediate result after Phase 1 ({@code requestLayout}) and Phase 2 ({@code prepaint}), used
+   * by {@code SiteCompiler} to merge stylesheets and verify cross-page links before Phase 3 ({@code
+   * paint}).
+   */
+  public record PreparedPage(
+      PageDocument document,
+      StyleSheetCollector styles,
+      List<ResolvedNode> bodyNodes,
+      Set<String> registeredDomIds,
+      Set<String> outgoingHrefs) {}
+
+  public sealed interface ResolvedNode
       permits ResolvedTag, ResolvedText, ResolvedRaw, ResolvedEmpty {}
 
-  private record ResolvedTag(
+  public record ResolvedTag(
       HtmlTag tag,
       Map<String, String> attributes,
       List<ResolvedNode> children,
       @Nullable ResolvedTag companionSibling)
       implements ResolvedNode {}
 
-  private record ResolvedText(String content) implements ResolvedNode {}
+  public record ResolvedText(String content) implements ResolvedNode {}
 
-  private record ResolvedRaw(String trustedHtml) implements ResolvedNode {}
+  public record ResolvedRaw(String trustedHtml) implements ResolvedNode {}
 
-  private enum ResolvedEmpty implements ResolvedNode {
+  public enum ResolvedEmpty implements ResolvedNode {
     INSTANCE
   }
 
@@ -69,6 +81,7 @@ public final class PageCompiler {
   private static final class CompilationState {
     private final PriorityQueue<ResolvedDeferred> deferredQueue = new PriorityQueue<>();
     private final Set<String> registeredDomIds = new LinkedHashSet<>();
+    private final Set<String> outgoingHrefs = new LinkedHashSet<>();
     private long deferredSequence = 0L;
 
     void enqueueDeferred(int priority, ResolvedNode node) {
@@ -83,11 +96,16 @@ public final class PageCompiler {
   }
 
   public static CompiledPage compile(PageDocument document, OutputMode outputMode) {
+    PreparedPage prepared = prepare(document);
+    String cssContent = prepared.styles().toCssStylesheet(document.tokens());
+    return paintPrepared(prepared, cssContent, outputMode);
+  }
+
+  public static PreparedPage prepare(PageDocument document) {
     var styles = new StyleSheetCollector();
     var state = new CompilationState();
 
-    // Phase 1: requestLayout (component expansion, view scoping, CSS interning, lexical
-    // deferred resolution, and automatic endnotes hoisting)
+    // Phase 1: requestLayout
     ResolvedNode resolvedRoot =
         RenderContext.runRoot(
             styles,
@@ -102,15 +120,22 @@ public final class PageCompiler {
               return root;
             });
 
-    // Phase 2: prepaint (WCAG/HTML5 validation, invoker target verification, deferred portal
-    // hoisting)
+    // Phase 2: prepaint
     List<ResolvedNode> bodyNodes = prepaint(resolvedRoot, state);
 
-    // Phase 3: paint (streaming HTML5 & CSS emission)
-    String cssContent = styles.toCssStylesheet(document.tokens());
-    var htmlBuffer = new StringBuilder(4096);
-    String externalCssPath = paint(document, bodyNodes, cssContent, outputMode, htmlBuffer);
+    return new PreparedPage(
+        document,
+        styles,
+        bodyNodes,
+        Collections.unmodifiableSet(state.registeredDomIds),
+        Collections.unmodifiableSet(state.outgoingHrefs));
+  }
 
+  public static CompiledPage paintPrepared(
+      PreparedPage prepared, String cssContent, OutputMode outputMode) {
+    var htmlBuffer = new StringBuilder(4096);
+    String externalCssPath =
+        paint(prepared.document(), prepared.bodyNodes(), cssContent, outputMode, htmlBuffer);
     return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
   }
 
@@ -130,10 +155,13 @@ public final class PageCompiler {
           ctx.withViewScope(
               view.entityId(),
               () -> {
-                String scopeId = RenderContext.current().viewScope().domId();
-                RenderContext.current().styles().registerViewScope(scopeId, view.viewScopeRule());
+                String instanceScopeId = RenderContext.current().viewScope().domId();
+                String resolvedViewType =
+                    RenderContext.current()
+                        .styles()
+                        .registerViewScope(view.viewType(), view.viewScopeRule());
                 ResolvedNode inner = requestLayout(view.render(), state);
-                return attachViewScopeAttribute(inner, scopeId);
+                return attachViewScopeAttributes(inner, resolvedViewType, instanceScopeId);
               });
       case TagElement tag -> resolveTag(tag, null, state);
       case StatefulTagElement stateful -> {
@@ -144,18 +172,23 @@ public final class PageCompiler {
     };
   }
 
-  private static ResolvedNode attachViewScopeAttribute(ResolvedNode node, String scopeId) {
+  private static ResolvedNode attachViewScopeAttributes(
+      ResolvedNode node, String viewType, String instanceScopeId) {
     if (node instanceof ResolvedTag tag) {
       var updatedAttrs = new LinkedHashMap<>(tag.attributes());
-      updatedAttrs.put("data-view", scopeId);
+      updatedAttrs.put("data-view", viewType);
+      updatedAttrs.put("data-view-id", instanceScopeId);
       return new ResolvedTag(
           tag.tag(),
           Collections.unmodifiableMap(updatedAttrs),
           tag.children(),
           tag.companionSibling());
     }
-    var wrapperAttrs = Map.of("data-view", scopeId);
-    return new ResolvedTag(HtmlTag.DIV, wrapperAttrs, List.of(node), null);
+    var wrapperAttrs = new LinkedHashMap<String, String>(2);
+    wrapperAttrs.put("data-view", viewType);
+    wrapperAttrs.put("data-view-id", instanceScopeId);
+    return new ResolvedTag(
+        HtmlTag.DIV, Collections.unmodifiableMap(wrapperAttrs), List.of(node), null);
   }
 
   private static ResolvedTag resolveTag(
@@ -215,7 +248,7 @@ public final class PageCompiler {
   }
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
-    validateNodeTree(root, state.registeredDomIds);
+    validateNodeTree(root, state);
 
     var bodyNodes = new ArrayList<ResolvedNode>();
     if (!(root instanceof ResolvedEmpty)) {
@@ -225,7 +258,7 @@ public final class PageCompiler {
     while (!state.deferredQueue.isEmpty()) {
       ResolvedDeferred deferred = state.deferredQueue.poll();
       if (deferred != null && !(deferred.node() instanceof ResolvedEmpty)) {
-        validateNodeTree(deferred.node(), state.registeredDomIds);
+        validateNodeTree(deferred.node(), state);
         bodyNodes.add(deferred.node());
       }
     }
@@ -233,24 +266,25 @@ public final class PageCompiler {
     return Collections.unmodifiableList(bodyNodes);
   }
 
-  private static void validateNodeTree(ResolvedNode node, Set<String> registeredDomIds) {
+  private static void validateNodeTree(ResolvedNode node, CompilationState state) {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedTag tag -> {
-        validateTagAccessibility(tag, registeredDomIds);
+        validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
-          validateNodeTree(child, registeredDomIds);
+          validateNodeTree(child, state);
         }
         var companion = tag.companionSibling();
         if (companion != null) {
-          validateNodeTree(companion, registeredDomIds);
+          validateNodeTree(companion, state);
         }
       }
     }
   }
 
-  private static void validateTagAccessibility(ResolvedTag tag, Set<String> registeredDomIds) {
+  private static void validateTagAccessibility(ResolvedTag tag, CompilationState state) {
     Map<String, String> attrs = tag.attributes();
+    Set<String> registeredDomIds = state.registeredDomIds;
 
     if (tag.tag() == HtmlTag.IMG) {
       String alt = attrs.get("alt");
@@ -272,6 +306,13 @@ public final class PageCompiler {
             "Interactive <"
                 + tag.tag().tagName()
                 + "> element must have text content or an aria-label / aria-labelledby / title attribute");
+      }
+    }
+
+    if (tag.tag() == HtmlTag.A) {
+      String href = attrs.get("href");
+      if (href != null && !href.isBlank()) {
+        state.outgoingHrefs.add(href);
       }
     }
 

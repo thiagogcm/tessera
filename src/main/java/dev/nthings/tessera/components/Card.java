@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -129,44 +130,49 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   }
 
   @Override
-  public String viewScopeRule() {
-    return ":scope{"
-        + "container-type:inline-size;"
-        + "display:flex;flex-direction:column;gap:0.75rem;"
-        + "padding:1.25rem;border-radius:0.75rem;"
-        + "background:var(--surface-card);"
-        + "border:2px solid var(--border-subtle);"
-        + "position:relative"
-        + "}"
-        + ":scope:has(a.card-link) a.card-link::after{"
-        + "content:\"\";position:absolute;inset:0"
-        + "}"
-        + ":scope:has(a.card-link) a.card-link:focus-visible{"
-        + "outline:none"
-        + "}"
-        + ":scope:has(a.card-link:focus-visible){"
-        + "outline:2px solid var(--accent-primary);outline-offset:2px"
-        + "}"
-        + ":scope:has(a.card-link:hover){"
-        + "background:var(--surface-subtle)"
-        + "}"
-        + ":scope:has(a.card-link) :is(a:not(.card-link),button,input,select,textarea){"
-        + "position:relative;z-index:1"
-        + "}"
-        + ":scope:has(> input:checked){"
-        + "border-color:var(--accent-primary);background:var(--surface-subtle)"
-        + "}"
-        + "@container (inline-size >= 28rem){"
-        + ":scope:has(> img,> picture,> .media){"
-        + "display:grid;grid-template-columns:minmax(10rem,35%) 1fr;column-gap:1.25rem;align-items:start"
-        + "}"
-        + ":scope:has(> img,> picture,> .media) > :is(img,picture,.media){"
-        + "grid-column:1;grid-row:1 / span 3"
-        + "}"
-        + ":scope:has(> img,> picture,> .media) > :not(img,picture,.media){"
-        + "grid-column:2"
-        + "}"
-        + "}";
+  public void configureScope(ScopeStyle scope) {
+    scope
+        .root(
+            s ->
+                s.containerInlineSize()
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(0.75))
+                    .p(CssLength.rem(1.25))
+                    .rounded(CssLength.rem(0.75))
+                    .bg(Tokens.SURFACE_CARD)
+                    .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
+                    .relative())
+        .select(
+            ":scope:has(a.card-link) a.card-link::after",
+            s -> s.cssContent("\"\"").absolute().inset("0"))
+        .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.focusOutlineNone())
+        .select(":scope:has(a.card-link:focus-visible)", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+        .select(":scope:has(a.card-link:hover)", s -> s.bg(Tokens.SURFACE_SUBTLE))
+        .select(
+            ":scope:has(a.card-link) :is(a:not(.card-link),button,input,select,textarea)",
+            s -> s.relative().zIndex(1))
+        .select(
+            ":scope:has(> input:checked)",
+            s ->
+                s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
+                    .bg(Tokens.SURFACE_SUBTLE))
+        .containerMinInlineSize(
+            CssLength.rem(28),
+            c ->
+                c.select(
+                        ":scope:has(> img,> picture,> .media)",
+                        s ->
+                            s.grid()
+                                .gridColumns("minmax(10rem, 35%) 1fr")
+                                .colGap(CssLength.rem(1.25))
+                                .itemsStart())
+                    .select(
+                        ":scope:has(> img,> picture,> .media) > :is(img,picture,.media)",
+                        s -> s.gridColumn("1").gridRow("1 / span 3"))
+                    .select(
+                        ":scope:has(> img,> picture,> .media) > :not(img,picture,.media)",
+                        s -> s.gridColumn("2")));
   }
 
   @Override

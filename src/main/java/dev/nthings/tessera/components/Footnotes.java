@@ -8,6 +8,8 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.HighlightTone;
+import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 
 /**
@@ -70,19 +72,24 @@ public final class Footnotes {
     }
 
     @Override
-    public String viewScopeRule() {
-      return ":scope{"
-          + "margin-block-start:2.5rem;padding-block-start:1.25rem;"
-          + "border-block-start:1px solid var(--border-subtle);"
-          + "font-size:0.875rem;color:var(--text-muted)"
-          + "}"
-          + ":scope ol{"
-          + "display:flex;flex-direction:column;gap:0.5rem;padding-inline-start:1.5rem"
-          + "}"
-          + ":scope li:target{"
-          + "background:color-mix(in oklch, var(--accent-primary) 18%, transparent);"
-          + "border-radius:0.375rem;padding:0.25rem 0.5rem;color:var(--text-primary)"
-          + "}";
+    public void configureScope(ScopeStyle scope) {
+      scope
+          .root(
+              s ->
+                  s.mt(CssLength.rem(2.5))
+                      .pt(CssLength.rem(1.25))
+                      .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
+                      .textSize(CssLength.rem(0.875))
+                      .textColor(Tokens.TEXT_MUTED))
+          .select(
+              ":scope ol", s -> s.flex().flexCol().gap(CssLength.rem(0.5)).ps(CssLength.rem(1.5)))
+          .select(
+              ":scope li:target",
+              s ->
+                  s.highlight(HighlightTone.ACCENT)
+                      .px(CssLength.rem(0.5))
+                      .py(CssLength.rem(0.25))
+                      .textColor(Tokens.TEXT_PRIMARY));
     }
 
     @Override

@@ -5,12 +5,17 @@ package dev.nthings.tessera.css;
  * CssProperty}.
  */
 public sealed interface CssDeclaration
-    permits CssDeclaration.Display,
+    permits CssDeclaration.Content,
+        CssDeclaration.Display,
         CssDeclaration.Position,
+        CssDeclaration.Inset,
         CssDeclaration.InsetBlockStart,
         CssDeclaration.InsetInlineStart,
         CssDeclaration.ZIndex,
         CssDeclaration.Overflow,
+        CssDeclaration.ListStyle,
+        CssDeclaration.CounterReset,
+        CssDeclaration.CounterIncrement,
         CssDeclaration.FlexDirection,
         CssDeclaration.FlexWrap,
         CssDeclaration.AlignItems,
@@ -34,8 +39,12 @@ public sealed interface CssDeclaration
         CssDeclaration.ObjectFit,
         CssDeclaration.PaddingInline,
         CssDeclaration.PaddingBlock,
+        CssDeclaration.PaddingBlockStart,
+        CssDeclaration.PaddingInlineStart,
         CssDeclaration.MarginInline,
         CssDeclaration.MarginBlock,
+        CssDeclaration.MarginBlockStart,
+        CssDeclaration.MarginBlockEnd,
         CssDeclaration.Background,
         CssDeclaration.Color,
         CssDeclaration.FontSize,
@@ -51,6 +60,10 @@ public sealed interface CssDeclaration
         CssDeclaration.TextUnderlineOffset,
         CssDeclaration.TextDecorationSkipInk,
         CssDeclaration.Border,
+        CssDeclaration.BorderBlockStart,
+        CssDeclaration.BorderBlockEnd,
+        CssDeclaration.BorderCollapse,
+        CssDeclaration.BorderSpacing,
         CssDeclaration.BorderRadius,
         CssDeclaration.BoxShadow,
         CssDeclaration.Outline,
@@ -223,6 +236,18 @@ public sealed interface CssDeclaration
     }
   }
 
+  record Content(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.CONTENT;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
   record Display(DisplayMode mode) implements CssDeclaration {
     @Override
     public CssProperty property() {
@@ -244,6 +269,18 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return mode.css();
+    }
+  }
+
+  record Inset(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.INSET;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
     }
   }
 
@@ -292,6 +329,42 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return mode;
+    }
+  }
+
+  record ListStyle(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.LIST_STYLE;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record CounterReset(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.COUNTER_RESET;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record CounterIncrement(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.COUNTER_INCREMENT;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
     }
   }
 
@@ -571,6 +644,30 @@ public sealed interface CssDeclaration
     }
   }
 
+  record PaddingBlockStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.PADDING_BLOCK_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record PaddingInlineStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.PADDING_INLINE_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
   record MarginInline(CssLength length) implements CssDeclaration {
     @Override
     public CssProperty property() {
@@ -587,6 +684,30 @@ public sealed interface CssDeclaration
     @Override
     public CssProperty property() {
       return CssProperty.MARGIN_BLOCK;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record MarginBlockStart(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.MARGIN_BLOCK_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return length.toCss();
+    }
+  }
+
+  record MarginBlockEnd(CssLength length) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.MARGIN_BLOCK_END;
     }
 
     @Override
@@ -767,6 +888,54 @@ public sealed interface CssDeclaration
     @Override
     public CssProperty property() {
       return CssProperty.BORDER;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record BorderBlockStart(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_BLOCK_START;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record BorderBlockEnd(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_BLOCK_END;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record BorderCollapse(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_COLLAPSE;
+    }
+
+    @Override
+    public String cssValue() {
+      return value;
+    }
+  }
+
+  record BorderSpacing(String value) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.BORDER_SPACING;
     }
 
     @Override

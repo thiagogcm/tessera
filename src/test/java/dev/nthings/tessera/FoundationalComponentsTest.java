@@ -134,7 +134,7 @@ class FoundationalComponentsTest {
             new PageDocument("Cards & Grids", main().children(cardGrid, bentoGrid)));
 
     assertThat(compiled.cssContent())
-        .contains("grid-row:span 4;grid-template-rows:subgrid")
+        .contains("grid-template-rows:subgrid;grid-row:span 4")
         .contains(":scope:has(> img,> picture,> .media)")
         .contains(":scope:has(a.card-link) a.card-link::after")
         .contains(":scope:has(> input:checked)");
@@ -142,7 +142,8 @@ class FoundationalComponentsTest {
     Document doc = Jsoup.parse(compiled.html());
 
     // Media card has direct <img>, <hgroup>, single <p> (unwrapped), and <footer>
-    var firstArticle = doc.selectFirst("article[data-view=feature-cards--card-architecture]");
+    var firstArticle =
+        doc.selectFirst("article[data-view=card][data-view-id=feature-cards--card-architecture]");
     assertThat(firstArticle).isNotNull();
     assertThat(firstArticle.children().get(0).tagName()).isEqualTo("img");
     assertThat(firstArticle.children().get(1).tagName()).isEqualTo("hgroup");
@@ -151,13 +152,15 @@ class FoundationalComponentsTest {
     assertThat(firstArticle.selectFirst("hgroup h3 a.card-link")).isNotNull();
 
     // Text-only card with 2 paragraphs groups content in a single <div> for subgrid track alignment
-    var secondArticle = doc.selectFirst("article[data-view=feature-cards--card-tokens]");
+    var secondArticle =
+        doc.selectFirst("article[data-view=card][data-view-id=feature-cards--card-tokens]");
     assertThat(secondArticle).isNotNull();
     assertThat(secondArticle.children().get(0).tagName()).isEqualTo("h3");
     assertThat(secondArticle.children().get(1).tagName()).isEqualTo("div");
 
     // Choice card uses <label> root with direct <input type="radio" checked>
-    var choiceLabel = doc.selectFirst("label[data-view=feature-cards--card-tier-pro]");
+    var choiceLabel =
+        doc.selectFirst("label[data-view=card][data-view-id=feature-cards--card-tier-pro]");
     assertThat(choiceLabel).isNotNull();
     assertThat(choiceLabel.selectFirst("> input[type=radio][checked]")).isNotNull();
   }

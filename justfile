@@ -1,8 +1,9 @@
-# tessera task runner - single source of truth for build, test, and quality commands.
+# tessera task runner - single source of truth for build, test, site generation, and quality commands.
 #
 # Quick start:  just            (list recipes)
 #               just verify     (canonical compile + test + jacoco + spotless gate)
-#               just format     (apply Google Java Format via Spotless)
+#               just site       (compile multi-page showcase site into target/site)
+#               just demo       (serve multi-page showcase site at http://localhost:8080)
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set windows-shell := ["bash", "-euo", "pipefail", "-c"]
@@ -24,6 +25,16 @@ build:
 [group('build')]
 compile:
     {{mvn}} -DskipTests clean test-compile
+
+# Compile the multi-page showcase static site into target/site.
+[group('build')]
+site output="target/site":
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.site.ShowcaseSite -Dexec.args="--output {{output}}"
+
+# Build and serve the multi-page showcase site over HTTP for live browser/DevTools evaluation.
+[group('build')]
+demo port="8080":
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.site.ShowcaseSite -Dexec.args="--output target/site --serve {{port}}"
 
 # Remove Maven build outputs.
 [group('build')]

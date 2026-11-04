@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
 import java.util.List;
 
 /**
@@ -29,17 +30,11 @@ public record CardGrid(
   }
 
   @Override
-  public String viewScopeRule() {
-    return ":scope{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,"
-        + minCardWidth.toCss()
-        + "),1fr));column-gap:"
-        + gap.toCss()
-        + ";row-gap:"
-        + gap.toCss()
-        + "}"
-        + ":scope > article,:scope > label{"
-        + "display:grid;grid-row:span 4;grid-template-rows:subgrid;row-gap:0.75rem"
-        + "}";
+  public void configureScope(ScopeStyle scope) {
+    scope
+        .root(s -> s.gridAutoFit(minCardWidth).colGap(gap).rowGap(gap))
+        .select(
+            ":scope > article, :scope > label", s -> s.subgridRows(4).rowGap(CssLength.rem(0.75)));
   }
 
   @Override

@@ -66,4 +66,25 @@ public final class Fnv1a64 {
     }
     return sb.toString();
   }
+
+  public static String toKebabCase(String camelOrPascal) {
+    if (camelOrPascal.isEmpty()) {
+      return "view";
+    }
+    var sb = new StringBuilder(camelOrPascal.length() + 4);
+    for (int i = 0, len = camelOrPascal.length(); i < len; i++) {
+      char c = camelOrPascal.charAt(i);
+      if (c >= 'A' && c <= 'Z') {
+        if (i > 0) {
+          sb.append('-');
+        }
+        sb.append((char) (c + ('a' - 'A')));
+      } else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+        sb.append(c);
+      } else {
+        sb.append('-');
+      }
+    }
+    return sb.toString();
+  }
 }

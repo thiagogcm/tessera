@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
@@ -117,25 +118,36 @@ public final class Lists {
     }
 
     @Override
-    public String viewScopeRule() {
-      return ":scope{"
-          + "list-style:none;display:flex;flex-direction:column;gap:0.75rem;"
-          + "counter-reset:step"
-          + "}"
-          + ":scope > li{"
-          + "--step-index:sibling-index();--step-total:sibling-count();"
-          + "counter-increment:step;"
-          + "display:flex;align-items:baseline;gap:0.75rem"
-          + "}"
-          + ":scope > li::before{"
-          + "content:counter(step);"
-          + "display:inline-flex;align-items:center;justify-content:center;"
-          + "min-inline-size:1.75rem;block-size:1.75rem;border-radius:999px;"
-          + "font-weight:600;font-variant-numeric:tabular-nums;"
-          + "background:color-mix(in oklch, var(--accent-primary) "
-          + "calc(20% + (60% * var(--step-index) / var(--step-total))), var(--surface-subtle));"
-          + "color:var(--text-primary)"
-          + "}";
+    public void configureScope(ScopeStyle scope) {
+      scope
+          .root(
+              s -> s.listStyleNone().flex().flexCol().gap(CssLength.rem(0.75)).counterReset("step"))
+          .select(
+              ":scope > li",
+              s ->
+                  s.customProperty("--step-index", "sibling-index()")
+                      .customProperty("--step-total", "sibling-count()")
+                      .counterIncrement("step")
+                      .flex()
+                      .itemsBaseline()
+                      .gap(CssLength.rem(0.75)))
+          .select(
+              ":scope > li::before",
+              s ->
+                  s.cssContent("counter(step)")
+                      .inlineFlex()
+                      .itemsCenter()
+                      .justifyCenter()
+                      .minInlineSize(CssLength.rem(1.75))
+                      .blockSize(CssLength.rem(1.75))
+                      .rounded(CssLength.px(999))
+                      .fontWeight(600)
+                      .tabularNums()
+                      .bgRaw(
+                          "color-mix(in oklch, var(--accent-primary) "
+                              + "calc(20% + (60% * var(--step-index) / var(--step-total))), "
+                              + "var(--surface-subtle))")
+                      .textColor(Tokens.TEXT_PRIMARY));
     }
 
     @Override

@@ -18,6 +18,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF cssContent(String value) {
+    style().put(new CssDeclaration.Content(value));
+    return self();
+  }
+
   default SELF flex() {
     style().put(new CssDeclaration.Display(CssDeclaration.DisplayMode.FLEX));
     return self();
@@ -48,6 +53,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF absolute() {
+    style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.ABSOLUTE));
+    return self();
+  }
+
   default SELF fixed() {
     style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.FIXED));
     return self();
@@ -55,6 +65,11 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF sticky() {
     style().put(new CssDeclaration.Position(CssDeclaration.PositionMode.STICKY));
+    return self();
+  }
+
+  default SELF inset(String value) {
+    style().put(new CssDeclaration.Inset(value));
     return self();
   }
 
@@ -75,6 +90,21 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF overflowAuto() {
     style().put(new CssDeclaration.Overflow("auto"));
+    return self();
+  }
+
+  default SELF listStyleNone() {
+    style().put(new CssDeclaration.ListStyle("none"));
+    return self();
+  }
+
+  default SELF counterReset(String counterName) {
+    style().put(new CssDeclaration.CounterReset(counterName));
+    return self();
+  }
+
+  default SELF counterIncrement(String counterName) {
+    style().put(new CssDeclaration.CounterIncrement(counterName));
     return self();
   }
 
@@ -267,6 +297,16 @@ public interface Styled<SELF extends Styled<SELF>> {
     return px(length).py(length);
   }
 
+  default SELF pt(CssLength length) {
+    style().put(new CssDeclaration.PaddingBlockStart(length));
+    return self();
+  }
+
+  default SELF ps(CssLength length) {
+    style().put(new CssDeclaration.PaddingInlineStart(length));
+    return self();
+  }
+
   default SELF mx(CssLength length) {
     style().put(new CssDeclaration.MarginInline(length));
     return self();
@@ -274,6 +314,20 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF my(CssLength length) {
     style().put(new CssDeclaration.MarginBlock(length));
+    return self();
+  }
+
+  default SELF m(CssLength length) {
+    return mx(length).my(length);
+  }
+
+  default SELF mt(CssLength length) {
+    style().put(new CssDeclaration.MarginBlockStart(length));
+    return self();
+  }
+
+  default SELF mb(CssLength length) {
+    style().put(new CssDeclaration.MarginBlockEnd(length));
     return self();
   }
 
@@ -375,6 +429,22 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF borderBlockStartSubtle(DesignToken borderToken) {
+    style().put(new CssDeclaration.BorderBlockStart("1px solid " + borderToken.varReference()));
+    return self();
+  }
+
+  default SELF borderBlockEndSubtle(DesignToken borderToken) {
+    style().put(new CssDeclaration.BorderBlockEnd("1px solid " + borderToken.varReference()));
+    return self();
+  }
+
+  default SELF borderSeparateZero() {
+    style().put(new CssDeclaration.BorderCollapse("separate"));
+    style().put(new CssDeclaration.BorderSpacing("0"));
+    return self();
+  }
+
   default SELF rounded(CssLength radius) {
     style().put(new CssDeclaration.BorderRadius(radius));
     return self();
@@ -391,6 +461,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF focusOutlineNone() {
+    style().put(new CssDeclaration.Outline("none"));
+    return self();
+  }
+
   default SELF opacity(double value) {
     style().put(new CssDeclaration.Opacity(value));
     return self();
@@ -403,6 +478,11 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF transition(String value) {
     style().put(new CssDeclaration.Transition(value));
+    return self();
+  }
+
+  default SELF containerInlineSize() {
+    style().put(new CssDeclaration.ContainerType(CssDeclaration.ContainerKind.INLINE_SIZE));
     return self();
   }
 

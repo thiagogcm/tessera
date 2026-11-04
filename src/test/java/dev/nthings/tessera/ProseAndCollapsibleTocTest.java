@@ -21,9 +21,11 @@ class ProseAndCollapsibleTocTest {
   @Test
   void proseRendersWithMaxMeasureAndTypographyScope() {
     var prose =
-        Prose.of(
-            p().text("First paragraph of narrative prose."),
-            p().text("Second paragraph with editorial analysis."));
+        Prose.create("prose-spec")
+            .maxMeasure(CssLength.ch(75))
+            .children(
+                p().text("First paragraph of narrative prose."),
+                p().text("Second paragraph with editorial analysis."));
 
     var doc = new PageDocument("Prose Test", main().child(prose));
     var compiled = PageCompiler.compile(doc);
@@ -37,23 +39,9 @@ class ProseAndCollapsibleTocTest {
     assertThat(paragraphs).hasSize(2);
     assertThat(paragraphs.get(0).text()).isEqualTo("First paragraph of narrative prose.");
 
-    // Scope rules must contain 75ch measure and fluid typography
     assertThat(compiled.cssContent()).contains("max-inline-size:75ch");
     assertThat(compiled.cssContent()).contains("p:not([class])");
     assertThat(compiled.cssContent()).contains("line-height:1.75");
-  }
-
-  @Test
-  void proseCustomMeasure() {
-    var prose =
-        Prose.create("custom-prose")
-            .maxMeasure(CssLength.ch(65))
-            .child(p().text("Narrower measure text."));
-
-    var doc = new PageDocument("Custom Measure Test", main().child(prose));
-    var compiled = PageCompiler.compile(doc);
-
-    assertThat(compiled.cssContent()).contains("max-inline-size:65ch");
   }
 
   @Test

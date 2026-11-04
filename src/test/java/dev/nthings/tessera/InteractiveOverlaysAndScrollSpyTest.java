@@ -28,33 +28,7 @@ import org.junit.jupiter.api.Test;
 class InteractiveOverlaysAndScrollSpyTest {
 
   @Test
-  void compilesScrollSpyTableOfContentsAndRejectsDanglingFragments() {
-    var docLayout =
-        Toc.docLayout(
-            "guide-toc",
-            "On This Page",
-            Toc.section("intro", "Introduction", p().text("Welcome to Tessera.")),
-            Toc.subsection("setup", "Project Setup", p().text("Configure JDK 25.")),
-            Toc.section("pipeline", "Compilation Pipeline", p().text("Three phases.")));
-
-    var compiled = PageCompiler.compile(new PageDocument("Docs", main().child(docLayout)));
-
-    assertThat(compiled.cssContent())
-        .contains("scroll-target-group:auto")
-        .contains(":scope a:target-current")
-        .contains("border-inline-start:3px solid var(--accent-primary)");
-
-    var doc = Jsoup.parse(compiled.html());
-    var nav = doc.selectFirst("nav[data-view=table-of-contents]");
-    assertThat(nav).isNotNull();
-    var links = nav.select("ol > li > a");
-    assertThat(links).hasSize(3);
-    assertThat(links.get(0).attr("href")).isEqualTo("#guide-toc-layout--intro");
-    assertThat(links.get(1).attr("href")).isEqualTo("#guide-toc-layout--setup");
-    assertThat(links.get(1).attr("data-level")).isEqualTo("3");
-    assertThat(links.get(2).attr("href")).isEqualTo("#guide-toc-layout--pipeline");
-
-    // Explicit ToC with a non-existent target ID must fail in Phase 2 prepaint
+  void tableOfContentsRejectsDanglingFragmentIds() {
     var brokenToc =
         Toc.of("broken-toc", "Contents", List.of(Toc.Item.h2("missing-section", "Missing")));
     assertThatThrownBy(

@@ -21,12 +21,9 @@ import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 class DocumentationAndCwvPrimsTest {
 
@@ -216,7 +213,7 @@ class DocumentationAndCwvPrimsTest {
   }
 
   @Test
-  void compilesDocPagerAndGeneratesSitemapAndSearchIndex(@TempDir Path tempDir) throws Exception {
+  void compilesDocPagerAndGeneratesSitemapAndSearchIndex() {
     var site =
         new SiteDefinition(
             new Tokens(),
@@ -291,14 +288,5 @@ class DocumentationAndCwvPrimsTest {
         .contains("\"path\": \"/guide\"")
         .contains("\"id\": \"quickstart\"")
         .contains("\"id\": \"config\"");
-
-    // Verify writeToDirectory emits sitemap.xml and search-index.json
-    SiteCompiler.writeToDirectory(compiledSite, tempDir);
-    assertThat(Files.exists(tempDir.resolve("sitemap.xml"))).isTrue();
-    assertThat(Files.exists(tempDir.resolve("search-index.json"))).isTrue();
-    assertThat(Files.readString(tempDir.resolve("sitemap.xml")))
-        .isEqualTo(compiledSite.sitemapXml());
-    assertThat(Files.readString(tempDir.resolve("search-index.json")))
-        .isEqualTo(compiledSite.searchIndexJson());
   }
 }

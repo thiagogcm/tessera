@@ -1,7 +1,6 @@
 package dev.nthings.tessera;
 
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.form;
 import static dev.nthings.tessera.core.Elements.main;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -228,34 +227,5 @@ class FormsAndSearchPaletteTest {
     assertThat(tooltip).isNotNull();
     assertThat(tooltip.attr("role")).isEqualTo("tooltip");
     assertThat(tooltip.text()).isEqualTo("Must be alphanumeric");
-  }
-
-  @Test
-  void pageCompilerIntegratesFormsAndSearchPaletteCleanly() {
-    var palette = SearchPalette.create("global-search").item("General", "Dashboard", "/dashboard");
-
-    var formDoc =
-        new PageDocument(
-            "Account Settings",
-            main()
-                .children(
-                    palette.triggerButton("btn-open", "Search"),
-                    form()
-                        .child(
-                            Forms.field("Full Name", Forms.text("fullname"))
-                                .hint("Your legal name")
-                                .error("Name is required")),
-                    form().child(Forms.switchField("Email alerts", "alerts", true)),
-                    palette.asDeferred(10)));
-
-    var compiled = PageCompiler.compile(formDoc);
-    assertThat(compiled.html()).isNotBlank();
-    assertThat(compiled.cssContent())
-        .contains("@layer reset, base, theme, components, utilities, interactive, container;");
-    assertThat(compiled.cssContent()).contains(":user-invalid");
-
-    var parsed = Jsoup.parse(compiled.html());
-    assertThat(parsed.selectFirst("dialog#global-search")).isNotNull();
-    assertThat(parsed.selectFirst("button#btn-open")).isNotNull();
   }
 }

@@ -3,8 +3,8 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.div;
 
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Tokens;
 
 /// Text fields with validation, auto-growing textareas, switches, and customizable selects.
 final class FormsPage {
@@ -32,18 +32,16 @@ final class FormsPage {
                 + "the field, and a tooltip anchors to the input.")
         .features(":user-invalid", ":user-valid", "aria-errormessage", "anchor-name")
         .example(
-            div()
-                .grid()
-                .gridAutoFit(CssLength.rem(16))
-                .gap(CssLength.rem(1))
-                .children(
-                    Forms.field("Full name", Forms.text("fullName").attr("required", ""))
-                        .hint("As it appears on official documents.")
-                        .error("Full name is required.")
-                        .anchorTooltip("First and last name"),
-                    Forms.field("Work email", Forms.email("email").attr("required", ""))
-                        .hint("We send build notifications here.")
-                        .error("Enter a valid email address, e.g. ada@example.com.")))
+            Grid.autoFit(
+                CssLength.rem(16),
+                CssLength.rem(1),
+                Forms.field("Full name", Forms.text("fullName").attr("required", ""))
+                    .hint("As it appears on official documents.")
+                    .error("Full name is required.")
+                    .anchorTooltip("First and last name"),
+                Forms.field("Work email", Forms.email("email").attr("required", ""))
+                    .hint("We send build notifications here.")
+                    .error("Enter a valid email address, e.g. ada@example.com.")))
         .code(
             "Forms.field(\"Work email\", Forms.email(\"email\").attr(\"required\", \"\"))",
             "    .hint(\"We send build notifications here.\")",
@@ -67,14 +65,9 @@ final class FormsPage {
                 + "appearance: none and a :checked state.")
         .features("role=\"switch\"", "appearance: none", ":checked")
         .example(
-            div()
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(0.5))
-                .p(CssLength.rem(0.875))
-                .rounded(CssLength.rem(0.5))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
+            Demo.surface(
+                    div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(0.875)),
+                    CssLength.rem(0.5))
                 .children(
                     Forms.switchField("Email notifications", "notify_email", true),
                     Forms.switchField("Weekly digest", "notify_digest", false)))

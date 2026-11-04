@@ -66,12 +66,11 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  /// Registers a view's `@scope` CSS body using content-addressed deduplication.
+  /// Registers a view's `@scope` CSS body under a content-addressed key.
   ///
-  /// If `viewType` has not been registered or was registered with the exact same `scopedCss`
-  /// body, returns `viewType`. If a different `scopedCss` body was already registered under
-  /// `viewType`, qualifies the key as `<viewType>-<hash>` so distinct parameterized rules never
-  /// overwrite each other.
+  /// The key is `<viewType>-<hash(scopedCss)>`, a pure function of the view type and its rules,
+  /// so identical bodies share one `@scope` block and collectors from different pages merge
+  /// without conflicts. Views without scoped CSS keep the bare type as a scope boundary.
   ///
   /// @return the resolved `data-view` attribute value
   public String registerViewScope(String viewType, String scopedCss) {
@@ -79,17 +78,10 @@ public final class StyleSheetCollector {
     if (scopedCss.isBlank()) {
       return safeType;
     }
-    String existing = viewScopeBodies.get(safeType);
-    if (existing == null) {
-      viewScopeBodies.put(safeType, scopedCss);
-      return safeType;
-    }
-    if (existing.equals(scopedCss)) {
-      return safeType;
-    }
-    String qualifiedKey = qualifiedViewKey(safeType, scopedCss);
-    viewScopeBodies.putIfAbsent(qualifiedKey, scopedCss);
-    return qualifiedKey;
+    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
+    String key = safeType + "-" + Fnv1a64.toBase36Hash(hash);
+    viewScopeBodies.putIfAbsent(key, scopedCss);
+    return key;
   }
 
   public void registerKeyframeRule(String keyframeRule) {
@@ -107,31 +99,13 @@ public final class StyleSheetCollector {
   }
 
   /// Merges another collector's rules into this collector in deterministic insertion order.
-  ///
-  /// @return `data-view` renames for `other`'s pages: a view key that this collector already
-  /// holds with a different `@scope` body is re-registered under its content-qualified key
-  public Map<String, String> mergeFrom(StyleSheetCollector other) {
+  public void mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
     other.containerRules.forEach(containerRules::putIfAbsent);
-    var renames = new LinkedHashMap<String, String>();
-    other.viewScopeBodies.forEach(
-        (key, body) -> {
-          String existing = viewScopeBodies.putIfAbsent(key, body);
-          if (existing != null && !existing.equals(body)) {
-            String qualified = qualifiedViewKey(key, body);
-            viewScopeBodies.putIfAbsent(qualified, body);
-            renames.put(key, qualified);
-          }
-        });
+    other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
     keyframeRules.addAll(other.keyframeRules);
     transitionClasses.addAll(other.transitionClasses);
-    return renames;
-  }
-
-  private static String qualifiedViewKey(String viewKey, String scopedCss) {
-    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
-    return viewKey + "-" + Fnv1a64.toBase36Hash(hash);
   }
 
   private static String buildInteractiveBlock(Interactivity interactivity) {

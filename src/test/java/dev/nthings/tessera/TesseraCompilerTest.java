@@ -194,8 +194,7 @@ class TesseraCompilerTest {
         .contains("interpolate-size:allow-keywords")
         .contains("@view-transition{navigation:auto}")
         .contains("@function --fluid(")
-        .contains(
-            "@layer components{@scope ([data-view=\"workspace-panel-view\"]) to ([data-view])")
+        .contains("@layer components{@scope ([data-view=\"workspace-panel-view-")
         .contains("@layer utilities{")
         .contains("@layer interactive{")
         .contains("@layer container{@container metric-card (inline-size >= 320px)");
@@ -204,7 +203,7 @@ class TesseraCompilerTest {
     assertThat(parsed.title()).isEqualTo("Tessera Workspace");
 
     var mainEl =
-        parsed.selectFirst("main[data-view=workspace-panel-view][data-view-id=workspace-core]");
+        parsed.selectFirst("main[data-view^=workspace-panel-view-][data-view-id=workspace-core]");
     assertThat(mainEl).isNotNull();
 
     // Verify Invoker Commands & view-scoped IDs

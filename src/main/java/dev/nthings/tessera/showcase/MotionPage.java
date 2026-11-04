@@ -7,7 +7,6 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Grid;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.Tokens;
@@ -33,16 +32,6 @@ final class MotionPage {
         viewTransitions());
   }
 
-  private static TagElement panel(String label) {
-    return div()
-        .p(CssLength.rem(1.25))
-        .rounded(CssLength.rem(0.75))
-        .bg(Tokens.SURFACE_CARD)
-        .borderSubtle(Tokens.BORDER_SUBTLE)
-        .fontWeight(600)
-        .text(label);
-  }
-
   private static Demo scrollReveal() {
     return Demo.of("scroll-reveal", "Scroll reveal")
         .summary(
@@ -54,10 +43,10 @@ final class MotionPage {
             Grid.autoFit(
                 CssLength.rem(12),
                 CssLength.rem(1),
-                panel("Fade in").scrollReveal(ScrollReveal.FADE_IN),
-                panel("Fade up").scrollReveal(ScrollReveal.FADE_UP),
-                panel("Scale in").scrollReveal(ScrollReveal.SCALE_IN),
-                panel("Slide in").scrollReveal(ScrollReveal.SLIDE_INLINE)))
+                Demo.tile("Fade in").scrollReveal(ScrollReveal.FADE_IN),
+                Demo.tile("Fade up").scrollReveal(ScrollReveal.FADE_UP),
+                Demo.tile("Scale in").scrollReveal(ScrollReveal.SCALE_IN),
+                Demo.tile("Slide in").scrollReveal(ScrollReveal.SLIDE_INLINE)))
         .code(
             "div().scrollReveal(ScrollReveal.FADE_UP);",
             "new ScrollProgressBar(\"reading-progress\");");
@@ -74,9 +63,9 @@ final class MotionPage {
             Grid.autoFit(
                 CssLength.rem(12),
                 CssLength.rem(1),
-                panel("Fade up").revealOnce(ScrollReveal.FADE_UP),
-                panel("Scale in").revealOnce(ScrollReveal.SCALE_IN),
-                panel("Slide in").revealOnce(ScrollReveal.SLIDE_INLINE)))
+                Demo.tile("Fade up").revealOnce(ScrollReveal.FADE_UP),
+                Demo.tile("Scale in").revealOnce(ScrollReveal.SCALE_IN),
+                Demo.tile("Slide in").revealOnce(ScrollReveal.SLIDE_INLINE)))
         .code("div().revealOnce(ScrollReveal.SCALE_IN);");
   }
 
@@ -84,12 +73,7 @@ final class MotionPage {
     var row = div().flex().flexWrap().gap(CssLength.rem(0.5));
     for (int i = 1; i <= 8; i++) {
       row.child(
-          span()
-              .px(CssLength.rem(0.75))
-              .py(CssLength.rem(0.375))
-              .rounded(CssLength.px(999))
-              .bg(Tokens.SURFACE_CARD)
-              .borderSubtle(Tokens.BORDER_SUBTLE)
+          Demo.surface(span().px(CssLength.rem(0.75)).py(CssLength.rem(0.375)), CssLength.px(999))
               .revealOnce(ScrollReveal.FADE_UP)
               .staggerBySiblingIndex(60)
               .text("Item " + i));
@@ -103,14 +87,9 @@ final class MotionPage {
 
   private static Demo containerQueries() {
     var card =
-        div()
-            .flex()
-            .flexCol()
-            .gap(CssLength.rem(0.5))
-            .p(CssLength.rem(1))
-            .rounded(CssLength.rem(0.75))
-            .bg(Tokens.SURFACE_CARD)
-            .borderSubtle(Tokens.BORDER_SUBTLE)
+        Demo.surface(
+                div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(1)),
+                CssLength.rem(0.75))
             .onContainer(
                 "resizable", CssLength.rem(28), s -> s.flexRow().itemsCenter().justifyBetween())
             .children(

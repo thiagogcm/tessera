@@ -1,6 +1,5 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
@@ -18,7 +17,6 @@ import dev.nthings.tessera.components.Lists.NumberedList;
 import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.components.Lists.Term;
 import dev.nthings.tessera.components.Prose;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.Tokens;
@@ -44,16 +42,6 @@ final class LayoutPage {
         formatting());
   }
 
-  private static TagElement tile(String label) {
-    return div()
-        .p(CssLength.rem(1))
-        .rounded(CssLength.rem(0.5))
-        .bg(Tokens.SURFACE_CARD)
-        .borderSubtle(Tokens.BORDER_SUBTLE)
-        .fontWeight(600)
-        .text(label);
-  }
-
   private static Demo grid() {
     return Demo.of("grid", "Grid")
         .summary(
@@ -66,17 +54,17 @@ final class LayoutPage {
             Grid.autoFit(
                 CssLength.rem(10),
                 CssLength.rem(0.75),
-                tile("One"),
-                tile("Two"),
-                tile("Three"),
-                tile("Four")),
+                Demo.tile("One"),
+                Demo.tile("Two"),
+                Demo.tile("Three"),
+                Demo.tile("Four")),
             Grid.columns(
                 3,
                 CssLength.rem(0.75),
-                Grid.cell(2, 1, tile("Span 2 columns")),
-                Grid.cell(1, 2, tile("Span 2 rows")),
-                tile("Cell"),
-                tile("Cell")))
+                Grid.cell(2, 1, Demo.tile("Span 2 columns")),
+                Grid.cell(1, 2, Demo.tile("Span 2 rows")),
+                Demo.tile("Cell"),
+                Demo.tile("Cell")))
         .code(
             "Grid.autoFit(rem(10), rem(0.75), a, b, c, d);",
             "Grid.columns(3, rem(0.75), Grid.cell(2, 1, wide), Grid.cell(1, 2, tall), c, d);");

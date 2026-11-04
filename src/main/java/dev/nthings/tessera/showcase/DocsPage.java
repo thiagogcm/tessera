@@ -7,7 +7,6 @@ import static dev.nthings.tessera.core.Elements.text;
 import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Lists.StepList;
-import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.CssLength;
@@ -44,12 +43,7 @@ final class DocsPage {
             .borderSubtle(Tokens.BORDER_SUBTLE);
     var sections = new ArrayList<IntoElement>(demos);
     sections.add(Footnotes.section("Notes"));
-    return div()
-        .flex()
-        .flexCol()
-        .gap(CssLength.rem(2))
-        .children(
-            hero, Toc.docLayout(Page.TOC_ID, "On this page", sections.toArray(IntoElement[]::new)));
+    return div().flex().flexCol().gap(CssLength.rem(2)).children(hero, Page.docLayout(sections));
   }
 
   private static Demo heroImage() {

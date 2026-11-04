@@ -143,6 +143,10 @@ public final class PageCompiler {
     }
   }
 
+  /// Attributes whose URL values are collected into [PreparedPage#outgoingHrefs] for site-wide
+  /// route and asset validation.
+  private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
+
   private PageCompiler() {}
 
   public static CompiledPage compile(PageDocument document) {
@@ -156,6 +160,12 @@ public final class PageCompiler {
   }
 
   public static PreparedPage prepare(PageDocument document) {
+    return prepare(document, List.of());
+  }
+
+  /// Prepares `document` with `siteHead` elements (shared by every page of a site) placed in
+  /// `<head>` ahead of anything the page contributes.
+  public static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheetCollector();
     var state = new CompilationState();
 
@@ -167,6 +177,7 @@ public final class PageCompiler {
             styles,
             document.tokens(),
             () -> {
+              siteHead.forEach(RenderContext.current()::contributeHead);
               ResolvedNode root = requestLayout(document.bodyRoot().intoElement(), state);
               resolveLateElements(state);
               DocumentState docState = RenderContext.current().documentState();
@@ -189,7 +200,9 @@ public final class PageCompiler {
     List<ResolvedNode> bodyNodes = prepaint(p1.root(), state);
     var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
     for (var head : p1.headNodes()) {
-      headNodes.add(link(head, state));
+      ResolvedNode linked = link(head, state);
+      validateNodeTree(linked, state);
+      headNodes.add(linked);
     }
 
     return new PreparedPage(
@@ -205,16 +218,6 @@ public final class PageCompiler {
 
   public static CompiledPage paintPrepared(
       PreparedPage prepared, String cssContent, OutputMode outputMode) {
-    return paintPrepared(prepared, cssContent, outputMode, Map.of());
-  }
-
-  /// Paints `prepared`, mapping `data-view` values through `viewRenames` (see
-  /// [StyleSheetCollector#mergeFrom]).
-  public static CompiledPage paintPrepared(
-      PreparedPage prepared,
-      String cssContent,
-      OutputMode outputMode,
-      Map<String, String> viewRenames) {
     var htmlBuffer = new StringBuilder(4096);
     String externalCssPath =
         paint(
@@ -223,7 +226,6 @@ public final class PageCompiler {
             cssContent,
             outputMode,
             prepared.headNodes(),
-            viewRenames,
             htmlBuffer);
     return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
   }
@@ -503,17 +505,16 @@ public final class PageCompiler {
       }
     }
 
-    if (tag.tag() == HtmlTag.IMG) {
-      String src = attrs.get("src");
-      if (src != null && src.startsWith("/") && !src.startsWith("//")) {
-        state.outgoingHrefs.add(src);
+    for (String urlAttribute : URL_ATTRIBUTES) {
+      String url = attrs.get(urlAttribute);
+      if (url != null && !url.isBlank()) {
+        state.outgoingHrefs.add(url);
       }
     }
 
     if (tag.tag() == HtmlTag.A) {
       String href = attrs.get("href");
-      if (href != null && !href.isBlank()) {
-        state.outgoingHrefs.add(href);
+      if (href != null) {
         if (href.startsWith("#") && href.length() > 1) {
           String fragment = href.substring(1);
           if (!registeredDomIds.contains(fragment)) {
@@ -587,7 +588,6 @@ public final class PageCompiler {
       String cssContent,
       OutputMode outputMode,
       List<ResolvedNode> headNodes,
-      Map<String, String> viewRenames,
       Appendable out) {
     try {
       out.append("<!doctype html>\n<html lang=\"");
@@ -600,7 +600,7 @@ public final class PageCompiler {
       out.append(Encode.forHtmlContent(doc.title()));
       out.append("</title>\n");
       for (var head : headNodes) {
-        paintNode(head, viewRenames, out);
+        paintNode(head, out);
         out.append('\n');
       }
 
@@ -624,7 +624,7 @@ public final class PageCompiler {
 
       out.append("</head>\n<body>\n");
       for (var node : bodyNodes) {
-        paintNode(node, viewRenames, out);
+        paintNode(node, out);
       }
       out.append("\n</body>\n</html>\n");
       return externalCssPath;
@@ -633,8 +633,7 @@ public final class PageCompiler {
     }
   }
 
-  private static void paintNode(ResolvedNode node, Map<String, String> viewRenames, Appendable out)
-      throws IOException {
+  private static void paintNode(ResolvedNode node, Appendable out) throws IOException {
     switch (node) {
       case ResolvedEmpty _ -> {}
       case ResolvedSlot _ -> throw unlinked();
@@ -644,9 +643,6 @@ public final class PageCompiler {
         out.append('<').append(tag.tag().tagName());
         for (var attr : tag.attributes().entrySet()) {
           String value = attr.getValue();
-          if (attr.getKey().equals("data-view")) {
-            value = viewRenames.getOrDefault(value, value);
-          }
           out.append(' ').append(attr.getKey());
           if (!value.isEmpty()) {
             out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');
@@ -656,14 +652,14 @@ public final class PageCompiler {
 
         if (!tag.tag().isVoid()) {
           for (var child : tag.children()) {
-            paintNode(child, viewRenames, out);
+            paintNode(child, out);
           }
           out.append("</").append(tag.tag().tagName()).append('>');
         }
 
         var companion = tag.companionSibling();
         if (companion != null) {
-          paintNode(companion, viewRenames, out);
+          paintNode(companion, out);
         }
       }
     }

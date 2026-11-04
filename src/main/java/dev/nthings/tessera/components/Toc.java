@@ -22,6 +22,7 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -264,6 +265,16 @@ public final class Toc {
 
     @Override
     public ElementId entityId() {
+      return layoutId(tocId);
+    }
+
+    /// DOM id of section `sectionId` placed directly in a top-level `docLayout(tocId, ...)`, for
+    /// building links to it from other pages.
+    public static String sectionDomId(String tocId, String sectionId) {
+      return ViewScope.ROOT.extend(layoutId(tocId)).extend(ElementId.of(sectionId)).domId();
+    }
+
+    private static ElementId layoutId(String tocId) {
       return ElementId.of(tocId + "-layout");
     }
 

@@ -30,7 +30,7 @@ import java.util.List;
 
 /// Site chrome shared by every route: sticky header with navigation, search palette, quick
 /// actions and inspector drawer; page heading; previous/next pager; footer.
-record Shell(Page page, List<Page> pages) implements RenderOnce {
+record Shell(Page page) implements RenderOnce {
 
   static final CssLength MAX_WIDTH = CssLength.rem(76);
   static final CssLength PAD_X =
@@ -38,6 +38,7 @@ record Shell(Page page, List<Page> pages) implements RenderOnce {
 
   @Override
   public Element render() {
+    List<Page> pages = ShowcaseSite.pages();
     var inspector =
         Overlays.drawer("inspector", "Compiler & Cascade Inspector")
             .subtitle("What every page compiles to")

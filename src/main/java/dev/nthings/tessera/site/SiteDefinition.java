@@ -2,7 +2,6 @@ package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
-import java.util.HashSet;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -25,17 +24,6 @@ public record SiteDefinition(
     }
     routes = List.copyOf(routes);
     assets = List.copyOf(assets);
-    var assetPaths = new HashSet<String>();
-    for (var asset : assets) {
-      if (!assetPaths.add(asset.path())) {
-        throw new IllegalArgumentException("Duplicate asset path: " + asset.path());
-      }
-    }
-    for (var route : routes) {
-      if (assetPaths.contains(route.path())) {
-        throw new IllegalArgumentException("Asset path collides with route: " + route.path());
-      }
-    }
     if (baseUrl != null) {
       baseUrl = baseUrl.trim();
       if (baseUrl.endsWith("/")) {

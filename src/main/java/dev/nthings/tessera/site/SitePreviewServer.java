@@ -52,27 +52,9 @@ public final class SitePreviewServer implements AutoCloseable {
       requestPath = "/";
     }
 
-    String sharedCssPath = site.sharedCssPath();
-    if (sharedCssPath != null && sharedCssPath.equals(requestPath)) {
-      sendResponse(exchange, 200, "text/css; charset=utf-8", site.sharedCssContent());
-      return;
-    }
-
-    String sitemap = site.sitemapXml();
-    if ("/sitemap.xml".equals(requestPath) && sitemap != null) {
-      sendResponse(exchange, 200, "application/xml; charset=utf-8", sitemap);
-      return;
-    }
-
-    String searchIndex = site.searchIndexJson();
-    if ("/search-index.json".equals(requestPath) && searchIndex != null) {
-      sendResponse(exchange, 200, "application/json; charset=utf-8", searchIndex);
-      return;
-    }
-
-    SiteAsset asset = site.asset(requestPath);
-    if (asset != null) {
-      sendBytes(exchange, 200, asset.contentType(), asset.content());
+    SiteAsset file = site.files().get(requestPath);
+    if (file != null) {
+      sendBytes(exchange, 200, file.contentType(), file.contentView());
       return;
     }
 

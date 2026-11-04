@@ -35,7 +35,7 @@ class ProseAndCollapsibleTocTest {
 
     var canvas = parsed.selectFirst(".prose-canvas");
     assertThat(canvas).isNotNull();
-    assertThat(canvas.attr("data-view")).isEqualTo("prose-container");
+    assertThat(canvas.attr("data-view")).startsWith("prose-container-");
 
     var paragraphs = canvas.select("p");
     assertThat(paragraphs).hasSize(2);
@@ -128,7 +128,7 @@ class ProseAndCollapsibleTocTest {
     var nav = parsed.selectFirst("nav.toc-container");
     assertThat(nav).isNotNull();
     assertThat(nav.attr("aria-label")).isEqualTo("On This Page");
-    assertThat(nav.attr("data-view")).isEqualTo("table-of-contents");
+    assertThat(nav.attr("data-view")).startsWith("table-of-contents-");
 
     var details = nav.selectFirst("details.toc-collapsible-wrapper");
     assertThat(details).isNotNull();

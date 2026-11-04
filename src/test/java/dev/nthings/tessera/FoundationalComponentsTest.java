@@ -146,7 +146,7 @@ class FoundationalComponentsTest {
 
     // Media card has direct <img>, <hgroup>, single <p> (unwrapped), and <footer>
     var firstArticle =
-        doc.selectFirst("article[data-view=card][data-view-id=feature-cards--card-architecture]");
+        doc.selectFirst("article[data-view^=card-][data-view-id=feature-cards--card-architecture]");
     assertThat(firstArticle).isNotNull();
     assertThat(firstArticle.children().get(0).tagName()).isEqualTo("img");
     assertThat(firstArticle.children().get(1).tagName()).isEqualTo("hgroup");
@@ -156,14 +156,14 @@ class FoundationalComponentsTest {
 
     // Text-only card with 2 paragraphs groups content in a single <div> for subgrid track alignment
     var secondArticle =
-        doc.selectFirst("article[data-view=card][data-view-id=feature-cards--card-tokens]");
+        doc.selectFirst("article[data-view^=card-][data-view-id=feature-cards--card-tokens]");
     assertThat(secondArticle).isNotNull();
     assertThat(secondArticle.children().get(0).tagName()).isEqualTo("h3");
     assertThat(secondArticle.children().get(1).tagName()).isEqualTo("div");
 
     // Choice card uses <label> root with direct <input type="radio" checked>
     var choiceLabel =
-        doc.selectFirst("label[data-view=card][data-view-id=feature-cards--card-tier-pro]");
+        doc.selectFirst("label[data-view^=card-][data-view-id=feature-cards--card-tier-pro]");
     assertThat(choiceLabel).isNotNull();
     assertThat(choiceLabel.selectFirst("> input[type=radio][checked]")).isNotNull();
   }

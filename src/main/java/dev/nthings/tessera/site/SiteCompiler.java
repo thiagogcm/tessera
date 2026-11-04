@@ -1,14 +1,10 @@
 package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.components.Toc;
-import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageDocument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -16,17 +12,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.SequencedMap;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
 
@@ -39,23 +34,34 @@ import org.owasp.encoder.Encode;
 ///   before running Phase 3 (`paint`).
 public final class SiteCompiler {
 
+  /// Compiled routes plus every other file the site publishes, keyed by URL path: registered
+  /// assets, the shared stylesheet, `sitemap.xml` and `search-index.json`.
   public record CompiledSite(
       Map<String, PageCompiler.CompiledPage> pagesByRoute,
       @Nullable String sharedCssPath,
       String sharedCssContent,
-      @Nullable String sitemapXml,
-      @Nullable String searchIndexJson,
-      List<SiteAsset> assets) {
+      SequencedMap<String, SiteAsset> files) {
 
-    public @Nullable SiteAsset asset(String path) {
-      for (var asset : assets) {
-        if (asset.path().equals(path)) {
-          return asset;
-        }
-      }
-      return null;
+    public CompiledSite {
+      files = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(files));
+    }
+
+    public @Nullable String sitemapXml() {
+      return textFile(SITEMAP_PATH);
+    }
+
+    public @Nullable String searchIndexJson() {
+      return textFile(SEARCH_INDEX_PATH);
+    }
+
+    private @Nullable String textFile(String path) {
+      SiteAsset file = files.get(path);
+      return file == null ? null : new String(file.contentView(), StandardCharsets.UTF_8);
     }
   }
+
+  private static final String SITEMAP_PATH = "/sitemap.xml";
+  private static final String SEARCH_INDEX_PATH = "/search-index.json";
 
   private SiteCompiler() {}
 
@@ -69,35 +75,35 @@ public final class SiteCompiler {
         throw new IllegalArgumentException("Duplicate route path: " + route.path());
       }
     }
+    var files = new LinkedHashMap<String, SiteAsset>();
+    for (var asset : site.assets()) {
+      addFile(files, seenPaths, asset);
+    }
+
+    var siteHead = site.linkSpeculation().headElements();
     List<PageCompiler.PreparedPage> preparedPages =
-        parallelMap(
-            routes,
-            route -> PageCompiler.prepare(withHead(route.document(), site.linkSpeculation())));
+        parallelMap(routes, route -> PageCompiler.prepare(route.document(), siteHead));
     for (int i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
     // Verify cross-route links and #fragment targets
-    validateSiteLinks(preparedByRoute, site.assets());
+    validateSiteLinks(preparedByRoute, files.keySet());
 
     // Verify TransitionKey appearance across multiple routes
     validateViewTransitions(preparedByRoute);
 
     // Deterministically merge all route stylesheets in route order
     var sharedCollector = new StyleSheetCollector();
-    var viewRenames = new ArrayList<Map<String, String>>(preparedPages.size());
     for (var prepared : preparedPages) {
-      viewRenames.add(sharedCollector.mergeFrom(prepared.styles()));
+      sharedCollector.mergeFrom(prepared.styles());
     }
     String sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
 
-    var pageIndexes = IntStream.range(0, preparedPages.size()).boxed().toList();
     List<PageCompiler.CompiledPage> painted =
         parallelMap(
-            pageIndexes,
-            i ->
-                PageCompiler.paintPrepared(
-                    preparedPages.get(i), sharedCssContent, site.outputMode(), viewRenames.get(i)));
+            preparedPages,
+            prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
     var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
     String sharedCssPath = null;
     for (int i = 0; i < routes.size(); i++) {
@@ -108,35 +114,31 @@ public final class SiteCompiler {
       }
     }
 
-    String sitemapXml = null;
+    if (sharedCssPath != null) {
+      addFile(files, seenPaths, SiteAsset.text(sharedCssPath, sharedCssContent));
+    }
     String baseUrl = site.baseUrl();
     if (baseUrl != null && !baseUrl.isBlank()) {
-      sitemapXml = generateSitemapXml(baseUrl, site.routes());
+      addFile(files, seenPaths, SiteAsset.text(SITEMAP_PATH, generateSitemapXml(baseUrl, routes)));
     }
-
-    String searchIndexJson = generateSearchIndexJson(routes, preparedByRoute);
+    addFile(
+        files,
+        seenPaths,
+        SiteAsset.text(SEARCH_INDEX_PATH, generateSearchIndexJson(routes, preparedByRoute)));
 
     return new CompiledSite(
-        Collections.unmodifiableMap(compiledPages),
-        sharedCssPath,
-        sharedCssContent,
-        sitemapXml,
-        searchIndexJson,
-        site.assets());
+        Collections.unmodifiableMap(compiledPages), sharedCssPath, sharedCssContent, files);
   }
 
-  /// Adds site-wide `<head>` content (speculation rules) through the document's own body.
-  private static PageDocument withHead(PageDocument document, LinkSpeculation speculation) {
-    TagElement rules = speculation.rulesElement();
-    if (rules == null) {
-      return document;
+  /// Registers `file`, rejecting a path already taken by a route or another file.
+  private static void addFile(
+      Map<String, SiteAsset> files, Set<String> routePaths, SiteAsset file) {
+    if (routePaths.contains(file.path())) {
+      throw new IllegalArgumentException("File path collides with route: " + file.path());
     }
-    RenderOnce body =
-        () -> {
-          RenderContext.current().contributeHead(rules);
-          return document.bodyRoot().intoElement();
-        };
-    return new PageDocument(document.lang(), document.title(), document.tokens(), body);
+    if (files.putIfAbsent(file.path(), file) != null) {
+      throw new IllegalArgumentException("Duplicate file path: " + file.path());
+    }
   }
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.
@@ -167,49 +169,29 @@ public final class SiteCompiler {
     try {
       Files.createDirectories(outputDirectory);
       for (var entry : compiledSite.pagesByRoute().entrySet()) {
-        Path pageFile = outputDirectory.resolve(SiteRoute.outputPathFor(entry.getKey()));
-        Path parent = pageFile.getParent();
-        if (parent != null) {
-          Files.createDirectories(parent);
-        }
-        Files.writeString(pageFile, entry.getValue().html(), StandardCharsets.UTF_8);
+        writeFile(
+            outputDirectory,
+            SiteRoute.outputPathFor(entry.getKey()),
+            entry.getValue().html().getBytes(StandardCharsets.UTF_8));
       }
-
-      String cssPath = compiledSite.sharedCssPath();
-      if (cssPath != null) {
-        String relCss = cssPath.startsWith("/") ? cssPath.substring(1) : cssPath;
-        Path cssFile = outputDirectory.resolve(relCss);
-        Path parent = cssFile.getParent();
-        if (parent != null) {
-          Files.createDirectories(parent);
-        }
-        Files.writeString(cssFile, compiledSite.sharedCssContent(), StandardCharsets.UTF_8);
-      }
-
-      if (compiledSite.sitemapXml() != null) {
-        Path sitemapFile = outputDirectory.resolve("sitemap.xml");
-        Files.writeString(sitemapFile, compiledSite.sitemapXml(), StandardCharsets.UTF_8);
-      }
-
-      for (var asset : compiledSite.assets()) {
-        Path assetFile = outputDirectory.resolve(asset.relativeOutputPath()).normalize();
-        if (!assetFile.startsWith(outputDirectory.normalize())) {
-          throw new IllegalArgumentException("Asset escapes output directory: " + asset.path());
-        }
-        Path parent = assetFile.getParent();
-        if (parent != null) {
-          Files.createDirectories(parent);
-        }
-        Files.write(assetFile, asset.content());
-      }
-
-      if (compiledSite.searchIndexJson() != null) {
-        Path searchIndexFile = outputDirectory.resolve("search-index.json");
-        Files.writeString(searchIndexFile, compiledSite.searchIndexJson(), StandardCharsets.UTF_8);
+      for (var file : compiledSite.files().values()) {
+        writeFile(outputDirectory, file.relativeOutputPath(), file.contentView());
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  private static void writeFile(Path root, Path relative, byte[] content) throws IOException {
+    Path target = root.resolve(relative).normalize();
+    if (!target.startsWith(root.normalize())) {
+      throw new IllegalArgumentException("Output escapes the site directory: " + relative);
+    }
+    Path parent = target.getParent();
+    if (parent != null) {
+      Files.createDirectories(parent);
+    }
+    Files.write(target, content);
   }
 
   private static void validateViewTransitions(
@@ -295,9 +277,7 @@ public final class SiteCompiler {
   }
 
   private static void validateSiteLinks(
-      Map<String, PageCompiler.PreparedPage> preparedByRoute, List<SiteAsset> assets) {
-    var assetPaths = new HashSet<String>();
-    assets.forEach(asset -> assetPaths.add(asset.path()));
+      Map<String, PageCompiler.PreparedPage> preparedByRoute, Set<String> assetPaths) {
     for (var entry : preparedByRoute.entrySet()) {
       String sourceRoute = entry.getKey();
       PageCompiler.PreparedPage sourcePage = entry.getValue();

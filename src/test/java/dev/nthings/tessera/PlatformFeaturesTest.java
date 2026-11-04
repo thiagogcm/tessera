@@ -75,7 +75,7 @@ class PlatformFeaturesTest {
   }
 
   @Test
-  @DisplayName("Same view type with different @scope CSS on two pages keeps each page's rules")
+  @DisplayName("View keys are content-addressed, so pages with different @scope CSS never clash")
   void crossPageViewScopeConflict() {
     var routes =
         List.of(
@@ -97,15 +97,18 @@ class PlatformFeaturesTest {
                                 "g", CssLength.rem(15), CssLength.rem(1), p().text("b"))))));
     var site = SiteCompiler.compile(new SiteDefinition(routes));
 
-    String viewB =
-        Jsoup.parse(site.pagesByRoute().get("/b").html())
-            .selectFirst("[data-view^=card-grid]")
-            .attr("data-view");
+    String viewA = viewKey(site.pagesByRoute().get("/").html(), "card-grid");
+    String viewB = viewKey(site.pagesByRoute().get("/b").html(), "card-grid");
+    assertThat(viewA).startsWith("card-grid-").isNotEqualTo(viewB);
     assertThat(viewB).startsWith("card-grid-");
     assertThat(site.sharedCssContent())
-        .contains("@scope ([data-view=\"card-grid\"])")
+        .contains("@scope ([data-view=\"" + viewA + "\"])")
         .contains("@scope ([data-view=\"" + viewB + "\"])")
         .contains("min(100%, 15rem)");
+  }
+
+  private static String viewKey(String html, String viewType) {
+    return Jsoup.parse(html).selectFirst("[data-view^=" + viewType + "-]").attr("data-view");
   }
 
   @Test
@@ -151,5 +154,16 @@ class PlatformFeaturesTest {
       assertThat(res.headers().firstValue("Content-Type")).hasValue("image/svg+xml");
       assertThat(res.body()).isEqualTo("<svg/>");
     }
+
+    assertThatThrownBy(
+            () ->
+                SiteCompiler.compile(
+                    new SiteDefinition(routes)
+                        .withAssets(
+                            List.of(
+                                SiteAsset.text("/assets/logo.svg", "<svg/>"),
+                                SiteAsset.text("/search-index.json", "[]")))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Duplicate file path: /search-index.json");
   }
 }

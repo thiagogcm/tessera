@@ -7,6 +7,7 @@ import dev.nthings.tessera.components.ContentSection;
 import dev.nthings.tessera.components.ContentSection.SurfaceKind;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
@@ -14,7 +15,6 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
 
 /// One showcase section: what a component does, the platform features it compiles to, a live
 /// example, and the Java that produced it.
@@ -25,7 +25,7 @@ final class Demo implements RenderOnce {
   private String summary = "";
   private List<String> features = List.of();
   private final List<Element> examples = new ArrayList<>();
-  private @Nullable List<String> code;
+  private List<String> code = List.of();
   private SurfaceKind surface = SurfaceKind.CARD;
 
   private Demo(String id, String title) {
@@ -71,6 +71,24 @@ final class Demo implements RenderOnce {
     return div().flex().flexWrap().itemsCenter().gap(CssLength.rem(0.75)).children(controls);
   }
 
+  /// Card-surface styling shared by example panels, popovers and tooltips.
+  static TagElement surface(TagElement box, CssLength radius) {
+    return box.rounded(radius).bg(Tokens.SURFACE_CARD).borderSubtle(Tokens.BORDER_SUBTLE);
+  }
+
+  /// Labelled card-surface tile for layout and motion examples.
+  static TagElement tile(String label) {
+    return surface(div().p(CssLength.rem(1)).fontWeight(600).text(label), CssLength.rem(0.75));
+  }
+
+  /// Secondary button styled like the component triggers.
+  static TagElement button(String label) {
+    return surface(
+            Elements.button().px(CssLength.rem(0.875)).py(CssLength.rem(0.5)).cursorPointer(),
+            CssLength.rem(0.5))
+        .text(label);
+  }
+
   String id() {
     return id;
   }
@@ -103,9 +121,8 @@ final class Demo implements RenderOnce {
             .bg(Tokens.SURFACE_CANVAS)
             .borderSubtle(Tokens.BORDER_SUBTLE)
             .children(examples));
-    List<String> source = code;
-    if (source != null) {
-      section.child(CodeBlock.ofLines(source).filename("Usage").language("java"));
+    if (!code.isEmpty()) {
+      section.child(CodeBlock.ofLines(code).filename("Usage").language("java"));
     }
     return section.intoElement();
   }

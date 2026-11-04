@@ -83,7 +83,7 @@ class InteractiveOverlaysAndScrollSpyTest {
     assertThat(drawerEl).isNotNull();
 
     // Dropdown popover is adjacent sibling of its trigger button without false role="menu"
-    var dropdownTrigger = doc.selectFirst("[data-view=dropdown] > button.dropdown-trigger");
+    var dropdownTrigger = doc.selectFirst("[data-view^=dropdown-] > button.dropdown-trigger");
     assertThat(dropdownTrigger).isNotNull();
     assertThat(dropdownTrigger.hasAttr("aria-haspopup")).isFalse();
     var adjacentPopover = dropdownTrigger.nextElementSibling();

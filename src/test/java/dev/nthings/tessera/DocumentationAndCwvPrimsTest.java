@@ -174,7 +174,7 @@ class DocumentationAndCwvPrimsTest {
     assertThat(caution.selectFirst(".callout-title").text()).isEqualTo("Hazard Ahead");
 
     assertThat(compiled.cssContent())
-        .contains("@scope ([data-view=\"tessera-callout\"]) to ([data-view])")
+        .contains("@scope ([data-view=\"tessera-callout-")
         .contains("color-mix(in oklab, var(--status-info) 14%, var(--surface-card))")
         .contains("border-inline-start:4px solid var(--status-info)");
   }

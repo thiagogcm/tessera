@@ -60,19 +60,21 @@ class SiteCompilerAndScopeStyleTest {
                 "Scope Deduplication", main().children(card1, card2, table2Col, table3Col)));
 
     String css = compiled.cssContent();
-    // Only a single @scope ([data-view="card"]) block should exist despite 2 Card instances
-    int firstCardScope = css.indexOf("@scope ([data-view=\"card\"]) to ([data-view])");
-    int lastCardScope = css.lastIndexOf("@scope ([data-view=\"card\"]) to ([data-view])");
-    assertThat(firstCardScope).isGreaterThan(0).isEqualTo(lastCardScope);
+    var doc = Jsoup.parse(compiled.html());
+    // Only a single @scope block for the card view should exist despite 2 Card instances
+    String cardView = doc.selectFirst("[data-view-id=card-one]").attr("data-view");
+    assertThat(doc.selectFirst("[data-view-id=card-two]").attr("data-view")).isEqualTo(cardView);
+    String cardScope = "@scope ([data-view=\"" + cardView + "\"]) to ([data-view])";
+    assertThat(css.indexOf(cardScope)).isGreaterThan(0).isEqualTo(css.lastIndexOf(cardScope));
 
     // Parameterized DataTables with different columns get distinct data-view keys
-    var doc = Jsoup.parse(compiled.html());
     var firstTableWrapper = doc.selectFirst("[data-view-id=datatable-two-col]");
     var secondTableWrapper = doc.selectFirst("[data-view-id=datatable-three-col]");
     assertThat(firstTableWrapper).isNotNull();
     assertThat(secondTableWrapper).isNotNull();
-    assertThat(firstTableWrapper.attr("data-view")).isEqualTo("data-table");
-    assertThat(secondTableWrapper.attr("data-view")).startsWith("data-table-");
+    assertThat(firstTableWrapper.attr("data-view"))
+        .startsWith("data-table-")
+        .isNotEqualTo(secondTableWrapper.attr("data-view"));
   }
 
   @Test
@@ -90,9 +92,9 @@ class SiteCompilerAndScopeStyleTest {
             "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}")
         .contains(
             "::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}")
-        .contains("@scope ([data-view=\"card\"]) to ([data-view])")
-        .contains("@scope ([data-view=\"data-table\"]) to ([data-view])")
-        .contains("@scope ([data-view=\"step-list\"]) to ([data-view])");
+        .contains("@scope ([data-view=\"card-")
+        .contains("@scope ([data-view=\"data-table-")
+        .contains("@scope ([data-view=\"step-list-");
 
     // Verify disk output
     SiteCompiler.writeToDirectory(compiledSite, tempDir);

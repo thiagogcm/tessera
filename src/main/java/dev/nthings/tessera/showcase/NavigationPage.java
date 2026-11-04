@@ -11,6 +11,7 @@ import dev.nthings.tessera.components.Dropdown;
 import dev.nthings.tessera.components.Tabs;
 import dev.nthings.tessera.components.Tabs.NavItem;
 import dev.nthings.tessera.components.Tabs.TabPanel;
+import dev.nthings.tessera.components.Toc;
 import java.util.List;
 
 /// Breadcrumbs, tabs, accordions, carousels, dropdown menus, and pagers.
@@ -45,7 +46,9 @@ final class NavigationPage {
                 "demo-crumbs",
                 Crumb.of("/", "Tessera"),
                 Crumb.of("/navigation", "Navigation"),
-                Crumb.of("/navigation#toc-layout--breadcrumbs", "Breadcrumbs")))
+                Crumb.of(
+                    "/navigation#" + Toc.DocLayout.sectionDomId(Page.TOC_ID, "breadcrumbs"),
+                    "Breadcrumbs")))
         .code(
             "Breadcrumbs.of(\"crumbs\", Crumb.of(\"/\", \"Home\"), Crumb.of(\"/docs\", \"Docs\"));");
   }

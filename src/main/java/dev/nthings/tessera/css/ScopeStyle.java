@@ -69,8 +69,6 @@ public final class ScopeStyle {
     return atRule("@media (prefers-reduced-motion: no-preference)", nestedBuilder);
   }
 
-  /// Wraps nested rules inside `@supports not (<condition>)`.
-
   private ScopeStyle atRule(String header, Consumer<ScopeStyle> nestedBuilder) {
     var nested = atRuleBlocks.computeIfAbsent(header, _ -> new ScopeStyle());
     nestedBuilder.accept(nested);

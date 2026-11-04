@@ -9,7 +9,8 @@ import java.util.Locale;
 
 /// Static file (image, font, icon, ...) published at `path` alongside the compiled pages.
 ///
-/// Internal links and `<img src>` paths are validated against registered assets, just like routes.
+/// Internal `href`, `src` and `poster` URLs are validated against registered assets, just like
+/// routes.
 public record SiteAsset(String path, String contentType, byte[] content) {
 
   public SiteAsset {
@@ -44,6 +45,11 @@ public record SiteAsset(String path, String contentType, byte[] content) {
   @Override
   public byte[] content() {
     return content.clone();
+  }
+
+  /// The owned bytes without a defensive copy, for writing and serving.
+  byte[] contentView() {
+    return content;
   }
 
   /// Output location relative to the site root.

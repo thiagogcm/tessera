@@ -1,6 +1,5 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
@@ -13,7 +12,6 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Tokens;
 
 /// Modal dialogs, drawers, popovers, interest tooltips, and the search palette.
 final class OverlaysPage {
@@ -87,23 +85,10 @@ final class OverlaysPage {
                 + "ElementRef, so the id link is checked at compile time.")
         .features("popover=\"auto\"", "command=\"toggle-popover\"", "ElementRef")
         .example(
-            Demo.row(
-                button()
-                    .command(panel, BuiltinCommand.TOGGLE_POPOVER)
-                    .px(CssLength.rem(0.875))
-                    .py(CssLength.rem(0.5))
-                    .rounded(CssLength.rem(0.5))
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .bg(Tokens.SURFACE_CARD)
-                    .cursorPointer()
-                    .text("Toggle popover")),
-            div()
-                .id(panel)
-                .popover(PopoverMode.AUTO)
-                .p(CssLength.rem(1))
-                .rounded(CssLength.rem(0.75))
-                .bg(Tokens.SURFACE_CARD)
-                .borderSubtle(Tokens.BORDER_SUBTLE)
+            Demo.row(Demo.button("Toggle popover").command(panel, BuiltinCommand.TOGGLE_POPOVER)),
+            Demo.surface(
+                    div().id(panel).popover(PopoverMode.AUTO).p(CssLength.rem(1)),
+                    CssLength.rem(0.75))
                 .text("Click outside or press Escape to close."))
         .code(
             "var panel = ElementRef.named(\"panel\");",
@@ -119,21 +104,11 @@ final class OverlaysPage {
         .features("interestfor", "popover=\"hint\"", "position-try-fallbacks")
         .example(
             Demo.row(
-                button()
+                Demo.button("Hover me")
                     .interestTooltip(
                         tip ->
-                            tip.p(CssLength.rem(0.5))
-                                .rounded(CssLength.rem(0.375))
-                                .bg(Tokens.SURFACE_CARD)
-                                .borderSubtle(Tokens.BORDER_SUBTLE)
-                                .text("Saved 2 minutes ago"))
-                    .px(CssLength.rem(0.875))
-                    .py(CssLength.rem(0.5))
-                    .rounded(CssLength.rem(0.5))
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .bg(Tokens.SURFACE_CARD)
-                    .cursorPointer()
-                    .text("Hover me")))
+                            Demo.surface(tip.p(CssLength.rem(0.5)), CssLength.rem(0.375))
+                                .text("Saved 2 minutes ago"))))
         .code(
             "button().interestTooltip(tip -> tip.text(\"Saved 2 minutes ago\")).text(\"Hover me\");");
   }

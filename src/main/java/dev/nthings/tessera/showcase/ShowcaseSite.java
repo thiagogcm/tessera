@@ -37,7 +37,7 @@ public final class ShowcaseSite {
                 page ->
                     new SiteRoute(
                         page.path(),
-                        new PageDocument("Tessera — " + page.navLabel(), new Shell(page, PAGES)),
+                        new PageDocument("Tessera — " + page.navLabel(), new Shell(page)),
                         page.title(),
                         page.summary()))
             .toList();

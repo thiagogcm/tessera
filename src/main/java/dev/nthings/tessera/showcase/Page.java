@@ -37,11 +37,17 @@ record Page(
     if (custom != null) {
       return custom.get().intoElement();
     }
-    return Toc.docLayout(TOC_ID, "On this page", demos.toArray(IntoElement[]::new)).intoElement();
+    return docLayout(demos);
+  }
+
+  /// The showcase's scroll-spy documentation layout around `sections`.
+  static Element docLayout(List<? extends IntoElement> sections) {
+    return Toc.docLayout(TOC_ID, "On this page", sections.toArray(IntoElement[]::new))
+        .intoElement();
   }
 
   /// Fragment link to a demo section (sections are scoped inside the doc layout view).
   String sectionHref(Demo demo) {
-    return path + "#" + TOC_ID + "-layout--" + demo.id();
+    return path + "#" + Toc.DocLayout.sectionDomId(TOC_ID, demo.id());
   }
 }

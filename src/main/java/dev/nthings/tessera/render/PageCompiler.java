@@ -254,8 +254,8 @@ public final class PageCompiler {
 
     boolean hasAspectRatio = tag.style().get(CssProperty.ASPECT_RATIO) != null;
 
-    if (tag.transitionKey() != null) {
-      TransitionKey tk = tag.transitionKey();
+    TransitionKey tk = tag.transitionKey();
+    if (tk != null) {
       if (!state.viewTransitionNames.add(tk.name())) {
         throw new AccessibilityViolationException(
             "Duplicate TransitionKey name '"

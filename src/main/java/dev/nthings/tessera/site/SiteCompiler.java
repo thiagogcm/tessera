@@ -107,8 +107,9 @@ public final class SiteCompiler {
     }
 
     String sitemapXml = null;
-    if (site.baseUrl() != null && !site.baseUrl().isBlank()) {
-      sitemapXml = generateSitemapXml(site.baseUrl(), site.routes());
+    String baseUrl = site.baseUrl();
+    if (baseUrl != null && !baseUrl.isBlank()) {
+      sitemapXml = generateSitemapXml(baseUrl, site.routes());
     }
 
     String searchIndexJson = generateSearchIndexJson(routes, preparedByRoute);
@@ -203,17 +204,17 @@ public final class SiteCompiler {
     for (int i = 0; i < routes.size(); i++) {
       var route = routes.get(i);
       var prepared = preparedByRoute.get(route.path());
+      String routeTitle = route.title();
       String title =
-          route.title() != null
-              ? route.title()
+          routeTitle != null
+              ? routeTitle
               : (prepared != null ? prepared.document().title() : route.path());
       sb.append("  {\n");
       sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
       sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
-      if (route.description() != null) {
-        sb.append(",\n    \"description\": \"")
-            .append(escapeJson(route.description()))
-            .append("\"");
+      String routeDesc = route.description();
+      if (routeDesc != null) {
+        sb.append(",\n    \"description\": \"").append(escapeJson(routeDesc)).append("\"");
       }
       sb.append(",\n    \"headings\": [");
       if (prepared != null) {

@@ -18,6 +18,7 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -79,7 +80,10 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
   public Callout(Tone tone) {
     this.tone = tone;
     this.instanceId =
-        "callout-" + tone.name().toLowerCase() + "-" + Fnv1a64.toBase36Hash(System.nanoTime());
+        "callout-"
+            + tone.name().toLowerCase(Locale.ROOT)
+            + "-"
+            + Fnv1a64.toBase36Hash(System.nanoTime());
   }
 
   public static Callout note(String text) {
@@ -247,7 +251,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout> {
 
     return aside()
         .attr("role", "note")
-        .attr("class", "callout callout--" + tone.name().toLowerCase())
+        .attr("class", "callout callout--" + tone.name().toLowerCase(Locale.ROOT))
         .bgRaw(bgValue)
         .borderInlineStart("4px solid " + tone.token().varReference())
         .children(header, content);

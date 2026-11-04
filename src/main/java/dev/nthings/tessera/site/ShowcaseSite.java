@@ -75,7 +75,7 @@ public final class ShowcaseSite {
       @Nullable DocPager pager)
       implements RenderOnce {
 
-    public ShellLayout(
+    ShellLayout(
         String activePath,
         String pageHeading,
         String subtitle,

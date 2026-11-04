@@ -60,13 +60,15 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
-    if ("/sitemap.xml".equals(requestPath) && site.sitemapXml() != null) {
-      sendResponse(exchange, 200, "application/xml; charset=utf-8", site.sitemapXml());
+    String sitemap = site.sitemapXml();
+    if ("/sitemap.xml".equals(requestPath) && sitemap != null) {
+      sendResponse(exchange, 200, "application/xml; charset=utf-8", sitemap);
       return;
     }
 
-    if ("/search-index.json".equals(requestPath) && site.searchIndexJson() != null) {
-      sendResponse(exchange, 200, "application/json; charset=utf-8", site.searchIndexJson());
+    String searchIndex = site.searchIndexJson();
+    if ("/search-index.json".equals(requestPath) && searchIndex != null) {
+      sendResponse(exchange, 200, "application/json; charset=utf-8", searchIndex);
       return;
     }
 

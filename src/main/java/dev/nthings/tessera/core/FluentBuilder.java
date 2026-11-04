@@ -28,7 +28,10 @@ public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
   }
 
   default <T> SELF whenOptional(Optional<T> optional, BiFunction<SELF, T, SELF> then) {
-    return optional.map(v -> then.apply(self(), v)).orElseGet(this::self);
+    if (optional.isPresent()) {
+      return then.apply(self(), optional.get());
+    }
+    return self();
   }
 
   default SELF map(Function<SELF, SELF> mapper) {

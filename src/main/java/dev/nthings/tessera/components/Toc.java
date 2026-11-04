@@ -188,9 +188,8 @@ public final class Toc {
                       .fontSize(CssLength.rem(0.75))
                       .fontWeight(700))
           .select(":scope .toc-summary:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
-          .select(":scope .toc-summary::-webkit-details-marker", s -> s.hidden())
           .select(":scope .toc-chevron", s -> s.transition("transform 0.2s ease"))
-          .select(":scope[open] .toc-chevron", s -> s.transform("rotate(90deg)"))
+          .select(":scope details:open .toc-chevron", s -> s.transform("rotate(90deg)"))
           .select(
               ":scope details::details-content",
               s -> s.transition("block-size 0.3s ease, content-visibility 0.3s allow-discrete"))

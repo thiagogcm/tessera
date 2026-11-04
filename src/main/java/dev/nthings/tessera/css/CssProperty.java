@@ -124,7 +124,10 @@ public enum CssProperty {
   CONTAIN_INTRINSIC_SIZE,
   APPEARANCE,
   ACCENT_COLOR,
-  RESIZE;
+  RESIZE,
+  FIELD_SIZING,
+  TIMELINE_TRIGGER,
+  ANIMATION_TRIGGER;
 
   private final String cssName = name().toLowerCase(Locale.ROOT).replace('_', '-');
 

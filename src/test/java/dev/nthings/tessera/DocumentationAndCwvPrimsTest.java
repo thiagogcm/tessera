@@ -175,7 +175,7 @@ class DocumentationAndCwvPrimsTest {
 
     assertThat(compiled.cssContent())
         .contains("@scope ([data-view=\"tessera-callout\"]) to ([data-view])")
-        .contains("color-mix(in oklch, var(--status-info) 14%, var(--surface-card))")
+        .contains("color-mix(in oklab, var(--status-info) 14%, var(--surface-card))")
         .contains("border-inline-start:4px solid var(--status-info)");
   }
 

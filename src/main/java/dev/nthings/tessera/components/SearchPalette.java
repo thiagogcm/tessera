@@ -7,7 +7,6 @@ import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
-import static dev.nthings.tessera.core.Elements.header;
 import static dev.nthings.tessera.core.Elements.input;
 import static dev.nthings.tessera.core.Elements.kbd;
 import static dev.nthings.tessera.core.Elements.option;
@@ -110,7 +109,8 @@ public final class SearchPalette implements RenderView {
     return button()
         .id(buttonId)
         .command(dialog, BuiltinCommand.SHOW_MODAL)
-        .ariaLabel(label + " (Press Ctrl+K or / to open)")
+        .ariaLabel(label)
+        .attr("aria-keyshortcuts", "Alt+K")
         .attr("accesskey", "k")
         .flex()
         .itemsCenter()
@@ -146,7 +146,7 @@ public final class SearchPalette implements RenderView {
                         .fontSize(CssLength.rem(0.7))
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
-                        .text("Ctrl"))
+                        .text("Alt"))
                 .child(
                     kbd()
                         .px(CssLength.rem(0.35))
@@ -186,7 +186,7 @@ public final class SearchPalette implements RenderView {
     }
 
     var headerEl =
-        header()
+        Elements.search()
             .attr("class", "palette-header")
             .child(rawHtml(SEARCH_ICON_SVG))
             .child(
@@ -294,9 +294,9 @@ public final class SearchPalette implements RenderView {
                                 .transitionDuration("0.2s")
                                 .transitionTimingFunction("cubic-bezier(0.16, 1, 0.3, 1)")
                                 .transitionAllowDiscrete())
-                    .select(":scope[open]", s -> s.opacity(1).transform("translateY(0) scale(1)"))
+                    .select(":scope:open", s -> s.opacity(1).transform("translateY(0) scale(1)"))
                     .selectWithStartingStyle(
-                        ":scope[open]",
+                        ":scope:open",
                         s -> s.opacity(1).transform("translateY(0) scale(1)"),
                         s -> s.opacity(0).transform("translateY(-12px) scale(0.98)")))
         .select(

@@ -1,10 +1,14 @@
 package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.components.Toc;
+import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
+import dev.nthings.tessera.render.PageDocument;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -12,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
 
@@ -38,7 +44,18 @@ public final class SiteCompiler {
       @Nullable String sharedCssPath,
       String sharedCssContent,
       @Nullable String sitemapXml,
-      @Nullable String searchIndexJson) {}
+      @Nullable String searchIndexJson,
+      List<SiteAsset> assets) {
+
+    public @Nullable SiteAsset asset(String path) {
+      for (var asset : assets) {
+        if (asset.path().equals(path)) {
+          return asset;
+        }
+      }
+      return null;
+    }
+  }
 
   private SiteCompiler() {}
 
@@ -53,28 +70,34 @@ public final class SiteCompiler {
       }
     }
     List<PageCompiler.PreparedPage> preparedPages =
-        parallelMap(routes, route -> PageCompiler.prepare(route.document()));
+        parallelMap(
+            routes,
+            route -> PageCompiler.prepare(withHead(route.document(), site.linkSpeculation())));
     for (int i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
     // Verify cross-route links and #fragment targets
-    validateSiteLinks(preparedByRoute);
+    validateSiteLinks(preparedByRoute, site.assets());
 
     // Verify TransitionKey appearance across multiple routes
     validateViewTransitions(preparedByRoute);
 
     // Deterministically merge all route stylesheets in route order
     var sharedCollector = new StyleSheetCollector();
-    for (var prepared : preparedByRoute.values()) {
-      sharedCollector.mergeFrom(prepared.styles());
+    var viewRenames = new ArrayList<Map<String, String>>(preparedPages.size());
+    for (var prepared : preparedPages) {
+      viewRenames.add(sharedCollector.mergeFrom(prepared.styles()));
     }
     String sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
 
+    var pageIndexes = IntStream.range(0, preparedPages.size()).boxed().toList();
     List<PageCompiler.CompiledPage> painted =
         parallelMap(
-            preparedPages,
-            prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
+            pageIndexes,
+            i ->
+                PageCompiler.paintPrepared(
+                    preparedPages.get(i), sharedCssContent, site.outputMode(), viewRenames.get(i)));
     var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
     String sharedCssPath = null;
     for (int i = 0; i < routes.size(); i++) {
@@ -98,7 +121,22 @@ public final class SiteCompiler {
         sharedCssPath,
         sharedCssContent,
         sitemapXml,
-        searchIndexJson);
+        searchIndexJson,
+        site.assets());
+  }
+
+  /// Adds site-wide `<head>` content (speculation rules) through the document's own body.
+  private static PageDocument withHead(PageDocument document, LinkSpeculation speculation) {
+    TagElement rules = speculation.rulesElement();
+    if (rules == null) {
+      return document;
+    }
+    RenderOnce body =
+        () -> {
+          RenderContext.current().contributeHead(rules);
+          return document.bodyRoot().intoElement();
+        };
+    return new PageDocument(document.lang(), document.title(), document.tokens(), body);
   }
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.
@@ -151,6 +189,18 @@ public final class SiteCompiler {
       if (compiledSite.sitemapXml() != null) {
         Path sitemapFile = outputDirectory.resolve("sitemap.xml");
         Files.writeString(sitemapFile, compiledSite.sitemapXml(), StandardCharsets.UTF_8);
+      }
+
+      for (var asset : compiledSite.assets()) {
+        Path assetFile = outputDirectory.resolve(asset.relativeOutputPath()).normalize();
+        if (!assetFile.startsWith(outputDirectory.normalize())) {
+          throw new IllegalArgumentException("Asset escapes output directory: " + asset.path());
+        }
+        Path parent = assetFile.getParent();
+        if (parent != null) {
+          Files.createDirectories(parent);
+        }
+        Files.write(assetFile, asset.content());
       }
 
       if (compiledSite.searchIndexJson() != null) {
@@ -244,7 +294,10 @@ public final class SiteCompiler {
     return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
   }
 
-  private static void validateSiteLinks(Map<String, PageCompiler.PreparedPage> preparedByRoute) {
+  private static void validateSiteLinks(
+      Map<String, PageCompiler.PreparedPage> preparedByRoute, List<SiteAsset> assets) {
+    var assetPaths = new HashSet<String>();
+    assets.forEach(asset -> assetPaths.add(asset.path()));
     for (var entry : preparedByRoute.entrySet()) {
       String sourceRoute = entry.getKey();
       PageCompiler.PreparedPage sourcePage = entry.getValue();
@@ -255,6 +308,9 @@ public final class SiteCompiler {
           int hashIdx = href.indexOf('#');
           String rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
           String fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";
+          if (assetPaths.contains(rawPath)) {
+            continue;
+          }
           String targetRoute =
               rawPath.isEmpty() ? sourceRoute : SiteRoute.normalizeRoutePath(rawPath);
 
@@ -263,7 +319,7 @@ public final class SiteCompiler {
             throw new AccessibilityViolationException(
                 "Route \""
                     + sourceRoute
-                    + "\" links to unregistered internal route href=\""
+                    + "\" references unregistered internal route or asset \""
                     + href
                     + "\"");
           }

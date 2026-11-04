@@ -14,7 +14,6 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
@@ -82,7 +81,7 @@ public final class Tabs {
                       .p(CssLength.px(0))
                       .m(CssLength.px(0)))
           .select(":scope li.active", s -> s.anchorName(anchorIdent));
-      anchorUnderline(scope, ":scope ul::before", ":scope ul li.active", anchorIdent)
+      anchorUnderline(scope, ":scope ul::before", anchorIdent)
           .select(
               ":scope a",
               s ->
@@ -176,11 +175,7 @@ public final class Tabs {
           .select(
               ":scope > .tab-bar > .tab-label:has(> input:checked)",
               s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
-      anchorUnderline(
-              scope,
-              ":scope > .tab-bar::before",
-              ":scope > .tab-bar > .tab-label:has(> input:checked)",
-              anchorIdent)
+      anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent)
           .select(":scope > .tab-panel", s -> s.hidden().p(CssLength.rem(1.25)));
 
       for (int i = 0; i < panels.size(); i++) {
@@ -223,10 +218,9 @@ public final class Tabs {
     }
   }
 
-  /// Anchor-positioned sliding underline under `activeSelector`, with a static border fallback
-  /// where CSS Anchor Positioning is unsupported.
+  /// Anchor-positioned underline sliding to the tab carrying `anchorIdent`.
   private static ScopeStyle anchorUnderline(
-      ScopeStyle scope, String barSelector, String activeSelector, String anchorIdent) {
+      ScopeStyle scope, String barSelector, String anchorIdent) {
     return scope
         .select(
             barSelector,
@@ -239,17 +233,6 @@ public final class Tabs {
                     .insetInlineEnd(CssLength.expr("anchor(right)"))
                     .blockSize(CssLength.px(2))
                     .bg(Tokens.ACCENT_PRIMARY))
-        .motionSafe(m -> m.select(barSelector, s -> s.transition("inset 0.2s ease")))
-        .supportsNot(
-            "position-anchor: auto",
-            f ->
-                f.select(
-                    activeSelector,
-                    s ->
-                        s.refine(
-                            r ->
-                                r.put(
-                                    CssProperty.BORDER_BLOCK_END,
-                                    "2px solid " + Tokens.ACCENT_PRIMARY.varReference()))));
+        .motionSafe(m -> m.select(barSelector, s -> s.transition("inset 0.2s ease")));
   }
 }

@@ -21,7 +21,7 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Editorial callout admonition emitting an accessible `<aside role="note">` tinted with adaptive
-/// `color-mix(in oklch, var(--token) 14%, var(--surface-card))` tokens.
+/// `color-mix(in oklab, var(--token) 14%, var(--surface-card))` tokens.
 public final class Callout implements RenderView, FluentBuilder<Callout>, ParentElement<Callout> {
 
   public enum Tone {
@@ -199,7 +199,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
     var content = div().attr("class", "callout-content").children(children);
 
     String bgValue =
-        "color-mix(in oklch, "
+        "color-mix(in oklab, "
             + tone.token().varReference()
             + " 14%, "
             + Tokens.SURFACE_CARD.varReference()

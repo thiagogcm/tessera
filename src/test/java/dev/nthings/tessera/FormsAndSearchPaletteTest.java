@@ -40,7 +40,7 @@ class FormsAndSearchPaletteTest {
     assertThat(button.attr("command")).isEqualTo("show-modal");
     assertThat(button.attr("accesskey")).isEqualTo("k");
     assertThat(button.select("kbd")).hasSize(2);
-    assertThat(button.select("kbd").get(0).text()).isEqualTo("Ctrl");
+    assertThat(button.select("kbd").get(0).text()).isEqualTo("Alt");
     assertThat(button.select("kbd").get(1).text()).isEqualTo("K");
 
     // Dialog element in top layer with closedby="any"
@@ -139,7 +139,7 @@ class FormsAndSearchPaletteTest {
   }
 
   @Test
-  @DisplayName("Form switch control renders native checkbox switch with accessible label pairing")
+  @DisplayName("Form switch control renders a role=switch checkbox with accessible label pairing")
   void formSwitchControlAndLabel() {
     var switchCtrl = Forms.switchInput("enable_notifications", true);
     var switchRow = Forms.switchField("Receive updates", "updates", false);
@@ -149,7 +149,8 @@ class FormsAndSearchPaletteTest {
     var parsed = Jsoup.parse(compiled.html());
 
     // Standalone switch
-    var standalone = parsed.selectFirst("input[type=checkbox][switch][name=enable_notifications]");
+    var standalone =
+        parsed.selectFirst("input[type=checkbox][role=switch][name=enable_notifications]");
     assertThat(standalone).isNotNull();
     assertThat(standalone.hasAttr("checked")).isTrue();
 
@@ -160,7 +161,7 @@ class FormsAndSearchPaletteTest {
 
     var rowSwitch = parsed.selectFirst("input#switch-updates");
     assertThat(rowSwitch).isNotNull();
-    assertThat(rowSwitch.attr("switch")).isEmpty();
+    assertThat(rowSwitch.attr("role")).isEqualTo("switch");
     assertThat(rowSwitch.hasAttr("checked")).isFalse();
   }
 
@@ -178,7 +179,7 @@ class FormsAndSearchPaletteTest {
     var compiled = PageCompiler.compile(doc);
     var parsed = Jsoup.parse(compiled.html());
 
-    var select = parsed.selectFirst("select#select-theme_mode--select-theme");
+    var select = parsed.selectFirst("select[name=theme_mode][id$=--select-theme]");
     assertThat(select).isNotNull();
     assertThat(select.attr("name")).isEqualTo("theme_mode");
 

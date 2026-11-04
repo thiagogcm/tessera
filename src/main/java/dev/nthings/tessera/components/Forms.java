@@ -10,18 +10,17 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.textarea;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.Fnv1a64;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
-import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -63,26 +62,43 @@ public final class Forms {
     return inputControl(name, "search");
   }
 
-  /// Creates a styled multiline `<textarea>` with vertical resize.
-  public static TagElement textareaControl(String name, int rows) {
+  /// Creates a styled multiline `<textarea>` that grows with its content (`field-sizing:
+  /// content`) from a minimum of `minRows` lines.
+  public static TagElement textareaControl(String name, int minRows) {
     return controlChrome(textarea().attr("name", name))
-        .attr("rows", Integer.toString(rows))
+        .fieldSizingContent()
+        .minBlockSize(CssLength.expr("calc(" + minRows + "lh + 1rem)"))
         .resizeVertical()
         .focusVisible(Forms::controlFocusRing)
         .userInvalid(s -> s.borderColor(Tokens.STATUS_DANGER))
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
-  /// Creates a modern binary on/off toggle switch backed by HTML `<input type="checkbox"
-  /// switch>`.
+  /// Creates a binary on/off toggle: a `role="switch"` checkbox drawn as a track and thumb.
+  ///
+  /// Chrome has no native `<input switch>`, so the control is `appearance: none` with the thumb
+  /// as a background layer that slides on `:checked`.
   public static TagElement switchInput(String name, boolean checked) {
     return input("checkbox")
         .attr("name", name)
-        .attr("switch", "")
+        .role("switch")
         .boolAttr("checked", checked)
-        .accentColor(Tokens.ACCENT_PRIMARY)
+        .appearanceNone()
+        .inlineSize(CssLength.rem(2.5))
+        .blockSize(CssLength.rem(1.5))
+        .rounded(CssLength.px(999))
+        .bgRaw(switchTrack("0", Tokens.BORDER_SUBTLE))
         .cursorPointer()
-        .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY));
+        .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+        .checked(s -> s.bgRaw(switchTrack("100%", Tokens.ACCENT_PRIMARY)))
+        .motionSafe(s -> s.transition("background 0.2s ease"));
+  }
+
+  private static String switchTrack(String thumbX, DesignToken trackColor) {
+    return "radial-gradient(circle closest-side, white 80%, transparent 88%) "
+        + thumbX
+        + " 50% / 1.5rem 1.5rem no-repeat "
+        + trackColor.varReference();
   }
 
   /// Creates a full accessible field wrapper for an input or control.
@@ -92,7 +108,7 @@ public final class Forms {
 
   /// Creates a full accessible field wrapper for a customizable select control.
   public static Field field(String labelText, SelectControl select) {
-    return new Field(labelText, select.asTag());
+    return new Field(labelText, select.control(), select);
   }
 
   /// Creates an inline row pairing a label and a switch control.
@@ -125,13 +141,20 @@ public final class Forms {
 
     private final String labelText;
     private final TagElement control;
+    private final IntoElement controlNode;
     private @Nullable String hintText;
     private @Nullable String errorText;
     private @Nullable String anchorTooltipText;
 
     public Field(String labelText, TagElement control) {
+      this(labelText, control, control);
+    }
+
+    /// `control` is the labelled element; `controlNode` is what gets placed (e.g. its view).
+    private Field(String labelText, TagElement control, IntoElement controlNode) {
       this.labelText = labelText;
       this.control = control;
+      this.controlNode = controlNode;
     }
 
     /// Names the control's DOM id (scoped to this field) instead of a compiler-assigned one.
@@ -187,7 +210,7 @@ public final class Forms {
       }
 
       // 4. Control
-      container.child(control);
+      container.child(controlNode);
 
       // 5. Error message placed immediately after control for adjacent sibling styling
       if (errorText != null) {
@@ -265,42 +288,44 @@ public final class Forms {
 
     public record OptionItem(String value, String label, boolean selected) {}
 
-    public record OptionGroup(String label, List<OptionItem> options) {}
-
-    private final ElementId entityId;
-    private final String name;
-    private @Nullable String id;
-    private final List<OptionItem> standaloneOptions = new ArrayList<>();
-    private final List<OptionGroup> groups = new ArrayList<>();
+    private final TagElement select;
 
     public SelectControl(String name) {
-      this.name = name;
-      this.entityId = ElementId.of("select-" + Fnv1a64.sanitizeIdentifier(name));
+      this.select =
+          select()
+              .attr("name", name)
+              .attr("class", "base-select-control")
+              .child(
+                  button()
+                      .attr("class", "select-trigger")
+                      .ariaLabel("Select " + name)
+                      .child(selectedcontent()));
     }
 
     public SelectControl id(String id) {
-      this.id = id;
+      select.id(id);
       return this;
     }
 
     public SelectControl option(String value, String label) {
-      standaloneOptions.add(new OptionItem(value, label, false));
-      return this;
+      return option(value, label, false);
     }
 
     public SelectControl option(String value, String label, boolean selected) {
-      standaloneOptions.add(new OptionItem(value, label, selected));
+      select.child(optionElement(new OptionItem(value, label, selected)));
       return this;
     }
 
     public SelectControl optgroup(String groupLabel, List<OptionItem> options) {
-      groups.add(new OptionGroup(groupLabel, List.copyOf(options)));
+      var group = Elements.optgroup(groupLabel);
+      options.forEach(opt -> group.child(optionElement(opt)));
+      select.child(group);
       return this;
     }
 
-    @Override
-    public ElementId entityId() {
-      return entityId;
+    /// The `<select>` element, for wiring labels and descriptions to it.
+    TagElement control() {
+      return select;
     }
 
     @Override
@@ -310,29 +335,7 @@ public final class Forms {
 
     @Override
     public Element render() {
-      var sel =
-          select()
-              .attr("name", name)
-              .id(id != null ? id : "control")
-              .attr("class", "base-select-control")
-              .child(
-                  button()
-                      .attr("class", "select-trigger")
-                      .ariaLabel("Select " + name)
-                      .child(selectedcontent()));
-
-      standaloneOptions.forEach(opt -> sel.child(optionElement(opt)));
-      for (var group : groups) {
-        var groupEl = Elements.optgroup(group.label());
-        group.options().forEach(opt -> groupEl.child(optionElement(opt)));
-        sel.child(groupEl);
-      }
-
-      return sel;
-    }
-
-    public TagElement asTag() {
-      return (TagElement) render();
+      return select;
     }
 
     @Override

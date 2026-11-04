@@ -154,6 +154,17 @@ public interface InteractiveElement<
     return self();
   }
 
+  /// Styles applied only under `prefers-reduced-motion: no-preference`.
+  default SELF motionSafe(UnaryOperator<StyleRefinement> mutator) {
+    interactivity().on(InteractiveState.MOTION_SAFE, mutator);
+    return self();
+  }
+
+  default SELF checked(UnaryOperator<StyleRefinement> mutator) {
+    interactivity().on(InteractiveState.CHECKED, mutator);
+    return self();
+  }
+
   default SELF userInvalid(UnaryOperator<StyleRefinement> mutator) {
     interactivity().on(InteractiveState.USER_INVALID, mutator);
     return self();
@@ -210,6 +221,22 @@ public interface InteractiveElement<
 
   default SELF scrollReveal(ScrollReveal preset, TimelineAxis axis) {
     return scrollDriven(preset, axis, "backwards", "entry");
+  }
+
+  /// Plays `preset` once, the first time any part of the element scrolls into view (CSS
+  /// scroll-triggered animation; elements already visible on load play immediately). Unlike
+  /// [#scrollReveal(ScrollReveal)], progress is time-based and does not reverse on scroll back.
+  default SELF revealOnce(ScrollReveal preset) {
+    interactivity().registerKeyframeRule(preset.keyframeRule());
+    interactivity()
+        .on(
+            InteractiveState.MOTION_SAFE,
+            s ->
+                s.put(CssProperty.ANIMATION, preset.keyframeName() + " 0.5s ease-out both")
+                    .put(
+                        CssProperty.TIMELINE_TRIGGER, "--tessera-reveal view() cover 0% cover 100%")
+                    .put(CssProperty.ANIMATION_TRIGGER, "--tessera-reveal play-once"));
+    return self();
   }
 
   default SELF scrollExit(ScrollReveal preset) {

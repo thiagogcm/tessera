@@ -99,7 +99,7 @@ public final class Accordion implements RenderView {
             ":scope > details > summary .accordion-chevron",
             s -> s.textColor(Tokens.TEXT_MUTED).transition("transform 0.2s ease"))
         .select(
-            ":scope > details[open] > summary .accordion-chevron",
+            ":scope > details:open > summary .accordion-chevron",
             s -> s.transform("rotate(180deg)").textColor(Tokens.ACCENT_PRIMARY))
         .select(
             ":scope > details > .accordion-body",
@@ -116,7 +116,7 @@ public final class Accordion implements RenderView {
                                 .transitionTimingFunction("ease")
                                 .transitionAllowDiscrete())
                     .select(
-                        ":scope > details[open]::details-content",
+                        ":scope > details:open::details-content",
                         s -> s.blockSize(CssLength.auto())));
   }
 

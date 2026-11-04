@@ -8,6 +8,7 @@ public enum HtmlTag {
   SPAN,
   MAIN,
   HEADER,
+  SEARCH,
   FOOTER,
   NAV,
   SECTION,
@@ -75,7 +76,8 @@ public enum HtmlTag {
   BR,
   HR,
   META,
-  LINK;
+  LINK,
+  SCRIPT;
 
   private final String tagName = name().toLowerCase(Locale.ROOT).replace('_', '-');
 

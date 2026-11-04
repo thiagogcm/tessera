@@ -12,7 +12,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
-import dev.nthings.tessera.site.ShowcaseSite;
+import dev.nthings.tessera.showcase.ShowcaseSite;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SitePreviewServer;
@@ -81,7 +81,9 @@ class SiteCompilerAndScopeStyleTest {
     SiteDefinition definition = ShowcaseSite.createDefinition();
     SiteCompiler.CompiledSite compiledSite = SiteCompiler.compile(definition);
 
-    assertThat(compiledSite.pagesByRoute()).containsOnlyKeys("/", "/telemetry", "/typography");
+    assertThat(compiledSite.pagesByRoute())
+        .containsOnlyKeys(
+            "/", "/layout", "/navigation", "/overlays", "/forms", "/data", "/docs", "/motion");
     assertThat(compiledSite.sharedCssPath()).startsWith("/assets/styles-").endsWith(".css");
     assertThat(compiledSite.sharedCssContent())
         .contains(
@@ -95,8 +97,8 @@ class SiteCompilerAndScopeStyleTest {
     // Verify disk output
     SiteCompiler.writeToDirectory(compiledSite, tempDir);
     assertThat(Files.exists(tempDir.resolve("index.html"))).isTrue();
-    assertThat(Files.exists(tempDir.resolve("telemetry/index.html"))).isTrue();
-    assertThat(Files.exists(tempDir.resolve("typography/index.html"))).isTrue();
+    assertThat(Files.exists(tempDir.resolve("data/index.html"))).isTrue();
+    assertThat(Files.exists(tempDir.resolve("docs/index.html"))).isTrue();
     String relCss = compiledSite.sharedCssPath().substring(1);
     assertThat(Files.exists(tempDir.resolve(relCss))).isTrue();
 
@@ -110,14 +112,14 @@ class SiteCompilerAndScopeStyleTest {
               HttpRequest.newBuilder(URI.create(base + "/")).GET().build(),
               HttpResponse.BodyHandlers.ofString());
       assertThat(homeRes.statusCode()).isEqualTo(200);
-      assertThat(homeRes.body()).contains("Declarative HTML &amp; CSS View Engine for JDK 25");
+      assertThat(homeRes.body()).contains("Declarative HTML &amp; CSS components for JDK 25");
 
       var telemetryRes =
           client.send(
-              HttpRequest.newBuilder(URI.create(base + "/telemetry")).GET().build(),
+              HttpRequest.newBuilder(URI.create(base + "/data")).GET().build(),
               HttpResponse.BodyHandlers.ofString());
       assertThat(telemetryRes.statusCode()).isEqualTo(200);
-      assertThat(telemetryRes.body()).contains("Regional Service SLO Telemetry");
+      assertThat(telemetryRes.body()).contains("Service health by region");
 
       var cssRes =
           client.send(
@@ -147,7 +149,7 @@ class SiteCompilerAndScopeStyleTest {
 
     assertThatThrownBy(() -> SiteCompiler.compile(brokenRouteSite))
         .isInstanceOf(AccessibilityViolationException.class)
-        .hasMessageContaining("unregistered internal route href=\"/does-not-exist\"");
+        .hasMessageContaining("unregistered internal route or asset \"/does-not-exist\"");
 
     var brokenAnchorSite =
         new SiteDefinition(

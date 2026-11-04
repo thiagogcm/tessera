@@ -70,9 +70,6 @@ public final class ScopeStyle {
   }
 
   /// Wraps nested rules inside `@supports not (<condition>)`.
-  public ScopeStyle supportsNot(String condition, Consumer<ScopeStyle> nestedBuilder) {
-    return atRule("@supports not (" + condition + ")", nestedBuilder);
-  }
 
   private ScopeStyle atRule(String header, Consumer<ScopeStyle> nestedBuilder) {
     var nested = atRuleBlocks.computeIfAbsent(header, _ -> new ScopeStyle());

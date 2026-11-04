@@ -1,0 +1,93 @@
+package dev.nthings.tessera.showcase;
+
+import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.render.OutputMode;
+import dev.nthings.tessera.render.PageDocument;
+import dev.nthings.tessera.site.SiteCompiler;
+import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SitePreviewServer;
+import dev.nthings.tessera.site.SiteRoute;
+import java.nio.file.Path;
+import java.util.List;
+
+/// Showcase site entry point: the page registry drives routes, navigation, search, and pagers.
+public final class ShowcaseSite {
+
+  private static final List<Page> PAGES =
+      List.of(
+          OverviewPage.page(),
+          LayoutPage.page(),
+          NavigationPage.page(),
+          OverlaysPage.page(),
+          FormsPage.page(),
+          DataPage.page(),
+          DocsPage.page(),
+          MotionPage.page());
+
+  private ShowcaseSite() {}
+
+  static List<Page> pages() {
+    return PAGES;
+  }
+
+  public static SiteDefinition createDefinition() {
+    var routes =
+        PAGES.stream()
+            .map(
+                page ->
+                    new SiteRoute(
+                        page.path(),
+                        new PageDocument("Tessera — " + page.navLabel(), new Shell(page, PAGES)),
+                        page.title(),
+                        page.summary()))
+            .toList();
+    return new SiteDefinition(
+            new Tokens(), OutputMode.externalAsset("/assets"), routes, "http://localhost:8188")
+        .withAssets(Art.assets());
+  }
+
+  public static void main(String[] args) throws InterruptedException {
+    Path outputDir = Path.of("target/site");
+    boolean serve = false;
+    int port = 8080;
+
+    for (int i = 0; i < args.length; i++) {
+      switch (args[i]) {
+        case "--output" -> {
+          if (i + 1 < args.length) {
+            outputDir = Path.of(args[++i]);
+          }
+        }
+        case "--serve" -> {
+          serve = true;
+          if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+            port = Integer.parseInt(args[++i]);
+          }
+        }
+        case "--port" -> {
+          if (i + 1 < args.length) {
+            port = Integer.parseInt(args[++i]);
+          }
+        }
+        default -> {}
+      }
+    }
+
+    SiteCompiler.CompiledSite compiled = SiteCompiler.compile(createDefinition());
+    SiteCompiler.writeToDirectory(compiled, outputDir);
+    System.out.println(
+        "Compiled "
+            + compiled.pagesByRoute().size()
+            + " routes + shared stylesheet ("
+            + compiled.sharedCssPath()
+            + ") to "
+            + outputDir.toAbsolutePath());
+
+    if (serve) {
+      try (var server = SitePreviewServer.start(compiled, port)) {
+        System.out.println("Serving Tessera showcase at " + server.baseUrl() + " (Ctrl+C to stop)");
+        Thread.currentThread().join();
+      }
+    }
+  }
+}

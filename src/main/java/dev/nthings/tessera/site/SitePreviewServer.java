@@ -70,6 +70,12 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
+    SiteAsset asset = site.asset(requestPath);
+    if (asset != null) {
+      sendBytes(exchange, 200, asset.contentType(), asset.content());
+      return;
+    }
+
     String withoutIndex =
         requestPath.endsWith("/index.html")
             ? requestPath.substring(0, requestPath.length() - "/index.html".length())
@@ -87,7 +93,11 @@ public final class SitePreviewServer implements AutoCloseable {
 
   private static void sendResponse(
       HttpExchange exchange, int status, String contentType, String body) throws IOException {
-    byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+    sendBytes(exchange, status, contentType, body.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static void sendBytes(HttpExchange exchange, int status, String contentType, byte[] bytes)
+      throws IOException {
     exchange.getResponseHeaders().set("Content-Type", contentType);
     exchange.getResponseHeaders().set("Cache-Control", "no-store");
     exchange.sendResponseHeaders(status, bytes.length);

@@ -27,6 +27,11 @@ public final class Elements {
     return new TagElement(HtmlTag.HEADER);
   }
 
+  /// `<search>` landmark grouping search or filtering controls.
+  public static TagElement search() {
+    return new TagElement(HtmlTag.SEARCH);
+  }
+
   public static TagElement footer() {
     return new TagElement(HtmlTag.FOOTER);
   }

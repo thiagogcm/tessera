@@ -150,7 +150,7 @@ public final class Lists {
                       .fontWeight(600)
                       .tabularNums()
                       .bgRaw(
-                          "color-mix(in oklch, "
+                          "color-mix(in oklab, "
                               + Tokens.ACCENT_PRIMARY.varReference()
                               + " "
                               + "calc(20% + (60% * var(--step-index) / var(--step-total))), "

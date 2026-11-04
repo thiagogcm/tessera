@@ -141,7 +141,7 @@ public final class Overlays {
                                   .transitionTimingFunction("ease-out")
                                   .transitionAllowDiscrete())
                       .selectWithStartingStyle(
-                          ":scope[open]",
+                          ":scope:open",
                           s -> s.opacity(1).transform("scale(1)"),
                           start -> start.opacity(0).transform("scale(0.95)"))
                       .select(
@@ -155,7 +155,7 @@ public final class Overlays {
                                   .transitionTimingFunction("ease-out")
                                   .transitionAllowDiscrete())
                       .selectWithStartingStyle(
-                          ":scope[open]::backdrop",
+                          ":scope:open::backdrop",
                           s -> s.bgRaw("oklch(0% 0 0 / 0.45)").backdropFilter("blur(4px)"),
                           start -> start.bgRaw("oklch(0% 0 0 / 0)").backdropFilter("blur(0px)")));
     }
@@ -187,7 +187,7 @@ public final class Overlays {
               .py(CssLength.rem(0.5))
               .rounded(CssLength.rem(0.375))
               .bg(Tokens.ACCENT_PRIMARY)
-              .textColorRaw("white")
+              .textColorOn(Tokens.ACCENT_PRIMARY)
               .borderNone()
               .fontWeight(600)
               .cursorPointer()
@@ -310,7 +310,7 @@ public final class Overlays {
                                   .transitionTimingFunction("ease-out")
                                   .transitionAllowDiscrete())
                       .selectWithStartingStyle(
-                          ":scope[open]",
+                          ":scope:open",
                           s -> s.opacity(1).translate("0 0"),
                           start -> start.opacity(0).translate(offscreenTranslate))
                       .select(
@@ -322,7 +322,7 @@ public final class Overlays {
                                   .transitionTimingFunction("ease-out")
                                   .transitionAllowDiscrete())
                       .selectWithStartingStyle(
-                          ":scope[open]::backdrop",
+                          ":scope:open::backdrop",
                           s -> s.bgRaw("oklch(0% 0 0 / 0.45)"),
                           start -> start.bgRaw("oklch(0% 0 0 / 0)")));
     }

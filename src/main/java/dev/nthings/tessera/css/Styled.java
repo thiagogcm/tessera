@@ -343,6 +343,12 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  /// Text color that contrasts with `background` (`contrast-color()`), e.g. for filled buttons.
+  default SELF textColorOn(DesignToken background) {
+    style().put(CssProperty.COLOR, "contrast-color(" + background.varReference() + ")");
+    return self();
+  }
+
   default SELF textColorRaw(String colorValue) {
     style().put(CssProperty.COLOR, colorValue);
     return self();
@@ -470,6 +476,11 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF opacity(double value) {
     style().put(CssProperty.OPACITY, CssLength.formatNumber(value));
+    return self();
+  }
+
+  default SELF cursor(String value) {
+    style().put(CssProperty.CURSOR, value);
     return self();
   }
 
@@ -639,6 +650,12 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  /// Anonymous `container-type: scroll-state` (queried by the nearest `scroll-state()` query).
+  default SELF containerScrollState() {
+    style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
+    return self();
+  }
+
   default SELF containerScrollState(String containerName) {
     style().put(CssProperty.CONTAINER_NAME, containerName);
     style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
@@ -711,6 +728,12 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF resize(String mode) {
     style().put(CssProperty.RESIZE, mode);
+    return self();
+  }
+
+  /// `field-sizing: content`: form controls grow with their content instead of fixed rows/cols.
+  default SELF fieldSizingContent() {
+    style().put(CssProperty.FIELD_SIZING, "content");
     return self();
   }
 

@@ -157,6 +157,8 @@ public record DataTable<T>(
                   ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
                   s -> s.block())
               .select(":scope thead", s -> s.hidden())
+              // Card mode: label and value read left to right regardless of column alignment.
+              .select(":scope tr > :nth-child(n)", s -> s.textAlign("start"))
               .select(
                   ":scope tr",
                   s ->

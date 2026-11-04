@@ -1,0 +1,176 @@
+package dev.nthings.tessera.showcase;
+
+import static dev.nthings.tessera.core.Elements.a;
+import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.span;
+import static dev.nthings.tessera.core.Elements.text;
+
+import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.ScrollReveal;
+import dev.nthings.tessera.css.Tokens;
+
+/// Scroll-driven animation, scroll-state and size container queries, and view transitions.
+final class MotionPage {
+
+  private MotionPage() {}
+
+  static Page page() {
+    return Page.ofDemos(
+        "/motion",
+        "Motion",
+        "Motion, scroll & responsive",
+        "Animations driven by scroll position instead of timers, layouts that respond to their "
+            + "container instead of the viewport, and page-to-page transitions. All motion respects "
+            + "prefers-reduced-motion.",
+        scrollReveal(),
+        revealOnce(),
+        stagger(),
+        containerQueries(),
+        scrollState(),
+        viewTransitions());
+  }
+
+  private static TagElement panel(String label) {
+    return div()
+        .p(CssLength.rem(1.25))
+        .rounded(CssLength.rem(0.75))
+        .bg(Tokens.SURFACE_CARD)
+        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .fontWeight(600)
+        .text(label);
+  }
+
+  private static Demo scrollReveal() {
+    return Demo.of("scroll-reveal", "Scroll reveal")
+        .summary(
+            "Each panel animates as it enters the viewport using a view() timeline — the "
+                + "animation's progress is the element's scroll position. The reading progress bar "
+                + "at the top of the page uses a scroll(root) timeline.")
+        .features("animation-timeline: view()", "animation-range: entry", "scroll(root)")
+        .example(
+            Grid.autoFit(
+                CssLength.rem(12),
+                CssLength.rem(1),
+                panel("Fade in").scrollReveal(ScrollReveal.FADE_IN),
+                panel("Fade up").scrollReveal(ScrollReveal.FADE_UP),
+                panel("Scale in").scrollReveal(ScrollReveal.SCALE_IN),
+                panel("Slide in").scrollReveal(ScrollReveal.SLIDE_INLINE)))
+        .code(
+            "div().scrollReveal(ScrollReveal.FADE_UP);",
+            "new ScrollProgressBar(\"reading-progress\");");
+  }
+
+  private static Demo revealOnce() {
+    return Demo.of("reveal-once", "Reveal once")
+        .summary(
+            "Scroll-triggered animations: each panel plays a short time-based animation the first "
+                + "time it becomes visible, and stays put when scrolled back — unlike the "
+                + "scroll-scrubbed reveal above.")
+        .features("timeline-trigger: view() cover", "animation-trigger: play-once")
+        .example(
+            Grid.autoFit(
+                CssLength.rem(12),
+                CssLength.rem(1),
+                panel("Fade up").revealOnce(ScrollReveal.FADE_UP),
+                panel("Scale in").revealOnce(ScrollReveal.SCALE_IN),
+                panel("Slide in").revealOnce(ScrollReveal.SLIDE_INLINE)))
+        .code("div().revealOnce(ScrollReveal.SCALE_IN);");
+  }
+
+  private static Demo stagger() {
+    var row = div().flex().flexWrap().gap(CssLength.rem(0.5));
+    for (int i = 1; i <= 8; i++) {
+      row.child(
+          span()
+              .px(CssLength.rem(0.75))
+              .py(CssLength.rem(0.375))
+              .rounded(CssLength.px(999))
+              .bg(Tokens.SURFACE_CARD)
+              .borderSubtle(Tokens.BORDER_SUBTLE)
+              .revealOnce(ScrollReveal.FADE_UP)
+              .staggerBySiblingIndex(60)
+              .text("Item " + i));
+    }
+    return Demo.of("stagger", "Staggered entry")
+        .summary("Siblings delay their animation by their own index — no per-item classes.")
+        .features("sibling-index()", "animation-delay: calc()")
+        .example(row)
+        .code("chip.revealOnce(ScrollReveal.FADE_UP).staggerBySiblingIndex(60);");
+  }
+
+  private static Demo containerQueries() {
+    var card =
+        div()
+            .flex()
+            .flexCol()
+            .gap(CssLength.rem(0.5))
+            .p(CssLength.rem(1))
+            .rounded(CssLength.rem(0.75))
+            .bg(Tokens.SURFACE_CARD)
+            .borderSubtle(Tokens.BORDER_SUBTLE)
+            .onContainer(
+                "resizable", CssLength.rem(28), s -> s.flexRow().itemsCenter().justifyBetween())
+            .children(
+                span().fontWeight(700).text("Responsive to its container"),
+                span().textColor(Tokens.TEXT_MUTED).text("Stacked when narrow, a row when wide."));
+    return Demo.of("container-queries", "Container queries")
+        .summary(
+            "Drag the corner of the dashed box. The card switches layout at 28rem of container "
+                + "width, regardless of the viewport.")
+        .features("container-type: inline-size", "@container (inline-size >= 28rem)", "resize")
+        .example(
+            div()
+                .container("resizable")
+                .resize("horizontal")
+                .overflowHidden()
+                .minInlineSize(CssLength.rem(14))
+                .maxInlineSize(CssLength.pct(100))
+                .inlineSize(CssLength.rem(22))
+                .p(CssLength.rem(0.75))
+                .border("2px dashed " + Tokens.BORDER_SUBTLE.varReference())
+                .rounded(CssLength.rem(0.75))
+                .child(card))
+        .code(
+            "div().container(\"resizable\").child(",
+            "    card.onContainer(\"resizable\", rem(28), s -> s.flexRow()));");
+  }
+
+  private static Demo scrollState() {
+    return Demo.of("scroll-state", "Scroll-state queries")
+        .summary(
+            "Scroll down: the site header gains a translucent, blurred surface and a shadow once "
+                + "it is stuck to the top. The carousel highlights the snapped slide the same way.")
+        .features(
+            "container-type: scroll-state", "scroll-state(stuck: top)", "scroll-state(snapped: x)")
+        .example(
+            p().textPretty()
+                .text(
+                    "No scroll listeners: the browser evaluates the query as the sticky element "
+                        + "becomes stuck."))
+        .code("new StickyHeader(\"site-header\", content); // queries scroll-state(stuck: top)");
+  }
+
+  private static Demo viewTransitions() {
+    return Demo.of("view-transitions", "View transitions")
+        .summary(
+            "Navigating between pages cross-fades the document while the brand link and the docs "
+                + "banner morph into place. Links are prerendered on hover through speculation "
+                + "rules, so transitions start instantly.")
+        .features(
+            "@view-transition { navigation: auto }",
+            "view-transition-class",
+            "<script type=speculationrules>")
+        .example(
+            p().textPretty()
+                .children(
+                    text("Try it: open the "),
+                    a("/").text("overview"),
+                    text(", then click the Docs card.")))
+        .code(
+            "heroImage.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\"));",
+            "new SiteDefinition(routes); // prerenders same-site links by default");
+  }
+}

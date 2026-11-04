@@ -9,7 +9,6 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -72,7 +71,8 @@ public final class Carousel implements RenderView {
     scope
         .root(
             s ->
-                s.flex()
+                s.anchorName(anchorIdent())
+                    .flex()
                     .gap(CssLength.rem(1))
                     .overflowXAuto()
                     .scrollSnapType("x mandatory")
@@ -88,7 +88,7 @@ public final class Carousel implements RenderView {
                     .inlineSize(CssLength.expr("min(22rem, 82%)"))
                     .scrollSnapAlign("center")
                     .counterIncrement("carousel-item")
-                    .refine(r -> r.put(CssProperty.CONTAINER_TYPE, "scroll-state")))
+                    .containerScrollState())
         .select(
             ":scope > .carousel-item > .carousel-card",
             s ->
@@ -121,6 +121,35 @@ public final class Carousel implements RenderView {
         .select(
             ":scope > .carousel-item::scroll-marker:target-current",
             s -> s.bg(Tokens.ACCENT_PRIMARY).inlineSize(CssLength.rem(1.5)))
+        // Native prev/next controls (::scroll-button), overlaid on the track edges.
+        .select(
+            ":scope::scroll-button(*)",
+            s ->
+                s.absolute()
+                    .positionAnchor(anchorIdent())
+                    .insetBlockStart(CssLength.expr("anchor(center)"))
+                    .translate("0 -50%")
+                    .inlineSize(CssLength.rem(2.25))
+                    .blockSize(CssLength.rem(2.25))
+                    .rounded(CssLength.px(999))
+                    .bg(Tokens.SURFACE_CARD)
+                    .textColor(Tokens.TEXT_PRIMARY)
+                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .shadow("0 4px 12px -4px oklch(0% 0 0 / 0.2)")
+                    .fontSize(CssLength.rem(1.125))
+                    .cursorPointer()
+                    .zIndex(1))
+        .select(
+            ":scope::scroll-button(inline-start)",
+            s ->
+                s.content("\"‹\" / \"Previous slide\"")
+                    .insetInlineStart(CssLength.expr("calc(anchor(left) + 0.5rem)")))
+        .select(
+            ":scope::scroll-button(inline-end)",
+            s ->
+                s.content("\"›\" / \"Next slide\"")
+                    .insetInlineEnd(CssLength.expr("calc(anchor(right) + 0.5rem)")))
+        .select(":scope::scroll-button(*):disabled", s -> s.opacity(0.35).cursor("default"))
         .motionSafe(
             m ->
                 m.select(":scope", s -> s.scrollBehaviorSmooth())
@@ -133,6 +162,10 @@ public final class Carousel implements RenderView {
                                 s ->
                                     s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
                                         .shadow("0 12px 24px -6px oklch(0% 0 0 / 0.14)"))));
+  }
+
+  private String anchorIdent() {
+    return "--carousel-" + id.slug();
   }
 
   @Override

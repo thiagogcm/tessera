@@ -8,6 +8,7 @@ public enum InteractiveState {
   HOVER,
   FOCUS_VISIBLE,
   ACTIVE,
+  CHECKED,
   USER_INVALID,
   USER_VALID,
   /// Argument: sanitized `data-group` name of the hovered ancestor.
@@ -22,6 +23,7 @@ public enum InteractiveState {
       case HOVER -> "&:hover:not(:disabled){";
       case FOCUS_VISIBLE -> "&:focus-visible{";
       case ACTIVE -> "&:active:not(:disabled){";
+      case CHECKED -> "&:checked{";
       case USER_INVALID -> "&:user-invalid{";
       case USER_VALID -> "&:user-valid{";
       case GROUP_HOVER -> "[data-group=\"" + argument + "\"]:hover &{";

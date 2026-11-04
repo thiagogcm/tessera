@@ -29,12 +29,12 @@ compile:
 # Compile the multi-page showcase static site into target/site.
 [group('build')]
 site output="target/site":
-    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.site.ShowcaseSite -Dexec.args="--output {{output}}"
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{output}}"
 
 # Build and serve the multi-page showcase site over HTTP for live browser/DevTools evaluation.
 [group('build')]
 demo port="8080":
-    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.site.ShowcaseSite -Dexec.args="--output target/site --serve {{port}}"
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output target/site --serve {{port}}"
 
 # Remove Maven build outputs.
 [group('build')]

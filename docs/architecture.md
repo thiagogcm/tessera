@@ -287,7 +287,8 @@ public interface InteractiveElement<
   }
   // ... attr, boolAttr, ariaLabel, role, title, tabIndex, popover, dialogClosedBy*, focusVisible,
   // active, userInvalid, userValid, group, groupHover, whenHas, onContainer, onContainerStyle,
-  // scrollReveal, scrollExit, viewTimeline, staggerBySiblingIndex, transitionKey
+  // scrollReveal, revealOnce (scroll-triggered), scrollExit, viewTimeline,
+  // staggerBySiblingIndex, transitionKey
 }
 ```
 
@@ -406,7 +407,7 @@ public record PreparedPage(
   3. Every `<a href>` is recorded in `outgoingHrefs` for site-wide verification.
 
 ### Phase 3: `paint` (Streaming HTML & CSS Emission)
-- Streams `<!doctype html>`, `<meta charset>`, the viewport meta, `<title>`, the linked head contributions, then the stylesheet, to any `Appendable` using `org.owasp.encoder.Encode`.
+- Streams `<!doctype html>`, `<meta charset>`, the viewport and `text-scale` metas (OS text size), `<title>`, the linked head contributions, then the stylesheet, to any `Appendable` using `org.owasp.encoder.Encode`.
 - Emits void elements (`<input>`, `<img>`, `<source>`, `<track>`, `<br>`, `<hr>`, `<meta>`, `<link>`) without closing tags.
 - Emits companion `interestfor` `<span id="<id>--tooltip" popover="hint" role="tooltip">` elements immediately after their trigger's closing tag as adjacent siblings.
 - Supports both `OutputMode.InlineStyle` (single-file `<style>` in `<head>`) and `OutputMode.ExternalAsset(assetBasePath)` (content-hashed `<assetBasePath>/styles-<hash>.css` `<link rel="stylesheet">`), returning `CompiledPage(html, externalCssPath, cssContent)`.
@@ -440,7 +441,7 @@ Tessera provides a canonical library of zero-JavaScript UI components built on t
 
 ## 8. Multi-Page Site Compiler & Preview Server (`dev.nthings.tessera.site`)
 
-- **`SiteRoute` & `SiteDefinition`**: `SiteRoute(path, document, title, description)` normalizes route paths (`/`, `/telemetry`, `/typography`) and maps them to output locations (`index.html`, `telemetry/index.html`). `SiteDefinition(tokens, outputMode, routes, baseUrl)` defaults to `OutputMode.externalAsset("/assets")` so all pages share one stylesheet.
+- **`SiteRoute` & `SiteDefinition`**: `SiteRoute(path, document, title, description)` normalizes route paths (`/`, `/docs`) and maps them to output locations (`index.html`, `docs/index.html`). `SiteDefinition(tokens, outputMode, routes, baseUrl, linkSpeculation, assets)` defaults to `OutputMode.externalAsset("/assets")` so all pages share one stylesheet, and to `LinkSpeculation.PRERENDER`, which adds `<script type="speculationrules">` to every page. `SiteAsset`s (`withAssets(...)`) are static files published at absolute paths: `SiteCompiler` treats them as valid targets for internal links and local `<img src>`, `writeToDirectory` writes them, and `SitePreviewServer` serves them with their content type. When pages register the same view type with different `@scope` bodies, the merged stylesheet keeps both under content-qualified keys and each page's `data-view` values are renamed accordingly.
 - **`SiteNavigation`**: Builds route-derived navigation components: `searchPalette(SiteDefinition)` / `searchPalette(id, routes)` (a `SearchPalette` indexed under "Pages & Guides") and `docPager(SiteDefinition, currentPath)` (previous/next `DocPager` in route declaration order).
 - **`SiteCompiler`**:
   1. Rejects duplicate route paths, then executes Phase 1 and Phase 2 (`PageCompiler.prepare`) concurrently across all routes using `Executors.newVirtualThreadPerTaskExecutor()`, preserving route order.
@@ -449,6 +450,6 @@ Tessera provides a canonical library of zero-JavaScript UI components built on t
   4. Merges all per-page `StyleSheetCollector` instances in deterministic route order into a single content-addressed `/assets/styles-<hash>.css` bundle, then paints all routes concurrently with `<link rel="stylesheet" href="/assets/styles-<hash>.css">`.
   5. Generates `sitemap.xml` when a `baseUrl` is set, and `search-index.json` with each route's path, title, description, and headings from `Toc.entries(prepared.documentState())`.
   6. `SiteCompiler.writeToDirectory(CompiledSite, Path)` writes all HTML routes, the shared CSS asset, the sitemap, and the search index to disk.
-- **`SitePreviewServer` & `ShowcaseSite`**:
+- **`SitePreviewServer` & `showcase.ShowcaseSite`**:
   - Zero-dependency `com.sun.net.httpserver.HttpServer` bound to `127.0.0.1` and backed by JDK 25 Virtual Threads (`Executors.newVirtualThreadPerTaskExecutor()`), serving compiled routes, the shared stylesheet, `sitemap.xml`, and `search-index.json` from memory with `Cache-Control: no-store`.
-  - `ShowcaseSite` (`just site` writes `target/site`; `just demo` also serves it via `--serve <port>`) provides a 3-route interactive showcase (`/`, `/telemetry`, `/typography`) exercising every Tessera primitive and component.
+  - `ShowcaseSite` (`just site` writes `target/site`; `just demo` also serves it via `--serve <port>`) builds the showcase from a page registry in `dev.nthings.tessera.showcase`: an overview plus Layout, Navigation, Overlays, Forms, Data & code, Docs, and Motion pages. Each component gets a `Demo` section with its platform features, a live example, and its Java usage; navigation, search, and pagers are derived from the registry.

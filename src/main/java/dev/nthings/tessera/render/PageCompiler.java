@@ -205,6 +205,16 @@ public final class PageCompiler {
 
   public static CompiledPage paintPrepared(
       PreparedPage prepared, String cssContent, OutputMode outputMode) {
+    return paintPrepared(prepared, cssContent, outputMode, Map.of());
+  }
+
+  /// Paints `prepared`, mapping `data-view` values through `viewRenames` (see
+  /// [StyleSheetCollector#mergeFrom]).
+  public static CompiledPage paintPrepared(
+      PreparedPage prepared,
+      String cssContent,
+      OutputMode outputMode,
+      Map<String, String> viewRenames) {
     var htmlBuffer = new StringBuilder(4096);
     String externalCssPath =
         paint(
@@ -213,6 +223,7 @@ public final class PageCompiler {
             cssContent,
             outputMode,
             prepared.headNodes(),
+            viewRenames,
             htmlBuffer);
     return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
   }
@@ -492,6 +503,13 @@ public final class PageCompiler {
       }
     }
 
+    if (tag.tag() == HtmlTag.IMG) {
+      String src = attrs.get("src");
+      if (src != null && src.startsWith("/") && !src.startsWith("//")) {
+        state.outgoingHrefs.add(src);
+      }
+    }
+
     if (tag.tag() == HtmlTag.A) {
       String href = attrs.get("href");
       if (href != null && !href.isBlank()) {
@@ -569,17 +587,20 @@ public final class PageCompiler {
       String cssContent,
       OutputMode outputMode,
       List<ResolvedNode> headNodes,
+      Map<String, String> viewRenames,
       Appendable out) {
     try {
       out.append("<!doctype html>\n<html lang=\"");
       out.append(Encode.forHtmlAttribute(doc.lang()));
       out.append("\">\n<head>\n<meta charset=\"utf-8\">\n");
       out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
+      // rem-based layouts follow the OS text size setting, not only the browser's.
+      out.append("<meta name=\"text-scale\" content=\"scale\">\n");
       out.append("<title>");
       out.append(Encode.forHtmlContent(doc.title()));
       out.append("</title>\n");
       for (var head : headNodes) {
-        paintNode(head, out);
+        paintNode(head, viewRenames, out);
         out.append('\n');
       }
 
@@ -603,7 +624,7 @@ public final class PageCompiler {
 
       out.append("</head>\n<body>\n");
       for (var node : bodyNodes) {
-        paintNode(node, out);
+        paintNode(node, viewRenames, out);
       }
       out.append("\n</body>\n</html>\n");
       return externalCssPath;
@@ -612,7 +633,8 @@ public final class PageCompiler {
     }
   }
 
-  private static void paintNode(ResolvedNode node, Appendable out) throws IOException {
+  private static void paintNode(ResolvedNode node, Map<String, String> viewRenames, Appendable out)
+      throws IOException {
     switch (node) {
       case ResolvedEmpty _ -> {}
       case ResolvedSlot _ -> throw unlinked();
@@ -621,23 +643,27 @@ public final class PageCompiler {
       case ResolvedTag tag -> {
         out.append('<').append(tag.tag().tagName());
         for (var attr : tag.attributes().entrySet()) {
+          String value = attr.getValue();
+          if (attr.getKey().equals("data-view")) {
+            value = viewRenames.getOrDefault(value, value);
+          }
           out.append(' ').append(attr.getKey());
-          if (!attr.getValue().isEmpty()) {
-            out.append("=\"").append(Encode.forHtmlAttribute(attr.getValue())).append('"');
+          if (!value.isEmpty()) {
+            out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');
           }
         }
         out.append('>');
 
         if (!tag.tag().isVoid()) {
           for (var child : tag.children()) {
-            paintNode(child, out);
+            paintNode(child, viewRenames, out);
           }
           out.append("</").append(tag.tag().tagName()).append('>');
         }
 
         var companion = tag.companionSibling();
         if (companion != null) {
-          paintNode(companion, out);
+          paintNode(companion, viewRenames, out);
         }
       }
     }

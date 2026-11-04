@@ -87,8 +87,7 @@ public final class StyleSheetCollector {
     if (existing.equals(scopedCss)) {
       return safeType;
     }
-    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
-    String qualifiedKey = safeType + "-" + Fnv1a64.toBase36Hash(hash);
+    String qualifiedKey = qualifiedViewKey(safeType, scopedCss);
     viewScopeBodies.putIfAbsent(qualifiedKey, scopedCss);
     return qualifiedKey;
   }
@@ -108,13 +107,31 @@ public final class StyleSheetCollector {
   }
 
   /// Merges another collector's rules into this collector in deterministic insertion order.
-  public void mergeFrom(StyleSheetCollector other) {
+  ///
+  /// @return `data-view` renames for `other`'s pages: a view key that this collector already
+  /// holds with a different `@scope` body is re-registered under its content-qualified key
+  public Map<String, String> mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
     other.containerRules.forEach(containerRules::putIfAbsent);
-    other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
+    var renames = new LinkedHashMap<String, String>();
+    other.viewScopeBodies.forEach(
+        (key, body) -> {
+          String existing = viewScopeBodies.putIfAbsent(key, body);
+          if (existing != null && !existing.equals(body)) {
+            String qualified = qualifiedViewKey(key, body);
+            viewScopeBodies.putIfAbsent(qualified, body);
+            renames.put(key, qualified);
+          }
+        });
     keyframeRules.addAll(other.keyframeRules);
     transitionClasses.addAll(other.transitionClasses);
+    return renames;
+  }
+
+  private static String qualifiedViewKey(String viewKey, String scopedCss) {
+    long hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
+    return viewKey + "-" + Fnv1a64.toBase36Hash(hash);
   }
 
   private static String buildInteractiveBlock(Interactivity interactivity) {
@@ -138,7 +155,8 @@ public final class StyleSheetCollector {
     sb.append(
         "@layer reset{"
             + "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}"
-            + ":root{interpolate-size:allow-keywords;color-scheme:light dark}"
+            + ":root{interpolate-size:allow-keywords;color-scheme:light dark;"
+            + "scrollbar-gutter:stable}"
             + "img,svg,video{max-inline-size:100%;block-size:auto}"
             + "}\n");
 
@@ -154,9 +172,9 @@ public final class StyleSheetCollector {
     }
     sb.append("}");
     sb.append(
-        "body{font-family:system-ui,-apple-system,sans-serif;"
+        "body{font-family:system-ui,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
-            + "dialog{margin:auto}");
+            + "dialog{margin:auto;overscroll-behavior:contain}");
     keyframeRules.forEach(sb::append);
     sb.append("}\n");
 

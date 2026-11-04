@@ -367,7 +367,11 @@ public final class ShowcaseSite {
             "/typography",
             "Typography, Lists & Dual-Mode Footnotes",
             "Hover or focus the [1] and [2] superscripts for instant interestfor previews, or click to jump to endnotes.",
-            div().flex().flexCol().gap(CssLength.rem(2)).children(proseSection, listsGrid));
+            div()
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(2))
+                .children(proseSection, listsGrid, Footnotes.section()));
 
     return new PageDocument("Tessera — Typography & Footnotes", body);
   }
@@ -387,6 +391,11 @@ public final class ShowcaseSite {
         case "--serve" -> {
           serve = true;
           if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+            port = Integer.parseInt(args[++i]);
+          }
+        }
+        case "--port" -> {
+          if (i + 1 < args.length) {
             port = Integer.parseInt(args[++i]);
           }
         }

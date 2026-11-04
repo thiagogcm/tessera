@@ -143,7 +143,7 @@ public record DataTable<T>(
             stackBreakpoint,
             c -> {
               c.select(
-                      ":scope table, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
+                      ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
                       s -> s.block())
                   .select(":scope thead", s -> s.hidden())
                   .select(

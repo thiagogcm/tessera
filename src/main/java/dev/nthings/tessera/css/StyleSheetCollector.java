@@ -166,7 +166,8 @@ public final class StyleSheetCollector {
             + "body{font-family:system-ui,-apple-system,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
             + "[popover=\"hint\"]{position-area:block-start;"
-            + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}");
+            + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}"
+            + "dialog{margin:auto}");
     if (!keyframeRules.isEmpty()) {
       for (var kf : keyframeRules) {
         sb.append(kf);

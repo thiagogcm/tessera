@@ -64,12 +64,12 @@ class PlatformFeaturesTest {
             new SiteRoute("/", new PageDocument("Home", main().child(a("/b").text("B")))),
             new SiteRoute("/b", new PageDocument("B", main().child(a("/").text("Home")))));
 
-    var html = SiteCompiler.compile(new SiteDefinition(routes)).pagesByRoute().get("/").html();
+    var html = SiteCompiler.compile(SiteDefinition.of(routes)).pagesByRoute().get("/").html();
     var rules = Jsoup.parse(html).selectFirst("head > script[type=speculationrules]");
     assertThat(rules).isNotNull();
     assertThat(rules.data()).contains("\"prerender\"").contains("\"eagerness\":\"moderate\"");
 
-    var off = new SiteDefinition(routes).withLinkSpeculation(LinkSpeculation.NONE);
+    var off = SiteDefinition.builder().routes(routes).linkSpeculation(LinkSpeculation.NONE).build();
     assertThat(SiteCompiler.compile(off).pagesByRoute().get("/").html())
         .doesNotContain("speculationrules");
   }
@@ -95,7 +95,7 @@ class PlatformFeaturesTest {
                         .child(
                             new CardGrid(
                                 "g", CssLength.rem(15), CssLength.rem(1), p().text("b"))))));
-    var site = SiteCompiler.compile(new SiteDefinition(routes));
+    var site = SiteCompiler.compile(SiteDefinition.of(routes));
 
     String viewA = viewKey(site.pagesByRoute().get("/").html(), "card-grid");
     String viewB = viewKey(site.pagesByRoute().get("/b").html(), "card-grid");
@@ -133,14 +133,16 @@ class PlatformFeaturesTest {
         new PageDocument("Home", main().child(img("/assets/logo.svg", "Logo").dimensions(1, 1)));
     var routes = List.of(new SiteRoute("/", page));
 
-    assertThatThrownBy(() -> SiteCompiler.compile(new SiteDefinition(routes)))
+    assertThatThrownBy(() -> SiteCompiler.compile(SiteDefinition.of(routes)))
         .isInstanceOf(AccessibilityViolationException.class)
         .hasMessageContaining("/assets/logo.svg");
 
     var site =
         SiteCompiler.compile(
-            new SiteDefinition(routes)
-                .withAssets(List.of(SiteAsset.text("/assets/logo.svg", "<svg/>"))));
+            SiteDefinition.builder()
+                .routes(routes)
+                .asset(SiteAsset.text("/assets/logo.svg", "<svg/>"))
+                .build());
     SiteCompiler.writeToDirectory(site, out);
     assertThat(Files.readString(out.resolve("assets/logo.svg"))).isEqualTo("<svg/>");
 
@@ -158,11 +160,11 @@ class PlatformFeaturesTest {
     assertThatThrownBy(
             () ->
                 SiteCompiler.compile(
-                    new SiteDefinition(routes)
-                        .withAssets(
-                            List.of(
-                                SiteAsset.text("/assets/logo.svg", "<svg/>"),
-                                SiteAsset.text("/search-index.json", "[]")))))
+                    SiteDefinition.builder()
+                        .routes(routes)
+                        .asset(SiteAsset.text("/assets/logo.svg", "<svg/>"))
+                        .asset(SiteAsset.text("/search-index.json", "[]"))
+                        .build()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Duplicate file path: /search-index.json");
   }

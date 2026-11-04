@@ -13,9 +13,7 @@ import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.AccessibilityViolationException;
-import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
@@ -122,7 +120,7 @@ class DocumentationAndCwvPrimsTest {
 
     // Route 1 declares key, Route 2 does NOT -> failure
     var singleOccurrenceSite =
-        new SiteDefinition(
+        SiteDefinition.of(
             new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
             new SiteRoute("/about", new PageDocument("About", h1().text("About"))));
 
@@ -133,7 +131,7 @@ class DocumentationAndCwvPrimsTest {
 
     // Both routes declare key -> success, generates class-specific timing rule
     var validSite =
-        new SiteDefinition(
+        SiteDefinition.of(
             new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
             new SiteRoute(
                 "/about", new PageDocument("About", h1().text("About").transitionKey(key))));
@@ -225,48 +223,51 @@ class DocumentationAndCwvPrimsTest {
   @DisplayName("Compiles doc pager pagination, sitemap XML, and search index JSON")
   void compilesDocPagerSitemapAndSearchIndex() {
     var site =
-        new SiteDefinition(
-            new Tokens(),
-            OutputMode.externalAsset("/assets"),
-            List.of(
-                new SiteRoute(
-                    "/",
-                    new PageDocument(
-                        "Home",
-                        main()
-                            .children(
-                                Toc.section(
-                                    "features", "Core Features", p().text("Fast compiler.")),
-                                DocPager.of(
-                                    null, new DocPager.PageRef("/guide", "Getting Started")))),
-                    "Tessera Home",
-                    "Static HTML/CSS compiler"),
-                new SiteRoute(
-                    "/guide",
-                    new PageDocument(
-                        "Guide",
-                        main()
-                            .children(
-                                Toc.section(
-                                    "quickstart", "Quick Start", p().text("Setup commands.")),
-                                Toc.subsection("config", "Configuration", p().text("Build flags.")),
-                                DocPager.of(
-                                    new DocPager.PageRef("/", "Tessera Home"),
-                                    new DocPager.PageRef("/faq", "Frequently Asked Questions")))),
-                    "Getting Started",
-                    "Step by step guide"),
-                new SiteRoute(
-                    "/faq",
-                    new PageDocument(
-                        "FAQ",
-                        main()
-                            .children(
-                                Toc.section("questions", "Common Questions", p().text("Q&A list.")),
-                                DocPager.of(
-                                    new DocPager.PageRef("/guide", "Getting Started"), null))),
-                    "Frequently Asked Questions",
-                    "Common questions answered")),
-            "https://tessera.dev");
+        SiteDefinition.builder()
+            .baseUrl("https://tessera.dev")
+            .routes(
+                List.of(
+                    new SiteRoute(
+                        "/",
+                        new PageDocument(
+                            "Home",
+                            main()
+                                .children(
+                                    Toc.section(
+                                        "features", "Core Features", p().text("Fast compiler.")),
+                                    DocPager.of(
+                                        null, new DocPager.PageRef("/guide", "Getting Started")))),
+                        "Tessera Home",
+                        "Static HTML/CSS compiler"),
+                    new SiteRoute(
+                        "/guide",
+                        new PageDocument(
+                            "Guide",
+                            main()
+                                .children(
+                                    Toc.section(
+                                        "quickstart", "Quick Start", p().text("Setup commands.")),
+                                    Toc.subsection(
+                                        "config", "Configuration", p().text("Build flags.")),
+                                    DocPager.of(
+                                        new DocPager.PageRef("/", "Tessera Home"),
+                                        new DocPager.PageRef(
+                                            "/faq", "Frequently Asked Questions")))),
+                        "Getting Started",
+                        "Step by step guide"),
+                    new SiteRoute(
+                        "/faq",
+                        new PageDocument(
+                            "FAQ",
+                            main()
+                                .children(
+                                    Toc.section(
+                                        "questions", "Common Questions", p().text("Q&A list.")),
+                                    DocPager.of(
+                                        new DocPager.PageRef("/guide", "Getting Started"), null))),
+                        "Frequently Asked Questions",
+                        "Common questions answered")))
+            .build();
 
     // Verify SiteNavigation.docPager auto-resolution
     var autoPager = SiteNavigation.docPager(site, "/guide");

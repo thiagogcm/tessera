@@ -105,7 +105,7 @@ class FormsAndSearchPaletteTest {
     var doc2 = new PageDocument("Documentation", div().id("docs-root"));
 
     var site =
-        new SiteDefinition(
+        SiteDefinition.of(
             new SiteRoute("/", doc1, "Home"), new SiteRoute("/docs", doc2, "Documentation"));
 
     var palette = SiteNavigation.searchPalette(site);

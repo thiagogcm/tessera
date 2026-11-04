@@ -150,6 +150,6 @@ final class MotionPage {
                     text(", then click the Docs card.")))
         .code(
             "heroImage.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\"));",
-            "new SiteDefinition(routes); // prerenders same-site links by default");
+            "SiteDefinition.of(routes); // prerenders same-site links by default");
   }
 }

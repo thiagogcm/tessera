@@ -1,7 +1,5 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
@@ -41,9 +39,11 @@ public final class ShowcaseSite {
                         page.title(),
                         page.summary()))
             .toList();
-    return new SiteDefinition(
-            new Tokens(), OutputMode.externalAsset("/assets"), routes, "http://localhost:8188")
-        .withAssets(Art.assets());
+    return SiteDefinition.builder()
+        .routes(routes)
+        .baseUrl("http://localhost:8188")
+        .assets(Art.assets())
+        .build();
   }
 
   public static void main(String[] args) throws InterruptedException {

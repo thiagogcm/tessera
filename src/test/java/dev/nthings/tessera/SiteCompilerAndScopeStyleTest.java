@@ -142,7 +142,7 @@ class SiteCompilerAndScopeStyleTest {
   @DisplayName("Rejects broken cross-route links and missing anchors at compile time")
   void rejectsBrokenCrossRouteLinksAndAnchors() {
     var brokenRouteSite =
-        new SiteDefinition(
+        SiteDefinition.of(
             new SiteRoute(
                 "/",
                 new PageDocument(
@@ -154,7 +154,7 @@ class SiteCompilerAndScopeStyleTest {
         .hasMessageContaining("unregistered internal route or asset \"/does-not-exist\"");
 
     var brokenAnchorSite =
-        new SiteDefinition(
+        SiteDefinition.of(
             new SiteRoute(
                 "/",
                 new PageDocument(

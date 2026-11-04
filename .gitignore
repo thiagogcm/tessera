@@ -61,6 +61,10 @@ Thumbs.db
 
 .notes/
 legacy/
+.commandcode/
+.claude/
+.codex/
+.opencode/
 
 # Release pipeline outputs
 dist/

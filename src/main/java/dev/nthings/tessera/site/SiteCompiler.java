@@ -1,5 +1,7 @@
 package dev.nthings.tessera.site;
 
+import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PageCompiler;
@@ -14,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,7 +38,17 @@ public final class SiteCompiler {
   public record CompiledSite(
       Map<String, PageCompiler.CompiledPage> pagesByRoute,
       @Nullable String sharedCssPath,
-      String sharedCssContent) {}
+      String sharedCssContent,
+      @Nullable String sitemapXml,
+      @Nullable String searchIndexJson) {
+
+    public CompiledSite(
+        Map<String, PageCompiler.CompiledPage> pagesByRoute,
+        @Nullable String sharedCssPath,
+        String sharedCssContent) {
+      this(pagesByRoute, sharedCssPath, sharedCssContent, null, null);
+    }
+  }
 
   private SiteCompiler() {}
 
@@ -70,6 +83,9 @@ public final class SiteCompiler {
     // Verify cross-route links and #fragment targets
     validateSiteLinks(preparedByRoute);
 
+    // Verify TransitionKey appearance across multiple routes
+    validateViewTransitions(preparedByRoute);
+
     // Deterministically merge all route stylesheets in route order
     var sharedCollector = new StyleSheetCollector();
     for (var prepared : preparedByRoute.values()) {
@@ -88,8 +104,19 @@ public final class SiteCompiler {
       }
     }
 
+    String sitemapXml = null;
+    if (site.baseUrl() != null && !site.baseUrl().isBlank()) {
+      sitemapXml = generateSitemapXml(site.baseUrl(), site.routes());
+    }
+
+    String searchIndexJson = generateSearchIndexJson(routes, preparedByRoute);
+
     return new CompiledSite(
-        Collections.unmodifiableMap(compiledPages), sharedCssPath, sharedCssContent);
+        Collections.unmodifiableMap(compiledPages),
+        sharedCssPath,
+        sharedCssContent,
+        sitemapXml,
+        searchIndexJson);
   }
 
   public static void writeToDirectory(CompiledSite compiledSite, Path outputDirectory) {
@@ -115,9 +142,105 @@ public final class SiteCompiler {
         }
         Files.writeString(cssFile, compiledSite.sharedCssContent(), StandardCharsets.UTF_8);
       }
+
+      if (compiledSite.sitemapXml() != null) {
+        Path sitemapFile = outputDirectory.resolve("sitemap.xml");
+        Files.writeString(sitemapFile, compiledSite.sitemapXml(), StandardCharsets.UTF_8);
+      }
+
+      if (compiledSite.searchIndexJson() != null) {
+        Path searchIndexFile = outputDirectory.resolve("search-index.json");
+        Files.writeString(searchIndexFile, compiledSite.searchIndexJson(), StandardCharsets.UTF_8);
+      }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  private static void validateViewTransitions(
+      Map<String, PageCompiler.PreparedPage> preparedByRoute) {
+    var routesByKey = new LinkedHashMap<TransitionKey, Set<String>>();
+    for (var entry : preparedByRoute.entrySet()) {
+      String routePath = entry.getKey();
+      for (var key : entry.getValue().transitionKeys()) {
+        routesByKey.computeIfAbsent(key, _ -> new LinkedHashSet<>()).add(routePath);
+      }
+    }
+    for (var entry : routesByKey.entrySet()) {
+      var key = entry.getKey();
+      var routePaths = entry.getValue();
+      if (routePaths.size() < 2) {
+        throw new AccessibilityViolationException(
+            "TransitionKey '"
+                + key.name()
+                + "' declared on route '"
+                + routePaths.iterator().next()
+                + "' must appear on at least two distinct routes site-wide to enable cross-document morphing.");
+      }
+    }
+  }
+
+  private static String generateSitemapXml(String baseUrl, List<SiteRoute> routes) {
+    var sb = new StringBuilder(1024);
+    sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+    for (var route : routes) {
+      String loc = baseUrl + ("/".equals(route.path()) ? "/" : route.path());
+      sb.append("  <url>\n");
+      sb.append("    <loc>").append(loc).append("</loc>\n");
+      sb.append("  </url>\n");
+    }
+    sb.append("</urlset>\n");
+    return sb.toString();
+  }
+
+  private static String generateSearchIndexJson(
+      List<SiteRoute> routes, Map<String, PageCompiler.PreparedPage> preparedByRoute) {
+    var sb = new StringBuilder(2048);
+    sb.append("[\n");
+    for (int i = 0; i < routes.size(); i++) {
+      var route = routes.get(i);
+      var prepared = preparedByRoute.get(route.path());
+      String title =
+          route.title() != null
+              ? route.title()
+              : (prepared != null ? prepared.document().title() : route.path());
+      sb.append("  {\n");
+      sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
+      sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
+      if (route.description() != null) {
+        sb.append(",\n    \"description\": \"")
+            .append(escapeJson(route.description()))
+            .append("\"");
+      }
+      sb.append(",\n    \"headings\": [");
+      if (prepared != null) {
+        List<RenderContext.TocEntry> tocs = prepared.tocEntries();
+        for (int j = 0; j < tocs.size(); j++) {
+          var toc = tocs.get(j);
+          if (j > 0) sb.append(", ");
+          sb.append("{\"id\": \"")
+              .append(escapeJson(toc.targetDomId()))
+              .append("\", \"title\": \"")
+              .append(escapeJson(toc.title()))
+              .append("\", \"level\": ")
+              .append(toc.level())
+              .append("}");
+        }
+      }
+      sb.append("]\n");
+      sb.append("  }");
+      if (i < routes.size() - 1) {
+        sb.append(",");
+      }
+      sb.append("\n");
+    }
+    sb.append("]\n");
+    return sb.toString();
+  }
+
+  private static String escapeJson(String s) {
+    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
   }
 
   private static dev.nthings.tessera.render.PageDocument placeholderDocument() {

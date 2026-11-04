@@ -83,7 +83,9 @@ class SiteCompilerAndScopeStyleTest {
     assertThat(compiledSite.sharedCssPath()).startsWith("/assets/styles-").endsWith(".css");
     assertThat(compiledSite.sharedCssContent())
         .contains(
-            "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}}")
+            "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}")
+        .contains(
+            "::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}")
         .contains("@scope ([data-view=\"card\"]) to ([data-view])")
         .contains("@scope ([data-view=\"data-table\"]) to ([data-view])")
         .contains("@scope ([data-view=\"step-list\"]) to ([data-view])");

@@ -13,6 +13,9 @@ import dev.nthings.tessera.core.RenderViewElement;
 import dev.nthings.tessera.core.StatefulTagElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
+import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.css.CssDeclaration;
+import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -49,7 +52,20 @@ public final class PageCompiler {
       StyleSheetCollector styles,
       List<ResolvedNode> bodyNodes,
       Set<String> registeredDomIds,
-      Set<String> outgoingHrefs) {}
+      Set<String> outgoingHrefs,
+      Set<TransitionKey> transitionKeys,
+      @Nullable String heroImagePreloadHref,
+      List<RenderContext.TocEntry> tocEntries) {
+
+    public PreparedPage(
+        PageDocument document,
+        StyleSheetCollector styles,
+        List<ResolvedNode> bodyNodes,
+        Set<String> registeredDomIds,
+        Set<String> outgoingHrefs) {
+      this(document, styles, bodyNodes, registeredDomIds, outgoingHrefs, Set.of(), null, List.of());
+    }
+  }
 
   public sealed interface ResolvedNode
       permits ResolvedTag, ResolvedText, ResolvedRaw, ResolvedEmpty {}
@@ -58,8 +74,18 @@ public final class PageCompiler {
       HtmlTag tag,
       Map<String, String> attributes,
       List<ResolvedNode> children,
-      @Nullable ResolvedTag companionSibling)
-      implements ResolvedNode {}
+      @Nullable ResolvedTag companionSibling,
+      boolean hasAspectRatio)
+      implements ResolvedNode {
+
+    public ResolvedTag(
+        HtmlTag tag,
+        Map<String, String> attributes,
+        List<ResolvedNode> children,
+        @Nullable ResolvedTag companionSibling) {
+      this(tag, attributes, children, companionSibling, false);
+    }
+  }
 
   public record ResolvedText(String content) implements ResolvedNode {}
 
@@ -82,6 +108,8 @@ public final class PageCompiler {
     private final PriorityQueue<ResolvedDeferred> deferredQueue = new PriorityQueue<>();
     private final Set<String> registeredDomIds = new LinkedHashSet<>();
     private final Set<String> outgoingHrefs = new LinkedHashSet<>();
+    private final Set<TransitionKey> transitionKeys = new LinkedHashSet<>();
+    private final Set<String> viewTransitionNames = new LinkedHashSet<>();
     private long deferredSequence = 0L;
 
     void enqueueDeferred(int priority, ResolvedNode node) {
@@ -105,8 +133,13 @@ public final class PageCompiler {
     var styles = new StyleSheetCollector();
     var state = new CompilationState();
 
+    record Phase1Result(
+        ResolvedNode root,
+        @Nullable String heroImageHref,
+        List<RenderContext.TocEntry> tocEntries) {}
+
     // Phase 1: requestLayout
-    ResolvedNode resolvedRoot =
+    Phase1Result p1 =
         RenderContext.runRoot(
             styles,
             document.tokens(),
@@ -117,25 +150,37 @@ public final class PageCompiler {
                     requestLayout(Footnotes.section().intoElement(), state);
                 state.enqueueDeferred(Integer.MAX_VALUE, autoFootnotes);
               }
-              return root;
+              return new Phase1Result(
+                  root,
+                  RenderContext.current().heroImageHref(),
+                  RenderContext.current().tocEntries());
             });
 
     // Phase 2: prepaint
-    List<ResolvedNode> bodyNodes = prepaint(resolvedRoot, state);
+    List<ResolvedNode> bodyNodes = prepaint(p1.root(), state);
 
     return new PreparedPage(
         document,
         styles,
         bodyNodes,
         Collections.unmodifiableSet(state.registeredDomIds),
-        Collections.unmodifiableSet(state.outgoingHrefs));
+        Collections.unmodifiableSet(state.outgoingHrefs),
+        Collections.unmodifiableSet(state.transitionKeys),
+        p1.heroImageHref(),
+        p1.tocEntries());
   }
 
   public static CompiledPage paintPrepared(
       PreparedPage prepared, String cssContent, OutputMode outputMode) {
     var htmlBuffer = new StringBuilder(4096);
     String externalCssPath =
-        paint(prepared.document(), prepared.bodyNodes(), cssContent, outputMode, htmlBuffer);
+        paint(
+            prepared.document(),
+            prepared.bodyNodes(),
+            cssContent,
+            outputMode,
+            prepared.heroImagePreloadHref(),
+            htmlBuffer);
     return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
   }
 
@@ -182,13 +227,14 @@ public final class PageCompiler {
           tag.tag(),
           Collections.unmodifiableMap(updatedAttrs),
           tag.children(),
-          tag.companionSibling());
+          tag.companionSibling(),
+          tag.hasAspectRatio());
     }
     var wrapperAttrs = new LinkedHashMap<String, String>(2);
     wrapperAttrs.put("data-view", viewType);
     wrapperAttrs.put("data-view-id", instanceScopeId);
     return new ResolvedTag(
-        HtmlTag.DIV, Collections.unmodifiableMap(wrapperAttrs), List.of(node), null);
+        HtmlTag.DIV, Collections.unmodifiableMap(wrapperAttrs), List.of(node), null, false);
   }
 
   private static ResolvedTag resolveTag(
@@ -202,6 +248,38 @@ public final class PageCompiler {
       String explicitId = attrs.get("id");
       if (explicitId != null && !explicitId.isBlank()) {
         state.registeredDomIds.add(explicitId);
+      }
+    }
+
+    boolean hasAspectRatio = tag.style().get(CssProperty.ASPECT_RATIO) != null;
+
+    if (tag.transitionKey() != null) {
+      TransitionKey tk = tag.transitionKey();
+      if (!state.viewTransitionNames.add(tk.name())) {
+        throw new AccessibilityViolationException(
+            "Duplicate TransitionKey name '"
+                + tk.name()
+                + "' found on the same page. TransitionKey names must be unique per document.");
+      }
+      state.transitionKeys.add(tk);
+      if (tk.transitionClass() != null) {
+        ctx.styles().registerTransitionClass(tk.transitionClass());
+      }
+    } else {
+      var vtnDecl = tag.style().get(CssProperty.VIEW_TRANSITION_NAME);
+      if (vtnDecl instanceof CssDeclaration.ViewTransitionName(var ident)) {
+        if (!state.viewTransitionNames.add(ident)) {
+          throw new AccessibilityViolationException(
+              "Duplicate view-transition-name '"
+                  + ident
+                  + "' found on the same page. TransitionKey names must be unique per document.");
+        }
+        var vtcDecl = tag.style().get(CssProperty.VIEW_TRANSITION_CLASS);
+        String vtc = (vtcDecl instanceof CssDeclaration.ViewTransitionClass(var cls)) ? cls : null;
+        state.transitionKeys.add(new TransitionKey(ident, vtc));
+        if (vtc != null) {
+          ctx.styles().registerTransitionClass(vtc);
+        }
       }
     }
 
@@ -244,7 +322,8 @@ public final class PageCompiler {
         tag.tag(),
         Collections.unmodifiableMap(attrs),
         Collections.unmodifiableList(resolvedChildren),
-        companionTooltip);
+        companionTooltip,
+        hasAspectRatio);
   }
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
@@ -297,6 +376,16 @@ public final class PageCompiler {
           && !"true".equals(attrs.get("aria-hidden"))) {
         throw new AccessibilityViolationException(
             "Decorative <img> with empty alt=\"\" must declare role=\"presentation\" or aria-hidden=\"true\"");
+      }
+      boolean hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
+      boolean hasAspectRatio =
+          tag.hasAspectRatio()
+              || (attrs.containsKey("style") && attrs.get("style").contains("aspect-ratio"));
+      if (!hasWidthAndHeight && !hasAspectRatio) {
+        throw new AccessibilityViolationException(
+            "<img> element with src=\""
+                + attrs.getOrDefault("src", "")
+                + "\" must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio' to prevent Cumulative Layout Shift (CLS)");
       }
     }
 
@@ -380,6 +469,7 @@ public final class PageCompiler {
       List<ResolvedNode> bodyNodes,
       String cssContent,
       OutputMode outputMode,
+      @Nullable String heroImagePreloadHref,
       Appendable out) {
     try {
       out.append("<!doctype html>\n<html lang=\"");
@@ -389,6 +479,11 @@ public final class PageCompiler {
       out.append("<title>");
       out.append(Encode.forHtmlContent(doc.title()));
       out.append("</title>\n");
+      if (heroImagePreloadHref != null && !heroImagePreloadHref.isBlank()) {
+        out.append("<link rel=\"preload\" as=\"image\" href=\"");
+        out.append(Encode.forHtmlAttribute(heroImagePreloadHref));
+        out.append("\" fetchpriority=\"high\">\n");
+      }
 
       String externalCssPath = null;
       switch (outputMode) {

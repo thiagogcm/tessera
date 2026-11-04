@@ -6,6 +6,7 @@ import dev.nthings.tessera.css.StyleRefinement;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Identity-bearing HTML element unlocked via {@link TagElement#id(ElementId)}.
@@ -133,6 +134,20 @@ public final class StatefulTagElement
     String safeTransition = Fnv1a64.sanitizeIdentifier(transitionClass);
     style().put(new CssDeclaration.ViewTransitionName(safeTransition + "-" + elementId.slug()));
     style().put(new CssDeclaration.ViewTransitionClass(safeTransition));
+    return this;
+  }
+
+  public @Nullable TransitionKey transitionKey() {
+    return delegate.transitionKey();
+  }
+
+  public StatefulTagElement transitionKey(TransitionKey key) {
+    delegate.transitionKey(key);
+    return this;
+  }
+
+  public StatefulTagElement dimensions(int width, int height) {
+    delegate.dimensions(width, height);
     return this;
   }
 }

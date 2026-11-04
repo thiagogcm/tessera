@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Implicit lexical render context propagated across component boundaries via JDK 25 {@link
@@ -24,6 +25,7 @@ public final class RenderContext {
     private final Map<String, FootnoteEntry> footnotes = new LinkedHashMap<>();
     private boolean footnotesRendered = false;
     private final Map<String, TocEntry> tocEntries = new LinkedHashMap<>();
+    private @Nullable String heroImageHref = null;
   }
 
   private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
@@ -99,6 +101,22 @@ public final class RenderContext {
 
   public List<TocEntry> tocEntries() {
     return List.copyOf(docState.tocEntries.values());
+  }
+
+  public void registerHeroImage(String href) {
+    if (docState.heroImageHref != null) {
+      throw new IllegalStateException(
+          "Only one hero image allowed per page: already registered '"
+              + docState.heroImageHref
+              + "', cannot register '"
+              + href
+              + "'");
+    }
+    docState.heroImageHref = href;
+  }
+
+  public @Nullable String heroImageHref() {
+    return docState.heroImageHref;
   }
 
   public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {

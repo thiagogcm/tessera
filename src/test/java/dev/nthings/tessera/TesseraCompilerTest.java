@@ -322,7 +322,7 @@ class TesseraCompilerTest {
             "Valid A11y",
             div()
                 .children(
-                    img("/deco.svg", "").role("presentation"),
+                    img("/deco.svg", "").role("presentation").dimensions(100, 100),
                     a("/home")
                         .ariaLabel("Home page")
                         .child(new TagElement(HtmlTag.SPAN).ariaHidden(true))));

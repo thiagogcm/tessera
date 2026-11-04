@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Sparse, cascade-mergeable collection of {@link CssDeclaration} values and scoped CSS custom
@@ -49,6 +50,10 @@ public final class StyleRefinement
 
   public boolean isEmpty() {
     return declarations.isEmpty() && customProperties.isEmpty();
+  }
+
+  public @Nullable CssDeclaration get(CssProperty property) {
+    return declarations.get(property);
   }
 
   public Collection<CssDeclaration> declarations() {

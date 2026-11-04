@@ -2,6 +2,7 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.core.Fnv1a64;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,6 +20,7 @@ public final class StyleSheetCollector {
   private final Map<String, String> containerRules = new LinkedHashMap<>();
   private final Map<String, String> viewScopeBodies = new LinkedHashMap<>();
   private final Set<String> keyframeRules = new LinkedHashSet<>();
+  private final Set<String> transitionClasses = new LinkedHashSet<>();
 
   public List<String> registerElementStyles(
       StyleRefinement baseStyle, Interactivity interactivity) {
@@ -98,6 +100,16 @@ public final class StyleSheetCollector {
     keyframeRules.add(keyframeRule);
   }
 
+  public void registerTransitionClass(String transitionClass) {
+    if (transitionClass != null && !transitionClass.isBlank()) {
+      transitionClasses.add(Fnv1a64.sanitizeIdentifier(transitionClass));
+    }
+  }
+
+  public Set<String> transitionClasses() {
+    return Collections.unmodifiableSet(transitionClasses);
+  }
+
   /** Merges another collector's rules into this collector in deterministic insertion order. */
   public void mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
@@ -105,6 +117,7 @@ public final class StyleSheetCollector {
     other.containerRules.forEach(containerRules::putIfAbsent);
     other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
     keyframeRules.addAll(other.keyframeRules);
+    transitionClasses.addAll(other.transitionClasses);
   }
 
   private static String buildInteractiveBlock(Interactivity interactivity) {
@@ -157,13 +170,22 @@ public final class StyleSheetCollector {
         "@layer reset{"
             + "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}"
             + ":root{interpolate-size:allow-keywords;color-scheme:light dark}"
+            + "img,svg,video{max-inline-size:100%;block-size:auto}"
             + "}\n");
 
     // 2. @layer base
+    sb.append("@layer base{");
+    sb.append("@media (prefers-reduced-motion: no-preference){");
+    sb.append("@view-transition{navigation:auto}");
+    sb.append("::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}");
+    for (var cls : transitionClasses) {
+      sb.append("::view-transition-group(*.")
+          .append(cls)
+          .append("){animation-duration:0.35s;animation-timing-function:cubic-bezier(0.2,0,0,1)}");
+    }
+    sb.append("}");
     sb.append(
-        "@layer base{"
-            + "@media (prefers-reduced-motion: no-preference){@view-transition{navigation:auto}}"
-            + "body{font-family:system-ui,-apple-system,sans-serif;"
+        "body{font-family:system-ui,-apple-system,sans-serif;"
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
             + "[popover=\"hint\"]{position-area:block-start;"
             + "position-try-fallbacks:flip-block,flip-inline;margin:0.25rem}"

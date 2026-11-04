@@ -12,15 +12,19 @@ import static dev.nthings.tessera.core.Elements.text;
 import dev.nthings.tessera.components.Accordion;
 import dev.nthings.tessera.components.Breadcrumbs;
 import dev.nthings.tessera.components.Breadcrumbs.Crumb;
+import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CardGrid;
 import dev.nthings.tessera.components.Carousel;
+import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DataTable.Column;
+import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Dropdown;
 import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Lists.BulletList;
 import dev.nthings.tessera.components.Lists.DescriptionList;
 import dev.nthings.tessera.components.Lists.NumberedList;
@@ -38,11 +42,13 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.UnderlineStyle;
+import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageDocument;
 import java.nio.file.Path;
 import java.util.List;
@@ -62,8 +68,18 @@ public final class ShowcaseSite {
       String pageHeading,
       String subtitle,
       @Nullable Breadcrumbs breadcrumbs,
-      Element content)
+      Element content,
+      @Nullable DocPager pager)
       implements RenderOnce {
+
+    public ShellLayout(
+        String activePath,
+        String pageHeading,
+        String subtitle,
+        @Nullable Breadcrumbs breadcrumbs,
+        Element content) {
+      this(activePath, pageHeading, subtitle, breadcrumbs, content, null);
+    }
 
     @Override
     public Element render() {
@@ -121,11 +137,14 @@ public final class ShowcaseSite {
                   .justifyBetween()
                   .gap(CssLength.rem(0.625))
                   .children(
-                      span()
+                      Elements.a("/")
+                          .textColor(Tokens.TEXT_PRIMARY)
+                          .textDecorationNone()
                           .fontWeight(700)
                           .textSize(CssLength.rem(1.0625))
                           .whiteSpace("nowrap")
-                          .text("Tessera // JDK 25"),
+                          .text("Tessera // JDK 25")
+                          .transitionKey(TransitionKey.of("site-brand", "brand-morph")),
                       navTabs,
                       div()
                           .flex()
@@ -167,7 +186,7 @@ public final class ShowcaseSite {
                   .flex()
                   .flexCol()
                   .gap(CssLength.rem(2.5))
-                  .children(hero, content),
+                  .children(hero, content, pager != null ? pager.intoElement() : Elements.empty()),
               footer()
                   .maxInlineSize(CssLength.rem(72))
                   .mx(CssLength.auto())
@@ -184,9 +203,28 @@ public final class ShowcaseSite {
 
   public static SiteDefinition createDefinition() {
     return new SiteDefinition(
-        new SiteRoute("/", buildOverviewPage()),
-        new SiteRoute("/telemetry", buildTelemetryPage()),
-        new SiteRoute("/typography", buildTypographyPage()));
+        new Tokens(),
+        OutputMode.externalAsset("/assets"),
+        List.of(
+            new SiteRoute(
+                "/",
+                buildOverviewPage(),
+                "Tessera Showcase — Overview & Architecture",
+                "Declarative zero-JS HTML & CSS view engine for JDK 25",
+                1),
+            new SiteRoute(
+                "/telemetry",
+                buildTelemetryPage(),
+                "Telemetry & Responsive DataTables",
+                "Container-adaptive data tables, sticky headers, and action dropdowns",
+                2),
+            new SiteRoute(
+                "/typography",
+                buildTypographyPage(),
+                "Documentation, Lists & Scroll-Spy ToC",
+                "Editorial callouts, accessible code blocks, footnotes, and scroll-target-group navigation",
+                3)),
+        "http://localhost:8188");
   }
 
   private static PageDocument buildOverviewPage() {
@@ -222,6 +260,11 @@ public final class ShowcaseSite {
             Card.create("typography-card")
                 .title("Typography, Lists & Scroll-Spy ToC")
                 .subtitle("Digital publishing & scroll-target-group")
+                .media(
+                    Image.of("/assets/typography-hero.webp", "Typography Hero Preview")
+                        .dimensions(600, 240)
+                        .aspectRatio("5 / 2")
+                        .transitionKey(TransitionKey.of("typography-hero", "hero-morph")))
                 .bodyText(
                     "Auto-numbered footnotes with interestfor hover previews, sibling-index() step lists, and :target-current Scroll-Spy navigation.")
                 .stretchedLink("/typography")
@@ -292,7 +335,9 @@ public final class ShowcaseSite {
                 .flex()
                 .flexCol()
                 .gap(CssLength.rem(2.25))
-                .children(cardGrid, interactiveGrid, carousel));
+                .children(cardGrid, interactiveGrid, carousel),
+            DocPager.of(
+                null, new DocPager.PageRef("/telemetry", "Telemetry & Responsive DataTables")));
 
     return new PageDocument("Tessera — Overview", body);
   }
@@ -361,12 +406,73 @@ public final class ShowcaseSite {
             "Telemetry & Responsive DataTables",
             "Resize the viewport or container below 36rem to observe the @container stacked-card transformation.",
             breadcrumbs,
-            div().flex().flexCol().gap(CssLength.rem(2)).children(dataTable, bentoSummary));
+            div().flex().flexCol().gap(CssLength.rem(2)).children(dataTable, bentoSummary),
+            DocPager.of(
+                new DocPager.PageRef("/", "Overview & Architecture"),
+                new DocPager.PageRef("/typography", "Documentation, Lists & Scroll-Spy ToC")));
 
     return new PageDocument("Tessera — Telemetry", body);
   }
 
   private static PageDocument buildTypographyPage() {
+    var heroImage =
+        Image.hero("/assets/typography-hero.webp", "Tessera Documentation & Editorial Architecture")
+            .dimensions(1200, 480)
+            .aspectRatio("5 / 2")
+            .transitionKey(TransitionKey.of("typography-hero", "hero-morph"))
+            .style(
+                s ->
+                    s.rounded(CssLength.rem(0.75))
+                        .borderSubtle(Tokens.BORDER_SUBTLE)
+                        .overflowClip());
+
+    var admonitionsSection =
+        Toc.section(
+            "admonitions",
+            "Editorial Callouts & Admonitions",
+            div()
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(1))
+                .children(
+                    Callout.note(
+                        "Tessera compiles statically to zero-runtime HTML5 and CSS Level 4/5. No client-side JS hydrate pass is executed."),
+                    Callout.tip(
+                        "Chrome 156+ natively animates ::details-content when interpolate-size: allow-keywords is active."),
+                    Callout.important(
+                        "All <img> elements require explicit width/height or CSS aspect-ratio to eliminate Cumulative Layout Shift (CLS)."),
+                    Callout.warning(
+                        "JDK preview features are disallowed in production builds for long-term ABI stability."),
+                    Callout.caution(
+                        "Destructive actions should always declare dialog closedby=\"none\" to prevent accidental dismissal.")));
+
+    var codeBlocksSection =
+        Toc.section(
+            "code-blocks",
+            "Accessible Keyboard-Scrollable Code Blocks",
+            div()
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(1))
+                .children(
+                    p().text(
+                            "Scrollable <pre tabindex=\"0\"> with CSS counter-increment line numbering, diff markers, and line highlighting:"),
+                    CodeBlock.ofLines(
+                            "package dev.nthings.tessera.site;",
+                            "",
+                            "// Three-phase static compiler pipeline",
+                            "public class ShowcaseSite {",
+                            "+   // Phase 1: Layout expansion & token hoisting",
+                            "+   PreparedPage prepared = PageCompiler.prepare(document);",
+                            "-   // Legacy single-pass unvalidated rendering",
+                            "-   String rawHtml = LegacyEngine.render(document);",
+                            "    CompiledSite site = SiteCompiler.compile(definition);",
+                            "}")
+                        .filename("ShowcaseSite.java")
+                        .language("java")
+                        .diffAutoDetect(true)
+                        .highlightLines(4, 9)));
+
     var inlineFormattingSection =
         Toc.section(
             "inline-formatting",
@@ -458,6 +564,8 @@ public final class ShowcaseSite {
         Toc.docLayout(
             "doc-toc",
             "On This Page",
+            admonitionsSection,
+            codeBlocksSection,
             inlineFormattingSection,
             stepListSection,
             specsSubSection,
@@ -474,9 +582,15 @@ public final class ShowcaseSite {
         new ShellLayout(
             "/typography",
             "Documentation, Lists & Scroll-Spy ToC",
-            "Scroll through the sections to observe :target-current Scroll-Spy tracking, or hover [1] and [2] for instant interestfor previews.",
+            "Scroll through the sections to observe :target-current Scroll-Spy tracking, test Callout tones, or scroll keyboard-focused CodeBlocks.",
             breadcrumbs,
-            docLayout.intoElement());
+            div()
+                .flex()
+                .flexCol()
+                .gap(CssLength.rem(2))
+                .children(heroImage, docLayout.intoElement()),
+            DocPager.of(
+                new DocPager.PageRef("/telemetry", "Telemetry & Responsive DataTables"), null));
 
     return new PageDocument("Tessera — Documentation & Typography", body);
   }

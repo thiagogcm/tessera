@@ -74,6 +74,7 @@ public enum CssProperty {
   BACKGROUND("background"),
   BACKDROP_FILTER("backdrop-filter"),
   COLOR("color"),
+  FONT_FAMILY("font-family"),
   FONT_SIZE("font-size"),
   FONT_WEIGHT("font-weight"),
   FONT_VARIANT_NUMERIC("font-variant-numeric"),

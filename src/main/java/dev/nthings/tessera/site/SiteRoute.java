@@ -2,12 +2,30 @@ package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.render.PageDocument;
 import java.nio.file.Path;
+import org.jspecify.annotations.Nullable;
 
 /** Represents a single route and its associated {@link PageDocument} in a multi-page site. */
-public record SiteRoute(String path, PageDocument document) {
+public record SiteRoute(
+    String path,
+    PageDocument document,
+    @Nullable String title,
+    @Nullable String description,
+    int navOrder) {
 
   public SiteRoute {
     path = normalizeRoutePath(path);
+  }
+
+  public SiteRoute(String path, PageDocument document) {
+    this(path, document, null, null, 0);
+  }
+
+  public SiteRoute(String path, PageDocument document, String title) {
+    this(path, document, title, null, 0);
+  }
+
+  public SiteRoute(String path, PageDocument document, String title, int navOrder) {
+    this(path, document, title, null, navOrder);
   }
 
   public static String normalizeRoutePath(String rawPath) {

@@ -47,6 +47,7 @@ public sealed interface CssDeclaration
         CssDeclaration.MarginBlockEnd,
         CssDeclaration.Background,
         CssDeclaration.Color,
+        CssDeclaration.FontFamily,
         CssDeclaration.FontSize,
         CssDeclaration.FontWeight,
         CssDeclaration.FontVariantNumeric,
@@ -763,6 +764,18 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return value;
+    }
+  }
+
+  record FontFamily(String family) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.FONT_FAMILY;
+    }
+
+    @Override
+    public String cssValue() {
+      return family;
     }
   }
 

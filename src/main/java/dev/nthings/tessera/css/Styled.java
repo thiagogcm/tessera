@@ -108,6 +108,11 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  default SELF content(String value) {
+    style().put(new CssDeclaration.Content(value));
+    return self();
+  }
+
   default SELF flexRow() {
     style().put(new CssDeclaration.FlexDirection(CssDeclaration.Direction.ROW));
     return self();
@@ -353,6 +358,20 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF textSize(CssLength size) {
     style().put(new CssDeclaration.FontSize(size));
+    return self();
+  }
+
+  default SELF fontSize(CssLength size) {
+    return textSize(size);
+  }
+
+  default SELF textDecorationNone() {
+    style().put(new CssDeclaration.TextDecorationLine("none"));
+    return self();
+  }
+
+  default SELF fontFamily(String family) {
+    style().put(new CssDeclaration.FontFamily(family));
     return self();
   }
 

@@ -671,4 +671,9 @@ public interface Styled<SELF extends Styled<SELF>> {
     style().put(new CssDeclaration.PositionTryFallbacks(fallbacks));
     return self();
   }
+
+  default SELF whiteSpace(String mode) {
+    style().put(new CssDeclaration.WhiteSpace(mode));
+    return self();
+  }
 }

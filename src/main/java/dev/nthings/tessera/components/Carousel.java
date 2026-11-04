@@ -86,6 +86,7 @@ public final class Carousel implements RenderView {
                     .scrollMarkerGroup("after")
                     .overscrollBehaviorX("contain")
                     .scrollbarWidthNone()
+                    .counterReset("carousel-item")
                     .py(CssLength.rem(0.5)))
         .select(
             ":scope > .carousel-item",
@@ -93,6 +94,7 @@ public final class Carousel implements RenderView {
                 s.flexShrink(0)
                     .inlineSize(CssLength.expr("min(22rem, 82%)"))
                     .scrollSnapAlign("center")
+                    .counterIncrement("carousel-item")
                     .refine(
                         r ->
                             r.put(
@@ -119,7 +121,7 @@ public final class Carousel implements RenderView {
         .select(
             ":scope > .carousel-item::scroll-marker",
             s ->
-                s.cssContent("\"\"")
+                s.cssContent("\"\" / \"Slide \" counter(carousel-item)")
                     .inlineSize(CssLength.rem(0.625))
                     .blockSize(CssLength.rem(0.625))
                     .rounded(CssLength.px(999))

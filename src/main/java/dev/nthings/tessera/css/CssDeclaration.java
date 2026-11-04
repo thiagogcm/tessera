@@ -110,7 +110,8 @@ public sealed interface CssDeclaration
         CssDeclaration.TransitionProperty,
         CssDeclaration.TransitionDuration,
         CssDeclaration.TransitionTimingFunction,
-        CssDeclaration.TransitionBehavior {
+        CssDeclaration.TransitionBehavior,
+        CssDeclaration.WhiteSpace {
 
   CssProperty property();
 
@@ -1530,6 +1531,18 @@ public sealed interface CssDeclaration
     @Override
     public String cssValue() {
       return behavior;
+    }
+  }
+
+  record WhiteSpace(String mode) implements CssDeclaration {
+    @Override
+    public CssProperty property() {
+      return CssProperty.WHITE_SPACE;
+    }
+
+    @Override
+    public String cssValue() {
+      return mode;
     }
   }
 }

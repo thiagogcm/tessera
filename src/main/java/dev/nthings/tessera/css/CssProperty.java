@@ -80,6 +80,7 @@ public enum CssProperty {
   LINE_HEIGHT("line-height"),
   TEXT_ALIGN("text-align"),
   TEXT_WRAP("text-wrap"),
+  WHITE_SPACE("white-space"),
   TEXT_DECORATION_LINE("text-decoration-line"),
   TEXT_DECORATION_STYLE("text-decoration-style"),
   TEXT_DECORATION_COLOR("text-decoration-color"),

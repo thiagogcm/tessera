@@ -105,23 +105,26 @@ public final class ShowcaseSite {
                   new NavItem("/telemetry", "Telemetry & DataTables"),
                   new NavItem("/typography", "Docs & Scroll-Spy ToC")));
 
+      CssLength fluidPadX = CssLength.fluid(CssLength.rem(1), CssLength.cqi(3), CssLength.rem(2));
+
       var stickyNav =
           new StickyHeader(
               "site-header",
               div()
                   .maxInlineSize(CssLength.rem(72))
                   .mx(CssLength.auto())
-                  .px(CssLength.rem(2))
-                  .py(CssLength.rem(0.75))
+                  .px(fluidPadX)
+                  .py(CssLength.rem(0.625))
                   .flex()
                   .flexWrap()
                   .itemsCenter()
                   .justifyBetween()
-                  .gap(CssLength.rem(1))
+                  .gap(CssLength.rem(0.625))
                   .children(
                       span()
                           .fontWeight(700)
-                          .textSize(CssLength.rem(1.125))
+                          .textSize(CssLength.rem(1.0625))
+                          .whiteSpace("nowrap")
                           .text("Tessera // JDK 25"),
                       navTabs,
                       div()
@@ -159,7 +162,7 @@ public final class ShowcaseSite {
               Elements.main()
                   .maxInlineSize(CssLength.rem(72))
                   .mx(CssLength.auto())
-                  .px(CssLength.rem(2))
+                  .px(fluidPadX)
                   .py(CssLength.rem(2))
                   .flex()
                   .flexCol()
@@ -168,7 +171,7 @@ public final class ShowcaseSite {
               footer()
                   .maxInlineSize(CssLength.rem(72))
                   .mx(CssLength.auto())
-                  .px(CssLength.rem(2))
+                  .px(fluidPadX)
                   .py(CssLength.rem(2))
                   .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
                   .textColor(Tokens.TEXT_MUTED)

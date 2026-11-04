@@ -79,12 +79,13 @@ public final class Tabs {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> s.inlineFlex())
+          .root(s -> s.inlineFlex().maxInlineSize(CssLength.pct(100)))
           .select(
               ":scope ul",
               s ->
                   s.listStyleNone()
                       .flex()
+                      .flexWrap()
                       .itemsCenter()
                       .gap(CssLength.rem(0.25))
                       .relative()
@@ -118,11 +119,13 @@ public final class Tabs {
               ":scope a",
               s ->
                   s.block()
-                      .px(CssLength.rem(0.875))
-                      .py(CssLength.rem(0.5))
+                      .px(CssLength.rem(0.625))
+                      .py(CssLength.rem(0.375))
                       .rounded(CssLength.rem(0.375))
                       .textColor(Tokens.TEXT_MUTED)
+                      .textSize(CssLength.rem(0.875))
                       .fontWeight(500)
+                      .whiteSpace("nowrap")
                       .refine(
                           r ->
                               r.put(
@@ -193,6 +196,7 @@ public final class Tabs {
               ":scope > .tab-bar",
               s ->
                   s.flex()
+                      .flexWrap()
                       .itemsCenter()
                       .gap(CssLength.rem(0.25))
                       .px(CssLength.rem(1))
@@ -205,10 +209,11 @@ public final class Tabs {
               s ->
                   s.inlineFlex()
                       .itemsCenter()
-                      .px(CssLength.rem(1))
+                      .px(CssLength.rem(0.875))
                       .py(CssLength.rem(0.625))
                       .textColor(Tokens.TEXT_MUTED)
                       .fontWeight(500)
+                      .whiteSpace("nowrap")
                       .cursorPointer())
           .select(":scope > .tab-bar > .tab-label > input[type=\"radio\"]", s -> s.hidden())
           .select(

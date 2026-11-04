@@ -82,7 +82,7 @@ public final class Toc {
       var sectionEl =
           dev.nthings.tessera.core.Elements.section()
               .attr("id", entry.targetDomId())
-              .scrollMarginBlockStart(CssLength.rem(5.5))
+              .scrollMarginBlockStart(CssLength.rem(7))
               .flex()
               .flexCol()
               .gap(CssLength.rem(0.75))
@@ -160,7 +160,7 @@ public final class Toc {
               s ->
                   s.scrollTargetGroupAuto()
                       .sticky()
-                      .insetBlockStart(CssLength.rem(5))
+                      .insetBlockStart(CssLength.rem(6.75))
                       .flex()
                       .flexCol()
                       .gap(CssLength.rem(0.625))
@@ -261,15 +261,18 @@ public final class Toc {
           .root(s -> s.flex().flexCol().gap(CssLength.rem(2)).containerInlineSize())
           .select(":scope > .doc-grid", s -> s.flex().flexCol().gap(CssLength.rem(2)))
           .containerMinInlineSize(
-              CssLength.rem(48),
+              CssLength.rem(42),
               c ->
                   c.select(
-                      ":scope > .doc-grid",
-                      s ->
-                          s.grid()
-                              .gridColumns("minmax(0, 1fr) 16rem")
-                              .itemsStart()
-                              .gap(CssLength.rem(2.5))));
+                          ":scope > .doc-grid",
+                          s ->
+                              s.grid()
+                                  .gridColumns("minmax(0, 1fr) 15.5rem")
+                                  .itemsStart()
+                                  .gap(CssLength.rem(2)))
+                      .select(
+                          ":scope > .doc-grid > aside",
+                          s -> s.sticky().insetBlockStart(CssLength.rem(6.75))));
     }
 
     @Override
@@ -278,8 +281,7 @@ public final class Toc {
       for (var sec : sections) {
         proseCol.child(sec);
       }
-      var sidebar =
-          aside().sticky().insetBlockStart(CssLength.rem(5)).child(fromContext(tocId, tocHeading));
+      var sidebar = aside().child(fromContext(tocId, tocHeading));
       return div().child(div().attr("class", "doc-grid").children(proseCol, sidebar));
     }
   }

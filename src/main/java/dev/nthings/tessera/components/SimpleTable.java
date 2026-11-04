@@ -53,7 +53,11 @@ public final class SimpleTable implements RenderOnce {
   @Override
   public Element render() {
     TagElement table =
-        Elements.table().fullWidth().borderSubtle(Tokens.BORDER_SUBTLE).rounded(CssLength.rem(0.5));
+        Elements.table()
+            .fullWidth()
+            .maxInlineSize(CssLength.pct(100))
+            .borderSubtle(Tokens.BORDER_SUBTLE)
+            .rounded(CssLength.rem(0.5));
 
     if (caption != null && !caption.isBlank()) {
       table.child(

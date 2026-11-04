@@ -144,6 +144,24 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
                     .relative())
         .select(
+            ":scope a.card-link",
+            s ->
+                s.refine(
+                    r ->
+                        r.put(
+                            new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine("none"))))
+        .select(
+            ":scope a.card-link:hover",
+            s ->
+                s.refine(
+                    r ->
+                        r.put(
+                                new dev.nthings.tessera.css.CssDeclaration.TextDecorationLine(
+                                    "underline"))
+                            .put(
+                                new dev.nthings.tessera.css.CssDeclaration.TextUnderlineOffset(
+                                    CssLength.em(0.2)))))
+        .select(
             ":scope:has(a.card-link) a.card-link::after",
             s -> s.cssContent("\"\"").absolute().inset("0"))
         .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.focusOutlineNone())

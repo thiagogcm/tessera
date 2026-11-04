@@ -9,7 +9,6 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -21,17 +20,19 @@ import org.jspecify.annotations.Nullable;
 public final class Badge implements RenderView, FluentBuilder<Badge> {
 
   public enum Tone {
-    NEUTRAL(Tokens.TEXT_MUTED),
-    ACCENT(Tokens.ACCENT_PRIMARY),
-    SUCCESS(Tokens.STATUS_SUCCESS),
-    WARNING(Tokens.STATUS_WARNING),
-    DANGER(Tokens.STATUS_DANGER),
-    INFO(Tokens.STATUS_INFO);
+    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD.varReference()),
+    ACCENT(Tokens.ACCENT_PRIMARY, "#ffffff"),
+    SUCCESS(Tokens.STATUS_SUCCESS, "#ffffff"),
+    WARNING(Tokens.STATUS_WARNING, "oklch(15% 0.02 75)"),
+    DANGER(Tokens.STATUS_DANGER, "#ffffff"),
+    INFO(Tokens.STATUS_INFO, "#ffffff");
 
     private final DesignToken token;
+    private final String onSolid;
 
-    Tone(DesignToken token) {
+    Tone(DesignToken token, String onSolid) {
       this.token = token;
+      this.onSolid = onSolid;
     }
 
     public DesignToken token() {
@@ -250,14 +251,11 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .fontWeight(500)
                     .lineHeight("1")
                     .whiteSpace("nowrap")
-                    .refine(
-                        r ->
-                            r.put(CssProperty.BORDER_RADIUS, CssLength.rem(0.375))
-                                .put(CssProperty.TEXT_DECORATION_LINE, "none")
-                                .put(
-                                    CssProperty.TRANSITION,
-                                    "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease")))
-        .select(":scope.is-pill", s -> s.refine(r -> r.put(CssProperty.BORDER_RADIUS, "9999px")))
+                    .rounded(CssLength.rem(0.375))
+                    .textDecorationNone()
+                    .transition(
+                        "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease"))
+        .select(":scope.is-pill", s -> s.rounded(CssLength.px(9999)))
         .select(
             ":scope.badge--sm",
             s -> s.fontSize(CssLength.rem(0.7)).px(CssLength.rem(0.4)).py(CssLength.rem(0.15)))
@@ -274,197 +272,64 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .inlineSize(CssLength.rem(0.45))
                     .blockSize(CssLength.rem(0.45))
                     .rounded(CssLength.rem(99))
-                    .refine(
-                        r ->
-                            r.put(CssProperty.BACKGROUND, "currentColor")
-                                .put(CssProperty.FLEX_SHRINK, "0")))
+                    .bgRaw("currentColor")
+                    .flexShrink(0))
         .select(
             ":scope.badge--sm > .badge-dot",
             s -> s.inlineSize(CssLength.rem(0.375)).blockSize(CssLength.rem(0.375)))
         .select(
             ":scope.badge--lg > .badge-dot",
             s -> s.inlineSize(CssLength.rem(0.5)).blockSize(CssLength.rem(0.5)))
-        .select(
-            ":scope > .badge-icon",
-            s -> s.inlineFlex().itemsCenter().refine(r -> r.put(CssProperty.FLEX_SHRINK, "0")))
-        .select(
-            ":scope.badge--neutral.badge--tinted",
-            s ->
-                s.bg(Tokens.SURFACE_SUBTLE)
-                    .textColor(Tokens.TEXT_MUTED)
-                    .borderSubtle(Tokens.BORDER_SUBTLE))
-        .select(
-            ":scope.badge--neutral.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.TEXT_MUTED)
-                    .borderSubtle(Tokens.BORDER_SUBTLE))
-        .select(
-            ":scope.badge--neutral.badge--solid",
-            s ->
-                s.bg(Tokens.TEXT_MUTED)
-                    .textColor(Tokens.SURFACE_CARD)
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select(
-            ":scope.badge--accent.badge--tinted",
-            s ->
-                s.bgRaw(Tokens.ACCENT_PRIMARY.mixTransparent(14))
-                    .textColor(Tokens.ACCENT_PRIMARY)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.ACCENT_PRIMARY.mixTransparent(28))))
-        .select(
-            ":scope.badge--accent.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.ACCENT_PRIMARY)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.ACCENT_PRIMARY.varReference())))
-        .select(
-            ":scope.badge--accent.badge--solid",
-            s ->
-                s.bg(Tokens.ACCENT_PRIMARY)
-                    .textColorRaw("#ffffff")
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select(
-            ":scope.badge--success.badge--tinted",
-            s ->
-                s.bgRaw(Tokens.STATUS_SUCCESS.mixTransparent(14))
-                    .textColor(Tokens.STATUS_SUCCESS)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_SUCCESS.mixTransparent(28))))
-        .select(
-            ":scope.badge--success.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.STATUS_SUCCESS)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_SUCCESS.varReference())))
-        .select(
-            ":scope.badge--success.badge--solid",
-            s ->
-                s.bg(Tokens.STATUS_SUCCESS)
-                    .textColorRaw("#ffffff")
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select(
-            ":scope.badge--warning.badge--tinted",
-            s ->
-                s.bgRaw(Tokens.STATUS_WARNING.mixTransparent(14))
-                    .textColor(Tokens.STATUS_WARNING)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_WARNING.mixTransparent(28))))
-        .select(
-            ":scope.badge--warning.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.STATUS_WARNING)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_WARNING.varReference())))
-        .select(
-            ":scope.badge--warning.badge--solid",
-            s ->
-                s.bg(Tokens.STATUS_WARNING)
-                    .textColorRaw("oklch(15% 0.02 75)")
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select(
-            ":scope.badge--danger.badge--tinted",
-            s ->
-                s.bgRaw(Tokens.STATUS_DANGER.mixTransparent(14))
-                    .textColor(Tokens.STATUS_DANGER)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_DANGER.mixTransparent(28))))
-        .select(
-            ":scope.badge--danger.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.STATUS_DANGER)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_DANGER.varReference())))
-        .select(
-            ":scope.badge--danger.badge--solid",
-            s ->
-                s.bg(Tokens.STATUS_DANGER)
-                    .textColorRaw("#ffffff")
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select(
-            ":scope.badge--info.badge--tinted",
-            s ->
-                s.bgRaw(Tokens.STATUS_INFO.mixTransparent(14))
-                    .textColor(Tokens.STATUS_INFO)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_INFO.mixTransparent(28))))
-        .select(
-            ":scope.badge--info.badge--outline",
-            s ->
-                s.bgRaw("transparent")
-                    .textColor(Tokens.STATUS_INFO)
-                    .refine(
-                        r ->
-                            r.put(
-                                CssProperty.BORDER,
-                                "1px solid " + Tokens.STATUS_INFO.varReference())))
-        .select(
-            ":scope.badge--info.badge--solid",
-            s ->
-                s.bg(Tokens.STATUS_INFO)
-                    .textColorRaw("#ffffff")
-                    .refine(r -> r.put(CssProperty.BORDER, "1px solid transparent")))
-        .select("a:scope:hover", s -> s.opacity(0.85));
+        .select(":scope > .badge-icon", s -> s.inlineFlex().itemsCenter().flexShrink(0));
+
+    for (var tone : Tone.values()) {
+      var token = tone.token;
+      var neutral = tone == Tone.NEUTRAL;
+      var tintFill = neutral ? Tokens.SURFACE_SUBTLE.varReference() : token.mixTransparent(14);
+      var tintEdge = neutral ? Tokens.BORDER_SUBTLE.varReference() : token.mixTransparent(28);
+      var outlineEdge = (neutral ? Tokens.BORDER_SUBTLE : token).varReference();
+      var selector = ":scope.badge--" + cssName(tone) + ".badge--";
+      scope
+          .select(
+              selector + cssName(Variant.TINTED),
+              s -> s.bgRaw(tintFill).textColor(token).border("1px solid " + tintEdge))
+          .select(
+              selector + cssName(Variant.OUTLINE),
+              s -> s.bgRaw("transparent").textColor(token).border("1px solid " + outlineEdge))
+          .select(
+              selector + cssName(Variant.SOLID),
+              s -> s.bg(token).textColorRaw(tone.onSolid).border("1px solid transparent"));
+    }
+
+    scope.select("a:scope:hover", s -> s.opacity(0.85));
   }
 
   @Override
   public Element render() {
     var cls =
-        new StringBuilder("badge")
-            .append(" badge--")
-            .append(tone.name().toLowerCase(Locale.ROOT))
-            .append(" badge--")
-            .append(variant.name().toLowerCase(Locale.ROOT))
-            .append(" badge--")
-            .append(size.name().toLowerCase(Locale.ROOT));
+        "badge badge--"
+            + cssName(tone)
+            + " badge--"
+            + cssName(variant)
+            + " badge--"
+            + cssName(size)
+            + (pill ? " is-pill" : "");
 
-    if (pill) {
-      cls.append(" is-pill");
-    }
-
-    var el = (href != null ? a(href) : span()).attr("class", cls.toString());
+    var el = (href != null ? a(href) : span()).attr("class", cls);
 
     if (dot) {
-      el.child(span().attr("class", "badge-dot").attr("aria-hidden", "true"));
+      el.child(span().attr("class", "badge-dot").ariaHidden(true));
     }
 
     if (iconSvg != null && !iconSvg.isBlank()) {
-      el.child(
-          span().attr("class", "badge-icon").attr("aria-hidden", "true").child(rawHtml(iconSvg)));
+      el.child(span().attr("class", "badge-icon").ariaHidden(true).child(rawHtml(iconSvg)));
     }
 
     el.child(span().attr("class", "badge-label").text(text));
     return el;
+  }
+
+  private static String cssName(Enum<?> value) {
+    return value.name().toLowerCase(Locale.ROOT);
   }
 }

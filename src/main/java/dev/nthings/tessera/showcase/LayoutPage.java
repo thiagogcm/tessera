@@ -20,6 +20,8 @@ import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.components.Lists.Term;
 import dev.nthings.tessera.components.Pill;
 import dev.nthings.tessera.components.Prose;
+import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.Tokens;
@@ -177,35 +179,29 @@ final class LayoutPage {
         .features("OKLCH color-mix", "border-radius: 9999px", "status dots")
         .surface(SurfaceKind.FLAT)
         .example(
-            div()
-                .flex()
-                .flexWrap()
-                .itemsCenter()
-                .gap(CssLength.rem(0.5))
-                .children(
-                    Badge.neutral("Neutral"),
-                    Badge.accent("Accent"),
-                    Badge.success("Success"),
-                    Badge.warning("Warning"),
-                    Badge.danger("Danger"),
-                    Badge.info("Info")),
-            div()
-                .flex()
-                .flexWrap()
-                .itemsCenter()
-                .gap(CssLength.rem(0.5))
-                .children(
-                    Pill.accent("Pill").outline(),
-                    Pill.success("Live").dot(),
-                    Pill.warning("Beta"),
-                    Pill.danger("Critical").solid(),
-                    Pill.info("v0.1.0"),
-                    Badge.accent("Interactive link →").pill().href("/docs")))
+            badgeRow(
+                Badge.neutral("Neutral"),
+                Badge.accent("Accent"),
+                Badge.success("Success"),
+                Badge.warning("Warning"),
+                Badge.danger("Danger"),
+                Badge.info("Info")),
+            badgeRow(
+                Pill.accent("Pill").outline(),
+                Pill.success("Live").dot(),
+                Pill.warning("Beta"),
+                Pill.danger("Critical").solid(),
+                Pill.info("v0.1.0"),
+                Badge.accent("Interactive link →").pill().href("/docs")))
         .code(
             "Badge.accent(\"Accent\");",
             "Pill.success(\"Live\").dot();",
             "Pill.warning(\"Beta\").outline();",
             "Badge.accent(\"Link\").pill().href(\"/docs\");");
+  }
+
+  private static TagElement badgeRow(IntoElement... badges) {
+    return div().flex().flexWrap().itemsCenter().gap(CssLength.rem(0.5)).children(badges);
   }
 
   private static Demo formatting() {

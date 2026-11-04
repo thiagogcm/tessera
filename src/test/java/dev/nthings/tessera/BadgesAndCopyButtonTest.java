@@ -6,20 +6,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.nthings.tessera.components.Badge;
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.Pill;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BadgesAndCopyButtonTest {
 
+  private static Document render(IntoElement... content) {
+    return Jsoup.parse(
+        PageCompiler.compile(new PageDocument("Test", main().children(content))).html());
+  }
+
   @Test
   @DisplayName("Badge renders neutral tinted span by default")
   void badgeRendersDefault() {
     var badge = Badge.of("Status");
-    var html = PageCompiler.compile(new PageDocument("Badge", main().child(badge))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(badge);
 
     var el = doc.selectFirst("span.badge");
     assertThat(el).isNotNull();
@@ -36,8 +42,7 @@ class BadgesAndCopyButtonTest {
   void badgeSupportsToneVariantSizeAndPill() {
     var badge = Badge.of("Critical").danger().solid().lg().pill();
 
-    var html = PageCompiler.compile(new PageDocument("Badge", main().child(badge))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(badge);
 
     var el = doc.selectFirst("span.badge");
     assertThat(el).isNotNull();
@@ -51,8 +56,7 @@ class BadgesAndCopyButtonTest {
   @DisplayName("Badge with dot renders decorative dot indicator")
   void badgeWithDotRendersIndicator() {
     var badge = Badge.dot("Online", Badge.Tone.SUCCESS);
-    var html = PageCompiler.compile(new PageDocument("Badge", main().child(badge))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(badge);
 
     var el = doc.selectFirst("span.badge");
     assertThat(el).isNotNull();
@@ -67,8 +71,7 @@ class BadgesAndCopyButtonTest {
   @DisplayName("Badge with href renders accessible anchor link")
   void badgeWithHrefRendersAnchor() {
     var badge = Badge.accent("Docs").href("/docs");
-    var html = PageCompiler.compile(new PageDocument("Badge", main().child(badge))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(badge);
 
     var link = doc.selectFirst("a.badge");
     assertThat(link).isNotNull();
@@ -84,12 +87,7 @@ class BadgesAndCopyButtonTest {
     var pillSuccess = Pill.success("Active").dot();
     var pillWarning = Pill.warning("Warning").outline();
 
-    var html =
-        PageCompiler.compile(
-                new PageDocument(
-                    "Pills", main().child(pillAccent).child(pillSuccess).child(pillWarning)))
-            .html();
-    var doc = Jsoup.parse(html);
+    var doc = render(pillAccent, pillSuccess, pillWarning);
 
     var pills = doc.select(".badge.is-pill");
     assertThat(pills).hasSize(3);
@@ -107,8 +105,7 @@ class BadgesAndCopyButtonTest {
             .filename("index.js")
             .language("javascript");
 
-    var html = PageCompiler.compile(new PageDocument("Code", main().child(block))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(block);
 
     var btn = doc.selectFirst("button.code-copy-btn");
     assertThat(btn).isNotNull();
@@ -140,8 +137,7 @@ class BadgesAndCopyButtonTest {
   @DisplayName("CodeBlock without header renders floating copy button")
   void codeBlockWithoutHeaderRendersFloatingCopyButton() {
     var block = CodeBlock.ofLines("echo 'hello'");
-    var html = PageCompiler.compile(new PageDocument("Code", main().child(block))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(block);
 
     assertThat(doc.select(".code-header")).isEmpty();
     var btn = doc.selectFirst("button.code-copy-btn.is-floating");
@@ -153,8 +149,7 @@ class BadgesAndCopyButtonTest {
   @DisplayName("CodeBlock copy button can be disabled")
   void codeBlockCopyButtonCanBeDisabled() {
     var block = CodeBlock.ofLines("echo 'no copy'").copyButton(false);
-    var html = PageCompiler.compile(new PageDocument("Code", main().child(block))).html();
-    var doc = Jsoup.parse(html);
+    var doc = render(block);
 
     assertThat(doc.select("button.code-copy-btn")).isEmpty();
   }

@@ -26,6 +26,7 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.WhiteSpace;
 
 /// Site chrome shared by every route: sticky header with navigation, search palette, quick
 /// actions and inspector drawer; page heading; previous/next pager; footer.
@@ -103,7 +104,7 @@ record Shell(Page page) implements RenderOnce {
                                 .textDecorationNone()
                                 .fontWeight(700)
                                 .fontSize(CssLength.rem(1.0625))
-                                .whiteSpace("nowrap")
+                                .whiteSpace(WhiteSpace.NOWRAP)
                                 .transitionKey(TransitionKey.of("site-brand", "brand-morph"))
                                 .text("Tessera"),
                             div()

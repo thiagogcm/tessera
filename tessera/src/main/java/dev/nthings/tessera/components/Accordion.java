@@ -10,10 +10,12 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transform;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +101,7 @@ public final class Accordion implements RenderView {
             ":scope > details > summary .accordion-chevron", s -> s.textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > details:open > summary .accordion-chevron",
-            s -> s.transform("rotate(180deg)").textColor(Tokens.ACCENT_PRIMARY))
+            s -> s.transform(Transform.rotate(180)).textColor(Tokens.ACCENT_PRIMARY))
         .select(
             ":scope > details > .accordion-body",
             s -> s.px(Tokens.SPACE_5).py(Tokens.SPACE_4).pt(Tokens.SPACE_1))
@@ -107,7 +109,7 @@ public final class Accordion implements RenderView {
             m ->
                 m.select(
                         ":scope > details > summary .accordion-chevron",
-                        s -> s.motion(Motion.controlFeedback().properties("transform")))
+                        s -> s.motion(Motion.controlFeedback().properties(Animatable.TRANSFORM)))
                     .select(
                         ":scope > details::details-content",
                         s ->

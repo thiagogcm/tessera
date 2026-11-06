@@ -48,7 +48,7 @@ public final class StyleSheetCollector {
             cqClass,
             k ->
                 "@container "
-                    + rule.containerName()
+                    + rule.containerName().toCss()
                     + " "
                     + rule.condition()
                     + "{."

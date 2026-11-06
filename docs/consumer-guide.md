@@ -188,7 +188,7 @@ try {
 }
 ```
 
-The exception message also presents the full report for command-line builds:
+With source tracking on (see below), the location line also names the element's Java source line, for example `<button id="toolbar--save"> (Settings.java:42)`. The exception message also presents the full report for command-line builds:
 
 ```text
 Compilation failed with 1 error:
@@ -204,15 +204,15 @@ Duplicate bindings are reported as ambiguous; target-dependent command checks ar
 
 ## Customize the design system
 
-Components reference shared CSS custom properties. Replace a token by registering a new value for it. `withValue` and `withLightDark` keep the token's name and category, so a length cannot replace a color:
+Components reference shared CSS custom properties. Replace a token by registering a new value for it. `withValue` and `withLightDark` keep the token's name and category and take a value of that category, so a length cannot replace a color:
 
 ```java
 var tokens = new Tokens()
-    .register(Tokens.FONT_BODY.withValue("Georgia,serif"))
-    .register(Tokens.DENSITY.withValue("0.8"))
-    .register(Tokens.RADIUS_XL.withValue("1rem"))
-    .register(Tokens.CONTROL_FG.withLightDark("oklch(20% 0.02 150)", "oklch(96% 0.01 150)"))
-    .register(Tokens.CONTROL_FONT_SIZE.withValue("1rem"));
+    .register(Tokens.FONT_BODY.withValue(FontStack.of(FontStack.named("Georgia"), FontStack.Generic.SERIF)))
+    .register(Tokens.DENSITY.withValue(0.8))
+    .register(Tokens.RADIUS_XL.withValue(CssLength.rem(1)))
+    .register(Tokens.CONTROL_FG.withLightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)))
+    .register(Tokens.CONTROL_FONT_SIZE.withValue(CssLength.rem(1)));
 
 var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 ```
@@ -235,6 +235,48 @@ var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Length tokens are `CssLength` values and work in any length-valued authoring method. Color, duration, family, and number tokens expose `varReference()` instead.
 
 `Roles.LABEL` and `Tokens.CONTROL_FG` are what field labels and callout titles consume. Replacing `CONTROL_FONT_SIZE` or `CONTROL_FG` changes both. Replacing `FONT_SIZE_SM` changes the label size only while `CONTROL_FONT_SIZE` still points at it.
+
+## Write styles with typed values
+
+Style methods take values of the type their property accepts. There is no method that takes raw CSS text.
+
+```java
+div()
+    .p(Tokens.SPACE_4)
+    .bg(Tokens.SURFACE_CARD)
+    .border(Border.hairline(Tokens.BORDER_SUBTLE))
+    .rounded(Tokens.RADIUS_XL)
+    .shadow(Shadow.drop(CssLength.px(12), CssLength.px(32), CssLength.px(-4), CssColor.oklch(0, 0, 0, 0.18)))
+    .gridColumns(TrackList.autoFit(CssLength.rem(16)))
+    .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
+    .motion(Motion.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
+```
+
+Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties take enums (`TextAlign`, `WhiteSpace`, `Cursor`, `Resize`, ...), and identifiers such as container, anchor, and counter names are validated `CssIdent` values.
+
+## Declare roles and states
+
+Roles are `Role` constants and each `aria-*` attribute has a method taking the type it accepts. The generic `attr(...)` method refuses `role` and `aria-*`.
+
+```java
+var tabs = div().role(Role.TABLIST).ariaLabel("Sections")
+    .child(div().role(Role.TAB).ariaSelected(true).ariaControls(panel).text("Overview"));
+```
+
+The compiler checks what each declared role requires: an accessible name, owned children, state attributes, and supported `aria-*` attributes. It also reports landmarks that need distinct names, a second `<main>`, heading levels that skip, empty headings, positive `tabindex` values, `<label for>` targets a label cannot name, and focusable controls inside `aria-hidden`. Every violation names a rule code and a fix; the rule table is in the [architecture notes](architecture.md#accessibility-rules).
+
+Components with a landmark take its name where a page may hold several: `Breadcrumbs.label(...)` and `DocPager.label(...)`. `Card.headingLevel(...)` sets the title's level so the outline has no gaps.
+
+## Trace elements to their source
+
+Turn on source tracking to find the Java line behind an element:
+
+```sh
+just demo                 # serves the showcase with tracking on
+just explain /overlays/   # prints one route's element tree with source lines
+```
+
+With `-Dtessera.sources=true`, or inside `SourceTracking.enabled(() -> ...)`, every element records where it was built. Rendered HTML carries `data-src="Page.java:42"`, diagnostics print the line (`<button> (Page.java:42)`), and `PageCompiler.explain(document)` returns a `PageTree` of tags, ids, components, CSS scopes, and sources. Elements a Tessera component builds are attributed to the line that placed the component. Tracking walks the stack per element, so leave it off in production.
 
 ## Publish assets
 

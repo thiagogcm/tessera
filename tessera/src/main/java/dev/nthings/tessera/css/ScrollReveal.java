@@ -32,4 +32,24 @@ public enum ScrollReveal {
   public String keyframeRule() {
     return keyframeRule;
   }
+
+  /// Drives this preset by the element's progress through the viewport on `axis`: the entry range
+  /// for a reveal, the exit range when `exit` is set.
+  public StyleRefinement scrollDriven(StyleRefinement style, TimelineAxis axis, boolean exit) {
+    var phase = exit ? "exit" : "entry";
+    return style
+        .put(
+            CssProperty.ANIMATION,
+            keyframeName + " auto linear " + (exit ? "forwards" : "backwards"))
+        .put(CssProperty.ANIMATION_TIMELINE, "view(" + axis.toCss() + ")")
+        .put(CssProperty.ANIMATION_RANGE, phase + " 0% " + phase + " 100%");
+  }
+
+  /// Plays this preset once, the first time any part of the element scrolls into view.
+  public StyleRefinement revealOnce(StyleRefinement style) {
+    return style
+        .put(CssProperty.ANIMATION, keyframeName + " 0.5s ease-out both")
+        .put(CssProperty.TIMELINE_TRIGGER, "--tessera-reveal view() cover 0% cover 100%")
+        .put(CssProperty.ANIMATION_TRIGGER, "--tessera-reveal play-once");
+  }
 }

@@ -4,6 +4,7 @@
 #               just verify     (unit tests + browser E2E + quality gates)
 #               just site       (compile multi-page showcase site into target/site)
 #               just demo       (serve multi-page showcase site at http://localhost:8080)
+#               just explain /overlays/  (print a route's element tree with Java source lines)
 
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set windows-shell := ["bash", "-euo", "pipefail", "-c"]
@@ -39,7 +40,12 @@ guide output="target/guide":
 # Build and serve the multi-page showcase site over HTTP for live browser/DevTools evaluation.
 [group('build')]
 demo port="8080":
-    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{justfile_directory()}}/target/site --serve {{port}}"
+    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{justfile_directory()}}/target/site --sources --serve {{port}}"
+
+# Print one showcase route's element tree with the Java line that built each element.
+[group('build')]
+explain route:
+    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--explain {{route}}"
 
 # Remove Maven build outputs.
 [group('build')]

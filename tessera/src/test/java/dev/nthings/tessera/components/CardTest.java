@@ -4,6 +4,7 @@ import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.css.AspectRatio;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +16,7 @@ class CardTest {
   void mediaCardKeepsFourRegionStructure() {
     var card =
         Card.create("architecture")
-            .mediaImg("/assets/arch.webp", "Architecture diagram", "16 / 9")
+            .mediaImg("/assets/arch.webp", "Architecture diagram", AspectRatio.of(16, 9))
             .title("Multi-Phase Compiler")
             .subtitle("Three-pass static pipeline")
             .bodyText("Separates layout expansion, validation, and paint.")

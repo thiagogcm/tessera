@@ -83,6 +83,21 @@ public final class Catalog {
     return casePath(storyId, variant, Appearance.LIGHT, Density.REGULAR);
   }
 
+  /// One case of a story: its id, variant name, and light, regular-density path.
+  public record Case(String storyId, String variant, String path) {}
+
+  /// Every variant of every story at light appearance and regular density. Appearance and density
+  /// do not change what assistive technology sees, so this is the set to inspect once each.
+  public static List<Case> cases() {
+    var cases = new ArrayList<Case>();
+    for (var story : STORIES) {
+      for (var variant : story.variants()) {
+        cases.add(new Case(story.id(), variant.name(), casePath(story.id(), variant.name())));
+      }
+    }
+    return cases;
+  }
+
   static List<SiteRoute> routes() {
     var routes = new ArrayList<SiteRoute>();
     for (var story : STORIES) {

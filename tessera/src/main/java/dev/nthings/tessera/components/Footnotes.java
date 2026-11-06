@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -83,7 +84,7 @@ public final class Footnotes {
       var triggerLink =
           Elements.a("#" + entry.noteDomId())
               .id("fnlink-" + entry.slug())
-              .role("doc-noteref")
+              .role(Role.DOC_NOTEREF)
               .ariaLabel("Footnote " + entry.number())
               .textColor(Tokens.ACCENT_PRIMARY)
               .fontWeight(600)
@@ -154,7 +155,7 @@ public final class Footnotes {
       for (var entry : entries) {
         var backlink =
             Elements.a("#" + entry.refDomId())
-                .role("doc-backlink")
+                .role(Role.DOC_BACKLINK)
                 .ariaLabel("Back to reference " + entry.number())
                 .textColor(Tokens.ACCENT_PRIMARY)
                 .px(Tokens.SPACE_1)
@@ -163,13 +164,13 @@ public final class Footnotes {
         var li =
             Elements.li()
                 .attr("id", entry.noteDomId())
-                .role("doc-footnote")
+                .role(Role.DOC_FOOTNOTE)
                 .children(entry.content(), Elements.text(" "), backlink);
         ol.child(li);
       }
 
       return Elements.aside()
-          .role("doc-endnotes")
+          .role(Role.DOC_ENDNOTES)
           .ariaLabel(heading)
           .children(
               Elements.h2()

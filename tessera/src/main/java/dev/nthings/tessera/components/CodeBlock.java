@@ -7,9 +7,12 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.WhiteSpace;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,15 +128,19 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                     .py(Tokens.SPACE_3)
                     .bg(Tokens.SURFACE_CARD)
                     .fontSize(Tokens.FONT_SIZE_SM)
-                    .lineHeight("1.6"))
+                    .lineHeight(1.6))
         .select(":scope > .code-pre > .code-lines", s -> s.block())
         .select(
             ":scope > .code-pre > .code-lines > .code-line",
-            s -> s.block().counterIncrement("code-line").whiteSpace("pre").px(Tokens.SPACE_4))
+            s ->
+                s.block()
+                    .counterIncrement(CssIdent.of("code-line"))
+                    .whiteSpace(WhiteSpace.PRE)
+                    .px(Tokens.SPACE_4))
         .select(
             ":scope > .code-pre > .code-lines > .code-line::before",
             s ->
-                s.content("counter(code-line)")
+                s.content(CssContent.counter(CssIdent.of("code-line")))
                     .inlineFlex()
                     .justifyEnd()
                     .inlineSize(CssLength.rem(2))
@@ -142,13 +149,13 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                     .opacity(0.6))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-highlighted",
-            s -> s.bgRaw(Tokens.ACCENT_PRIMARY.mixTransparent(15)))
+            s -> s.bg(Tokens.ACCENT_PRIMARY.mixTransparent(15)))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-add",
-            s -> s.bgRaw(Tokens.STATUS_SUCCESS.mixTransparent(16)).textColor(Tokens.STATUS_SUCCESS))
+            s -> s.bg(Tokens.STATUS_SUCCESS.mixTransparent(16)).textColor(Tokens.STATUS_SUCCESS))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-del",
-            s -> s.bgRaw(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER));
+            s -> s.bg(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER));
   }
 
   @Override
@@ -204,9 +211,9 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
             .tabIndex(0)
             .refine(
                 s ->
-                    s.fontFamily(Tokens.FONT_MONO.varReference())
+                    s.fontFamily(Tokens.FONT_MONO)
                         .overflowXAuto()
-                        .counterReset("code-line"))
+                        .counterReset(CssIdent.of("code-line")))
             .child(codeEl);
 
     // CSS counter increment on lines

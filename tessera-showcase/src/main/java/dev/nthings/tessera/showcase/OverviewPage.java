@@ -47,6 +47,7 @@ final class OverviewPage {
       var card =
           Card.create("area-" + target.navLabel().toLowerCase(java.util.Locale.ROOT))
               .title(target.navLabel())
+              .headingLevel(2)
               .subtitle(target.demos().size() + " demos")
               .bodyText(target.summary())
               .stretchedLink(target.path());

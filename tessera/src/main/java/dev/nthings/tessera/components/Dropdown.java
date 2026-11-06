@@ -13,9 +13,19 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.PositionArea;
+import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Shadow;
+import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -101,9 +111,14 @@ public final class Dropdown implements RenderView {
         .select(
             ":scope > [popover]",
             s ->
-                s.positionArea("block-end span-inline-end")
-                    .inset("auto")
-                    .positionTryFallbacks("flip-block, flip-inline, flip-block flip-inline")
+                s.positionArea(
+                        PositionArea.of(
+                            PositionArea.Part.BLOCK_END, PositionArea.Part.SPAN_INLINE_END))
+                    .inset(CssLength.auto())
+                    .positionTryFallbacks(
+                        PositionTry.flip(PositionTry.Flip.BLOCK),
+                        PositionTry.flip(PositionTry.Flip.INLINE),
+                        PositionTry.flip(PositionTry.Flip.BLOCK, PositionTry.Flip.INLINE))
                     .mt(Tokens.SPACE_1_5)
                     .minInlineSize(CssLength.rem(14))
                     .p(Tokens.SPACE_1_5)
@@ -111,7 +126,12 @@ public final class Dropdown implements RenderView {
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .shadow("0 12px 32px -4px oklch(0% 0 0 / 0.18)"))
+                    .shadow(
+                        Shadow.drop(
+                            CssLength.px(12),
+                            CssLength.px(32),
+                            CssLength.px(-4),
+                            CssColor.oklch(0, 0, 0, 0.18))))
         .select(":scope .dropdown-panel-items", s -> s.flex().flexCol().gap(Tokens.SPACE_0_5))
         .select(
             ":scope .dropdown-item",
@@ -124,11 +144,11 @@ public final class Dropdown implements RenderView {
                     .px(Tokens.SPACE_3)
                     .py(Tokens.SPACE_2)
                     .rounded(Tokens.RADIUS_MD)
-                    .bgRaw("transparent")
+                    .bg(CssColor.transparent())
                     .textColor(Tokens.TEXT_PRIMARY)
                     .fontSize(Tokens.FONT_SIZE_SM)
                     .borderNone()
-                    .textAlign("start")
+                    .textAlign(TextAlign.START)
                     .cursorPointer()
                     .textDecorationNone())
         .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
@@ -141,15 +161,20 @@ public final class Dropdown implements RenderView {
                         ":scope > [popover]",
                         s ->
                             s.opacity(0)
-                                .translate("0 -0.25rem")
-                                .transitionProperty("opacity, translate, display, overlay")
-                                .transitionDuration("0.15s")
-                                .transitionTimingFunction("ease-out")
-                                .transitionAllowDiscrete())
+                                .translate(Translation.y(CssLength.rem(-0.25)))
+                                .motion(
+                                    Motion.of(
+                                            CssDuration.ms(150),
+                                            Easing.easeOut(),
+                                            Animatable.OPACITY,
+                                            Animatable.TRANSLATE,
+                                            Animatable.DISPLAY,
+                                            Animatable.OVERLAY)
+                                        .allowingDiscrete()))
                     .selectWithStartingStyle(
                         ":scope > [popover]:popover-open",
-                        s -> s.opacity(1).translate("0 0"),
-                        start -> start.opacity(0).translate("0 -0.25rem")));
+                        s -> s.opacity(1).translate(Translation.none()),
+                        start -> start.opacity(0).translate(Translation.y(CssLength.rem(-0.25)))));
   }
 
   @Override

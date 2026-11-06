@@ -25,6 +25,7 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import java.util.List;
 import java.util.stream.Stream;
@@ -217,7 +218,7 @@ class AccessibilityRulesTest {
 
     var compatible =
         switch (command) {
-          case SHOW_MODAL, CLOSE, REQUEST_CLOSE -> dialog().id("target");
+          case SHOW_MODAL, CLOSE, REQUEST_CLOSE -> dialog().id("target").ariaLabel("Target");
           case SHOW_POPOVER, HIDE_POPOVER, TOGGLE_POPOVER ->
               div().id("target").popover(PopoverMode.AUTO);
         };
@@ -250,7 +251,7 @@ class AccessibilityRulesTest {
             "Valid A11y",
             div()
                 .children(
-                    img("/deco.svg", "").role("presentation").dimensions(100, 100),
+                    img("/deco.svg", "").role(Role.PRESENTATION).dimensions(100, 100),
                     a("/home")
                         .ariaLabel("Home page")
                         .child(new TagElement(HtmlTag.SPAN).ariaHidden(true))));

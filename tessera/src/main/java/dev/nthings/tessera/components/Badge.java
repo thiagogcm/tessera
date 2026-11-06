@@ -7,10 +7,16 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.WhiteSpace;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
@@ -20,17 +26,17 @@ import org.jspecify.annotations.Nullable;
 public final class Badge implements RenderView, FluentBuilder<Badge> {
 
   public enum Tone {
-    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD.varReference()),
-    ACCENT(Tokens.ACCENT_PRIMARY, "#ffffff"),
-    SUCCESS(Tokens.STATUS_SUCCESS, "#ffffff"),
-    WARNING(Tokens.STATUS_WARNING, "oklch(15% 0.02 75)"),
-    DANGER(Tokens.STATUS_DANGER, "#ffffff"),
-    INFO(Tokens.STATUS_INFO, "#ffffff");
+    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD),
+    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
+    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white()),
+    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75)),
+    DANGER(Tokens.STATUS_DANGER, CssColor.white()),
+    INFO(Tokens.STATUS_INFO, CssColor.white());
 
     private final DesignToken.Color token;
-    private final String onSolid;
+    private final CssColor onSolid;
 
-    Tone(DesignToken.Color token, String onSolid) {
+    Tone(DesignToken.Color token, CssColor onSolid) {
       this.token = token;
       this.onSolid = onSolid;
     }
@@ -247,14 +253,20 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .itemsCenter()
                     .justifyCenter()
                     .gap(CssLength.rem(0.35))
-                    .fontFamily("inherit")
+                    .fontFamilyInherit()
                     .fontWeight(500)
-                    .lineHeight("1")
-                    .whiteSpace("nowrap")
+                    .lineHeight(1)
+                    .whiteSpace(WhiteSpace.NOWRAP)
                     .rounded(Tokens.RADIUS_MD)
                     .textDecorationNone()
-                    .transition(
-                        "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease"))
+                    .motion(
+                        Motion.of(
+                            CssDuration.ms(150),
+                            Easing.ease(),
+                            Animatable.BACKGROUND_COLOR,
+                            Animatable.COLOR,
+                            Animatable.BORDER_COLOR,
+                            Animatable.OPACITY)))
         .select(":scope.is-pill", s -> s.rounded(Tokens.RADIUS_FULL))
         .select(
             ":scope.badge--sm",
@@ -272,7 +284,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .inlineSize(CssLength.rem(0.45))
                     .blockSize(CssLength.rem(0.45))
                     .rounded(Tokens.RADIUS_FULL)
-                    .bgRaw("currentColor")
+                    .bg(CssColor.currentColor())
                     .flexShrink(0))
         .select(
             ":scope.badge--sm > .badge-dot",
@@ -285,20 +297,20 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     for (var tone : Tone.values()) {
       var token = tone.token;
       var neutral = tone == Tone.NEUTRAL;
-      var tintFill = neutral ? Tokens.SURFACE_SUBTLE.varReference() : token.mixTransparent(14);
-      var tintEdge = neutral ? Tokens.BORDER_SUBTLE.varReference() : token.mixTransparent(28);
-      var outlineEdge = (neutral ? Tokens.BORDER_SUBTLE : token).varReference();
+      CssColor tintFill = neutral ? Tokens.SURFACE_SUBTLE : token.mixTransparent(14);
+      CssColor tintEdge = neutral ? Tokens.BORDER_SUBTLE : token.mixTransparent(28);
+      var outlineEdge = neutral ? Tokens.BORDER_SUBTLE : token;
       var selector = ":scope.badge--" + cssName(tone) + ".badge--";
       scope
           .select(
               selector + cssName(Variant.TINTED),
-              s -> s.bgRaw(tintFill).textColor(token).border("1px solid " + tintEdge))
+              s -> s.bg(tintFill).textColor(token).borderSubtle(tintEdge))
           .select(
               selector + cssName(Variant.OUTLINE),
-              s -> s.bgRaw("transparent").textColor(token).border("1px solid " + outlineEdge))
+              s -> s.bg(CssColor.transparent()).textColor(token).borderSubtle(outlineEdge))
           .select(
               selector + cssName(Variant.SOLID),
-              s -> s.bg(token).textColorRaw(tone.onSolid).border("1px solid transparent"));
+              s -> s.bg(token).textColor(tone.onSolid).borderSubtle(CssColor.transparent()));
     }
 
     scope.select("a:scope:hover", s -> s.opacity(0.85));

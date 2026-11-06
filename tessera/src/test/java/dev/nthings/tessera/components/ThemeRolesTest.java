@@ -4,6 +4,8 @@ import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageCompiler;
@@ -20,8 +22,10 @@ class ThemeRolesTest {
   void roleOverrideRestylesFieldAndCallout() {
     var tokens =
         new Tokens()
-            .register(Tokens.CONTROL_FG.withLightDark("oklch(20% 0.03 250)", "oklch(95% 0.02 250)"))
-            .register(Tokens.CONTROL_FONT_SIZE.withValue("1.25rem"));
+            .register(
+                Tokens.CONTROL_FG.withLightDark(
+                    CssColor.oklch(20, 0.03, 250), CssColor.oklch(95, 0.02, 250)))
+            .register(Tokens.CONTROL_FONT_SIZE.withValue(CssLength.rem(1.25)));
     var page =
         RenderedPage.of(
             PageCompiler.compile(
@@ -56,7 +60,7 @@ class ThemeRolesTest {
   @Test
   @DisplayName("compact density scales spacing and leaves the type scale alone")
   void compactDensityLeavesTypographyAlone() {
-    var tokens = new Tokens().register(Tokens.DENSITY.withValue("0.5"));
+    var tokens = new Tokens().register(Tokens.DENSITY.withValue(0.5));
     var page =
         RenderedPage.of(
             PageCompiler.compile(

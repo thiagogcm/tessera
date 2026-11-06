@@ -1,42 +1,73 @@
 package dev.nthings.tessera.css;
 
-/// Duration, easing, and transition properties for one purpose.
+import java.util.List;
+
+/// Duration, easing, and transitioned properties for one purpose.
 ///
 /// Spatial presets belong inside `prefers-reduced-motion: no-preference`. The visible end state
 /// stays outside that query, so the control is already in place when the transition does not run.
 public record Motion(
-    DesignToken.Duration duration, String easing, String properties, boolean discrete) {
+    CssDuration duration, Easing easing, List<Animatable> properties, boolean allowDiscrete) {
+
+  public Motion {
+    if (properties.isEmpty()) {
+      throw new IllegalArgumentException("A motion transitions at least one property");
+    }
+    properties = List.copyOf(properties);
+  }
+
+  /// Transitions `properties` over `duration` with `easing`.
+  public static Motion of(CssDuration duration, Easing easing, Animatable... properties) {
+    return new Motion(duration, easing, List.of(properties), false);
+  }
 
   public static Motion controlFeedback() {
-    return new Motion(
+    return of(
         Tokens.CONTROL_FEEDBACK_DURATION,
-        "ease",
-        "background, color, border-color, outline-color",
-        false);
+        Easing.ease(),
+        Animatable.BACKGROUND,
+        Animatable.COLOR,
+        Animatable.BORDER_COLOR,
+        Animatable.OUTLINE_COLOR);
   }
 
   public static Motion overlayEntry() {
-    return new Motion(
-        Tokens.OVERLAY_DURATION,
-        "ease-out",
-        "opacity, transform, translate, display, overlay",
-        true);
+    return of(
+            Tokens.OVERLAY_DURATION,
+            Easing.easeOut(),
+            Animatable.OPACITY,
+            Animatable.TRANSFORM,
+            Animatable.TRANSLATE,
+            Animatable.DISPLAY,
+            Animatable.OVERLAY)
+        .allowingDiscrete();
   }
 
   public static Motion disclosure() {
-    return new Motion(Tokens.DISCLOSURE_DURATION, "ease", "block-size, content-visibility", true);
+    return of(
+            Tokens.DISCLOSURE_DURATION,
+            Easing.ease(),
+            Animatable.BLOCK_SIZE,
+            Animatable.CONTENT_VISIBILITY)
+        .allowingDiscrete();
   }
 
-  public Motion properties(String properties) {
-    return new Motion(duration, easing, properties, discrete);
+  /// The same timing over different properties.
+  public Motion properties(Animatable... replacement) {
+    return new Motion(duration, easing, List.of(replacement), allowDiscrete);
+  }
+
+  /// The same motion, also animating properties that switch between discrete values.
+  public Motion allowingDiscrete() {
+    return new Motion(duration, easing, properties, true);
   }
 
   public StyleRefinement apply(StyleRefinement style) {
     style
         .put(CssProperty.TRANSITION_PROPERTY, properties)
-        .put(CssProperty.TRANSITION_DURATION, duration.varReference())
+        .put(CssProperty.TRANSITION_DURATION, duration)
         .put(CssProperty.TRANSITION_TIMING_FUNCTION, easing);
-    if (discrete) {
+    if (allowDiscrete) {
       style.put(CssProperty.TRANSITION_BEHAVIOR, "allow-discrete");
     }
     return style;

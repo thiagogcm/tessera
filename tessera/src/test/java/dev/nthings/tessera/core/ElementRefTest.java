@@ -45,7 +45,7 @@ class ElementRefTest {
     var page =
         renderMain(
             new Panel("toolbar", button().command(target, BuiltinCommand.SHOW_MODAL).text("Open")),
-            new Panel("dialogs", dialog().id(target).text("Sure?")));
+            new Panel("dialogs", dialog().id(target).ariaLabel("Confirm").text("Sure?")));
 
     assertThat(page.element("button")).hasAttribute("commandfor", "dialogs--confirm");
     assertThat(page.elementById("dialogs--confirm")).hasTagName("dialog");
@@ -64,14 +64,14 @@ class ElementRefTest {
 
   static Stream<Arguments> ambiguousTargets() {
     var shared = ElementRef.named("confirm");
-    var dialog = dialog().id("confirm").text("Confirm?");
+    var dialog = dialog().id("confirm").ariaLabel("Confirm").text("Confirm?");
     return Stream.of(
         argumentSet(
             "same reference bound twice",
             div()
                 .children(
                     p().id(shared),
-                    dialog().id(shared).text("Confirm?"),
+                    dialog().id(shared).ariaLabel("Confirm").text("Confirm?"),
                     button().command(shared, BuiltinCommand.SHOW_MODAL).text("Open"),
                     button()),
             "duplicate-reference-binding"),

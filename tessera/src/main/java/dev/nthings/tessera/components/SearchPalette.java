@@ -21,10 +21,19 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssDuration;
+import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transform;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -135,7 +144,7 @@ public final class SearchPalette implements RenderView {
         .id(buttonId)
         .command(dialog, BuiltinCommand.SHOW_MODAL)
         .ariaLabel(label)
-        .attr("aria-keyshortcuts", "Alt+K")
+        .ariaKeyShortcuts("Alt+K")
         .attr("accesskey", "k")
         .flex()
         .itemsCenter()
@@ -229,7 +238,10 @@ public final class SearchPalette implements RenderView {
                     .child(kbd().attr("class", "palette-esc-kbd").text("Esc")));
 
     var resultsContainer =
-        div().attr("class", "palette-results").role("region").ariaLabel("Search navigation links");
+        div()
+            .attr("class", "palette-results")
+            .role(Role.REGION)
+            .ariaLabel("Search navigation links");
 
     for (var entry : groupedItems.entrySet()) {
       var groupBlock = div().attr("class", "palette-group");
@@ -263,7 +275,7 @@ public final class SearchPalette implements RenderView {
         Elements.p()
             .attr("class", "palette-empty")
             .attr("hidden", "")
-            .attr("role", "status")
+            .role(Role.STATUS)
             .text("No results found. Try another search."));
 
     var footerEl =
@@ -303,31 +315,59 @@ public final class SearchPalette implements RenderView {
                 s.m(CssLength.auto())
                     .insetBlockStart(CssLength.rem(5))
                     .maxInlineSize(CssLength.rem(42))
-                    .inlineSize(CssLength.expr("calc(100% - 2rem)"))
+                    .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
                     .p(CssLength.px(0))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .shadow("0 25px 50px -12px oklch(0% 0 0 / 0.35)")
+                    .shadow(
+                        Shadow.drop(
+                            CssLength.px(25),
+                            CssLength.px(50),
+                            CssLength.px(-12),
+                            CssColor.oklch(0, 0, 0, 0.35)))
                     .overflowHidden())
-        .select(":scope::backdrop", s -> s.bgRaw("oklch(0% 0 0 / 0.5)").backdropFilter("blur(4px)"))
+        .select(
+            ":scope::backdrop",
+            s -> s.bg(CssColor.oklch(0, 0, 0, 0.5)).backdropFilter(CssFilter.blur(CssLength.px(4))))
         .motionSafe(
             m ->
                 m.select(
                         ":scope",
                         s ->
                             s.opacity(0)
-                                .transform("translateY(-12px) scale(0.98)")
-                                .transitionProperty("opacity, transform, overlay, display")
-                                .transitionDuration("0.2s")
-                                .transitionTimingFunction("cubic-bezier(0.16, 1, 0.3, 1)")
-                                .transitionAllowDiscrete())
-                    .select(":scope:open", s -> s.opacity(1).transform("translateY(0) scale(1)"))
+                                .transform(
+                                    Transform.translateY(CssLength.px(-12))
+                                        .then(Transform.scale(0.98)))
+                                .motion(
+                                    Motion.of(
+                                            CssDuration.ms(200),
+                                            Easing.cubicBezier(0.16, 1, 0.3, 1),
+                                            Animatable.OPACITY,
+                                            Animatable.TRANSFORM,
+                                            Animatable.OVERLAY,
+                                            Animatable.DISPLAY)
+                                        .allowingDiscrete()))
+                    .select(
+                        ":scope:open",
+                        s ->
+                            s.opacity(1)
+                                .transform(
+                                    Transform.translateY(CssLength.zero())
+                                        .then(Transform.scale(1))))
                     .selectWithStartingStyle(
                         ":scope:open",
-                        s -> s.opacity(1).transform("translateY(0) scale(1)"),
-                        s -> s.opacity(0).transform("translateY(-12px) scale(0.98)")))
+                        s ->
+                            s.opacity(1)
+                                .transform(
+                                    Transform.translateY(CssLength.zero())
+                                        .then(Transform.scale(1))),
+                        s ->
+                            s.opacity(0)
+                                .transform(
+                                    Transform.translateY(CssLength.px(-12))
+                                        .then(Transform.scale(0.98)))))
         .select(
             ":scope .palette-header",
             s ->
@@ -344,7 +384,7 @@ public final class SearchPalette implements RenderView {
                 s.flexGrow(1)
                     .fontSize(Tokens.FONT_SIZE_MD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .bgRaw("transparent")
+                    .bg(CssColor.transparent())
                     .borderNone()
                     .outlineNone())
         .select(

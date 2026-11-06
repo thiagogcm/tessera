@@ -3,6 +3,7 @@ package dev.nthings.tessera.render;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -39,9 +40,13 @@ final class CompilationState {
     this.pageTitle = pageTitle;
   }
 
-  CompilationLocation location(List<String> components, HtmlTag tag, Map<String, String> attrs) {
+  CompilationLocation location(
+      List<String> components,
+      HtmlTag tag,
+      Map<String, String> attrs,
+      @Nullable SourceLocation source) {
     var id = attrs.get("id");
-    return new CompilationLocation(pageTitle, null, components, tag.tagName(), id);
+    return new CompilationLocation(pageTitle, null, components, tag.tagName(), id, source);
   }
 
   void report(CompilationLocation location, String rule, String message, String suggestion) {
@@ -84,7 +89,8 @@ final class CompilationState {
     boundDomIds.put(ref, domId);
     registerDomId(
         domId,
-        new CompilationLocation(pageTitle, null, location.componentPath(), tag.tagName(), domId));
+        new CompilationLocation(
+            pageTitle, null, location.componentPath(), tag.tagName(), domId, location.source()));
     return domId;
   }
 

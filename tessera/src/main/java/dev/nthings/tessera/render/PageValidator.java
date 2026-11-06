@@ -195,17 +195,23 @@ final class PageValidator {
   }
 
   private static boolean hasAccessibleLabel(ResolvedTag tag) {
-    var attrs = tag.attributes();
-    if (tag.idReferences().containsKey("aria-labelledby")
-        || isNonBlank(attrs.get("aria-label"))
-        || isNonBlank(attrs.get("aria-labelledby"))
-        || isNonBlank(attrs.get("title"))) {
-      return true;
-    }
-    return containsReadableText(tag.children());
+    return hasAuthorName(tag) || containsReadableText(tag.children());
   }
 
-  private static boolean containsReadableText(List<ResolvedNode> children) {
+  /// Whether `tag` carries an author-supplied name: `aria-label`, `aria-labelledby`, or `title`.
+  static boolean hasAuthorName(ResolvedTag tag) {
+    return hasAriaName(tag) || isNonBlank(tag.attributes().get("title"));
+  }
+
+  /// Whether `tag` is named through `aria-label` or `aria-labelledby`.
+  static boolean hasAriaName(ResolvedTag tag) {
+    var attrs = tag.attributes();
+    return tag.idReferences().containsKey("aria-labelledby")
+        || isNonBlank(attrs.get("aria-label"))
+        || isNonBlank(attrs.get("aria-labelledby"));
+  }
+
+  static boolean containsReadableText(List<ResolvedNode> children) {
     for (var child : children) {
       var found =
           switch (child) {
@@ -225,11 +231,11 @@ final class PageValidator {
     return false;
   }
 
-  private static IllegalStateException unlinked() {
+  static IllegalStateException unlinked() {
     return new IllegalStateException("Late-element slot reached validation/paint before linking");
   }
 
-  private static boolean isNonBlank(@Nullable String value) {
+  static boolean isNonBlank(@Nullable String value) {
     return value != null && !value.isBlank();
   }
 }

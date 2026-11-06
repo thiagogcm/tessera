@@ -14,7 +14,9 @@ import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,7 +128,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
           p().attr("class", "section-lead")
               .fontSize(Tokens.FONT_SIZE_LG)
               .textColor(Tokens.TEXT_MUTED)
-              .lineHeight("1.6")
+              .lineHeight(1.6)
               .m(CssLength.px(0))
               .text(leadText));
     }
@@ -145,7 +147,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
             .scrollMarginBlockStart(CssLength.rem(7));
 
     switch (surface) {
-      case GHOST -> sectionEl.p(CssLength.px(0)).bgRaw("transparent").borderNone();
+      case GHOST -> sectionEl.p(CssLength.px(0)).bg(CssColor.transparent()).borderNone();
       case FLAT -> sectionEl.py(Tokens.SPACE_6).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
       case CARD ->
           sectionEl
@@ -153,12 +155,17 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
               .rounded(Tokens.RADIUS_XL)
               .bg(Tokens.SURFACE_CARD)
               .borderSubtle(Tokens.BORDER_SUBTLE)
-              .shadow("0 4px 16px -4px oklch(0% 0 0 / 0.12)");
+              .shadow(
+                  Shadow.drop(
+                      CssLength.px(4),
+                      CssLength.px(16),
+                      CssLength.px(-4),
+                      CssColor.oklch(0, 0, 0, 0.12)));
       case HIGHLIGHT ->
           sectionEl
               .p(Tokens.SPACE_6)
               .rounded(Tokens.RADIUS_XL)
-              .bgRaw("oklch(from " + Tokens.ACCENT_PRIMARY.varReference() + " 97% 0.03 h)")
+              .bg(CssColor.sameHue(Tokens.ACCENT_PRIMARY, 97, 0.03))
               .borderSubtle(Tokens.ACCENT_PRIMARY);
     }
 

@@ -1,0 +1,7 @@
+- main:
+  - heading "Overflowing actions — Wide row" [level=1]
+  - button "Save"
+  - button "Review"
+  - button "Publish"
+  - button "Schedule"
+  - button "Archive"

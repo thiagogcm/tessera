@@ -10,6 +10,9 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -180,7 +183,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                     .blockSize(CssLength.rem(1.25)))
         .select(
             ":scope > .callout-content",
-            s -> s.fontSize(Tokens.FONT_SIZE_MD).lineHeight("1.6").textColor(Tokens.CONTROL_FG))
+            s -> s.fontSize(Tokens.FONT_SIZE_MD).lineHeight(1.6).textColor(Tokens.CONTROL_FG))
         .select(":scope > .callout-content > :first-child", s -> s.mt(CssLength.px(0)))
         .select(":scope > .callout-content > :last-child", s -> s.mb(CssLength.px(0)));
   }
@@ -200,18 +203,13 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
 
     var content = div().attr("class", "callout-content").children(children);
 
-    var bgValue =
-        "color-mix(in oklab, "
-            + tone.token().varReference()
-            + " 14%, "
-            + Tokens.SURFACE_CARD.varReference()
-            + ")";
+    var tint = tone.token().mix(CssColor.Space.OKLAB, 14, Tokens.SURFACE_CARD);
 
     return aside()
-        .role("note")
+        .role(Role.NOTE)
         .attr("class", "callout callout--" + tone.name().toLowerCase(Locale.ROOT))
-        .bgRaw(bgValue)
-        .borderInlineStart("4px solid " + tone.token().varReference())
+        .bg(tint)
+        .borderInlineStart(Border.solid(CssLength.px(4), tone.token()))
         .children(header, content);
   }
 }

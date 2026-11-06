@@ -1,15 +1,7 @@
 package dev.nthings.tessera.css;
 
-import java.util.Locale;
-
 /// Scroll or view timeline tracking axis (`block` or `inline`).
-public enum TimelineAxis {
+public enum TimelineAxis implements CssKeyword {
   BLOCK,
-  INLINE;
-
-  private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
-
-  public String css() {
-    return css;
-  }
+  INLINE
 }

@@ -1,5 +1,7 @@
 package dev.nthings.tessera.showcase;
 
+import dev.nthings.tessera.core.SourceTracking;
+import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
@@ -48,10 +50,24 @@ public final class ShowcaseSite {
         .build();
   }
 
+  /// The element tree of one route, with the Java line that built each element.
+  static String explain(SiteDefinition definition, String path) {
+    var wanted = SiteRoute.normalizeRoutePath(path);
+    var route =
+        definition.routes().stream()
+            .filter(candidate -> candidate.path().equals(wanted))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No route " + wanted));
+    return SourceTracking.enabled(() -> PageCompiler.explain(route.document(), definition.tokens()))
+        .toText();
+  }
+
   public static void main(String[] args) throws InterruptedException {
     var outputDir = Path.of("target/site");
     var serve = false;
     var port = 8080;
+    var sources = false;
+    String explain = null;
 
     for (var i = 0; i < args.length; i++) {
       switch (args[i]) {
@@ -67,13 +83,29 @@ public final class ShowcaseSite {
             port = Integer.parseInt(args[++i]);
           }
         }
+        case "--sources" -> sources = true;
+        case "--explain" -> {
+          if (++i == args.length) {
+            throw new IllegalArgumentException("--explain requires a route path");
+          }
+          explain = args[i];
+        }
         default ->
             throw new IllegalArgumentException(
-                "Unknown option " + args[i] + "; usage: [--output <dir>] [--serve [port]]");
+                "Unknown option "
+                    + args[i]
+                    + "; usage: [--output <dir>] [--serve [port]] [--sources] [--explain <route>]");
       }
     }
 
-    var compiled = SiteCompiler.compile(createDefinition());
+    var tracking = sources || explain != null;
+    var definition = SourceTracking.with(tracking, ShowcaseSite::createDefinition);
+    if (explain != null) {
+      System.out.print(explain(definition, explain));
+      return;
+    }
+
+    var compiled = SourceTracking.with(tracking, () -> SiteCompiler.compile(definition));
     SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "

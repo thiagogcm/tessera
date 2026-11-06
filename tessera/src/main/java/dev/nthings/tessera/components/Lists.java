@@ -7,9 +7,15 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssNumber;
+import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.TrackList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -88,7 +94,14 @@ public final class Lists {
     @Override
     public Element render() {
       var dl =
-          Elements.dl().grid().gridColumns("minmax(8rem, max-content) 1fr").gap(Tokens.SPACE_3);
+          Elements.dl()
+              .grid()
+              .gridColumns(
+                  TrackList.of(
+                      GridTrack.minmax(
+                          GridTrack.length(CssLength.rem(8)), GridTrack.Keyword.MAX_CONTENT),
+                      GridTrack.fr(1)))
+              .gap(Tokens.SPACE_3);
       for (var entry : terms) {
         dl.children(
             Elements.dt().fontWeight(600).textColor(Tokens.TEXT_PRIMARY).text(entry.term()),
@@ -99,6 +112,9 @@ public final class Lists {
   }
 
   public record StepList(String id, List<Element> steps) implements RenderView {
+
+    private static final CssIdent STEP_INDEX = CssIdent.custom("step-index");
+    private static final CssIdent STEP_TOTAL = CssIdent.custom("step-total");
 
     public static StepList ofStrings(String id, String... steps) {
       return new StepList(id, texts(steps));
@@ -116,20 +132,26 @@ public final class Lists {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> s.listStyleNone().flex().flexCol().gap(Tokens.SPACE_3).counterReset("step"))
+          .root(
+              s ->
+                  s.listStyleNone()
+                      .flex()
+                      .flexCol()
+                      .gap(Tokens.SPACE_3)
+                      .counterReset(CssIdent.of("step")))
           .select(
               ":scope > li",
               s ->
-                  s.customProperty("--step-index", "sibling-index()")
-                      .customProperty("--step-total", "sibling-count()")
-                      .counterIncrement("step")
+                  s.customProperty(STEP_INDEX, CssNumber.siblingIndex())
+                      .customProperty(STEP_TOTAL, CssNumber.siblingCount())
+                      .counterIncrement(CssIdent.of("step"))
                       .flex()
                       .itemsBaseline()
                       .gap(Tokens.SPACE_3))
           .select(
               ":scope > li::before",
               s ->
-                  s.content("counter(step)")
+                  s.content(CssContent.counter(CssIdent.of("step")))
                       .inlineFlex()
                       .itemsCenter()
                       .justifyCenter()
@@ -138,13 +160,15 @@ public final class Lists {
                       .rounded(Tokens.RADIUS_FULL)
                       .fontWeight(600)
                       .tabularNums()
-                      .bgRaw(
-                          "color-mix(in oklab, "
-                              + Tokens.ACCENT_PRIMARY.varReference()
-                              + " "
-                              + "calc(20% + (60% * var(--step-index) / var(--step-total))), "
-                              + Tokens.SURFACE_SUBTLE.varReference()
-                              + ")")
+                      .bg(
+                          Tokens.ACCENT_PRIMARY.mix(
+                              CssColor.Space.OKLAB,
+                              CssLength.pct(20)
+                                  .plus(
+                                      CssLength.pct(60)
+                                          .times(CssNumber.property(STEP_INDEX))
+                                          .dividedBy(CssNumber.property(STEP_TOTAL))),
+                              Tokens.SURFACE_SUBTLE))
                       .textColor(Tokens.TEXT_PRIMARY));
     }
 

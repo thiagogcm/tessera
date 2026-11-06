@@ -6,7 +6,6 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
@@ -43,7 +42,7 @@ public record CardGrid(
                 s.subgridRows(4)
                     .rowGap(Tokens.SPACE_3)
                     // A query container is layout-contained and cannot be a subgrid.
-                    .put(CssProperty.CONTAINER_TYPE, "normal"));
+                    .containerNormal());
   }
 
   @Override

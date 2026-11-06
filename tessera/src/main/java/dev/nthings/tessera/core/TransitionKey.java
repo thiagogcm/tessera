@@ -1,5 +1,6 @@
 package dev.nthings.tessera.core;
 
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
@@ -19,8 +20,10 @@ public record TransitionKey(String name, @Nullable String transitionClass) {
     if ("root".equals(name) || "none".equals(name) || "auto".equals(name)) {
       throw new IllegalArgumentException("TransitionKey name is reserved: " + name);
     }
+    CssIdent.of(name);
     if (transitionClass != null) {
       transitionClass = Fnv1a64.sanitizeIdentifier(transitionClass);
+      CssIdent.of(transitionClass);
     }
   }
 

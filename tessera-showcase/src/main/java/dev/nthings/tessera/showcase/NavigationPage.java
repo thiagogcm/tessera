@@ -44,12 +44,13 @@ final class NavigationPage {
         .features("content: \"/\" / \"\"", "aria-current=\"page\"")
         .example(
             Breadcrumbs.of(
-                "demo-crumbs",
-                Crumb.of("/", "Tessera"),
-                Crumb.of("/navigation", "Navigation"),
-                Crumb.of(
-                    "/navigation#" + Toc.DocLayout.sectionDomId(Page.TOC_ID, "breadcrumbs"),
-                    "Breadcrumbs")))
+                    "demo-crumbs",
+                    Crumb.of("/", "Tessera"),
+                    Crumb.of("/navigation", "Navigation"),
+                    Crumb.of(
+                        "/navigation#" + Toc.DocLayout.sectionDomId(Page.TOC_ID, "breadcrumbs"),
+                        "Breadcrumbs"))
+                .label("Breadcrumb example"))
         .code(
             "Breadcrumbs.of(\"crumbs\", Crumb.of(\"/\", \"Home\"), Crumb.of(\"/docs\", \"Docs\"));");
   }
@@ -164,8 +165,9 @@ final class NavigationPage {
         .features("<nav aria-label>", "rel-style links")
         .example(
             DocPager.of(
-                new DocPager.PageRef("/layout", "Layout"),
-                new DocPager.PageRef("/overlays", "Overlays")))
+                    new DocPager.PageRef("/layout", "Layout"),
+                    new DocPager.PageRef("/overlays", "Overlays"))
+                .label("Pager example"))
         .code(
             "DocPager.of(new PageRef(\"/layout\", \"Layout\"), new PageRef(\"/overlays\", \"Overlays\"));");
   }

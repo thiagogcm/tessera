@@ -1,0 +1,4 @@
+- main:
+  - heading "Switch — On" [level=1]
+  - text: Weekly digest
+  - switch "Weekly digest" [checked]

@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +61,11 @@ public final class SimpleTable implements RenderOnce {
 
     if (caption != null) {
       table.child(
-          Elements.caption().py(Tokens.SPACE_2).fontWeight(600).textAlign("start").text(caption));
+          Elements.caption()
+              .py(Tokens.SPACE_2)
+              .fontWeight(600)
+              .textAlign(TextAlign.START)
+              .text(caption));
     }
 
     if (!headers.isEmpty()) {
@@ -71,7 +76,7 @@ public final class SimpleTable implements RenderOnce {
                 .attr("scope", "col")
                 .px(Tokens.SPACE_3)
                 .py(Tokens.SPACE_2)
-                .textAlign("start")
+                .textAlign(TextAlign.START)
                 .text(h));
       }
       table.child(Elements.thead().child(headRow));

@@ -7,12 +7,17 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.Tokens;
 
 /// Scroll-driven animation, scroll-state and size container queries, and view transitions.
 final class MotionPage {
+
+  private static final CssIdent RESIZABLE = CssIdent.of("resizable");
 
   private MotionPage() {}
 
@@ -91,7 +96,7 @@ final class MotionPage {
                 div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(1)),
                 CssLength.rem(0.75))
             .onContainer(
-                "resizable", CssLength.rem(28), s -> s.flexRow().itemsCenter().justifyBetween())
+                RESIZABLE, CssLength.rem(28), s -> s.flexRow().itemsCenter().justifyBetween())
             .children(
                 span().fontWeight(700).text("Responsive to its container"),
                 span().textColor(Tokens.TEXT_MUTED).text("Stacked when narrow, a row when wide."));
@@ -102,14 +107,14 @@ final class MotionPage {
         .features("container-type: inline-size", "@container (inline-size >= 28rem)", "resize")
         .example(
             div()
-                .container("resizable")
-                .resize("horizontal")
+                .container(RESIZABLE)
+                .resize(Resize.HORIZONTAL)
                 .overflowHidden()
                 .minInlineSize(CssLength.rem(14))
                 .maxInlineSize(CssLength.pct(100))
                 .inlineSize(CssLength.rem(22))
                 .p(CssLength.rem(0.75))
-                .border("2px dashed " + Tokens.BORDER_SUBTLE.varReference())
+                .border(Border.dashed(CssLength.px(2), Tokens.BORDER_SUBTLE))
                 .rounded(CssLength.rem(0.75))
                 .child(card))
         .code(

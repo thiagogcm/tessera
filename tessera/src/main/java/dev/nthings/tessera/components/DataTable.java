@@ -6,13 +6,16 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
-import org.owasp.encoder.Encode;
 
 /// Strongly typed, responsive data table component (`DataTable<T>`).
 ///
@@ -29,20 +32,20 @@ public record DataTable<T>(
     implements RenderView {
 
   public enum CellAlign {
-    START("start", false),
-    CENTER("center", false),
-    END("end", false),
-    NUMERIC("end", true);
+    START(TextAlign.START, false),
+    CENTER(TextAlign.CENTER, false),
+    END(TextAlign.END, false),
+    NUMERIC(TextAlign.END, true);
 
-    private final String textAlign;
+    private final TextAlign textAlign;
     private final boolean tabularNums;
 
-    CellAlign(String textAlign, boolean tabularNums) {
+    CellAlign(TextAlign textAlign, boolean tabularNums) {
       this.textAlign = textAlign;
       this.tabularNums = tabularNums;
     }
 
-    public String textAlign() {
+    public TextAlign textAlign() {
       return textAlign;
     }
 
@@ -101,11 +104,9 @@ public record DataTable<T>(
         .select(
             ":scope table",
             s -> {
-              s.fullWidth().borderSeparateZero().textAlign("start");
+              s.fullWidth().borderSeparateZero().textAlign(TextAlign.START);
               for (var i = 0; i < columns.size(); i++) {
-                s.customProperty(
-                    "--label-" + (i + 1),
-                    "\"" + Encode.forCssString(columns.get(i).header()) + "\"");
+                s.customProperty(labelProperty(i + 1), CssContent.text(columns.get(i).header()));
               }
               return s;
             })
@@ -115,7 +116,7 @@ public record DataTable<T>(
                 s.px(Tokens.SPACE_4)
                     .py(Tokens.SPACE_3_5)
                     .fontWeight(600)
-                    .textAlign("start")
+                    .textAlign(TextAlign.START)
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
         .select(
             ":scope thead",
@@ -154,7 +155,7 @@ public record DataTable<T>(
                   s -> s.block())
               .select(":scope thead", s -> s.hidden())
               // Card mode: label and value read left to right regardless of column alignment.
-              .select(":scope tr > :nth-child(n)", s -> s.textAlign("start"))
+              .select(":scope tr > :nth-child(n)", s -> s.textAlign(TextAlign.START))
               .select(
                   ":scope tr",
                   s ->
@@ -175,7 +176,10 @@ public record DataTable<T>(
               c.select(
                   ":scope td:nth-child(" + colIndex + ")::before",
                   s ->
-                      s.content("var(--label-" + colIndex + ") \": \"")
+                      s.content(
+                              CssContent.sequence(
+                                  CssContent.property(labelProperty(colIndex)),
+                                  CssContent.text(": ")))
                           .fontWeight(600)
                           .textColor(Tokens.TEXT_MUTED));
             }
@@ -209,6 +213,10 @@ public record DataTable<T>(
                 Elements.thead().child(headerRow),
                 tbody);
 
-    return Elements.div().tabIndex(0).role("region").ariaLabelledBy(caption).child(table);
+    return Elements.div().tabIndex(0).role(Role.REGION).ariaLabelledBy(caption).child(table);
+  }
+
+  private static CssIdent labelProperty(int column) {
+    return CssIdent.custom("label-" + column);
   }
 }

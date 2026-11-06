@@ -7,9 +7,6 @@ import java.util.Locale;
 ///
 /// Note:
 ///
-/// - [#TRANSITION] precedes [#TRANSITION_PROPERTY], [#TRANSITION_DURATION],
-///   [#TRANSITION_TIMING_FUNCTION], and [#TRANSITION_BEHAVIOR] so `transition-behavior:
-///   allow-discrete` is never reset by the shorthand.
 /// - [#ANIMATION] precedes [#ANIMATION_DELAY], [#ANIMATION_TIMELINE], and [#ANIMATION_RANGE] so
 ///   the `animation` shorthand never resets scroll-driven timeline or range declarations.
 public enum CssProperty {
@@ -101,7 +98,6 @@ public enum CssProperty {
   TRANSFORM,
   TRANSLATE,
   CURSOR,
-  TRANSITION,
   TRANSITION_PROPERTY,
   TRANSITION_DURATION,
   TRANSITION_TIMING_FUNCTION,
@@ -121,8 +117,6 @@ public enum CssProperty {
   POSITION_TRY_FALLBACKS,
   VIEW_TRANSITION_NAME,
   VIEW_TRANSITION_CLASS,
-  CONTENT_VISIBILITY,
-  CONTAIN_INTRINSIC_SIZE,
   APPEARANCE,
   ACCENT_COLOR,
   RESIZE,

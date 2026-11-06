@@ -19,7 +19,8 @@ class FormsTest {
     @Test
     @DisplayName("is a role=switch checkbox reflecting its checked state")
     void reflectsCheckedState() {
-      var page = renderMain(Forms.switchInput("enable_notifications", true));
+      var page =
+          renderMain(Forms.switchInput("enable_notifications", true).ariaLabel("Notifications"));
 
       assertThat(page.element("input[role=switch][name=enable_notifications]"))
           .hasAttribute("checked");

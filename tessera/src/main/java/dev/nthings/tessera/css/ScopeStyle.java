@@ -58,8 +58,15 @@ public final class ScopeStyle {
 
   /// Emits a `@container <name> scroll-state(<stateQuery>)` block.
   public ScopeStyle containerScrollState(
-      String containerName, String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
-    return container(containerName + " scroll-state(" + stateQuery + ")", nestedBuilder);
+      CssIdent containerName, String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
+    return container(containerName.toCss() + " scroll-state(" + stateQuery + ")", nestedBuilder);
+  }
+
+  /// Emits a `@container <name> (inline-size >= <min>)` block against a named container.
+  public ScopeStyle containerMinInlineSize(
+      CssIdent containerName, CssLength minInlineSize, Consumer<ScopeStyle> nestedBuilder) {
+    return container(
+        containerName.toCss() + " (inline-size >= " + minInlineSize.toCss() + ")", nestedBuilder);
   }
 
   public ScopeStyle container(String condition, Consumer<ScopeStyle> nestedBuilder) {

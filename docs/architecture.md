@@ -14,6 +14,10 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 - `RenderOnce` expands without adding a scope. `RenderView` establishes an identity namespace and optional CSS scope before expansion.
 - `ElementRef` is an identity token, `ElementId` a local identifier, and `IdReference` an attribute reference resolved after expansion.
 - `Styled`, `InteractiveElement`, `ParentElement`, and `FluentBuilder` share authoring operations without unchecked self casts.
+- `Styled` composes six traits by concern: `LayoutStyled`, `BoxStyled`, `TextStyled`, `EffectStyled`, `ScrollStyled`, and `AnchorStyled`. Every style method takes a typed value of the category its property accepts, so a color cannot be passed where a length belongs.
+- `CssValue` is the sealed family of those values: `CssLength` (dimensions, `calc`, `min`/`max`, `anchor()`), `CssColor` (OKLCH, `color-mix`, `light-dark`, relative colors), `CssNumber`, `CssDuration`, `Easing`, `Border`, `Shadow`, `Background`, `TrackList`, `GridPlacement`, `Transform`, `AspectRatio`, `CssIdent`, and enums for keyword sets (`CssKeyword`). `StyleRefinement` accepts declarations only from the `css` package, so no declaration is built from raw text.
+- `Accessible` writes the element's `Role` and typed `aria-*` states. The generic `attr`, `boolAttr`, and `idRef` methods refuse `role` and `aria-*`.
+- `SourceTracking` optionally records the Java call site of each element as a `SourceLocation`.
 - `DocumentKey<T>` supports per-compilation component state. Footnotes and image coordination retain their own registries without site-layer knowledge.
 - `OutputMode` describes CSS publication independently of filesystem I/O.
 
@@ -105,8 +109,10 @@ block
 | --- | --- |
 | Author HTML | `Elements`, `TagElement`, `IntoElement`, sealed `Element` variants |
 | Build components | `RenderOnce`, `RenderView`, `ParentElement`, `InteractiveElement`, `Styled` |
-| Author styles | `CssLength`, `CssProperty`, `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
+| Author styles | `Styled` and its six traits, the `CssValue` family (`CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, ...), `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
+| Declare accessibility semantics | `Accessible`, `Role` (name, children, state, and `aria-*` requirements) |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
+| Trace elements to source | `SourceTracking`, `SourceLocation`, `PageCompiler.explain(...)`, `PreparedPage.tree()`, `PageTree` |
 | Contribute document content | `RenderContext.current()`, `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
 | Compile a page | `PageDocument`, `PageCompiler.compile(...)`, `CompiledPage`, `OutputMode` |
 | Coordinate page phases | `PageCompiler.prepare(...)`, opaque `PreparedPage`, `PageCompiler.paintPrepared(...)` |
@@ -142,7 +148,7 @@ flowchart TD
 
 `LayoutPass` runs inside `RenderContext.runRoot`. Child view scopes share page state and styles. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late elements capture their lexical context and expand after ordinary traversal. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
-`ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
+`ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. `AccessibilityRules` checks the linked body tree (see below). It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
 
 `ResolvedNode` and its variants are package-private. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
 
@@ -159,6 +165,35 @@ flowchart TD
 `ContentSection` and `Toc.DocSection` register headings while rendering. `Toc.fromContext` consumes them through a late element, so it may precede sections. Explicit TOCs accept `List<DocumentHeading>`. Section components retain supported levels 2 through 4; general metadata supports HTML heading levels 1 through 6. Headings retain registration order and scoped target IDs.
 
 Search generation reads `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `Toc`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
+
+## Accessibility rules
+
+`AccessibilityRules` runs on the linked body after `PageValidator` and reports through the same diagnostics. Rules that depend on a role apply to elements that declare one with `Accessible.role(Role)`; native elements are checked where their semantics are unambiguous (`<dialog>`, headings, landmarks, `<label for>`).
+
+| Rule | Reported when |
+| --- | --- |
+| `role-name-required` | A role that requires an accessible name (or a native `<dialog>`) has no `aria-label`, `aria-labelledby`, `title`, native label, or, for roles named from content, readable content |
+| `role-required-children` | A role such as `tablist`, `list`, `listbox`, `menu`, or `tree` owns none of the roles it requires |
+| `role-required-attribute` | A custom element lacks a state its role needs (`aria-checked`, `aria-level`, `aria-valuenow`, `aria-selected`); native hosts that expose the state are exempt |
+| `aria-attribute-not-allowed` | An `aria-*` attribute is neither global nor supported by the declared role |
+| `landmark-name-unique` | Several landmarks of one kind lack distinct accessible names |
+| `multiple-main` | A page has more than one main landmark |
+| `heading-level-skip`, `empty-heading` | Heading levels jump by more than one in document order, or a heading has no text |
+| `tabindex-positive` | A positive `tabindex` overrides the natural tab order |
+| `label-target` | `<label for>` points at an element a label cannot name |
+| `aria-hidden-focusable` | An `aria-hidden` subtree contains a control that stays in the tab order |
+
+Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark and heading structure because they have no accessibility tree. `Role` carries each role's requirements as data, so the rules and the authoring API share one source.
+
+## Source provenance
+
+`SourceTracking` is off by default. While it is active (`-Dtessera.sources=true`, or inside `SourceTracking.enabled(...)`), each `TagElement` and component wrapper records the first stack frame that is neither Tessera's nor the platform's. Frames are classified by code source, so a library user's own code is never mistaken for Tessera's, even in the same package.
+
+- An element a Tessera component builds during compilation is attributed to the line that placed the component, through the origin carried by `RenderContext` and by head and end-section contributions.
+- `CompilationLocation` carries the `SourceLocation`; `CompilationException` prints it as `<button> (Page.java:42)`.
+- `HtmlWriter` emits `data-src="Page.java:42"` for tracked elements, so a rendered element leads back to the line that wrote it.
+- `SiteCompiler` carries the caller's setting onto its virtual threads.
+- `PreparedPage.tree()` snapshots the linked tree as `PageTree`: tag, DOM id, attributes, enclosing components, CSS scope, and source. `PageTree.toText()` prints it; `just explain <route>` prints a showcase route.
 
 ## Compilation diagnostics
 
@@ -241,7 +276,7 @@ Existing tests cover scoped identities, linking failures, late TOCs, deferred fo
 
 The showcase is also the browser acceptance suite. It compiles through public `SiteCompiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
 
-JUnit reuses Chromium across the suite and creates a fresh browser context per test. Documentation routes are opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Named cases are routes under `/stories/{case}/{variant}/{appearance}/{density}/`. Documentation sections and browser tests call the same factories, and each case page contributes the chosen `color-scheme` and density in its document head. Those cases are opened at the same widths for the overflow check. Interaction tests exercise dialog focus and dismissal, popover light dismissal, field labels and validation, tabs, exclusive accordions, route and fragment navigation, switches, and case freshness. These complement the library tests' compiler diagnostics and output assertions.
+JUnit reuses Chromium across the suite and creates a fresh browser context per test. Documentation routes are opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Named cases are routes under `/stories/{case}/{variant}/{appearance}/{density}/`. Documentation sections and browser tests call the same factories, and each case page contributes the chosen `color-scheme` and density in its document head. Those cases are opened at the same widths for the overflow check. Each component case is also compared with a committed accessibility-tree snapshot (`ShowcaseIT`, `src/test/resources/aria`); a changed snapshot is a changed experience for assistive technology, and `-Dtessera.bless=true` rewrites them. Interaction tests exercise dialog focus and dismissal, popover light dismissal, field labels and validation, tabs, exclusive accordions, route and fragment navigation, switches, and case freshness. These complement the library tests' compiler diagnostics and output assertions.
 
 Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium and operating-system dependencies before full verification. There is no browser-version matrix. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright` directory.
 

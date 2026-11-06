@@ -15,6 +15,8 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -33,9 +35,9 @@ public final class GuideSite {
   public static SiteDefinition createDefinition() {
     var tokens =
         new Tokens()
-            .register(Tokens.ACCENT_PRIMARY.withValue("oklch(55% 0.18 150)"))
-            .register(Tokens.DENSITY.withValue("0.9"))
-            .register(Tokens.RADIUS_XL.withValue("1rem"));
+            .register(Tokens.ACCENT_PRIMARY.withValue(CssColor.oklch(55, 0.18, 150)))
+            .register(Tokens.DENSITY.withValue(0.9))
+            .register(Tokens.RADIUS_XL.withValue(CssLength.rem(1)));
 
     return SiteDefinition.builder()
         .tokens(tokens)

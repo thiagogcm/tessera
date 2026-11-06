@@ -45,6 +45,7 @@ public final class CompilationException extends RuntimeException {
         + location.tagName()
         + (location.domId() == null ? "" : " id=\"" + location.domId() + "\"")
         + ">"
+        + (location.source() == null ? "" : " (" + location.source() + ")")
         + ": "
         + diagnostic.message()
         + "\n  Fix: "

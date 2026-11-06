@@ -1,7 +1,8 @@
 package dev.nthings.tessera.core;
 
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.CssValue;
 import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.ScrollReveal;
@@ -11,7 +12,6 @@ import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
-import java.util.Map;
 import java.util.function.UnaryOperator;
 
 /// Shared interactive, attribute, id-reference, container-query, and scroll-driven animation
@@ -20,21 +20,20 @@ import java.util.function.UnaryOperator;
 /// @param <SELF> concrete element type
 public interface InteractiveElement<
         SELF extends InteractiveElement<SELF> & Styled<SELF> & FluentBuilder<SELF>>
-    extends Styled<SELF>, FluentBuilder<SELF> {
+    extends Styled<SELF>, Accessible<SELF>, FluentBuilder<SELF> {
 
   Interactivity interactivity();
 
-  Map<String, String> attributes();
-
-  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler.
-  Map<String, IdReference> idReferences();
-
+  /// Sets an arbitrary attribute. Roles and `aria-*` attributes have typed methods ([Accessible]),
+  /// so this refuses them.
   default SELF attr(String name, String value) {
+    requireNotAria(name);
     attributes().put(name, value);
     return self();
   }
 
   default SELF boolAttr(String name, boolean enabled) {
+    requireNotAria(name);
     if (enabled) {
       attributes().put(name, "");
     } else {
@@ -43,32 +42,17 @@ public interface InteractiveElement<
     return self();
   }
 
-  default SELF ariaLabel(String label) {
-    return attr("aria-label", label);
-  }
-
   /// Sets `attribute` to the DOM ids of `targets` once they are bound on the page.
   default SELF idRef(String attribute, ElementRef... targets) {
     return idRef(attribute, new IdReference("", List.of(targets)));
   }
 
   private SELF idRef(String attribute, IdReference reference) {
+    requireNotAria(attribute);
     // Reserve the attribute's position so resolved ids keep declaration order.
     attributes().putIfAbsent(attribute, "");
     idReferences().put(attribute, reference);
     return self();
-  }
-
-  default SELF ariaLabelledBy(ElementRef... labels) {
-    return idRef("aria-labelledby", labels);
-  }
-
-  default SELF ariaDescribedBy(ElementRef... descriptions) {
-    return idRef("aria-describedby", descriptions);
-  }
-
-  default SELF ariaErrorMessage(ElementRef message) {
-    return idRef("aria-errormessage", message);
   }
 
   default SELF labelFor(ElementRef control) {
@@ -119,14 +103,6 @@ public interface InteractiveElement<
   /// Cross-document view transition identity: emits `view-transition-name` (and class), checked
   /// to be unique per page and present on at least two routes of a site.
   SELF transitionKey(TransitionKey key);
-
-  default SELF ariaHidden(boolean hidden) {
-    return attr("aria-hidden", Boolean.toString(hidden));
-  }
-
-  default SELF role(String role) {
-    return attr("role", role);
-  }
 
   default SELF title(String title) {
     return attr("title", title);
@@ -187,28 +163,22 @@ public interface InteractiveElement<
     return self();
   }
 
-  default SELF container(String containerName) {
-    var safeName = Fnv1a64.sanitizeIdentifier(containerName);
-    style().put(CssProperty.CONTAINER_NAME, safeName);
-    style().put(CssProperty.CONTAINER_TYPE, "inline-size");
-    return self();
+  default SELF container(CssIdent containerName) {
+    return containerInlineSize(containerName);
   }
 
   default SELF onContainer(
-      String containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
-    interactivity()
-        .onContainerMinWidth(Fnv1a64.sanitizeIdentifier(containerName), minInlineSize, mutator);
+      CssIdent containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
+    interactivity().onContainerMinWidth(containerName, minInlineSize, mutator);
     return self();
   }
 
   default SELF onContainerStyle(
-      String containerName,
-      String customProperty,
-      String expectedValue,
+      CssIdent containerName,
+      CssIdent customProperty,
+      CssValue expectedValue,
       UnaryOperator<StyleRefinement> mutator) {
-    interactivity()
-        .onContainerStyleQuery(
-            Fnv1a64.sanitizeIdentifier(containerName), customProperty, expectedValue, mutator);
+    interactivity().onContainerStyleQuery(containerName, customProperty, expectedValue, mutator);
     return self();
   }
 
@@ -217,7 +187,7 @@ public interface InteractiveElement<
   }
 
   default SELF scrollReveal(ScrollReveal preset, TimelineAxis axis) {
-    return scrollDriven(preset, axis, "backwards", "entry");
+    return scrollDriven(preset, axis, false);
   }
 
   /// Plays `preset` once, the first time any part of the element scrolls into view (CSS
@@ -225,14 +195,7 @@ public interface InteractiveElement<
   /// [#scrollReveal(ScrollReveal)], progress is time-based and does not reverse on scroll back.
   default SELF revealOnce(ScrollReveal preset) {
     interactivity().registerKeyframeRule(preset.keyframeRule());
-    interactivity()
-        .on(
-            InteractiveState.MOTION_SAFE,
-            s ->
-                s.put(CssProperty.ANIMATION, preset.keyframeName() + " 0.5s ease-out both")
-                    .put(
-                        CssProperty.TIMELINE_TRIGGER, "--tessera-reveal view() cover 0% cover 100%")
-                    .put(CssProperty.ANIMATION_TRIGGER, "--tessera-reveal play-once"));
+    interactivity().on(InteractiveState.MOTION_SAFE, preset::revealOnce);
     return self();
   }
 
@@ -241,38 +204,27 @@ public interface InteractiveElement<
   }
 
   default SELF scrollExit(ScrollReveal preset, TimelineAxis axis) {
-    return scrollDriven(preset, axis, "forwards", "exit");
+    return scrollDriven(preset, axis, true);
   }
 
-  private SELF scrollDriven(ScrollReveal preset, TimelineAxis axis, String fill, String phase) {
+  private SELF scrollDriven(ScrollReveal preset, TimelineAxis axis, boolean exit) {
     interactivity().registerKeyframeRule(preset.keyframeRule());
-    interactivity()
-        .on(
-            InteractiveState.MOTION_SAFE,
-            s ->
-                s.put(CssProperty.ANIMATION, preset.keyframeName() + " auto linear " + fill)
-                    .put(CssProperty.ANIMATION_TIMELINE, "view(" + axis.css() + ")")
-                    .put(CssProperty.ANIMATION_RANGE, phase + " 0% " + phase + " 100%"));
-    return self();
-  }
-
-  default SELF viewTimeline(String name, TimelineAxis axis) {
-    var ident = "--" + Fnv1a64.sanitizeIdentifier(name);
-    style().put(CssProperty.VIEW_TIMELINE, ident + " " + axis.css());
+    interactivity().on(InteractiveState.MOTION_SAFE, s -> preset.scrollDriven(s, axis, exit));
     return self();
   }
 
   default SELF staggerBySiblingIndex(int stepMilliseconds) {
-    if (stepMilliseconds < 0) {
-      throw new IllegalArgumentException("stepMilliseconds must be >= 0");
-    }
     interactivity()
-        .on(
-            InteractiveState.MOTION_SAFE,
-            s ->
-                s.put(
-                    CssProperty.ANIMATION_DELAY,
-                    "calc((sibling-index() - 1) * " + stepMilliseconds + "ms)"));
+        .on(InteractiveState.MOTION_SAFE, s -> s.animationStaggerBySiblingIndex(stepMilliseconds));
     return self();
+  }
+
+  private static void requireNotAria(String attribute) {
+    if (attribute.equals("role") || attribute.startsWith("aria-")) {
+      throw new IllegalArgumentException(
+          "Use the typed Accessible method (role(Role), aria...(...)) instead of the attribute '"
+              + attribute
+              + "'");
+    }
   }
 }

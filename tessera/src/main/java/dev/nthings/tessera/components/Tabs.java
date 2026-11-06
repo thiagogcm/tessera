@@ -9,13 +9,21 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.ul;
 
+import dev.nthings.tessera.core.Accessible;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssDuration;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.WhiteSpace;
 import java.util.List;
 
 /// Navigation and in-page content tab components backed by CSS Anchor Positioning (`anchor-name`,
@@ -48,14 +56,14 @@ public final class Tabs {
 
     private final ElementId id;
     private final String ariaLabel;
-    private final String anchorIdent;
+    private final CssIdent anchorIdent;
     private final String activeHref;
     private final List<NavItem> items;
 
     public NavTabs(ElementId id, String ariaLabel, String activeHref, List<NavItem> items) {
       this.id = id;
       this.ariaLabel = ariaLabel;
-      this.anchorIdent = "--active-nav-" + id.slug();
+      this.anchorIdent = CssIdent.custom("active-nav-" + id.slug());
       this.activeHref = activeHref;
       this.items = List.copyOf(items);
     }
@@ -92,7 +100,7 @@ public final class Tabs {
                       .textColor(Tokens.TEXT_MUTED)
                       .fontSize(Tokens.FONT_SIZE_SM)
                       .fontWeight(500)
-                      .whiteSpace("nowrap")
+                      .whiteSpace(WhiteSpace.NOWRAP)
                       .textDecorationNone())
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(":scope li.active > a", s -> s.textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
@@ -104,7 +112,9 @@ public final class Tabs {
       for (var item : items) {
         var isActive = item.href().equals(activeHref);
         var link =
-            a(item.href()).when(isActive, el -> el.attr("aria-current", "page")).text(item.label());
+            a(item.href())
+                .when(isActive, el -> el.ariaCurrent(Accessible.Current.PAGE))
+                .text(item.label());
         var liEl = li().when(isActive, el -> el.attr("class", "active")).child(link);
         list.child(liEl);
       }
@@ -119,7 +129,7 @@ public final class Tabs {
 
     private final ElementId id;
     private final String radioGroupName;
-    private final String anchorIdent;
+    private final CssIdent anchorIdent;
     private final List<TabPanel> panels;
 
     public ContentTabs(ElementId id, List<TabPanel> panels) {
@@ -128,7 +138,7 @@ public final class Tabs {
       }
       this.id = id;
       this.radioGroupName = "tabs-" + id.slug();
-      this.anchorIdent = "--active-tab-" + id.slug();
+      this.anchorIdent = CssIdent.custom("active-tab-" + id.slug());
       this.panels = List.copyOf(panels);
     }
 
@@ -169,7 +179,7 @@ public final class Tabs {
                       .py(Tokens.SPACE_2_5)
                       .textColor(Tokens.TEXT_MUTED)
                       .fontWeight(500)
-                      .whiteSpace("nowrap")
+                      .whiteSpace(WhiteSpace.NOWRAP)
                       .cursorPointer())
           .select(":scope > .tab-bar > .tab-label > input[type=\"radio\"]", s -> s.hidden())
           .select(
@@ -220,19 +230,25 @@ public final class Tabs {
 
   /// Anchor-positioned underline sliding to the tab carrying `anchorIdent`.
   private static ScopeStyle anchorUnderline(
-      ScopeStyle scope, String barSelector, String anchorIdent) {
+      ScopeStyle scope, String barSelector, CssIdent anchorIdent) {
     return scope
         .select(
             barSelector,
             s ->
-                s.content("\"\"")
+                s.content(CssContent.empty())
                     .absolute()
                     .positionAnchor(anchorIdent)
-                    .insetBlockStart(CssLength.expr("calc(anchor(bottom) - 2px)"))
-                    .insetInlineStart(CssLength.expr("anchor(left)"))
-                    .insetInlineEnd(CssLength.expr("anchor(right)"))
+                    .insetBlockStart(
+                        CssLength.anchor(CssLength.AnchorSide.BOTTOM).minus(CssLength.px(2)))
+                    .insetInlineStart(CssLength.anchor(CssLength.AnchorSide.LEFT))
+                    .insetInlineEnd(CssLength.anchor(CssLength.AnchorSide.RIGHT))
                     .blockSize(CssLength.px(2))
                     .bg(Tokens.ACCENT_PRIMARY))
-        .motionSafe(m -> m.select(barSelector, s -> s.transition("inset 0.2s ease")));
+        .motionSafe(
+            m ->
+                m.select(
+                    barSelector,
+                    s ->
+                        s.motion(Motion.of(CssDuration.ms(200), Easing.ease(), Animatable.INSET))));
   }
 }

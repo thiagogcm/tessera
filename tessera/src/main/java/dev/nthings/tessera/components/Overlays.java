@@ -16,10 +16,16 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -126,37 +132,56 @@ public final class Overlays {
               s ->
                   s.m(CssLength.auto())
                       .maxInlineSize(CssLength.rem(32))
-                      .inlineSize(CssLength.expr("calc(100% - 2rem)"))
+                      .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
                       .p(Tokens.SPACE_6)
                       .rounded(Tokens.RADIUS_XL)
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .shadow("0 24px 48px -12px oklch(0% 0 0 / 0.28)"))
+                      .shadow(
+                          Shadow.drop(
+                              CssLength.px(24),
+                              CssLength.px(48),
+                              CssLength.px(-12),
+                              CssColor.oklch(0, 0, 0, 0.28))))
           .select(
-              ":scope::backdrop", s -> s.bgRaw("oklch(0% 0 0 / 0.45)").backdropFilter("blur(4px)"))
+              ":scope::backdrop",
+              s ->
+                  s.bg(CssColor.oklch(0, 0, 0, 0.45))
+                      .backdropFilter(CssFilter.blur(CssLength.px(4))))
           .motionSafe(
               m ->
                   m.select(
                           ":scope",
-                          s -> s.opacity(0).transform("scale(0.95)").motion(Motion.overlayEntry()))
+                          s ->
+                              s.opacity(0)
+                                  .transform(Transform.scale(0.95))
+                                  .motion(Motion.overlayEntry()))
                       .selectWithStartingStyle(
                           ":scope:open",
-                          s -> s.opacity(1).transform("scale(1)"),
-                          start -> start.opacity(0).transform("scale(0.95)"))
+                          s -> s.opacity(1).transform(Transform.scale(1)),
+                          start -> start.opacity(0).transform(Transform.scale(0.95)))
                       .select(
                           ":scope::backdrop",
                           s ->
-                              s.bgRaw("oklch(0% 0 0 / 0)")
-                                  .backdropFilter("blur(0px)")
+                              s.bg(CssColor.oklch(0, 0, 0, 0))
+                                  .backdropFilter(CssFilter.blur(CssLength.px(0)))
                                   .motion(
                                       Motion.overlayEntry()
                                           .properties(
-                                              "background, backdrop-filter, display, overlay")))
+                                              Animatable.BACKGROUND,
+                                              Animatable.BACKDROP_FILTER,
+                                              Animatable.DISPLAY,
+                                              Animatable.OVERLAY)))
                       .selectWithStartingStyle(
                           ":scope:open::backdrop",
-                          s -> s.bgRaw("oklch(0% 0 0 / 0.45)").backdropFilter("blur(4px)"),
-                          start -> start.bgRaw("oklch(0% 0 0 / 0)").backdropFilter("blur(0px)")));
+                          s ->
+                              s.bg(CssColor.oklch(0, 0, 0, 0.45))
+                                  .backdropFilter(CssFilter.blur(CssLength.px(4))),
+                          start ->
+                              start
+                                  .bg(CssColor.oklch(0, 0, 0, 0))
+                                  .backdropFilter(CssFilter.blur(CssLength.px(0)))));
     }
 
     @Override
@@ -259,19 +284,26 @@ public final class Overlays {
 
     @Override
     public void configureScope(ScopeStyle scope) {
-      var offscreenTranslate = side == DrawerSide.INLINE_START ? "-100% 0" : "100% 0";
+      var offscreenTranslate =
+          Translation.of(
+              CssLength.pct(side == DrawerSide.INLINE_START ? -100 : 100), CssLength.zero());
       scope
           .root(
               s -> {
                 s.my(CssLength.px(0))
                     .blockSize(CssLength.dvh(100))
                     .maxBlockSize(CssLength.dvh(100))
-                    .inlineSize(CssLength.expr("min(24rem, 85dvw)"))
+                    .inlineSize(CssLength.min(CssLength.rem(24), CssLength.dvw(85)))
                     .p(Tokens.SPACE_6)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .shadow("0 24px 48px -12px oklch(0% 0 0 / 0.32)");
+                    .shadow(
+                        Shadow.drop(
+                            CssLength.px(24),
+                            CssLength.px(48),
+                            CssLength.px(-12),
+                            CssColor.oklch(0, 0, 0, 0.32)));
                 if (side == DrawerSide.INLINE_START) {
                   s.ms(CssLength.px(0)).me(CssLength.auto());
                 } else {
@@ -280,7 +312,10 @@ public final class Overlays {
                 return s;
               })
           .select(
-              ":scope::backdrop", s -> s.bgRaw("oklch(0% 0 0 / 0.45)").backdropFilter("blur(3px)"))
+              ":scope::backdrop",
+              s ->
+                  s.bg(CssColor.oklch(0, 0, 0, 0.45))
+                      .backdropFilter(CssFilter.blur(CssLength.px(3))))
           .motionSafe(
               m ->
                   m.select(
@@ -291,19 +326,22 @@ public final class Overlays {
                                   .motion(Motion.overlayEntry()))
                       .selectWithStartingStyle(
                           ":scope:open",
-                          s -> s.opacity(1).translate("0 0"),
+                          s -> s.opacity(1).translate(Translation.none()),
                           start -> start.opacity(0).translate(offscreenTranslate))
                       .select(
                           ":scope::backdrop",
                           s ->
-                              s.bgRaw("oklch(0% 0 0 / 0)")
+                              s.bg(CssColor.oklch(0, 0, 0, 0))
                                   .motion(
                                       Motion.overlayEntry()
-                                          .properties("background, display, overlay")))
+                                          .properties(
+                                              Animatable.BACKGROUND,
+                                              Animatable.DISPLAY,
+                                              Animatable.OVERLAY)))
                       .selectWithStartingStyle(
                           ":scope:open::backdrop",
-                          s -> s.bgRaw("oklch(0% 0 0 / 0.45)"),
-                          start -> start.bgRaw("oklch(0% 0 0 / 0)")));
+                          s -> s.bg(CssColor.oklch(0, 0, 0, 0.45)),
+                          start -> start.bg(CssColor.oklch(0, 0, 0, 0))));
     }
 
     @Override

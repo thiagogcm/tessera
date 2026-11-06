@@ -3,12 +3,19 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.AspectRatio;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.GridPlacement;
+import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +50,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   private @Nullable Element media;
   private String headingText = "";
   private @Nullable String subtitleText;
+  private int headingLevel = 3;
   private final List<Element> contentItems = new ArrayList<>();
   private final List<Element> footerActions = new ArrayList<>();
   private Interaction interaction = Interaction.Content.INSTANCE;
@@ -60,7 +68,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
-  public Card mediaImg(String src, String alt, String aspectRatio) {
+  public Card mediaImg(String src, String alt, AspectRatio aspectRatio) {
     this.media = Elements.img(src, alt).aspectRatio(aspectRatio).objectCover().fullWidth();
     return this;
   }
@@ -74,6 +82,16 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   /// Arbitrary media (video, figure, illustration) wrapped in a `div.media` region.
   public Card media(IntoElement mediaContent) {
     this.media = Elements.div().attr("class", "media").child(mediaContent);
+    return this;
+  }
+
+  /// The heading level of the title, 2 through 6 (3 by default). Pick the level that follows the
+  /// heading of the section holding the card, so the page outline has no gaps.
+  public Card headingLevel(int level) {
+    if (level < 2 || level > 6) {
+      throw new IllegalArgumentException("Card heading level must be 2 to 6: " + level);
+    }
+    this.headingLevel = level;
     return this;
   }
 
@@ -130,7 +148,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
   /// Query container name for the card's own width; [CardGrid] switches it off so its cards can
   /// be subgrids (layout containment would make `grid-template-rows: subgrid` compute to `none`).
-  static final String CONTAINER = "tessera-card";
+  static final CssIdent CONTAINER = CssIdent.of("tessera-card");
 
   @Override
   public void configureScope(ScopeStyle scope) {
@@ -144,19 +162,13 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .p(Tokens.SPACE_5)
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
-                    .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
+                    .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
                     .relative())
         .select(":scope a.card-link", s -> s.textDecorationNone())
-        .select(
-            ":scope a.card-link:hover",
-            s ->
-                s.refine(
-                    r ->
-                        r.put(CssProperty.TEXT_DECORATION_LINE, "underline")
-                            .put(CssProperty.TEXT_UNDERLINE_OFFSET, CssLength.em(0.2))))
+        .select(":scope a.card-link:hover", s -> s.textDecorationUnderline(CssLength.em(0.2)))
         .select(
             ":scope:has(a.card-link) a.card-link::after",
-            s -> s.content("\"\"").absolute().inset("0"))
+            s -> s.content(CssContent.empty()).absolute().inset(CssLength.zero()))
         .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.outlineNone())
         .select(":scope:has(a.card-link:focus-visible)", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .select(":scope:has(a.card-link:hover)", s -> s.bg(Tokens.SURFACE_SUBTLE))
@@ -166,15 +178,16 @@ public final class Card implements RenderView, FluentBuilder<Card> {
         .select(
             ":scope:has(> input:checked)",
             s ->
-                s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
+                s.border(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY))
                     .bg(Tokens.SURFACE_SUBTLE))
         // Fixed region rows, so sibling cards line up when a CardGrid makes them subgrids
         // (ignored while the card lays out as a flex column).
-        .select(":scope > :is(img, picture, .media, input)", s -> s.gridRow("1"))
-        .select(":scope > :is(h3, hgroup)", s -> s.gridRow("2"))
+        .select(":scope > :is(img, picture, .media, input)", s -> s.gridRow(GridPlacement.at(1)))
+        .select(":scope > :is(h2, h3, h4, h5, h6, hgroup)", s -> s.gridRow(GridPlacement.at(2)))
         .select(
-            ":scope > :not(img, picture, .media, input, h3, hgroup, footer)", s -> s.gridRow("3"))
-        .select(":scope > footer", s -> s.gridRow("4"))
+            ":scope > :not(img, picture, .media, input, h2, h3, h4, h5, h6, hgroup, footer)",
+            s -> s.gridRow(GridPlacement.at(3)))
+        .select(":scope > footer", s -> s.gridRow(GridPlacement.at(4)))
         // Media cards: a two-column template whose children span both columns until the card
         // itself is wide enough (the card is the query container for its children, not for
         // itself, so the template cannot be conditional).
@@ -182,23 +195,34 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             MEDIA_CARD,
             s ->
                 s.grid()
-                    .gridColumns("minmax(10rem, 35%) 1fr")
+                    .gridColumns(
+                        TrackList.of(
+                            GridTrack.minmax(
+                                GridTrack.length(CssLength.rem(10)),
+                                GridTrack.length(CssLength.pct(35))),
+                            GridTrack.fr(1)))
                     .colGap(Tokens.SPACE_5)
                     .rowGap(Tokens.SPACE_3)
                     .itemsStart())
-        .select(MEDIA_CARD + " > *", s -> s.gridColumn("1 / -1"))
-        .container(
-            CONTAINER + " (inline-size >= 28rem)",
+        .select(MEDIA_CARD + " > *", s -> s.gridColumn(GridPlacement.between(1, -1)))
+        .containerMinInlineSize(
+            CONTAINER,
+            CssLength.rem(28),
             c ->
                 c.select(
                         MEDIA_CARD + " > :is(img, picture, .media)",
-                        s -> s.gridColumn("1").gridRow("1 / span 3"))
-                    .select(MEDIA_CARD + " > :not(img, picture, .media)", s -> s.gridColumn("2"))
-                    .select(MEDIA_CARD + " > :is(h3, hgroup)", s -> s.gridRow("1"))
+                        s -> s.gridColumn(GridPlacement.at(1)).gridRow(GridPlacement.from(1, 3)))
                     .select(
-                        MEDIA_CARD + " > :not(img, picture, .media, h3, hgroup, footer)",
-                        s -> s.gridRow("2"))
-                    .select(MEDIA_CARD + " > footer", s -> s.gridRow("3")));
+                        MEDIA_CARD + " > :not(img, picture, .media)",
+                        s -> s.gridColumn(GridPlacement.at(2)))
+                    .select(
+                        MEDIA_CARD + " > :is(h2, h3, h4, h5, h6, hgroup)",
+                        s -> s.gridRow(GridPlacement.at(1)))
+                    .select(
+                        MEDIA_CARD
+                            + " > :not(img, picture, .media, h2, h3, h4, h5, h6, hgroup, footer)",
+                        s -> s.gridRow(GridPlacement.at(2)))
+                    .select(MEDIA_CARD + " > footer", s -> s.gridRow(GridPlacement.at(3))));
   }
 
   @Override
@@ -232,18 +256,18 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     .text(headingText);
             case Interaction.Content _, Interaction.Choice _ -> Elements.text(headingText);
           };
-      var h3 = Elements.h3().textBalance().child(headingInner);
+      var heading = Elements.el(HtmlTag.heading(headingLevel)).textBalance().child(headingInner);
       if (subtitleText != null) {
         root.child(
             Elements.hgroup()
                 .children(
-                    h3,
+                    heading,
                     Elements.p()
                         .textColor(Tokens.TEXT_MUTED)
                         .fontSize(Tokens.FONT_SIZE_SM)
                         .text(subtitleText)));
       } else {
-        root.child(h3);
+        root.child(heading);
       }
     }
 

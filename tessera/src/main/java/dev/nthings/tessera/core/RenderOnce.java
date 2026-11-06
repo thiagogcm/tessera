@@ -11,6 +11,6 @@ public interface RenderOnce extends IntoElement {
 
   @Override
   default Element intoElement() {
-    return new RenderOnceElement(this);
+    return new RenderOnceElement(this, SourceTracking.capture());
   }
 }

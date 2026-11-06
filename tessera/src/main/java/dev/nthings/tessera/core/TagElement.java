@@ -1,8 +1,9 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.Interactivity;
+import dev.nthings.tessera.css.PositionArea;
+import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public final class TagElement
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
   private @Nullable TransitionKey transitionKey;
+  private final @Nullable SourceLocation source = SourceTracking.capture();
 
   public TagElement(HtmlTag tag) {
     this.tag = tag;
@@ -42,6 +44,11 @@ public final class TagElement
   @Override
   public TagElement self() {
     return this;
+  }
+
+  /// The authoring call site, present only while [SourceTracking] is active.
+  public @Nullable SourceLocation source() {
+    return source;
   }
 
   public HtmlTag tag() {
@@ -122,9 +129,10 @@ public final class TagElement
     var base =
         Elements.span()
             .attr("popover", "hint")
-            .role("tooltip")
-            .positionArea("block-start")
-            .positionTryFallbacks("flip-block, flip-inline")
+            .role(Role.TOOLTIP)
+            .positionArea(PositionArea.of(PositionArea.Part.BLOCK_START))
+            .positionTryFallbacks(
+                PositionTry.flip(PositionTry.Flip.BLOCK), PositionTry.flip(PositionTry.Flip.INLINE))
             .m(CssLength.rem(0.25));
     this.interestTooltip = tooltipBuilder.apply(base);
     return this;
@@ -146,11 +154,10 @@ public final class TagElement
   }
 
   /// Positions this element against `anchor` (which must be laid out earlier on the page).
-  public TagElement anchoredTo(ElementRef anchor, String positionArea, String tryFallbacks) {
+  public TagElement anchoredTo(
+      ElementRef anchor, PositionArea area, PositionTry firstFallback, PositionTry... fallbacks) {
     this.anchorTarget = anchor;
-    style.put(CssProperty.POSITION_AREA, positionArea);
-    style.put(CssProperty.POSITION_TRY_FALLBACKS, tryFallbacks);
-    return this;
+    return positionArea(area).positionTryFallbacks(firstFallback, fallbacks);
   }
 
   public @Nullable ElementRef anchorTarget() {

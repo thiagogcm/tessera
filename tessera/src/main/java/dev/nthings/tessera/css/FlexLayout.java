@@ -1,7 +1,5 @@
 package dev.nthings.tessera.css;
 
-import java.util.Locale;
-
 /// A complete flex formatting context: display, direction, gap, item alignment, and wrapping.
 ///
 /// Apply it with [Styled#layout(FlexLayout)]. The value is copied into the element's
@@ -33,65 +31,46 @@ public record FlexLayout(
   /// Copies these declarations into `style`.
   public StyleRefinement apply(StyleRefinement style) {
     return style
-        .put(CssProperty.DISPLAY, display.css())
-        .put(CssProperty.FLEX_DIRECTION, direction.css())
-        .put(CssProperty.FLEX_WRAP, wrap.css())
-        .put(CssProperty.ALIGN_ITEMS, align.css())
+        .put(CssProperty.DISPLAY, display)
+        .put(CssProperty.FLEX_DIRECTION, direction)
+        .put(CssProperty.FLEX_WRAP, wrap)
+        .put(CssProperty.ALIGN_ITEMS, align)
         .put(CssProperty.GAP, gap);
   }
 
   /// `display` value. Block flex and inline flex are explicit.
-  public enum Display {
+  public enum Display implements CssKeyword {
     FLEX,
-    INLINE_FLEX;
-
-    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
-
-    public String css() {
-      return css;
-    }
+    INLINE_FLEX
   }
 
   /// `flex-direction` value.
-  public enum Direction {
+  public enum Direction implements CssKeyword {
     ROW,
-    COLUMN;
-
-    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
-
-    public String css() {
-      return css;
-    }
+    COLUMN
   }
 
   /// `align-items` value.
-  public enum Align {
-    START("flex-start"),
-    CENTER("center"),
-    END("flex-end"),
-    STRETCH("stretch"),
-    BASELINE("baseline");
+  public enum Align implements CssKeyword {
+    START,
+    CENTER,
+    END,
+    STRETCH,
+    BASELINE;
 
-    private final String css;
-
-    Align(String css) {
-      this.css = css;
-    }
-
-    public String css() {
-      return css;
+    @Override
+    public String toCss() {
+      return switch (this) {
+        case START -> "flex-start";
+        case END -> "flex-end";
+        default -> CssKeyword.super.toCss();
+      };
     }
   }
 
   /// `flex-wrap` value.
-  public enum Wrap {
+  public enum Wrap implements CssKeyword {
     NOWRAP,
-    WRAP;
-
-    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
-
-    public String css() {
-      return css;
-    }
+    WRAP
   }
 }

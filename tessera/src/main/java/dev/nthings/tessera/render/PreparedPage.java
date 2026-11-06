@@ -73,6 +73,11 @@ public final class PreparedPage {
     return headings;
   }
 
+  /// Snapshot of the linked element tree, for inspection.
+  public PageTree tree() {
+    return PageTree.of(headNodes, bodyNodes);
+  }
+
   public String stylesheet(Tokens tokens) {
     return styles.toCssStylesheet(tokens);
   }

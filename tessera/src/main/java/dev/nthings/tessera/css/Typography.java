@@ -13,7 +13,7 @@ public record Typography(
         .put(CssProperty.FONT_FAMILY, family.varReference())
         .put(CssProperty.FONT_SIZE, size)
         .put(CssProperty.FONT_WEIGHT, Integer.toString(weight))
-        .put(CssProperty.LINE_HEIGHT, lineHeight.varReference())
+        .put(CssProperty.LINE_HEIGHT, lineHeight)
         .put(CssProperty.LETTER_SPACING, tracking);
   }
 }

@@ -5,9 +5,11 @@ import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
 
+import dev.nthings.tessera.core.Accessible;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -26,6 +28,7 @@ public final class Breadcrumbs implements RenderView {
 
   private final ElementId id;
   private final List<Crumb> crumbs;
+  private String label = "Breadcrumb";
 
   private Breadcrumbs(String id, List<Crumb> crumbs) {
     if (crumbs.isEmpty()) {
@@ -37,6 +40,12 @@ public final class Breadcrumbs implements RenderView {
 
   public static Breadcrumbs of(String id, Crumb... crumbs) {
     return new Breadcrumbs(id, List.of(crumbs));
+  }
+
+  /// The landmark's accessible name. Pages with several trails need a distinct name for each.
+  public Breadcrumbs label(String label) {
+    this.label = label;
+    return this;
   }
 
   @Override
@@ -61,7 +70,8 @@ public final class Breadcrumbs implements RenderView {
                     .fontSize(Tokens.FONT_SIZE_SM))
         .select(":scope li", s -> s.inlineFlex().itemsCenter().gap(Tokens.SPACE_2))
         .select(
-            ":scope li + li::before", s -> s.content("\"/\" / \"\"").textColor(Tokens.TEXT_MUTED))
+            ":scope li + li::before",
+            s -> s.content(CssContent.decorative("/")).textColor(Tokens.TEXT_MUTED))
         .select(":scope a", s -> s.textColor(Tokens.TEXT_MUTED).textDecorationNone())
         .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
         .select(
@@ -77,10 +87,10 @@ public final class Breadcrumbs implements RenderView {
       var crumb = crumbs.get(i);
       var link =
           a(crumb.href())
-              .when(isCurrent, el -> el.attr("aria-current", "page"))
+              .when(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
               .text(crumb.label());
       list.child(li().child(link));
     }
-    return nav().ariaLabel("Breadcrumb").child(list);
+    return nav().ariaLabel(label).child(list);
   }
 }

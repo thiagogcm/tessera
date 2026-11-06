@@ -3,8 +3,8 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.TimelineAxis;
@@ -43,9 +43,7 @@ public record ScrollProgressBar(
     el.interactivity()
         .on(
             InteractiveState.MOTION_SAFE,
-            s ->
-                s.put(CssProperty.ANIMATION, "tessera-scroll-progress auto linear")
-                    .put(CssProperty.ANIMATION_TIMELINE, "scroll(root " + axis.css() + ")"));
+            s -> s.scrollProgressAnimation(CssIdent.of("tessera-scroll-progress"), axis));
     return el;
   }
 }

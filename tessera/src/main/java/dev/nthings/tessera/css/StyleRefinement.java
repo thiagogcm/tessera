@@ -2,9 +2,12 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.foundation.Fnv1a64;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /// Sparse, cascade-mergeable CSS declarations (property → value) and scoped custom properties,
@@ -25,18 +28,32 @@ public final class StyleRefinement
     return this;
   }
 
-  public StyleRefinement put(CssProperty property, String value) {
+  /// Declarations are made through the typed [Styled] methods; this stays package-private so no
+  /// declaration is built from raw text outside the value types.
+  StyleRefinement put(CssProperty property, String value) {
     declarations.put(property, value);
     return this;
   }
 
-  public StyleRefinement put(CssProperty property, CssLength value) {
+  StyleRefinement put(CssProperty property, CssValue value) {
     return put(property, value.toCss());
   }
 
-  public StyleRefinement customProperty(String name, String value) {
-    var normalized = name.startsWith("--") ? name : "--" + Fnv1a64.sanitizeIdentifier(name);
-    customProperties.put(normalized, value);
+  /// A comma-separated list of values, as `box-shadow` and `transition-property` take.
+  StyleRefinement put(CssProperty property, List<? extends CssValue> values) {
+    return put(property, values.stream().map(CssValue::toCss).collect(Collectors.joining(", ")));
+  }
+
+  StyleRefinement put(CssProperty property, CssValue first, CssValue... rest) {
+    var values = new ArrayList<CssValue>(rest.length + 1);
+    values.add(first);
+    values.addAll(List.of(rest));
+    return put(property, values);
+  }
+
+  /// Defines the custom property `name` (a dashed identifier) as `value`.
+  public StyleRefinement customProperty(CssIdent name, CssValue value) {
+    customProperties.put(name.requireCustom().value(), value.toCss());
     return this;
   }
 

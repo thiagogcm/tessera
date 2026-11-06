@@ -15,6 +15,8 @@ import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.FontStack;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageDocument;
@@ -24,7 +26,9 @@ import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
 import dev.nthings.tessera.site.SiteWriter;
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -47,6 +51,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Showcase browser behavior")
 class ShowcaseIT {
+  private static final Path ARIA_SNAPSHOTS = Path.of("src", "test", "resources", "aria");
   @TempDir private static Path publishedSite;
   private static HttpServer server;
   private static Playwright playwright;
@@ -76,11 +81,11 @@ class ShowcaseIT {
             .outputMode(OutputMode.inlineStyle())
             .tokens(
                 new Tokens()
-                    .register(Tokens.DENSITY.withValue("0.5"))
-                    .register(Tokens.FONT_BODY.withValue("monospace"))
-                    .register(Tokens.FONT_SIZE_MD.withValue("20px"))
-                    .register(Tokens.RADIUS_XL.withValue("18px"))
-                    .register(Tokens.RADIUS_LG.withValue("12px")))
+                    .register(Tokens.DENSITY.withValue(0.5))
+                    .register(Tokens.FONT_BODY.withValue(FontStack.of(FontStack.Generic.MONOSPACE)))
+                    .register(Tokens.FONT_SIZE_MD.withValue(CssLength.px(20)))
+                    .register(Tokens.RADIUS_XL.withValue(CssLength.px(18)))
+                    .register(Tokens.RADIUS_LG.withValue(CssLength.px(12))))
             .route(
                 new SiteRoute(
                     "/",
@@ -611,6 +616,34 @@ class ShowcaseIT {
           .as("the row scrolls inside its region")
           .isEqualTo(true);
     }
+  }
+
+  private static Stream<Arguments> componentCases() {
+    return Catalog.cases().stream()
+        .map(
+            testCase ->
+                Arguments.argumentSet(testCase.storyId() + " / " + testCase.variant(), testCase));
+  }
+
+  /// A changed snapshot is a changed experience for assistive technology: review the diff like
+  /// any other change. `-Dtessera.bless=true` rewrites the snapshots from the current output.
+  @ParameterizedTest
+  @MethodSource("componentCases")
+  @DisplayName("a component case exposes the committed accessibility tree")
+  void caseMatchesAriaSnapshot(Catalog.Case testCase) throws IOException {
+    page.navigate(baseUrl + testCase.path());
+    var actual = page.locator("body").ariaSnapshot().strip() + "\n";
+    var snapshot = ARIA_SNAPSHOTS.resolve(testCase.storyId() + "-" + testCase.variant() + ".yml");
+
+    if (Boolean.getBoolean("tessera.bless")) {
+      Files.createDirectories(ARIA_SNAPSHOTS);
+      Files.writeString(snapshot, actual);
+      return;
+    }
+    Assertions.assertThat(snapshot)
+        .as("snapshot for %s; run with -Dtessera.bless=true to create it", testCase.path())
+        .exists();
+    Assertions.assertThat(actual).isEqualTo(Files.readString(snapshot));
   }
 
   private static String caseUrl(String story, String variant) {

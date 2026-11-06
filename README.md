@@ -61,6 +61,9 @@ Tessera emits purely standard HTML and CSS features available in modern browsers
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tags (`HtmlTag`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
+- **Typed Style Values**: Style methods accept `CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, keyword enums, and other sealed values, so no declaration is built from raw text.
+- **Typed ARIA**: Roles are `Role` constants and each `aria-*` state has a typed method; the compiler checks every role's name, children, state, and attribute requirements.
+- **Source Provenance**: With tracking on, rendered elements carry `data-src="File.java:42"` and diagnostics name the Java line that built them.
 
 ### 3. Linker-Style Element Identity
 
@@ -69,6 +72,7 @@ In Tessera, DOM elements are identified by `ElementRef` tokens. References to ot
 - Unbound references trigger compile-time errors.
 - Duplicate bindings and duplicate DOM IDs are reported before HTML is emitted.
 - Invoker command targets are checked for existence in the compiled document.
+- Accessibility contracts (roles, landmarks, heading order, label targets, focus) are checked on the linked tree.
 
 ### 4. Zero `@SuppressWarnings` & Extreme Quality Gates
 

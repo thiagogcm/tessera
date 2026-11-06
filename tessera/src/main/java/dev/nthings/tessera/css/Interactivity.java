@@ -15,10 +15,10 @@ import java.util.function.UnaryOperator;
 /// animation styles for an element.
 public final class Interactivity {
 
-  public record ContainerRule(String containerName, String condition, StyleRefinement style) {
+  public record ContainerRule(CssIdent containerName, String condition, StyleRefinement style) {
     public long contentHash() {
       var h = Fnv1a64.OFFSET_BASIS;
-      h = Fnv1a64.updateChars(h, containerName);
+      h = Fnv1a64.updateChars(h, containerName.toCss());
       h = Fnv1a64.updateChars(h, condition);
       return Fnv1a64.updateLong(h, style.contentHash());
     }
@@ -58,21 +58,23 @@ public final class Interactivity {
   }
 
   public void onContainerMinWidth(
-      String containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
+      CssIdent containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
     var style = mutator.apply(new StyleRefinement());
     containerRules.add(
         new ContainerRule(containerName, "(inline-size >= " + minInlineSize.toCss() + ")", style));
   }
 
   public void onContainerStyleQuery(
-      String containerName,
-      String customProperty,
-      String expectedValue,
+      CssIdent containerName,
+      CssIdent customProperty,
+      CssValue expectedValue,
       UnaryOperator<StyleRefinement> mutator) {
     var style = mutator.apply(new StyleRefinement());
     containerRules.add(
         new ContainerRule(
-            containerName, "style(" + customProperty + ": " + expectedValue + ")", style));
+            containerName,
+            "style(" + customProperty.toCss() + ": " + expectedValue.toCss() + ")",
+            style));
   }
 
   public SortedMap<StateRule, StyleRefinement> states() {

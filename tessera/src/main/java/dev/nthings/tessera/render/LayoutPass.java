@@ -14,7 +14,7 @@ import dev.nthings.tessera.core.RenderOnceElement;
 import dev.nthings.tessera.core.RenderViewElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
-import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.StyleSheetCollector;
@@ -62,6 +62,7 @@ final class LayoutPass {
                 RenderContext.current()
                     .withComponentPath(
                         section.componentPath(),
+                        section.origin(),
                         () -> requestLayout(section.content().get().intoElement(), state)));
             resolveLateElements(state);
           }
@@ -72,7 +73,9 @@ final class LayoutPass {
             headNodes.add(
                 RenderContext.current()
                     .withComponentPath(
-                        head.componentPath(), () -> requestLayout(head.content(), state)));
+                        head.componentPath(),
+                        head.origin(),
+                        () -> requestLayout(head.content(), state)));
             resolveLateElements(state);
           }
           return new Result(root, headNodes, docState);
@@ -90,11 +93,12 @@ final class LayoutPass {
         state.enqueueDeferred(deferred.priority(), resolvedDeferredChild);
         yield ResolvedEmpty.INSTANCE;
       }
-      case RenderOnceElement(var component) ->
+      case RenderOnceElement(var component, var source) ->
           ctx.withComponent(
               component.getClass().isSynthetic()
                   ? "RenderOnce"
                   : component.getClass().getSimpleName(),
+              source,
               () -> requestLayout(component.render(), state));
       case LateElement(var content) -> {
         var slot = state.lateSlots.size();
@@ -105,7 +109,7 @@ final class LayoutPass {
                     slot, ctx.reenter(() -> requestLayout(content.get().intoElement(), state))));
         yield new ResolvedSlot(slot);
       }
-      case RenderViewElement(var view) -> {
+      case RenderViewElement(var view, var source) -> {
         var entityId = view.entityId();
         yield ctx.withViewScope(
             entityId != null ? entityId : state.nextAutoId(view.viewType()),
@@ -114,6 +118,7 @@ final class LayoutPass {
               return RenderContext.current()
                   .withComponent(
                       view.viewType() + "[" + instanceScopeId + "]",
+                      source,
                       () -> {
                         var scope = new ScopeStyle();
                         view.configureScope(scope);
@@ -127,7 +132,10 @@ final class LayoutPass {
                             resolvedViewType,
                             instanceScopeId,
                             state.location(
-                                RenderContext.current().componentPath(), HtmlTag.DIV, Map.of()));
+                                RenderContext.current().componentPath(),
+                                HtmlTag.DIV,
+                                Map.of(),
+                                RenderContext.current().origin()));
                       });
             });
       }
@@ -167,23 +175,28 @@ final class LayoutPass {
     var ctx = RenderContext.current();
     var attrs = new LinkedHashMap<>(tag.attributes());
     var components = ctx.componentPath();
+    var source = tag.source() != null ? tag.source() : ctx.origin();
 
     var domId = forcedDomId;
     var ref = tag.boundRef();
     if (domId == null && ref != null) {
       domId =
-          state.bind(ref, ctx.viewScope(), tag.tag(), state.location(components, tag.tag(), attrs));
+          state.bind(
+              ref,
+              ctx.viewScope(),
+              tag.tag(),
+              state.location(components, tag.tag(), attrs, source));
     }
     if (domId != null) {
       attrs.put("id", domId);
     } else {
       var explicitId = attrs.get("id");
       if (explicitId != null && !explicitId.isBlank()) {
-        state.registerDomId(explicitId, state.location(components, tag.tag(), attrs));
+        state.registerDomId(explicitId, state.location(components, tag.tag(), attrs, source));
       }
     }
 
-    var location = state.location(components, tag.tag(), attrs);
+    var location = state.location(components, tag.tag(), attrs, source);
     var style = withIdentityStyles(tag, domId, state, location);
     if (tag.tag() == HtmlTag.IMG) {
       PageValidator.validateImage(attrs, style, state, location);
@@ -255,27 +268,27 @@ final class LayoutPass {
     }
     var style = new StyleRefinement().mergeFrom(tag.style());
     if (domId != null && tag.isAnchor()) {
-      style.put(CssProperty.ANCHOR_NAME, anchorIdent(domId));
+      style.anchorName(anchorIdent(domId));
     }
     if (anchorTarget != null) {
       var usage = "<" + tag.tag().tagName() + "> anchoredTo (anchor must be laid out earlier)";
       var targetId = state.boundDomId(anchorTarget, usage, location);
       if (targetId != null) {
-        style.put(CssProperty.POSITION_ANCHOR, anchorIdent(targetId));
+        style.positionAnchor(anchorIdent(targetId));
       }
     }
     if (transitionKey != null) {
-      style.put(CssProperty.VIEW_TRANSITION_NAME, transitionKey.name());
+      style.viewTransitionName(CssIdent.of(transitionKey.name()));
       var transitionClass = transitionKey.transitionClass();
       if (transitionClass != null) {
-        style.put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
+        style.viewTransitionClass(CssIdent.of(transitionClass));
       }
     }
     return style;
   }
 
-  private static String anchorIdent(String domId) {
-    return "--anchor-" + domId;
+  private static CssIdent anchorIdent(String domId) {
+    return CssIdent.custom("anchor-" + domId);
   }
 
   static void resolveLateElements(CompilationState state) {

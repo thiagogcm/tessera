@@ -20,10 +20,20 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.ViewScope;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.GridPlacement;
+import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.HighlightTone;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.TrackList;
+import dev.nthings.tessera.css.Transform;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -129,7 +139,7 @@ public final class Toc {
                       .flexCol()
                       .gap(Tokens.SPACE_2)
                       .p(CssLength.px(0))
-                      .bgRaw("transparent")
+                      .bg(CssColor.transparent())
                       .borderNone())
           .select(
               ":scope .toc-summary",
@@ -145,11 +155,20 @@ public final class Toc {
                       .fontSize(Tokens.FONT_SIZE_XS)
                       .fontWeight(700))
           .select(":scope .toc-summary:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
-          .select(":scope .toc-chevron", s -> s.transition("transform 0.2s ease"))
-          .select(":scope details:open .toc-chevron", s -> s.transform("rotate(90deg)"))
+          .select(
+              ":scope .toc-chevron",
+              s -> s.motion(Motion.of(CssDuration.ms(200), Easing.ease(), Animatable.TRANSFORM)))
+          .select(":scope details:open .toc-chevron", s -> s.transform(Transform.rotate(90)))
           .select(
               ":scope details::details-content",
-              s -> s.transition("block-size 0.3s ease, content-visibility 0.3s allow-discrete"))
+              s ->
+                  s.motion(
+                      Motion.of(
+                              CssDuration.ms(300),
+                              Easing.ease(),
+                              Animatable.BLOCK_SIZE,
+                              Animatable.CONTENT_VISIBILITY)
+                          .allowingDiscrete()))
           .select(
               ":scope .toc-collapsible-wrapper",
               s ->
@@ -169,7 +188,12 @@ public final class Toc {
                       .fontSize(Tokens.FONT_SIZE_SM)
                       .rounded(Tokens.RADIUS_SM)
                       .textDecorationNone()
-                      .transition("color 0.15s ease, background 0.15s ease"))
+                      .motion(
+                          Motion.of(
+                              CssDuration.ms(150),
+                              Easing.ease(),
+                              Animatable.COLOR,
+                              Animatable.BACKGROUND)))
           .select(
               ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
@@ -178,8 +202,8 @@ public final class Toc {
               s ->
                   s.textColor(Tokens.ACCENT_PRIMARY)
                       .fontWeight(600)
-                      .borderInlineStart("3px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                      .bgRaw(HighlightTone.ACCENT.toCssBackground()));
+                      .borderInlineStart(Border.solid(CssLength.px(3), Tokens.ACCENT_PRIMARY))
+                      .bg(HighlightTone.ACCENT.background()));
     }
 
     @Override
@@ -238,11 +262,12 @@ public final class Toc {
       scope
           .root(s -> s.flex().flexCol().gap(Tokens.SPACE_8).containerInlineSize())
           .select(
-              ":scope > .doc-grid", s -> s.grid().gridColumns("minmax(0, 1fr)").gap(Tokens.SPACE_6))
+              ":scope > .doc-grid",
+              s -> s.grid().gridColumns(TrackList.of(GridTrack.flexible())).gap(Tokens.SPACE_6))
           .select(
               ":scope > .doc-grid > aside",
               s ->
-                  s.gridRow("1")
+                  s.gridRow(GridPlacement.at(1))
                       .bg(Tokens.SURFACE_CARD)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
                       .rounded(Tokens.RADIUS_LG)
@@ -250,7 +275,7 @@ public final class Toc {
           .select(
               ":scope > .doc-grid > .doc-prose-col",
               s ->
-                  s.gridRow("2")
+                  s.gridRow(GridPlacement.at(2))
                       .flex()
                       .flexCol()
                       .gap(Tokens.SPACE_10)
@@ -258,39 +283,42 @@ public final class Toc {
                       .minInlineSize(CssLength.px(0))
                       .maxInlineSize(CssLength.ch(75))
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .lineHeight("1.75"))
+                      .lineHeight(1.75))
           .select(
               ":scope .doc-prose-col p:not([class])",
               s ->
                   s.mb(CssLength.rem(1.125))
                       .fontSize(Tokens.FONT_SIZE_MD)
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .lineHeight("1.75"))
+                      .lineHeight(1.75))
           .containerMinInlineSize(
               CssLength.rem(48),
               c ->
                   c.select(
                           ":scope > .doc-grid",
                           s ->
-                              s.gridColumns("minmax(0, 1fr) 15rem")
+                              s.gridColumns(
+                                      TrackList.of(
+                                          GridTrack.flexible(),
+                                          GridTrack.length(CssLength.rem(15))))
                                   .itemsStart()
                                   .gap(Tokens.SPACE_10))
                       .select(
                           ":scope > .doc-grid > .doc-prose-col",
                           s ->
-                              s.gridColumn("1")
-                                  .gridRow("1")
+                              s.gridColumn(GridPlacement.at(1))
+                                  .gridRow(GridPlacement.at(1))
                                   .inlineSize(CssLength.pct(100))
                                   .minInlineSize(CssLength.px(0))
                                   .maxInlineSize(CssLength.ch(75)))
                       .select(
                           ":scope > .doc-grid > aside",
                           s ->
-                              s.gridColumn("2")
-                                  .gridRow("1")
+                              s.gridColumn(GridPlacement.at(2))
+                                  .gridRow(GridPlacement.at(1))
                                   .sticky()
                                   .insetBlockStart(CssLength.rem(6.75))
-                                  .bgRaw("transparent")
+                                  .bg(CssColor.transparent())
                                   .borderNone()
                                   .p(CssLength.px(0))));
     }

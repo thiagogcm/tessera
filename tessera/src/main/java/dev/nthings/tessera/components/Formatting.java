@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.HighlightTone;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.UnderlineStyle;
 
@@ -85,7 +86,7 @@ public final class Formatting {
         .py(CssLength.rem(0.1))
         .rounded(Tokens.RADIUS_SM)
         .fontSize(CssLength.em(0.85))
-        .shadow("0 1px 0 " + Tokens.BORDER_SUBTLE.varReference())
+        .shadow(Shadow.drop(CssLength.px(1), CssLength.zero(), Tokens.BORDER_SUBTLE))
         .text(keys);
   }
 }

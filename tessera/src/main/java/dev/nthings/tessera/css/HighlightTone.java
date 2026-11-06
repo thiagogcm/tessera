@@ -19,7 +19,7 @@ public enum HighlightTone {
     return token;
   }
 
-  public String toCssBackground() {
+  public CssColor background() {
     return token.mixTransparent(24);
   }
 }

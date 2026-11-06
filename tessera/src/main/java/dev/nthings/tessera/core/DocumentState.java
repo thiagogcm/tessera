@@ -28,20 +28,26 @@ public final class DocumentState {
     return value != null ? key.cast(value) : null;
   }
 
-  /// Content registered for a document-level position, with its originating component path.
-  public record Contribution<T>(T content, List<String> componentPath) {
+  /// Content registered for a document-level position, with its originating component path and
+  /// the call site that placed that component.
+  public record Contribution<T>(
+      T content, List<String> componentPath, @Nullable SourceLocation origin) {
     public Contribution {
       componentPath = List.copyOf(componentPath);
     }
   }
 
-  void contributeHead(Element element, List<String> componentPath) {
-    headElements.add(new Contribution<>(element, componentPath));
+  void contributeHead(
+      Element element, List<String> componentPath, @Nullable SourceLocation origin) {
+    headElements.add(new Contribution<>(element, componentPath, origin));
   }
 
   void atDocumentEnd(
-      DocumentKey<?> owner, Supplier<? extends IntoElement> section, List<String> componentPath) {
-    documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath));
+      DocumentKey<?> owner,
+      Supplier<? extends IntoElement> section,
+      List<String> componentPath,
+      @Nullable SourceLocation origin) {
+    documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath, origin));
   }
 
   public List<Contribution<Element>> headElements() {

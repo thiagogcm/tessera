@@ -77,6 +77,10 @@ final class HtmlWriter {
             out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');
           }
         }
+        var source = tag.location().source();
+        if (source != null) {
+          out.append(" data-src=\"").append(Encode.forHtmlAttribute(source.toString())).append('"');
+        }
         out.append('>');
 
         if (!tag.tag().isVoid()) {

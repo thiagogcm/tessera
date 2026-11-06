@@ -21,6 +21,16 @@ public final class PageCompiler {
     return paintPrepared(prepared, cssContent, outputMode);
   }
 
+  /// Compiles `document` under the default tokens and returns its element tree instead of HTML.
+  public static PageTree explain(PageDocument document) {
+    return explain(document, new Tokens());
+  }
+
+  /// Compiles `document` under `tokens` and returns its element tree instead of HTML.
+  public static PageTree explain(PageDocument document, Tokens tokens) {
+    return prepare(document, tokens, List.of()).tree();
+  }
+
   /// Runs layout and prepaint for `document` under `tokens`, with `siteHead` elements (shared by
   /// every page of a site) placed in `<head>` ahead of anything the page contributes.
   public static PreparedPage prepare(
@@ -44,6 +54,7 @@ public final class PageCompiler {
     for (var head : headNodes) {
       PageValidator.validateNodeTree(head, state);
     }
+    AccessibilityRules.check(bodyNodes, state);
     if (!state.diagnostics.isEmpty()) {
       throw new CompilationException(state.diagnostics);
     }

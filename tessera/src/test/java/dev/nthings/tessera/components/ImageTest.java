@@ -4,6 +4,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +26,7 @@ class ImageTest {
           renderMain(
               Image.hero("/assets/hero-banner.webp", "Hero Banner")
                   .dimensions(1280, 720)
-                  .aspectRatio("16 / 9"),
+                  .aspectRatio(AspectRatio.of(16, 9)),
               Image.of("/assets/thumbnail.webp", "Secondary Thumbnail").dimensions(400, 300));
     }
 

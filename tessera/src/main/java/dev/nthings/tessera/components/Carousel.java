@@ -8,9 +8,25 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssContent;
+import dev.nthings.tessera.css.CssDuration;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Overscroll;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.ScrollMarkerGroup;
+import dev.nthings.tessera.css.ScrollSnap;
+import dev.nthings.tessera.css.Shadow;
+import dev.nthings.tessera.css.SnapAlign;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +34,8 @@ import java.util.List;
 /// `container-type: scroll-state` with `@container scroll-state(snapped: x)`, and native
 /// `scroll-marker-group: after` / `::scroll-marker:target-current` pagination dots.
 public final class Carousel implements RenderView {
+
+  private static final CssIdent ITEM_COUNTER = CssIdent.of("carousel-item");
 
   public record Slide(String title, String summary, Element content) {
     public static Slide ofText(String title, String summary) {
@@ -75,19 +93,19 @@ public final class Carousel implements RenderView {
                     .flex()
                     .gap(Tokens.SPACE_4)
                     .overflowXAuto()
-                    .scrollSnapType("x mandatory")
-                    .scrollMarkerGroup("after")
-                    .overscrollBehaviorX("contain")
+                    .scrollSnapType(ScrollSnap.mandatory(ScrollSnap.Axis.X))
+                    .scrollMarkerGroup(ScrollMarkerGroup.AFTER)
+                    .overscrollBehaviorX(Overscroll.CONTAIN)
                     .scrollbarWidthNone()
-                    .counterReset("carousel-item")
+                    .counterReset(ITEM_COUNTER)
                     .py(Tokens.SPACE_2))
         .select(
             ":scope > .carousel-item",
             s ->
                 s.flexShrink(0)
-                    .inlineSize(CssLength.expr("min(22rem, 82%)"))
-                    .scrollSnapAlign("center")
-                    .counterIncrement("carousel-item")
+                    .inlineSize(CssLength.min(CssLength.rem(22), CssLength.pct(82)))
+                    .scrollSnapAlign(SnapAlign.CENTER)
+                    .counterIncrement(ITEM_COUNTER)
                     .containerScrollState())
         .select(
             ":scope > .carousel-item > .carousel-card",
@@ -96,23 +114,37 @@ public final class Carousel implements RenderView {
                     .blockSize(CssLength.pct(100))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
-                    .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
-                    .transition(
-                        "border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease"))
+                    .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
+                    .motion(
+                        Motion.of(
+                            CssDuration.ms(250),
+                            Easing.ease(),
+                            Animatable.BORDER_COLOR,
+                            Animatable.BOX_SHADOW,
+                            Animatable.TRANSFORM)))
         .select(
             ":scope::scroll-marker-group",
             s -> s.flex().itemsCenter().justifyCenter().gap(Tokens.SPACE_2).pt(Tokens.SPACE_3))
         .select(
             ":scope > .carousel-item::scroll-marker",
             s ->
-                s.content("\"\" / \"Slide \" counter(carousel-item)")
+                s.content(
+                        CssContent.withAlternative(
+                            CssContent.empty(),
+                            CssContent.text("Slide "),
+                            CssContent.counter(ITEM_COUNTER)))
                     .inlineSize(CssLength.rem(0.625))
                     .blockSize(CssLength.rem(0.625))
                     .rounded(Tokens.RADIUS_FULL)
                     .bg(Tokens.BORDER_SUBTLE)
                     .borderNone()
                     .cursorPointer()
-                    .transition("inline-size 0.2s ease, background-color 0.2s ease"))
+                    .motion(
+                        Motion.of(
+                            CssDuration.ms(200),
+                            Easing.ease(),
+                            Animatable.INLINE_SIZE,
+                            Animatable.BACKGROUND_COLOR)))
         .select(
             ":scope > .carousel-item::scroll-marker:target-current",
             s -> s.bg(Tokens.ACCENT_PRIMARY).inlineSize(CssLength.rem(1.5)))
@@ -122,29 +154,36 @@ public final class Carousel implements RenderView {
             s ->
                 s.absolute()
                     .positionAnchor(anchorIdent())
-                    .insetBlockStart(CssLength.expr("anchor(center)"))
-                    .translate("0 -50%")
+                    .insetBlockStart(CssLength.anchor(CssLength.AnchorSide.CENTER))
+                    .translate(Translation.y(CssLength.pct(-50)))
                     .inlineSize(CssLength.rem(2.25))
                     .blockSize(CssLength.rem(2.25))
                     .rounded(Tokens.RADIUS_FULL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .shadow("0 4px 12px -4px oklch(0% 0 0 / 0.2)")
+                    .shadow(
+                        Shadow.drop(
+                            CssLength.px(4),
+                            CssLength.px(12),
+                            CssLength.px(-4),
+                            CssColor.oklch(0, 0, 0, 0.2)))
                     .fontSize(Tokens.FONT_SIZE_LG)
                     .cursorPointer()
                     .zIndex(1))
         .select(
             ":scope::scroll-button(inline-start)",
             s ->
-                s.content("\"‹\" / \"Previous slide\"")
-                    .insetInlineStart(CssLength.expr("calc(anchor(left) + 0.5rem)")))
+                s.content(CssContent.labelled("‹", "Previous slide"))
+                    .insetInlineStart(
+                        CssLength.anchor(CssLength.AnchorSide.LEFT).plus(CssLength.rem(0.5))))
         .select(
             ":scope::scroll-button(inline-end)",
             s ->
-                s.content("\"›\" / \"Next slide\"")
-                    .insetInlineEnd(CssLength.expr("calc(anchor(right) + 0.5rem)")))
-        .select(":scope::scroll-button(*):disabled", s -> s.opacity(0.35).cursor("default"))
+                s.content(CssContent.labelled("›", "Next slide"))
+                    .insetInlineEnd(
+                        CssLength.anchor(CssLength.AnchorSide.RIGHT).plus(CssLength.rem(0.5))))
+        .select(":scope::scroll-button(*):disabled", s -> s.opacity(0.35).cursor(Cursor.DEFAULT))
         .motionSafe(
             m ->
                 m.select(":scope", s -> s.scrollBehaviorSmooth())
@@ -154,17 +193,22 @@ public final class Carousel implements RenderView {
                             c.select(
                                 ":scope > .carousel-item > .carousel-card",
                                 s ->
-                                    s.border("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                                        .shadow("0 12px 24px -6px oklch(0% 0 0 / 0.14)"))));
+                                    s.border(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY))
+                                        .shadow(
+                                            Shadow.drop(
+                                                CssLength.px(12),
+                                                CssLength.px(24),
+                                                CssLength.px(-6),
+                                                CssColor.oklch(0, 0, 0, 0.14))))));
   }
 
-  private String anchorIdent() {
-    return "--carousel-" + id.slug();
+  private CssIdent anchorIdent() {
+    return CssIdent.custom("carousel-" + id.slug());
   }
 
   @Override
   public Element render() {
-    var track = div().role("region").ariaLabel(ariaLabel);
+    var track = div().role(Role.REGION).ariaLabel(ariaLabel);
     for (var slide : slides) {
       track.child(
           div()

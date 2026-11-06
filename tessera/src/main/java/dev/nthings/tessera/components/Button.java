@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -15,26 +16,22 @@ public final class Button extends ButtonBase<Button> implements RenderView {
 
   /// Semantic color. It does not choose the surface or the button's behavior.
   public enum Tone {
-    NEUTRAL(
-        Tokens.TEXT_PRIMARY,
-        Tokens.SURFACE_CARD.varReference(),
-        Tokens.BORDER_SUBTLE,
-        Tokens.SURFACE_SUBTLE.varReference()),
-    ACCENT(Tokens.ACCENT_PRIMARY, "#ffffff"),
-    SUCCESS(Tokens.STATUS_SUCCESS, "#ffffff"),
-    WARNING(Tokens.STATUS_WARNING, "oklch(15% 0.02 75)"),
-    DANGER(Tokens.STATUS_DANGER, "#ffffff");
+    NEUTRAL(Tokens.TEXT_PRIMARY, Tokens.SURFACE_CARD, Tokens.BORDER_SUBTLE, Tokens.SURFACE_SUBTLE),
+    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
+    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white()),
+    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75)),
+    DANGER(Tokens.STATUS_DANGER, CssColor.white());
 
     private final DesignToken.Color token;
-    private final String onSolid;
+    private final CssColor onSolid;
     private final DesignToken.Color edge;
-    private final String wash;
+    private final CssColor wash;
 
-    Tone(DesignToken.Color token, String onSolid) {
+    Tone(DesignToken.Color token, CssColor onSolid) {
       this(token, onSolid, token, token.mixTransparent(12));
     }
 
-    Tone(DesignToken.Color token, String onSolid, DesignToken.Color edge, String wash) {
+    Tone(DesignToken.Color token, CssColor onSolid, DesignToken.Color edge, CssColor wash) {
       this.token = token;
       this.onSolid = onSolid;
       this.edge = edge;
@@ -45,7 +42,7 @@ public final class Button extends ButtonBase<Button> implements RenderView {
       return token;
     }
 
-    String onSolid() {
+    CssColor onSolid() {
       return onSolid;
     }
 
@@ -55,7 +52,7 @@ public final class Button extends ButtonBase<Button> implements RenderView {
     }
 
     /// Hover background for outline and ghost buttons.
-    String wash() {
+    CssColor wash() {
       return wash;
     }
   }

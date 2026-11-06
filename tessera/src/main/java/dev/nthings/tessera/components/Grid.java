@@ -5,17 +5,18 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Styled;
+import dev.nthings.tessera.css.GridTrack;
+import dev.nthings.tessera.css.TrackList;
 import java.util.List;
 
 /// Responsive CSS Grid component supporting intrinsic `auto-fit` columns, container-adaptive
 /// multi-column tracks, and bento cell spanning.
-public record Grid(
-    String columnsTemplate, CssLength gap, boolean collapseOnNarrow, List<Element> items)
+public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, List<Element> items)
     implements RenderOnce {
 
-  private static final String GRID_CONTAINER = "tessera-grid";
+  private static final CssIdent GRID_CONTAINER = CssIdent.of("tessera-grid");
   private static final CssLength MULTI_COL_MIN_WIDTH = CssLength.rem(36);
 
   public static Grid autoFit(CssLength minColumnWidth, CssLength gap, IntoElement... items) {
@@ -25,7 +26,7 @@ public record Grid(
   public static Grid autoFit(
       CssLength minColumnWidth, CssLength gap, List<? extends IntoElement> items) {
     return new Grid(
-        Styled.autoFitTracks(minColumnWidth),
+        TrackList.autoFit(minColumnWidth),
         gap,
         false,
         items.stream().map(IntoElement::intoElement).toList());
@@ -39,7 +40,7 @@ public record Grid(
     if (count <= 0) {
       throw new IllegalArgumentException("Grid column count must be > 0");
     }
-    var template = "repeat(" + count + ", minmax(0, 1fr))";
+    var template = TrackList.of(GridTrack.repeat(count, GridTrack.flexible()));
     return new Grid(
         template, gap, count > 1, items.stream().map(IntoElement::intoElement).toList());
   }
@@ -55,17 +56,16 @@ public record Grid(
     if (!collapseOnNarrow) {
       return Elements.div()
           .container(GRID_CONTAINER)
-          .child(Elements.div().grid().gridColumns(columnsTemplate).gap(gap).children(items));
+          .child(Elements.div().grid().gridColumns(columns).gap(gap).children(items));
     }
     return Elements.div()
         .container(GRID_CONTAINER)
         .child(
             Elements.div()
                 .grid()
-                .gridColumns("minmax(0, 1fr)")
+                .gridColumns(TrackList.of(GridTrack.flexible()))
                 .gap(gap)
-                .onContainer(
-                    GRID_CONTAINER, MULTI_COL_MIN_WIDTH, s -> s.gridColumns(columnsTemplate))
+                .onContainer(GRID_CONTAINER, MULTI_COL_MIN_WIDTH, s -> s.gridColumns(columns))
                 .children(items));
   }
 }

@@ -3,11 +3,14 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.button;
 
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.WhiteSpace;
 import java.util.Locale;
 
 /// Shared face of [Button] and [IconButton]. Appearance classes never change the button type or
@@ -29,12 +32,12 @@ final class ButtonFace {
                     .typography(Roles.LABEL)
                     .cursorPointer()
                     .rounded(Tokens.RADIUS_MD)
-                    .border("1px solid transparent")
+                    .borderSubtle(CssColor.transparent())
                     .textDecorationNone()
-                    .whiteSpace("nowrap"))
+                    .whiteSpace(WhiteSpace.NOWRAP))
         .select(":scope:focus-visible", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
-        .select(":scope[aria-busy=true]", s -> s.cursor("progress"))
-        .select(":scope:disabled", s -> s.opacity(0.55).cursor("not-allowed"));
+        .select(":scope[aria-busy=true]", s -> s.cursor(Cursor.PROGRESS))
+        .select(":scope:disabled", s -> s.opacity(0.55).cursor(Cursor.NOT_ALLOWED));
 
     if (icon) {
       scope.select(
@@ -80,7 +83,7 @@ final class ButtonFace {
             .attr("type", model.submit ? "submit" : "button")
             .boolAttr("disabled", model.disabled);
     if (model.busy) {
-      el.attr("aria-busy", "true");
+      el.ariaBusy(true);
     }
     var domRef = model.domRef;
     if (domRef != null) {
@@ -115,9 +118,10 @@ final class ButtonFace {
   private static StyleRefinement paint(
       StyleRefinement style, Button.Tone tone, Button.Variant variant) {
     return switch (variant) {
-      case SOLID -> style.bg(tone.token()).textColorRaw(tone.onSolid());
-      case OUTLINE -> style.bgRaw("transparent").textColor(tone.token()).borderSubtle(tone.edge());
-      case GHOST -> style.bgRaw("transparent").textColor(tone.token());
+      case SOLID -> style.bg(tone.token()).textColor(tone.onSolid());
+      case OUTLINE ->
+          style.bg(CssColor.transparent()).textColor(tone.token()).borderSubtle(tone.edge());
+      case GHOST -> style.bg(CssColor.transparent()).textColor(tone.token());
     };
   }
 
@@ -125,7 +129,7 @@ final class ButtonFace {
       StyleRefinement style, Button.Tone tone, Button.Variant variant) {
     return switch (variant) {
       case SOLID -> style.opacity(0.92);
-      case OUTLINE, GHOST -> style.bgRaw(tone.wash());
+      case OUTLINE, GHOST -> style.bg(tone.wash());
     };
   }
 

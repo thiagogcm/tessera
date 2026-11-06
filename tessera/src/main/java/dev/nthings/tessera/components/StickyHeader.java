@@ -7,8 +7,16 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
+import dev.nthings.tessera.css.CssDuration;
+import dev.nthings.tessera.css.CssFilter;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 
 /// State-aware sticky header backed by Chrome 156+ `container-type: scroll-state` and `@container
@@ -20,12 +28,12 @@ import dev.nthings.tessera.css.Tokens;
 public final class StickyHeader implements RenderView {
 
   private final ElementId id;
-  private final String containerName;
+  private final CssIdent containerName;
   private final Element content;
 
   public StickyHeader(String id, IntoElement content) {
     this.id = ElementId.of(id);
-    this.containerName = "sticky-" + this.id.slug();
+    this.containerName = CssIdent.of("sticky-" + this.id.slug());
     this.content = content.intoElement();
   }
 
@@ -48,7 +56,12 @@ public final class StickyHeader implements RenderView {
             s ->
                 s.bg(Tokens.SURFACE_CARD)
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
-                    .transition("background-color 0.2s ease, box-shadow 0.2s ease"))
+                    .motion(
+                        Motion.of(
+                            CssDuration.ms(200),
+                            Easing.ease(),
+                            Animatable.BACKGROUND_COLOR,
+                            Animatable.BOX_SHADOW)))
         .containerScrollState(
             containerName,
             "stuck: top",
@@ -56,9 +69,14 @@ public final class StickyHeader implements RenderView {
                 c.select(
                     ":scope > .sticky-surface",
                     s ->
-                        s.bgRaw(Tokens.SURFACE_CARD.mixTransparent(88))
-                            .backdropFilter("blur(12px)")
-                            .shadow("0 6px 20px -4px oklch(0% 0 0 / 0.14)")));
+                        s.bg(Tokens.SURFACE_CARD.mixTransparent(88))
+                            .backdropFilter(CssFilter.blur(CssLength.px(12)))
+                            .shadow(
+                                Shadow.drop(
+                                    CssLength.px(6),
+                                    CssLength.px(20),
+                                    CssLength.px(-4),
+                                    CssColor.oklch(0, 0, 0, 0.14)))));
   }
 
   @Override

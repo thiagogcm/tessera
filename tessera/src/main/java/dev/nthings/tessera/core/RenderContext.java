@@ -5,6 +5,7 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
 /// Implicit lexical render context propagated across component boundaries via JDK 25
 /// [ScopedValue].
@@ -17,9 +18,10 @@ public final class RenderContext {
   private final Tokens tokens;
   private final DocumentState docState;
   private final List<String> componentPath;
+  private final @Nullable SourceLocation origin;
 
   public RenderContext(ViewScope viewScope, StyleSheetCollector styles, Tokens tokens) {
-    this(viewScope, styles, tokens, new DocumentState(), List.of());
+    this(viewScope, styles, tokens, new DocumentState(), List.of(), null);
   }
 
   private RenderContext(
@@ -27,12 +29,14 @@ public final class RenderContext {
       StyleSheetCollector styles,
       Tokens tokens,
       DocumentState docState,
-      List<String> componentPath) {
+      List<String> componentPath,
+      @Nullable SourceLocation origin) {
     this.viewScope = viewScope;
     this.styles = styles;
     this.tokens = tokens;
     this.docState = docState;
     this.componentPath = List.copyOf(componentPath);
+    this.origin = origin;
   }
 
   public static RenderContext current() {
@@ -61,13 +65,13 @@ public final class RenderContext {
 
   /// Adds `element` to the page's `<head>` (after `<title>`).
   public void contributeHead(IntoElement element) {
-    docState.contributeHead(element.intoElement(), componentPath);
+    docState.contributeHead(element.intoElement(), componentPath, origin);
   }
 
   /// Appends `section` to the end of `<body>` after layout; only the first registration per
   /// `owner` counts.
   public void atDocumentEnd(DocumentKey<?> owner, Supplier<? extends IntoElement> section) {
-    docState.atDocumentEnd(owner, section, componentPath);
+    docState.atDocumentEnd(owner, section, componentPath, origin);
   }
 
   public DocumentState documentState() {
@@ -89,7 +93,8 @@ public final class RenderContext {
 
   public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
     var childContext =
-        new RenderContext(viewScope.extend(viewEntityId), styles, tokens, docState, componentPath);
+        new RenderContext(
+            viewScope.extend(viewEntityId), styles, tokens, docState, componentPath, origin);
     return ScopedValue.where(CURRENT, childContext).call(work::get);
   }
 
@@ -98,16 +103,26 @@ public final class RenderContext {
     return componentPath;
   }
 
-  /// Enters a component without changing its element identity scope.
-  public <R> R withComponent(String component, Supplier<R> work) {
-    var path = new ArrayList<>(componentPath);
-    path.add(component);
-    return withComponentPath(path, work);
+  /// The call site that placed the innermost enclosing component, while [SourceTracking] is
+  /// active. Elements a component builds itself are attributed to it.
+  public @Nullable SourceLocation origin() {
+    return origin;
   }
 
-  /// Expands registered document content with the component path captured at registration.
-  public <R> R withComponentPath(List<String> path, Supplier<R> work) {
-    var context = new RenderContext(viewScope, styles, tokens, docState, path);
+  /// Enters a component without changing its element identity scope. `placedAt` is where
+  /// authoring code placed the component; without one, the enclosing component's origin stays.
+  public <R> R withComponent(
+      String component, @Nullable SourceLocation placedAt, Supplier<R> work) {
+    var path = new ArrayList<>(componentPath);
+    path.add(component);
+    return withComponentPath(path, placedAt != null ? placedAt : origin, work);
+  }
+
+  /// Expands registered document content with the component path and origin captured at
+  /// registration.
+  public <R> R withComponentPath(
+      List<String> path, @Nullable SourceLocation origin, Supplier<R> work) {
+    var context = new RenderContext(viewScope, styles, tokens, docState, path, origin);
     return context.reenter(work);
   }
 

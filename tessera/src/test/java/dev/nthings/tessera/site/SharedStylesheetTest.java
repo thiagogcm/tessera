@@ -8,6 +8,7 @@ import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 import dev.nthings.tessera.components.CardGrid;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
@@ -71,7 +72,7 @@ class SharedStylesheetTest {
 
     @BeforeAll
     static void compileSiteWithBrandToken() {
-      var brand = new DesignToken.Color("brand-hue", "oklch(60% 0.2 300)");
+      var brand = new DesignToken.Color("brand-hue", CssColor.oklch(60, 0.2, 300));
       RenderOnce tokenProbe =
           () ->
               p().text(

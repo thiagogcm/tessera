@@ -19,6 +19,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -27,6 +28,8 @@ import java.util.Map;
 /// A view that exercises scoped ids, invokers, interest tooltips, custom actions, container
 /// queries and deferred portals together. [PageCompilerTest] asserts each feature separately.
 record WorkspacePanelView(String workspaceSlug) implements RenderView {
+
+  private static final CssIdent METRIC_CARD = CssIdent.of("metric-card");
 
   record ArchiveProjectAction(String projectId) implements Action {
 
@@ -49,9 +52,9 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
   /// A container-query card: stacked by default, a row once its container is 320px wide.
   private static TagElement metricCard(String label, String value) {
     return section()
-        .container("metric-card")
+        .container(METRIC_CARD)
         .onContainer(
-            "metric-card", CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
+            METRIC_CARD, CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
         .children(span().text(label), h2().text(value));
   }
 
@@ -71,6 +74,7 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
     var confirmModal =
         dialog()
             .id(confirmRef)
+            .ariaLabel("Archive workspace")
             .dialogClosedByAny()
             .p(CssLength.rem(1.5))
             .rounded(CssLength.rem(0.75))

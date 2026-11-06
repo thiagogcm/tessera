@@ -14,11 +14,19 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Background;
+import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.PositionArea;
+import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
@@ -39,7 +47,7 @@ public final class Forms {
         .userInvalid(
             s ->
                 s.borderColor(Tokens.STATUS_DANGER)
-                    .bgRaw("oklch(from " + Tokens.STATUS_DANGER.varReference() + " 97% 0.03 h)"))
+                    .bg(CssColor.sameHue(Tokens.STATUS_DANGER, 97, 0.03)))
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
@@ -68,7 +76,7 @@ public final class Forms {
   public static TagElement textareaControl(String name, int minRows) {
     return controlChrome(textarea().attr("name", name))
         .fieldSizingContent()
-        .minBlockSize(CssLength.expr("calc(" + minRows + "lh + 1rem)"))
+        .minBlockSize(CssLength.lh(minRows).plus(CssLength.rem(1)))
         .resizeVertical()
         .focusVisible(Forms::controlFocusRing)
         .userInvalid(s -> s.borderColor(Tokens.STATUS_DANGER))
@@ -82,24 +90,27 @@ public final class Forms {
   public static TagElement switchInput(String name, boolean checked) {
     return input("checkbox")
         .attr("name", name)
-        .role("switch")
+        .role(Role.SWITCH)
         .boolAttr("checked", checked)
         .appearanceNone()
         .inlineSize(CssLength.rem(2.5))
         .blockSize(CssLength.rem(1.5))
         .rounded(Tokens.RADIUS_FULL)
-        .bgRaw(switchTrack("0", Tokens.BORDER_SUBTLE))
+        .background(switchTrack(CssLength.zero(), Tokens.BORDER_SUBTLE))
         .cursorPointer()
         .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
-        .checked(s -> s.bgRaw(switchTrack("100%", Tokens.ACCENT_PRIMARY)))
-        .motionSafe(s -> s.motion(Motion.controlFeedback().properties("background")));
+        .checked(s -> s.background(switchTrack(CssLength.pct(100), Tokens.ACCENT_PRIMARY)))
+        .motionSafe(s -> s.motion(Motion.controlFeedback().properties(Animatable.BACKGROUND)));
   }
 
-  private static String switchTrack(String thumbX, DesignToken.Color trackColor) {
-    return "radial-gradient(circle closest-side, white 80%, transparent 88%) "
-        + thumbX
-        + " 50% / 1.5rem 1.5rem no-repeat "
-        + trackColor.varReference();
+  private static Background switchTrack(CssLength thumbX, DesignToken.Color trackColor) {
+    return new Background(
+        new Background.Dot(CssColor.white(), 80, 88),
+        thumbX,
+        CssLength.pct(50),
+        CssLength.rem(1.5),
+        CssLength.rem(1.5),
+        trackColor);
   }
 
   /// Creates a full accessible field wrapper for an input or control.
@@ -230,8 +241,12 @@ public final class Forms {
         var tooltipEl =
             div()
                 .attr("class", "field-anchor-tooltip")
-                .role("tooltip")
-                .anchoredTo(ctrl, "top span-right", "flip-block, flip-inline")
+                .role(Role.TOOLTIP)
+                .anchoredTo(
+                    ctrl,
+                    PositionArea.of(PositionArea.Part.TOP, PositionArea.Part.SPAN_RIGHT),
+                    PositionTry.flip(PositionTry.Flip.BLOCK),
+                    PositionTry.flip(PositionTry.Flip.INLINE))
                 .text(anchorTooltipText);
         container.child(tooltipEl);
       }
@@ -274,7 +289,9 @@ public final class Forms {
                       .px(CssLength.rem(0.6))
                       .py(CssLength.rem(0.3))
                       .fontSize(Tokens.FONT_SIZE_XS)
-                      .shadow("0 4px 12px oklch(0% 0 0 / 0.15)"))
+                      .shadow(
+                          Shadow.drop(
+                              CssLength.px(4), CssLength.px(12), CssColor.oklch(0, 0, 0, 0.15))))
           .select(
               ":scope:has(:focus-visible) .field-anchor-tooltip, :scope:has(:hover) .field-anchor-tooltip",
               s -> s.block());
@@ -351,7 +368,12 @@ public final class Forms {
                       .borderSubtle(Tokens.BORDER_SUBTLE)
                       .rounded(Tokens.RADIUS_LG)
                       .p(Tokens.SPACE_1_5)
-                      .shadow("0 12px 28px -6px oklch(0% 0 0 / 0.25)"))
+                      .shadow(
+                          Shadow.drop(
+                              CssLength.px(12),
+                              CssLength.px(28),
+                              CssLength.px(-6),
+                              CssColor.oklch(0, 0, 0, 0.25))))
           .select(
               ":scope option",
               s ->
@@ -379,7 +401,7 @@ public final class Forms {
   }
 
   private static StyleRefinement controlFocusRing(StyleRefinement s) {
-    return s.outline("2px solid " + Tokens.ACCENT_PRIMARY.varReference())
+    return s.outline(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY))
         .outlineOffset(CssLength.px(1));
   }
 

@@ -1,6 +1,5 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
@@ -17,7 +16,6 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -102,7 +100,7 @@ public final class Overlays {
     }
 
     /// Creates a trigger button wired via `command="show-modal"` to this modal.
-    public TagElement triggerButton(String buttonId, String label) {
+    public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }
 
@@ -129,8 +127,8 @@ public final class Overlays {
                   s.m(CssLength.auto())
                       .maxInlineSize(CssLength.rem(32))
                       .inlineSize(CssLength.expr("calc(100% - 2rem)"))
-                      .p(Tokens.SPACE_6.length())
-                      .rounded(Tokens.RADIUS_XL.length())
+                      .p(Tokens.SPACE_6)
+                      .rounded(Tokens.RADIUS_XL)
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -168,44 +166,24 @@ public final class Overlays {
           header()
               .flex()
               .flexCol()
-              .gap(Tokens.SPACE_1.length())
-              .child(
-                  h2().id(titleRef)
-                      .fontSize(Tokens.FONT_SIZE_XL.length())
-                      .textBalance()
-                      .text(title))
+              .gap(Tokens.SPACE_1)
+              .child(h2().id(titleRef).fontSize(Tokens.FONT_SIZE_XL).textBalance().text(title))
               .whenPresent(
                   description,
                   (h, desc) ->
                       h.child(
                           p().textColor(Tokens.TEXT_MUTED)
-                              .fontSize(Tokens.FONT_SIZE_SM.length())
+                              .fontSize(Tokens.FONT_SIZE_SM)
                               .text(desc)));
 
-      var contentEl = div().flex().flexCol().gap(Tokens.SPACE_3.length());
+      var contentEl = div().flex().flexCol().gap(Tokens.SPACE_3);
       contentEl.children(bodyNodes);
 
       var closeBtn =
-          button()
-              .id("close")
-              .command(dialog, BuiltinCommand.CLOSE)
-              .px(Tokens.SPACE_3_5.length())
-              .py(Tokens.SPACE_2.length())
-              .rounded(Tokens.RADIUS_MD.length())
-              .bg(Tokens.ACCENT_PRIMARY)
-              .textColorOn(Tokens.ACCENT_PRIMARY)
-              .borderNone()
-              .fontWeight(600)
-              .cursorPointer()
-              .text(closeLabel);
+          Button.of(closeLabel).id(ElementRef.named("close")).command(dialog, BuiltinCommand.CLOSE);
 
       var footerEl =
-          footer()
-              .flex()
-              .itemsCenter()
-              .justifyEnd()
-              .gap(Tokens.SPACE_3.length())
-              .pt(Tokens.SPACE_2.length());
+          footer().flex().itemsCenter().justifyEnd().gap(Tokens.SPACE_3).pt(Tokens.SPACE_2);
       footerEl.children(footerActions);
       footerEl.child(closeBtn);
 
@@ -215,11 +193,7 @@ public final class Overlays {
           .dialogClosedByAny()
           .boolAttr("open", opened)
           .child(
-              div()
-                  .flex()
-                  .flexCol()
-                  .gap(Tokens.SPACE_5.length())
-                  .children(headerEl, contentEl, footerEl));
+              div().flex().flexCol().gap(Tokens.SPACE_5).children(headerEl, contentEl, footerEl));
     }
   }
 
@@ -259,7 +233,8 @@ public final class Overlays {
       return this;
     }
 
-    public TagElement triggerButton(String buttonId, String label) {
+    /// Creates a trigger button wired via `command="show-modal"` to this drawer.
+    public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }
 
@@ -292,7 +267,7 @@ public final class Overlays {
                     .blockSize(CssLength.dvh(100))
                     .maxBlockSize(CssLength.dvh(100))
                     .inlineSize(CssLength.expr("min(24rem, 85dvw)"))
-                    .p(Tokens.SPACE_6.length())
+                    .p(Tokens.SPACE_6)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -335,43 +310,37 @@ public final class Overlays {
     public Element render() {
       var titleRef = ElementRef.named("title");
       var closeBtn =
-          button()
-              .id("close")
-              .command(dialog, BuiltinCommand.CLOSE)
-              .px(Tokens.SPACE_3.length())
-              .py(Tokens.SPACE_1_5.length())
-              .rounded(Tokens.RADIUS_MD.length())
-              .borderSubtle(Tokens.BORDER_SUBTLE)
-              .bg(Tokens.SURFACE_SUBTLE)
-              .textColor(Tokens.TEXT_PRIMARY)
-              .cursorPointer()
-              .text(closeLabel);
+          Button.of(closeLabel)
+              .id(ElementRef.named("close"))
+              .tone(Button.Tone.NEUTRAL)
+              .variant(Button.Variant.OUTLINE)
+              .size(Button.Size.SM)
+              .command(dialog, BuiltinCommand.CLOSE);
 
       var headerEl =
           header()
               .flex()
               .itemsCenter()
               .justifyBetween()
-              .gap(Tokens.SPACE_4.length())
-              .py(Tokens.SPACE_2.length())
+              .gap(Tokens.SPACE_4)
+              .py(Tokens.SPACE_2)
               .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
               .children(
                   div()
                       .flex()
                       .flexCol()
-                      .gap(Tokens.SPACE_0_5.length())
-                      .child(h2().id(titleRef).fontSize(Tokens.FONT_SIZE_LG.length()).text(title))
+                      .gap(Tokens.SPACE_0_5)
+                      .child(h2().id(titleRef).fontSize(Tokens.FONT_SIZE_LG).text(title))
                       .whenPresent(
                           subtitle,
                           (d, sub) ->
                               d.child(
                                   p().textColor(Tokens.TEXT_MUTED)
-                                      .fontSize(Tokens.FONT_SIZE_XS.length())
+                                      .fontSize(Tokens.FONT_SIZE_XS)
                                       .text(sub))),
                   closeBtn);
 
-      var contentEl =
-          div().flex().flexCol().gap(Tokens.SPACE_4.length()).py(Tokens.SPACE_4.length());
+      var contentEl = div().flex().flexCol().gap(Tokens.SPACE_4).py(Tokens.SPACE_4);
       contentEl.children(bodyNodes);
 
       return Elements.dialog()
@@ -383,18 +352,11 @@ public final class Overlays {
     }
   }
 
-  private static TagElement showModalTrigger(ElementRef dialog, String buttonId, String label) {
-    return button()
-        .id(buttonId)
-        .command(dialog, BuiltinCommand.SHOW_MODAL)
-        .px(Tokens.SPACE_3_5.length())
-        .py(Tokens.SPACE_2.length())
-        .rounded(Tokens.RADIUS_LG.length())
-        .borderSubtle(Tokens.BORDER_SUBTLE)
-        .bg(Tokens.SURFACE_SUBTLE)
-        .textColor(Tokens.TEXT_PRIMARY)
-        .fontWeight(600)
-        .cursorPointer()
-        .text(label);
+  private static Button showModalTrigger(ElementRef dialog, String buttonId, String label) {
+    return Button.of(label)
+        .id(ElementRef.named(buttonId))
+        .tone(Button.Tone.NEUTRAL)
+        .variant(Button.Variant.OUTLINE)
+        .command(dialog, BuiltinCommand.SHOW_MODAL);
   }
 }

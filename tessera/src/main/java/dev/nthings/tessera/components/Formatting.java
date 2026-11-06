@@ -72,7 +72,7 @@ public final class Formatting {
         .bg(Tokens.SURFACE_SUBTLE)
         .px(CssLength.rem(0.35))
         .py(CssLength.rem(0.1))
-        .rounded(Tokens.RADIUS_SM.length())
+        .rounded(Tokens.RADIUS_SM)
         .fontSize(CssLength.em(0.9))
         .text(codeText);
   }
@@ -83,7 +83,7 @@ public final class Formatting {
         .borderSubtle(Tokens.BORDER_SUBTLE)
         .px(CssLength.rem(0.4))
         .py(CssLength.rem(0.1))
-        .rounded(Tokens.RADIUS_SM.length())
+        .rounded(Tokens.RADIUS_SM)
         .fontSize(CssLength.em(0.85))
         .shadow("0 1px 0 " + Tokens.BORDER_SUBTLE.varReference())
         .text(keys);

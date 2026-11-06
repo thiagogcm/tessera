@@ -251,36 +251,27 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .fontWeight(500)
                     .lineHeight("1")
                     .whiteSpace("nowrap")
-                    .rounded(Tokens.RADIUS_MD.length())
+                    .rounded(Tokens.RADIUS_MD)
                     .textDecorationNone()
                     .transition(
                         "background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease"))
-        .select(":scope.is-pill", s -> s.rounded(Tokens.RADIUS_FULL.length()))
+        .select(":scope.is-pill", s -> s.rounded(Tokens.RADIUS_FULL))
         .select(
             ":scope.badge--sm",
-            s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
-                    .px(CssLength.rem(0.4))
-                    .py(CssLength.rem(0.15)))
+            s -> s.fontSize(Tokens.FONT_SIZE_XS).px(CssLength.rem(0.4)).py(CssLength.rem(0.15)))
         .select(
             ":scope.badge--md",
-            s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
-                    .px(CssLength.rem(0.55))
-                    .py(CssLength.rem(0.225)))
+            s -> s.fontSize(Tokens.FONT_SIZE_XS).px(CssLength.rem(0.55)).py(CssLength.rem(0.225)))
         .select(
             ":scope.badge--lg",
-            s ->
-                s.fontSize(Tokens.FONT_SIZE_SM.length())
-                    .px(Tokens.SPACE_3.length())
-                    .py(CssLength.rem(0.3)))
+            s -> s.fontSize(Tokens.FONT_SIZE_SM).px(Tokens.SPACE_3).py(CssLength.rem(0.3)))
         .select(
             ":scope > .badge-dot",
             s ->
                 s.inlineBlock()
                     .inlineSize(CssLength.rem(0.45))
                     .blockSize(CssLength.rem(0.45))
-                    .rounded(Tokens.RADIUS_FULL.length())
+                    .rounded(Tokens.RADIUS_FULL)
                     .bgRaw("currentColor")
                     .flexShrink(0))
         .select(

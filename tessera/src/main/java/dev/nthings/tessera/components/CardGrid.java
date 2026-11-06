@@ -41,7 +41,7 @@ public record CardGrid(
             ":scope > article, :scope > label",
             s ->
                 s.subgridRows(4)
-                    .rowGap(Tokens.SPACE_3.length())
+                    .rowGap(Tokens.SPACE_3)
                     // A query container is layout-contained and cannot be a subgrid.
                     .put(CssProperty.CONTAINER_TYPE, "normal"));
   }

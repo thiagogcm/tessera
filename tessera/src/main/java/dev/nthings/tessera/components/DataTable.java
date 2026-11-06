@@ -96,7 +96,7 @@ public record DataTable<T>(
                     .maxInlineSize(CssLength.pct(100))
                     .containerInlineSize()
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .rounded(Tokens.RADIUS_XL.length())
+                    .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD))
         .select(
             ":scope table",
@@ -112,8 +112,8 @@ public record DataTable<T>(
         .select(
             ":scope caption",
             s ->
-                s.px(Tokens.SPACE_4.length())
-                    .py(Tokens.SPACE_3_5.length())
+                s.px(Tokens.SPACE_4)
+                    .py(Tokens.SPACE_3_5)
                     .fontWeight(600)
                     .textAlign("start")
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
@@ -122,10 +122,7 @@ public record DataTable<T>(
             s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(2).bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope th, :scope td",
-            s ->
-                s.px(Tokens.SPACE_4.length())
-                    .py(Tokens.SPACE_3.length())
-                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
+            s -> s.px(Tokens.SPACE_4).py(Tokens.SPACE_3).borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
         .select(
             ":scope tbody th",
             s ->
@@ -161,9 +158,9 @@ public record DataTable<T>(
               .select(
                   ":scope tr",
                   s ->
-                      s.m(Tokens.SPACE_3.length())
+                      s.m(Tokens.SPACE_3)
                           .borderSubtle(Tokens.BORDER_SUBTLE)
-                          .rounded(Tokens.RADIUS_LG.length()))
+                          .rounded(Tokens.RADIUS_LG))
               .select(
                   ":scope tbody th",
                   s ->

@@ -98,8 +98,8 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     scope
         .root(
             s ->
-                s.my(Tokens.SPACE_5.length())
-                    .rounded(Tokens.RADIUS_LG.length())
+                s.my(Tokens.SPACE_5)
+                    .rounded(Tokens.RADIUS_LG)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .bg(Tokens.SURFACE_CARD)
                     .overflowClip())
@@ -109,11 +109,11 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                 s.flex()
                     .justifyBetween()
                     .itemsCenter()
-                    .px(Tokens.SPACE_4.length())
+                    .px(Tokens.SPACE_4)
                     .py(CssLength.rem(0.45))
                     .bg(Tokens.SURFACE_SUBTLE)
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
-                    .fontSize(Tokens.FONT_SIZE_XS.length())
+                    .fontSize(Tokens.FONT_SIZE_XS)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > .code-header > .code-filename",
@@ -122,18 +122,14 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
             ":scope > .code-pre",
             s ->
                 s.m(CssLength.px(0))
-                    .py(Tokens.SPACE_3.length())
+                    .py(Tokens.SPACE_3)
                     .bg(Tokens.SURFACE_CARD)
-                    .fontSize(Tokens.FONT_SIZE_SM.length())
+                    .fontSize(Tokens.FONT_SIZE_SM)
                     .lineHeight("1.6"))
         .select(":scope > .code-pre > .code-lines", s -> s.block())
         .select(
             ":scope > .code-pre > .code-lines > .code-line",
-            s ->
-                s.block()
-                    .counterIncrement("code-line")
-                    .whiteSpace("pre")
-                    .px(Tokens.SPACE_4.length()))
+            s -> s.block().counterIncrement("code-line").whiteSpace("pre").px(Tokens.SPACE_4))
         .select(
             ":scope > .code-pre > .code-lines > .code-line::before",
             s ->
@@ -141,7 +137,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                     .inlineFlex()
                     .justifyEnd()
                     .inlineSize(CssLength.rem(2))
-                    .me(Tokens.SPACE_5.length())
+                    .me(Tokens.SPACE_5)
                     .textColor(Tokens.TEXT_MUTED)
                     .opacity(0.6))
         .select(

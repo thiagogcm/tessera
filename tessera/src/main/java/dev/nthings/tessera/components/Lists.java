@@ -45,8 +45,7 @@ public final class Lists {
 
     @Override
     public Element render() {
-      var ul =
-          Elements.ul().flex().flexCol().gap(Tokens.SPACE_2.length()).px(Tokens.SPACE_5.length());
+      var ul = Elements.ul().flex().flexCol().gap(Tokens.SPACE_2).px(Tokens.SPACE_5);
       ul.children(listItems(items));
       return ul;
     }
@@ -64,13 +63,7 @@ public final class Lists {
 
     @Override
     public Element render() {
-      var ol =
-          Elements.ol()
-              .flex()
-              .flexCol()
-              .gap(Tokens.SPACE_2.length())
-              .px(Tokens.SPACE_5.length())
-              .tabularNums();
+      var ol = Elements.ol().flex().flexCol().gap(Tokens.SPACE_2).px(Tokens.SPACE_5).tabularNums();
       ol.children(listItems(items));
       return ol;
     }
@@ -95,10 +88,7 @@ public final class Lists {
     @Override
     public Element render() {
       var dl =
-          Elements.dl()
-              .grid()
-              .gridColumns("minmax(8rem, max-content) 1fr")
-              .gap(Tokens.SPACE_3.length());
+          Elements.dl().grid().gridColumns("minmax(8rem, max-content) 1fr").gap(Tokens.SPACE_3);
       for (var entry : terms) {
         dl.children(
             Elements.dt().fontWeight(600).textColor(Tokens.TEXT_PRIMARY).text(entry.term()),
@@ -126,13 +116,7 @@ public final class Lists {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(
-              s ->
-                  s.listStyleNone()
-                      .flex()
-                      .flexCol()
-                      .gap(Tokens.SPACE_3.length())
-                      .counterReset("step"))
+          .root(s -> s.listStyleNone().flex().flexCol().gap(Tokens.SPACE_3).counterReset("step"))
           .select(
               ":scope > li",
               s ->
@@ -141,7 +125,7 @@ public final class Lists {
                       .counterIncrement("step")
                       .flex()
                       .itemsBaseline()
-                      .gap(Tokens.SPACE_3.length()))
+                      .gap(Tokens.SPACE_3))
           .select(
               ":scope > li::before",
               s ->
@@ -151,7 +135,7 @@ public final class Lists {
                       .justifyCenter()
                       .minInlineSize(CssLength.rem(1.75))
                       .blockSize(CssLength.rem(1.75))
-                      .rounded(Tokens.RADIUS_FULL.length())
+                      .rounded(Tokens.RADIUS_FULL)
                       .fontWeight(600)
                       .tabularNums()
                       .bgRaw(

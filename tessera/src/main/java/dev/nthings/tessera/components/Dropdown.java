@@ -70,8 +70,7 @@ public final class Dropdown implements RenderView {
   }
 
   public Dropdown separator() {
-    items.add(
-        hr().borderNone().borderBlockStartSubtle(Tokens.BORDER_SUBTLE).my(Tokens.SPACE_1.length()));
+    items.add(hr().borderNone().borderBlockStartSubtle(Tokens.BORDER_SUBTLE).my(Tokens.SPACE_1));
     return this;
   }
 
@@ -89,10 +88,10 @@ public final class Dropdown implements RenderView {
             s ->
                 s.inlineFlex()
                     .itemsCenter()
-                    .gap(Tokens.SPACE_2.length())
-                    .px(Tokens.SPACE_3_5.length())
-                    .py(Tokens.SPACE_2.length())
-                    .rounded(Tokens.RADIUS_LG.length())
+                    .gap(Tokens.SPACE_2)
+                    .px(Tokens.SPACE_3_5)
+                    .py(Tokens.SPACE_2)
+                    .rounded(Tokens.RADIUS_LG)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -105,30 +104,29 @@ public final class Dropdown implements RenderView {
                 s.positionArea("block-end span-inline-end")
                     .inset("auto")
                     .positionTryFallbacks("flip-block, flip-inline, flip-block flip-inline")
-                    .mt(Tokens.SPACE_1_5.length())
+                    .mt(Tokens.SPACE_1_5)
                     .minInlineSize(CssLength.rem(14))
-                    .p(Tokens.SPACE_1_5.length())
-                    .rounded(Tokens.RADIUS_XL.length())
+                    .p(Tokens.SPACE_1_5)
+                    .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .shadow("0 12px 32px -4px oklch(0% 0 0 / 0.18)"))
-        .select(
-            ":scope .dropdown-panel-items", s -> s.flex().flexCol().gap(Tokens.SPACE_0_5.length()))
+        .select(":scope .dropdown-panel-items", s -> s.flex().flexCol().gap(Tokens.SPACE_0_5))
         .select(
             ":scope .dropdown-item",
             s ->
                 s.flex()
                     .itemsCenter()
                     .justifyBetween()
-                    .gap(Tokens.SPACE_4.length())
+                    .gap(Tokens.SPACE_4)
                     .fullWidth()
-                    .px(Tokens.SPACE_3.length())
-                    .py(Tokens.SPACE_2.length())
-                    .rounded(Tokens.RADIUS_MD.length())
+                    .px(Tokens.SPACE_3)
+                    .py(Tokens.SPACE_2)
+                    .rounded(Tokens.RADIUS_MD)
                     .bgRaw("transparent")
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .fontSize(Tokens.FONT_SIZE_SM.length())
+                    .fontSize(Tokens.FONT_SIZE_SM)
                     .borderNone()
                     .textAlign("start")
                     .cursorPointer()
@@ -136,10 +134,7 @@ public final class Dropdown implements RenderView {
         .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope .dropdown-hint",
-            s ->
-                s.textColor(Tokens.TEXT_MUTED)
-                    .fontSize(Tokens.FONT_SIZE_XS.length())
-                    .ms(CssLength.auto()))
+            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_XS).ms(CssLength.auto()))
         .motionSafe(
             m ->
                 m.select(

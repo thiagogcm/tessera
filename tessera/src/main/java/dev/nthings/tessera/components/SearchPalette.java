@@ -140,20 +140,20 @@ public final class SearchPalette implements RenderView {
         .flex()
         .itemsCenter()
         .justifyBetween()
-        .gap(Tokens.SPACE_3.length())
-        .px(Tokens.SPACE_3.length())
+        .gap(Tokens.SPACE_3)
+        .px(Tokens.SPACE_3)
         .py(CssLength.rem(0.4))
-        .rounded(Tokens.RADIUS_LG.length())
+        .rounded(Tokens.RADIUS_LG)
         .borderSubtle(Tokens.BORDER_SUBTLE)
         .bg(Tokens.SURFACE_CARD)
         .textColor(Tokens.TEXT_MUTED)
-        .fontSize(Tokens.FONT_SIZE_SM.length())
+        .fontSize(Tokens.FONT_SIZE_SM)
         .cursorPointer()
         .child(
             div()
                 .flex()
                 .itemsCenter()
-                .gap(Tokens.SPACE_2.length())
+                .gap(Tokens.SPACE_2)
                 .child(rawHtml(SEARCH_ICON_SVG))
                 .child(span().text(label)))
         .child(
@@ -165,10 +165,10 @@ public final class SearchPalette implements RenderView {
                     kbd()
                         .px(CssLength.rem(0.35))
                         .py(CssLength.rem(0.1))
-                        .rounded(Tokens.RADIUS_SM.length())
+                        .rounded(Tokens.RADIUS_SM)
                         .bg(Tokens.SURFACE_SUBTLE)
                         .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .fontSize(Tokens.FONT_SIZE_XS.length())
+                        .fontSize(Tokens.FONT_SIZE_XS)
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
                         .text("Alt"))
@@ -176,10 +176,10 @@ public final class SearchPalette implements RenderView {
                     kbd()
                         .px(CssLength.rem(0.35))
                         .py(CssLength.rem(0.1))
-                        .rounded(Tokens.RADIUS_SM.length())
+                        .rounded(Tokens.RADIUS_SM)
                         .bg(Tokens.SURFACE_SUBTLE)
                         .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .fontSize(Tokens.FONT_SIZE_XS.length())
+                        .fontSize(Tokens.FONT_SIZE_XS)
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
                         .text("K")));
@@ -305,7 +305,7 @@ public final class SearchPalette implements RenderView {
                     .maxInlineSize(CssLength.rem(42))
                     .inlineSize(CssLength.expr("calc(100% - 2rem)"))
                     .p(CssLength.px(0))
-                    .rounded(Tokens.RADIUS_XL.length())
+                    .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -333,16 +333,16 @@ public final class SearchPalette implements RenderView {
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(Tokens.SPACE_3.length())
-                    .px(Tokens.SPACE_4.length())
-                    .py(Tokens.SPACE_3.length())
+                    .gap(Tokens.SPACE_3)
+                    .px(Tokens.SPACE_4)
+                    .py(Tokens.SPACE_3)
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-input",
             s ->
                 s.flexGrow(1)
-                    .fontSize(Tokens.FONT_SIZE_MD.length())
+                    .fontSize(Tokens.FONT_SIZE_MD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .bgRaw("transparent")
                     .borderNone()
@@ -352,38 +352,35 @@ public final class SearchPalette implements RenderView {
             s ->
                 s.bg(Tokens.SURFACE_SUBTLE)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .rounded(Tokens.RADIUS_MD.length())
+                    .rounded(Tokens.RADIUS_MD)
                     .px(CssLength.rem(0.4))
                     .py(CssLength.rem(0.2))
                     .cursorPointer())
         .select(
             ":scope .palette-esc-kbd",
-            s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
-                    .fontWeight(600)
-                    .textColor(Tokens.TEXT_MUTED))
+            s -> s.fontSize(Tokens.FONT_SIZE_XS).fontWeight(600).textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-results",
-            s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(Tokens.SPACE_3.length()))
+            s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(Tokens.SPACE_3))
         .select(":scope .palette-group", s -> s.m(CssLength.px(0)).p(CssLength.px(0)))
         .select(":scope .palette-group:not(:has(.palette-item:not([hidden])))", s -> s.hidden())
         .select(
             ":scope .palette-group-title",
             s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
+                s.fontSize(Tokens.FONT_SIZE_XS)
                     .fontWeight(600)
                     .textColor(Tokens.TEXT_MUTED)
-                    .px(Tokens.SPACE_3.length())
-                    .py(Tokens.SPACE_1_5.length()))
+                    .px(Tokens.SPACE_3)
+                    .py(Tokens.SPACE_1_5))
         .select(
             ":scope .palette-item",
             s ->
                 s.flex()
                     .itemsCenter()
                     .justifyBetween()
-                    .px(Tokens.SPACE_3.length())
-                    .py(Tokens.SPACE_2_5.length())
-                    .rounded(Tokens.RADIUS_LG.length())
+                    .px(Tokens.SPACE_3)
+                    .py(Tokens.SPACE_2_5)
+                    .rounded(Tokens.RADIUS_LG)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .textDecorationNone()
                     .cursorPointer())
@@ -391,44 +388,42 @@ public final class SearchPalette implements RenderView {
             ":scope .palette-item:hover, :scope .palette-item:focus-visible",
             s -> s.bg(Tokens.SURFACE_SUBTLE).outlineNone())
         .select(":scope .palette-item-main", s -> s.flex().flexCol().gap(CssLength.rem(0.15)))
-        .select(
-            ":scope .palette-item-title",
-            s -> s.fontSize(Tokens.FONT_SIZE_SM.length()).fontWeight(500))
+        .select(":scope .palette-item-title", s -> s.fontSize(Tokens.FONT_SIZE_SM).fontWeight(500))
         .select(
             ":scope .palette-item-desc",
-            s -> s.fontSize(Tokens.FONT_SIZE_XS.length()).textColor(Tokens.TEXT_MUTED))
+            s -> s.fontSize(Tokens.FONT_SIZE_XS).textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-item-badge",
             s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
+                s.fontSize(Tokens.FONT_SIZE_XS)
                     .textColor(Tokens.TEXT_MUTED)
                     .bg(Tokens.SURFACE_SUBTLE)
                     .px(CssLength.rem(0.4))
                     .py(CssLength.rem(0.15))
-                    .rounded(Tokens.RADIUS_SM.length()))
+                    .rounded(Tokens.RADIUS_SM))
         .select(
             ":scope .palette-item-arrow",
-            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_SM.length()))
+            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_SM))
         .select(
             ":scope .palette-footer",
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(Tokens.SPACE_4.length())
-                    .px(Tokens.SPACE_4.length())
-                    .py(Tokens.SPACE_2.length())
+                    .gap(Tokens.SPACE_4)
+                    .px(Tokens.SPACE_4)
+                    .py(Tokens.SPACE_2)
                     .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
                     .bg(Tokens.SURFACE_SUBTLE)
                     .textColor(Tokens.TEXT_MUTED)
-                    .fontSize(Tokens.FONT_SIZE_XS.length()))
-        .select(":scope .palette-hint", s -> s.flex().itemsCenter().gap(Tokens.SPACE_1.length()))
+                    .fontSize(Tokens.FONT_SIZE_XS))
+        .select(":scope .palette-hint", s -> s.flex().itemsCenter().gap(Tokens.SPACE_1))
         .select(
             ":scope .palette-hint-kbd",
             s ->
-                s.fontSize(Tokens.FONT_SIZE_XS.length())
+                s.fontSize(Tokens.FONT_SIZE_XS)
                     .px(CssLength.rem(0.3))
                     .py(CssLength.rem(0.1))
-                    .rounded(Tokens.RADIUS_SM.length())
+                    .rounded(Tokens.RADIUS_SM)
                     .bg(Tokens.SURFACE_CARD)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .textColor(Tokens.TEXT_PRIMARY))

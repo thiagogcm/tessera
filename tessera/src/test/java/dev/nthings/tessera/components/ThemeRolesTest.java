@@ -4,12 +4,10 @@ import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
-import dev.nthings.tessera.support.CssBlocks;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,10 +20,8 @@ class ThemeRolesTest {
   void roleOverrideRestylesFieldAndCallout() {
     var tokens =
         new Tokens()
-            .register(
-                DesignToken.Color.lightDark(
-                    Tokens.CONTROL_FG.name(), "oklch(20% 0.03 250)", "oklch(95% 0.02 250)"))
-            .register(DesignToken.Length.of(Tokens.CONTROL_FONT_SIZE.name(), "1.25rem"));
+            .register(Tokens.CONTROL_FG.withLightDark("oklch(20% 0.03 250)", "oklch(95% 0.02 250)"))
+            .register(Tokens.CONTROL_FONT_SIZE.withValue("1.25rem"));
     var page =
         RenderedPage.of(
             PageCompiler.compile(
@@ -38,8 +34,8 @@ class ThemeRolesTest {
                 tokens,
                 OutputMode.inlineStyle()));
 
-    var fieldScope = scopeBody(page, page.element(".field-label"));
-    var calloutScope = scopeBody(page, page.element(".callout-title"));
+    var fieldScope = page.scopeBody(page.element(".field-label"));
+    var calloutScope = page.scopeBody(page.element(".callout-title"));
     assertThat(fieldScope)
         .contains(":scope .field-label{")
         .contains("font-size:var(--control-font-size)")
@@ -60,7 +56,7 @@ class ThemeRolesTest {
   @Test
   @DisplayName("compact density scales spacing and leaves the type scale alone")
   void compactDensityLeavesTypographyAlone() {
-    var tokens = new Tokens().register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.5"));
+    var tokens = new Tokens().register(Tokens.DENSITY.withValue("0.5"));
     var page =
         RenderedPage.of(
             PageCompiler.compile(
@@ -86,7 +82,7 @@ class ThemeRolesTest {
             Overlays.modal("confirm", "Confirm").bodyText("Deploy"));
 
     var dialog = page.element("dialog");
-    var scope = scopeBody(page, dialog);
+    var scope = page.scopeBody(dialog);
     var media = scope.indexOf("@media (prefers-reduced-motion: no-preference)");
     assertThat(media).isPositive();
     assertThat(scope.substring(0, media)).doesNotContain("transform:").doesNotContain("opacity:0");
@@ -103,18 +99,5 @@ class ThemeRolesTest {
     assertThat(interactive.substring(0, motion)).contains("outline:");
     assertThat(interactive.substring(motion))
         .contains("transition-duration:var(--control-feedback-duration)");
-  }
-
-  private static String scopeBody(RenderedPage page, org.jsoup.nodes.Element element) {
-    var current = element;
-    while (current != null && !current.hasAttr("data-view")) {
-      current = current.parent();
-    }
-    if (current == null) {
-      throw new AssertionError("No data-view ancestor");
-    }
-    return CssBlocks.block(
-        page.css(),
-        "@scope ([data-view=\"" + current.attr("data-view") + "\"]) to (:scope [data-view] > *){");
   }
 }

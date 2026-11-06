@@ -76,7 +76,7 @@ public final class Tabs {
                       .flex()
                       .flexWrap()
                       .itemsCenter()
-                      .gap(Tokens.SPACE_1.length())
+                      .gap(Tokens.SPACE_1)
                       .relative()
                       .p(CssLength.px(0))
                       .m(CssLength.px(0)))
@@ -86,11 +86,11 @@ public final class Tabs {
               ":scope a",
               s ->
                   s.block()
-                      .px(Tokens.SPACE_2_5.length())
-                      .py(Tokens.SPACE_1_5.length())
-                      .rounded(Tokens.RADIUS_MD.length())
+                      .px(Tokens.SPACE_2_5)
+                      .py(Tokens.SPACE_1_5)
+                      .rounded(Tokens.RADIUS_MD)
                       .textColor(Tokens.TEXT_MUTED)
-                      .fontSize(Tokens.FONT_SIZE_SM.length())
+                      .fontSize(Tokens.FONT_SIZE_SM)
                       .fontWeight(500)
                       .whiteSpace("nowrap")
                       .textDecorationNone())
@@ -144,7 +144,7 @@ public final class Tabs {
               s ->
                   s.flex()
                       .flexCol()
-                      .rounded(Tokens.RADIUS_XL.length())
+                      .rounded(Tokens.RADIUS_XL)
                       .bg(Tokens.SURFACE_CARD)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
                       .overflowClip())
@@ -154,9 +154,9 @@ public final class Tabs {
                   s.flex()
                       .flexWrap()
                       .itemsCenter()
-                      .gap(Tokens.SPACE_1.length())
-                      .px(Tokens.SPACE_4.length())
-                      .pt(Tokens.SPACE_2.length())
+                      .gap(Tokens.SPACE_1)
+                      .px(Tokens.SPACE_4)
+                      .pt(Tokens.SPACE_2)
                       .relative()
                       .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
                       .bg(Tokens.SURFACE_SUBTLE))
@@ -165,8 +165,8 @@ public final class Tabs {
               s ->
                   s.inlineFlex()
                       .itemsCenter()
-                      .px(Tokens.SPACE_3_5.length())
-                      .py(Tokens.SPACE_2_5.length())
+                      .px(Tokens.SPACE_3_5)
+                      .py(Tokens.SPACE_2_5)
                       .textColor(Tokens.TEXT_MUTED)
                       .fontWeight(500)
                       .whiteSpace("nowrap")
@@ -176,7 +176,7 @@ public final class Tabs {
               ":scope > .tab-bar > .tab-label:has(> input:checked)",
               s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
       anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent)
-          .select(":scope > .tab-panel", s -> s.hidden().p(Tokens.SPACE_5.length()));
+          .select(":scope > .tab-panel", s -> s.hidden().p(Tokens.SPACE_5));
 
       for (var i = 0; i < panels.size(); i++) {
         var tabIndex = i + 1;

@@ -58,7 +58,7 @@ public final class Toc {
               .scrollMarginBlockStart(CssLength.rem(7))
               .flex()
               .flexCol()
-              .gap(Tokens.SPACE_3.length())
+              .gap(Tokens.SPACE_3)
               .child(heading);
       sectionEl.children(body);
       return sectionEl;
@@ -127,7 +127,7 @@ public final class Toc {
               s ->
                   s.flex()
                       .flexCol()
-                      .gap(Tokens.SPACE_2.length())
+                      .gap(Tokens.SPACE_2)
                       .p(CssLength.px(0))
                       .bgRaw("transparent")
                       .borderNone())
@@ -138,11 +138,11 @@ public final class Toc {
                       .itemsCenter()
                       .justifyBetween()
                       .py(CssLength.rem(0.35))
-                      .px(Tokens.SPACE_1.length())
+                      .px(Tokens.SPACE_1)
                       .listStyleNone()
                       .cursorPointer()
                       .textColor(Tokens.TEXT_MUTED)
-                      .fontSize(Tokens.FONT_SIZE_XS.length())
+                      .fontSize(Tokens.FONT_SIZE_XS)
                       .fontWeight(700))
           .select(":scope .toc-summary:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
           .select(":scope .toc-chevron", s -> s.transition("transform 0.2s ease"))
@@ -155,29 +155,23 @@ public final class Toc {
               s ->
                   s.scrollTargetGroupAuto()
                       .borderInlineStartSubtle(Tokens.BORDER_SUBTLE)
-                      .ps(Tokens.SPACE_1.length()))
+                      .ps(Tokens.SPACE_1))
           .select(
               ":scope ol",
-              s ->
-                  s.listStyleNone()
-                      .flex()
-                      .flexCol()
-                      .gap(Tokens.SPACE_0_5.length())
-                      .p(CssLength.px(0)))
+              s -> s.listStyleNone().flex().flexCol().gap(Tokens.SPACE_0_5).p(CssLength.px(0)))
           .select(
               ":scope a",
               s ->
                   s.block()
                       .py(CssLength.rem(0.35))
-                      .px(Tokens.SPACE_3.length())
+                      .px(Tokens.SPACE_3)
                       .textColor(Tokens.TEXT_MUTED)
-                      .fontSize(Tokens.FONT_SIZE_SM.length())
-                      .rounded(Tokens.RADIUS_SM.length())
+                      .fontSize(Tokens.FONT_SIZE_SM)
+                      .rounded(Tokens.RADIUS_SM)
                       .textDecorationNone()
                       .transition("color 0.15s ease, background 0.15s ease"))
           .select(
-              ":scope a[data-level=\"3\"]",
-              s -> s.ps(Tokens.SPACE_6.length()).fontSize(Tokens.FONT_SIZE_XS.length()))
+              ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(
               ":scope a:target-current",
@@ -242,25 +236,24 @@ public final class Toc {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> s.flex().flexCol().gap(Tokens.SPACE_8.length()).containerInlineSize())
+          .root(s -> s.flex().flexCol().gap(Tokens.SPACE_8).containerInlineSize())
           .select(
-              ":scope > .doc-grid",
-              s -> s.grid().gridColumns("minmax(0, 1fr)").gap(Tokens.SPACE_6.length()))
+              ":scope > .doc-grid", s -> s.grid().gridColumns("minmax(0, 1fr)").gap(Tokens.SPACE_6))
           .select(
               ":scope > .doc-grid > aside",
               s ->
                   s.gridRow("1")
                       .bg(Tokens.SURFACE_CARD)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .rounded(Tokens.RADIUS_LG.length())
-                      .p(Tokens.SPACE_3.length()))
+                      .rounded(Tokens.RADIUS_LG)
+                      .p(Tokens.SPACE_3))
           .select(
               ":scope > .doc-grid > .doc-prose-col",
               s ->
                   s.gridRow("2")
                       .flex()
                       .flexCol()
-                      .gap(Tokens.SPACE_10.length())
+                      .gap(Tokens.SPACE_10)
                       .inlineSize(CssLength.pct(100))
                       .minInlineSize(CssLength.px(0))
                       .maxInlineSize(CssLength.ch(75))
@@ -270,7 +263,7 @@ public final class Toc {
               ":scope .doc-prose-col p:not([class])",
               s ->
                   s.mb(CssLength.rem(1.125))
-                      .fontSize(Tokens.FONT_SIZE_MD.length())
+                      .fontSize(Tokens.FONT_SIZE_MD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .lineHeight("1.75"))
           .containerMinInlineSize(
@@ -281,7 +274,7 @@ public final class Toc {
                           s ->
                               s.gridColumns("minmax(0, 1fr) 15rem")
                                   .itemsStart()
-                                  .gap(Tokens.SPACE_10.length()))
+                                  .gap(Tokens.SPACE_10))
                       .select(
                           ":scope > .doc-grid > .doc-prose-col",
                           s ->
@@ -304,8 +297,7 @@ public final class Toc {
 
     @Override
     public Element render() {
-      var proseCol =
-          div().attr("class", "doc-prose-col").flex().flexCol().gap(Tokens.SPACE_10.length());
+      var proseCol = div().attr("class", "doc-prose-col").flex().flexCol().gap(Tokens.SPACE_10);
       proseCol.children(sections);
       var sidebar = aside().attr("class", "doc-toc-rail").child(fromContext(tocId, tocHeading));
       return div().child(div().attr("class", "doc-grid").children(proseCol, sidebar));

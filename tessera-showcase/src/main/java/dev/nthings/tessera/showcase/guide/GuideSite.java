@@ -15,7 +15,6 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -34,9 +33,9 @@ public final class GuideSite {
   public static SiteDefinition createDefinition() {
     var tokens =
         new Tokens()
-            .register(DesignToken.Color.of(Tokens.ACCENT_PRIMARY.name(), "oklch(55% 0.18 150)"))
-            .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.9"))
-            .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "1rem"));
+            .register(Tokens.ACCENT_PRIMARY.withValue("oklch(55% 0.18 150)"))
+            .register(Tokens.DENSITY.withValue("0.9"))
+            .register(Tokens.RADIUS_XL.withValue("1rem"));
 
     return SiteDefinition.builder()
         .tokens(tokens)
@@ -81,19 +80,18 @@ public final class GuideSite {
             .item("Guide", "Installation", "/guide/#installation")
             .item("Guide", "Publishing", "/guide/#publishing");
     return Elements.main()
-        .p(Tokens.SPACE_8.length())
+        .p(Tokens.SPACE_8)
         .children(
             nav()
                 .layout(
-                    FlexLayout.row(
-                        Tokens.SPACE_4.length(), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
+                    FlexLayout.row(Tokens.SPACE_4, FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
                 .ariaLabel("Site navigation")
                 .children(a("/").text("Home"), a("/guide/").text("Guide"), search.triggerButton()),
             h1().text(title),
             div()
                 .layout(
                     FlexLayout.column(
-                        Tokens.SPACE_4.length(), FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
+                        Tokens.SPACE_4, FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
                 .children(body),
             search.asDeferred(10));
   }
@@ -109,8 +107,8 @@ public final class GuideSite {
     public void configureScope(ScopeStyle scope) {
       scope.root(
           s ->
-              s.p(Tokens.SPACE_5.length())
-                  .rounded(Tokens.RADIUS_XL.length())
+              s.p(Tokens.SPACE_5)
+                  .rounded(Tokens.RADIUS_XL)
                   .bg(Tokens.SURFACE_CARD)
                   .borderSubtle(Tokens.BORDER_SUBTLE));
     }

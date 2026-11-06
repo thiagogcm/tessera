@@ -71,7 +71,7 @@ class SharedStylesheetTest {
 
     @BeforeAll
     static void compileSiteWithBrandToken() {
-      var brand = DesignToken.Color.of("brand-hue", "oklch(60% 0.2 300)");
+      var brand = new DesignToken.Color("brand-hue", "oklch(60% 0.2 300)");
       RenderOnce tokenProbe =
           () ->
               p().text(

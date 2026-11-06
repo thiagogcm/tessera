@@ -25,10 +25,10 @@ final class ButtonFace {
                 s.inlineFlex()
                     .itemsCenter()
                     .justifyCenter()
-                    .gap(Tokens.SPACE_2.length())
+                    .gap(Tokens.SPACE_2)
                     .typography(Roles.LABEL)
                     .cursorPointer()
-                    .rounded(Tokens.RADIUS_MD.length())
+                    .rounded(Tokens.RADIUS_MD)
                     .border("1px solid transparent")
                     .textDecorationNone()
                     .whiteSpace("nowrap"))
@@ -66,17 +66,11 @@ final class ButtonFace {
   }
 
   private static StyleRefinement iconBox(StyleRefinement style, Button.Size size) {
-    return style
-        .inlineSize(size.iconBox().length())
-        .blockSize(size.iconBox().length())
-        .p(CssLength.px(0));
+    return style.inlineSize(size.iconBox()).blockSize(size.iconBox()).p(CssLength.px(0));
   }
 
   private static StyleRefinement paddedBox(StyleRefinement style, Button.Size size) {
-    return style
-        .fontSize(size.fontSize().length())
-        .px(size.paddingInline().length())
-        .py(size.paddingBlock().length());
+    return style.fontSize(size.fontSize()).px(size.paddingInline()).py(size.paddingBlock());
   }
 
   static TagElement element(ButtonBase<?> model, boolean icon) {
@@ -121,11 +115,9 @@ final class ButtonFace {
   private static StyleRefinement paint(
       StyleRefinement style, Button.Tone tone, Button.Variant variant) {
     return switch (variant) {
-      case SOLID ->
-          style.bg(tone.token()).textColorRaw(tone.onSolid()).border("1px solid transparent");
+      case SOLID -> style.bg(tone.token()).textColorRaw(tone.onSolid());
       case OUTLINE -> style.bgRaw("transparent").textColor(tone.token()).borderSubtle(tone.edge());
-      case GHOST ->
-          style.bgRaw("transparent").textColor(tone.token()).border("1px solid transparent");
+      case GHOST -> style.bgRaw("transparent").textColor(tone.token());
     };
   }
 

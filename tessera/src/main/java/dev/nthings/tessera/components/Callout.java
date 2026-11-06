@@ -156,20 +156,20 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
             s ->
                 s.flex()
                     .flexCol()
-                    .gap(Tokens.SPACE_2.length())
-                    .px(Tokens.SPACE_5.length())
-                    .py(Tokens.SPACE_4.length())
-                    .my(Tokens.SPACE_5.length())
-                    .rounded(Tokens.RADIUS_LG.length())
+                    .gap(Tokens.SPACE_2)
+                    .px(Tokens.SPACE_5)
+                    .py(Tokens.SPACE_4)
+                    .my(Tokens.SPACE_5)
+                    .rounded(Tokens.RADIUS_LG)
                     .borderNone())
         .select(
             ":scope > .callout-header",
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(Tokens.SPACE_2.length())
+                    .gap(Tokens.SPACE_2)
                     .typography(Roles.LABEL)
-                    .textColor(Roles.FOREGROUND))
+                    .textColor(Tokens.CONTROL_FG))
         .select(
             ":scope > .callout-header > .callout-icon",
             s ->
@@ -180,10 +180,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                     .blockSize(CssLength.rem(1.25)))
         .select(
             ":scope > .callout-content",
-            s ->
-                s.fontSize(Tokens.FONT_SIZE_MD.length())
-                    .lineHeight("1.6")
-                    .textColor(Roles.FOREGROUND))
+            s -> s.fontSize(Tokens.FONT_SIZE_MD).lineHeight("1.6").textColor(Tokens.CONTROL_FG))
         .select(":scope > .callout-content > :first-child", s -> s.mt(CssLength.px(0)))
         .select(":scope > .callout-content > :last-child", s -> s.mb(CssLength.px(0)));
   }

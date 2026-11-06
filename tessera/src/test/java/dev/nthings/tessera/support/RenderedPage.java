@@ -64,6 +64,20 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return found;
   }
 
+  /// The `@scope` body of the view that contains `element`.
+  public String scopeBody(Element element) {
+    var current = element;
+    while (current != null && !current.hasAttr("data-view")) {
+      current = current.parent();
+    }
+    if (current == null) {
+      throw new AssertionError("No data-view ancestor");
+    }
+    return CssBlocks.block(
+        css(),
+        "@scope ([data-view=\"" + current.attr("data-view") + "\"]) to (:scope [data-view] > *){");
+  }
+
   /// The rule body of `element`'s generated class with the given `prefix` (`u-`, `i-`, `cq-`).
   public String ruleOf(Element element, String prefix) {
     return CssBlocks.classRule(css(), CssBlocks.generatedClass(element.className(), prefix));

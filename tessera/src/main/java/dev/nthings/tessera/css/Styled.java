@@ -426,8 +426,8 @@ public interface Styled<SELF extends Styled<SELF>> {
 
   default SELF highlight(HighlightTone tone) {
     style().put(CssProperty.BACKGROUND, tone.toCssBackground());
-    style().put(CssProperty.PADDING_INLINE, Tokens.SPACE_1.length());
-    style().put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM.length());
+    style().put(CssProperty.PADDING_INLINE, Tokens.SPACE_1);
+    style().put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
     return self();
   }
 

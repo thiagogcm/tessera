@@ -24,15 +24,11 @@ final class OverlaysPage {
         "Overlays & top layer",
         "Dialogs, drawers, popovers and tooltips rendered in the browser's top layer, opened by "
             + "declarative invoker commands and animated in and out with @starting-style.",
-        modal(),
+        Catalog.MODAL.documentation(),
         drawer(),
-        popover(),
+        Catalog.POPOVER.documentation(),
         tooltip(),
         searchPalette());
-  }
-
-  private static Demo modal() {
-    return Catalog.demo("modal");
   }
 
   private static Demo drawer() {
@@ -61,10 +57,6 @@ final class OverlaysPage {
         .code(
             "var drawer = Overlays.drawer(\"filters\", \"Filters\", DrawerSide.INLINE_START);",
             "Button.of(\"Open drawer\").command(drawer.dialogRef(), BuiltinCommand.SHOW_MODAL);");
-  }
-
-  private static Demo popover() {
-    return Catalog.demo("popover");
   }
 
   private static Demo tooltip() {

@@ -62,8 +62,13 @@ public final class Catalog {
     }
   }
 
-  private static final List<Story> STORIES =
-      List.of(actions(), modal(), popover(), switchCase(), overflow());
+  static final Story ACTIONS = actions();
+  static final Story MODAL = modal();
+  static final Story POPOVER = popover();
+  static final Story SWITCHES = switches();
+  static final Story OVERFLOW = overflow();
+
+  private static final List<Story> STORIES = List.of(ACTIONS, MODAL, POPOVER, SWITCHES, OVERFLOW);
 
   private Catalog() {}
 
@@ -97,23 +102,6 @@ public final class Catalog {
       }
     }
     return routes;
-  }
-
-  static Demo demo(String storyId) {
-    return story(storyId).documentation();
-  }
-
-  static IntoElement content(String storyId, String variant) {
-    return story(storyId).variant(variant).create();
-  }
-
-  private static Story story(String id) {
-    for (var story : STORIES) {
-      if (story.id().equals(id)) {
-        return story;
-      }
-    }
-    throw new IllegalArgumentException("Unknown story " + id);
   }
 
   private static Story actions() {
@@ -167,11 +155,12 @@ public final class Catalog {
         List.of(variant("toggle", "Toggle", true, Catalog::togglePopover)));
   }
 
-  private static Story switchCase() {
+  private static Story switches() {
     return new Story(
-        "switch",
+        "switches",
         "Switch",
-        "A checkbox with role=\"switch\". The off and on cases declare the checked state.",
+        "A checkbox with role=\"switch\", drawn as a track and sliding thumb with "
+            + "appearance: none and a :checked state.",
         List.of("role=\"switch\"", "appearance: none", ":checked"),
         List.of(
             "Forms.switchField(\"Weekly digest\", \"notify_digest\", false);",

@@ -83,8 +83,8 @@ public record MetricCard(String id, String title, String value) implements Rende
   @Override
   public void configureScope(ScopeStyle scope) {
     scope.root(s -> s
-        .p(Tokens.SPACE_5.length())
-        .rounded(Tokens.RADIUS_XL.length())
+        .p(Tokens.SPACE_5)
+        .rounded(Tokens.RADIUS_XL)
         .bg(Tokens.SURFACE_CARD)
         .borderSubtle(Tokens.BORDER_SUBTLE));
   }
@@ -105,8 +105,8 @@ Keep render callbacks free of shared mutable application state: site compilation
 `FlexLayout` sets display, direction, gap, alignment, and wrapping on the element that should be the flex container. The element keeps its own tag.
 
 ```java
-var links = FlexLayout.row(Tokens.SPACE_4.length(), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP);
-var stack = FlexLayout.column(Tokens.SPACE_4.length(), FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP);
+var links = FlexLayout.row(Tokens.SPACE_4, FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP);
+var stack = FlexLayout.column(Tokens.SPACE_4, FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP);
 
 Elements.section().layout(stack).children(
     Elements.nav().layout(links).ariaLabel("Site navigation")
@@ -114,7 +114,7 @@ Elements.section().layout(stack).children(
     p().text("Introduction"));
 ```
 
-`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length.length()`.
+`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length` tokens.
 
 A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowYAuto()`.
 
@@ -204,21 +204,20 @@ Duplicate bindings are reported as ambiguous; target-dependent command checks ar
 
 ## Customize the design system
 
-Components reference shared CSS custom properties. Replace a token by registering a new value under its existing name:
+Components reference shared CSS custom properties. Replace a token by registering a new value for it. `withValue` and `withLightDark` keep the token's name and category, so a length cannot replace a color:
 
 ```java
 var tokens = new Tokens()
-    .register(DesignToken.FontFamily.of(Tokens.FONT_BODY.name(), "Georgia,serif"))
-    .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.8"))
-    .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "1rem"))
-    .register(DesignToken.Color.lightDark(
-        Tokens.CONTROL_FG.name(), "oklch(20% 0.02 150)", "oklch(96% 0.01 150)"))
-    .register(DesignToken.Length.of(Tokens.CONTROL_FONT_SIZE.name(), "1rem"));
+    .register(Tokens.FONT_BODY.withValue("Georgia,serif"))
+    .register(Tokens.DENSITY.withValue("0.8"))
+    .register(Tokens.RADIUS_XL.withValue("1rem"))
+    .register(Tokens.CONTROL_FG.withLightDark("oklch(20% 0.02 150)", "oklch(96% 0.01 150)"))
+    .register(Tokens.CONTROL_FONT_SIZE.withValue("1rem"));
 
 var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 ```
 
-`Typography` sets family, size, weight, line height, and tracking together. `Roles.LABEL` is the control label. `Roles.FOREGROUND` is the control text color, defined as `var(--text-primary)` until a theme replaces `--control-fg`. `Motion.controlFeedback()`, `Motion.overlayEntry()`, and `Motion.disclosure()` set duration, easing, and the transitioned properties. Apply a preset that moves an element inside `motionSafe`, and leave its visible end state outside that query.
+`Typography` sets family, size, weight, line height, and tracking together. `Roles.LABEL` is the control label. `Tokens.CONTROL_FG` is the control text color, defined as `var(--text-primary)` until a theme replaces `--control-fg`. `Motion.controlFeedback()`, `Motion.overlayEntry()`, and `Motion.disclosure()` set duration, easing, and the transitioned properties. Apply a preset that moves an element inside `motionSafe`, and leave its visible end state outside that query.
 
 | Family | Public tokens | Defaults |
 | --- | --- | --- |
@@ -233,9 +232,9 @@ var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | 0.25, 0.375, 0.5, 0.75 rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light/dark OKLCH colors |
 
-Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Use `Length.length()` for length-valued authoring methods. Color, duration, family, and number tokens expose `varReference()` instead.
+Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Length tokens are `CssLength` values and work in any length-valued authoring method. Color, duration, family, and number tokens expose `varReference()` instead.
 
-`Roles.LABEL` and `Roles.FOREGROUND` are what field labels and callout titles consume. Replacing `CONTROL_FONT_SIZE` or `CONTROL_FG` changes both. Replacing `FONT_SIZE_SM` changes the label size only while `CONTROL_FONT_SIZE` still points at it.
+`Roles.LABEL` and `Tokens.CONTROL_FG` are what field labels and callout titles consume. Replacing `CONTROL_FONT_SIZE` or `CONTROL_FG` changes both. Replacing `FONT_SIZE_SM` changes the label size only while `CONTROL_FONT_SIZE` still points at it.
 
 ## Publish assets
 

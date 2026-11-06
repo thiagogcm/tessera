@@ -1,15 +1,8 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.a;
-import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.p;
-import static dev.nthings.tessera.core.Elements.text;
-
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Grid;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.CssLength;
-import java.util.List;
 
 /// Text fields with validation, auto-growing textareas, switches, and customizable selects.
 final class FormsPage {
@@ -25,9 +18,9 @@ final class FormsPage {
             + "content, and fully styleable selects — all native form elements.",
         fields(),
         textarea(),
-        switches(),
+        Catalog.SWITCHES.documentation(),
         select(),
-        actions());
+        Catalog.ACTIONS.documentation());
   }
 
   private static Demo fields() {
@@ -62,36 +55,6 @@ final class FormsPage {
         .features("field-sizing: content", "lh unit")
         .example(Forms.field("Release notes", Forms.textareaControl("notes", 2)))
         .code("Forms.field(\"Release notes\", Forms.textareaControl(\"notes\", 2));");
-  }
-
-  private static Demo switches() {
-    return Demo.of("switches", "Switch")
-        .summary(
-            "A checkbox with role=\"switch\", drawn as a track and sliding thumb with "
-                + "appearance: none and a :checked state.")
-        .features("role=\"switch\"", "appearance: none", ":checked")
-        .stage(FormsPage::switchStage)
-        .code(
-            "Forms.switchField(\"Email notifications\", \"notify_email\", true);",
-            "Forms.switchField(\"Weekly digest\", \"notify_digest\", false);");
-  }
-
-  private static List<IntoElement> switchStage() {
-    return List.of(
-        p().children(
-                a(Catalog.casePath("switch", "off")).text("Off case"),
-                text(" · "),
-                a(Catalog.casePath("switch", "on")).text("On case")),
-        Demo.surface(
-                div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(0.875)),
-                CssLength.rem(0.5))
-            .children(
-                Forms.switchField("Email notifications", "notify_email", true),
-                Catalog.content("switch", "off")));
-  }
-
-  private static Demo actions() {
-    return Catalog.demo("actions");
   }
 
   private static Demo select() {

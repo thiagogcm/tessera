@@ -10,8 +10,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.support.CssBlocks;
-import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -100,7 +98,7 @@ class ButtonTest {
         .hasAttribute("aria-hidden", "true")
         .hasText("Dismiss");
 
-    var scope = scopeBody(page, button);
+    var scope = page.scopeBody(button);
     var media = scope.indexOf("@media (prefers-reduced-motion: no-preference)");
     assertThat(media).isPositive();
     assertThat(scope.substring(0, media))
@@ -134,18 +132,5 @@ class ButtonTest {
         .hasAttribute("aria-busy", "true")
         .hasAttribute("disabled")
         .hasAttribute("aria-label", "Refresh");
-  }
-
-  private static String scopeBody(RenderedPage page, org.jsoup.nodes.Element element) {
-    var current = element;
-    while (current != null && !current.hasAttr("data-view")) {
-      current = current.parent();
-    }
-    if (current == null) {
-      throw new AssertionError("No data-view ancestor");
-    }
-    return CssBlocks.block(
-        page.css(),
-        "@scope ([data-view=\"" + current.attr("data-view") + "\"]) to (:scope [data-view] > *){");
   }
 }

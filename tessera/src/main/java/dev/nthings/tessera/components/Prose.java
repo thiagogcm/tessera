@@ -62,8 +62,7 @@ public final class Prose implements RenderView, ParentElement<Prose> {
 
   @Override
   public Element render() {
-    var container =
-        div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10.length());
+    var container = div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10);
     container.children(children);
     return container;
   }
@@ -82,35 +81,35 @@ public final class Prose implements RenderView, ParentElement<Prose> {
             ":scope p:not([class])",
             s ->
                 s.mb(CssLength.rem(1.125))
-                    .fontSize(Tokens.FONT_SIZE_MD.length())
+                    .fontSize(Tokens.FONT_SIZE_MD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .lineHeight("1.75"))
         .select(
             ":scope > h2",
             s ->
-                s.fontSize(Tokens.FONT_SIZE_2XL.length())
+                s.fontSize(Tokens.FONT_SIZE_2XL)
                     .fontWeight(700)
                     .mt(CssLength.rem(2.25))
-                    .mb(Tokens.SPACE_3.length())
+                    .mb(Tokens.SPACE_3)
                     .lineHeight("1.3"))
         .select(
             ":scope > h3",
             s ->
-                s.fontSize(Tokens.FONT_SIZE_XL.length())
+                s.fontSize(Tokens.FONT_SIZE_XL)
                     .fontWeight(600)
                     .mt(CssLength.rem(1.75))
-                    .mb(Tokens.SPACE_2.length())
+                    .mb(Tokens.SPACE_2)
                     .lineHeight("1.4"))
         .select(
             ":scope > ul, :scope > ol",
-            s -> s.ps(Tokens.SPACE_6.length()).mb(Tokens.SPACE_5.length()).lineHeight("1.75"))
+            s -> s.ps(Tokens.SPACE_6).mb(Tokens.SPACE_5).lineHeight("1.75"))
         .select(
             ":scope > blockquote",
             s ->
                 s.borderInlineStart("3px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                    .ps(Tokens.SPACE_4.length())
-                    .py(Tokens.SPACE_1.length())
-                    .my(Tokens.SPACE_6.length())
+                    .ps(Tokens.SPACE_4)
+                    .py(Tokens.SPACE_1)
+                    .my(Tokens.SPACE_6)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > hr",

@@ -1,5 +1,7 @@
 package dev.nthings.tessera.css;
 
+import java.util.Locale;
+
 /// A complete flex formatting context: display, direction, gap, item alignment, and wrapping.
 ///
 /// Apply it with [Styled#layout(FlexLayout)]. The value is copied into the element's
@@ -40,14 +42,10 @@ public record FlexLayout(
 
   /// `display` value. Block flex and inline flex are explicit.
   public enum Display {
-    FLEX("flex"),
-    INLINE_FLEX("inline-flex");
+    FLEX,
+    INLINE_FLEX;
 
-    private final String css;
-
-    Display(String css) {
-      this.css = css;
-    }
+    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
     public String css() {
       return css;
@@ -56,14 +54,10 @@ public record FlexLayout(
 
   /// `flex-direction` value.
   public enum Direction {
-    ROW("row"),
-    COLUMN("column");
+    ROW,
+    COLUMN;
 
-    private final String css;
-
-    Direction(String css) {
-      this.css = css;
-    }
+    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
     public String css() {
       return css;
@@ -91,14 +85,10 @@ public record FlexLayout(
 
   /// `flex-wrap` value.
   public enum Wrap {
-    NOWRAP("nowrap"),
-    WRAP("wrap");
+    NOWRAP,
+    WRAP;
 
-    private final String css;
-
-    Wrap(String css) {
-      this.css = css;
-    }
+    private final String css = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
     public String css() {
       return css;

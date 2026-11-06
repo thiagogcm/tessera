@@ -115,7 +115,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
           span()
               .attr("class", "section-badge")
               .inlineFlex()
-              .fontSize(Tokens.FONT_SIZE_XS.length())
+              .fontSize(Tokens.FONT_SIZE_XS)
               .fontWeight(700)
               .textColor(Tokens.ACCENT_PRIMARY)
               .text(badge));
@@ -124,15 +124,14 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     if (leadText != null) {
       headerEl.child(
           p().attr("class", "section-lead")
-              .fontSize(Tokens.FONT_SIZE_LG.length())
+              .fontSize(Tokens.FONT_SIZE_LG)
               .textColor(Tokens.TEXT_MUTED)
               .lineHeight("1.6")
               .m(CssLength.px(0))
               .text(leadText));
     }
 
-    var bodyContainer =
-        div().attr("class", "section-body").flex().flexCol().gap(Tokens.SPACE_4.length());
+    var bodyContainer = div().attr("class", "section-body").flex().flexCol().gap(Tokens.SPACE_4);
     bodyContainer.children(children);
 
     var sectionEl =
@@ -142,23 +141,23 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
             .attr("class", "content-section-node")
             .flex()
             .flexCol()
-            .gap(Tokens.SPACE_5.length())
+            .gap(Tokens.SPACE_5)
             .scrollMarginBlockStart(CssLength.rem(7));
 
     switch (surface) {
       case GHOST -> sectionEl.p(CssLength.px(0)).bgRaw("transparent").borderNone();
-      case FLAT -> sectionEl.py(Tokens.SPACE_6.length()).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
+      case FLAT -> sectionEl.py(Tokens.SPACE_6).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
       case CARD ->
           sectionEl
-              .p(Tokens.SPACE_6.length())
-              .rounded(Tokens.RADIUS_XL.length())
+              .p(Tokens.SPACE_6)
+              .rounded(Tokens.RADIUS_XL)
               .bg(Tokens.SURFACE_CARD)
               .borderSubtle(Tokens.BORDER_SUBTLE)
               .shadow("0 4px 16px -4px oklch(0% 0 0 / 0.12)");
       case HIGHLIGHT ->
           sectionEl
-              .p(Tokens.SPACE_6.length())
-              .rounded(Tokens.RADIUS_XL.length())
+              .p(Tokens.SPACE_6)
+              .rounded(Tokens.RADIUS_XL)
               .bgRaw("oklch(from " + Tokens.ACCENT_PRIMARY.varReference() + " 97% 0.03 h)")
               .borderSubtle(Tokens.ACCENT_PRIMARY);
     }
@@ -184,10 +183,9 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     return heading
         .attr("id", sectionDomId + "--heading")
         .fontSize(
-            (level == 2
-                    ? Tokens.FONT_SIZE_2XL
-                    : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
-                .length())
+            level == 2
+                ? Tokens.FONT_SIZE_2XL
+                : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
         .fontWeight(level == 2 ? 700 : 600)
         .text(title);
   }

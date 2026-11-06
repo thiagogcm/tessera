@@ -9,26 +9,26 @@ import java.util.Map;
 public final class Tokens {
 
   public static final DesignToken.FontFamily FONT_BODY =
-      DesignToken.FontFamily.of("font-body", "system-ui,sans-serif");
+      new DesignToken.FontFamily("font-body", "system-ui,sans-serif");
   public static final DesignToken.FontFamily FONT_MONO =
-      DesignToken.FontFamily.of("font-mono", "ui-monospace,SFMono-Regular,Consolas,monospace");
+      new DesignToken.FontFamily("font-mono", "ui-monospace,SFMono-Regular,Consolas,monospace");
   public static final DesignToken.Length FONT_SIZE_XS =
-      DesignToken.Length.of("font-size-xs", "0.75rem");
+      new DesignToken.Length("font-size-xs", "0.75rem");
   public static final DesignToken.Length FONT_SIZE_SM =
-      DesignToken.Length.of("font-size-sm", "0.875rem");
+      new DesignToken.Length("font-size-sm", "0.875rem");
   public static final DesignToken.Length FONT_SIZE_MD =
-      DesignToken.Length.of("font-size-md", "1rem");
+      new DesignToken.Length("font-size-md", "1rem");
   public static final DesignToken.Length FONT_SIZE_LG =
-      DesignToken.Length.of("font-size-lg", "1.125rem");
+      new DesignToken.Length("font-size-lg", "1.125rem");
   public static final DesignToken.Length FONT_SIZE_XL =
-      DesignToken.Length.of("font-size-xl", "1.25rem");
+      new DesignToken.Length("font-size-xl", "1.25rem");
   public static final DesignToken.Length FONT_SIZE_2XL =
-      DesignToken.Length.of("font-size-2xl", "1.5rem");
+      new DesignToken.Length("font-size-2xl", "1.5rem");
   public static final DesignToken.Number LINE_HEIGHT_BODY =
-      DesignToken.Number.of("line-height-body", "1.5");
+      new DesignToken.Number("line-height-body", "1.5");
   public static final DesignToken.Length TRACKING_NORMAL =
-      DesignToken.Length.of("tracking-normal", "0");
-  public static final DesignToken.Number DENSITY = DesignToken.Number.of("density", "1");
+      new DesignToken.Length("tracking-normal", "0");
+  public static final DesignToken.Number DENSITY = new DesignToken.Number("density", "1");
   public static final DesignToken.Length CONTROL_PADDING_INLINE =
       DesignToken.Length.space("control-padding-inline", "0.875rem");
   public static final DesignToken.Length SPACE_0_5 =
@@ -48,12 +48,13 @@ public final class Tokens {
   public static final DesignToken.Length SPACE_8 = DesignToken.Length.space("space-8", "2rem");
   public static final DesignToken.Length SPACE_10 = DesignToken.Length.space("space-10", "2.5rem");
   public static final DesignToken.Length SPACE_12 = DesignToken.Length.space("space-12", "3rem");
-  public static final DesignToken.Length RADIUS_SM = DesignToken.Length.of("radius-sm", "0.25rem");
-  public static final DesignToken.Length RADIUS_MD = DesignToken.Length.of("radius-md", "0.375rem");
-  public static final DesignToken.Length RADIUS_LG = DesignToken.Length.of("radius-lg", "0.5rem");
-  public static final DesignToken.Length RADIUS_XL = DesignToken.Length.of("radius-xl", "0.75rem");
+  public static final DesignToken.Length RADIUS_SM = new DesignToken.Length("radius-sm", "0.25rem");
+  public static final DesignToken.Length RADIUS_MD =
+      new DesignToken.Length("radius-md", "0.375rem");
+  public static final DesignToken.Length RADIUS_LG = new DesignToken.Length("radius-lg", "0.5rem");
+  public static final DesignToken.Length RADIUS_XL = new DesignToken.Length("radius-xl", "0.75rem");
   public static final DesignToken.Length RADIUS_FULL =
-      DesignToken.Length.of("radius-full", "9999px");
+      new DesignToken.Length("radius-full", "9999px");
 
   public static final DesignToken.FontFamily CONTROL_FAMILY =
       DesignToken.FontFamily.alias("control-family", FONT_BODY);
@@ -64,11 +65,11 @@ public final class Tokens {
   public static final DesignToken.Length CONTROL_TRACKING =
       DesignToken.Length.alias("control-tracking", TRACKING_NORMAL);
   public static final DesignToken.Duration CONTROL_FEEDBACK_DURATION =
-      DesignToken.Duration.of("control-feedback-duration", "150ms");
+      new DesignToken.Duration("control-feedback-duration", "150ms");
   public static final DesignToken.Duration OVERLAY_DURATION =
-      DesignToken.Duration.of("overlay-duration", "200ms");
+      new DesignToken.Duration("overlay-duration", "200ms");
   public static final DesignToken.Duration DISCLOSURE_DURATION =
-      DesignToken.Duration.of("disclosure-duration", "250ms");
+      new DesignToken.Duration("disclosure-duration", "250ms");
 
   public static final DesignToken.Color SURFACE_CANVAS =
       DesignToken.Color.lightDark("surface-canvas", "oklch(99% 0.005 260)", "oklch(14% 0.015 260)");

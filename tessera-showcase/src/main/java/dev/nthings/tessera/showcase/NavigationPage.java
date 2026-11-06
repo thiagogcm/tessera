@@ -33,7 +33,7 @@ final class NavigationPage {
         carousel(),
         dropdown(),
         pager(),
-        overflow());
+        Catalog.OVERFLOW.documentation());
   }
 
   private static Demo breadcrumbs() {
@@ -168,9 +168,5 @@ final class NavigationPage {
                 new DocPager.PageRef("/overlays", "Overlays")))
         .code(
             "DocPager.of(new PageRef(\"/layout\", \"Layout\"), new PageRef(\"/overlays\", \"Overlays\"));");
-  }
-
-  private static Demo overflow() {
-    return Catalog.demo("overflow");
   }
 }

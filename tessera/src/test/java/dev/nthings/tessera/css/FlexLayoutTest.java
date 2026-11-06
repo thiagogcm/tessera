@@ -94,7 +94,7 @@ class FlexLayoutTest {
   @Test
   @DisplayName("refining one element's gap leaves other uses of the same recipe unchanged")
   void gapRefinementStaysOnOneElement() {
-    var links = FlexLayout.row(Tokens.SPACE_4.length(), Align.CENTER, Wrap.WRAP);
+    var links = FlexLayout.row(Tokens.SPACE_4, Align.CENTER, Wrap.WRAP);
     RenderedPage page =
         render(
             main()

@@ -15,7 +15,6 @@ import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageDocument;
@@ -77,11 +76,11 @@ class ShowcaseIT {
             .outputMode(OutputMode.inlineStyle())
             .tokens(
                 new Tokens()
-                    .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.5"))
-                    .register(DesignToken.FontFamily.of(Tokens.FONT_BODY.name(), "monospace"))
-                    .register(DesignToken.Length.of(Tokens.FONT_SIZE_MD.name(), "20px"))
-                    .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "18px"))
-                    .register(DesignToken.Length.of(Tokens.RADIUS_LG.name(), "12px")))
+                    .register(Tokens.DENSITY.withValue("0.5"))
+                    .register(Tokens.FONT_BODY.withValue("monospace"))
+                    .register(Tokens.FONT_SIZE_MD.withValue("20px"))
+                    .register(Tokens.RADIUS_XL.withValue("18px"))
+                    .register(Tokens.RADIUS_LG.withValue("12px")))
             .route(
                 new SiteRoute(
                     "/",
@@ -522,7 +521,7 @@ class ShowcaseIT {
                 AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
         .isVisible();
 
-    page.navigate(caseUrl("switch", "on"));
+    page.navigate(caseUrl("switches", "on"));
     var toggle =
         page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest"));
     assertThat(toggle).isChecked();
@@ -535,7 +534,7 @@ class ShowcaseIT {
                 AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
         .isHidden();
 
-    page.navigate(caseUrl("switch", "on"));
+    page.navigate(caseUrl("switches", "on"));
     assertThat(
             page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest")))
         .isChecked();
@@ -564,7 +563,7 @@ class ShowcaseIT {
                 AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
         .isVisible();
 
-    page.navigate(caseUrl("switch", "off"));
+    page.navigate(caseUrl("switches", "off"));
     assertThat(
             page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest")))
         .not()

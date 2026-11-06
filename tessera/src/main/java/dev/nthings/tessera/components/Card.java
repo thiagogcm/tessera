@@ -140,9 +140,9 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                 s.containerInlineSize(CONTAINER)
                     .flex()
                     .flexCol()
-                    .gap(Tokens.SPACE_3.length())
-                    .p(Tokens.SPACE_5.length())
-                    .rounded(Tokens.RADIUS_XL.length())
+                    .gap(Tokens.SPACE_3)
+                    .p(Tokens.SPACE_5)
+                    .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
                     .relative())
@@ -183,8 +183,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             s ->
                 s.grid()
                     .gridColumns("minmax(10rem, 35%) 1fr")
-                    .colGap(Tokens.SPACE_5.length())
-                    .rowGap(Tokens.SPACE_3.length())
+                    .colGap(Tokens.SPACE_5)
+                    .rowGap(Tokens.SPACE_3)
                     .itemsStart())
         .select(MEDIA_CARD + " > *", s -> s.gridColumn("1 / -1"))
         .container(
@@ -240,7 +240,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     h3,
                     Elements.p()
                         .textColor(Tokens.TEXT_MUTED)
-                        .fontSize(Tokens.FONT_SIZE_SM.length())
+                        .fontSize(Tokens.FONT_SIZE_SM)
                         .text(subtitleText)));
       } else {
         root.child(h3);
@@ -252,18 +252,13 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     if (contentItems.size() == 1) {
       root.child(contentItems.getFirst());
     } else if (contentItems.size() > 1) {
-      root.child(
-          Elements.div().flex().flexCol().gap(Tokens.SPACE_2.length()).children(contentItems));
+      root.child(Elements.div().flex().flexCol().gap(Tokens.SPACE_2).children(contentItems));
     }
 
     // Region 4: Footer (holds independent actions as native links/buttons)
     if (!footerActions.isEmpty()) {
       root.child(
-          Elements.footer()
-              .flex()
-              .itemsCenter()
-              .gap(Tokens.SPACE_3.length())
-              .children(footerActions));
+          Elements.footer().flex().itemsCenter().gap(Tokens.SPACE_3).children(footerActions));
     }
 
     return root;

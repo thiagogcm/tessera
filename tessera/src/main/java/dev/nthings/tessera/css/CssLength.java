@@ -5,7 +5,11 @@ import java.math.RoundingMode;
 
 /// Sealed algebraic CSS length units.
 public sealed interface CssLength
-    permits CssLength.Dimension, CssLength.Auto, CssLength.Fluid, CssLength.Expr {
+    permits CssLength.Dimension,
+        CssLength.Auto,
+        CssLength.Fluid,
+        CssLength.Expr,
+        DesignToken.Length {
 
   String toCss();
 

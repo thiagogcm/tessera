@@ -56,15 +56,11 @@ public final class SimpleTable implements RenderOnce {
             .fullWidth()
             .maxInlineSize(CssLength.pct(100))
             .borderSubtle(Tokens.BORDER_SUBTLE)
-            .rounded(Tokens.RADIUS_LG.length());
+            .rounded(Tokens.RADIUS_LG);
 
     if (caption != null) {
       table.child(
-          Elements.caption()
-              .py(Tokens.SPACE_2.length())
-              .fontWeight(600)
-              .textAlign("start")
-              .text(caption));
+          Elements.caption().py(Tokens.SPACE_2).fontWeight(600).textAlign("start").text(caption));
     }
 
     if (!headers.isEmpty()) {
@@ -73,8 +69,8 @@ public final class SimpleTable implements RenderOnce {
         headRow.child(
             Elements.th()
                 .attr("scope", "col")
-                .px(Tokens.SPACE_3.length())
-                .py(Tokens.SPACE_2.length())
+                .px(Tokens.SPACE_3)
+                .py(Tokens.SPACE_2)
                 .textAlign("start")
                 .text(h));
       }
@@ -85,7 +81,7 @@ public final class SimpleTable implements RenderOnce {
     for (var row : rows) {
       var tr = Elements.tr();
       for (var cell : row) {
-        tr.child(Elements.td().px(Tokens.SPACE_3.length()).py(Tokens.SPACE_2.length()).child(cell));
+        tr.child(Elements.td().px(Tokens.SPACE_3).py(Tokens.SPACE_2).child(cell));
       }
       tbody.child(tr);
     }

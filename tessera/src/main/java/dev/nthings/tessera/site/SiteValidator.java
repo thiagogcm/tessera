@@ -1,11 +1,13 @@
 package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompilationDiagnostic;
+import dev.nthings.tessera.render.CompilationLocation;
 import dev.nthings.tessera.render.PreparedPage;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -14,29 +16,43 @@ import java.util.Set;
 final class SiteValidator {
   private SiteValidator() {}
 
-  static void validateViewTransitions(Map<String, PreparedPage> preparedByRoute) {
-    var routesByKey = new LinkedHashMap<TransitionKey, Set<String>>();
+  static void validateViewTransitions(
+      Map<String, PreparedPage> preparedByRoute, List<CompilationDiagnostic> diagnostics) {
+    var locationsByKey = new LinkedHashMap<TransitionKey, List<CompilationLocation>>();
     for (var entry : preparedByRoute.entrySet()) {
-      var routePath = entry.getKey();
-      for (var key : entry.getValue().transitionKeys()) {
-        routesByKey.computeIfAbsent(key, _ -> new LinkedHashSet<>()).add(routePath);
-      }
+      var route = entry.getKey();
+      entry
+          .getValue()
+          .transitionLocations()
+          .forEach(
+              (key, location) ->
+                  locationsByKey
+                      .computeIfAbsent(key, _ -> new ArrayList<>())
+                      .add(location.atRoute(route)));
     }
-    for (var entry : routesByKey.entrySet()) {
+    for (var entry : locationsByKey.entrySet()) {
       var key = entry.getKey();
-      var routePaths = entry.getValue();
-      if (routePaths.size() < 2) {
-        throw new AccessibilityViolationException(
-            "TransitionKey '"
-                + key.name()
-                + "' declared on route '"
-                + routePaths.iterator().next()
-                + "' must appear on at least two distinct routes site-wide to enable cross-document morphing.");
+      var locations = entry.getValue();
+      if (locations.size() < 2) {
+        var location = locations.getFirst();
+        diagnostics.add(
+            new CompilationDiagnostic(
+                "unshared-transition-key",
+                location,
+                "TransitionKey '"
+                    + key.name()
+                    + "' declared on route '"
+                    + location.route()
+                    + "' must appear on at least two distinct routes site-wide to enable cross-document morphing.",
+                "Use the same key on the corresponding element of another route, or remove this transition key."));
       }
     }
   }
 
-  static void validateSiteLinks(Map<String, PreparedPage> preparedByRoute, Set<String> assetPaths) {
+  static void validateSiteLinks(
+      Map<String, PreparedPage> preparedByRoute,
+      Set<String> assetPaths,
+      List<CompilationDiagnostic> diagnostics) {
     var publishedPages = new LinkedHashMap<String, PreparedPage>();
     preparedByRoute.forEach(
         (route, page) -> {
@@ -49,7 +65,9 @@ final class SiteValidator {
       var sourcePage = entry.getValue();
       var base = SiteRoute.documentUriFor(sourceRoute);
 
-      for (var href : sourcePage.outgoingHrefs()) {
+      for (var link : sourcePage.outgoingLinks().entrySet()) {
+        var href = link.getKey();
+        var location = link.getValue().atRoute(sourceRoute);
         var reference = URI.create(href);
         if (!reference.isAbsolute() && reference.getRawAuthority() == null) {
           // Empty paths (query-only and fragment-only references) retain the current document.
@@ -67,24 +85,33 @@ final class SiteValidator {
 
           var targetPage = publishedPages.get(targetRoute);
           if (targetPage == null) {
-            throw new AccessibilityViolationException(
-                "Route \""
-                    + sourceRoute
-                    + "\" references unregistered internal route or asset \""
-                    + href
-                    + "\"");
+            diagnostics.add(
+                new CompilationDiagnostic(
+                    "missing-route-or-asset",
+                    location,
+                    "Route \""
+                        + sourceRoute
+                        + "\" references unregistered internal route or asset \""
+                        + href
+                        + "\"",
+                    "Register the destination route or asset, or correct the URL relative to this page's published URL."));
+            continue;
           }
           if (fragment != null
               && !fragment.isEmpty()
               && !targetPage.registeredDomIds().contains(fragment)) {
-            throw new AccessibilityViolationException(
-                "Route \""
-                    + sourceRoute
-                    + "\" links to missing target anchor #"
-                    + fragment
-                    + " on route \""
-                    + targetRoute
-                    + "\"");
+            diagnostics.add(
+                new CompilationDiagnostic(
+                    "missing-route-fragment",
+                    location,
+                    "Route \""
+                        + sourceRoute
+                        + "\" links to missing target anchor #"
+                        + fragment
+                        + " on route \""
+                        + targetRoute
+                        + "\"",
+                    "Correct the fragment or add the matching ID to the destination page."));
           }
         }
       }

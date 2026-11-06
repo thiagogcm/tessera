@@ -2,24 +2,40 @@ package dev.nthings.tessera.render;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.button;
+import static dev.nthings.tessera.core.Elements.deferred;
+import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.el;
 import static dev.nthings.tessera.core.Elements.img;
+import static dev.nthings.tessera.core.Elements.late;
 import static dev.nthings.tessera.core.Elements.main;
-import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatCode;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
+import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
+import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.DocumentKey;
+import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.PopoverMode;
+import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@DisplayName("Accessibility rules enforced at compile time")
+@DisplayName("Page authoring diagnostics")
 class AccessibilityRulesTest {
 
   static Stream<Arguments> violations() {
@@ -37,18 +53,191 @@ class AccessibilityRulesTest {
             new PageDocument(
                 "CLS Violation",
                 main().child(img("/banner.jpg", "Banner without width/height or aspect-ratio"))),
-            "aspect-ratio"),
-        argumentSet(
-            "duplicate DOM id",
-            new PageDocument("Duplicate Id", div().children(p().id("dup"), p().id("dup"))),
-            "Duplicate DOM id 'dup'"));
+            "aspect-ratio"));
+  }
+
+  record Panel(String id, Element content) implements RenderView {
+    @Override
+    public ElementId entityId() {
+      return ElementId.of(id);
+    }
+
+    @Override
+    public Element render() {
+      return div().child(content);
+    }
+  }
+
+  @Test
+  @DisplayName(
+      "reports independent errors with their lexical component paths, including late and deferred content")
+  void reportsIndependentErrorsWithLexicalComponentPaths() {
+    var missing = ElementRef.named("confirmation");
+    var document =
+        new PageDocument(
+            "Settings",
+            new Panel(
+                "settings",
+                div()
+                    .children(
+                        new Panel("profile", img("/avatar.png", "Profile photo")),
+                        new Panel(
+                            "actions",
+                            div()
+                                .children(
+                                    late(
+                                        () ->
+                                            button()
+                                                .id("save")
+                                                .command(missing, BuiltinCommand.SHOW_MODAL)
+                                                .text("Save")),
+                                    a("#details%ZZ").id("details").text("Details"),
+                                    deferred(button().id("cancel"), 10))))));
+
+    var failure =
+        catchThrowableOfType(CompilationException.class, () -> PageCompiler.compile(document));
+
+    assertThat(failure.diagnostics())
+        .extracting(
+            CompilationDiagnostic::rule,
+            d -> d.location().pageTitle(),
+            d -> d.location().componentPath(),
+            d -> d.location().tagName(),
+            d -> d.location().domId())
+        .containsExactlyInAnyOrder(
+            tuple(
+                "image-dimensions",
+                "Settings",
+                List.of("panel[settings]", "panel[settings--profile]"),
+                "img",
+                null),
+            tuple(
+                "unbound-reference",
+                "Settings",
+                List.of("panel[settings]", "panel[settings--actions]"),
+                "button",
+                "settings--actions--save"),
+            tuple(
+                "invalid-url",
+                "Settings",
+                List.of("panel[settings]", "panel[settings--actions]"),
+                "a",
+                "settings--actions--details"),
+            tuple(
+                "interactive-label",
+                "Settings",
+                List.of("panel[settings]", "panel[settings--actions]"),
+                "button",
+                "settings--actions--cancel"));
+    assertThat(failure.getMessage())
+        .contains("Settings", "settings--actions--save", "Fix:", ".id(ref)");
+  }
+
+  record DocumentExtras() implements RenderView {
+    private static final DocumentKey<Object> ACTIONS =
+        DocumentKey.of("extra-actions", Object.class, Object::new);
+
+    @Override
+    public ElementId entityId() {
+      return ElementId.of("extras");
+    }
+
+    @Override
+    public Element render() {
+      var context = RenderContext.current();
+      context.contributeHead(
+          el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
+      context.atDocumentEnd(ACTIONS, () -> button().id("subscribe"));
+      return div();
+    }
+  }
+
+  @Test
+  @DisplayName("head and end-of-document errors identify the component that registered the content")
+  void reportsContributionOrigins() {
+    var document =
+        new PageDocument("Settings", new Panel("settings", new DocumentExtras().intoElement()));
+
+    var failure =
+        catchThrowableOfType(CompilationException.class, () -> PageCompiler.compile(document));
+
+    assertThat(failure.diagnostics())
+        .extracting(
+            CompilationDiagnostic::rule,
+            d -> d.location().componentPath(),
+            d -> d.location().tagName())
+        .containsExactlyInAnyOrder(
+            tuple(
+                "invalid-url",
+                List.of("panel[settings]", "document-extras[settings--extras]"),
+                "link"),
+            tuple(
+                "interactive-label",
+                List.of("panel[settings]", "document-extras[settings--extras]"),
+                "button"));
+  }
+
+  @Test
+  @DisplayName(
+      "an unresolved label reports its binding error without an additional missing-label error")
+  void unresolvedLabelDoesNotProduceSecondaryLabelError() {
+    var label = ElementRef.named("save-label");
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> PageCompiler.compile(new PageDocument("Editor", button().ariaLabelledBy(label))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(d -> assertThat(d.rule()).isEqualTo("unbound-reference"));
+  }
+
+  @ParameterizedTest
+  @EnumSource(BuiltinCommand.class)
+  @DisplayName(
+      "rejects native commands aimed at an ordinary element and accepts compatible targets")
+  void checksNativeCommandTargets(BuiltinCommand command) {
+    var target = div().id("target");
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                PageCompiler.compile(
+                    new PageDocument(
+                        "Commands",
+                        main().children(button().command(target, command).text("Run"), target))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("incompatible-command-target");
+              assertThat(d.message()).contains(command.wireValue(), "<div>", "target");
+            });
+
+    var compatible =
+        switch (command) {
+          case SHOW_MODAL, CLOSE, REQUEST_CLOSE -> dialog().id("target");
+          case SHOW_POPOVER, HIDE_POPOVER, TOGGLE_POPOVER ->
+              div().id("target").popover(PopoverMode.AUTO);
+        };
+    assertThatCode(
+            () ->
+                PageCompiler.compile(
+                    new PageDocument(
+                        "Commands",
+                        main()
+                            .children(
+                                button().command(compatible, command).text("Run"),
+                                deferred(compatible, 10)))))
+        .doesNotThrowAnyException();
   }
 
   @ParameterizedTest
   @MethodSource("violations")
   @DisplayName("rejects invalid markup")
   void rejectsInvalidMarkup(PageDocument document, String message) {
-    assertThatExceptionOfType(AccessibilityViolationException.class)
+    assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> PageCompiler.compile(document))
         .withMessageContaining(message);
   }

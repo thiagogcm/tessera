@@ -8,7 +8,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.DocumentHeading;
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompilationException;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -46,7 +46,7 @@ class TocTest {
           Toc.of(
               "broken-toc", "Contents", List.of(DocumentHeading.h2("missing-section", "Missing")));
 
-      assertThatExceptionOfType(AccessibilityViolationException.class)
+      assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(brokenToc))
           .withMessageContaining("references a non-existent fragment ID");
     }

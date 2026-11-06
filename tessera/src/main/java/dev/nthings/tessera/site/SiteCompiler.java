@@ -3,7 +3,10 @@ package dev.nthings.tessera.site;
 import static dev.nthings.tessera.site.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.site.SiteArtifacts.SITEMAP_PATH;
 
+import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.render.CompilationDiagnostic;
+import dev.nthings.tessera.render.CompilationException;
 import dev.nthings.tessera.render.CompiledPage;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PreparedPage;
@@ -38,18 +41,20 @@ public final class SiteCompiler {
     }
 
     var siteHead = site.linkSpeculation().headElements();
-    var preparedPages =
-        parallelMap(
-            routes, route -> PageCompiler.prepare(route.document(), site.tokens(), siteHead));
+    var preparedPages = preparePages(site, siteHead);
     for (var i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
     // Verify cross-route links and #fragment targets
-    SiteValidator.validateSiteLinks(preparedByRoute, files.keySet());
+    var diagnostics = new ArrayList<CompilationDiagnostic>();
+    SiteValidator.validateSiteLinks(preparedByRoute, files.keySet(), diagnostics);
 
     // Verify TransitionKey appearance across multiple routes
-    SiteValidator.validateViewTransitions(preparedByRoute);
+    SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
+    if (!diagnostics.isEmpty()) {
+      throw new CompilationException(diagnostics);
+    }
 
     // Deterministically merge all route stylesheets in route order
     var sharedCollector = new StyleSheetCollector();
@@ -97,6 +102,39 @@ public final class SiteCompiler {
     if (files.putIfAbsent(file.path(), file) != null) {
       throw new IllegalArgumentException("Duplicate file path: " + file.path());
     }
+  }
+
+  private sealed interface Preparation permits Prepared, Failed {}
+
+  private record Prepared(PreparedPage page) implements Preparation {}
+
+  private record Failed(List<CompilationDiagnostic> diagnostics) implements Preparation {}
+
+  private static List<PreparedPage> preparePages(SiteDefinition site, List<Element> siteHead) {
+    List<Preparation> preparations =
+        parallelMap(
+            site.routes(),
+            route -> {
+              try {
+                return new Prepared(
+                    PageCompiler.prepare(route.document(), site.tokens(), siteHead));
+              } catch (CompilationException failure) {
+                return new Failed(
+                    failure.diagnostics().stream().map(d -> d.atRoute(route.path())).toList());
+              }
+            });
+    var pages = new ArrayList<PreparedPage>(preparations.size());
+    var diagnostics = new ArrayList<CompilationDiagnostic>();
+    for (var preparation : preparations) {
+      switch (preparation) {
+        case Prepared(var page) -> pages.add(page);
+        case Failed(var errors) -> diagnostics.addAll(errors);
+      }
+    }
+    if (!diagnostics.isEmpty()) {
+      throw new CompilationException(diagnostics);
+    }
+    return pages;
   }
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.

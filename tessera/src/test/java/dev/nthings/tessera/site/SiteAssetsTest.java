@@ -8,7 +8,7 @@ import static dev.nthings.tessera.support.SiteFixtures.homeWithLogoAndGuide;
 import static dev.nthings.tessera.support.SiteFixtures.logo;
 import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompilationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ class SiteAssetsTest {
   void rejectsImageReferencingUnregisteredAsset() {
     var site = SiteDefinition.of(homeWithLogoAndGuide());
 
-    assertThatExceptionOfType(AccessibilityViolationException.class)
+    assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> SiteCompiler.compile(site))
         .withMessageContaining(LOGO_PATH);
   }

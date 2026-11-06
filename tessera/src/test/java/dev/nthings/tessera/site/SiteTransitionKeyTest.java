@@ -5,7 +5,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompilationException;
 import dev.nthings.tessera.render.PageDocument;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class SiteTransitionKeyTest {
             new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
             new SiteRoute("/about", new PageDocument("About", h1().text("About"))));
 
-    assertThatExceptionOfType(AccessibilityViolationException.class)
+    assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> SiteCompiler.compile(singleOccurrenceSite))
         .withMessageContainingAll(
             "TransitionKey 'page-title-morph'",

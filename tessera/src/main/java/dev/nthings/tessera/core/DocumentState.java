@@ -13,10 +13,10 @@ import org.jspecify.annotations.Nullable;
 public final class DocumentState {
 
   private final Map<DocumentKey<?>, Object> values = new LinkedHashMap<>();
-  private final List<Element> headElements = new ArrayList<>();
+  private final List<Contribution<Element>> headElements = new ArrayList<>();
   private final Map<String, DocumentHeading> headings = new LinkedHashMap<>();
-  private final Map<DocumentKey<?>, Supplier<? extends IntoElement>> documentEndSections =
-      new LinkedHashMap<>();
+  private final Map<DocumentKey<?>, Contribution<Supplier<? extends IntoElement>>>
+      documentEndSections = new LinkedHashMap<>();
 
   <T> T getOrCreate(DocumentKey<T> key) {
     return key.cast(values.computeIfAbsent(key, _ -> key.create()));
@@ -28,15 +28,23 @@ public final class DocumentState {
     return value != null ? key.cast(value) : null;
   }
 
-  void contributeHead(Element element) {
-    headElements.add(element);
+  /// Content registered for a document-level position, with its originating component path.
+  public record Contribution<T>(T content, List<String> componentPath) {
+    public Contribution {
+      componentPath = List.copyOf(componentPath);
+    }
   }
 
-  void atDocumentEnd(DocumentKey<?> owner, Supplier<? extends IntoElement> section) {
-    documentEndSections.putIfAbsent(owner, section);
+  void contributeHead(Element element, List<String> componentPath) {
+    headElements.add(new Contribution<>(element, componentPath));
   }
 
-  public List<Element> headElements() {
+  void atDocumentEnd(
+      DocumentKey<?> owner, Supplier<? extends IntoElement> section, List<String> componentPath) {
+    documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath));
+  }
+
+  public List<Contribution<Element>> headElements() {
     return Collections.unmodifiableList(headElements);
   }
 
@@ -53,7 +61,7 @@ public final class DocumentState {
   }
 
   /// Snapshot of the registered end-of-document sections, in registration order.
-  public List<Supplier<? extends IntoElement>> documentEndSections() {
+  public List<Contribution<Supplier<? extends IntoElement>>> documentEndSections() {
     return List.copyOf(documentEndSections.values());
   }
 }

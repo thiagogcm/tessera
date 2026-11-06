@@ -17,6 +17,7 @@ sealed interface ResolvedNode
   /// `attributes`.
   record ResolvedTag(
       HtmlTag tag,
+      CompilationLocation location,
       Map<String, String> attributes,
       Map<String, IdReference> idReferences,
       List<ResolvedNode> children,

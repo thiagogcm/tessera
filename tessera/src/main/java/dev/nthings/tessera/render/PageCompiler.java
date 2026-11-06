@@ -26,7 +26,7 @@ public final class PageCompiler {
   public static PreparedPage prepare(
       PageDocument document, Tokens tokens, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheetCollector();
-    var state = new CompilationState();
+    var state = new CompilationState(document.title());
 
     var p1 = LayoutPass.layout(document, tokens, siteHead, styles, state);
 
@@ -35,8 +35,17 @@ public final class PageCompiler {
     var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
     for (var head : p1.headNodes()) {
       var linked = ReferenceLinker.link(head, state);
-      PageValidator.validateNodeTree(linked, state);
       headNodes.add(linked);
+    }
+
+    for (var node : bodyNodes) {
+      PageValidator.validateNodeTree(node, state);
+    }
+    for (var head : headNodes) {
+      PageValidator.validateNodeTree(head, state);
+    }
+    if (!state.diagnostics.isEmpty()) {
+      throw new CompilationException(state.diagnostics);
     }
 
     return new PreparedPage(
@@ -44,8 +53,8 @@ public final class PageCompiler {
         styles,
         bodyNodes,
         state.registeredDomIds,
-        state.outgoingHrefs,
-        state.transitionKeys,
+        state.outgoingLinks,
+        state.transitionLocations,
         headNodes,
         p1.state().headings());
   }
@@ -70,9 +79,6 @@ public final class PageCompiler {
     for (CompilationState.ResolvedDeferred deferred;
         (deferred = state.deferredQueue.poll()) != null; ) {
       bodyNodes.add(ReferenceLinker.link(deferred.node(), state));
-    }
-    for (var node : bodyNodes) {
-      PageValidator.validateNodeTree(node, state);
     }
     return bodyNodes;
   }

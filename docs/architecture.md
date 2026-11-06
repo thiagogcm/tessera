@@ -2,20 +2,13 @@
 
 Tessera is a declarative Java 25 HTML/CSS compiler with a component library and static-site tooling. Authors construct mutable element builders and components. Compilation expands them into a separate linked tree, validates that tree, and emits HTML with inline or external CSS. Site compilation coordinates this process across routes and produces a shared stylesheet and generated artifacts.
 
-## Assessment of the original structure
+## API evolution
 
-| Finding | Consequence | Refactor |
-| --- | --- | --- |
-| `core` imported CSS while `css` imported `core.FluentBuilder` and `core.Fnv1a64` | Element model and CSS formed a package cycle | Move shared fluent composition and hashing to `foundation` |
-| The 664-line `PageCompiler` combined expansion, identity allocation, linking, validation, encoding, and serialization | Independent concerns shared one implementation boundary | Extract package-private passes behind a public coordinator |
-| Public nested `ResolvedNode` types and a public `PreparedPage` record exposed the intermediate representation | Consumers could construct incomplete trees and depend on their representation | Publish an opaque prepared-page handle; hide the entire intermediate tree |
-| Prepared results exposed a mutable stylesheet collector and `DocumentState` | Site code could modify compilation state and reach private component registries | Snapshot metadata and privately own CSS contributions |
-| Search generation called `Toc.entries(prepared.documentState())` | Infrastructure depended on one component's registry convention | Introduce component-independent `DocumentHeading` metadata |
-| `SiteCompiler` owned concurrency, validation, XML/JSON generation, and filesystem writes | Compilation also owned storage and artifact formats | Extract `SiteValidator`, `SiteArtifacts`, and public `SiteWriter` |
-| `site.SiteNavigation` constructed UI components | Site infrastructure imported the component catalog | Move route-to-component composition to `navigation` |
-| `TagElement.AnchorTarget` was unused | Public abstraction without a role | Remove the unused type |
+Tessera has no external consumers. Evolve APIs directly with breaking changes and zero compatibility shims. Update the implementation, showcase, tests, and documentation together; do not add deprecation wrappers or migration guides.
 
-Several existing abstractions already serve useful boundaries and remain:
+Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples). Select the diagram type that best expresses the structure, relationships, states, or interactions being documented. Exact mappings remain Markdown tables.
+
+## Core abstractions
 
 - `IntoElement` is the authoring conversion contract. The sealed `Element` hierarchy allows exhaustive compiler dispatch.
 - `RenderOnce` expands without adding a scope. `RenderView` establishes an identity namespace and optional CSS scope before expansion.
@@ -24,9 +17,60 @@ Several existing abstractions already serve useful boundaries and remain:
 - `DocumentKey<T>` supports per-compilation component state. Footnotes and image coordination retain their own registries without site-layer knowledge.
 - `OutputMode` describes CSS publication independently of filesystem I/O.
 
+The authoring contracts convert components into element wrappers before the layout pass expands them. The class diagram shows the relevant subset of the sealed element hierarchy:
+
+```mermaid
+classDiagram
+    direction TB
+    class IntoElement {
+        <<interface>>
+        +intoElement() Element
+    }
+    class Element {
+        <<interface>>
+    }
+    class RenderOnce {
+        <<interface>>
+        +render() Element
+    }
+    class RenderView {
+        <<interface>>
+        +render() Element
+        +configureScope(ScopeStyle) void
+    }
+    class TagElement
+    class RenderOnceElement {
+        <<record>>
+    }
+    class RenderViewElement {
+        <<record>>
+    }
+
+    IntoElement <|-- Element
+    IntoElement <|-- RenderOnce
+    IntoElement <|-- RenderView
+    Element <|.. TagElement
+    Element <|.. RenderOnceElement
+    Element <|.. RenderViewElement
+    RenderOnceElement --> RenderOnce : wraps
+    RenderViewElement --> RenderView : wraps
+```
+
 ## Dependency graph
 
-These are direct imports between production packages, pointing from consumers to providers. The graph has no package cycles.
+Arrows point from consumers to providers. The diagram omits transitive edges for readability; the table lists every direct project dependency. The graph has no package cycles.
+
+```mermaid
+flowchart TB
+    showcase --> navigation
+    navigation --> site
+    navigation --> components
+    site --> render
+    render --> core
+    components --> core
+    core --> css
+    css --> foundation
+```
 
 | Package | Direct project dependencies | Responsibility |
 | --- | --- | --- |
@@ -43,14 +87,17 @@ The component catalog and page compiler are sibling consumers of the element/CSS
 
 The reactor builds two child modules under `tessera-parent`:
 
-```text
-tessera-showcase --> tessera
-    |                  |
-    |                  +-- published library and unit tests
-    +-- runnable example and Playwright browser tests
+```mermaid
+block
+    columns 3
+    parent["tessera-parent<br/>Shared compiler and quality configuration"]:3
+    showcase["tessera-showcase<br/>Runnable examples and Playwright tests"]
+    space
+    library["tessera<br/>Published library and unit tests"]
+    showcase --> library
 ```
 
-`dev.nthings:tessera` retains every library package. `tessera-showcase` compiles as an independent public-API consumer, with no dependency on library test helpers. Playwright is test-scoped in the showcase module. Shared compiler and quality configuration belongs to the parent; runtime dependencies belong to their modules. Package-private access still protects internal compiler details within the library.
+`dev.nthings:tessera` contains every library package. `tessera-showcase` compiles as a separate module using the public API, with no dependency on library test helpers. Playwright is test-scoped in the showcase module. Shared compiler and quality configuration belongs to the parent; runtime dependencies belong to their modules. Package-private access still protects internal compiler details within the library.
 
 ## User-facing APIs
 
@@ -72,35 +119,30 @@ tessera-showcase --> tessera
 
 ## Page compilation contracts
 
-```text
-PageDocument + Tokens + shared head contributions
-    |
-    v
-LayoutPass          expand components; allocate identities; collect styles
-    |
-    v
-ReferenceLinker     resolve late slots and symbolic ID attributes
-    |
-    v
-PageValidator       validate linked nodes; collect outgoing URLs
-    |
-    v
-PreparedPage        opaque tree + metadata snapshots + privately owned CSS
-    |
-    +---- site validation and ordered CSS merge ----+
-    |                                              |
-    v                                              v
-HtmlWriter <--------------------------------- selected stylesheet
-    |
-    v
-CompiledPage
+```mermaid
+flowchart TD
+    Input["PageDocument, Tokens, and shared head contributions"]
+    Layout["LayoutPass<br/>Expand components, bind identities, collect styles"]
+    Linker["ReferenceLinker<br/>Resolve late slots and symbolic ID attributes"]
+    Validator["PageValidator<br/>Check linked nodes and collect valid URLs"]
+    Prepared["PreparedPage<br/>Opaque tree, metadata snapshots, and private CSS"]
+    Selection["Standalone stylesheet or site validation<br/>and ordered stylesheet merge"]
+    Writer["HtmlWriter<br/>Encode the prepared tree with selected CSS"]
+    Output["CompiledPage"]
+
+    Input --> Layout --> Linker --> Validator
+    Validator -->|No authoring errors| Prepared
+    Prepared -->|Prepared content| Writer
+    Prepared -->|Styles and metadata| Selection
+    Selection -->|Selected stylesheet| Writer
+    Writer --> Output
 ```
 
 `PageCompiler` coordinates passes. `CompilationState` belongs to one preparation: identity bindings, counters, deferred priorities, late slots, and collected metadata. It does not escape preparation.
 
 `LayoutPass` runs inside `RenderContext.runRoot`. Child view scopes share page state and styles. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late elements capture their lexical context and expand after ordinary traversal. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
-`ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, and invoker target existence. It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
+`ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
 
 `ResolvedNode` and its variants are package-private. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
 
@@ -118,30 +160,73 @@ CompiledPage
 
 Search generation reads `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `Toc`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
 
+## Compilation diagnostics
+
+`CompilationLocation` records the page title, optional route, enclosing component path, element tag name, and optional DOM ID. Element descriptions are formatted when presenting the exception.
+
+`RenderContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head or end-section content with that path, allowing layout to expand it with its originating component context. These authoring types have no dependency on `render`.
+
+Layout attaches diagnostic locations to resolved tags and retains them when expanding late or deferred content. Linking preserves the location when replacing symbolic attributes. `PreparedPage` snapshots the first location of each outgoing URL and each transition key so site validation can report errors without exposing the intermediate tree.
+
+`CompilationState` collects `CompilationDiagnostic` records containing a rule code, location, message, and suggested fix. Recoverable authoring errors accumulate through layout, linking, and validation. Duplicate reference bindings and DOM IDs are marked ambiguous, so target-dependent checks do not select an arbitrary element. Unresolved symbolic attributes remain marked as unresolved and are excluded from dependent checks, avoiding secondary errors such as a missing-label report caused by an unbound label reference. The compiler throws one `CompilationException` with the collected diagnostics before returning a prepared page or emitting HTML.
+
+The preparation coordinator maps each route to either a prepared page or collected diagnostics, annotates failures with the route, and gathers diagnostics in route declaration order despite concurrent execution. The shared parallel mapper owns scheduling and result ordering; it has no diagnostic aggregation policy. URL syntax is validated once during page validation: malformed URLs become `invalid-url` diagnostics. Site validation consumes the syntactically valid URL metadata. Cross-route link and transition validation run only after every page prepares successfully and share one diagnostic report. Application callback failures and internal compiler failures continue to propagate rather than being converted to authoring diagnostics.
+
+For site compilation, validation gates the transition from prepared pages to painted output:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Preparing
+    Preparing: Prepare all routes and collect page diagnostics
+    Preparing --> Rejected: Page authoring errors
+    Preparing --> Prepared: Every page prepared successfully
+    Prepared --> ValidatingSite
+    ValidatingSite: Check cross-route links and transition keys
+    ValidatingSite --> Rejected: Site diagnostics
+    ValidatingSite --> Painting: Site is valid
+    Painting: Merge CSS and paint prepared pages
+    Painting --> Compiled: Assemble pages and generated assets
+    Rejected: Throw CompilationException
+    Rejected --> [*]
+    Compiled: Return CompiledSite
+    Compiled --> [*]
+```
+
 ## Site orchestration and I/O
 
-```text
-SiteDefinition
-    |
-    v
-prepare routes concurrently --> route-ordered PreparedPage results
-    |
-    v
-SiteValidator ---------------> links, fragments, transition keys
-    |
-    v
-merge CSS in route order ----> shared stylesheet
-    |
-    v
-paint routes concurrently ---> route-ordered CompiledPage results
-    |
-    v
-SiteArtifacts ---------------> sitemap and search-index assets
-    |
-    v
-CompiledSite
-    +----> SiteWriter --------> directory tree
-    +----> SitePreviewServer -> local HTTP responses
+The sequence shows a successful multi-route compilation; the state diagram above describes rejection paths. Each parallel block represents the route batch.
+
+```mermaid
+sequenceDiagram
+    actor App as Application
+    participant Site as SiteCompiler
+    participant Pages as PageCompiler
+    participant Checks as SiteValidator
+    participant Assets as SiteArtifacts
+
+    App->>Site: compile(definition)
+    par First route on a virtual thread
+        Site->>Pages: prepare(...)
+        Pages-->>Site: PreparedPage
+    and Other routes on virtual threads
+        Site->>Pages: prepare(...)
+        Pages-->>Site: PreparedPage
+    end
+    Site->>Site: Gather results in route order
+    Site->>Checks: Validate links and transition keys
+    Checks-->>Site: No site diagnostics
+    Site->>Site: Merge CSS in route order
+    par First prepared page on a virtual thread
+        Site->>Pages: paintPrepared(...)
+        Pages-->>Site: CompiledPage
+    and Other prepared pages on virtual threads
+        Site->>Pages: paintPrepared(...)
+        Pages-->>Site: CompiledPage
+    end
+    Site->>Site: Assemble pages in route order
+    Site->>Assets: Generate search index and optional sitemap
+    Assets-->>Site: Generated assets
+    Site-->>App: CompiledSite
 ```
 
 Site definitions require at least one route. Tasks use virtual threads; results are gathered in declaration order. Each page has separate compilation state. CSS merges sequentially and deterministically. Component callbacks should avoid mutating shared application state during concurrent rendering.
@@ -150,29 +235,9 @@ Site definitions require at least one route. Tasks use virtual threads; results 
 
 `SiteArtifacts` owns XML/JSON serialization. `SiteWriter` owns directory creation, route-to-output-path mapping, and byte writes. `SitePreviewServer` serves the same compiled routes and assets. `SiteAsset.file(...)` remains explicit input I/O; byte-backed assets are shared by compilation and output adapters.
 
-## Breaking changes
-
-| Previous symbol | Current symbol or operation |
-| --- | --- |
-| `core.FluentBuilder` | `foundation.FluentBuilder` |
-| `core.Fnv1a64` | `foundation.Fnv1a64` |
-| `PageCompiler.CompiledPage` | `render.CompiledPage` |
-| `PageCompiler.PreparedPage` | Opaque `render.PreparedPage` |
-| Public `PageCompiler.Resolved*` | Package-private implementation |
-| `prepared.styles()` | `prepared.contributeStylesTo(target)` or `prepared.stylesheet(tokens)` |
-| `prepared.documentState()` | `prepared.headings()` for navigation/search metadata |
-| `Toc.Item` | `core.DocumentHeading` |
-| `Toc.entries(state)` | `state.headings()` during rendering; `prepared.headings()` after preparation |
-| `SiteCompiler.CompiledSite` | `site.CompiledSite` |
-| `SiteCompiler.writeToDirectory(...)` | `SiteWriter.writeToDirectory(...)` |
-| `site.SiteNavigation` | `navigation.SiteNavigation` |
-| `TagElement.AnchorTarget` | Removed unused type; `anchoredTo(ElementRef, ...)` remains |
-
-Callers, tests, and showcase code use new APIs directly, without compatibility shims.
-
 ## Verification and remaining limits
 
-Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, CSS scope deduplication, merged stylesheets, site links/assets, disk output, and preview HTTP responses. The added integration case verifies that search output includes headings registered by a custom component without `Toc`. Tests exercise output rather than package shape or builder implementation details.
+Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, CSS scope deduplication, merged stylesheets, site links/assets, disk output, and preview HTTP responses. Search integration tests verify that output includes headings registered by a custom component without `Toc`. Tests exercise output rather than package shape or builder implementation details.
 
 The showcase is also the browser acceptance suite. It compiles through public `SiteCompiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
 
@@ -180,7 +245,7 @@ JUnit reuses Chromium across the suite and creates a fresh browser context per t
 
 Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium and operating-system dependencies before full verification. There is no browser-version matrix. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright` directory.
 
-Invoker checks establish target existence rather than command/tag compatibility. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These concerns have isolated owners in validators and artifact serialization.
+Invoker checks establish target existence and require the appropriate dialog or popover target for Tessera's built-in commands. Custom commands remain valid for arbitrary existing targets. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These concerns have isolated owners in validators and artifact serialization.
 
 ## Shared design tokens and search
 

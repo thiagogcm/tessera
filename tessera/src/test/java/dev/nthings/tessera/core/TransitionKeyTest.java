@@ -4,7 +4,7 @@ import static dev.nthings.tessera.core.Elements.h1;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompilationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ class TransitionKeyTest {
   void mustBeUniqueOnOnePage() {
     var key = TransitionKey.of("hero-title");
 
-    assertThatExceptionOfType(AccessibilityViolationException.class)
+    assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(
             () ->
                 renderMain(

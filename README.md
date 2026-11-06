@@ -16,27 +16,27 @@ Start with the [consumer guide](docs/consumer-guide.md), including the runnable 
 
 ```mermaid
 flowchart LR
-    subgraph Java25["JDK 25 Declarative Model"]
-        RO["RenderOnce\n(Stateless Records)"]
-        RV["RenderView\n(Scoped Components)"]
-        ER["ElementRef\n(Identity Linker)"]
-        SS["ScopeStyle\n(@scope Isolation)"]
+    subgraph Authoring["Java 25 authoring"]
+        Components["RenderOnce and RenderView<br/>Reusable components"]
+        References["ElementRef and IdReference<br/>Symbolic identities"]
+        Styles["ScopeStyle and Tokens<br/>Scoped CSS and design tokens"]
     end
 
-    subgraph Pipeline["Three-Phase Compiler"]
-        P1["Phase 1: requestLayout\n• ScopedValue binding\n• ElementRef registration\n• CSS interning & hashing"]
-        P2["Phase 2: prepaint\n• Link IdReferences\n• Sort deferred elements\n• Validate ARIA/WCAG/invokers"]
-        P3["Phase 3: paint\n• Emit @layer stylesheet\n• OWASP context encoding\n• Stream HTML document"]
-        P1 --> P2 --> P3
+    subgraph Compiler["PageCompiler"]
+        Layout["1. LayoutPass<br/>Expand components, bind IDs, collect styles"]
+        Prepaint["2. ReferenceLinker and PageValidator<br/>Link references and collect diagnostics"]
+        Paint["3. HtmlWriter<br/>Encode and emit HTML with selected CSS"]
+        Layout --> Prepaint -->|Valid page| Paint
     end
 
-    subgraph Platform["Baseline 2026+ Runtime"]
-        INV["Invoker Commands\n(commandfor, command)"]
-        OVL["Native Overlays\n(<dialog closedby>, popover)"]
-        CSS["Modern CSS\n(@layer, @scope, subgrid, oklch)"]
+    subgraph Browser["Native browser platform"]
+        Controls["Dialogs, popovers, and invoker commands"]
+        CSS["Cascade layers, scopes, and modern layout"]
+        Search["SearchPalette module when used"]
     end
 
-    Java25 --> Pipeline --> Platform
+    Authoring --> Layout
+    Paint --> Browser
 ```
 
 ---
@@ -67,7 +67,7 @@ Tessera emits purely standard HTML and CSS features available in modern browsers
 In Tessera, DOM elements are identified by `ElementRef` tokens. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) are strongly-typed `IdReference` handles. During compilation, the **Linker** statically resolves and verifies every reference:
 
 - Unbound references trigger compile-time errors.
-- Duplicate bindings or duplicate DOM IDs fail compilation immediately.
+- Duplicate bindings and duplicate DOM IDs are reported before HTML is emitted.
 - Invoker command targets are checked for existence in the compiled document.
 
 ### 4. Zero `@SuppressWarnings` & Extreme Quality Gates
@@ -196,19 +196,28 @@ main().children(modal.triggerButton("open-confirm", "Delete item"), modal.asDefe
 
 ## Project Structure
 
-```
-tessera-parent/
-+-- pom.xml                        # Parent reactor and shared quality configuration
-+-- config/                        # Shared Checkstyle and SpotBugs policies
-+-- tessera/                       # Published dev.nthings:tessera library
-|   +-- src/main/java/              # foundation, css, core, render, components, site, navigation
-|   +-- src/test/java/              # Compiler, component, and site unit tests
-+-- tessera-showcase/              # Runnable example and external library consumer
-|   +-- src/main/java/              # Multi-page showcase
-|   +-- src/test/java/              # Playwright browser E2E suite
-+-- docs/architecture.md           # Assessment, APIs, dependencies, and test boundaries
-+-- justfile                       # Build, test, browser setup, site, and demo commands
-+-- .github/workflows/ci.yml        # Full verification with Chromium
+```mermaid
+treeView-beta
+    tessera/ ## Repository and Maven reactor
+        pom.xml ## Parent and shared quality configuration
+        config/ ## Checkstyle and SpotBugs policies
+        tessera/ ## Published dev.nthings:tessera library
+            pom.xml
+            src/
+                main/java/ ## foundation, css, core, render, components, site, navigation
+                test/java/ ## Compiler, component, and site tests
+        tessera-showcase/ ## Public API example and browser tests
+            pom.xml
+            src/
+                main/java/ ## Showcase and consumer-guide example
+                test/java/ ## Playwright browser suite
+        docs/
+            architecture.md ## Boundaries, APIs, and compilation contracts
+            consumer-guide.md ## Authoring and publishing guide
+        justfile ## Build, test, browser setup, and demo commands
+        .github/
+            workflows/
+                ci.yml ## Full verification with Chromium
 ```
 
 The showcase depends on the library's public API. Playwright is test-scoped in the showcase module and never becomes a library dependency. Maven `test` runs the unit suite; Maven `verify` also runs the showcase's Failsafe browser tests.

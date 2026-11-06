@@ -55,12 +55,11 @@ SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 
 `PageDocument` accepts an optional language before the title; the two-argument constructor uses English. The default site output shares a content-hashed external stylesheet across all pages.
 
-```text
-Route          Public document URL   Generated file
-/              /                     index.html
-/guide         /guide/               guide/index.html
-/about.html    /about.html           about.html
-```
+| Route         | Public document URL | Generated file     |
+| ------------- | ------------------- | ------------------ |
+| `/`           | `/`                 | `index.html`       |
+| `/guide`      | `/guide/`           | `guide/index.html` |
+| `/about.html` | `/about.html`       | `about.html`       |
 
 Use `route.documentUri()` when you need the canonical public URL for a route. Preview serving redirects directory routes to their trailing-slash URL, preserving the query string, so relative links resolve the same way as on a static host.
 
@@ -128,6 +127,36 @@ Site compilation resolves local links from each page's published document URL. I
 | `/guide` | `../assets/manual%20v1.pdf?download=1` | Asset `/assets/manual v1.pdf` |
 
 Route and asset definitions use their logical paths, such as `/guides/café`. Links use URL escaping, such as `/guides/caf%C3%A9/`. Explicit `index.html` links are accepted as aliases of generated directory pages. Absolute and protocol-relative URLs are external to local validation.
+
+## Read compilation diagnostics
+
+`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title, route (for sites), enclosing component path, and separate `tagName` and nullable `domId` fields. The exception formats those fields for display.
+
+```java
+try {
+  SiteCompiler.compile(site);
+} catch (CompilationException failure) {
+  for (var diagnostic : failure.diagnostics()) {
+    System.err.println(diagnostic.rule() + ": " + diagnostic.message());
+    System.err.println(diagnostic.location());
+    System.err.println(diagnostic.suggestion());
+  }
+}
+```
+
+The exception message also presents the full report for command-line builds:
+
+```text
+Compilation failed with 1 error:
+[interactive-label] Route "/settings", page "Settings" > toolbar[toolbar] > <button id="toolbar--save">: Interactive <button> element must have text content or an aria-label / aria-labelledby / title attribute
+  Fix: Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.
+```
+
+Independent image, identity, reference, URL syntax, and markup errors are collected before a page fails. Late and deferred elements retain their enclosing component path. Site compilation collects page errors in route declaration order; once all pages prepare successfully, it collects cross-route link and transition-key errors together. Cross-route diagnostics identify the first use of each outgoing URL on a page. Head and end-section contributions retain the component path from their registration, including when they expand further components.
+
+Native dialog commands (`show-modal`, `close`, `request-close`) require a `<dialog>` target. Popover commands (`toggle-popover`, `show-popover`, `hide-popover`) require a target with a `popover` attribute, following the [HTML command rules](https://html.spec.whatwg.org/multipage/form-elements.html#attr-button-command). Custom commands continue to use any existing target.
+
+Duplicate bindings are reported as ambiguous; target-dependent command checks are skipped for ambiguous targets. Malformed URLs produce an `invalid-url` diagnostic alongside other page errors. The compiler reports authoring errors without emitting HTML. Exceptions thrown by application render callbacks still propagate normally, and trusted raw HTML remains outside validation.
 
 ## Customize the design system
 

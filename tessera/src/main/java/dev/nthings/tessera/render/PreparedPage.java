@@ -5,8 +5,10 @@ import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /// Opaque, reusable result of layout and validation. Public metadata is snapshotted;
@@ -17,8 +19,8 @@ public final class PreparedPage {
   private final List<ResolvedNode> bodyNodes;
   private final List<ResolvedNode> headNodes;
   private final Set<String> registeredDomIds;
-  private final Set<String> outgoingHrefs;
-  private final Set<TransitionKey> transitionKeys;
+  private final Map<String, CompilationLocation> outgoingLinks;
+  private final Map<TransitionKey, CompilationLocation> transitionLocations;
   private final List<DocumentHeading> headings;
 
   PreparedPage(
@@ -26,8 +28,8 @@ public final class PreparedPage {
       StyleSheetCollector styles,
       List<ResolvedNode> bodyNodes,
       Set<String> registeredDomIds,
-      Set<String> outgoingHrefs,
-      Set<TransitionKey> transitionKeys,
+      Map<String, CompilationLocation> outgoingLinks,
+      Map<TransitionKey, CompilationLocation> transitionLocations,
       List<ResolvedNode> headNodes,
       List<DocumentHeading> headings) {
     this.document = document;
@@ -36,8 +38,9 @@ public final class PreparedPage {
     this.bodyNodes = List.copyOf(bodyNodes);
     this.headNodes = List.copyOf(headNodes);
     this.registeredDomIds = Collections.unmodifiableSet(new LinkedHashSet<>(registeredDomIds));
-    this.outgoingHrefs = Collections.unmodifiableSet(new LinkedHashSet<>(outgoingHrefs));
-    this.transitionKeys = Collections.unmodifiableSet(new LinkedHashSet<>(transitionKeys));
+    this.outgoingLinks = Collections.unmodifiableMap(new LinkedHashMap<>(outgoingLinks));
+    this.transitionLocations =
+        Collections.unmodifiableMap(new LinkedHashMap<>(transitionLocations));
     this.headings = List.copyOf(headings);
   }
 
@@ -57,12 +60,13 @@ public final class PreparedPage {
     return registeredDomIds;
   }
 
-  public Set<String> outgoingHrefs() {
-    return outgoingHrefs;
+  /// First authoring location of each outgoing URL, for cross-route diagnostics.
+  public Map<String, CompilationLocation> outgoingLinks() {
+    return outgoingLinks;
   }
 
-  public Set<TransitionKey> transitionKeys() {
-    return transitionKeys;
+  public Map<TransitionKey, CompilationLocation> transitionLocations() {
+    return transitionLocations;
   }
 
   public List<DocumentHeading> headings() {

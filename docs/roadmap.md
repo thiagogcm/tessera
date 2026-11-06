@@ -6,26 +6,12 @@ Improve the Java authoring experience while compiling to semantic HTML and moder
 
 | Order | Item | Priority | Prerequisites |
 | --- | --- | --- | --- |
-| 1 | Native button components | High | Typed design values |
-| 2 | Reusable component stories | Medium | Native button components and theme variants |
-| 3 | Compilation inspection | Medium | Existing compiler passes and component origins |
+| 1 | Reusable component stories | Medium | `Button`, `IconButton`, and theme variants |
+| 2 | Compilation inspection | Medium | Existing compiler passes and component origins |
 
-Compilation inspection can proceed independently; the other items follow the sequence above. Row and column layout is `FlexLayout`, applied with `Styled.layout`. Typography, motion, and semantic roles are `Typography`, `Motion`, and `Roles`.
+Compilation inspection can proceed independently; the other items follow the sequence above. Row and column layout is `FlexLayout`, applied with `Styled.layout`. Typography, motion, and semantic roles are `Typography`, `Motion`, and `Roles`. Native buttons are `Button` and `IconButton`.
 
-## 1. Native button components
-
-Add `Button` and `IconButton` as ordinary components accepted by `IntoElement` composition. Both emit native buttons. Semantic tone, surface variant, control size, disabled state, and busy feedback are separate choices. Form submission and invoker commands describe behavior independently of appearance; navigation continues to use anchors.
-
-An icon button requires an accessible name alongside its visual content. Custom button content retains an intentional accessible name. Components coordinate native attributes, focus styling, semantic tokens, and `ElementRef` command targets. CSS pseudo-classes and browser controls provide interaction behavior, with Java callbacks used for authoring-time composition.
-
-**Verification criteria**
-
-- Pointer and keyboard activation open a referenced native dialog or popover, including when the target is emitted as deferred content. Disabled buttons cannot activate it.
-- A submit button participates in native form submission, while an ordinary action button inside the same form does not submit it. Changing the visual variant does not change either behavior.
-- An icon-only button has the supplied accessible name and a visible keyboard focus indicator. Decorative visual content does not repeat that name to assistive technology.
-- Busy feedback is conveyed to assistive technology and can be combined with an explicit disabled choice without losing the button's name.
-
-## 2. Reusable component stories
+## 1. Reusable component stories
 
 Evolve the showcase's `Demo` model into named component cases with variant parameters and a fresh content factory. A shared catalog drives both the rendered documentation and browser fixtures. Each case identifies the component state being demonstrated, such as a disabled action, an open overlay, or a compact control.
 
@@ -37,7 +23,7 @@ Keep the catalog and browser integration in `tessera-showcase`. Reuse component 
 - Opening a dialog, changing a control, and then opening another case starts that case in its declared state. Reopening the original case starts it fresh.
 - Representative narrow and wide cases remain usable, including keyboard access to overflowed content and text wrapping without unintended horizontal document scrolling.
 
-## 3. Compilation inspection
+## 2. Compilation inspection
 
 Provide an opt-in, read-only report for successful page and site compilation. Connect component paths and scoped DOM IDs to generated classes, declared CSS rules, cascade layers, and scope boundaries. Report UTF-8 output sizes so consumers can identify large documents and stylesheets.
 

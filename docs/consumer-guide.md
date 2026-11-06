@@ -133,6 +133,20 @@ The reference is an identity token; another `ElementRef.named("help")` is a diff
 
 For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, emits a target ID, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components can call `RenderContext.current().registerHeading(localId, title, level)` and emit the returned `targetDomId` themselves.
 
+## Add a button
+
+`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(...)` targets a dialog or popover, including one emitted later in the document. Navigation stays on anchors.
+
+```java
+var confirm = Overlays.modal("confirm", "Confirm");
+var open = Button.of("Review").command(confirm.dialogRef(), BuiltinCommand.SHOW_MODAL);
+var save = Button.of("Save").submit().variant(Button.Variant.OUTLINE);
+var close = IconButton.of("Close", Elements.span().text("×"))
+    .command(confirm.dialogRef(), BuiltinCommand.CLOSE);
+```
+
+`IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(name, content)` keeps `name` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
+
 ## Write links as browser URLs
 
 Site compilation resolves local links from each page's published document URL. It validates relative and root-relative `href`, `src`, and `poster` targets. Queries are preserved in output and excluded from route/asset lookup. Percent-encoded paths and fragments are decoded for comparison with registered paths and DOM IDs. A `+` in a fragment remains a plus sign.

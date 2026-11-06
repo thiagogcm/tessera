@@ -55,11 +55,11 @@ public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, L
   public Element render() {
     if (!collapseOnNarrow) {
       return Elements.div()
-          .container(GRID_CONTAINER)
+          .containerInlineSize(GRID_CONTAINER)
           .child(Elements.div().grid().gridColumns(columns).gap(gap).children(items));
     }
     return Elements.div()
-        .container(GRID_CONTAINER)
+        .containerInlineSize(GRID_CONTAINER)
         .child(
             Elements.div()
                 .grid()

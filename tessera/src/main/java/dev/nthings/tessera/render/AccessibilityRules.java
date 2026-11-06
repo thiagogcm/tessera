@@ -26,7 +26,6 @@ final class AccessibilityRules {
       Set.of(Role.NAVIGATION, Role.COMPLEMENTARY, Role.SEARCH, Role.FORM, Role.REGION);
 
   private final CompilationState state;
-  private final Set<String> labelledControlIds = new HashSet<>();
   private final Map<Role, List<Landmark>> landmarks = new EnumMap<>(Role.class);
   private final List<Heading> headings = new ArrayList<>();
   private int mainLandmarks;
@@ -43,9 +42,6 @@ final class AccessibilityRules {
   static void check(List<ResolvedNode> body, CompilationState state) {
     var rules = new AccessibilityRules(state);
     for (var node : body) {
-      rules.collectLabelTargets(node);
-    }
-    for (var node : body) {
       rules.visit(node, new Context(false, false));
     }
     rules.checkLandmarks();
@@ -55,20 +51,6 @@ final class AccessibilityRules {
   /// What the surrounding elements imply for a node: `labelled` inside a `<label>`; `unexposed`
   /// inside a closed dialog, popover, or `aria-hidden` subtree, which has no accessibility tree.
   private record Context(boolean labelled, boolean unexposed) {}
-
-  private void collectLabelTargets(ResolvedNode node) {
-    if (node instanceof ResolvedTag tag) {
-      var target = tag.attributes().get("for");
-      if (tag.tag() == HtmlTag.LABEL && target != null) {
-        labelledControlIds.add(target);
-      }
-      tag.children().forEach(this::collectLabelTargets);
-      var companion = tag.companionSibling();
-      if (companion != null) {
-        collectLabelTargets(companion);
-      }
-    }
-  }
 
   private void visit(ResolvedNode node, Context context) {
     switch (node) {
@@ -201,7 +183,7 @@ final class AccessibilityRules {
       case INPUT, SELECT, TEXTAREA -> {
         var id = attrs.get("id");
         yield context.labelled()
-            || (id != null && labelledControlIds.contains(id))
+            || (id != null && state.labelledControlIds.contains(id))
             || (tag.tag() == HtmlTag.INPUT && isButtonInput(attrs) && attrs.containsKey("value"));
       }
       default ->

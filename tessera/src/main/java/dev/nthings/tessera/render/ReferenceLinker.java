@@ -1,5 +1,6 @@
 package dev.nthings.tessera.render;
 
+import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IdReference;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -66,6 +67,10 @@ final class ReferenceLinker {
     var id = attrs.get("id");
     if (id != null && !id.isBlank()) {
       state.elementsById.putIfAbsent(id, resolved);
+    }
+    var labelled = attrs.get("for");
+    if (tag.tag() == HtmlTag.LABEL && labelled != null) {
+      state.labelledControlIds.add(labelled);
     }
     return resolved;
   }

@@ -9,10 +9,8 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
-import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
-import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -260,13 +258,12 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
                     .rounded(Tokens.RADIUS_MD)
                     .textDecorationNone()
                     .motion(
-                        Motion.of(
-                            CssDuration.ms(150),
-                            Easing.ease(),
-                            Animatable.BACKGROUND_COLOR,
-                            Animatable.COLOR,
-                            Animatable.BORDER_COLOR,
-                            Animatable.OPACITY)))
+                        Motion.controlFeedback()
+                            .properties(
+                                Animatable.BACKGROUND_COLOR,
+                                Animatable.COLOR,
+                                Animatable.BORDER_COLOR,
+                                Animatable.OPACITY)))
         .select(":scope.is-pill", s -> s.rounded(Tokens.RADIUS_FULL))
         .select(
             ":scope.badge--sm",

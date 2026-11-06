@@ -107,7 +107,7 @@ final class MotionPage {
         .features("container-type: inline-size", "@container (inline-size >= 28rem)", "resize")
         .example(
             div()
-                .container(RESIZABLE)
+                .containerInlineSize(RESIZABLE)
                 .resize(Resize.HORIZONTAL)
                 .overflowHidden()
                 .minInlineSize(CssLength.rem(14))
@@ -118,7 +118,7 @@ final class MotionPage {
                 .rounded(CssLength.rem(0.75))
                 .child(card))
         .code(
-            "div().container(\"resizable\").child(",
+            "div().containerInlineSize(CssIdent.of(\"resizable\")).child(",
             "    card.onContainer(\"resizable\", rem(28), s -> s.flexRow()));");
   }
 

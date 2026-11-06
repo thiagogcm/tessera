@@ -7,9 +7,7 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Animatable;
-import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -106,11 +104,8 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
                     .textDecorationNone()
                     .textColor(Tokens.TEXT_PRIMARY)
                     .motion(
-                        Motion.of(
-                            CssDuration.ms(150),
-                            Easing.ease(),
-                            Animatable.BORDER_COLOR,
-                            Animatable.BACKGROUND)))
+                        Motion.controlFeedback()
+                            .properties(Animatable.BORDER_COLOR, Animatable.BACKGROUND)))
         .select(
             ":scope > .pager-card:hover",
             s -> s.borderSubtle(Tokens.ACCENT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))

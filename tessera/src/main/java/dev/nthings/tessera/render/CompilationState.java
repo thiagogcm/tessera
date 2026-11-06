@@ -27,6 +27,7 @@ final class CompilationState {
   final Map<TransitionKey, CompilationLocation> transitionLocations = new LinkedHashMap<>();
   final Set<String> ambiguousDomIds = new HashSet<>();
   final Map<String, ResolvedTag> elementsById = new HashMap<>();
+  final Set<String> labelledControlIds = new HashSet<>();
   final List<CompilationDiagnostic> diagnostics = new ArrayList<>();
   final Set<String> viewTransitionNames = new LinkedHashSet<>();
   final Map<ElementRef, String> boundDomIds = new IdentityHashMap<>();

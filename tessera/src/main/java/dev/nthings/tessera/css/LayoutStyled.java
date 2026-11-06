@@ -14,12 +14,12 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
   }
 
   default SELF flex() {
-    style().put(CssProperty.DISPLAY, "flex");
+    style().put(CssProperty.DISPLAY, FlexLayout.Display.FLEX);
     return self();
   }
 
   default SELF inlineFlex() {
-    style().put(CssProperty.DISPLAY, "inline-flex");
+    style().put(CssProperty.DISPLAY, FlexLayout.Display.INLINE_FLEX);
     return self();
   }
 
@@ -146,42 +146,42 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
   }
 
   default SELF flexRow() {
-    style().put(CssProperty.FLEX_DIRECTION, "row");
+    style().put(CssProperty.FLEX_DIRECTION, FlexLayout.Direction.ROW);
     return self();
   }
 
   default SELF flexCol() {
-    style().put(CssProperty.FLEX_DIRECTION, "column");
+    style().put(CssProperty.FLEX_DIRECTION, FlexLayout.Direction.COLUMN);
     return self();
   }
 
   default SELF flexWrap() {
-    style().put(CssProperty.FLEX_WRAP, "wrap");
+    style().put(CssProperty.FLEX_WRAP, FlexLayout.Wrap.WRAP);
     return self();
   }
 
   default SELF itemsStart() {
-    style().put(CssProperty.ALIGN_ITEMS, "flex-start");
+    style().put(CssProperty.ALIGN_ITEMS, FlexLayout.Align.START);
     return self();
   }
 
   default SELF itemsCenter() {
-    style().put(CssProperty.ALIGN_ITEMS, "center");
+    style().put(CssProperty.ALIGN_ITEMS, FlexLayout.Align.CENTER);
     return self();
   }
 
   default SELF itemsEnd() {
-    style().put(CssProperty.ALIGN_ITEMS, "flex-end");
+    style().put(CssProperty.ALIGN_ITEMS, FlexLayout.Align.END);
     return self();
   }
 
   default SELF itemsStretch() {
-    style().put(CssProperty.ALIGN_ITEMS, "stretch");
+    style().put(CssProperty.ALIGN_ITEMS, FlexLayout.Align.STRETCH);
     return self();
   }
 
   default SELF itemsBaseline() {
-    style().put(CssProperty.ALIGN_ITEMS, "baseline");
+    style().put(CssProperty.ALIGN_ITEMS, FlexLayout.Align.BASELINE);
     return self();
   }
 

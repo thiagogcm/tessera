@@ -15,11 +15,19 @@ import java.util.function.UnaryOperator;
 /// animation styles for an element.
 public final class Interactivity {
 
-  public record ContainerRule(CssIdent containerName, String condition, StyleRefinement style) {
+  /// Styles applied while the named container is at least `minInlineSize` wide.
+  public record ContainerRule(
+      CssIdent containerName, CssLength minInlineSize, StyleRefinement style) {
+
+    /// The `@container` condition this rule applies under.
+    public String condition() {
+      return "(inline-size >= " + minInlineSize.toCss() + ")";
+    }
+
     public long contentHash() {
       var h = Fnv1a64.OFFSET_BASIS;
       h = Fnv1a64.updateChars(h, containerName.toCss());
-      h = Fnv1a64.updateChars(h, condition);
+      h = Fnv1a64.updateChars(h, condition());
       return Fnv1a64.updateLong(h, style.contentHash());
     }
   }
@@ -60,21 +68,7 @@ public final class Interactivity {
   public void onContainerMinWidth(
       CssIdent containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
     var style = mutator.apply(new StyleRefinement());
-    containerRules.add(
-        new ContainerRule(containerName, "(inline-size >= " + minInlineSize.toCss() + ")", style));
-  }
-
-  public void onContainerStyleQuery(
-      CssIdent containerName,
-      CssIdent customProperty,
-      CssValue expectedValue,
-      UnaryOperator<StyleRefinement> mutator) {
-    var style = mutator.apply(new StyleRefinement());
-    containerRules.add(
-        new ContainerRule(
-            containerName,
-            "style(" + customProperty.toCss() + ": " + expectedValue.toCss() + ")",
-            style));
+    containerRules.add(new ContainerRule(containerName, minInlineSize, style));
   }
 
   public SortedMap<StateRule, StyleRefinement> states() {

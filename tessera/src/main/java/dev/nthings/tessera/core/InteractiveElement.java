@@ -2,7 +2,6 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CssValue;
 import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.ScrollReveal;
@@ -163,22 +162,9 @@ public interface InteractiveElement<
     return self();
   }
 
-  default SELF container(CssIdent containerName) {
-    return containerInlineSize(containerName);
-  }
-
   default SELF onContainer(
       CssIdent containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
     interactivity().onContainerMinWidth(containerName, minInlineSize, mutator);
-    return self();
-  }
-
-  default SELF onContainerStyle(
-      CssIdent containerName,
-      CssIdent customProperty,
-      CssValue expectedValue,
-      UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onContainerStyleQuery(containerName, customProperty, expectedValue, mutator);
     return self();
   }
 

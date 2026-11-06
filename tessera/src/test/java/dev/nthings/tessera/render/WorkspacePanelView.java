@@ -52,7 +52,7 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
   /// A container-query card: stacked by default, a row once its container is 320px wide.
   private static TagElement metricCard(String label, String value) {
     return section()
-        .container(METRIC_CARD)
+        .containerInlineSize(METRIC_CARD)
         .onContainer(
             METRIC_CARD, CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
         .children(span().text(label), h2().text(value));

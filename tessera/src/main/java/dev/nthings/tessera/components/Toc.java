@@ -189,11 +189,8 @@ public final class Toc {
                       .rounded(Tokens.RADIUS_SM)
                       .textDecorationNone()
                       .motion(
-                          Motion.of(
-                              CssDuration.ms(150),
-                              Easing.ease(),
-                              Animatable.COLOR,
-                              Animatable.BACKGROUND)))
+                          Motion.controlFeedback()
+                              .properties(Animatable.COLOR, Animatable.BACKGROUND)))
           .select(
               ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
           .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))

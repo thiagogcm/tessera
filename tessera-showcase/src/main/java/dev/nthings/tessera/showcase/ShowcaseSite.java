@@ -1,5 +1,6 @@
 package dev.nthings.tessera.showcase;
 
+import dev.nthings.tessera.navigation.SiteNavigation;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
@@ -44,6 +45,7 @@ public final class ShowcaseSite {
         .routes(routes)
         .baseUrl("http://localhost:8188")
         .assets(Art.assets())
+        .asset(SiteNavigation.searchScript())
         .build();
   }
 

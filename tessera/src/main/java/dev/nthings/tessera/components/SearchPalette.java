@@ -2,23 +2,24 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.datalist;
 import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.input;
 import static dev.nthings.tessera.core.Elements.kbd;
-import static dev.nthings.tessera.core.Elements.option;
 import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.DeferredElement;
+import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
@@ -30,11 +31,27 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Zero-JavaScript Client-Side Search UI and Quick Open Command Palette backed by `<dialog
-/// closedby="any">`, Declarative Invoker Commands (`commandfor` / `command="show-modal"`), native
-/// autocomplete `<input type="search" list="...">`, `<datalist>`, and smooth `@starting-style`
-/// transitions.
+/// Native quick-open dialog. By default it is a script-free directory of grouped links.
+/// [#enhanced()] opts into live filtering and keyboard selection with a separately published
+/// script asset at [#SCRIPT_PATH].
 public final class SearchPalette implements RenderView {
+
+  public static final String SCRIPT_PATH = "/assets/tessera-search.js";
+
+  private static final class ScriptContribution {
+    private boolean added;
+  }
+
+  private static final DocumentKey<ScriptContribution> SCRIPT =
+      DocumentKey.of("search-script", ScriptContribution.class, ScriptContribution::new);
+
+  private boolean enhanced;
+
+  /// Enables the optional static-site search runtime. Publish the corresponding script asset.
+  public SearchPalette enhanced() {
+    enhanced = true;
+    return this;
+  }
 
   private static final String SEARCH_ICON_SVG =
       "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
@@ -115,20 +132,20 @@ public final class SearchPalette implements RenderView {
         .flex()
         .itemsCenter()
         .justifyBetween()
-        .gap(CssLength.rem(0.75))
-        .px(CssLength.rem(0.75))
+        .gap(Tokens.SPACE_3.length())
+        .px(Tokens.SPACE_3.length())
         .py(CssLength.rem(0.4))
-        .rounded(CssLength.rem(0.5))
+        .rounded(Tokens.RADIUS_LG.length())
         .borderSubtle(Tokens.BORDER_SUBTLE)
         .bg(Tokens.SURFACE_CARD)
         .textColor(Tokens.TEXT_MUTED)
-        .fontSize(CssLength.rem(0.875))
+        .fontSize(Tokens.FONT_SIZE_SM.length())
         .cursorPointer()
         .child(
             div()
                 .flex()
                 .itemsCenter()
-                .gap(CssLength.rem(0.5))
+                .gap(Tokens.SPACE_2.length())
                 .child(rawHtml(SEARCH_ICON_SVG))
                 .child(span().text(label)))
         .child(
@@ -140,10 +157,10 @@ public final class SearchPalette implements RenderView {
                     kbd()
                         .px(CssLength.rem(0.35))
                         .py(CssLength.rem(0.1))
-                        .rounded(CssLength.rem(0.25))
+                        .rounded(Tokens.RADIUS_SM.length())
                         .bg(Tokens.SURFACE_SUBTLE)
                         .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .fontSize(CssLength.rem(0.7))
+                        .fontSize(Tokens.FONT_SIZE_XS.length())
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
                         .text("Alt"))
@@ -151,10 +168,10 @@ public final class SearchPalette implements RenderView {
                     kbd()
                         .px(CssLength.rem(0.35))
                         .py(CssLength.rem(0.1))
-                        .rounded(CssLength.rem(0.25))
+                        .rounded(Tokens.RADIUS_SM.length())
                         .bg(Tokens.SURFACE_SUBTLE)
                         .borderSubtle(Tokens.BORDER_SUBTLE)
-                        .fontSize(CssLength.rem(0.7))
+                        .fontSize(Tokens.FONT_SIZE_XS.length())
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
                         .text("K")));
@@ -176,12 +193,13 @@ public final class SearchPalette implements RenderView {
 
   @Override
   public Element render() {
-    var datalist = ElementRef.named("datalist");
-    var datalistEl = datalist().id(datalist);
-    for (var entry : groupedItems.entrySet()) {
-      for (var item : entry.getValue()) {
-        var label = item.title() + " (" + entry.getKey() + ")";
-        datalistEl.child(option(item.href(), label));
+    if (enhanced) {
+      var context = RenderContext.current();
+      var script = context.document(SCRIPT);
+      if (!script.added) {
+        script.added = true;
+        context.contributeHead(
+            Elements.el(HtmlTag.SCRIPT).attr("type", "module").attr("src", SCRIPT_PATH));
       }
     }
 
@@ -190,14 +208,15 @@ public final class SearchPalette implements RenderView {
             .attr("class", "palette-header")
             .child(rawHtml(SEARCH_ICON_SVG))
             .child(
-                input("search")
-                    .id("input")
-                    .attr("class", "palette-input")
-                    .attr("name", "q")
-                    .attr("placeholder", placeholder)
-                    .attr("autocomplete", "off")
-                    .list(datalist)
-                    .ariaLabel("Search query"))
+                enhanced
+                    ? input("search")
+                        .id("input")
+                        .attr("class", "palette-input")
+                        .attr("placeholder", placeholder)
+                        .attr("autocomplete", "off")
+                        .attr("autofocus", "")
+                        .ariaLabel("Search query")
+                    : span().text("Browse pages and sections"))
             .child(
                 button()
                     .attr("class", "palette-close")
@@ -236,14 +255,20 @@ public final class SearchPalette implements RenderView {
       resultsContainer.child(groupBlock);
     }
 
+    resultsContainer.child(
+        Elements.p()
+            .attr("class", "palette-empty")
+            .attr("hidden", "")
+            .attr("role", "status")
+            .text("No results found. Try another search."));
+
     var footerEl =
         footer()
             .attr("class", "palette-footer")
             .child(
                 div()
                     .attr("class", "palette-hint")
-                    .child(kbd().attr("class", "palette-hint-kbd").text("↑"))
-                    .child(kbd().attr("class", "palette-hint-kbd").text("↓"))
+                    .child(kbd().attr("class", "palette-hint-kbd").text(enhanced ? "↑ ↓" : "Tab"))
                     .child(span().text("navigate")))
             .child(
                 div()
@@ -258,10 +283,10 @@ public final class SearchPalette implements RenderView {
 
     return Elements.dialog()
         .id(dialog)
+        .when(enhanced, d -> d.attr("data-search-palette", ""))
         .dialogClosedByAny()
         .ariaLabel("Quick open command palette")
         .child(headerEl)
-        .child(datalistEl)
         .child(resultsContainer)
         .child(footerEl);
   }
@@ -276,7 +301,7 @@ public final class SearchPalette implements RenderView {
                     .maxInlineSize(CssLength.rem(42))
                     .inlineSize(CssLength.expr("calc(100% - 2rem)"))
                     .p(CssLength.px(0))
-                    .rounded(CssLength.rem(0.75))
+                    .rounded(Tokens.RADIUS_XL.length())
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -304,16 +329,16 @@ public final class SearchPalette implements RenderView {
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(CssLength.rem(0.75))
-                    .px(CssLength.rem(1))
-                    .py(CssLength.rem(0.75))
+                    .gap(Tokens.SPACE_3.length())
+                    .px(Tokens.SPACE_4.length())
+                    .py(Tokens.SPACE_3.length())
                     .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-input",
             s ->
                 s.flexGrow(1)
-                    .fontSize(CssLength.rem(1.05))
+                    .fontSize(Tokens.FONT_SIZE_MD.length())
                     .textColor(Tokens.TEXT_PRIMARY)
                     .bgRaw("transparent")
                     .borderNone()
@@ -323,34 +348,37 @@ public final class SearchPalette implements RenderView {
             s ->
                 s.bg(Tokens.SURFACE_SUBTLE)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .rounded(CssLength.rem(0.375))
+                    .rounded(Tokens.RADIUS_MD.length())
                     .px(CssLength.rem(0.4))
                     .py(CssLength.rem(0.2))
                     .cursorPointer())
         .select(
             ":scope .palette-esc-kbd",
-            s -> s.fontSize(CssLength.rem(0.75)).fontWeight(600).textColor(Tokens.TEXT_MUTED))
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_XS.length())
+                    .fontWeight(600)
+                    .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-results",
-            s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(CssLength.rem(0.75)))
+            s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(Tokens.SPACE_3.length()))
         .select(":scope .palette-group", s -> s.m(CssLength.px(0)).p(CssLength.px(0)))
         .select(
             ":scope .palette-group-title",
             s ->
-                s.fontSize(CssLength.rem(0.75))
+                s.fontSize(Tokens.FONT_SIZE_XS.length())
                     .fontWeight(600)
                     .textColor(Tokens.TEXT_MUTED)
-                    .px(CssLength.rem(0.75))
-                    .py(CssLength.rem(0.375)))
+                    .px(Tokens.SPACE_3.length())
+                    .py(Tokens.SPACE_1_5.length()))
         .select(
             ":scope .palette-item",
             s ->
                 s.flex()
                     .itemsCenter()
                     .justifyBetween()
-                    .px(CssLength.rem(0.75))
-                    .py(CssLength.rem(0.625))
-                    .rounded(CssLength.rem(0.5))
+                    .px(Tokens.SPACE_3.length())
+                    .py(Tokens.SPACE_2_5.length())
+                    .rounded(Tokens.RADIUS_LG.length())
                     .textColor(Tokens.TEXT_PRIMARY)
                     .textDecorationNone()
                     .cursorPointer())
@@ -358,44 +386,47 @@ public final class SearchPalette implements RenderView {
             ":scope .palette-item:hover, :scope .palette-item:focus-visible",
             s -> s.bg(Tokens.SURFACE_SUBTLE).outlineNone())
         .select(":scope .palette-item-main", s -> s.flex().flexCol().gap(CssLength.rem(0.15)))
-        .select(":scope .palette-item-title", s -> s.fontSize(CssLength.rem(0.9)).fontWeight(500))
+        .select(
+            ":scope .palette-item-title",
+            s -> s.fontSize(Tokens.FONT_SIZE_SM.length()).fontWeight(500))
         .select(
             ":scope .palette-item-desc",
-            s -> s.fontSize(CssLength.rem(0.8)).textColor(Tokens.TEXT_MUTED))
+            s -> s.fontSize(Tokens.FONT_SIZE_XS.length()).textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-item-badge",
             s ->
-                s.fontSize(CssLength.rem(0.75))
+                s.fontSize(Tokens.FONT_SIZE_XS.length())
                     .textColor(Tokens.TEXT_MUTED)
                     .bg(Tokens.SURFACE_SUBTLE)
                     .px(CssLength.rem(0.4))
                     .py(CssLength.rem(0.15))
-                    .rounded(CssLength.rem(0.25)))
+                    .rounded(Tokens.RADIUS_SM.length()))
         .select(
             ":scope .palette-item-arrow",
-            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(CssLength.rem(0.9)))
+            s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_SM.length()))
         .select(
             ":scope .palette-footer",
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(CssLength.rem(1))
-                    .px(CssLength.rem(1))
-                    .py(CssLength.rem(0.5))
+                    .gap(Tokens.SPACE_4.length())
+                    .px(Tokens.SPACE_4.length())
+                    .py(Tokens.SPACE_2.length())
                     .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
                     .bg(Tokens.SURFACE_SUBTLE)
                     .textColor(Tokens.TEXT_MUTED)
-                    .fontSize(CssLength.rem(0.75)))
-        .select(":scope .palette-hint", s -> s.flex().itemsCenter().gap(CssLength.rem(0.25)))
+                    .fontSize(Tokens.FONT_SIZE_XS.length()))
+        .select(":scope .palette-hint", s -> s.flex().itemsCenter().gap(Tokens.SPACE_1.length()))
         .select(
             ":scope .palette-hint-kbd",
             s ->
-                s.fontSize(CssLength.rem(0.7))
+                s.fontSize(Tokens.FONT_SIZE_XS.length())
                     .px(CssLength.rem(0.3))
                     .py(CssLength.rem(0.1))
-                    .rounded(CssLength.rem(0.2))
+                    .rounded(Tokens.RADIUS_SM.length())
                     .bg(Tokens.SURFACE_CARD)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .textColor(Tokens.TEXT_PRIMARY));
+                    .textColor(Tokens.TEXT_PRIMARY))
+        .select(":scope [hidden]", s -> s.hidden());
   }
 }

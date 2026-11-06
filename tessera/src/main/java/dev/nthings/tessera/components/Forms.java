@@ -86,7 +86,7 @@ public final class Forms {
         .appearanceNone()
         .inlineSize(CssLength.rem(2.5))
         .blockSize(CssLength.rem(1.5))
-        .rounded(CssLength.px(999))
+        .rounded(Tokens.RADIUS_FULL.length())
         .bgRaw(switchTrack("0", Tokens.BORDER_SUBTLE))
         .cursorPointer()
         .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
@@ -118,12 +118,12 @@ public final class Forms {
         .flex()
         .itemsCenter()
         .justifyBetween()
-        .gap(CssLength.rem(1))
-        .py(CssLength.rem(0.25))
+        .gap(Tokens.SPACE_4.length())
+        .py(Tokens.SPACE_1.length())
         .child(
             label()
                 .labelFor(sw.ref())
-                .fontSize(CssLength.rem(0.875))
+                .fontSize(Tokens.FONT_SIZE_SM.length())
                 .fontWeight(500)
                 .textColor(Tokens.TEXT_PRIMARY)
                 .cursorPointer()
@@ -242,22 +242,28 @@ public final class Forms {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> s.flex().flexCol().gap(CssLength.rem(0.25)).relative())
+          .root(s -> s.flex().flexCol().gap(Tokens.SPACE_1.length()).relative())
           .select(
               ":scope .field-label",
-              s -> s.fontSize(CssLength.rem(0.875)).fontWeight(600).textColor(Tokens.TEXT_PRIMARY))
+              s ->
+                  s.fontSize(Tokens.FONT_SIZE_SM.length())
+                      .fontWeight(600)
+                      .textColor(Tokens.TEXT_PRIMARY))
           .select(
               ":scope .field-hint",
-              s -> s.fontSize(CssLength.rem(0.8)).textColor(Tokens.TEXT_MUTED).m(CssLength.px(0)))
+              s ->
+                  s.fontSize(Tokens.FONT_SIZE_XS.length())
+                      .textColor(Tokens.TEXT_MUTED)
+                      .m(CssLength.px(0)))
           .select(
               ":scope .field-error",
               s ->
                   s.hidden()
-                      .fontSize(CssLength.rem(0.8))
+                      .fontSize(Tokens.FONT_SIZE_XS.length())
                       .fontWeight(500)
                       .textColor(Tokens.STATUS_DANGER)
                       .itemsCenter()
-                      .gap(CssLength.rem(0.25)))
+                      .gap(Tokens.SPACE_1.length()))
           .select(
               ":scope:has(:user-invalid) .field-error, :scope :user-invalid + .field-error",
               s -> s.flex())
@@ -271,10 +277,10 @@ public final class Forms {
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .rounded(CssLength.rem(0.375))
+                      .rounded(Tokens.RADIUS_MD.length())
                       .px(CssLength.rem(0.6))
                       .py(CssLength.rem(0.3))
-                      .fontSize(CssLength.rem(0.75))
+                      .fontSize(Tokens.FONT_SIZE_XS.length())
                       .shadow("0 4px 12px oklch(0% 0 0 / 0.15)"))
           .select(
               ":scope:has(:focus-visible) .field-anchor-tooltip, :scope:has(:hover) .field-anchor-tooltip",
@@ -350,15 +356,15 @@ public final class Forms {
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .rounded(CssLength.rem(0.5))
-                      .p(CssLength.rem(0.375))
+                      .rounded(Tokens.RADIUS_LG.length())
+                      .p(Tokens.SPACE_1_5.length())
                       .shadow("0 12px 28px -6px oklch(0% 0 0 / 0.25)"))
           .select(
               ":scope option",
               s ->
-                  s.px(CssLength.rem(0.75))
-                      .py(CssLength.rem(0.5))
-                      .rounded(CssLength.rem(0.375))
+                  s.px(Tokens.SPACE_3.length())
+                      .py(Tokens.SPACE_2.length())
+                      .rounded(Tokens.RADIUS_MD.length())
                       .textColor(Tokens.TEXT_PRIMARY)
                       .cursorPointer())
           .select(":scope option:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
@@ -370,13 +376,13 @@ public final class Forms {
   /// Shared padding, border, surface and type styling for text-like form controls.
   private static <S extends Styled<S>> S controlChrome(S control) {
     return control
-        .px(CssLength.rem(0.875))
-        .py(CssLength.rem(0.5))
-        .rounded(CssLength.rem(0.5))
+        .px(Tokens.CONTROL_PADDING_INLINE.length())
+        .py(Tokens.SPACE_2.length())
+        .rounded(Tokens.RADIUS_LG.length())
         .borderSubtle(Tokens.BORDER_SUBTLE)
         .bg(Tokens.SURFACE_CARD)
         .textColor(Tokens.TEXT_PRIMARY)
-        .fontSize(CssLength.rem(0.875));
+        .fontSize(Tokens.FONT_SIZE_SM.length());
   }
 
   private static StyleRefinement controlFocusRing(StyleRefinement s) {

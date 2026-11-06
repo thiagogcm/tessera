@@ -37,7 +37,7 @@ These are direct imports between production packages, pointing from consumers to
 | `components` | `foundation`, `css`, `core` | Reusable authored UI |
 | `site` | `css`, `core`, `render` | Routes, site compilation, artifacts, filesystem and preview adapters |
 | `navigation` | `components`, `site` | Route-derived search palette and pager composition |
-| `showcase` | `components`, `core`, `css`, `render`, `site` | Example application and CLI |
+| `showcase` | `components`, `core`, `css`, `navigation`, `render`, `site` | Example application and CLI |
 
 The component catalog and page compiler are sibling consumers of the element/CSS model. Neither imports the other. Site compilation consumes page metadata without knowing which components produced it. Navigation integrates site models and UI.
 
@@ -146,7 +146,7 @@ CompiledSite
 
 Site definitions require at least one route. Tasks use virtual threads; results are gathered in declaration order. Each page has separate compilation state. CSS merges sequentially and deterministically. Component callbacks should avoid mutating shared application state during concurrent rendering.
 
-`SiteValidator` receives prepared metadata and asset paths. It verifies internal root-relative links, cross-page fragments, and transition-key appearances on at least two routes. `SiteCompiler` retains collision checks because it assembles the output namespace. Compilation performs no filesystem writes.
+`SiteValidator` receives prepared metadata and asset paths. It resolves relative and root-relative URLs against each route's published document URI, validates decoded paths and fragments, and excludes query strings from target lookup. Generated `index.html` URLs are accepted alongside route paths. Absolute and protocol-relative URLs are external to this validation. It also checks transition-key appearances on at least two routes. `SiteCompiler` retains output namespace collision checks. Compilation performs no filesystem writes.
 
 `SiteArtifacts` owns XML/JSON serialization. `SiteWriter` owns directory creation, route-to-output-path mapping, and byte writes. `SitePreviewServer` serves the same compiled routes and assets. `SiteAsset.file(...)` remains explicit input I/O; byte-backed assets are shared by compilation and output adapters.
 
@@ -180,4 +180,12 @@ JUnit reuses Chromium across the suite and creates a fresh browser context per t
 
 Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium and operating-system dependencies before full verification. There is no browser-version matrix. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright` directory.
 
-This refactor preserves the scope of existing validation. Invoker checks establish target existence rather than command/tag compatibility. URL validation retains its existing root-relative path handling. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These behavioral concerns now have isolated owners in validators and artifact serialization.
+Invoker checks establish target existence rather than command/tag compatibility. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These concerns have isolated owners in validators and artifact serialization.
+
+## Shared design tokens and optional search
+
+The design-token registry covers colors, font families, typography scale, spacing, corner radii, line height, and component density. Built-in components use CSS variable references, so overriding a token affects their rendered appearance without changing the component tree. `DesignToken.length()` bridges token references to length-valued authoring APIs. Spacing tokens include the density multiplier; layout widths and breakpoint definitions remain separately authored values.
+
+`SearchPalette` renders a native dialog with grouped navigation links. Calling `.enhanced()` adds a search input and contributes one external module script per document. `SiteNavigation.searchScript()` exposes the bundled runtime as a normal `SiteAsset`, preserving the component/site dependency boundary. The caller opts in to publishing it. The runtime filters existing links and handles keyboard focus and navigation without fetching an index or requiring a server endpoint. The showcase opts in; ordinary components require no JavaScript.
+
+The [consumer guide](consumer-guide.md) and its runnable `GuideSite` demonstrate these public APIs together. Browser tests cover filtered navigation, empty-state recovery, custom token rendering, and encoded relative links over published files.

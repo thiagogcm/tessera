@@ -45,7 +45,8 @@ public final class Lists {
 
     @Override
     public Element render() {
-      var ul = Elements.ul().flex().flexCol().gap(CssLength.rem(0.5)).px(CssLength.rem(1.25));
+      var ul =
+          Elements.ul().flex().flexCol().gap(Tokens.SPACE_2.length()).px(Tokens.SPACE_5.length());
       ul.children(listItems(items));
       return ul;
     }
@@ -67,8 +68,8 @@ public final class Lists {
           Elements.ol()
               .flex()
               .flexCol()
-              .gap(CssLength.rem(0.5))
-              .px(CssLength.rem(1.25))
+              .gap(Tokens.SPACE_2.length())
+              .px(Tokens.SPACE_5.length())
               .tabularNums();
       ol.children(listItems(items));
       return ol;
@@ -97,7 +98,7 @@ public final class Lists {
           Elements.dl()
               .grid()
               .gridColumns("minmax(8rem, max-content) 1fr")
-              .gap(CssLength.rem(0.75));
+              .gap(Tokens.SPACE_3.length());
       for (var entry : terms) {
         dl.children(
             Elements.dt().fontWeight(600).textColor(Tokens.TEXT_PRIMARY).text(entry.term()),
@@ -126,7 +127,12 @@ public final class Lists {
     public void configureScope(ScopeStyle scope) {
       scope
           .root(
-              s -> s.listStyleNone().flex().flexCol().gap(CssLength.rem(0.75)).counterReset("step"))
+              s ->
+                  s.listStyleNone()
+                      .flex()
+                      .flexCol()
+                      .gap(Tokens.SPACE_3.length())
+                      .counterReset("step"))
           .select(
               ":scope > li",
               s ->
@@ -135,7 +141,7 @@ public final class Lists {
                       .counterIncrement("step")
                       .flex()
                       .itemsBaseline()
-                      .gap(CssLength.rem(0.75)))
+                      .gap(Tokens.SPACE_3.length()))
           .select(
               ":scope > li::before",
               s ->
@@ -145,7 +151,7 @@ public final class Lists {
                       .justifyCenter()
                       .minInlineSize(CssLength.rem(1.75))
                       .blockSize(CssLength.rem(1.75))
-                      .rounded(CssLength.px(999))
+                      .rounded(Tokens.RADIUS_FULL.length())
                       .fontWeight(600)
                       .tabularNums()
                       .bgRaw(

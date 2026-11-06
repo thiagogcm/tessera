@@ -37,7 +37,7 @@ final class OverviewPage {
         "Declarative HTML & CSS components for JDK 25",
         "Tessera compiles Java component trees into static HTML and one layered stylesheet. "
             + "Interactivity comes from the platform — dialogs, popovers, invoker commands, anchor "
-            + "positioning, scroll-driven CSS — so pages ship with zero JavaScript.",
+            + "positioning, scroll-driven CSS — with an optional search enhancement.",
         () -> content(ShowcaseSite.pages()));
   }
 

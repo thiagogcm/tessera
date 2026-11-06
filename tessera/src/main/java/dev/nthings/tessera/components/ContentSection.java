@@ -106,9 +106,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   public Element render() {
     var entry = RenderContext.current().registerHeading(rawId, title, level);
 
-    var heading =
-        sectionHeading(
-            level, entry.targetDomId(), title, level == 2 ? 1.625 : level == 3 ? 1.25 : 1.05);
+    var heading = sectionHeading(level, entry.targetDomId(), title);
 
     var headerEl =
         header().attr("class", "section-header").flex().flexCol().gap(CssLength.rem(0.35));
@@ -117,7 +115,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
           span()
               .attr("class", "section-badge")
               .inlineFlex()
-              .fontSize(CssLength.rem(0.75))
+              .fontSize(Tokens.FONT_SIZE_XS.length())
               .fontWeight(700)
               .textColor(Tokens.ACCENT_PRIMARY)
               .text(badge));
@@ -126,14 +124,15 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     if (leadText != null) {
       headerEl.child(
           p().attr("class", "section-lead")
-              .fontSize(CssLength.rem(1.1))
+              .fontSize(Tokens.FONT_SIZE_LG.length())
               .textColor(Tokens.TEXT_MUTED)
               .lineHeight("1.6")
               .m(CssLength.px(0))
               .text(leadText));
     }
 
-    var bodyContainer = div().attr("class", "section-body").flex().flexCol().gap(CssLength.rem(1));
+    var bodyContainer =
+        div().attr("class", "section-body").flex().flexCol().gap(Tokens.SPACE_4.length());
     bodyContainer.children(children);
 
     var sectionEl =
@@ -143,23 +142,23 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
             .attr("class", "content-section-node")
             .flex()
             .flexCol()
-            .gap(CssLength.rem(1.25))
+            .gap(Tokens.SPACE_5.length())
             .scrollMarginBlockStart(CssLength.rem(7));
 
     switch (surface) {
       case GHOST -> sectionEl.p(CssLength.px(0)).bgRaw("transparent").borderNone();
-      case FLAT -> sectionEl.py(CssLength.rem(1.5)).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
+      case FLAT -> sectionEl.py(Tokens.SPACE_6.length()).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
       case CARD ->
           sectionEl
-              .p(CssLength.rem(1.5))
-              .rounded(CssLength.rem(0.75))
+              .p(Tokens.SPACE_6.length())
+              .rounded(Tokens.RADIUS_XL.length())
               .bg(Tokens.SURFACE_CARD)
               .borderSubtle(Tokens.BORDER_SUBTLE)
               .shadow("0 4px 16px -4px oklch(0% 0 0 / 0.12)");
       case HIGHLIGHT ->
           sectionEl
-              .p(CssLength.rem(1.5))
-              .rounded(CssLength.rem(0.75))
+              .p(Tokens.SPACE_6.length())
+              .rounded(Tokens.RADIUS_XL.length())
               .bgRaw("oklch(from " + Tokens.ACCENT_PRIMARY.varReference() + " 97% 0.03 h)")
               .borderSubtle(Tokens.ACCENT_PRIMARY);
     }
@@ -175,7 +174,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   }
 
   /// Builds the `<h2>`–`<h4>` heading for a TOC-registered section, id'd `<sectionDomId>--heading`.
-  static TagElement sectionHeading(int level, String sectionDomId, String title, double sizeRem) {
+  static TagElement sectionHeading(int level, String sectionDomId, String title) {
     var heading =
         switch (level) {
           case 2 -> h2();
@@ -184,7 +183,11 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
         };
     return heading
         .attr("id", sectionDomId + "--heading")
-        .fontSize(CssLength.rem(sizeRem))
+        .fontSize(
+            (level == 2
+                    ? Tokens.FONT_SIZE_2XL
+                    : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
+                .length())
         .fontWeight(level == 2 ? 700 : 600)
         .text(title);
   }

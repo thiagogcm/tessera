@@ -46,5 +46,7 @@ jobs:
             tessera-showcase/target/playwright/
             tessera-showcase/target/failsafe-reports/
 
-      - name: Build Showcase Site
-        run: just site
+      - name: Build Showcase and Consumer Guide
+        run: |
+          just site
+          just guide

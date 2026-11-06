@@ -121,8 +121,8 @@ public final class Overlays {
                   s.m(CssLength.auto())
                       .maxInlineSize(CssLength.rem(32))
                       .inlineSize(CssLength.expr("calc(100% - 2rem)"))
-                      .p(CssLength.rem(1.5))
-                      .rounded(CssLength.rem(0.75))
+                      .p(Tokens.SPACE_6.length())
+                      .rounded(Tokens.RADIUS_XL.length())
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -167,26 +167,30 @@ public final class Overlays {
           header()
               .flex()
               .flexCol()
-              .gap(CssLength.rem(0.25))
-              .child(h2().id(titleRef).fontSize(CssLength.rem(1.25)).textBalance().text(title))
+              .gap(Tokens.SPACE_1.length())
+              .child(
+                  h2().id(titleRef)
+                      .fontSize(Tokens.FONT_SIZE_XL.length())
+                      .textBalance()
+                      .text(title))
               .whenPresent(
                   description,
                   (h, desc) ->
                       h.child(
                           p().textColor(Tokens.TEXT_MUTED)
-                              .fontSize(CssLength.rem(0.875))
+                              .fontSize(Tokens.FONT_SIZE_SM.length())
                               .text(desc)));
 
-      var contentEl = div().flex().flexCol().gap(CssLength.rem(0.75));
+      var contentEl = div().flex().flexCol().gap(Tokens.SPACE_3.length());
       contentEl.children(bodyNodes);
 
       var closeBtn =
           button()
               .id("close")
               .command(dialog, BuiltinCommand.CLOSE)
-              .px(CssLength.rem(0.875))
-              .py(CssLength.rem(0.5))
-              .rounded(CssLength.rem(0.375))
+              .px(Tokens.SPACE_3_5.length())
+              .py(Tokens.SPACE_2.length())
+              .rounded(Tokens.RADIUS_MD.length())
               .bg(Tokens.ACCENT_PRIMARY)
               .textColorOn(Tokens.ACCENT_PRIMARY)
               .borderNone()
@@ -199,8 +203,8 @@ public final class Overlays {
               .flex()
               .itemsCenter()
               .justifyEnd()
-              .gap(CssLength.rem(0.75))
-              .pt(CssLength.rem(0.5));
+              .gap(Tokens.SPACE_3.length())
+              .pt(Tokens.SPACE_2.length());
       footerEl.children(footerActions);
       footerEl.child(closeBtn);
 
@@ -212,7 +216,7 @@ public final class Overlays {
               div()
                   .flex()
                   .flexCol()
-                  .gap(CssLength.rem(1.25))
+                  .gap(Tokens.SPACE_5.length())
                   .children(headerEl, contentEl, footerEl));
     }
   }
@@ -286,7 +290,7 @@ public final class Overlays {
                     .blockSize(CssLength.dvh(100))
                     .maxBlockSize(CssLength.dvh(100))
                     .inlineSize(CssLength.expr("min(24rem, 85dvw)"))
-                    .p(CssLength.rem(1.5))
+                    .p(Tokens.SPACE_6.length())
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
@@ -336,9 +340,9 @@ public final class Overlays {
           button()
               .id("close")
               .command(dialog, BuiltinCommand.CLOSE)
-              .px(CssLength.rem(0.75))
-              .py(CssLength.rem(0.375))
-              .rounded(CssLength.rem(0.375))
+              .px(Tokens.SPACE_3.length())
+              .py(Tokens.SPACE_1_5.length())
+              .rounded(Tokens.RADIUS_MD.length())
               .borderSubtle(Tokens.BORDER_SUBTLE)
               .bg(Tokens.SURFACE_SUBTLE)
               .textColor(Tokens.TEXT_PRIMARY)
@@ -350,25 +354,26 @@ public final class Overlays {
               .flex()
               .itemsCenter()
               .justifyBetween()
-              .gap(CssLength.rem(1))
-              .py(CssLength.rem(0.5))
+              .gap(Tokens.SPACE_4.length())
+              .py(Tokens.SPACE_2.length())
               .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
               .children(
                   div()
                       .flex()
                       .flexCol()
-                      .gap(CssLength.rem(0.125))
-                      .child(h2().id(titleRef).fontSize(CssLength.rem(1.125)).text(title))
+                      .gap(Tokens.SPACE_0_5.length())
+                      .child(h2().id(titleRef).fontSize(Tokens.FONT_SIZE_LG.length()).text(title))
                       .whenPresent(
                           subtitle,
                           (d, sub) ->
                               d.child(
                                   p().textColor(Tokens.TEXT_MUTED)
-                                      .fontSize(CssLength.rem(0.8125))
+                                      .fontSize(Tokens.FONT_SIZE_XS.length())
                                       .text(sub))),
                   closeBtn);
 
-      var contentEl = div().flex().flexCol().gap(CssLength.rem(1)).py(CssLength.rem(1));
+      var contentEl =
+          div().flex().flexCol().gap(Tokens.SPACE_4.length()).py(Tokens.SPACE_4.length());
       contentEl.children(bodyNodes);
 
       return Elements.dialog()
@@ -384,9 +389,9 @@ public final class Overlays {
     return button()
         .id(buttonId)
         .command(dialog, BuiltinCommand.SHOW_MODAL)
-        .px(CssLength.rem(0.875))
-        .py(CssLength.rem(0.5))
-        .rounded(CssLength.rem(0.5))
+        .px(Tokens.SPACE_3_5.length())
+        .py(Tokens.SPACE_2.length())
+        .rounded(Tokens.RADIUS_LG.length())
         .borderSubtle(Tokens.BORDER_SUBTLE)
         .bg(Tokens.SURFACE_SUBTLE)
         .textColor(Tokens.TEXT_PRIMARY)

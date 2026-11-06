@@ -48,9 +48,9 @@ class SiteNavigationTest {
             new SiteRoute("/", new PageDocument("Home Page", div()), "Home"),
             new SiteRoute("/docs", new PageDocument("Documentation", div())));
 
-    var options = renderMain(SiteNavigation.searchPalette(site)).elements("datalist option");
+    var options = renderMain(SiteNavigation.searchPalette(site)).elements("a.palette-item");
 
-    assertThat(options).extracting(o -> o.attr("value")).containsExactly("/", "/docs");
+    assertThat(options).extracting(o -> o.attr("href")).containsExactly("/", "/docs");
     assertThat(options.getFirst().text()).startsWith("Home ");
     assertThat(options.getLast().text()).startsWith("Documentation ");
   }

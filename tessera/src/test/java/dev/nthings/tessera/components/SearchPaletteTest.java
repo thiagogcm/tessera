@@ -64,18 +64,6 @@ class SearchPaletteTest {
     }
 
     @Test
-    @DisplayName("autocomplete from a datalist of every item's path")
-    void autocompleteFromDatalistOfItemPaths() {
-      var input = page.element("dialog input[type=search]");
-      var datalist = page.elementById(input.attr("list"));
-
-      assertThat(datalist).hasTagName("datalist");
-      assertThat(datalist.select("option"))
-          .extracting(o -> o.attr("value"))
-          .containsExactly("/telemetry", "/typography", "/theme");
-    }
-
-    @Test
     @DisplayName("link items are grouped by their group")
     void linkItemsAreGroupedByGroup() {
       var groups = page.elements("dialog .palette-group");

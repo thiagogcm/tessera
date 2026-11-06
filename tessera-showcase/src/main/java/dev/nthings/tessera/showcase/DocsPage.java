@@ -92,10 +92,10 @@ final class DocsPage {
                 .children(
                     text("Tessera targets a single evergreen engine"),
                     Footnotes.ref("engine", "Chrome 155 or later; no polyfills are shipped."),
-                    text(" and emits no client-side script"),
+                    text(" and provides script-free native controls"),
                     Footnotes.ref(
                         "zero-js",
-                        "Speculation rules are declarative JSON, not executed JavaScript."),
+                        "Search optionally adds a small script; speculation rules are declarative JSON."),
                     text(".")))
         .code(
             "p().children(text(\"Tessera targets one engine\"),",

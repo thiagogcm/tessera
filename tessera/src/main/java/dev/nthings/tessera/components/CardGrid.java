@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
 /// Scoped CSS Subgrid container for [Card] items.
@@ -40,7 +41,7 @@ public record CardGrid(
             ":scope > article, :scope > label",
             s ->
                 s.subgridRows(4)
-                    .rowGap(CssLength.rem(0.75))
+                    .rowGap(Tokens.SPACE_3.length())
                     // A query container is layout-contained and cannot be a subgrid.
                     .put(CssProperty.CONTAINER_TYPE, "normal"));
   }

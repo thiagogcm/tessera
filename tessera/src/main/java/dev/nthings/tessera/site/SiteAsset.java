@@ -72,6 +72,7 @@ public record SiteAsset(String path, String contentType, byte[] content) {
       case "woff2" -> "font/woff2";
       case "woff" -> "font/woff";
       case "css" -> "text/css; charset=utf-8";
+      case "js", "mjs" -> "text/javascript; charset=utf-8";
       case "json", "webmanifest" -> "application/json; charset=utf-8";
       case "txt" -> "text/plain; charset=utf-8";
       case "xml" -> "application/xml; charset=utf-8";

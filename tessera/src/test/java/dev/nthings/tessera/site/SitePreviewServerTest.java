@@ -66,4 +66,14 @@ class SitePreviewServerTest {
   void answersNotFoundForUnknownPaths() throws Exception {
     assertThat(get("/missing").statusCode()).isEqualTo(404);
   }
+
+  @Test
+  @DisplayName("redirects directory routes without losing queries")
+  void redirectsDirectoryRoutesWithoutLosingQueries() throws Exception {
+    var response = get("/guide?q=a%2Bb");
+
+    assertThat(response.statusCode()).isEqualTo(308);
+    assertThat(response.headers().firstValue("Location")).hasValue("/guide/?q=a%2Bb");
+    assertThat(get("/guide/?q=a%2Bb").body()).isEqualTo(site.pagesByRoute().get("/guide").html());
+  }
 }

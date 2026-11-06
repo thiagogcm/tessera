@@ -133,8 +133,9 @@ public final class StyleSheetCollector {
     }
     sb.append("}");
     sb.append(
-        "body{font-family:system-ui,sans-serif;"
-            + "background:var(--surface-canvas);color:var(--text-primary);line-height:1.5}"
+        "body{font-family:var(--font-body);font-size:var(--font-size-md);"
+            + "background:var(--surface-canvas);color:var(--text-primary);line-height:var(--line-height-body)}"
+            + "button,input,select,textarea{font-family:inherit}"
             + "dialog{margin:auto;overscroll-behavior:contain}");
     keyframeRules.forEach(sb::append);
     sb.append("}\n");

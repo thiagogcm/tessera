@@ -75,7 +75,7 @@ public final class Accordion implements RenderView {
             s ->
                 s.flex()
                     .flexCol()
-                    .rounded(CssLength.rem(0.75))
+                    .rounded(Tokens.RADIUS_XL.length())
                     .bg(Tokens.SURFACE_CARD)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .overflowClip())
@@ -87,9 +87,9 @@ public final class Accordion implements RenderView {
                 s.flex()
                     .itemsCenter()
                     .justifyBetween()
-                    .gap(CssLength.rem(1))
-                    .px(CssLength.rem(1.25))
-                    .py(CssLength.rem(1))
+                    .gap(Tokens.SPACE_4.length())
+                    .px(Tokens.SPACE_5.length())
+                    .py(Tokens.SPACE_4.length())
                     .fontWeight(600)
                     .cursorPointer()
                     .listStyleNone())
@@ -102,7 +102,10 @@ public final class Accordion implements RenderView {
             s -> s.transform("rotate(180deg)").textColor(Tokens.ACCENT_PRIMARY))
         .select(
             ":scope > details > .accordion-body",
-            s -> s.px(CssLength.rem(1.25)).py(CssLength.rem(1)).pt(CssLength.rem(0.25)))
+            s ->
+                s.px(Tokens.SPACE_5.length())
+                    .py(Tokens.SPACE_4.length())
+                    .pt(Tokens.SPACE_1.length()))
         .motionSafe(
             m ->
                 m.select(

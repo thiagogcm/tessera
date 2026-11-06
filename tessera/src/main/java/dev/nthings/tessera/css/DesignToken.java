@@ -25,6 +25,11 @@ public record DesignToken(String name, String cssDefinition) {
     return "var(--" + name + ")";
   }
 
+  /// Uses this token in length-valued authoring operations such as padding, gap, and font size.
+  public CssLength length() {
+    return CssLength.expr(varReference());
+  }
+
   /// `color-mix(in oklch, var(--name) <percent>%, transparent)`: this token at reduced opacity.
   public String mixTransparent(int percent) {
     return "color-mix(in oklch, " + varReference() + " " + percent + "%, transparent)";

@@ -63,6 +63,18 @@ public final class SitePreviewServer implements AutoCloseable {
 
     var page = site.pagesByRoute().get(normalized);
     if (page != null) {
+      if (!requestPath.endsWith("/") && !requestPath.endsWith(".html")) {
+        var query = exchange.getRequestURI().getRawQuery();
+        exchange
+            .getResponseHeaders()
+            .set(
+                "Location",
+                SiteRoute.documentUriFor(normalized).toASCIIString()
+                    + (query == null ? "" : "?" + query));
+        exchange.sendResponseHeaders(308, -1);
+        exchange.close();
+        return;
+      }
       sendResponse(exchange, 200, "text/html; charset=utf-8", page.html());
       return;
     }

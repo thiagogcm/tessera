@@ -3,9 +3,11 @@ package dev.nthings.tessera.site;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import dev.nthings.tessera.render.PreparedPage;
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /// Cross-route contracts over prepared page metadata.
@@ -35,22 +37,35 @@ final class SiteValidator {
   }
 
   static void validateSiteLinks(Map<String, PreparedPage> preparedByRoute, Set<String> assetPaths) {
+    var publishedPages = new LinkedHashMap<String, PreparedPage>();
+    preparedByRoute.forEach(
+        (route, page) -> {
+          publishedPages.put(route, page);
+          publishedPages.put(
+              "/" + SiteRoute.outputPathFor(route).toString().replace('\\', '/'), page);
+        });
     for (var entry : preparedByRoute.entrySet()) {
       var sourceRoute = entry.getKey();
       var sourcePage = entry.getValue();
+      var base = SiteRoute.documentUriFor(sourceRoute);
 
       for (var href : sourcePage.outgoingHrefs()) {
-        // Same-page `#fragment` links are already validated by PageCompiler.prepare.
-        if (href.startsWith("/") && !href.startsWith("//")) {
-          var hashIdx = href.indexOf('#');
-          var rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
-          var fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";
+        var reference = URI.create(href);
+        if (!reference.isAbsolute() && reference.getRawAuthority() == null) {
+          // Empty paths (query-only and fragment-only references) retain the current document.
+          var referencePath = Objects.requireNonNull(reference.getRawPath());
+          var rawPath =
+              Objects.requireNonNull(
+                  referencePath.isEmpty()
+                      ? base.getPath()
+                      : base.resolve(reference).normalize().getPath());
+          var fragment = reference.getFragment();
           if (assetPaths.contains(rawPath)) {
             continue;
           }
           var targetRoute = SiteRoute.normalizeRoutePath(rawPath);
 
-          var targetPage = preparedByRoute.get(targetRoute);
+          var targetPage = publishedPages.get(targetRoute);
           if (targetPage == null) {
             throw new AccessibilityViolationException(
                 "Route \""
@@ -59,7 +74,9 @@ final class SiteValidator {
                     + href
                     + "\"");
           }
-          if (!fragment.isEmpty() && !targetPage.registeredDomIds().contains(fragment)) {
+          if (fragment != null
+              && !fragment.isEmpty()
+              && !targetPage.registeredDomIds().contains(fragment)) {
             throw new AccessibilityViolationException(
                 "Route \""
                     + sourceRoute

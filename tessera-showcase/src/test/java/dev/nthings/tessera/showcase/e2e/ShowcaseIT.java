@@ -11,8 +11,17 @@ import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.options.AriaRole;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import dev.nthings.tessera.components.Card;
+import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.css.DesignToken;
+import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.render.OutputMode;
+import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.showcase.ShowcaseSite;
 import dev.nthings.tessera.site.SiteCompiler;
+import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SiteRoute;
 import dev.nthings.tessera.site.SiteWriter;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
@@ -23,6 +32,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -33,6 +43,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@DisplayName("Showcase browser behavior")
 class ShowcaseIT {
   @TempDir private static Path publishedSite;
   private static HttpServer server;
@@ -56,6 +67,51 @@ class ShowcaseIT {
   static void publishAndLaunch() {
     var compiled = SiteCompiler.compile(ShowcaseSite.createDefinition());
     SiteWriter.writeToDirectory(compiled, publishedSite);
+    // This published fixture proves one theme can change multiple independently authored
+    // components.
+    var themed =
+        SiteDefinition.builder()
+            .outputMode(OutputMode.inlineStyle())
+            .tokens(
+                new Tokens()
+                    .register(DesignToken.value(Tokens.DENSITY.name(), "0.5"))
+                    .register(DesignToken.value(Tokens.FONT_BODY.name(), "monospace"))
+                    .register(DesignToken.value(Tokens.FONT_SIZE_MD.name(), "20px"))
+                    .register(DesignToken.value(Tokens.RADIUS_XL.name(), "18px"))
+                    .register(DesignToken.value(Tokens.RADIUS_LG.name(), "12px")))
+            .route(
+                new SiteRoute(
+                    "/",
+                    new PageDocument(
+                        "Custom theme",
+                        Elements.main()
+                            .children(
+                                Card.create("custom").title("Themed card").bodyText("Body"),
+                                Forms.field("Custom field", Forms.text("custom"))))))
+            .build();
+    SiteWriter.writeToDirectory(SiteCompiler.compile(themed), publishedSite.resolve("theme"));
+    var linked =
+        SiteDefinition.builder()
+            .outputMode(OutputMode.inlineStyle())
+            .route(
+                new SiteRoute(
+                    "/links/start",
+                    new PageDocument(
+                        "Start",
+                        Elements.main()
+                            .child(
+                                Elements.a("../caf%C3%A9?mode=full#caf%C3%A9%2Bintro")
+                                    .text("Read the café guide")))))
+            .route(
+                new SiteRoute(
+                    "/links/café",
+                    new PageDocument(
+                        "Café guide",
+                        Elements.main()
+                            .child(
+                                Elements.h1().attr("id", "café+intro").text("Café introduction")))))
+            .build();
+    SiteWriter.writeToDirectory(SiteCompiler.compile(linked), publishedSite.resolve("urls"));
     server =
         SimpleFileServer.createFileServer(
             new InetSocketAddress("127.0.0.1", 0),
@@ -112,6 +168,7 @@ class ShowcaseIT {
 
   @ParameterizedTest(name = "{0} at {3}px")
   @MethodSource("routesAndViewports")
+  @DisplayName("published pages render with styles and images")
   void publishedPagesRenderWithStylesAndImages(
       String route, String title, String heading, int width) {
     var failures = new ArrayList<String>();
@@ -145,6 +202,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("modal opens dismisses and restores focus")
   void modalOpensDismissesAndRestoresFocus() {
     page.navigate(baseUrl + "/overlays");
     var trigger =
@@ -166,6 +224,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("popover toggles and light dismisses")
   void popoverTogglesAndLightDismisses() {
     page.navigate(baseUrl + "/overlays");
     var trigger =
@@ -185,6 +244,7 @@ class ShowcaseIT {
 
   @ParameterizedTest
   @CsvSource({"Open start drawer, Filters", "Open end drawer, Details"})
+  @DisplayName("drawers open with an accessible name and dismiss")
   void drawersOpenWithAnAccessibleNameAndDismiss(String button, String title) {
     page.navigate(baseUrl + "/overlays");
     var trigger = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(button));
@@ -198,6 +258,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("labels focus fields and native validation tracks input")
   void labelsFocusFieldsAndNativeValidationTracksInput() {
     page.navigate(baseUrl + "/forms");
     var email = page.getByLabel("Work email", new Page.GetByLabelOptions().setExact(true));
@@ -216,6 +277,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("switching tabs changes visible content")
   void switchingTabsChangesVisibleContent() {
     page.navigate(baseUrl + "/navigation");
     var javaPanel =
@@ -233,6 +295,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("exclusive accordion closes previous item")
   void exclusiveAccordionClosesPreviousItem() {
     page.navigate(baseUrl + "/navigation");
     var first =
@@ -250,6 +313,7 @@ class ShowcaseIT {
   }
 
   @Test
+  @DisplayName("navigation and table of contents reach published targets")
   void navigationAndTableOfContentsReachPublishedTargets() {
     page.navigate(baseUrl + "/");
     page.getByRole(AriaRole.NAVIGATION, new Page.GetByRoleOptions().setName("Primary navigation"))
@@ -268,5 +332,77 @@ class ShowcaseIT {
         page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest"));
     toggle.check();
     assertThat(toggle).isChecked();
+  }
+
+  @Test
+  @DisplayName("search filters visible links and navigates by keyboard")
+  void searchFiltersVisibleLinksAndNavigatesByKeyboard() {
+    page.navigate(baseUrl + "/");
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search").setExact(true))
+        .click();
+    var dialog =
+        page.getByRole(
+            AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Quick open command palette"));
+    var query = dialog.getByRole(AriaRole.SEARCHBOX);
+    assertThat(query).isFocused();
+    query.fill("modal");
+    var result =
+        dialog.getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName("Modal dialog"));
+    assertThat(dialog.locator("a.palette-item:visible")).hasCount(1);
+    query.press("ArrowDown");
+    assertThat(result).isFocused();
+    result.press("Enter");
+    assertThat(page).hasURL(baseUrl + "/overlays/#toc-layout--modal");
+    assertThat(
+            page.getByRole(
+                AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Open modal").setExact(true)))
+        .isInViewport();
+  }
+
+  @Test
+  @DisplayName("search handles empty results clearing and enter from the query")
+  void searchHandlesEmptyResultsClearingAndEnterFromTheQuery() {
+    page.navigate(baseUrl + "/");
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search").setExact(true))
+        .click();
+    var dialog = page.getByRole(AriaRole.DIALOG);
+    var query = dialog.getByRole(AriaRole.SEARCHBOX);
+    query.fill("not-a-real-component");
+    assertThat(dialog.getByRole(AriaRole.STATUS)).isVisible();
+    assertThat(dialog.locator("a.palette-item:visible")).hasCount(0);
+    query.fill("");
+    assertThat(dialog.getByRole(AriaRole.STATUS)).isHidden();
+    query.fill("auto growing textarea");
+    assertThat(dialog.locator("a.palette-item:visible")).hasCount(1);
+    query.press("Enter");
+    assertThat(page).hasURL(baseUrl + "/forms/#toc-layout--textarea");
+  }
+
+  @Test
+  @DisplayName("tokens customize typography density and radii across components")
+  void tokensCustomizeTypographyDensityAndRadiiAcrossComponents() {
+    page.navigate(baseUrl + "/theme/");
+    assertThat(page.locator("body")).hasCSS("font-family", "monospace");
+    assertThat(page.locator("body")).hasCSS("font-size", "20px");
+    var card = page.getByRole(AriaRole.ARTICLE);
+    assertThat(card).hasCSS("border-radius", "18px");
+    assertThat(card).hasCSS("padding-inline-start", "10px");
+    var field = page.getByLabel("Custom field", new Page.GetByLabelOptions().setExact(true));
+    assertThat(field).hasCSS("font-family", "monospace");
+    assertThat(field).hasCSS("padding-inline-start", "7px");
+    assertThat(field).hasCSS("border-radius", "12px");
+  }
+
+  @Test
+  @DisplayName("relative links preserve queries and encoded fragments on the published site")
+  void relativeLinksPreserveQueriesAndEncodedFragmentsOnThePublishedSite() {
+    page.navigate(baseUrl + "/urls/links/start/");
+    page.getByRole(AriaRole.LINK, new Page.GetByRoleOptions().setName("Read the café guide"))
+        .click();
+    assertThat(page).hasURL(baseUrl + "/urls/links/caf%C3%A9/?mode=full#caf%C3%A9%2Bintro");
+    assertThat(
+            page.getByRole(
+                AriaRole.HEADING, new Page.GetByRoleOptions().setName("Café introduction")))
+        .isVisible();
   }
 }

@@ -8,6 +8,7 @@ import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -82,7 +83,7 @@ final class PageValidator {
       var href = attrs.get("href");
       if (href != null) {
         if (href.startsWith("#") && href.length() > 1) {
-          var fragment = href.substring(1);
+          var fragment = URI.create(href).getFragment();
           if (!registeredDomIds.contains(fragment)) {
             throw new AccessibilityViolationException(
                 "Anchor link href=\""

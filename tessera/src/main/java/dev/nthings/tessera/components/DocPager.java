@@ -72,9 +72,9 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
         .root(
             s ->
                 s.grid()
-                    .gap(CssLength.rem(1))
-                    .mt(CssLength.rem(3))
-                    .pt(CssLength.rem(1.5))
+                    .gap(Tokens.SPACE_4.length())
+                    .mt(Tokens.SPACE_12.length())
+                    .pt(Tokens.SPACE_6.length())
                     .borderBlockStartSubtle(Tokens.BORDER_SUBTLE))
         .containerMinInlineSize(
             CssLength.rem(36), c -> c.root(s -> s.gridColumns("repeat(2, 1fr)")))
@@ -83,10 +83,10 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
             s ->
                 s.flex()
                     .flexCol()
-                    .gap(CssLength.rem(0.25))
-                    .px(CssLength.rem(1.25))
-                    .py(CssLength.rem(1))
-                    .rounded(CssLength.rem(0.5))
+                    .gap(Tokens.SPACE_1.length())
+                    .px(Tokens.SPACE_5.length())
+                    .py(Tokens.SPACE_4.length())
+                    .rounded(Tokens.RADIUS_LG.length())
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .bg(Tokens.SURFACE_CARD)
                     .textDecorationNone()
@@ -99,10 +99,16 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
         .select(":scope > .pager-card.pager-next", s -> s.gridColumn("2").textAlign("right"))
         .select(
             ":scope > .pager-card > .pager-hint",
-            s -> s.fontSize(CssLength.rem(0.8)).fontWeight(500).textColor(Tokens.TEXT_MUTED))
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_XS.length())
+                    .fontWeight(500)
+                    .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > .pager-card > .pager-title",
-            s -> s.fontSize(CssLength.rem(1)).fontWeight(600).textColor(Tokens.ACCENT_PRIMARY));
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_MD.length())
+                    .fontWeight(600)
+                    .textColor(Tokens.ACCENT_PRIMARY));
   }
 
   @Override

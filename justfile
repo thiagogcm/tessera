@@ -31,6 +31,11 @@ compile:
 site output="target/site":
     {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{absolute_path(output)}}"
 
+# Build the runnable two-page example from the consumer guide.
+[group('build')]
+guide output="target/guide":
+    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.guide.GuideSite -Dexec.args="{{absolute_path(output)}}"
+
 # Build and serve the multi-page showcase site over HTTP for live browser/DevTools evaluation.
 [group('build')]
 demo port="8080":

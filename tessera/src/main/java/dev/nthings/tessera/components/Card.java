@@ -140,9 +140,9 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                 s.containerInlineSize(CONTAINER)
                     .flex()
                     .flexCol()
-                    .gap(CssLength.rem(0.75))
-                    .p(CssLength.rem(1.25))
-                    .rounded(CssLength.rem(0.75))
+                    .gap(Tokens.SPACE_3.length())
+                    .p(Tokens.SPACE_5.length())
+                    .rounded(Tokens.RADIUS_XL.length())
                     .bg(Tokens.SURFACE_CARD)
                     .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
                     .relative())
@@ -183,8 +183,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             s ->
                 s.grid()
                     .gridColumns("minmax(10rem, 35%) 1fr")
-                    .colGap(CssLength.rem(1.25))
-                    .rowGap(CssLength.rem(0.75))
+                    .colGap(Tokens.SPACE_5.length())
+                    .rowGap(Tokens.SPACE_3.length())
                     .itemsStart())
         .select(MEDIA_CARD + " > *", s -> s.gridColumn("1 / -1"))
         .container(
@@ -240,7 +240,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
                     h3,
                     Elements.p()
                         .textColor(Tokens.TEXT_MUTED)
-                        .fontSize(CssLength.rem(0.875))
+                        .fontSize(Tokens.FONT_SIZE_SM.length())
                         .text(subtitleText)));
       } else {
         root.child(h3);
@@ -252,13 +252,18 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     if (contentItems.size() == 1) {
       root.child(contentItems.getFirst());
     } else if (contentItems.size() > 1) {
-      root.child(Elements.div().flex().flexCol().gap(CssLength.rem(0.5)).children(contentItems));
+      root.child(
+          Elements.div().flex().flexCol().gap(Tokens.SPACE_2.length()).children(contentItems));
     }
 
     // Region 4: Footer (holds independent actions as native links/buttons)
     if (!footerActions.isEmpty()) {
       root.child(
-          Elements.footer().flex().itemsCenter().gap(CssLength.rem(0.75)).children(footerActions));
+          Elements.footer()
+              .flex()
+              .itemsCenter()
+              .gap(Tokens.SPACE_3.length())
+              .children(footerActions));
     }
 
     return root;

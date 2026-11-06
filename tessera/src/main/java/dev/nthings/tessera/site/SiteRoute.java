@@ -1,6 +1,8 @@
 package dev.nthings.tessera.site;
 
 import dev.nthings.tessera.render.PageDocument;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import org.jspecify.annotations.Nullable;
 
@@ -37,6 +39,21 @@ public record SiteRoute(
   /// Route title if set, otherwise the document title.
   public String displayTitle() {
     return title != null ? title : document.title();
+  }
+
+  /// Browser URL of the published page. Directory routes end in `/`; HTML files keep their path.
+  public URI documentUri() {
+    return documentUriFor(path);
+  }
+
+  static URI documentUriFor(String routePath) {
+    var documentPath =
+        routePath.endsWith(".html") || routePath.endsWith("/") ? routePath : routePath + "/";
+    try {
+      return new URI(null, null, documentPath, null);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException("Invalid route path: " + routePath, e);
+    }
   }
 
   /// Maps a normalized route path to its output file relative to the site root.

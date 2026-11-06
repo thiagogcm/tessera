@@ -68,4 +68,15 @@ class AccessibilityRulesTest {
 
     assertThatCode(() -> PageCompiler.compile(document)).doesNotThrowAnyException();
   }
+
+  @Test
+  @DisplayName("percent encoded fragment links resolve without treating plus as space")
+  void percentEncodedFragmentLinksResolveWithoutTreatingPlusAsSpace() {
+    var document =
+        new PageDocument(
+            "Links",
+            main().attr("id", "café+intro").child(a("#caf%C3%A9%2Bintro").text("Introduction")));
+
+    assertThatCode(() -> PageCompiler.compile(document)).doesNotThrowAnyException();
+  }
 }

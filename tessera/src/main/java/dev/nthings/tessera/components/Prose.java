@@ -62,7 +62,8 @@ public final class Prose implements RenderView, ParentElement<Prose> {
 
   @Override
   public Element render() {
-    var container = div().attr("class", "prose-canvas").flex().flexCol().gap(CssLength.rem(2.5));
+    var container =
+        div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10.length());
     container.children(children);
     return container;
   }
@@ -81,35 +82,35 @@ public final class Prose implements RenderView, ParentElement<Prose> {
             ":scope p:not([class])",
             s ->
                 s.mb(CssLength.rem(1.125))
-                    .fontSize(CssLength.rem(1.05))
+                    .fontSize(Tokens.FONT_SIZE_MD.length())
                     .textColor(Tokens.TEXT_PRIMARY)
                     .lineHeight("1.75"))
         .select(
             ":scope > h2",
             s ->
-                s.fontSize(CssLength.rem(1.625))
+                s.fontSize(Tokens.FONT_SIZE_2XL.length())
                     .fontWeight(700)
                     .mt(CssLength.rem(2.25))
-                    .mb(CssLength.rem(0.75))
+                    .mb(Tokens.SPACE_3.length())
                     .lineHeight("1.3"))
         .select(
             ":scope > h3",
             s ->
-                s.fontSize(CssLength.rem(1.25))
+                s.fontSize(Tokens.FONT_SIZE_XL.length())
                     .fontWeight(600)
                     .mt(CssLength.rem(1.75))
-                    .mb(CssLength.rem(0.5))
+                    .mb(Tokens.SPACE_2.length())
                     .lineHeight("1.4"))
         .select(
             ":scope > ul, :scope > ol",
-            s -> s.ps(CssLength.rem(1.5)).mb(CssLength.rem(1.25)).lineHeight("1.75"))
+            s -> s.ps(Tokens.SPACE_6.length()).mb(Tokens.SPACE_5.length()).lineHeight("1.75"))
         .select(
             ":scope > blockquote",
             s ->
                 s.borderInlineStart("3px solid " + Tokens.ACCENT_PRIMARY.varReference())
-                    .ps(CssLength.rem(1))
-                    .py(CssLength.rem(0.25))
-                    .my(CssLength.rem(1.5))
+                    .ps(Tokens.SPACE_4.length())
+                    .py(Tokens.SPACE_1.length())
+                    .my(Tokens.SPACE_6.length())
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > hr",

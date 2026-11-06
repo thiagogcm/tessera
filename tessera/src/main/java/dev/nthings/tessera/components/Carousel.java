@@ -27,9 +27,9 @@ public final class Carousel implements RenderView {
           div()
               .flex()
               .flexCol()
-              .gap(CssLength.rem(0.5))
+              .gap(Tokens.SPACE_2.length())
               .children(
-                  h3().fontSize(CssLength.rem(1.125)).textBalance().text(title),
+                  h3().fontSize(Tokens.FONT_SIZE_LG.length()).textBalance().text(title),
                   p().textColor(Tokens.TEXT_MUTED).textPretty().text(summary)));
     }
 
@@ -73,14 +73,14 @@ public final class Carousel implements RenderView {
             s ->
                 s.anchorName(anchorIdent())
                     .flex()
-                    .gap(CssLength.rem(1))
+                    .gap(Tokens.SPACE_4.length())
                     .overflowXAuto()
                     .scrollSnapType("x mandatory")
                     .scrollMarkerGroup("after")
                     .overscrollBehaviorX("contain")
                     .scrollbarWidthNone()
                     .counterReset("carousel-item")
-                    .py(CssLength.rem(0.5)))
+                    .py(Tokens.SPACE_2.length()))
         .select(
             ":scope > .carousel-item",
             s ->
@@ -92,9 +92,9 @@ public final class Carousel implements RenderView {
         .select(
             ":scope > .carousel-item > .carousel-card",
             s ->
-                s.p(CssLength.rem(1.25))
+                s.p(Tokens.SPACE_5.length())
                     .blockSize(CssLength.pct(100))
-                    .rounded(CssLength.rem(0.75))
+                    .rounded(Tokens.RADIUS_XL.length())
                     .bg(Tokens.SURFACE_CARD)
                     .border("2px solid " + Tokens.BORDER_SUBTLE.varReference())
                     .transition(
@@ -105,15 +105,15 @@ public final class Carousel implements RenderView {
                 s.flex()
                     .itemsCenter()
                     .justifyCenter()
-                    .gap(CssLength.rem(0.5))
-                    .pt(CssLength.rem(0.75)))
+                    .gap(Tokens.SPACE_2.length())
+                    .pt(Tokens.SPACE_3.length()))
         .select(
             ":scope > .carousel-item::scroll-marker",
             s ->
                 s.content("\"\" / \"Slide \" counter(carousel-item)")
                     .inlineSize(CssLength.rem(0.625))
                     .blockSize(CssLength.rem(0.625))
-                    .rounded(CssLength.px(999))
+                    .rounded(Tokens.RADIUS_FULL.length())
                     .bg(Tokens.BORDER_SUBTLE)
                     .borderNone()
                     .cursorPointer()
@@ -131,12 +131,12 @@ public final class Carousel implements RenderView {
                     .translate("0 -50%")
                     .inlineSize(CssLength.rem(2.25))
                     .blockSize(CssLength.rem(2.25))
-                    .rounded(CssLength.px(999))
+                    .rounded(Tokens.RADIUS_FULL.length())
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .borderSubtle(Tokens.BORDER_SUBTLE)
                     .shadow("0 4px 12px -4px oklch(0% 0 0 / 0.2)")
-                    .fontSize(CssLength.rem(1.125))
+                    .fontSize(Tokens.FONT_SIZE_LG.length())
                     .cursorPointer()
                     .zIndex(1))
         .select(

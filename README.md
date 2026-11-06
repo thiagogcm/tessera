@@ -1,8 +1,8 @@
 # Tessera
 
-> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+) web platform primitives, with strictly zero client-side JavaScript.**
+> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+), with zero JavaScript by default and optional static-site search enhancement.**
 
-[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](<https://img.shields.io/badge/Client%20JavaScript-Zero%20(0%20bytes)-success.svg>)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
+[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Optional%20search-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
 
 ---
 
@@ -10,7 +10,9 @@
 
 Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and **Baseline 2026+ web standards**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
 
-By leveraging native HTML5 and CSS capabilities—such as **Invoker Commands** (`commandfor` and `command`), **`<dialog closedby="any">`**, **`popover="auto"`**, **CSS `@scope`**, **Cascade Layers (`@layer`)**, **OKLCH `light-dark()` color spaces**, **CSS Anchor Positioning**, and **Speculation Rules**—Tessera delivers rich, interactive, accessible web applications with **zero bytes of client-side JavaScript**.
+Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components ship **zero JavaScript by default**. Search palettes can opt into a bundled script for live filtering and keyboard navigation on static hosting.
+
+Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and optional search.
 
 ```mermaid
 flowchart LR
@@ -114,6 +116,9 @@ just site
 
 # Build and launch the built-in HTTP preview server at http://localhost:8080
 just demo
+
+# Generate the two-page consumer-guide example
+just guide
 ```
 
 ### Running Tests & Quality Gates
@@ -217,6 +222,8 @@ For library-only verification, run `./mvnw -pl tessera verify`. For a focused br
 ## Documentation
 
 For a comprehensive deep-dive into Tessera's architecture, compiler phases, linker mechanics, and CSS layer design, see the [Canonical Architecture Specification](docs/architecture.md).
+
+For application development, see the [consumer guide](docs/consumer-guide.md).
 
 ---
 

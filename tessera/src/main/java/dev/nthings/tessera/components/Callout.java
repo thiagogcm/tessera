@@ -156,20 +156,20 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
             s ->
                 s.flex()
                     .flexCol()
-                    .gap(CssLength.rem(0.5))
-                    .px(CssLength.rem(1.25))
-                    .py(CssLength.rem(1))
-                    .my(CssLength.rem(1.25))
-                    .rounded(CssLength.rem(0.5))
+                    .gap(Tokens.SPACE_2.length())
+                    .px(Tokens.SPACE_5.length())
+                    .py(Tokens.SPACE_4.length())
+                    .my(Tokens.SPACE_5.length())
+                    .rounded(Tokens.RADIUS_LG.length())
                     .borderNone())
         .select(
             ":scope > .callout-header",
             s ->
                 s.flex()
                     .itemsCenter()
-                    .gap(CssLength.rem(0.5))
+                    .gap(Tokens.SPACE_2.length())
                     .fontWeight(600)
-                    .fontSize(CssLength.rem(0.95)))
+                    .fontSize(Tokens.FONT_SIZE_MD.length()))
         .select(
             ":scope > .callout-header > .callout-icon",
             s ->
@@ -180,7 +180,10 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                     .blockSize(CssLength.rem(1.25)))
         .select(
             ":scope > .callout-content",
-            s -> s.fontSize(CssLength.rem(0.95)).lineHeight("1.6").textColor(Tokens.TEXT_PRIMARY))
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_MD.length())
+                    .lineHeight("1.6")
+                    .textColor(Tokens.TEXT_PRIMARY))
         .select(":scope > .callout-content > :first-child", s -> s.mt(CssLength.px(0)))
         .select(":scope > .callout-content > :last-child", s -> s.mb(CssLength.px(0)));
   }

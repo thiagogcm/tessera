@@ -89,11 +89,11 @@ public final class Footnotes {
               .fontWeight(600)
               .interestTooltip(
                   tip ->
-                      tip.p(CssLength.rem(0.75))
+                      tip.p(Tokens.SPACE_3.length())
                           .maxInlineSize(CssLength.rem(22))
                           .bg(Tokens.SURFACE_CARD)
                           .borderSubtle(Tokens.BORDER_SUBTLE)
-                          .rounded(CssLength.rem(0.5))
+                          .rounded(Tokens.RADIUS_LG.length())
                           .child(content))
               .text(label);
 
@@ -133,19 +133,20 @@ public final class Footnotes {
       scope
           .root(
               s ->
-                  s.mt(CssLength.rem(2.5))
-                      .pt(CssLength.rem(1.25))
+                  s.mt(Tokens.SPACE_10.length())
+                      .pt(Tokens.SPACE_5.length())
                       .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
-                      .fontSize(CssLength.rem(0.875))
+                      .fontSize(Tokens.FONT_SIZE_SM.length())
                       .textColor(Tokens.TEXT_MUTED))
           .select(
-              ":scope ol", s -> s.flex().flexCol().gap(CssLength.rem(0.5)).ps(CssLength.rem(1.5)))
+              ":scope ol",
+              s -> s.flex().flexCol().gap(Tokens.SPACE_2.length()).ps(Tokens.SPACE_6.length()))
           .select(
               ":scope li:target",
               s ->
                   s.highlight(HighlightTone.ACCENT)
-                      .px(CssLength.rem(0.5))
-                      .py(CssLength.rem(0.25))
+                      .px(Tokens.SPACE_2.length())
+                      .py(Tokens.SPACE_1.length())
                       .textColor(Tokens.TEXT_PRIMARY));
     }
 
@@ -158,7 +159,7 @@ public final class Footnotes {
                 .role("doc-backlink")
                 .ariaLabel("Back to reference " + entry.number())
                 .textColor(Tokens.ACCENT_PRIMARY)
-                .px(CssLength.rem(0.25))
+                .px(Tokens.SPACE_1.length())
                 .text("↩");
 
         var li =
@@ -174,9 +175,9 @@ public final class Footnotes {
           .ariaLabel(heading)
           .children(
               Elements.h2()
-                  .fontSize(CssLength.rem(1.0))
+                  .fontSize(Tokens.FONT_SIZE_MD.length())
                   .textColor(Tokens.TEXT_PRIMARY)
-                  .py(CssLength.rem(0.5))
+                  .py(Tokens.SPACE_2.length())
                   .text(heading),
               ol);
     }

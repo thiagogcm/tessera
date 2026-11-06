@@ -19,6 +19,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -133,13 +134,7 @@ public final class Overlays {
               m ->
                   m.select(
                           ":scope",
-                          s ->
-                              s.opacity(0)
-                                  .transform("scale(0.95)")
-                                  .transitionProperty("opacity, transform, display, overlay")
-                                  .transitionDuration("0.2s")
-                                  .transitionTimingFunction("ease-out")
-                                  .transitionAllowDiscrete())
+                          s -> s.opacity(0).transform("scale(0.95)").motion(Motion.overlayEntry()))
                       .selectWithStartingStyle(
                           ":scope:open",
                           s -> s.opacity(1).transform("scale(1)"),
@@ -149,11 +144,10 @@ public final class Overlays {
                           s ->
                               s.bgRaw("oklch(0% 0 0 / 0)")
                                   .backdropFilter("blur(0px)")
-                                  .transitionProperty(
-                                      "background, backdrop-filter, display, overlay")
-                                  .transitionDuration("0.2s")
-                                  .transitionTimingFunction("ease-out")
-                                  .transitionAllowDiscrete())
+                                  .motion(
+                                      Motion.overlayEntry()
+                                          .properties(
+                                              "background, backdrop-filter, display, overlay")))
                       .selectWithStartingStyle(
                           ":scope:open::backdrop",
                           s -> s.bgRaw("oklch(0% 0 0 / 0.45)").backdropFilter("blur(4px)"),
@@ -311,10 +305,7 @@ public final class Overlays {
                           s ->
                               s.opacity(0)
                                   .translate(offscreenTranslate)
-                                  .transitionProperty("opacity, translate, display, overlay")
-                                  .transitionDuration("0.25s")
-                                  .transitionTimingFunction("ease-out")
-                                  .transitionAllowDiscrete())
+                                  .motion(Motion.overlayEntry()))
                       .selectWithStartingStyle(
                           ":scope:open",
                           s -> s.opacity(1).translate("0 0"),
@@ -323,10 +314,9 @@ public final class Overlays {
                           ":scope::backdrop",
                           s ->
                               s.bgRaw("oklch(0% 0 0 / 0)")
-                                  .transitionProperty("background, display, overlay")
-                                  .transitionDuration("0.25s")
-                                  .transitionTimingFunction("ease-out")
-                                  .transitionAllowDiscrete())
+                                  .motion(
+                                      Motion.overlayEntry()
+                                          .properties("background, display, overlay")))
                       .selectWithStartingStyle(
                           ":scope:open::backdrop",
                           s -> s.bgRaw("oklch(0% 0 0 / 0.45)"),

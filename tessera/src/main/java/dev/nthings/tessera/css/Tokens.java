@@ -8,65 +8,92 @@ import java.util.Map;
 /// Registry of design tokens emitted into `@layer theme`.
 public final class Tokens {
 
-  public static final DesignToken FONT_BODY =
-      DesignToken.value("font-body", "system-ui,sans-serif");
-  public static final DesignToken FONT_MONO =
-      DesignToken.value("font-mono", "ui-monospace,SFMono-Regular,Consolas,monospace");
-  public static final DesignToken FONT_SIZE_XS = DesignToken.value("font-size-xs", "0.75rem");
-  public static final DesignToken FONT_SIZE_SM = DesignToken.value("font-size-sm", "0.875rem");
-  public static final DesignToken FONT_SIZE_MD = DesignToken.value("font-size-md", "1rem");
-  public static final DesignToken FONT_SIZE_LG = DesignToken.value("font-size-lg", "1.125rem");
-  public static final DesignToken FONT_SIZE_XL = DesignToken.value("font-size-xl", "1.25rem");
-  public static final DesignToken FONT_SIZE_2XL = DesignToken.value("font-size-2xl", "1.5rem");
-  public static final DesignToken LINE_HEIGHT_BODY = DesignToken.value("line-height-body", "1.5");
-  public static final DesignToken DENSITY = DesignToken.value("density", "1");
-  public static final DesignToken CONTROL_PADDING_INLINE =
-      space("control-padding-inline", "0.875rem");
-  public static final DesignToken SPACE_0_5 = space("space-0-5", "0.125rem");
-  public static final DesignToken SPACE_1_5 = space("space-1-5", "0.375rem");
-  public static final DesignToken SPACE_2_5 = space("space-2-5", "0.625rem");
-  public static final DesignToken SPACE_3_5 = space("space-3-5", "0.875rem");
-  public static final DesignToken SPACE_1 = space("space-1", "0.25rem");
-  public static final DesignToken SPACE_2 = space("space-2", "0.5rem");
-  public static final DesignToken SPACE_3 = space("space-3", "0.75rem");
-  public static final DesignToken SPACE_4 = space("space-4", "1rem");
-  public static final DesignToken SPACE_5 = space("space-5", "1.25rem");
-  public static final DesignToken SPACE_6 = space("space-6", "1.5rem");
-  public static final DesignToken SPACE_8 = space("space-8", "2rem");
-  public static final DesignToken SPACE_10 = space("space-10", "2.5rem");
-  public static final DesignToken SPACE_12 = space("space-12", "3rem");
-  public static final DesignToken RADIUS_SM = DesignToken.value("radius-sm", "0.25rem");
-  public static final DesignToken RADIUS_MD = DesignToken.value("radius-md", "0.375rem");
-  public static final DesignToken RADIUS_LG = DesignToken.value("radius-lg", "0.5rem");
-  public static final DesignToken RADIUS_XL = DesignToken.value("radius-xl", "0.75rem");
-  public static final DesignToken RADIUS_FULL = DesignToken.value("radius-full", "9999px");
+  public static final DesignToken.FontFamily FONT_BODY =
+      DesignToken.FontFamily.of("font-body", "system-ui,sans-serif");
+  public static final DesignToken.FontFamily FONT_MONO =
+      DesignToken.FontFamily.of("font-mono", "ui-monospace,SFMono-Regular,Consolas,monospace");
+  public static final DesignToken.Length FONT_SIZE_XS =
+      DesignToken.Length.of("font-size-xs", "0.75rem");
+  public static final DesignToken.Length FONT_SIZE_SM =
+      DesignToken.Length.of("font-size-sm", "0.875rem");
+  public static final DesignToken.Length FONT_SIZE_MD =
+      DesignToken.Length.of("font-size-md", "1rem");
+  public static final DesignToken.Length FONT_SIZE_LG =
+      DesignToken.Length.of("font-size-lg", "1.125rem");
+  public static final DesignToken.Length FONT_SIZE_XL =
+      DesignToken.Length.of("font-size-xl", "1.25rem");
+  public static final DesignToken.Length FONT_SIZE_2XL =
+      DesignToken.Length.of("font-size-2xl", "1.5rem");
+  public static final DesignToken.Number LINE_HEIGHT_BODY =
+      DesignToken.Number.of("line-height-body", "1.5");
+  public static final DesignToken.Length TRACKING_NORMAL =
+      DesignToken.Length.of("tracking-normal", "0");
+  public static final DesignToken.Number DENSITY = DesignToken.Number.of("density", "1");
+  public static final DesignToken.Length CONTROL_PADDING_INLINE =
+      DesignToken.Length.space("control-padding-inline", "0.875rem");
+  public static final DesignToken.Length SPACE_0_5 =
+      DesignToken.Length.space("space-0-5", "0.125rem");
+  public static final DesignToken.Length SPACE_1_5 =
+      DesignToken.Length.space("space-1-5", "0.375rem");
+  public static final DesignToken.Length SPACE_2_5 =
+      DesignToken.Length.space("space-2-5", "0.625rem");
+  public static final DesignToken.Length SPACE_3_5 =
+      DesignToken.Length.space("space-3-5", "0.875rem");
+  public static final DesignToken.Length SPACE_1 = DesignToken.Length.space("space-1", "0.25rem");
+  public static final DesignToken.Length SPACE_2 = DesignToken.Length.space("space-2", "0.5rem");
+  public static final DesignToken.Length SPACE_3 = DesignToken.Length.space("space-3", "0.75rem");
+  public static final DesignToken.Length SPACE_4 = DesignToken.Length.space("space-4", "1rem");
+  public static final DesignToken.Length SPACE_5 = DesignToken.Length.space("space-5", "1.25rem");
+  public static final DesignToken.Length SPACE_6 = DesignToken.Length.space("space-6", "1.5rem");
+  public static final DesignToken.Length SPACE_8 = DesignToken.Length.space("space-8", "2rem");
+  public static final DesignToken.Length SPACE_10 = DesignToken.Length.space("space-10", "2.5rem");
+  public static final DesignToken.Length SPACE_12 = DesignToken.Length.space("space-12", "3rem");
+  public static final DesignToken.Length RADIUS_SM = DesignToken.Length.of("radius-sm", "0.25rem");
+  public static final DesignToken.Length RADIUS_MD = DesignToken.Length.of("radius-md", "0.375rem");
+  public static final DesignToken.Length RADIUS_LG = DesignToken.Length.of("radius-lg", "0.5rem");
+  public static final DesignToken.Length RADIUS_XL = DesignToken.Length.of("radius-xl", "0.75rem");
+  public static final DesignToken.Length RADIUS_FULL =
+      DesignToken.Length.of("radius-full", "9999px");
 
-  private static DesignToken space(String name, String size) {
-    return DesignToken.value(name, "calc(" + size + " * var(--density))");
-  }
+  public static final DesignToken.FontFamily CONTROL_FAMILY =
+      DesignToken.FontFamily.alias("control-family", FONT_BODY);
+  public static final DesignToken.Length CONTROL_FONT_SIZE =
+      DesignToken.Length.alias("control-font-size", FONT_SIZE_SM);
+  public static final DesignToken.Number CONTROL_LINE_HEIGHT =
+      DesignToken.Number.alias("control-line-height", LINE_HEIGHT_BODY);
+  public static final DesignToken.Length CONTROL_TRACKING =
+      DesignToken.Length.alias("control-tracking", TRACKING_NORMAL);
+  public static final DesignToken.Duration CONTROL_FEEDBACK_DURATION =
+      DesignToken.Duration.of("control-feedback-duration", "150ms");
+  public static final DesignToken.Duration OVERLAY_DURATION =
+      DesignToken.Duration.of("overlay-duration", "200ms");
+  public static final DesignToken.Duration DISCLOSURE_DURATION =
+      DesignToken.Duration.of("disclosure-duration", "250ms");
 
-  public static final DesignToken SURFACE_CANVAS =
-      DesignToken.lightDark("surface-canvas", "oklch(99% 0.005 260)", "oklch(14% 0.015 260)");
-  public static final DesignToken SURFACE_CARD =
-      DesignToken.lightDark("surface-card", "oklch(100% 0 0)", "oklch(19% 0.02 260)");
-  public static final DesignToken SURFACE_SUBTLE =
-      DesignToken.lightDark("surface-subtle", "oklch(95% 0.01 260)", "oklch(24% 0.02 260)");
-  public static final DesignToken TEXT_PRIMARY =
-      DesignToken.lightDark("text-primary", "oklch(18% 0.02 260)", "oklch(96% 0.01 260)");
-  public static final DesignToken TEXT_MUTED =
-      DesignToken.lightDark("text-muted", "oklch(45% 0.02 260)", "oklch(72% 0.02 260)");
-  public static final DesignToken ACCENT_PRIMARY =
-      DesignToken.lightDark("accent-primary", "oklch(54% 0.21 262)", "oklch(68% 0.19 262)");
-  public static final DesignToken BORDER_SUBTLE =
-      DesignToken.lightDark("border-subtle", "oklch(88% 0.01 260)", "oklch(30% 0.02 260)");
-  public static final DesignToken STATUS_SUCCESS =
-      DesignToken.lightDark("status-success", "oklch(55% 0.17 152)", "oklch(72% 0.16 152)");
-  public static final DesignToken STATUS_WARNING =
-      DesignToken.lightDark("status-warning", "oklch(68% 0.17 75)", "oklch(80% 0.16 75)");
-  public static final DesignToken STATUS_DANGER =
-      DesignToken.lightDark("status-danger", "oklch(56% 0.21 25)", "oklch(70% 0.19 25)");
-  public static final DesignToken STATUS_INFO =
-      DesignToken.lightDark("status-info", "oklch(58% 0.16 235)", "oklch(74% 0.14 235)");
+  public static final DesignToken.Color SURFACE_CANVAS =
+      DesignToken.Color.lightDark("surface-canvas", "oklch(99% 0.005 260)", "oklch(14% 0.015 260)");
+  public static final DesignToken.Color SURFACE_CARD =
+      DesignToken.Color.lightDark("surface-card", "oklch(100% 0 0)", "oklch(19% 0.02 260)");
+  public static final DesignToken.Color SURFACE_SUBTLE =
+      DesignToken.Color.lightDark("surface-subtle", "oklch(95% 0.01 260)", "oklch(24% 0.02 260)");
+  public static final DesignToken.Color TEXT_PRIMARY =
+      DesignToken.Color.lightDark("text-primary", "oklch(18% 0.02 260)", "oklch(96% 0.01 260)");
+  public static final DesignToken.Color TEXT_MUTED =
+      DesignToken.Color.lightDark("text-muted", "oklch(45% 0.02 260)", "oklch(72% 0.02 260)");
+  public static final DesignToken.Color ACCENT_PRIMARY =
+      DesignToken.Color.lightDark("accent-primary", "oklch(54% 0.21 262)", "oklch(68% 0.19 262)");
+  public static final DesignToken.Color BORDER_SUBTLE =
+      DesignToken.Color.lightDark("border-subtle", "oklch(88% 0.01 260)", "oklch(30% 0.02 260)");
+  public static final DesignToken.Color STATUS_SUCCESS =
+      DesignToken.Color.lightDark("status-success", "oklch(55% 0.17 152)", "oklch(72% 0.16 152)");
+  public static final DesignToken.Color STATUS_WARNING =
+      DesignToken.Color.lightDark("status-warning", "oklch(68% 0.17 75)", "oklch(80% 0.16 75)");
+  public static final DesignToken.Color STATUS_DANGER =
+      DesignToken.Color.lightDark("status-danger", "oklch(56% 0.21 25)", "oklch(70% 0.19 25)");
+  public static final DesignToken.Color STATUS_INFO =
+      DesignToken.Color.lightDark("status-info", "oklch(58% 0.16 235)", "oklch(74% 0.14 235)");
+  public static final DesignToken.Color CONTROL_FG =
+      DesignToken.Color.alias("control-fg", TEXT_PRIMARY);
 
   private final Map<String, DesignToken> entries = new LinkedHashMap<>();
 
@@ -82,6 +109,7 @@ public final class Tokens {
           FONT_SIZE_XL,
           FONT_SIZE_2XL,
           LINE_HEIGHT_BODY,
+          TRACKING_NORMAL,
           DENSITY,
           CONTROL_PADDING_INLINE,
           SPACE_0_5,
@@ -101,7 +129,14 @@ public final class Tokens {
           RADIUS_MD,
           RADIUS_LG,
           RADIUS_XL,
-          RADIUS_FULL
+          RADIUS_FULL,
+          CONTROL_FAMILY,
+          CONTROL_FONT_SIZE,
+          CONTROL_LINE_HEIGHT,
+          CONTROL_TRACKING,
+          CONTROL_FEEDBACK_DURATION,
+          OVERLAY_DURATION,
+          DISCLOSURE_DURATION
         }) {
       register(token);
     }
@@ -116,6 +151,7 @@ public final class Tokens {
     register(STATUS_WARNING);
     register(STATUS_DANGER);
     register(STATUS_INFO);
+    register(CONTROL_FG);
   }
 
   public Tokens register(DesignToken token) {

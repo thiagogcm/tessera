@@ -17,6 +17,7 @@ import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
@@ -91,10 +92,10 @@ public final class Forms {
         .cursorPointer()
         .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .checked(s -> s.bgRaw(switchTrack("100%", Tokens.ACCENT_PRIMARY)))
-        .motionSafe(s -> s.transition("background 0.2s ease"));
+        .motionSafe(s -> s.motion(Motion.controlFeedback().properties("background")));
   }
 
-  private static String switchTrack(String thumbX, DesignToken trackColor) {
+  private static String switchTrack(String thumbX, DesignToken.Color trackColor) {
     return "radial-gradient(circle closest-side, white 80%, transparent 88%) "
         + thumbX
         + " 50% / 1.5rem 1.5rem no-repeat "
@@ -123,9 +124,8 @@ public final class Forms {
         .child(
             label()
                 .labelFor(sw.ref())
-                .fontSize(Tokens.FONT_SIZE_SM.length())
-                .fontWeight(500)
-                .textColor(Tokens.TEXT_PRIMARY)
+                .typography(Roles.LABEL)
+                .textColor(Roles.FOREGROUND)
                 .cursorPointer()
                 .text(labelText))
         .child(sw);
@@ -243,12 +243,7 @@ public final class Forms {
     public void configureScope(ScopeStyle scope) {
       scope
           .root(s -> s.flex().flexCol().gap(Tokens.SPACE_1.length()).relative())
-          .select(
-              ":scope .field-label",
-              s ->
-                  s.fontSize(Tokens.FONT_SIZE_SM.length())
-                      .fontWeight(600)
-                      .textColor(Tokens.TEXT_PRIMARY))
+          .select(":scope .field-label", s -> s.typography(Roles.LABEL).textColor(Roles.FOREGROUND))
           .select(
               ":scope .field-hint",
               s ->

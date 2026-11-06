@@ -36,12 +36,12 @@ public final class Formatting {
   }
 
   public static TagElement underline(
-      String text, UnderlineStyle style, DesignToken decorationColor) {
+      String text, UnderlineStyle style, DesignToken.Color decorationColor) {
     return underline(Elements.text(text), style, decorationColor);
   }
 
   public static TagElement underline(
-      IntoElement content, UnderlineStyle style, DesignToken decorationColor) {
+      IntoElement content, UnderlineStyle style, DesignToken.Color decorationColor) {
     return Elements.u().underline(style, decorationColor).child(content);
   }
 
@@ -49,7 +49,7 @@ public final class Formatting {
     return strikethrough(Elements.text(text), Tokens.TEXT_MUTED);
   }
 
-  public static TagElement strikethrough(IntoElement content, DesignToken decorationColor) {
+  public static TagElement strikethrough(IntoElement content, DesignToken.Color decorationColor) {
     return Elements.s().strikethrough(decorationColor).child(content);
   }
 

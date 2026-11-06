@@ -9,13 +9,13 @@ public enum HighlightTone {
   DANGER(Tokens.STATUS_DANGER),
   INFO(Tokens.STATUS_INFO);
 
-  private final DesignToken token;
+  private final DesignToken.Color token;
 
-  HighlightTone(DesignToken token) {
+  HighlightTone(DesignToken.Color token) {
     this.token = token;
   }
 
-  public DesignToken token() {
+  public DesignToken.Color token() {
     return token;
   }
 

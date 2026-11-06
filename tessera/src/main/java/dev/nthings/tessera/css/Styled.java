@@ -341,7 +341,19 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF bg(DesignToken token) {
+  default SELF typography(Typography typography) {
+    typography.apply(style());
+    return self();
+  }
+
+  /// Applies a motion preset. A preset that moves an element belongs inside a
+  /// `prefers-reduced-motion: no-preference` block; the visible end state stays outside it.
+  default SELF motion(Motion motion) {
+    motion.apply(style());
+    return self();
+  }
+
+  default SELF bg(DesignToken.Color token) {
     style().put(CssProperty.BACKGROUND, token.varReference());
     return self();
   }
@@ -351,13 +363,13 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF textColor(DesignToken token) {
+  default SELF textColor(DesignToken.Color token) {
     style().put(CssProperty.COLOR, token.varReference());
     return self();
   }
 
   /// Text color that contrasts with `background` (`contrast-color()`), e.g. for filled buttons.
-  default SELF textColorOn(DesignToken background) {
+  default SELF textColorOn(DesignToken.Color background) {
     style().put(CssProperty.COLOR, "contrast-color(" + background.varReference() + ")");
     return self();
   }
@@ -423,7 +435,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return underline(UnderlineStyle.SOLID, Tokens.ACCENT_PRIMARY);
   }
 
-  default SELF underline(UnderlineStyle lineStyle, DesignToken colorToken) {
+  default SELF underline(UnderlineStyle lineStyle, DesignToken.Color colorToken) {
     style().put(CssProperty.TEXT_DECORATION_LINE, "underline");
     style().put(CssProperty.TEXT_DECORATION_STYLE, lineStyle.css());
     style().put(CssProperty.TEXT_DECORATION_COLOR, colorToken.varReference());
@@ -437,7 +449,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return strikethrough(Tokens.TEXT_MUTED);
   }
 
-  default SELF strikethrough(DesignToken colorToken) {
+  default SELF strikethrough(DesignToken.Color colorToken) {
     style().put(CssProperty.TEXT_DECORATION_LINE, "line-through");
     style().put(CssProperty.TEXT_DECORATION_STYLE, UnderlineStyle.SOLID.css());
     style().put(CssProperty.TEXT_DECORATION_COLOR, colorToken.varReference());
@@ -450,17 +462,17 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF borderSubtle(DesignToken borderToken) {
+  default SELF borderSubtle(DesignToken.Color borderToken) {
     style().put(CssProperty.BORDER, "1px solid " + borderToken.varReference());
     return self();
   }
 
-  default SELF borderBlockStartSubtle(DesignToken borderToken) {
+  default SELF borderBlockStartSubtle(DesignToken.Color borderToken) {
     style().put(CssProperty.BORDER_BLOCK_START, "1px solid " + borderToken.varReference());
     return self();
   }
 
-  default SELF borderBlockEndSubtle(DesignToken borderToken) {
+  default SELF borderBlockEndSubtle(DesignToken.Color borderToken) {
     style().put(CssProperty.BORDER_BLOCK_END, "1px solid " + borderToken.varReference());
     return self();
   }
@@ -481,7 +493,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF focusRing(DesignToken accentToken) {
+  default SELF focusRing(DesignToken.Color accentToken) {
     style().put(CssProperty.OUTLINE, "2px solid " + accentToken.varReference());
     style().put(CssProperty.OUTLINE_OFFSET, CssLength.px(2));
     return self();
@@ -624,7 +636,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF borderInlineStartSubtle(DesignToken borderToken) {
+  default SELF borderInlineStartSubtle(DesignToken.Color borderToken) {
     style().put(CssProperty.BORDER_INLINE_START, "1px solid " + borderToken.varReference());
     return self();
   }
@@ -712,7 +724,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
-  default SELF borderColor(DesignToken token) {
+  default SELF borderColor(DesignToken.Color token) {
     style().put(CssProperty.BORDER_COLOR, token.varReference());
     return self();
   }
@@ -735,7 +747,7 @@ public interface Styled<SELF extends Styled<SELF>> {
     return appearance("none");
   }
 
-  default SELF accentColor(DesignToken token) {
+  default SELF accentColor(DesignToken.Color token) {
     style().put(CssProperty.ACCENT_COLOR, token.varReference());
     return self();
   }

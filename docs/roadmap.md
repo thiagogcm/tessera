@@ -6,26 +6,13 @@ Improve the Java authoring experience while compiling to semantic HTML and moder
 
 | Order | Item | Priority | Prerequisites |
 | --- | --- | --- | --- |
-| 1 | Typed design values and semantic themes | High | Existing token registry and stylesheet collection |
-| 2 | Native button components | High | Typed design values |
-| 3 | Reusable component stories | Medium | Native button components and theme variants |
-| 4 | Compilation inspection | Medium | Existing compiler passes and component origins |
+| 1 | Native button components | High | Typed design values |
+| 2 | Reusable component stories | Medium | Native button components and theme variants |
+| 3 | Compilation inspection | Medium | Existing compiler passes and component origins |
 
-Compilation inspection can proceed independently; the other items follow the sequence above. Row and column layout is `FlexLayout`, applied with `Styled.layout`.
+Compilation inspection can proceed independently; the other items follow the sequence above. Row and column layout is `FlexLayout`, applied with `Styled.layout`. Typography, motion, and semantic roles are `Typography`, `Motion`, and `Roles`.
 
-## 1. Typed design values and semantic themes
-
-Introduce immutable Java values for typography and motion. Typography combines font family, size, weight, line height, and tracking. Motion combines duration, easing, and a reduced-motion policy for a named purpose such as control feedback, overlay entry, or disclosure. These values apply to elements and scoped rules through the same declaration pipeline.
-
-Give tokens typed categories for the values consumed by these APIs, preserving CSS variable references through serialization. Generic value types and token emission belong in `css`; component-specific semantic roles belong in `components`. Theme data supplies the values for those roles through the token registry. Typography, color, spacing, and motion choices stay independently configurable, including light/dark appearance and density.
-
-**Verification criteria**
-
-- Two independently authored components using the same semantic typography and color roles reflect a theme override in both light and dark appearance, with the intended font metrics and readable content.
-- A compact density changes control spacing without changing the typography scale unless the theme explicitly changes it.
-- An overlay or control using a motion preset reaches its intended visible state under reduced motion, with spatial travel reduced and keyboard focus still apparent.
-
-## 2. Native button components
+## 1. Native button components
 
 Add `Button` and `IconButton` as ordinary components accepted by `IntoElement` composition. Both emit native buttons. Semantic tone, surface variant, control size, disabled state, and busy feedback are separate choices. Form submission and invoker commands describe behavior independently of appearance; navigation continues to use anchors.
 
@@ -38,7 +25,7 @@ An icon button requires an accessible name alongside its visual content. Custom 
 - An icon-only button has the supplied accessible name and a visible keyboard focus indicator. Decorative visual content does not repeat that name to assistive technology.
 - Busy feedback is conveyed to assistive technology and can be combined with an explicit disabled choice without losing the button's name.
 
-## 3. Reusable component stories
+## 2. Reusable component stories
 
 Evolve the showcase's `Demo` model into named component cases with variant parameters and a fresh content factory. A shared catalog drives both the rendered documentation and browser fixtures. Each case identifies the component state being demonstrated, such as a disabled action, an open overlay, or a compact control.
 
@@ -50,7 +37,7 @@ Keep the catalog and browser integration in `tessera-showcase`. Reuse component 
 - Opening a dialog, changing a control, and then opening another case starts that case in its declared state. Reopening the original case starts it fresh.
 - Representative narrow and wide cases remain usable, including keyboard access to overflowed content and text wrapping without unintended horizontal document scrolling.
 
-## 4. Compilation inspection
+## 3. Compilation inspection
 
 Provide an opt-in, read-only report for successful page and site compilation. Connect component paths and scoped DOM IDs to generated classes, declared CSS rules, cascade layers, and scope boundaries. Report UTF-8 output sizes so consumers can identify large documents and stylesheets.
 

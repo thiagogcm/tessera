@@ -114,7 +114,7 @@ Elements.section().layout(stack).children(
     p().text("Introduction"));
 ```
 
-`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.length()`.
+`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length.length()`.
 
 A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowYAuto()`.
 
@@ -182,27 +182,34 @@ Components reference shared CSS custom properties. Replace a token by registerin
 
 ```java
 var tokens = new Tokens()
-    .register(DesignToken.value(Tokens.FONT_BODY.name(), "Georgia,serif"))
-    .register(DesignToken.value(Tokens.DENSITY.name(), "0.8"))
-    .register(DesignToken.value(Tokens.RADIUS_XL.name(), "1rem"));
+    .register(DesignToken.FontFamily.of(Tokens.FONT_BODY.name(), "Georgia,serif"))
+    .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.8"))
+    .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "1rem"))
+    .register(DesignToken.Color.lightDark(
+        Tokens.CONTROL_FG.name(), "oklch(20% 0.02 150)", "oklch(96% 0.01 150)"))
+    .register(DesignToken.Length.of(Tokens.CONTROL_FONT_SIZE.name(), "1rem"));
 
 var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 ```
+
+`Typography` sets family, size, weight, line height, and tracking together. `Roles.LABEL` is the control label. `Roles.FOREGROUND` is the control text color, defined as `var(--text-primary)` until a theme replaces `--control-fg`. `Motion.controlFeedback()`, `Motion.overlayEntry()`, and `Motion.disclosure()` set duration, easing, and the transitioned properties. Apply a preset that moves an element inside `motionSafe`, and leave its visible end state outside that query.
 
 | Family | Public tokens | Defaults |
 | --- | --- | --- |
 | Fonts | `FONT_BODY`, `FONT_MONO` | System UI and system monospace stacks |
 | Type scale | `FONT_SIZE_XS`, `FONT_SIZE_SM`, `FONT_SIZE_MD`, `FONT_SIZE_LG`, `FONT_SIZE_XL`, `FONT_SIZE_2XL` | 0.75, 0.875, 1, 1.125, 1.25, 1.5 rem |
 | Line height | `LINE_HEIGHT_BODY` | 1.5 |
+| Tracking | `TRACKING_NORMAL` | 0 |
 | Spacing | `SPACE_1` through `SPACE_6`, `SPACE_8`, `SPACE_10`, `SPACE_12`; half steps `SPACE_0_5`, `SPACE_1_5`, `SPACE_2_5`, `SPACE_3_5` | Quarter-rem steps multiplied by density |
 | Density | `DENSITY` | 1 |
-| Controls | `CONTROL_PADDING_INLINE` | 0.875 rem multiplied by density |
+| Controls | `CONTROL_PADDING_INLINE`, `CONTROL_FAMILY`, `CONTROL_FONT_SIZE`, `CONTROL_LINE_HEIGHT`, `CONTROL_TRACKING`, `CONTROL_FG` | Padding follows density. The label role aliases the body family, small type size, body line height, normal tracking, and primary text |
+| Motion | `CONTROL_FEEDBACK_DURATION`, `OVERLAY_DURATION`, `DISCLOSURE_DURATION` | 150ms, 200ms, 250ms |
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | 0.25, 0.375, 0.5, 0.75 rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light/dark OKLCH colors |
 
-Density scales component padding, gaps, and margins. Custom spacing definitions can include `var(--density)` to follow it. Use `.length()` when passing a token to length-valued authoring methods, and `.varReference()` for string-valued methods such as `fontFamily(...)`.
+Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Use `Length.length()` for length-valued authoring methods. Color, duration, family, and number tokens expose `varReference()` instead.
 
-Existing components consume the shared scale. Explicit layout dimensions and special component styles remain individually configurable through authoring APIs.
+`Roles.LABEL` and `Roles.FOREGROUND` are what field labels and callout titles consume. Replacing `CONTROL_FONT_SIZE` or `CONTROL_FG` changes both. Replacing `FONT_SIZE_SM` changes the label size only while `CONTROL_FONT_SIZE` still points at it.
 
 ## Publish assets
 

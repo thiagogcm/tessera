@@ -11,6 +11,7 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -95,8 +96,7 @@ public final class Accordion implements RenderView {
                     .listStyleNone())
         .select(":scope > details > summary:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
-            ":scope > details > summary .accordion-chevron",
-            s -> s.textColor(Tokens.TEXT_MUTED).transition("transform 0.2s ease"))
+            ":scope > details > summary .accordion-chevron", s -> s.textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope > details:open > summary .accordion-chevron",
             s -> s.transform("rotate(180deg)").textColor(Tokens.ACCENT_PRIMARY))
@@ -109,14 +109,12 @@ public final class Accordion implements RenderView {
         .motionSafe(
             m ->
                 m.select(
+                        ":scope > details > summary .accordion-chevron",
+                        s -> s.motion(Motion.controlFeedback().properties("transform")))
+                    .select(
                         ":scope > details::details-content",
                         s ->
-                            s.blockSize(CssLength.px(0))
-                                .overflowClip()
-                                .transitionProperty("block-size, content-visibility")
-                                .transitionDuration("0.25s")
-                                .transitionTimingFunction("ease")
-                                .transitionAllowDiscrete())
+                            s.blockSize(CssLength.px(0)).overflowClip().motion(Motion.disclosure()))
                     .select(
                         ":scope > details:open::details-content",
                         s -> s.blockSize(CssLength.auto())));

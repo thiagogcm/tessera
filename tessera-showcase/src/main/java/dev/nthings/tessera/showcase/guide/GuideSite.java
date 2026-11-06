@@ -34,9 +34,9 @@ public final class GuideSite {
   public static SiteDefinition createDefinition() {
     var tokens =
         new Tokens()
-            .register(DesignToken.value(Tokens.ACCENT_PRIMARY.name(), "oklch(55% 0.18 150)"))
-            .register(DesignToken.value(Tokens.DENSITY.name(), "0.9"))
-            .register(DesignToken.value(Tokens.RADIUS_XL.name(), "1rem"));
+            .register(DesignToken.Color.of(Tokens.ACCENT_PRIMARY.name(), "oklch(55% 0.18 150)"))
+            .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.9"))
+            .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "1rem"));
 
     return SiteDefinition.builder()
         .tokens(tokens)

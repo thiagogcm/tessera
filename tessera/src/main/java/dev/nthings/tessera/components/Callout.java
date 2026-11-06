@@ -47,10 +47,10 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polygon points=\"5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5\"/><line x1=\"8\" y1=\"5\" x2=\"8\" y2=\"9\"/><line x1=\"8\" y1=\"11\" x2=\"8\" y2=\"11.5\"/></svg>");
 
     private final String defaultTitle;
-    private final DesignToken token;
+    private final DesignToken.Color token;
     private final String iconSvg;
 
-    Tone(String defaultTitle, DesignToken token, String iconSvg) {
+    Tone(String defaultTitle, DesignToken.Color token, String iconSvg) {
       this.defaultTitle = defaultTitle;
       this.token = token;
       this.iconSvg = iconSvg;
@@ -60,7 +60,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
       return defaultTitle;
     }
 
-    public DesignToken token() {
+    public DesignToken.Color token() {
       return token;
     }
 
@@ -168,8 +168,8 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                 s.flex()
                     .itemsCenter()
                     .gap(Tokens.SPACE_2.length())
-                    .fontWeight(600)
-                    .fontSize(Tokens.FONT_SIZE_MD.length()))
+                    .typography(Roles.LABEL)
+                    .textColor(Roles.FOREGROUND))
         .select(
             ":scope > .callout-header > .callout-icon",
             s ->
@@ -177,13 +177,14 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                     .itemsCenter()
                     .justifyCenter()
                     .inlineSize(CssLength.rem(1.25))
-                    .blockSize(CssLength.rem(1.25)))
+                    .blockSize(CssLength.rem(1.25))
+                    .textColor(tone.token()))
         .select(
             ":scope > .callout-content",
             s ->
                 s.fontSize(Tokens.FONT_SIZE_MD.length())
                     .lineHeight("1.6")
-                    .textColor(Tokens.TEXT_PRIMARY))
+                    .textColor(Roles.FOREGROUND))
         .select(":scope > .callout-content > :first-child", s -> s.mt(CssLength.px(0)))
         .select(":scope > .callout-content > :last-child", s -> s.mb(CssLength.px(0)));
   }
@@ -194,7 +195,6 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
     var header =
         div()
             .attr("class", "callout-header")
-            .textColor(tone.token())
             .children(
                 span().attr("class", "callout-icon").child(rawHtml(tone.iconSvg())),
                 span().attr("class", "callout-title").text(displayTitle));

@@ -15,7 +15,8 @@ import dev.nthings.tessera.css.Tokens;
 ///
 /// Emits `aria-hidden="true"` so assistive technologies skip the decorative indicator.
 public record ScrollProgressBar(
-    String id, DesignToken barColor, CssLength thickness, TimelineAxis axis) implements RenderOnce {
+    String id, DesignToken.Color barColor, CssLength thickness, TimelineAxis axis)
+    implements RenderOnce {
 
   private static final String PROGRESS_KEYFRAME =
       "@keyframes tessera-scroll-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}";

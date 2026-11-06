@@ -27,15 +27,15 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     DANGER(Tokens.STATUS_DANGER, "#ffffff"),
     INFO(Tokens.STATUS_INFO, "#ffffff");
 
-    private final DesignToken token;
+    private final DesignToken.Color token;
     private final String onSolid;
 
-    Tone(DesignToken token, String onSolid) {
+    Tone(DesignToken.Color token, String onSolid) {
       this.token = token;
       this.onSolid = onSolid;
     }
 
-    public DesignToken token() {
+    public DesignToken.Color token() {
       return token;
     }
   }

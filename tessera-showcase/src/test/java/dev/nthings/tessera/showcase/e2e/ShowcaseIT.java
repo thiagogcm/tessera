@@ -75,11 +75,11 @@ class ShowcaseIT {
             .outputMode(OutputMode.inlineStyle())
             .tokens(
                 new Tokens()
-                    .register(DesignToken.value(Tokens.DENSITY.name(), "0.5"))
-                    .register(DesignToken.value(Tokens.FONT_BODY.name(), "monospace"))
-                    .register(DesignToken.value(Tokens.FONT_SIZE_MD.name(), "20px"))
-                    .register(DesignToken.value(Tokens.RADIUS_XL.name(), "18px"))
-                    .register(DesignToken.value(Tokens.RADIUS_LG.name(), "12px")))
+                    .register(DesignToken.Number.of(Tokens.DENSITY.name(), "0.5"))
+                    .register(DesignToken.FontFamily.of(Tokens.FONT_BODY.name(), "monospace"))
+                    .register(DesignToken.Length.of(Tokens.FONT_SIZE_MD.name(), "20px"))
+                    .register(DesignToken.Length.of(Tokens.RADIUS_XL.name(), "18px"))
+                    .register(DesignToken.Length.of(Tokens.RADIUS_LG.name(), "12px")))
             .route(
                 new SiteRoute(
                     "/",

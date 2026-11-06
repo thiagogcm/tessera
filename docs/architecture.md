@@ -105,7 +105,7 @@ block
 | --- | --- |
 | Author HTML | `Elements`, `TagElement`, `IntoElement`, sealed `Element` variants |
 | Build components | `RenderOnce`, `RenderView`, `ParentElement`, `InteractiveElement`, `Styled` |
-| Author styles | `CssLength`, `CssProperty`, `StyleRefinement`, `FlexLayout`, `ScopeStyle`, `Interactivity`, `Tokens`, `DesignToken` |
+| Author styles | `CssLength`, `CssProperty`, `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
 | Contribute document content | `RenderContext.current()`, `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
 | Compile a page | `PageDocument`, `PageCompiler.compile(...)`, `CompiledPage`, `OutputMode` |
@@ -249,7 +249,7 @@ Invoker checks establish target existence and require the appropriate dialog or 
 
 ## Shared design tokens and search
 
-The design-token registry covers colors, font families, typography scale, spacing, corner radii, line height, and component density. Built-in components use CSS variable references, so overriding a token affects their rendered appearance without changing the component tree. `DesignToken.length()` bridges token references to length-valued authoring APIs. Spacing tokens include the density multiplier; layout widths and breakpoint definitions remain separately authored values.
+The design-token registry covers colors, font families, the type scale, tracking, spacing, corner radii, line height, motion durations, and component density. `DesignToken` is sealed by category: `Color`, `Length`, `Duration`, `FontFamily`, and `Number`. `Length.length()` bridges a length token into length-valued authoring. Spacing tokens include the density multiplier; font sizes, tracking, and durations do not. `Typography` and `Motion` expand into the same declaration pipeline as other style values. Component roles in `Roles` alias registry tokens, so a theme replaces the role or the underlying scale through `Tokens.register`. Built-in components use CSS variable references, so an override changes rendered appearance without changing the component tree. Layout widths and breakpoint definitions remain separately authored values.
 
 `SearchPalette` always renders a functional search input and grouped result links. It contributes a bundled inline ES module once per document using the render context, so standalone pages and compiled sites carry the behavior automatically. No component-to-site dependency or manual asset registration is needed.
 

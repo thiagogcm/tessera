@@ -1,27 +1,25 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Action;
-import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.List;
-import java.util.function.UnaryOperator;
 
 /// Native `<button>`. Tone, surface, and size are independent of submission and invoker commands.
 /// An ordinary button is `type="button"`; [Button#submit] opts into form submission. Navigation
 /// stays on anchors.
-public final class Button implements RenderView, FluentBuilder<Button> {
+public final class Button extends ButtonBase<Button> implements RenderView {
 
   /// Semantic color. It does not choose the surface or the button's behavior.
   public enum Tone {
-    NEUTRAL(Tokens.TEXT_PRIMARY, Tokens.SURFACE_CARD.varReference()),
+    NEUTRAL(
+        Tokens.TEXT_PRIMARY,
+        Tokens.SURFACE_CARD.varReference(),
+        Tokens.BORDER_SUBTLE,
+        Tokens.SURFACE_SUBTLE.varReference()),
     ACCENT(Tokens.ACCENT_PRIMARY, "#ffffff"),
     SUCCESS(Tokens.STATUS_SUCCESS, "#ffffff"),
     WARNING(Tokens.STATUS_WARNING, "oklch(15% 0.02 75)"),
@@ -29,10 +27,18 @@ public final class Button implements RenderView, FluentBuilder<Button> {
 
     private final DesignToken.Color token;
     private final String onSolid;
+    private final DesignToken.Color edge;
+    private final String wash;
 
     Tone(DesignToken.Color token, String onSolid) {
+      this(token, onSolid, token, token.mixTransparent(12));
+    }
+
+    Tone(DesignToken.Color token, String onSolid, DesignToken.Color edge, String wash) {
       this.token = token;
       this.onSolid = onSolid;
+      this.edge = edge;
+      this.wash = wash;
     }
 
     DesignToken.Color token() {
@@ -41,6 +47,16 @@ public final class Button implements RenderView, FluentBuilder<Button> {
 
     String onSolid() {
       return onSolid;
+    }
+
+    /// Outline border color.
+    DesignToken.Color edge() {
+      return edge;
+    }
+
+    /// Hover background for outline and ghost buttons.
+    String wash() {
+      return wash;
     }
   }
 
@@ -92,9 +108,9 @@ public final class Button implements RenderView, FluentBuilder<Button> {
 
   private final String name;
   private final List<IntoElement> content;
-  private final ButtonModel model = new ButtonModel(Tone.ACCENT, Variant.SOLID);
 
   private Button(String name, List<IntoElement> content) {
+    super(Tone.ACCENT, Variant.SOLID);
     this.name = name;
     this.content = content;
   }
@@ -114,78 +130,14 @@ public final class Button implements RenderView, FluentBuilder<Button> {
     return this;
   }
 
-  public Button tone(Tone tone) {
-    model.tone = tone;
-    return this;
-  }
-
-  public Button variant(Variant variant) {
-    model.variant = variant;
-    return this;
-  }
-
-  public Button size(Size size) {
-    model.size = size;
-    return this;
-  }
-
-  /// Participates in native form submission (`type="submit"`).
-  public Button submit() {
-    model.submit = true;
-    return this;
-  }
-
-  public Button command(ElementRef target, BuiltinCommand command) {
-    model.commandTarget = target;
-    model.command = command;
-    model.action = null;
-    return this;
-  }
-
-  public Button dispatchAction(ElementRef target, Action action) {
-    model.commandTarget = target;
-    model.command = null;
-    model.action = action;
-    return this;
-  }
-
-  public Button id(ElementRef ref) {
-    model.domRef = ref;
-    return this;
-  }
-
-  public Button disabled(boolean disabled) {
-    model.disabled = disabled;
-    return this;
-  }
-
-  public Button disabled() {
-    return disabled(true);
-  }
-
-  public Button busy(boolean busy) {
-    model.busy = busy;
-    return this;
-  }
-
-  public Button busy() {
-    return busy(true);
-  }
-
-  /// Hint popover shown on hover or focus (`interestfor`).
-  public Button interestTooltip(UnaryOperator<TagElement> tooltip) {
-    model.tooltip = tooltip;
-    return this;
-  }
-
   @Override
   public void configureScope(ScopeStyle scope) {
-    ButtonFace.configure(scope);
+    ButtonFace.configure(scope, false);
   }
 
   @Override
   public Element render() {
-    var el = ButtonFace.element(model, false);
+    var el = ButtonFace.element(this, false);
     if (content.isEmpty()) {
       el.text(name);
     } else {

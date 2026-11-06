@@ -12,6 +12,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteRoute;
 import java.util.ArrayList;
@@ -70,6 +71,11 @@ public final class Catalog {
   public static String casePath(
       String storyId, String variant, Appearance appearance, Density density) {
     return "/stories/" + storyId + "/" + variant + "/" + appearance.wire() + "/" + density.wire();
+  }
+
+  /// Light, regular-density case path: the default view linked from the docs.
+  public static String casePath(String storyId, String variant) {
+    return casePath(storyId, variant, Appearance.LIGHT, Density.REGULAR);
   }
 
   static List<SiteRoute> routes() {
@@ -222,10 +228,7 @@ public final class Catalog {
                 "Press Escape or click the backdrop to dismiss — closedby=\"any\" handles both.")
             .closeLabel("Got it");
     return div()
-        .flex()
-        .flexWrap()
-        .itemsCenter()
-        .gap(CssLength.rem(0.75))
+        .layout(FlexLayout.row(CssLength.rem(0.75), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
         .children(
             Button.of("Open modal").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL),
             modal.asDeferred(10));
@@ -245,9 +248,9 @@ public final class Catalog {
   private static IntoElement togglePopover() {
     var panel = ElementRef.named("panel");
     return div()
-        .flex()
-        .flexCol()
-        .gap(CssLength.rem(0.75))
+        .layout(
+            FlexLayout.column(
+                CssLength.rem(0.75), FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
         .children(
             Button.of("Toggle popover").command(panel, BuiltinCommand.TOGGLE_POPOVER),
             Demo.surface(
@@ -269,9 +272,9 @@ public final class Catalog {
         .fullWidth()
         .child(
             div()
-                .flex()
-                .itemsCenter()
-                .gap(CssLength.rem(0.75))
+                .layout(
+                    FlexLayout.row(
+                        CssLength.rem(0.75), FlexLayout.Align.CENTER, FlexLayout.Wrap.NOWRAP))
                 .minInlineSize(CssLength.rem(48))
                 .children(
                     Button.of("Save"),

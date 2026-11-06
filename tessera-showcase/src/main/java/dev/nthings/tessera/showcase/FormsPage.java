@@ -79,13 +79,9 @@ final class FormsPage {
   private static List<IntoElement> switchStage() {
     return List.of(
         p().children(
-                a(Catalog.casePath(
-                        "switch", "off", Catalog.Appearance.LIGHT, Catalog.Density.REGULAR))
-                    .text("Off case"),
+                a(Catalog.casePath("switch", "off")).text("Off case"),
                 text(" · "),
-                a(Catalog.casePath(
-                        "switch", "on", Catalog.Appearance.LIGHT, Catalog.Density.REGULAR))
-                    .text("On case")),
+                a(Catalog.casePath("switch", "on")).text("On case")),
         Demo.surface(
                 div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(0.875)),
                 CssLength.rem(0.5))

@@ -16,7 +16,9 @@ final class ButtonFace {
 
   private ButtonFace() {}
 
-  static void configure(ScopeStyle scope) {
+  /// Emits only the rules the given face can use: the icon-only face has square boxes and a
+  /// decorative icon slot, the text face has padded boxes.
+  static void configure(ScopeStyle scope, boolean icon) {
     scope
         .root(
             s ->
@@ -32,32 +34,23 @@ final class ButtonFace {
                     .whiteSpace("nowrap"))
         .select(":scope:focus-visible", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .select(":scope[aria-busy=true]", s -> s.cursor("progress"))
-        .select(":scope:disabled", s -> s.opacity(0.55).cursor("not-allowed"))
-        .select(
-            ":scope > .button-icon",
-            s ->
-                s.inlineFlex()
-                    .itemsCenter()
-                    .justifyCenter()
-                    .inlineSize(CssLength.em(1.25))
-                    .blockSize(CssLength.em(1.25))
-                    .flexShrink(0));
+        .select(":scope:disabled", s -> s.opacity(0.55).cursor("not-allowed"));
+
+    if (icon) {
+      scope.select(
+          ":scope > .button-icon",
+          s ->
+              s.inlineFlex()
+                  .itemsCenter()
+                  .justifyCenter()
+                  .inlineSize(CssLength.em(1.25))
+                  .blockSize(CssLength.em(1.25))
+                  .flexShrink(0));
+    }
 
     for (var size : Button.Size.values()) {
-      var name = css(size);
-      scope
-          .select(
-              ":scope.button--" + name + ":not(.button--icon)",
-              s ->
-                  s.fontSize(size.fontSize().length())
-                      .px(size.paddingInline().length())
-                      .py(size.paddingBlock().length()))
-          .select(
-              ":scope.button--icon.button--" + name,
-              s ->
-                  s.inlineSize(size.iconBox().length())
-                      .blockSize(size.iconBox().length())
-                      .p(CssLength.px(0)));
+      scope.select(
+          ":scope.button--" + css(size), s -> icon ? iconBox(s, size) : paddedBox(s, size));
     }
 
     for (var tone : Button.Tone.values()) {
@@ -72,7 +65,21 @@ final class ButtonFace {
     scope.motionSafe(m -> m.select(":scope", s -> s.motion(Motion.controlFeedback())));
   }
 
-  static TagElement element(ButtonModel model, boolean icon) {
+  private static StyleRefinement iconBox(StyleRefinement style, Button.Size size) {
+    return style
+        .inlineSize(size.iconBox().length())
+        .blockSize(size.iconBox().length())
+        .p(CssLength.px(0));
+  }
+
+  private static StyleRefinement paddedBox(StyleRefinement style, Button.Size size) {
+    return style
+        .fontSize(size.fontSize().length())
+        .px(size.paddingInline().length())
+        .py(size.paddingBlock().length());
+  }
+
+  static TagElement element(ButtonBase<?> model, boolean icon) {
     var el =
         button()
             .attr("class", classes(model, icon))
@@ -100,7 +107,7 @@ final class ButtonFace {
     return el;
   }
 
-  private static String classes(ButtonModel model, boolean icon) {
+  private static String classes(ButtonBase<?> model, boolean icon) {
     var classes =
         "button button--"
             + css(model.tone)
@@ -116,8 +123,7 @@ final class ButtonFace {
     return switch (variant) {
       case SOLID ->
           style.bg(tone.token()).textColorRaw(tone.onSolid()).border("1px solid transparent");
-      case OUTLINE ->
-          style.bgRaw("transparent").textColor(tone.token()).border("1px solid " + edge(tone));
+      case OUTLINE -> style.bgRaw("transparent").textColor(tone.token()).borderSubtle(tone.edge());
       case GHOST ->
           style.bgRaw("transparent").textColor(tone.token()).border("1px solid transparent");
     };
@@ -127,16 +133,8 @@ final class ButtonFace {
       StyleRefinement style, Button.Tone tone, Button.Variant variant) {
     return switch (variant) {
       case SOLID -> style.opacity(0.92);
-      case OUTLINE, GHOST ->
-          style.bgRaw(
-              tone == Button.Tone.NEUTRAL
-                  ? Tokens.SURFACE_SUBTLE.varReference()
-                  : tone.token().mixTransparent(12));
+      case OUTLINE, GHOST -> style.bgRaw(tone.wash());
     };
-  }
-
-  private static String edge(Button.Tone tone) {
-    return (tone == Button.Tone.NEUTRAL ? Tokens.BORDER_SUBTLE : tone.token()).varReference();
   }
 
   private static String css(Enum<?> value) {

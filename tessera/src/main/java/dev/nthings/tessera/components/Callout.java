@@ -177,8 +177,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
                     .itemsCenter()
                     .justifyCenter()
                     .inlineSize(CssLength.rem(1.25))
-                    .blockSize(CssLength.rem(1.25))
-                    .textColor(tone.token()))
+                    .blockSize(CssLength.rem(1.25)))
         .select(
             ":scope > .callout-content",
             s ->
@@ -196,7 +195,10 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
         div()
             .attr("class", "callout-header")
             .children(
-                span().attr("class", "callout-icon").child(rawHtml(tone.iconSvg())),
+                span()
+                    .attr("class", "callout-icon")
+                    .textColor(tone.token())
+                    .child(rawHtml(tone.iconSvg())),
                 span().attr("class", "callout-title").text(displayTitle));
 
     var content = div().attr("class", "callout-content").children(children);

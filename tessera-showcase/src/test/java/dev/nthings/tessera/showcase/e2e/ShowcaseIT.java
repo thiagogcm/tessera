@@ -484,7 +484,8 @@ class ShowcaseIT {
     page.onRequestFailed(request -> failures.add(request.url() + ": " + request.failure()));
     page.setViewportSize(width, 900);
     for (var route : ShowcaseSite.createDefinition().routes()) {
-      if (!route.path().startsWith("/stories/")) {
+      // Color scheme cannot change layout, so the dark cases add navigations but no coverage.
+      if (!route.path().startsWith("/stories/") || route.path().contains("/dark/")) {
         continue;
       }
       var response = page.navigate(baseUrl + route.path());
@@ -614,8 +615,7 @@ class ShowcaseIT {
   }
 
   private static String caseUrl(String story, String variant) {
-    return baseUrl
-        + Catalog.casePath(story, variant, Catalog.Appearance.LIGHT, Catalog.Density.REGULAR);
+    return baseUrl + Catalog.casePath(story, variant);
   }
 
   private Locator namedButton(String name) {

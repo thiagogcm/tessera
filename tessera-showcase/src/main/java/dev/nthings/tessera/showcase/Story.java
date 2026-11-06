@@ -57,8 +57,6 @@ record Story(
   }
 
   private IntoElement caseLink(Variant variant) {
-    var href =
-        Catalog.casePath(id, variant.name(), Catalog.Appearance.LIGHT, Catalog.Density.REGULAR);
-    return p().child(a(href).text(variant.label() + " case"));
+    return p().child(a(Catalog.casePath(id, variant.name())).text(variant.label() + " case"));
   }
 }

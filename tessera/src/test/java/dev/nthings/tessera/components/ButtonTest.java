@@ -77,6 +77,16 @@ class ButtonTest {
   }
 
   @Test
+  @DisplayName("a button can show an interest tooltip")
+  void interestTooltipAnchorsAHint() {
+    var page = renderMain(Button.of("Hover me").interestTooltip(tip -> tip.text("Saved")));
+
+    var hint = page.element("[popover=hint]");
+    assertThat(page.element("button")).hasAttribute("interestfor", hint.id()).hasText("Hover me");
+    assertThat(hint).hasAttribute("role", "tooltip").hasText("Saved");
+  }
+
+  @Test
   @DisplayName("an icon button keeps its name, hides the icon, and shows keyboard focus")
   void iconButtonKeepsItsNameAndFocus() {
     var page = renderMain(IconButton.of("Dismiss", span().text("Dismiss")));

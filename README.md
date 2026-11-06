@@ -109,7 +109,7 @@ Tessera includes a comprehensive catalog of accessible, responsive components:
 
 ### Running the Multi-Page Showcase
 
-Compile and run the built-in 8-page showcase static site:
+Compile and run the showcase. Documentation pages cover the component library, and named cases are published under `/stories/`.
 
 ```bash
 # Compile the static site into target/site
@@ -224,7 +224,7 @@ treeView-beta
 
 The showcase depends on the library's public API. Playwright is test-scoped in the showcase module and never becomes a library dependency. Maven `test` runs the unit suite; Maven `verify` also runs the showcase's Failsafe browser tests.
 
-The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It exercises every route at desktop and mobile widths plus native interactions. Tests use the Chromium bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure.
+The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It opens documentation routes and component cases at desktop and mobile widths, and exercises native interactions. Tests use the Chromium bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure.
 
 For library-only verification, run `./mvnw -pl tessera verify`. For a focused browser run after compilation, use `./mvnw -pl tessera-showcase -am verify -Dit.test=ShowcaseIT`.
 

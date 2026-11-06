@@ -93,6 +93,10 @@ final class ButtonFace {
     } else if (target != null && action != null) {
       el.dispatchAction(target, action);
     }
+    var tooltip = model.tooltip;
+    if (tooltip != null) {
+      el.interestTooltip(tooltip);
+    }
     return el;
   }
 

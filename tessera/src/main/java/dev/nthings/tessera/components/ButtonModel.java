@@ -3,6 +3,8 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Action;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.TagElement;
+import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Tone, surface, size, and behavior shared by [Button] and [IconButton].
@@ -18,6 +20,7 @@ final class ButtonModel {
   @Nullable ElementRef commandTarget;
   @Nullable BuiltinCommand command;
   @Nullable Action action;
+  @Nullable UnaryOperator<TagElement> tooltip;
 
   ButtonModel(Button.Tone tone, Button.Variant variant) {
     this.tone = tone;

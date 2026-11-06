@@ -77,6 +77,7 @@ public enum HtmlTag {
   HR,
   META,
   LINK,
+  STYLE,
   SCRIPT;
 
   private final String tagName = name().toLowerCase(Locale.ROOT).replace('_', '-');

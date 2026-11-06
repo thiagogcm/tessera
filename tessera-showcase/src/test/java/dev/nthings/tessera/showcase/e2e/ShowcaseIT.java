@@ -19,6 +19,7 @@ import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.OutputMode;
 import dev.nthings.tessera.render.PageDocument;
+import dev.nthings.tessera.showcase.Catalog;
 import dev.nthings.tessera.showcase.ShowcaseSite;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
@@ -43,6 +44,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Showcase browser behavior")
 class ShowcaseIT {
@@ -183,6 +185,7 @@ class ShowcaseIT {
 
   private static Stream<Arguments> routesAndViewports() {
     return ShowcaseSite.createDefinition().routes().stream()
+        .filter(route -> !route.path().startsWith("/stories/"))
         .flatMap(
             route ->
                 Stream.of(390, 1440)
@@ -233,7 +236,7 @@ class ShowcaseIT {
   @Test
   @DisplayName("modal opens dismisses and restores focus")
   void modalOpensDismissesAndRestoresFocus() {
-    page.navigate(baseUrl + "/overlays");
+    page.navigate(caseUrl("modal", "closed"));
     var trigger =
         page.getByRole(
             AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Open modal").setExact(true));
@@ -255,7 +258,7 @@ class ShowcaseIT {
   @Test
   @DisplayName("popover toggles and light dismisses")
   void popoverTogglesAndLightDismisses() {
-    page.navigate(baseUrl + "/overlays");
+    page.navigate(caseUrl("popover", "toggle"));
     var trigger =
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Toggle popover"));
     var popover =
@@ -465,5 +468,198 @@ class ShowcaseIT {
             page.getByRole(
                 AriaRole.HEADING, new Page.GetByRoleOptions().setName("Café introduction")))
         .isVisible();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {390, 1440})
+  @DisplayName("component cases fit the viewport")
+  void componentCasesFitTheViewport(int width) {
+    var failures = new ArrayList<String>();
+    page.onResponse(
+        response -> {
+          if (response.status() >= 400) {
+            failures.add(response.status() + " " + response.url());
+          }
+        });
+    page.onRequestFailed(request -> failures.add(request.url() + ": " + request.failure()));
+    page.setViewportSize(width, 900);
+    for (var route : ShowcaseSite.createDefinition().routes()) {
+      if (!route.path().startsWith("/stories/")) {
+        continue;
+      }
+      var response = page.navigate(baseUrl + route.path());
+      Assertions.assertThat(response.status()).as(route.path()).isEqualTo(200);
+      assertThat(page).hasTitle(route.document().title());
+      assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setLevel(1)))
+          .hasText(route.displayTitle());
+      Assertions.assertThat(fitsViewport()).as(route.path() + " fits the viewport").isEqualTo(true);
+    }
+    Assertions.assertThat(failures).isEmpty();
+  }
+
+  @Test
+  @DisplayName("a named case matches the setup used on its documentation page")
+  void namedCaseMatchesTheDocumentedSetup() {
+    page.navigate(caseUrl("modal", "closed"));
+    assertClosedPublishDialog();
+    page.navigate(baseUrl + "/overlays/");
+    assertClosedPublishDialog();
+
+    page.navigate(caseUrl("popover", "toggle"));
+    assertThat(popoverCopy()).hasCount(1);
+    page.navigate(baseUrl + "/overlays/");
+    assertThat(popoverCopy()).hasCount(1);
+  }
+
+  @Test
+  @DisplayName("opening another case starts fresh and reopening restores the declared state")
+  void casesStartFreshAfterNavigation() {
+    page.navigate(caseUrl("modal", "closed"));
+    namedButton("Open modal").click();
+    assertThat(
+            page.getByRole(
+                AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
+        .isVisible();
+
+    page.navigate(caseUrl("switch", "on"));
+    var toggle =
+        page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest"));
+    assertThat(toggle).isChecked();
+    toggle.uncheck();
+    assertThat(toggle).not().isChecked();
+
+    page.navigate(caseUrl("modal", "closed"));
+    assertThat(
+            page.getByRole(
+                AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
+        .isHidden();
+
+    page.navigate(caseUrl("switch", "on"));
+    assertThat(
+            page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest")))
+        .isChecked();
+  }
+
+  @Test
+  @DisplayName("case variants expose disabled busy compact and open states")
+  void caseVariantsExposeTheirDeclaredState() {
+    page.navigate(caseUrl("actions", "disabled"));
+    assertThat(namedButton("Delete")).isDisabled();
+
+    page.navigate(caseUrl("actions", "busy"));
+    assertThat(namedButton("Publishing")).hasAttribute("aria-busy", "true");
+
+    page.navigate(caseUrl("actions", "icon"));
+    assertThat(namedButton("Refresh")).isVisible();
+
+    page.navigate(caseUrl("actions", "compact"));
+    var compact = fontSize("Edit");
+    page.navigate(caseUrl("actions", "primary"));
+    Assertions.assertThat(compact).isLessThan(fontSize("Save"));
+
+    page.navigate(caseUrl("modal", "open"));
+    assertThat(
+            page.getByRole(
+                AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?")))
+        .isVisible();
+
+    page.navigate(caseUrl("switch", "off"));
+    assertThat(
+            page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest")))
+        .not()
+        .isChecked();
+  }
+
+  @Test
+  @DisplayName("appearance and density come from the case url")
+  void appearanceAndDensityComeFromTheCaseUrl() {
+    page.navigate(
+        baseUrl
+            + Catalog.casePath(
+                "actions", "primary", Catalog.Appearance.DARK, Catalog.Density.COMPACT));
+    Assertions.assertThat(colorScheme()).isEqualTo("dark");
+    Assertions.assertThat(densityValue()).isEqualTo("0.8");
+    var compact = paddingInline("Save");
+
+    page.navigate(
+        baseUrl
+            + Catalog.casePath(
+                "actions", "primary", Catalog.Appearance.LIGHT, Catalog.Density.REGULAR));
+    Assertions.assertThat(colorScheme()).isEqualTo("light");
+    Assertions.assertThat(densityValue()).isEqualTo("1");
+    Assertions.assertThat(compact).isLessThan(paddingInline("Save"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {390, 1440})
+  @DisplayName("overflowed actions stay reachable without widening the document")
+  void overflowedActionsStayReachable(int width) {
+    page.setViewportSize(width, 900);
+    page.navigate(caseUrl("overflow", "row"));
+    namedButton("Save").focus();
+    assertThat(namedButton("Save")).isFocused();
+    for (var step = 0; step < 4; step++) {
+      page.keyboard().press("Tab");
+    }
+    assertThat(namedButton("Archive")).isFocused();
+    Assertions.assertThat(fitsViewport()).as("document fits at " + width).isEqualTo(true);
+    if (width == 390) {
+      Assertions.assertThat(
+              page.evaluate(
+                  "() => { const el = document.querySelector('.story-overflow');"
+                      + " return el.scrollWidth > el.clientWidth; }"))
+          .as("the row scrolls inside its region")
+          .isEqualTo(true);
+    }
+  }
+
+  private static String caseUrl(String story, String variant) {
+    return baseUrl
+        + Catalog.casePath(story, variant, Catalog.Appearance.LIGHT, Catalog.Density.REGULAR);
+  }
+
+  private Locator namedButton(String name) {
+    return page.getByRole(
+        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
+  }
+
+  private void assertClosedPublishDialog() {
+    assertThat(namedButton("Open modal")).isVisible();
+    var dialog =
+        page.locator("dialog").filter(new Locator.FilterOptions().setHasText("Publish release?"));
+    assertThat(dialog).hasCount(1);
+    Assertions.assertThat(dialog.textContent()).contains("Got it");
+  }
+
+  private Locator popoverCopy() {
+    return page.getByText(
+        "Click outside or press Escape to close.", new Page.GetByTextOptions().setExact(true));
+  }
+
+  private String colorScheme() {
+    return (String) page.evaluate("getComputedStyle(document.documentElement).colorScheme");
+  }
+
+  private String densityValue() {
+    return (String)
+        page.evaluate(
+            "getComputedStyle(document.documentElement).getPropertyValue('--density').trim()");
+  }
+
+  private double paddingInline(String name) {
+    return number(
+        namedButton(name).evaluate("el => parseFloat(getComputedStyle(el).paddingInlineStart)"));
+  }
+
+  private double fontSize(String name) {
+    return number(namedButton(name).evaluate("el => parseFloat(getComputedStyle(el).fontSize)"));
+  }
+
+  private static double number(Object value) {
+    return ((Number) value).doubleValue();
+  }
+
+  private boolean fitsViewport() {
+    return (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth");
   }
 }

@@ -7,6 +7,7 @@ import dev.nthings.tessera.site.SitePreviewServer;
 import dev.nthings.tessera.site.SiteRoute;
 import dev.nthings.tessera.site.SiteWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 /// Showcase site entry point: the page registry drives routes, navigation, search, and pagers.
@@ -30,16 +31,16 @@ public final class ShowcaseSite {
   }
 
   public static SiteDefinition createDefinition() {
-    var routes =
-        PAGES.stream()
-            .map(
-                page ->
-                    new SiteRoute(
-                        page.path(),
-                        new PageDocument("Tessera — " + page.navLabel(), new Shell(page)),
-                        page.title(),
-                        page.summary()))
-            .toList();
+    var routes = new ArrayList<SiteRoute>();
+    for (var page : PAGES) {
+      routes.add(
+          new SiteRoute(
+              page.path(),
+              new PageDocument("Tessera — " + page.navLabel(), new Shell(page)),
+              page.title(),
+              page.summary()));
+    }
+    routes.addAll(Catalog.routes());
     return SiteDefinition.builder()
         .routes(routes)
         .baseUrl("http://localhost:8188")

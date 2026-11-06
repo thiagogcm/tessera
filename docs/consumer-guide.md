@@ -147,6 +147,18 @@ var close = IconButton.of("Close", Elements.span().text("×"))
 
 `IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(name, content)` keeps `name` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
 
+`Button.interestTooltip(...)` adds a hint popover on hover or focus. `Overlays.modal(...).opened()` renders a dialog visible in the non-modal `open` state.
+
+## Open a component case
+
+The showcase publishes each component case as its own page:
+
+`/stories/{case}/{variant}/{appearance}/{density}/`
+
+Appearance is `light` or `dark`. Density is `regular` or `compact` (`--density: 0.8`). The viewport is the browser window, so a narrow or wide window shows the same compiled page. The page builds the case when it renders, so opening it again starts from the declared state.
+
+`/stories/modal/closed/light/regular/` is the closed publish dialog used by the overlays page. `/stories/modal/open/dark/compact/` shows that dialog open, in the dark scheme, at compact density. `/stories/actions/disabled/light/regular/` is the disabled action.
+
 ## Write links as browser URLs
 
 Site compilation resolves local links from each page's published document URL. It validates relative and root-relative `href`, `src`, and `poster` targets. Queries are preserved in output and excluded from route/asset lookup. Percent-encoded paths and fragments are decoded for comparison with registered paths and DOM IDs. A `+` in a fragment remains a plus sign.

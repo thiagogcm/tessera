@@ -4,13 +4,12 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 
+import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Lists.BulletList;
 import dev.nthings.tessera.components.Overlays;
 import dev.nthings.tessera.components.Overlays.DrawerSide;
 import dev.nthings.tessera.core.BuiltinCommand;
-import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.CssLength;
 
 /// Modal dialogs, drawers, popovers, interest tooltips, and the search palette.
@@ -33,22 +32,7 @@ final class OverlaysPage {
   }
 
   private static Demo modal() {
-    var modal =
-        Overlays.modal("demo-modal", "Publish release?")
-            .description("A native <dialog> opened with command=\"show-modal\".")
-            .bodyText(
-                "Press Escape or click the backdrop to dismiss — closedby=\"any\" handles both.")
-            .closeLabel("Got it");
-    return Demo.of("modal", "Modal dialog")
-        .summary(
-            "A modal <dialog> with light dismiss. The trigger is a plain button whose commandfor "
-                + "is resolved by the compiler to the dialog's scoped id.")
-        .features(
-            "command=\"show-modal\"", "<dialog closedby=\"any\">", "@starting-style", "::backdrop")
-        .example(Demo.row(modal.triggerButton("open-modal", "Open modal")), modal.asDeferred(10))
-        .code(
-            "var modal = Overlays.modal(\"publish\", \"Publish release?\").bodyText(\"…\");",
-            "main().children(modal.triggerButton(\"open\", \"Open modal\"), modal.asDeferred(10));");
+    return Catalog.demo("modal");
   }
 
   private static Demo drawer() {
@@ -68,32 +52,19 @@ final class OverlaysPage {
                 .flex()
                 .gap(CssLength.rem(0.75))
                 .children(
-                    start.triggerButton("open-start", "Open start drawer"),
-                    end.triggerButton("open-end", "Open end drawer")),
+                    Button.of("Open start drawer")
+                        .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
+                    Button.of("Open end drawer")
+                        .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL)),
             start.asDeferred(10),
             end.asDeferred(10))
         .code(
             "var drawer = Overlays.drawer(\"filters\", \"Filters\", DrawerSide.INLINE_START);",
-            "drawer.triggerButton(\"open\", \"Open drawer\");");
+            "Button.of(\"Open drawer\").command(drawer.dialogRef(), BuiltinCommand.SHOW_MODAL);");
   }
 
   private static Demo popover() {
-    var panel = ElementRef.named("demo-popover");
-    return Demo.of("popover", "Popover")
-        .summary(
-            "Any element can become a light-dismiss popover. The button references it through an "
-                + "ElementRef, so the id link is checked at compile time.")
-        .features("popover=\"auto\"", "command=\"toggle-popover\"", "ElementRef")
-        .example(
-            Demo.row(Demo.button("Toggle popover").command(panel, BuiltinCommand.TOGGLE_POPOVER)),
-            Demo.surface(
-                    div().id(panel).popover(PopoverMode.AUTO).p(CssLength.rem(1)),
-                    CssLength.rem(0.75))
-                .text("Click outside or press Escape to close."))
-        .code(
-            "var panel = ElementRef.named(\"panel\");",
-            "button().command(panel, BuiltinCommand.TOGGLE_POPOVER).text(\"Toggle\");",
-            "div().id(panel).popover(PopoverMode.AUTO).text(\"…\");");
+    return Catalog.demo("popover");
   }
 
   private static Demo tooltip() {
@@ -103,14 +74,12 @@ final class OverlaysPage {
                 + "anchored above the button and flipped when space runs out.")
         .features("interestfor", "popover=\"hint\"", "position-try-fallbacks")
         .example(
-            Demo.row(
-                Demo.button("Hover me")
-                    .interestTooltip(
-                        tip ->
-                            Demo.surface(tip.p(CssLength.rem(0.5)), CssLength.rem(0.375))
-                                .text("Saved 2 minutes ago"))))
-        .code(
-            "button().interestTooltip(tip -> tip.text(\"Saved 2 minutes ago\")).text(\"Hover me\");");
+            Button.of("Hover me")
+                .interestTooltip(
+                    tip ->
+                        Demo.surface(tip.p(CssLength.rem(0.5)), CssLength.rem(0.375))
+                            .text("Saved 2 minutes ago")))
+        .code("Button.of(\"Hover me\").interestTooltip(tip -> tip.text(\"Saved 2 minutes ago\"));");
   }
 
   private static Demo searchPalette() {

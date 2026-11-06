@@ -7,7 +7,6 @@ import dev.nthings.tessera.components.ContentSection;
 import dev.nthings.tessera.components.ContentSection.SurfaceKind;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
@@ -15,6 +14,8 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
 /// One showcase section: what a component does, the platform features it compiles to, a live
 /// example, and the Java that produced it.
@@ -25,6 +26,7 @@ final class Demo implements RenderOnce {
   private String summary = "";
   private List<String> features = List.of();
   private final List<Element> examples = new ArrayList<>();
+  private @Nullable Supplier<List<IntoElement>> stage;
   private List<String> code = List.of();
   private SurfaceKind surface = SurfaceKind.CARD;
 
@@ -55,6 +57,12 @@ final class Demo implements RenderOnce {
     return this;
   }
 
+  /// Example built when the section renders, so each compilation gets new elements.
+  Demo stage(Supplier<List<IntoElement>> content) {
+    this.stage = content;
+    return this;
+  }
+
   /// Java source shown under the example.
   Demo code(String... lines) {
     this.code = List.of(lines);
@@ -64,11 +72,6 @@ final class Demo implements RenderOnce {
   Demo surface(SurfaceKind kind) {
     this.surface = kind;
     return this;
-  }
-
-  /// Inline row for controls that should keep their intrinsic width inside the stage.
-  static TagElement row(IntoElement... controls) {
-    return div().flex().flexWrap().itemsCenter().gap(CssLength.rem(0.75)).children(controls);
   }
 
   /// Card-surface styling shared by example panels, popovers and tooltips.
@@ -81,14 +84,6 @@ final class Demo implements RenderOnce {
     return surface(div().p(CssLength.rem(1)).fontWeight(600).text(label), CssLength.rem(0.75));
   }
 
-  /// Secondary button styled like the component triggers.
-  static TagElement button(String label) {
-    return surface(
-            Elements.button().px(CssLength.rem(0.875)).py(CssLength.rem(0.5)).cursorPointer(),
-            CssLength.rem(0.5))
-        .text(label);
-  }
-
   String id() {
     return id;
   }
@@ -99,6 +94,11 @@ final class Demo implements RenderOnce {
 
   @Override
   public Element render() {
+    var stageItems = new ArrayList<IntoElement>(examples);
+    var fresh = stage;
+    if (fresh != null) {
+      stageItems.addAll(fresh.get());
+    }
     var section = ContentSection.create(id, title).surface(surface).leadText(summary);
     if (!features.isEmpty()) {
       section.child(
@@ -120,7 +120,7 @@ final class Demo implements RenderOnce {
             .rounded(CssLength.rem(0.75))
             .bg(Tokens.SURFACE_CANVAS)
             .borderSubtle(Tokens.BORDER_SUBTLE)
-            .children(examples));
+            .children(stageItems));
     if (!code.isEmpty()) {
       section.child(CodeBlock.ofLines(code).filename("Usage").language("java"));
     }

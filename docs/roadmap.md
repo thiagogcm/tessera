@@ -6,24 +6,11 @@ Improve the Java authoring experience while compiling to semantic HTML and moder
 
 | Order | Item | Priority | Prerequisites |
 | --- | --- | --- | --- |
-| 1 | Reusable component stories | Medium | `Button`, `IconButton`, and theme variants |
-| 2 | Compilation inspection | Medium | Existing compiler passes and component origins |
+| 1 | Compilation inspection | Medium | Existing compiler passes and component origins |
 
-Compilation inspection can proceed independently; the other items follow the sequence above. Row and column layout is `FlexLayout`, applied with `Styled.layout`. Typography, motion, and semantic roles are `Typography`, `Motion`, and `Roles`. Native buttons are `Button` and `IconButton`.
+Row and column layout is `FlexLayout`, applied with `Styled.layout`. Typography, motion, and semantic roles are `Typography`, `Motion`, and `Roles`. Native buttons are `Button` and `IconButton`. Component cases are showcase routes at `/stories/{case}/{variant}/{appearance}/{density}/`.
 
-## 1. Reusable component stories
-
-Evolve the showcase's `Demo` model into named component cases with variant parameters and a fresh content factory. A shared catalog drives both the rendered documentation and browser fixtures. Each case identifies the component state being demonstrated, such as a disabled action, an open overlay, or a compact control.
-
-Keep the catalog and browser integration in `tessera-showcase`. Reuse component factories instead of duplicating markup in tests, and create fresh element builders for each case compilation. Named cases can be opened directly at a selected viewport, appearance, and density. Extend the existing Playwright interactions to use these cases and select combinations that exercise distinct behavior.
-
-**Verification criteria**
-
-- A named case and variant opened directly show the same component setup used by its browser interaction test.
-- Opening a dialog, changing a control, and then opening another case starts that case in its declared state. Reopening the original case starts it fresh.
-- Representative narrow and wide cases remain usable, including keyboard access to overflowed content and text wrapping without unintended horizontal document scrolling.
-
-## 2. Compilation inspection
+## 1. Compilation inspection
 
 Provide an opt-in, read-only report for successful page and site compilation. Connect component paths and scoped DOM IDs to generated classes, declared CSS rules, cascade layers, and scope boundaries. Report UTF-8 output sizes so consumers can identify large documents and stylesheets.
 

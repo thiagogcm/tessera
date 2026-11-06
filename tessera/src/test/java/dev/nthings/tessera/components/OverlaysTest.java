@@ -21,16 +21,23 @@ class OverlaysTest {
         Overlays.drawer("inspector", "Live Inspector")
             .subtitle("Cascade state")
             .body(p().text("7 cascade layers active."));
+    var preview =
+        Overlays.modal("preview", "Preview")
+            .bodyText("Shown before the page is published.")
+            .opened();
 
     var page =
         renderMain(
             modal.triggerButton("trigger-modal", "Open Modal"),
             drawer.triggerButton("trigger-drawer", "Open Drawer"),
             modal.asDeferred(10),
-            drawer.asDeferred(20));
+            drawer.asDeferred(20),
+            preview);
 
     assertThat(page.elements("dialog[closedby=any]"))
         .extracting(e -> e.id())
-        .containsExactlyInAnyOrder("confirm-deploy--dialog", "inspector--dialog");
+        .containsExactlyInAnyOrder(
+            "confirm-deploy--dialog", "inspector--dialog", "preview--dialog");
+    assertThat(page.element("dialog[open]")).hasAttribute("open");
   }
 }

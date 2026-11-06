@@ -6,11 +6,13 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 /// Native `<button>`. Tone, surface, and size are independent of submission and invoker commands.
 /// An ordinary button is `type="button"`; [Button#submit] opts into form submission. Navigation
@@ -168,6 +170,12 @@ public final class Button implements RenderView, FluentBuilder<Button> {
 
   public Button busy() {
     return busy(true);
+  }
+
+  /// Hint popover shown on hover or focus (`interestfor`).
+  public Button interestTooltip(UnaryOperator<TagElement> tooltip) {
+    model.tooltip = tooltip;
+    return this;
   }
 
   @Override

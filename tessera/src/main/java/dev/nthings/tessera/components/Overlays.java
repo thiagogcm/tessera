@@ -61,6 +61,7 @@ public final class Overlays {
     private final List<Element> bodyNodes = new ArrayList<>();
     private final List<Element> footerActions = new ArrayList<>();
     private String closeLabel = "Close";
+    private boolean opened;
 
     public Modal(ElementId id, String title) {
       this.id = id;
@@ -91,6 +92,12 @@ public final class Overlays {
 
     public Modal closeLabel(String label) {
       this.closeLabel = label;
+      return this;
+    }
+
+    /// Shows the dialog when the document loads (`open`). The dialog is visible and non-modal.
+    public Modal opened() {
+      opened = true;
       return this;
     }
 
@@ -206,6 +213,7 @@ public final class Overlays {
           .id(dialog)
           .ariaLabelledBy(titleRef)
           .dialogClosedByAny()
+          .boolAttr("open", opened)
           .child(
               div()
                   .flex()

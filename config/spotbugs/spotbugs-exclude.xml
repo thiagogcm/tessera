@@ -9,12 +9,6 @@
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
-    <!-- Ignore compiler-synthetic local store variables generated during Java record pattern matching -->
-    <Match>
-        <Class name="dev.nthings.tessera.render.PageCompiler"/>
-        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
-    </Match>
-
     <!-- Permit runtime exception rethrow for multi-threaded future unwrapping -->
     <Match>
         <Class name="dev.nthings.tessera.site.SiteCompiler"/>

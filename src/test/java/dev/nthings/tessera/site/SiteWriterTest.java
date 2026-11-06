@@ -11,17 +11,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@DisplayName("SiteCompiler.writeToDirectory")
+@DisplayName("SiteWriter.writeToDirectory")
 class SiteWriterTest {
 
   @TempDir private static Path out;
 
-  private static SiteCompiler.CompiledSite site;
+  private static CompiledSite site;
 
   @BeforeAll
   static void writeSite() {
     site = SiteCompiler.compile(siteWithLogo());
-    SiteCompiler.writeToDirectory(site, out);
+    SiteWriter.writeToDirectory(site, out);
   }
 
   @Test

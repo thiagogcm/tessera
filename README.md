@@ -2,11 +2,7 @@
 
 > **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+) web platform primitives, with strictly zero client-side JavaScript.**
 
-[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#)
-[![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#)
-[![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Zero%20(0%20bytes)-success.svg)](#)
-[![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#)
-[![Compiler](https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg)](#)
+[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](<https://img.shields.io/badge/Client%20JavaScript-Zero%20(0%20bytes)-success.svg>)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
 
 ---
 
@@ -46,31 +42,36 @@ flowchart LR
 ## Core Pillars & Architectural Principles
 
 ### 1. Baseline 2026+ Native Web Standards
+
 Tessera emits purely standard HTML and CSS features available in modern browsers:
+
 - **Invoker Commands**: Declarative button interactions via `commandfor="target-id"` and `command="show-modal"` / `command="toggle-popover"` / custom commands without JavaScript event listeners.
 - **Native Light-Dismiss Overlays**: `<dialog closedby="any">` and `[popover="auto"]` with native backdrop styling and top-layer positioning.
-- **CSS Cascade Layers (`@layer`)**: Strict, deterministic cascade hierarchy:
-  `@layer reset, base, theme, components, utilities, interactive, container;`
+- **CSS Cascade Layers (`@layer`)**: Strict, deterministic cascade hierarchy: `@layer reset, base, theme, components, utilities, interactive, container;`
 - **Scoped Styling (`@scope`)**: Modular CSS styling isolated directly to component boundaries (`@scope ([data-view="tessera-card"])`) without CSS Modules or naming collisions.
 - **OKLCH & `light-dark()`**: Perceptually uniform OKLCH color palettes with automatic OS light/dark mode adaptation via pure CSS variables.
 - **Subgrid & Anchor Positioning**: Seamless multi-column card alignments, sticky headers, and pure CSS anchored tooltips.
 - **Link Speculation Rules**: Native Chrome prefetch and prerender for instant multi-page transitions.
 
 ### 2. JDK 25 Idiomatic Language Features
+
 - **`ScopedValue<RenderContext>` (JEP 506)**: Implicit, thread-confined, immutable context propagation across component trees.
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tags (`HtmlTag`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
 
 ### 3. Linker-Style Element Identity
-In Tessera, DOM elements are identified by `ElementRef` tokens. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) are strongly-typed `IdReference` handles.
-During compilation, the **Linker** statically resolves and verifies every reference:
+
+In Tessera, DOM elements are identified by `ElementRef` tokens. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) are strongly-typed `IdReference` handles. During compilation, the **Linker** statically resolves and verifies every reference:
+
 - Unbound references trigger compile-time errors.
 - Duplicate bindings or duplicate DOM IDs fail compilation immediately.
-- Invoker command targets are validated for element compatibility (e.g. `show-modal` must target a `<dialog>`).
+- Invoker command targets are checked for existence in the compiled document.
 
 ### 4. Zero `@SuppressWarnings` & Extreme Quality Gates
+
 Tessera enforces an unyielding quality policy:
+
 - Forked `javac` with `-Xlint:all -Xdoclint:all/protected,-missing -Werror`.
 - Error Prone combined with Uber's NullAway in `@NullMarked` JSpecify mode.
 - Checkstyle 14.4.0 enforcing Markdown docs (`///`) and banning legacy `/** */`.
@@ -85,7 +86,7 @@ Tessera enforces an unyielding quality policy:
 Tessera includes a comprehensive catalog of accessible, responsive components:
 
 | Category | Components | Highlights |
-| :--- | :--- | :--- |
+| :-- | :-- | :-- |
 | **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnotes` | Subgrid alignment, typography scales, line numbering, and language tags. |
 | **Status & Badges** | `Badge`, `Pill` | OKLCH tinted, outline, and solid variants across 6 semantic tones, status dot indicators, anchor link support. |
 | **Navigation** | `Breadcrumbs`, `DocPager`, `StickyHeader`, `Toc` | Accessible breadcrumbs, pagination, sticky subgrid headers, and collapsible table of contents with integrated scrollspy. |
@@ -99,6 +100,7 @@ Tessera includes a comprehensive catalog of accessible, responsive components:
 ## Quick Start
 
 ### Prerequisites
+
 - **JDK 25** (with `JAVA_HOME` pointing to JDK 25)
 - **`just`** task runner (optional but recommended) or `./mvnw`
 
@@ -184,15 +186,17 @@ main().children(modal.triggerButton("open-confirm", "Delete item"), modal.asDefe
 tessera/
 ├── .github/workflows/ci.yml       # Automated JDK 25 CI pipeline
 ├── docs/
-│   └── architecture.md            # Canonical Architecture Specification
+│   └── architecture.md            # Assessment, API contracts, and dependency graph
 ├── justfile                       # Task runner recipes
 ├── pom.xml                        # Maven configuration with strict compiler gates
 └── src/
     ├── main/java/dev/nthings/tessera/
-    │   ├── core/                  # Element hierarchy, linker identity, RenderOnce, RenderView
+    │   ├── foundation/            # Fluent composition and deterministic hashing
+    │   ├── core/                  # Elements, identity, component contracts, document metadata
     │   ├── css/                   # OKLCH tokens, algebraic StyleRefinement, @scope, @layer
-    │   ├── render/                # Three-phase compiler (requestLayout, prepaint, paint)
-    │   ├── site/                  # Multi-page compiler, speculation rules, preview server
+    │   ├── render/                # Compiler facade, private passes, opaque prepared pages
+    │   ├── site/                  # Site compilation, artifacts, writer, preview server
+    │   ├── navigation/            # Route-derived component composition
     │   ├── components/            # Complete component catalog
     │   └── showcase/              # Multi-page showcase demonstration site
     └── test/java/dev/nthings/tessera/ # Unit and integration test suites

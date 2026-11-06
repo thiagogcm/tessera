@@ -1,5 +1,7 @@
 package dev.nthings.tessera.core;
 
+import dev.nthings.tessera.foundation.Fnv1a64;
+
 /// Sanitized local identifier for a view boundary or an [ElementRef], unique within its view scope.
 ///
 /// `--` is reserved as the [ViewScope] path separator, so runs of `-` collapse to one.

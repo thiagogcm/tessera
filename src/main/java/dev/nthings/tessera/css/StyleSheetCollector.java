@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.core.Fnv1a64;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;

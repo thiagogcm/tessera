@@ -1,7 +1,9 @@
-package dev.nthings.tessera.site;
+package dev.nthings.tessera.navigation;
 
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.SearchPalette;
+import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 
 /// Navigation components derived from a [SiteDefinition]'s routes.

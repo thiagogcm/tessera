@@ -1,5 +1,6 @@
 package dev.nthings.tessera.core;
 
+import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
 /// Typed identity shared by counterpart elements across routes for Cross-Document View

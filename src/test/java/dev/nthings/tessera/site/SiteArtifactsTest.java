@@ -3,6 +3,10 @@ package dev.nthings.tessera.site;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
+import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.render.PageDocument;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,7 +15,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Generated site artifacts")
 class SiteArtifactsTest {
 
-  private static SiteCompiler.CompiledSite site;
+  private static CompiledSite site;
 
   @BeforeAll
   static void compileSite() {
@@ -47,6 +51,21 @@ class SiteArtifactsTest {
   @Nested
   @DisplayName("search-index.json")
   class SearchIndex {
+
+    @Test
+    void indexesHeadingsFromCustomComponents() {
+      RenderOnce custom =
+          () -> {
+            var heading = RenderContext.current().registerHeading("custom", "Custom section", 2);
+            return Elements.h2().attr("id", heading.targetDomId()).text(heading.title());
+          };
+      var compiled =
+          SiteCompiler.compile(
+              SiteDefinition.of(new SiteRoute("/", new PageDocument("Custom", custom))));
+
+      assertThat(compiled.searchIndexJson())
+          .contains("\"id\": \"custom\", \"title\": \"Custom section\", \"level\": 2");
+    }
 
     /// The index with whitespace around JSON punctuation removed, so assertions don't depend on
     /// the layout but still see spaces inside values.

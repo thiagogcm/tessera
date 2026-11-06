@@ -5,6 +5,7 @@ import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SitePreviewServer;
 import dev.nthings.tessera.site.SiteRoute;
+import dev.nthings.tessera.site.SiteWriter;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -72,7 +73,7 @@ public final class ShowcaseSite {
     }
 
     var compiled = SiteCompiler.compile(createDefinition());
-    SiteCompiler.writeToDirectory(compiled, outputDir);
+    SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "
             + compiled.pagesByRoute().size()

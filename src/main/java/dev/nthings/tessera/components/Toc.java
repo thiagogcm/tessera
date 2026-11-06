@@ -11,8 +11,7 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
-import dev.nthings.tessera.core.DocumentKey;
-import dev.nthings.tessera.core.DocumentState;
+import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
@@ -26,9 +25,7 @@ import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /// Scroll-Spy Table of Contents and documentation layout primitives.
 public final class Toc {
@@ -39,46 +36,7 @@ public final class Toc {
           + " stroke-linejoin=\"round\" aria-hidden=\"true\"><polyline points=\"9 18 15 12 9"
           + " 6\"/></svg>";
 
-  private static final class Registry {
-    private final Map<String, Item> entries = new LinkedHashMap<>();
-  }
-
-  private static final DocumentKey<Registry> REGISTRY =
-      DocumentKey.of("toc", Registry.class, Registry::new);
-
   private Toc() {}
-
-  /// Registers a heading for context-driven TOCs; its DOM id is `rawId` in the current scope.
-  static Item register(String rawId, String title, int level) {
-    var ctx = RenderContext.current();
-    var domId = ctx.viewScope().extend(ElementId.of(rawId)).domId();
-    var item = new Item(domId, title, level);
-    if (ctx.document(REGISTRY).entries.putIfAbsent(domId, item) != null) {
-      throw new IllegalArgumentException("Duplicate section id '" + domId + "' on the same page");
-    }
-    return item;
-  }
-
-  /// Headings registered on a compiled page, in document order (e.g. for search indexes).
-  public static List<Item> entries(DocumentState state) {
-    var registry = state.get(REGISTRY);
-    return registry == null ? List.of() : List.copyOf(registry.entries.values());
-  }
-
-  /// Table of Contents item target.
-  public record Item(String targetDomId, String title, int level) {
-    public Item {
-      ContentSection.checkHeadingLevel(level);
-    }
-
-    public static Item h2(String targetDomId, String title) {
-      return new Item(targetDomId, title, 2);
-    }
-
-    public static Item h3(String targetDomId, String title) {
-      return new Item(targetDomId, title, 3);
-    }
-  }
 
   /// Section that registers with [RenderContext] during layout expansion.
   public record DocSection(String id, String title, int level, List<Element> body)
@@ -91,7 +49,7 @@ public final class Toc {
 
     @Override
     public Element render() {
-      var entry = register(id, title, level);
+      var entry = RenderContext.current().registerHeading(id, title, level);
       var heading =
           ContentSection.sectionHeading(
               level, entry.targetDomId(), title, level == 2 ? 1.375 : level == 3 ? 1.125 : 1);
@@ -131,10 +89,10 @@ public final class Toc {
     return Elements.late(
         () ->
             new TableOfContents(
-                ElementId.of(id), heading, entries(RenderContext.current().documentState())));
+                ElementId.of(id), heading, RenderContext.current().documentState().headings()));
   }
 
-  public static TableOfContents of(String id, String heading, List<Item> explicitItems) {
+  public static TableOfContents of(String id, String heading, List<DocumentHeading> explicitItems) {
     return new TableOfContents(ElementId.of(id), heading, explicitItems);
   }
 
@@ -151,9 +109,9 @@ public final class Toc {
 
     private final ElementId id;
     private final String heading;
-    private final List<Item> items;
+    private final List<DocumentHeading> items;
 
-    public TableOfContents(ElementId id, String heading, List<Item> items) {
+    public TableOfContents(ElementId id, String heading, List<DocumentHeading> items) {
       this.id = id;
       this.heading = heading;
       this.items = List.copyOf(items);

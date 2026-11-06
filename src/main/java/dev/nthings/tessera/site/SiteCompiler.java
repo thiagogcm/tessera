@@ -1,75 +1,31 @@
 package dev.nthings.tessera.site;
 
-import dev.nthings.tessera.components.Toc;
-import dev.nthings.tessera.core.TransitionKey;
+import static dev.nthings.tessera.site.SiteArtifacts.SEARCH_INDEX_PATH;
+import static dev.nthings.tessera.site.SiteArtifacts.SITEMAP_PATH;
+
 import dev.nthings.tessera.css.StyleSheetCollector;
-import dev.nthings.tessera.render.AccessibilityViolationException;
+import dev.nthings.tessera.render.CompiledPage;
 import dev.nthings.tessera.render.PageCompiler;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import dev.nthings.tessera.render.PreparedPage;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.SequencedMap;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
-import org.jspecify.annotations.Nullable;
-import org.owasp.encoder.Encode;
 
-/// Multi-page static site compiler.
-///
-/// - Executes Phase 1 & Phase 2 concurrently across all routes on JDK 25 Virtual Threads.
-/// - Deterministically merges each route's [StyleSheetCollector] in route declaration order into
-///   a single shared site stylesheet.
-/// - Verifies internal `<a href="/...">` route links and `#fragment` target IDs across the site
-///   before running Phase 3 (`paint`).
+/// Coordinates concurrent page compilation, site validation, shared CSS, and artifacts.
 public final class SiteCompiler {
-
-  /// Compiled routes plus every other file the site publishes, keyed by URL path: registered
-  /// assets, the shared stylesheet, `sitemap.xml` and `search-index.json`.
-  public record CompiledSite(
-      Map<String, PageCompiler.CompiledPage> pagesByRoute,
-      @Nullable String sharedCssPath,
-      String sharedCssContent,
-      SequencedMap<String, SiteAsset> files) {
-
-    public CompiledSite {
-      pagesByRoute = Collections.unmodifiableMap(new LinkedHashMap<>(pagesByRoute));
-      files = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(files));
-    }
-
-    public @Nullable String sitemapXml() {
-      return textFile(SITEMAP_PATH);
-    }
-
-    public @Nullable String searchIndexJson() {
-      return textFile(SEARCH_INDEX_PATH);
-    }
-
-    private @Nullable String textFile(String path) {
-      var file = files.get(path);
-      return file == null ? null : new String(file.contentView(), StandardCharsets.UTF_8);
-    }
-  }
-
-  private static final String SITEMAP_PATH = "/sitemap.xml";
-  private static final String SEARCH_INDEX_PATH = "/search-index.json";
-
   private SiteCompiler() {}
 
   public static CompiledSite compile(SiteDefinition site) {
     var routes = site.routes();
     var seenPaths = new LinkedHashSet<String>(routes.size());
-    var preparedByRoute = new LinkedHashMap<String, PageCompiler.PreparedPage>(routes.size());
+    var preparedByRoute = new LinkedHashMap<String, PreparedPage>(routes.size());
 
     for (var route : routes) {
       if (!seenPaths.add(route.path())) {
@@ -90,15 +46,15 @@ public final class SiteCompiler {
     }
 
     // Verify cross-route links and #fragment targets
-    validateSiteLinks(preparedByRoute, files.keySet());
+    SiteValidator.validateSiteLinks(preparedByRoute, files.keySet());
 
     // Verify TransitionKey appearance across multiple routes
-    validateViewTransitions(preparedByRoute);
+    SiteValidator.validateViewTransitions(preparedByRoute);
 
     // Deterministically merge all route stylesheets in route order
     var sharedCollector = new StyleSheetCollector();
     for (var prepared : preparedPages) {
-      sharedCollector.mergeFrom(prepared.styles());
+      prepared.contributeStylesTo(sharedCollector);
     }
     var sharedCssContent = sharedCollector.toCssStylesheet(site.tokens());
 
@@ -106,7 +62,7 @@ public final class SiteCompiler {
         parallelMap(
             preparedPages,
             prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
-    var compiledPages = new LinkedHashMap<String, PageCompiler.CompiledPage>(routes.size());
+    var compiledPages = new LinkedHashMap<String, CompiledPage>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       compiledPages.put(routes.get(i).path(), painted.get(i));
     }
@@ -118,12 +74,16 @@ public final class SiteCompiler {
     }
     var baseUrl = site.baseUrl();
     if (baseUrl != null) {
-      addFile(files, seenPaths, SiteAsset.text(SITEMAP_PATH, generateSitemapXml(baseUrl, routes)));
+      addFile(
+          files,
+          seenPaths,
+          SiteAsset.text(SITEMAP_PATH, SiteArtifacts.generateSitemapXml(baseUrl, routes)));
     }
     addFile(
         files,
         seenPaths,
-        SiteAsset.text(SEARCH_INDEX_PATH, generateSearchIndexJson(routes, preparedPages)));
+        SiteAsset.text(
+            SEARCH_INDEX_PATH, SiteArtifacts.generateSearchIndexJson(routes, preparedPages)));
 
     return new CompiledSite(compiledPages, sharedCssPath, sharedCssContent, files);
   }
@@ -159,157 +119,6 @@ public final class SiteCompiler {
         throw unchecked;
       }
       throw new IllegalStateException("Site compilation failed", e.getCause());
-    }
-  }
-
-  public static void writeToDirectory(CompiledSite compiledSite, Path outputDirectory) {
-    try {
-      Files.createDirectories(outputDirectory);
-      for (var entry : compiledSite.pagesByRoute().entrySet()) {
-        writeFile(
-            outputDirectory,
-            SiteRoute.outputPathFor(entry.getKey()),
-            entry.getValue().html().getBytes(StandardCharsets.UTF_8));
-      }
-      for (var file : compiledSite.files().values()) {
-        writeFile(outputDirectory, file.relativeOutputPath(), file.contentView());
-      }
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  private static void writeFile(Path root, Path relative, byte[] content) throws IOException {
-    var target = root.resolve(relative).normalize();
-    if (!target.startsWith(root.normalize())) {
-      throw new IllegalArgumentException("Output escapes the site directory: " + relative);
-    }
-    var parent = target.getParent();
-    if (parent != null) {
-      Files.createDirectories(parent);
-    }
-    Files.write(target, content);
-  }
-
-  private static void validateViewTransitions(
-      Map<String, PageCompiler.PreparedPage> preparedByRoute) {
-    var routesByKey = new LinkedHashMap<TransitionKey, Set<String>>();
-    for (var entry : preparedByRoute.entrySet()) {
-      var routePath = entry.getKey();
-      for (var key : entry.getValue().transitionKeys()) {
-        routesByKey.computeIfAbsent(key, _ -> new LinkedHashSet<>()).add(routePath);
-      }
-    }
-    for (var entry : routesByKey.entrySet()) {
-      var key = entry.getKey();
-      var routePaths = entry.getValue();
-      if (routePaths.size() < 2) {
-        throw new AccessibilityViolationException(
-            "TransitionKey '"
-                + key.name()
-                + "' declared on route '"
-                + routePaths.iterator().next()
-                + "' must appear on at least two distinct routes site-wide to enable cross-document morphing.");
-      }
-    }
-  }
-
-  private static String generateSitemapXml(String baseUrl, List<SiteRoute> routes) {
-    var sb = new StringBuilder(1024);
-    sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-    sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-    for (var route : routes) {
-      var loc = baseUrl + route.path();
-      sb.append("  <url>\n");
-      sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
-      sb.append("  </url>\n");
-    }
-    sb.append("</urlset>\n");
-    return sb.toString();
-  }
-
-  private static String generateSearchIndexJson(
-      List<SiteRoute> routes, List<PageCompiler.PreparedPage> preparedPages) {
-    var sb = new StringBuilder(2048);
-    sb.append("[\n");
-    for (var i = 0; i < routes.size(); i++) {
-      var route = routes.get(i);
-      var title = route.displayTitle();
-      sb.append("  {\n");
-      sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
-      sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
-      var routeDesc = route.description();
-      if (routeDesc != null) {
-        sb.append(",\n    \"description\": \"").append(escapeJson(routeDesc)).append("\"");
-      }
-      sb.append(",\n    \"headings\": [");
-      var tocs = Toc.entries(preparedPages.get(i).documentState());
-      for (var j = 0; j < tocs.size(); j++) {
-        var toc = tocs.get(j);
-        if (j > 0) {
-          sb.append(", ");
-        }
-        sb.append("{\"id\": \"")
-            .append(escapeJson(toc.targetDomId()))
-            .append("\", \"title\": \"")
-            .append(escapeJson(toc.title()))
-            .append("\", \"level\": ")
-            .append(toc.level())
-            .append("}");
-      }
-      sb.append("]\n");
-      sb.append("  }");
-      if (i < routes.size() - 1) {
-        sb.append(",");
-      }
-      sb.append("\n");
-    }
-    sb.append("]\n");
-    return sb.toString();
-  }
-
-  private static String escapeJson(String s) {
-    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
-  }
-
-  private static void validateSiteLinks(
-      Map<String, PageCompiler.PreparedPage> preparedByRoute, Set<String> assetPaths) {
-    for (var entry : preparedByRoute.entrySet()) {
-      var sourceRoute = entry.getKey();
-      var sourcePage = entry.getValue();
-
-      for (var href : sourcePage.outgoingHrefs()) {
-        // Same-page `#fragment` links are already validated by PageCompiler.prepare.
-        if (href.startsWith("/") && !href.startsWith("//")) {
-          var hashIdx = href.indexOf('#');
-          var rawPath = hashIdx >= 0 ? href.substring(0, hashIdx) : href;
-          var fragment = hashIdx >= 0 ? href.substring(hashIdx + 1) : "";
-          if (assetPaths.contains(rawPath)) {
-            continue;
-          }
-          var targetRoute = SiteRoute.normalizeRoutePath(rawPath);
-
-          var targetPage = preparedByRoute.get(targetRoute);
-          if (targetPage == null) {
-            throw new AccessibilityViolationException(
-                "Route \""
-                    + sourceRoute
-                    + "\" references unregistered internal route or asset \""
-                    + href
-                    + "\"");
-          }
-          if (!fragment.isEmpty() && !targetPage.registeredDomIds().contains(fragment)) {
-            throw new AccessibilityViolationException(
-                "Route \""
-                    + sourceRoute
-                    + "\" links to missing target anchor #"
-                    + fragment
-                    + " on route \""
-                    + targetRoute
-                    + "\"");
-          }
-        }
-      }
     }
   }
 }

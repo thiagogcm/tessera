@@ -1,6 +1,7 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
 /// Scoped view boundary representing a persistent domain entity with isolated `@scope` styles and

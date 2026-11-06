@@ -9,7 +9,7 @@ public sealed interface OutputMode permits OutputMode.InlineStyle, OutputMode.Ex
   }
 
   /// Emits a content-hashed `<link rel="stylesheet" href="<basePath>/styles-<hash>.css">` tag in
-  /// `<head>` and returns the external stylesheet payload in [PageCompiler.CompiledPage].
+  /// `<head>` and returns the external stylesheet payload in [CompiledPage].
   record ExternalAsset(String assetBasePath) implements OutputMode {
     public ExternalAsset {
       if (assetBasePath.isBlank()) {

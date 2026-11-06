@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.core.FluentBuilder;
-import dev.nthings.tessera.core.Fnv1a64;
+import dev.nthings.tessera.foundation.FluentBuilder;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;

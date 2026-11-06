@@ -4,6 +4,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,9 +22,6 @@ public final class TagElement
         InteractiveElement<TagElement>,
         ParentElement<TagElement>,
         FluentBuilder<TagElement> {
-
-  /// Anchor positioning against another element's `anchor-name`.
-  public record AnchorTarget(ElementRef anchor) {}
 
   private final HtmlTag tag;
   private final StyleRefinement style = new StyleRefinement();

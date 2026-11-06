@@ -7,6 +7,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfTy
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.render.AccessibilityViolationException;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +28,9 @@ class TocTest {
           Toc.of(
               "doc-toc",
               "On This Page",
-              List.of(Toc.Item.h2("intro", "Introduction"), Toc.Item.h3("sub", "Details")));
+              List.of(
+                  DocumentHeading.h2("intro", "Introduction"),
+                  DocumentHeading.h3("sub", "Details")));
 
       var page = renderMain(div().attr("id", "intro"), div().attr("id", "sub"), toc);
 
@@ -40,7 +43,8 @@ class TocTest {
     @DisplayName("rejects dangling fragment ids during prepaint")
     void rejectsDanglingFragmentIds() {
       var brokenToc =
-          Toc.of("broken-toc", "Contents", List.of(Toc.Item.h2("missing-section", "Missing")));
+          Toc.of(
+              "broken-toc", "Contents", List.of(DocumentHeading.h2("missing-section", "Missing")));
 
       assertThatExceptionOfType(AccessibilityViolationException.class)
           .isThrownBy(() -> renderMain(brokenToc))

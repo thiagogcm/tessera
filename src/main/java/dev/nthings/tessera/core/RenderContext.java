@@ -66,6 +66,14 @@ public final class RenderContext {
     return docState;
   }
 
+  /// Registers metadata for a local element id in the current view scope.
+  public DocumentHeading registerHeading(String localId, String title, int level) {
+    var heading =
+        new DocumentHeading(viewScope.extend(ElementId.of(localId)).domId(), title, level);
+    docState.registerHeading(heading);
+    return heading;
+  }
+
   /// Runs `work` with this context current again (used to resolve [LateElement]s in place).
   public <R> R reenter(Supplier<R> work) {
     return ScopedValue.where(CURRENT, this).call(work::get);

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Timeout;
 @Timeout(10)
 class SitePreviewServerTest {
 
-  private static SiteCompiler.CompiledSite site;
+  private static CompiledSite site;
 
   @AutoClose private static HttpClient client;
   @AutoClose private static SitePreviewServer server;

@@ -11,6 +11,7 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ParentElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
@@ -103,7 +104,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
 
   @Override
   public Element render() {
-    var entry = Toc.register(rawId, title, level);
+    var entry = RenderContext.current().registerHeading(rawId, title, level);
 
     var heading =
         sectionHeading(

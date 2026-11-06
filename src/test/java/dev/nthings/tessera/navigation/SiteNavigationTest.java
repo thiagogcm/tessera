@@ -1,4 +1,4 @@
-package dev.nthings.tessera.site;
+package dev.nthings.tessera.navigation;
 
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
@@ -8,6 +8,8 @@ import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.render.PageDocument;
+import dev.nthings.tessera.site.SiteDefinition;
+import dev.nthings.tessera.site.SiteRoute;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

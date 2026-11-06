@@ -3,8 +3,8 @@ package dev.nthings.tessera.support;
 import static dev.nthings.tessera.core.Elements.main;
 
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.render.CompiledPage;
 import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageCompiler.CompiledPage;
 import dev.nthings.tessera.render.PageDocument;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

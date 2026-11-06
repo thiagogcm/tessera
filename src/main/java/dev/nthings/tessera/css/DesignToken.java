@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.core.Fnv1a64;
+import dev.nthings.tessera.foundation.Fnv1a64;
 
 /// Reactive CSS custom property token backed by native `light-dark()` or static CSS values.
 public record DesignToken(String name, String cssDefinition) {

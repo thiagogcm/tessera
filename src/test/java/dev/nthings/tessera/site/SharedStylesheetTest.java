@@ -11,7 +11,7 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.render.PageCompiler;
+import dev.nthings.tessera.render.CompiledPage;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.support.RenderedPage;
 import java.util.List;
@@ -59,7 +59,7 @@ class SharedStylesheetTest {
         title, main().child(CardGrid.of("g", minColumn, CssLength.rem(1), p().text(text))));
   }
 
-  private static String viewKey(PageCompiler.CompiledPage page) {
+  private static String viewKey(CompiledPage page) {
     return RenderedPage.of(page).element("[data-view^=card-grid-]").attr("data-view");
   }
 
@@ -67,7 +67,7 @@ class SharedStylesheetTest {
   @DisplayName("site tokens")
   class SiteTokens {
 
-    private static SiteCompiler.CompiledSite site;
+    private static CompiledSite site;
 
     @BeforeAll
     static void compileSiteWithBrandToken() {

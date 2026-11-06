@@ -8,6 +8,8 @@ import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.TimelineAxis;
+import dev.nthings.tessera.foundation.FluentBuilder;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;

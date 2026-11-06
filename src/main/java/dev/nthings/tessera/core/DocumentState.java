@@ -14,6 +14,7 @@ public final class DocumentState {
 
   private final Map<DocumentKey<?>, Object> values = new LinkedHashMap<>();
   private final List<Element> headElements = new ArrayList<>();
+  private final Map<String, DocumentHeading> headings = new LinkedHashMap<>();
   private final Map<DocumentKey<?>, Supplier<? extends IntoElement>> documentEndSections =
       new LinkedHashMap<>();
 
@@ -37,6 +38,18 @@ public final class DocumentState {
 
   public List<Element> headElements() {
     return Collections.unmodifiableList(headElements);
+  }
+
+  void registerHeading(DocumentHeading heading) {
+    if (headings.putIfAbsent(heading.targetDomId(), heading) != null) {
+      throw new IllegalArgumentException(
+          "Duplicate section id '" + heading.targetDomId() + "' on the same page");
+    }
+  }
+
+  /// Registered navigation headings in registration order, independent of component types.
+  public List<DocumentHeading> headings() {
+    return List.copyOf(headings.values());
   }
 
   /// Snapshot of the registered end-of-document sections, in registration order.

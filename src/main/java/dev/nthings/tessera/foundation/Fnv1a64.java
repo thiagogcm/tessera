@@ -1,4 +1,4 @@
-package dev.nthings.tessera.core;
+package dev.nthings.tessera.foundation;
 
 /// Deterministic 64-bit FNV-1a hashing and DOM/CSS identifier sanitization.
 ///

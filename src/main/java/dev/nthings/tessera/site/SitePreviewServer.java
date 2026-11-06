@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 /// Lightweight, zero-dependency HTTP server backed by JDK [HttpServer] and Virtual Threads for
-/// previewing and evaluating a [SiteCompiler.CompiledSite] in Chrome 156+.
+/// previewing and evaluating a [CompiledSite] in Chrome 156+.
 public final class SitePreviewServer implements AutoCloseable {
 
   private final HttpServer server;
@@ -18,7 +18,7 @@ public final class SitePreviewServer implements AutoCloseable {
     this.server = server;
   }
 
-  public static SitePreviewServer start(SiteCompiler.CompiledSite site, int port) {
+  public static SitePreviewServer start(CompiledSite site, int port) {
     try {
       var httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
       httpServer.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
@@ -43,8 +43,7 @@ public final class SitePreviewServer implements AutoCloseable {
     server.stop(0);
   }
 
-  private static void handleRequest(SiteCompiler.CompiledSite site, HttpExchange exchange)
-      throws IOException {
+  private static void handleRequest(CompiledSite site, HttpExchange exchange) throws IOException {
     var requestPath = exchange.getRequestURI().getPath();
     if (requestPath == null || requestPath.isBlank()) {
       requestPath = "/";

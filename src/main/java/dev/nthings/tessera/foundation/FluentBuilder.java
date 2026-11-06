@@ -1,4 +1,4 @@
-package dev.nthings.tessera.core;
+package dev.nthings.tessera.foundation;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

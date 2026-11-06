@@ -7,7 +7,6 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.FluentBuilder;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderView;
@@ -15,6 +14,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;

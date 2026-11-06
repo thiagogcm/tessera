@@ -154,7 +154,8 @@ public record MetricCard(String title, String value, Badge badge) implements Ren
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
-        .root(s -> s.flexCol().gap(CssLength.rem(0.5)))
+        .root(s -> s.layout(
+            FlexLayout.column(CssLength.rem(0.5), FlexLayout.Align.START, FlexLayout.Wrap.NOWRAP)))
         .select(".metric-value", s -> s.fontSize(CssLength.rem(1.5)).fontWeight(700));
   }
 

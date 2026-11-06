@@ -16,6 +16,7 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.DesignToken;
+import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.PageDocument;
@@ -83,12 +84,17 @@ public final class GuideSite {
         .p(Tokens.SPACE_8.length())
         .children(
             nav()
-                .flex()
-                .gap(Tokens.SPACE_4.length())
+                .layout(
+                    FlexLayout.row(
+                        Tokens.SPACE_4.length(), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
                 .ariaLabel("Site navigation")
                 .children(a("/").text("Home"), a("/guide/").text("Guide"), search.triggerButton()),
             h1().text(title),
-            div().flex().flexCol().gap(Tokens.SPACE_4.length()).children(body),
+            div()
+                .layout(
+                    FlexLayout.column(
+                        Tokens.SPACE_4.length(), FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
+                .children(body),
             search.asDeferred(10));
   }
 

@@ -16,6 +16,14 @@ public interface Styled<SELF extends Styled<SELF>> {
     return self();
   }
 
+  /// Applies a complete row or column. Later calls such as [#gap(CssLength)],
+  /// [#blockSize(CssLength)], or [#flexShrink(int)] replace the matching declaration on this
+  /// element.
+  default SELF layout(FlexLayout layout) {
+    layout.apply(style());
+    return self();
+  }
+
   default SELF flex() {
     style().put(CssProperty.DISPLAY, "flex");
     return self();

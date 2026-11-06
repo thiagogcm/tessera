@@ -100,6 +100,24 @@ Pass it to `.child(...)` or `.children(...)` like any other component. The compi
 
 Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
 
+## Lay out a row or column
+
+`FlexLayout` sets display, direction, gap, alignment, and wrapping on the element that should be the flex container. The element keeps its own tag.
+
+```java
+var links = FlexLayout.row(Tokens.SPACE_4.length(), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP);
+var stack = FlexLayout.column(Tokens.SPACE_4.length(), FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP);
+
+Elements.section().layout(stack).children(
+    Elements.nav().layout(links).ariaLabel("Site navigation")
+        .children(a("/").text("Home"), a("/guide/").text("Guide")),
+    p().text("Introduction"));
+```
+
+`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.length()`.
+
+A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowYAuto()`.
+
 ## Link elements with identity references
 
 Bind an `ElementRef` where an element is emitted and use the same reference at its invoker. The compiler resolves both under the binding's view scope:

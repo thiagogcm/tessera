@@ -105,7 +105,7 @@ block
 | --- | --- |
 | Author HTML | `Elements`, `TagElement`, `IntoElement`, sealed `Element` variants |
 | Build components | `RenderOnce`, `RenderView`, `ParentElement`, `InteractiveElement`, `Styled` |
-| Author styles | `CssLength`, `CssProperty`, `StyleRefinement`, `ScopeStyle`, `Interactivity`, `Tokens`, `DesignToken` |
+| Author styles | `CssLength`, `CssProperty`, `StyleRefinement`, `FlexLayout`, `ScopeStyle`, `Interactivity`, `Tokens`, `DesignToken` |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
 | Contribute document content | `RenderContext.current()`, `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
 | Compile a page | `PageDocument`, `PageCompiler.compile(...)`, `CompiledPage`, `OutputMode` |

@@ -23,14 +23,10 @@ public sealed interface DesignToken
     return "var(--" + name() + ")";
   }
 
-  private static String sanitize(String name) {
-    return Fnv1a64.sanitizeIdentifier(name);
-  }
-
   /// Color token. Adaptive colors use [Color#lightDark].
   record Color(String name, String cssDefinition) implements DesignToken {
     public Color {
-      name = sanitize(name);
+      name = Fnv1a64.sanitizeIdentifier(name);
     }
 
     public static Color of(String name, String value) {
@@ -55,7 +51,7 @@ public sealed interface DesignToken
   /// Length token. [Length#space] multiplies a length by `--density`; other lengths do not.
   record Length(String name, String cssDefinition) implements DesignToken {
     public Length {
-      name = sanitize(name);
+      name = Fnv1a64.sanitizeIdentifier(name);
     }
 
     public static Length of(String name, String value) {
@@ -78,7 +74,7 @@ public sealed interface DesignToken
   /// Time token used by [Motion].
   record Duration(String name, String cssDefinition) implements DesignToken {
     public Duration {
-      name = sanitize(name);
+      name = Fnv1a64.sanitizeIdentifier(name);
     }
 
     public static Duration of(String name, String value) {
@@ -88,7 +84,7 @@ public sealed interface DesignToken
 
   record FontFamily(String name, String cssDefinition) implements DesignToken {
     public FontFamily {
-      name = sanitize(name);
+      name = Fnv1a64.sanitizeIdentifier(name);
     }
 
     public static FontFamily of(String name, String value) {
@@ -103,7 +99,7 @@ public sealed interface DesignToken
   /// Unitless number, such as line height or density.
   record Number(String name, String cssDefinition) implements DesignToken {
     public Number {
-      name = sanitize(name);
+      name = Fnv1a64.sanitizeIdentifier(name);
     }
 
     public static Number of(String name, String value) {

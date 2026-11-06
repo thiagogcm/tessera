@@ -1,8 +1,8 @@
 # Tessera
 
-> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+), with zero JavaScript by default and optional static-site search enhancement.**
+> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+), with native platform controls and automatically bundled search behavior.**
 
-[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Optional%20search-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
+[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Bundled%20when%20needed-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
 
 ---
 
@@ -10,9 +10,9 @@
 
 Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and **Baseline 2026+ web standards**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
 
-Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components ship **zero JavaScript by default**. Search palettes can opt into a bundled script for live filtering and keyboard navigation on static hosting.
+Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. `SearchPalette` automatically embeds its JavaScript module for live filtering and keyboard navigation. Pages without a palette receive no search script.
 
-Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and optional search.
+Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search.
 
 ```mermaid
 flowchart LR

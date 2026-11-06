@@ -18,7 +18,6 @@ import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.navigation.SiteNavigation;
 import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.site.SiteAsset;
 import dev.nthings.tessera.site.SiteCompiler;
@@ -45,7 +44,6 @@ public final class GuideSite {
                 "/assets/logo.svg",
                 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\">"
                     + "<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"seagreen\"/></svg>"))
-        .asset(SiteNavigation.searchScript())
         .route(
             new SiteRoute(
                 "/",
@@ -78,7 +76,6 @@ public final class GuideSite {
   private static Element page(String title, IntoElement... body) {
     var search =
         SearchPalette.create("guide-search")
-            .enhanced()
             .item("Pages", "Home", "/")
             .item("Guide", "Installation", "/guide/#installation")
             .item("Guide", "Publishing", "/guide/#publishing");

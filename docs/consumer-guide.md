@@ -1,6 +1,6 @@
 # Building a site with Tessera
 
-Tessera compiles Java components into HTML, CSS, and static assets. This guide builds a two-page site, customizes its appearance, adds a scoped component, and publishes it with optional search enhancement.
+Tessera compiles Java components into HTML, CSS, and static assets. This guide builds a two-page site, customizes its appearance, adds a scoped component, and publishes it with interactive search.
 
 The complete runnable example is [GuideSite.java](../tessera-showcase/src/main/java/dev/nthings/tessera/showcase/guide/GuideSite.java). It lives in the showcase module and uses only public library APIs.
 
@@ -168,25 +168,25 @@ builder.asset(SiteAsset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"))
 
 Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Decorative images need the appropriate presentation or hidden semantics. The compiler reports missing alt text and missing dimensions/aspect ratios.
 
-## Add optional static-site search
+## Add static-site search
 
-The default `SearchPalette` is a grouped directory of links, with native dialog opening, dismissal, and keyboard tab navigation. Opt into interactive search and publish the bundled script:
+Rendering a `SearchPalette` includes its search input, result links, and JavaScript module automatically:
 
 ```java
 var search = SearchPalette.create("search", "Search pages and sections...")
-    .enhanced()
     .item("Guide", "Installation", "/guide/#installation")
     .item("Guide", "Publishing", "/guide/#publishing");
 
-builder.asset(SiteNavigation.searchScript());
 Elements.main().children(search.triggerButton(), search.asDeferred(10));
 ```
 
-The palette contributes one external module script to the document head. The script is published at `/assets/tessera-search.js`. Including the asset makes the site work on static-only hosting; no search endpoint or runtime server is needed. If the asset is missing, site link validation reports its URL during compilation.
+The palette contributes one inline ES module per document, shared by all palettes on the page. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `PageCompiler.compile(...)` output. Pages without palettes receive no search script.
 
-Typing filters the rendered links by group, title, and description. Matching is case- and accent-insensitive and accepts multiple words. Empty results show a message; clearing the query restores the directory. Arrow keys move focus through matching links. Enter on the input opens the first result, and Enter on a focused link uses native navigation. Escape dismisses the dialog.
+The module registers a customized native `<dialog is="tessera-search">` element. The browser upgrades each instance and owns modal opening, focus trapping, and light dismissal. Escape requests native dialog dismissal through `requestClose()`. Component lifecycle callbacks install event listeners with an `AbortSignal` and release them on disconnection. CSS `:has()` hides empty result groups; JavaScript handles filtering and result selection.
 
-The runtime reads the palette's rendered links. The generated `search-index.json` is a separate artifact for other consumers. Add the routes and sections you want to expose with `.item(...)`, or initialize a palette from routes using `SiteNavigation.searchPalette(site)` and then call `.enhanced()`.
+Typing filters the rendered links by group, title, and description. Matching is case- and accent-insensitive and accepts multiple words. Empty results show a message; clearing the query restores the directory. Arrow keys move focus through matching links. Enter on the input opens the first result, and Enter on a focused link uses native navigation. Selecting a result requests native dialog dismissal before the link navigates. Escape dismisses the dialog.
+
+The runtime reads the palette's rendered links. The generated `search-index.json` is a separate artifact for other consumers. Add the routes and sections you want to expose with `.item(...)`, or initialize a palette from routes using `SiteNavigation.searchPalette(site)`.
 
 ## Verify and deploy
 

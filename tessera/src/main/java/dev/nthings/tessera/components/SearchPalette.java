@@ -25,18 +25,19 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
-/// Native quick-open dialog. By default it is a script-free directory of grouped links.
-/// [#enhanced()] opts into live filtering and keyboard selection with a separately published
-/// script asset at [#SCRIPT_PATH].
+/// Native quick-open dialog with live filtering and keyboard selection.
+/// Rendering a palette automatically contributes its ES module once per document.
 public final class SearchPalette implements RenderView {
-
-  public static final String SCRIPT_PATH = "/assets/tessera-search.js";
 
   private static final class ScriptContribution {
     private boolean added;
@@ -45,12 +46,19 @@ public final class SearchPalette implements RenderView {
   private static final DocumentKey<ScriptContribution> SCRIPT =
       DocumentKey.of("search-script", ScriptContribution.class, ScriptContribution::new);
 
-  private boolean enhanced;
+  private static final class ClientScript {
+    private static final String SOURCE = readScript();
 
-  /// Enables the optional static-site search runtime. Publish the corresponding script asset.
-  public SearchPalette enhanced() {
-    enhanced = true;
-    return this;
+    private static String readScript() {
+      try (var input =
+          Objects.requireNonNull(
+              SearchPalette.class.getResourceAsStream("search-palette.js"),
+              "Bundled search palette module")) {
+        return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
   }
 
   private static final String SEARCH_ICON_SVG =
@@ -193,14 +201,12 @@ public final class SearchPalette implements RenderView {
 
   @Override
   public Element render() {
-    if (enhanced) {
-      var context = RenderContext.current();
-      var script = context.document(SCRIPT);
-      if (!script.added) {
-        script.added = true;
-        context.contributeHead(
-            Elements.el(HtmlTag.SCRIPT).attr("type", "module").attr("src", SCRIPT_PATH));
-      }
+    var context = RenderContext.current();
+    var script = context.document(SCRIPT);
+    if (!script.added) {
+      script.added = true;
+      context.contributeHead(
+          Elements.el(HtmlTag.SCRIPT).attr("type", "module").child(rawHtml(ClientScript.SOURCE)));
     }
 
     var headerEl =
@@ -208,15 +214,13 @@ public final class SearchPalette implements RenderView {
             .attr("class", "palette-header")
             .child(rawHtml(SEARCH_ICON_SVG))
             .child(
-                enhanced
-                    ? input("search")
-                        .id("input")
-                        .attr("class", "palette-input")
-                        .attr("placeholder", placeholder)
-                        .attr("autocomplete", "off")
-                        .attr("autofocus", "")
-                        .ariaLabel("Search query")
-                    : span().text("Browse pages and sections"))
+                input("search")
+                    .id("input")
+                    .attr("class", "palette-input")
+                    .attr("placeholder", placeholder)
+                    .attr("autocomplete", "off")
+                    .attr("autofocus", "")
+                    .ariaLabel("Search query"))
             .child(
                 button()
                     .attr("class", "palette-close")
@@ -268,7 +272,7 @@ public final class SearchPalette implements RenderView {
             .child(
                 div()
                     .attr("class", "palette-hint")
-                    .child(kbd().attr("class", "palette-hint-kbd").text(enhanced ? "↑ ↓" : "Tab"))
+                    .child(kbd().attr("class", "palette-hint-kbd").text("↑ ↓"))
                     .child(span().text("navigate")))
             .child(
                 div()
@@ -283,7 +287,7 @@ public final class SearchPalette implements RenderView {
 
     return Elements.dialog()
         .id(dialog)
-        .when(enhanced, d -> d.attr("data-search-palette", ""))
+        .attr("is", "tessera-search")
         .dialogClosedByAny()
         .ariaLabel("Quick open command palette")
         .child(headerEl)
@@ -362,6 +366,7 @@ public final class SearchPalette implements RenderView {
             ":scope .palette-results",
             s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(Tokens.SPACE_3.length()))
         .select(":scope .palette-group", s -> s.m(CssLength.px(0)).p(CssLength.px(0)))
+        .select(":scope .palette-group:not(:has(.palette-item:not([hidden])))", s -> s.hidden())
         .select(
             ":scope .palette-group-title",
             s ->

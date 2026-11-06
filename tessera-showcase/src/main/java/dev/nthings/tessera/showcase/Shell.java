@@ -50,7 +50,7 @@ record Shell(Page page) implements RenderOnce {
                     Term.of("Top layer", "<dialog>, [popover], @starting-style"),
                     Term.of(
                         "JavaScript",
-                        "Optional search enhancement; native controls use HTML and CSS")),
+                        "Search includes its module; native controls use HTML and CSS")),
                 SimpleTable.create()
                     .caption("Compiler phases")
                     .headers("Phase", "Responsibility")
@@ -58,7 +58,7 @@ record Shell(Page page) implements RenderOnce {
                     .row("2. prepaint", "Link id references, verify accessibility and links")
                     .row("3. paint", "Stream encoded HTML and one shared stylesheet"));
 
-    var search = SearchPalette.create("search", "Search components and pages...").enhanced();
+    var search = SearchPalette.create("search", "Search components and pages...");
     var quickActions = Dropdown.create("quick-actions", "Pages");
     for (var p : pages) {
       search.item("Pages", p.navLabel(), p.path(), p.summary());
@@ -172,7 +172,7 @@ record Shell(Page page) implements RenderOnce {
                 .fontSize(CssLength.rem(0.875))
                 .text(
                     "Compiled by Tessera on JDK 25 into static HTML and CSS for Chrome 155+. "
-                        + "Search uses an optional script; components use native HTML and CSS."));
+                        + "Search includes its module automatically; controls use native HTML and CSS."));
   }
 
   private static DocPager.PageRef pageRef(Page target) {

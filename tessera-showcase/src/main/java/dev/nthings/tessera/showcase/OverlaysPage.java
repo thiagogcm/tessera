@@ -117,8 +117,8 @@ final class OverlaysPage {
     return Demo.of("search-palette", "Search palette")
         .summary(
             "The header's search button opens a command palette dialog with grouped results and "
-                + "optional live filtering and keyboard selection inside a <search> landmark.")
-        .features("<search>", "optional script", "accesskey", "<dialog>")
+                + "live filtering and keyboard selection inside a <search> landmark.")
+        .features("<search>", "automatic ES module", "accesskey", "<dialog>")
         .example(
             p().textPretty()
                 .children(
@@ -127,7 +127,7 @@ final class OverlaysPage {
                     Formatting.keybinding("Alt+K"),
                     text(". Every page and demo on this site is indexed.")))
         .code(
-            "var search = SearchPalette.create(\"search\", \"Search…\").enhanced()",
+            "var search = SearchPalette.create(\"search\", \"Search…\")",
             "    .item(\"Pages\", \"Forms\", \"/forms\", \"Inputs and validation\");",
             "header.children(search.triggerButton(\"search-btn\", \"Search\"), search.asDeferred(30));");
   }

@@ -95,7 +95,7 @@ final class DocsPage {
                     text(" and provides script-free native controls"),
                     Footnotes.ref(
                         "zero-js",
-                        "Search optionally adds a small script; speculation rules are declarative JSON."),
+                        "Search includes its JavaScript module; speculation rules are declarative JSON."),
                     text(".")))
         .code(
             "p().children(text(\"Tessera targets one engine\"),",

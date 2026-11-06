@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
@@ -112,6 +113,34 @@ class ShowcaseIT {
                                 Elements.h1().attr("id", "café+intro").text("Café introduction")))))
             .build();
     SiteWriter.writeToDirectory(SiteCompiler.compile(linked), publishedSite.resolve("urls"));
+    var firstSearch =
+        SearchPalette.create("first-search")
+            .item("Guides", "Café guide", "#cafe")
+            .item("Guides", "Tea notes", "#tea");
+    var secondSearch =
+        SearchPalette.create("second-search")
+            .item("Guides", "Layout guide", "#layout")
+            .item("Guides", "Forms guide", "#forms");
+    var searchPage =
+        SiteDefinition.builder()
+            .outputMode(OutputMode.inlineStyle())
+            .route(
+                new SiteRoute(
+                    "/",
+                    new PageDocument(
+                        "Search examples",
+                        Elements.main()
+                            .children(
+                                firstSearch.triggerButton("first-trigger", "Find articles"),
+                                secondSearch.triggerButton("second-trigger", "Find guides"),
+                                Elements.h2().id("cafe").text("Café guide"),
+                                Elements.h2().id("tea").text("Tea notes"),
+                                Elements.h2().id("layout").text("Layout guide"),
+                                Elements.h2().id("forms").text("Forms guide"),
+                                firstSearch.asDeferred(10),
+                                secondSearch.asDeferred(20)))))
+            .build();
+    SiteWriter.writeToDirectory(SiteCompiler.compile(searchPage), publishedSite.resolve("search"));
     server =
         SimpleFileServer.createFileServer(
             new InetSocketAddress("127.0.0.1", 0),
@@ -376,6 +405,38 @@ class ShowcaseIT {
     assertThat(dialog.locator("a.palette-item:visible")).hasCount(1);
     query.press("Enter");
     assertThat(page).hasURL(baseUrl + "/forms/#toc-layout--textarea");
+  }
+
+  @Test
+  @DisplayName("palettes include their runtime automatically and keep searches independent")
+  void palettesIncludeTheirRuntimeAutomaticallyAndKeepSearchesIndependent() {
+    var errors = new ArrayList<String>();
+    page.onPageError(errors::add);
+    page.navigate(baseUrl + "/search/");
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Find articles")).click();
+    var dialog = page.getByRole(AriaRole.DIALOG);
+    var query = dialog.getByRole(AriaRole.SEARCHBOX);
+    query.fill("cafe");
+    assertThat(dialog.getByRole(AriaRole.LINK)).hasCount(1);
+    assertThat(
+            dialog.getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName("Café guide")))
+        .isVisible();
+    query.press("Escape");
+    assertThat(dialog).isHidden();
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Find guides")).click();
+    assertThat(query).hasValue("");
+    assertThat(dialog.getByRole(AriaRole.LINK)).hasCount(2);
+    query.fill("guide");
+    query.press("ArrowUp");
+    var forms =
+        dialog.getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName("Forms guide"));
+    assertThat(forms).isFocused();
+    forms.press("Enter");
+    assertThat(page).hasURL(baseUrl + "/search/#forms");
+    assertThat(dialog).isHidden();
+    assertThat(page.getByRole(AriaRole.HEADING, new Page.GetByRoleOptions().setName("Forms guide")))
+        .isInViewport();
+    Assertions.assertThat(errors).isEmpty();
   }
 
   @Test

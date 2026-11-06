@@ -1,42 +1,77 @@
 const normalize = (text) => text.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
 
-for (const dialog of document.querySelectorAll("[data-search-palette]")) {
-  const input = dialog.querySelector("input[type=search]");
-  const groups = [...dialog.querySelectorAll(".palette-group")];
-  const links = [...dialog.querySelectorAll(".palette-item")];
-  const empty = dialog.querySelector(".palette-empty");
-  const searchable = new Map(links.map((link) => [link, normalize(
-    `${link.closest(".palette-group").querySelector(".palette-group-title").textContent} ${link.textContent}`
-  )]));
-  const visibleLinks = () => links.filter((link) => !link.hidden);
+class TesseraSearch extends HTMLDialogElement {
+  #controller;
+  #input;
+  #entries;
+  #empty;
 
-  const filter = () => {
-    const terms = normalize(input.value).trim().split(/\s+/).filter(Boolean);
-    for (const link of links) {
-      link.hidden = !terms.every((term) => searchable.get(link).includes(term));
-    }
-    for (const group of groups) {
-      group.hidden = ![...group.querySelectorAll(".palette-item")].some((link) => !link.hidden);
-    }
-    empty.hidden = visibleLinks().length !== 0;
-  };
-  input.addEventListener("input", filter);
-  filter();
+  connectedCallback() {
+    this.#controller = new AbortController();
+    const { signal } = this.#controller;
+    this.#input = this.querySelector("input[type=search]");
+    this.#empty = this.querySelector(".palette-empty");
+    this.#entries = Array.from(this.querySelectorAll(".palette-item"), (link) => ({
+      link,
+      text: normalize(`${link.closest(".palette-group").querySelector(".palette-group-title").textContent} ${link.textContent}`),
+    }));
 
-  dialog.addEventListener("keydown", (event) => {
-    if (event.isComposing) return;
-    const visible = visibleLinks();
-    if (event.key === "Enter" && event.target === input) {
+    this.#input.addEventListener("input", () => this.#filter(), { signal });
+    this.addEventListener("keydown", (event) => this.#navigate(event), { signal });
+    this.addEventListener("click", (event) => {
+      if (
+        !event.defaultPrevented && event.button === 0 &&
+        !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
+        event.target.closest(".palette-item")
+      ) this.requestClose();
+    }, { signal });
+    this.addEventListener("toggle", (event) => {
+      if (event.newState === "open") this.#filter();
+    }, { signal });
+    this.#filter();
+  }
+
+  disconnectedCallback() {
+    this.#controller.abort();
+  }
+
+  #visibleEntries() {
+    return this.#entries.filter(({ link }) => !link.hidden);
+  }
+
+  #filter() {
+    const terms = normalize(this.#input.value).trim().split(/\s+/).filter(Boolean);
+    for (const { link, text } of this.#entries) {
+      link.hidden = !terms.every((term) => text.includes(term));
+    }
+    this.#empty.hidden = this.#visibleEntries().length !== 0;
+  }
+
+  #navigate(event) {
+    if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target !== this.#input && !event.target.matches(".palette-item")) return;
+
+    if (event.key === "Escape") {
       event.preventDefault();
-      visible[0]?.click();
+      this.requestClose();
+      return;
+    }
+
+    const visible = this.#visibleEntries();
+    if (event.key === "Enter" && event.target === this.#input) {
+      event.preventDefault();
+      visible.at(0)?.link.click();
     } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       if (visible.length === 0) return;
       event.preventDefault();
-      const current = visible.indexOf(document.activeElement);
+      const forward = event.key === "ArrowDown";
+      const current = visible.findIndex(({ link }) => link === document.activeElement);
       const next = current < 0
-        ? (event.key === "ArrowDown" ? 0 : visible.length - 1)
-        : (current + (event.key === "ArrowDown" ? 1 : -1) + visible.length) % visible.length;
-      visible[next].focus();
+        ? (forward ? 0 : -1)
+        : (current + (forward ? 1 : -1) + visible.length) % visible.length;
+      visible.at(next).link.focus();
     }
-  });
+  }
 }
+
+customElements.define("tessera-search", TesseraSearch, { extends: "dialog" });

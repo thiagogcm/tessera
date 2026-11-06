@@ -2,33 +2,14 @@ package dev.nthings.tessera.navigation;
 
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.SearchPalette;
-import dev.nthings.tessera.site.SiteAsset;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 /// Navigation components derived from a [SiteDefinition]'s routes.
 public final class SiteNavigation {
 
   private SiteNavigation() {}
-
-  /// Bundled optional runtime for [SearchPalette#enhanced()], published as a normal site asset.
-  public static SiteAsset searchScript() {
-    try (var input =
-        Objects.requireNonNull(
-            SiteNavigation.class.getResourceAsStream(
-                "/dev/nthings/tessera/components/search-palette.js"),
-            "Bundled search script")) {
-      return SiteAsset.text(
-          SearchPalette.SCRIPT_PATH, new String(input.readAllBytes(), StandardCharsets.UTF_8));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
 
   /// Automatically initializes a `SearchPalette` indexed from all routes in the given
   /// [SiteDefinition].

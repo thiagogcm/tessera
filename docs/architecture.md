@@ -182,10 +182,12 @@ Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integr
 
 Invoker checks establish target existence rather than command/tag compatibility. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These concerns have isolated owners in validators and artifact serialization.
 
-## Shared design tokens and optional search
+## Shared design tokens and search
 
 The design-token registry covers colors, font families, typography scale, spacing, corner radii, line height, and component density. Built-in components use CSS variable references, so overriding a token affects their rendered appearance without changing the component tree. `DesignToken.length()` bridges token references to length-valued authoring APIs. Spacing tokens include the density multiplier; layout widths and breakpoint definitions remain separately authored values.
 
-`SearchPalette` renders a native dialog with grouped navigation links. Calling `.enhanced()` adds a search input and contributes one external module script per document. `SiteNavigation.searchScript()` exposes the bundled runtime as a normal `SiteAsset`, preserving the component/site dependency boundary. The caller opts in to publishing it. The runtime filters existing links and handles keyboard focus and navigation without fetching an index or requiring a server endpoint. The showcase opts in; ordinary components require no JavaScript.
+`SearchPalette` always renders a functional search input and grouped result links. It contributes a bundled inline ES module once per document using the render context, so standalone pages and compiled sites carry the behavior automatically. No component-to-site dependency or manual asset registration is needed.
+
+The module defines a customized built-in `HTMLDialogElement`. Browser upgrade and lifecycle callbacks scope behavior to each palette; `AbortController` removes listeners when an instance disconnects. Native invoker commands and dialog behavior handle opening, focus trapping, and dismissal. Selection uses native `requestClose()` and anchor navigation, while CSS `:has()` controls empty-group visibility. The module has private instance fields and caches normalized search entries per instance. It needs no document-wide initializer, index fetch, or polyfills for the target browser.
 
 The [consumer guide](consumer-guide.md) and its runnable `GuideSite` demonstrate these public APIs together. Browser tests cover filtered navigation, empty-state recovery, custom token rendering, and encoded relative links over published files.

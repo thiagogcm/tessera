@@ -119,8 +119,17 @@ just demo
 ### Running Tests & Quality Gates
 
 ```bash
-# Run all unit tests and quality verification
+# Install Playwright Chromium (once, and after upgrades)
+just browsers
+
+# On Linux hosts needing system packages (requires sudo)
+just browsers --with-deps
+
+# Run unit tests, browser E2E tests, and all quality gates
 just verify
+
+# Run fast unit tests without a browser
+just test
 
 # Enforce zero @SuppressWarnings across the entire tree
 just no-suppress-warnings
@@ -183,24 +192,25 @@ main().children(modal.triggerButton("open-confirm", "Delete item"), modal.asDefe
 ## Project Structure
 
 ```
-tessera/
-├── .github/workflows/ci.yml       # Automated JDK 25 CI pipeline
-├── docs/
-│   └── architecture.md            # Assessment, API contracts, and dependency graph
-├── justfile                       # Task runner recipes
-├── pom.xml                        # Maven configuration with strict compiler gates
-└── src/
-    ├── main/java/dev/nthings/tessera/
-    │   ├── foundation/            # Fluent composition and deterministic hashing
-    │   ├── core/                  # Elements, identity, component contracts, document metadata
-    │   ├── css/                   # OKLCH tokens, algebraic StyleRefinement, @scope, @layer
-    │   ├── render/                # Compiler facade, private passes, opaque prepared pages
-    │   ├── site/                  # Site compilation, artifacts, writer, preview server
-    │   ├── navigation/            # Route-derived component composition
-    │   ├── components/            # Complete component catalog
-    │   └── showcase/              # Multi-page showcase demonstration site
-    └── test/java/dev/nthings/tessera/ # Unit and integration test suites
+tessera-parent/
++-- pom.xml                        # Parent reactor and shared quality configuration
++-- config/                        # Shared Checkstyle and SpotBugs policies
++-- tessera/                       # Published dev.nthings:tessera library
+|   +-- src/main/java/              # foundation, css, core, render, components, site, navigation
+|   +-- src/test/java/              # Compiler, component, and site unit tests
++-- tessera-showcase/              # Runnable example and external library consumer
+|   +-- src/main/java/              # Multi-page showcase
+|   +-- src/test/java/              # Playwright browser E2E suite
++-- docs/architecture.md           # Assessment, APIs, dependencies, and test boundaries
++-- justfile                       # Build, test, browser setup, site, and demo commands
++-- .github/workflows/ci.yml        # Full verification with Chromium
 ```
+
+The showcase depends on the library's public API. Playwright is test-scoped in the showcase module and never becomes a library dependency. Maven `test` runs the unit suite; Maven `verify` also runs the showcase's Failsafe browser tests.
+
+The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It exercises every route at desktop and mobile widths plus native interactions. Tests use the Chromium bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure.
+
+For library-only verification, run `./mvnw -pl tessera verify`. For a focused browser run after compilation, use `./mvnw -pl tessera-showcase -am verify -Dit.test=ShowcaseIT`.
 
 ---
 

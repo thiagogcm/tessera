@@ -1,7 +1,7 @@
 # tessera task runner - single source of truth for build, test, site generation, and quality commands.
 #
 # Quick start:  just            (list recipes)
-#               just verify     (canonical compile + test + jacoco + spotless gate)
+#               just verify     (unit tests + browser E2E + quality gates)
 #               just site       (compile multi-page showcase site into target/site)
 #               just demo       (serve multi-page showcase site at http://localhost:8080)
 
@@ -29,12 +29,12 @@ compile:
 # Compile the multi-page showcase static site into target/site.
 [group('build')]
 site output="target/site":
-    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{output}}"
+    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{absolute_path(output)}}"
 
 # Build and serve the multi-page showcase site over HTTP for live browser/DevTools evaluation.
 [group('build')]
 demo port="8080":
-    {{mvn}} -q test-compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output target/site --serve {{port}}"
+    {{mvn}} -q compile exec:java -Dexec.mainClass=dev.nthings.tessera.showcase.ShowcaseSite -Dexec.args="--output {{justfile_directory()}}/target/site --serve {{port}}"
 
 # Remove Maven build outputs.
 [group('build')]
@@ -43,12 +43,17 @@ clean:
 
 # --- Test ---------------------------------------------------------------------
 
-# Run unit tests.
+# Run unit tests without launching browsers.
 [group('test')]
 test:
     {{mvn}} test
 
-# Canonical gate: compile (-Xlint:all -Werror + NullAway), test, JaCoCo report, and Spotless check.
+# Install configured Playwright Chromium; pass --with-deps to install Linux system packages too.
+[group('test')]
+browsers options="":
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install {{options}} chromium"
+
+# Canonical gate: unit tests, browser E2E, strict compilation, coverage, and quality checks.
 [group('test')]
 verify:
     {{mvn}} clean verify
@@ -70,7 +75,7 @@ format-check:
 no-suppress-warnings:
     #!/usr/bin/env bash
     set -euo pipefail
-    if grep -rn "@SuppressWarnings" src/; then
+    if rg -n '@SuppressWarnings' tessera/src tessera-showcase/src; then
         echo "ERROR: @SuppressWarnings is forbidden in tessera." >&2
         exit 1
     fi

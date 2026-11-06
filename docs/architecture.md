@@ -41,7 +41,16 @@ These are direct imports between production packages, pointing from consumers to
 
 The component catalog and page compiler are sibling consumers of the element/CSS model. Neither imports the other. Site compilation consumes page metadata without knowing which components produced it. Navigation integrates site models and UI.
 
-This remains one Maven artifact. Package-private access protects compiler details; the graph is a source-level layering convention rather than separate JPMS modules. There is no current independent deployment requirement to justify multiple artifacts.
+The reactor builds two child modules under `tessera-parent`:
+
+```text
+tessera-showcase --> tessera
+    |                  |
+    |                  +-- published library and unit tests
+    +-- runnable example and Playwright browser tests
+```
+
+`dev.nthings:tessera` retains every library package. `tessera-showcase` compiles as an independent public-API consumer, with no dependency on library test helpers. Playwright is test-scoped in the showcase module. Shared compiler and quality configuration belongs to the parent; runtime dependencies belong to their modules. Package-private access still protects internal compiler details within the library.
 
 ## User-facing APIs
 
@@ -164,5 +173,11 @@ Callers, tests, and showcase code use new APIs directly, without compatibility s
 ## Verification and remaining limits
 
 Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, CSS scope deduplication, merged stylesheets, site links/assets, disk output, and preview HTTP responses. The added integration case verifies that search output includes headings registered by a custom component without `Toc`. Tests exercise output rather than package shape or builder implementation details.
+
+The showcase is also the browser acceptance suite. It compiles through public `SiteCompiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
+
+JUnit reuses Chromium across the suite and creates a fresh browser context per test. Every route is opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Interaction tests exercise dialog focus and dismissal, popover light dismissal, field labels and validation, tabs, exclusive accordions, route and fragment navigation, and switches. These complement the library tests' compiler diagnostics and output assertions.
+
+Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium and operating-system dependencies before full verification. There is no browser-version matrix. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright` directory.
 
 This refactor preserves the scope of existing validation. Invoker checks establish target existence rather than command/tag compatibility. URL validation retains its existing root-relative path handling. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These behavioral concerns now have isolated owners in validators and artifact serialization.

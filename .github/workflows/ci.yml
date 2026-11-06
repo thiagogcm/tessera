@@ -31,8 +31,20 @@ jobs:
       - name: Verify zero @SuppressWarnings
         run: just no-suppress-warnings
 
-      - name: Run Quality Gate (Verify)
+      - name: Install Playwright Chromium and System Dependencies
+        run: just browsers --with-deps
+
+      - name: Run Unit Tests, Browser E2E and Quality Gates
         run: just verify
+
+      - name: Upload Browser Traces and Failure Screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: |
+            tessera-showcase/target/playwright/
+            tessera-showcase/target/failsafe-reports/
 
       - name: Build Showcase Site
         run: just site

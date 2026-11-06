@@ -2,6 +2,7 @@ package dev.nthings.tessera.showcase;
 
 import dev.nthings.tessera.site.SiteAsset;
 import java.util.List;
+import java.util.Locale;
 
 /// Generated SVG artwork published as static site assets.
 final class Art {
@@ -33,7 +34,7 @@ final class Art {
             .append("' y='")
             .append(row * 80 + 8)
             .append("' width='64' height='64' rx='12' fill='white' fill-opacity='")
-            .append(String.format(java.util.Locale.ROOT, "%.2f", opacity))
+            .append(String.format(Locale.ROOT, "%.2f", opacity))
             .append("'/>");
       }
     }

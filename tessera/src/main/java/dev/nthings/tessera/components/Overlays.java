@@ -162,12 +162,13 @@ public final class Overlays {
 
     @Override
     public Element render() {
+      var titleRef = ElementRef.named("title");
       var headerEl =
           header()
               .flex()
               .flexCol()
               .gap(CssLength.rem(0.25))
-              .child(h2().fontSize(CssLength.rem(1.25)).textBalance().text(title))
+              .child(h2().id(titleRef).fontSize(CssLength.rem(1.25)).textBalance().text(title))
               .whenPresent(
                   description,
                   (h, desc) ->
@@ -205,6 +206,7 @@ public final class Overlays {
 
       return Elements.dialog()
           .id(dialog)
+          .ariaLabelledBy(titleRef)
           .dialogClosedByAny()
           .child(
               div()
@@ -329,6 +331,7 @@ public final class Overlays {
 
     @Override
     public Element render() {
+      var titleRef = ElementRef.named("title");
       var closeBtn =
           button()
               .id("close")
@@ -355,7 +358,7 @@ public final class Overlays {
                       .flex()
                       .flexCol()
                       .gap(CssLength.rem(0.125))
-                      .child(h2().fontSize(CssLength.rem(1.125)).text(title))
+                      .child(h2().id(titleRef).fontSize(CssLength.rem(1.125)).text(title))
                       .whenPresent(
                           subtitle,
                           (d, sub) ->
@@ -370,6 +373,7 @@ public final class Overlays {
 
       return Elements.dialog()
           .id(dialog)
+          .ariaLabelledBy(titleRef)
           .dialogClosedByAny()
           .child(
               div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));

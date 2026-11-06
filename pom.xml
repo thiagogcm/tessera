@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>dev.nthings</groupId>
-    <artifactId>tessera</artifactId>
+    <artifactId>tessera-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <name>tessera</name>
     <description>Declarative, multi-phase HTML/CSS view engine for JDK 25 targeting Baseline 2026+ (Chrome 156+).</description>
@@ -30,6 +30,11 @@
         </developer>
     </developers>
 
+    <modules>
+        <module>tessera</module>
+        <module>tessera-showcase</module>
+    </modules>
+
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <maven.compiler.source>25</maven.compiler.source>
@@ -37,6 +42,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <exec.skip>true</exec.skip>
+        <exec-maven-plugin.version>3.6.4</exec-maven-plugin.version>
+        <playwright.version>1.64.0</playwright.version>
         <assertj-core.version>3.27.7</assertj-core.version>
         <checkstyle.version>14.4.0</checkstyle.version>
         <errorprone.version>2.51.0</errorprone.version>
@@ -59,44 +67,54 @@
         <spotless-maven-plugin.version>3.10.4</spotless-maven-plugin.version>
     </properties>
 
-    <dependencies>
-        <!-- Nullability contract for public API and NullAway verification -->
-        <dependency>
-            <groupId>org.jspecify</groupId>
-            <artifactId>jspecify</artifactId>
-            <version>${jspecify.version}</version>
-        </dependency>
+    <dependencyManagement>
+        <dependencies>
+            <!-- Nullability contract for public API and NullAway verification -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${jspecify.version}</version>
+            </dependency>
 
-        <!-- Zero-allocation context-sensitive HTML/CSS/URI streaming encoder -->
-        <dependency>
-            <groupId>org.owasp.encoder</groupId>
-            <artifactId>encoder</artifactId>
-            <version>${owasp-encoder.version}</version>
-        </dependency>
+            <!-- Zero-allocation context-sensitive HTML/CSS/URI streaming encoder -->
+            <dependency>
+                <groupId>org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>${owasp-encoder.version}</version>
+            </dependency>
 
-        <!-- Testing libraries -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>${junit-jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>${assertj-core.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>${jsoup.version}</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+            <!-- Testing libraries -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj-core.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>${exec-maven-plugin.version}</version>
+                <configuration>
+                    <skip>${exec.skip}</skip>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -244,7 +262,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <configLocation>config/checkstyle/checkstyle.xml</configLocation>
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
                     <failsOnError>true</failsOnError>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
@@ -275,7 +293,7 @@
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
                     <failOnError>true</failOnError>
-                    <excludeFilterFile>config/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${maven.multiModuleProjectDirectory}/config/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
                 <executions>
                     <execution>

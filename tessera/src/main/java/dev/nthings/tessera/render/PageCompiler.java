@@ -67,21 +67,24 @@ public final class PageCompiler {
         state.outgoingLinks,
         state.transitionLocations,
         headNodes,
-        p1.state().headings());
+        p1.state().headings(),
+        p1.state().behaviors());
   }
 
   public static CompiledPage paintPrepared(
       PreparedPage prepared, String cssContent, OutputMode outputMode) {
     var htmlBuffer = new StringBuilder(4096);
-    var externalCssPath =
+    var result =
         HtmlWriter.paint(
             prepared.document(),
             prepared.bodyNodes(),
             cssContent,
             outputMode,
             prepared.headNodes(),
+            prepared.behaviors(),
             htmlBuffer);
-    return new CompiledPage(htmlBuffer.toString(), externalCssPath, cssContent);
+    return new CompiledPage(
+        htmlBuffer.toString(), result.externalCssPath(), cssContent, result.assets());
   }
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {

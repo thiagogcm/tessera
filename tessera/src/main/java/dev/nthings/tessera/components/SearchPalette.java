@@ -12,13 +12,12 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.DeferredElement;
-import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
@@ -48,13 +47,6 @@ import org.jspecify.annotations.Nullable;
 /// Rendering a palette automatically contributes its ES module once per document.
 public final class SearchPalette implements RenderView {
 
-  private static final class ScriptContribution {
-    private boolean added;
-  }
-
-  private static final DocumentKey<ScriptContribution> SCRIPT =
-      DocumentKey.of("search-script", ScriptContribution.class, ScriptContribution::new);
-
   private static final class ClientScript {
     private static final String SOURCE = readScript();
 
@@ -69,6 +61,9 @@ public final class SearchPalette implements RenderView {
       }
     }
   }
+
+  private static final ClientBehavior SEARCH_BEHAVIOR =
+      new ClientBehavior("tessera-search", ClientScript.SOURCE);
 
   private static final String SEARCH_ICON_SVG =
       "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
@@ -143,7 +138,6 @@ public final class SearchPalette implements RenderView {
     return button()
         .id(buttonId)
         .command(dialog, BuiltinCommand.SHOW_MODAL)
-        .ariaLabel(label)
         .ariaKeyShortcuts("Alt+K")
         .attr("accesskey", "k")
         .flex()
@@ -210,13 +204,7 @@ public final class SearchPalette implements RenderView {
 
   @Override
   public Element render() {
-    var context = RenderContext.current();
-    var script = context.document(SCRIPT);
-    if (!script.added) {
-      script.added = true;
-      context.contributeHead(
-          Elements.el(HtmlTag.SCRIPT).attr("type", "module").child(rawHtml(ClientScript.SOURCE)));
-    }
+    RenderContext.current().contributeBehavior(SEARCH_BEHAVIOR);
 
     var headerEl =
         Elements.search()

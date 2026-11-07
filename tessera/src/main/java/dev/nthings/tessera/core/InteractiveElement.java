@@ -67,7 +67,7 @@ public interface InteractiveElement<
     return idRef("href", new IdReference("#", List.of(target)));
   }
 
-  /// Chrome 156+ Invoker Command: `commandfor` + `command`.
+  /// Invoker Command: `commandfor` + `command`.
   default SELF command(ElementRef target, BuiltinCommand command) {
     return idRef("commandfor", target).attr("command", command.wireValue());
   }

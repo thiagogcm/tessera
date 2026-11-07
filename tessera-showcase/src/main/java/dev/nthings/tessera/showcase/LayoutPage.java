@@ -148,7 +148,8 @@ final class LayoutPage {
                 BulletList.ofStrings("Zero JavaScript", "Scoped styles", "Shared stylesheet"),
                 NumberedList.ofStrings("Describe", "Compile", "Deploy"),
                 DescriptionList.of(
-                    Term.of("Runtime", "Chrome 155+"), Term.of("Language", "Java 25"))),
+                    Term.of("Runtime", "Latest Chromium + Firefox"),
+                    Term.of("Language", "Java 25"))),
             StepList.ofStrings(
                 "release-steps", "Write components", "Compile the site", "Serve static files"))
         .code(

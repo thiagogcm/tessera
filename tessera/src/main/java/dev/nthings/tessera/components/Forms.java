@@ -34,8 +34,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Accessible Forms and Form Controls Suite backed by CSS Level 4 `:user-invalid` / `:user-valid`
-/// pseudo-classes, HTML `<input type="checkbox" switch>`, Chrome 156+ `appearance: base-select`,
-/// and CSS Anchor Positioning tooltips.
+/// pseudo-classes, HTML `<input type="checkbox" switch>`, `appearance: base-select` where
+/// supported, and CSS Anchor Positioning tooltips.
 public final class Forms {
 
   private Forms() {}
@@ -85,7 +85,8 @@ public final class Forms {
 
   /// Creates a binary on/off toggle: a `role="switch"` checkbox drawn as a track and thumb.
   ///
-  /// Chrome has no native `<input switch>`, so the control is `appearance: none` with the thumb
+  /// The target browsers have no native `<input switch>`, so the control is `appearance: none`
+  /// with the thumb
   /// as a background layer that slides on `:checked`.
   public static TagElement switchInput(String name, boolean checked) {
     return input("checkbox")
@@ -298,8 +299,8 @@ public final class Forms {
     }
   }
 
-  /// Customizable `<select>` component implementing Chrome 156+ `appearance: base-select` and
-  /// top-layer option picker styling.
+  /// Customizable `<select>` component implementing `appearance: base-select` and top-layer option
+  /// picker styling where supported, with a native select fallback elsewhere.
   public static final class SelectControl implements RenderView {
 
     public record OptionItem(String value, String label, boolean selected) {}
@@ -314,7 +315,7 @@ public final class Forms {
               .child(
                   button()
                       .attr("class", "select-trigger")
-                      .ariaLabel("Select " + name)
+                      .child(span().visuallyHidden().text("Select " + name))
                       .child(selectedcontent()));
     }
 

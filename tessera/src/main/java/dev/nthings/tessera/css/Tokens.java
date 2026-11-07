@@ -79,6 +79,9 @@ public final class Tokens {
       adaptive("text-muted", 45, 0.02, 260, 72, 0.02, 260);
   public static final DesignToken.Color ACCENT_PRIMARY =
       adaptive("accent-primary", 54, 0.21, 262, 68, 0.19, 262);
+  /// Accent safe for small text on tinted or canvas surfaces.
+  public static final DesignToken.Color ACCENT_TEXT =
+      tintText("accent-text", ACCENT_PRIMARY, 38, 0.16, 84, 0.12);
   public static final DesignToken.Color BORDER_SUBTLE =
       adaptive("border-subtle", 88, 0.01, 260, 30, 0.02, 260);
   public static final DesignToken.Color STATUS_SUCCESS =
@@ -89,6 +92,15 @@ public final class Tokens {
       adaptive("status-danger", 56, 0.21, 25, 70, 0.19, 25);
   public static final DesignToken.Color STATUS_INFO =
       adaptive("status-info", 58, 0.16, 235, 74, 0.14, 235);
+  /// Status tones safe for small text on tinted or canvas surfaces.
+  public static final DesignToken.Color STATUS_SUCCESS_TEXT =
+      tintText("status-success-text", STATUS_SUCCESS, 38, 0.14, 84, 0.12);
+  public static final DesignToken.Color STATUS_WARNING_TEXT =
+      tintText("status-warning-text", STATUS_WARNING, 35, 0.12, 88, 0.12);
+  public static final DesignToken.Color STATUS_DANGER_TEXT =
+      tintText("status-danger-text", STATUS_DANGER, 38, 0.18, 84, 0.12);
+  public static final DesignToken.Color STATUS_INFO_TEXT =
+      tintText("status-info-text", STATUS_INFO, 38, 0.14, 84, 0.12);
   public static final DesignToken.Color CONTROL_FG =
       DesignToken.Color.alias("control-fg", TEXT_PRIMARY);
 
@@ -143,11 +155,16 @@ public final class Tokens {
     register(TEXT_PRIMARY);
     register(TEXT_MUTED);
     register(ACCENT_PRIMARY);
+    register(ACCENT_TEXT);
     register(BORDER_SUBTLE);
     register(STATUS_SUCCESS);
+    register(STATUS_SUCCESS_TEXT);
     register(STATUS_WARNING);
+    register(STATUS_WARNING_TEXT);
     register(STATUS_DANGER);
+    register(STATUS_DANGER_TEXT);
     register(STATUS_INFO);
+    register(STATUS_INFO_TEXT);
     register(CONTROL_FG);
   }
 
@@ -167,6 +184,20 @@ public final class Tokens {
   /// A spacing length that scales with [#DENSITY].
   private static DesignToken.Length space(String name, double rem) {
     return new DesignToken.Length(name, CssLength.rem(rem).times(DENSITY));
+  }
+
+  /// A scheme-aware text color derived from `source` at readable light/dark lightness and chroma.
+  private static DesignToken.Color tintText(
+      String name,
+      DesignToken.Color source,
+      double lightLightness,
+      double lightChroma,
+      double darkLightness,
+      double darkChroma) {
+    return DesignToken.Color.lightDark(
+        name,
+        CssColor.sameHue(source, lightLightness, lightChroma),
+        CssColor.sameHue(source, darkLightness, darkChroma));
   }
 
   private static DesignToken.Color adaptive(

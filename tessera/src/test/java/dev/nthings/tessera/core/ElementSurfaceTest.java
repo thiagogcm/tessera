@@ -1,0 +1,42 @@
+package dev.nthings.tessera.core;
+
+import static dev.nthings.tessera.core.Elements.button;
+import static dev.nthings.tessera.core.Elements.custom;
+import static dev.nthings.tessera.core.Elements.fragment;
+import static dev.nthings.tessera.core.Elements.li;
+import static dev.nthings.tessera.core.Elements.ul;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.RenderedPage.renderMain;
+
+import dev.nthings.tessera.render.CompilationException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+@DisplayName("Fragment and custom element authoring")
+class ElementSurfaceTest {
+
+  @Test
+  @DisplayName("a fragment keeps direct child content-model positions")
+  void fragmentKeepsDirectChildren() {
+    var page = renderMain(ul().child(fragment().children(li().text("One"), li().text("Two"))));
+
+    assertThat(page.elements("ul > li")).hasSize(2);
+    assertThat(page.elements("ul > div")).isEmpty();
+  }
+
+  @Test
+  @DisplayName("an unlabelled button inside a fragment is reported")
+  void fragmentChildrenParticipateInDiagnostics() {
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> renderMain(fragment().child(button())))
+        .isInstanceOf(CompilationException.class)
+        .hasMessageContaining("interactive-label");
+  }
+
+  @Test
+  @DisplayName("a custom element renders its content")
+  void customElementRendersContent() {
+    var page = renderMain(custom("my-widget").text("Hello"));
+
+    assertThat(page.element("main > my-widget")).hasText("Hello");
+  }
+}

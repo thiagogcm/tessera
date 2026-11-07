@@ -20,4 +20,16 @@ public interface Styled<SELF extends Styled<SELF>>
     mutator.apply(style());
     return self();
   }
+
+  /// Keeps content in the accessibility tree while removing it from the visual layout.
+  default SELF visuallyHidden() {
+    return absolute()
+        .inlineSize(CssLength.px(1))
+        .blockSize(CssLength.px(1))
+        .p(CssLength.zero())
+        .m(CssLength.px(-1))
+        .overflowHidden()
+        .whiteSpace(WhiteSpace.NOWRAP)
+        .borderNone();
+  }
 }

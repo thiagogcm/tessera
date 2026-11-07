@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.SourceTracking;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.CompilationDiagnostic;
 import dev.nthings.tessera.render.CompilationException;
+import dev.nthings.tessera.render.CompiledAsset;
 import dev.nthings.tessera.render.CompiledPage;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PreparedPage;
@@ -69,9 +70,15 @@ public final class SiteCompiler {
             preparedPages,
             prepared -> PageCompiler.paintPrepared(prepared, sharedCssContent, site.outputMode()));
     var compiledPages = new LinkedHashMap<String, CompiledPage>(routes.size());
+    var generatedAssets = new LinkedHashMap<String, SiteAsset>();
     for (var i = 0; i < routes.size(); i++) {
-      compiledPages.put(routes.get(i).path(), painted.get(i));
+      var page = painted.get(i);
+      compiledPages.put(routes.get(i).path(), page);
+      for (var asset : page.assets()) {
+        generatedAssets.putIfAbsent(asset.path(), toSiteAsset(asset));
+      }
     }
+    generatedAssets.values().forEach(asset -> addFile(files, seenPaths, asset));
     // Every page is painted with the same output mode and stylesheet, so they share one path.
     var sharedCssPath = painted.getFirst().externalCssPath();
 
@@ -92,6 +99,10 @@ public final class SiteCompiler {
             SEARCH_INDEX_PATH, SiteArtifacts.generateSearchIndexJson(routes, preparedPages)));
 
     return new CompiledSite(compiledPages, sharedCssPath, sharedCssContent, files);
+  }
+
+  private static SiteAsset toSiteAsset(CompiledAsset asset) {
+    return new SiteAsset(asset.path(), asset.contentType(), asset.content());
   }
 
   /// Registers `file`, rejecting a path already taken by a route or another file.

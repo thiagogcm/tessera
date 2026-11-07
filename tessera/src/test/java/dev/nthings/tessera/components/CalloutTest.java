@@ -17,7 +17,7 @@ class CalloutTest {
   static Stream<Arguments> calloutsByTone() {
     return Stream.of(
         argumentSet("note", Callout.note("Important note about JDK 25."), "note", "Note"),
-        argumentSet("tip", Callout.tip("Enable Baseline 2026+ CSS features."), "tip", "Tip"),
+        argumentSet("tip", Callout.tip("Enable bleeding-edge CSS features."), "tip", "Tip"),
         argumentSet("important", Callout.important("Read this first."), "important", "Important"),
         argumentSet(
             "warning", Callout.warning("Do not use preview language flags."), "warning", "Warning"),

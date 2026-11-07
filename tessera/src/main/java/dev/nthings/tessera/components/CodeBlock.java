@@ -152,10 +152,13 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
             s -> s.bg(Tokens.ACCENT_PRIMARY.mixTransparent(15)))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-add",
-            s -> s.bg(Tokens.STATUS_SUCCESS.mixTransparent(16)).textColor(Tokens.STATUS_SUCCESS))
+            s ->
+                s.bg(Tokens.STATUS_SUCCESS.mixTransparent(16))
+                    .textColor(Tokens.STATUS_SUCCESS_TEXT))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-del",
-            s -> s.bg(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER));
+            s ->
+                s.bg(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER_TEXT));
   }
 
   @Override

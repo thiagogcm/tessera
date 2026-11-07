@@ -1,20 +1,24 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
+import static dev.nthings.tessera.core.Elements.button;
+import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.input;
-import static dev.nthings.tessera.core.Elements.label;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
-import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.ul;
 
 import dev.nthings.tessera.core.Accessible;
+import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssIdent;
@@ -24,11 +28,16 @@ import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 /// Navigation and in-page content tab components backed by CSS Anchor Positioning (`anchor-name`,
 /// `position-anchor`, `anchor(left)`, `anchor(right)`, `anchor(bottom)`) for animated active tab
-/// underlines and `:has(> input:checked)` for zero-JavaScript panel switching.
+/// underlines. Content tabs use the ARIA tabs pattern and a bundled `tessera-tabs` client behavior
+/// with roving tabindex and arrow-key navigation.
 public final class Tabs {
 
   private Tabs() {}
@@ -47,7 +56,11 @@ public final class Tabs {
   }
 
   public static ContentTabs contentTabs(String id, List<TabPanel> panels) {
-    return new ContentTabs(ElementId.of(id), panels);
+    return contentTabs(id, "Content tabs", panels);
+  }
+
+  public static ContentTabs contentTabs(String id, String ariaLabel, List<TabPanel> panels) {
+    return new ContentTabs(ElementId.of(id), ariaLabel, panels);
   }
 
   /// Route navigation tab bar using CSS Anchor Positioning (`ul::before` tethered to `li.active`)
@@ -122,22 +135,39 @@ public final class Tabs {
     }
   }
 
-  /// Zero-JavaScript in-page tabbed content widget that switches panels via `:has(>
-  /// input:checked)` and smoothly slides its active underline across tabs using CSS Anchor
-  /// Positioning (`transition: inset 0.2s ease`).
+  /// Accessible in-page tab set backed by the ARIA tabs pattern, roving tabindex, and the bundled
+  /// `tessera-tabs` client behavior. Panels stay server-rendered; the behavior only switches
+  /// selection and focus.
   public static final class ContentTabs implements RenderView {
 
+    private static final class ClientScript {
+      private static final String SOURCE = readScript();
+
+      private static String readScript() {
+        try (var input =
+            Objects.requireNonNull(
+                ContentTabs.class.getResourceAsStream("tessera-tabs.js"), "Bundled tabs module")) {
+          return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+          throw new UncheckedIOException(e);
+        }
+      }
+    }
+
+    private static final ClientBehavior TABS_BEHAVIOR =
+        new ClientBehavior("tessera-tabs", ClientScript.SOURCE);
+
     private final ElementId id;
-    private final String radioGroupName;
+    private final String ariaLabel;
     private final CssIdent anchorIdent;
     private final List<TabPanel> panels;
 
-    public ContentTabs(ElementId id, List<TabPanel> panels) {
+    public ContentTabs(ElementId id, String ariaLabel, List<TabPanel> panels) {
       if (panels.isEmpty()) {
         throw new IllegalArgumentException("ContentTabs requires at least 1 TabPanel");
       }
       this.id = id;
-      this.radioGroupName = "tabs-" + id.slug();
+      this.ariaLabel = ariaLabel;
       this.anchorIdent = CssIdent.custom("active-tab-" + id.slug());
       this.panels = List.copyOf(panels);
     }
@@ -171,58 +201,74 @@ public final class Tabs {
                       .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
                       .bg(Tokens.SURFACE_SUBTLE))
           .select(
-              ":scope > .tab-bar > .tab-label",
+              ":scope > .tab-bar > [role=\"tab\"]",
               s ->
                   s.inlineFlex()
                       .itemsCenter()
+                      .m(CssLength.zero())
                       .px(Tokens.SPACE_3_5)
                       .py(Tokens.SPACE_2_5)
+                      .bg(CssColor.transparent())
+                      .borderNone()
                       .textColor(Tokens.TEXT_MUTED)
+                      .fontFamilyInherit()
+                      .fontSize(Tokens.FONT_SIZE_SM)
                       .fontWeight(500)
                       .whiteSpace(WhiteSpace.NOWRAP)
                       .cursorPointer())
-          .select(":scope > .tab-bar > .tab-label > input[type=\"radio\"]", s -> s.hidden())
           .select(
-              ":scope > .tab-bar > .tab-label:has(> input:checked)",
-              s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
-      anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent)
-          .select(":scope > .tab-panel", s -> s.hidden().p(Tokens.SPACE_5));
-
-      for (var i = 0; i < panels.size(); i++) {
-        var tabIndex = i + 1;
-        scope.select(
-            ":scope:has(> .tab-bar > .tab-label[data-tab=\""
-                + tabIndex
-                + "\"] > input:checked) > .tab-panel[data-panel=\""
-                + tabIndex
-                + "\"]",
-            s -> s.block());
-      }
+              ":scope > .tab-bar > [role=\"tab\"]:hover",
+              s -> s.bg(Tokens.SURFACE_CARD).textColor(Tokens.TEXT_PRIMARY))
+          .select(
+              ":scope > .tab-bar > [role=\"tab\"]:focus-visible",
+              s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+          .select(
+              ":scope > .tab-bar > [role=\"tab\"][aria-selected=\"true\"]",
+              s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600))
+          .select(":scope > [role=\"tabpanel\"]", s -> s.p(Tokens.SPACE_5))
+          // Before the behavior upgrades the element, expose every panel instead of hiding all
+          // but the first.
+          .select(":scope:not(:defined) > .tab-bar", s -> s.hidden())
+          .select(":scope:not(:defined) > [role=\"tabpanel\"][hidden]", s -> s.block());
+      anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent);
     }
 
     @Override
     public Element render() {
-      var tabBar = div().attr("class", "tab-bar");
-      var root = div().child(tabBar);
+      RenderContext.current().contributeBehavior(TABS_BEHAVIOR);
+
+      var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(ariaLabel);
+      var root = custom("tessera-tabs").attr("class", "tabs");
+      var tabRefs = new ElementRef[panels.size()];
+      var panelRefs = new ElementRef[panels.size()];
 
       for (var i = 0; i < panels.size(); i++) {
-        var tabIndex = i + 1;
-        var panel = panels.get(i);
-        var radio =
-            input("radio")
-                .attr("name", radioGroupName)
-                .attr("value", Integer.toString(tabIndex))
-                .boolAttr("checked", i == 0);
+        tabRefs[i] = ElementRef.named("tab-" + i);
+        panelRefs[i] = ElementRef.named("panel-" + i);
         tabBar.child(
-            label()
-                .attr("class", "tab-label")
-                .attr("data-tab", Integer.toString(tabIndex))
-                .children(radio, span().text(panel.label())));
+            button()
+                .id(tabRefs[i])
+                .role(Role.TAB)
+                .attr("class", "tab")
+                .attr("data-tab-index", Integer.toString(i))
+                .ariaSelected(i == 0)
+                .ariaControls(panelRefs[i])
+                .tabIndex(i == 0 ? 0 : -1)
+                .text(panels.get(i).label()));
+      }
+
+      root.child(tabBar);
+      for (var i = 0; i < panels.size(); i++) {
         root.child(
             div()
+                .id(panelRefs[i])
+                .role(Role.TABPANEL)
                 .attr("class", "tab-panel")
-                .attr("data-panel", Integer.toString(tabIndex))
-                .child(panel.content()));
+                .attr("data-panel-index", Integer.toString(i))
+                .ariaLabelledBy(tabRefs[i])
+                .tabIndex(0)
+                .boolAttr("hidden", i != 0)
+                .child(panels.get(i).content()));
       }
       return root;
     }

@@ -90,16 +90,17 @@ final class DocsPage {
         .example(
             p().textPretty()
                 .children(
-                    text("Tessera targets a single evergreen engine"),
-                    Footnotes.ref("engine", "Chrome 155 or later; no polyfills are shipped."),
+                    text("Tessera targets the latest Chromium and Firefox"),
+                    Footnotes.ref(
+                        "engine", "latest Chromium and Firefox; no polyfills are shipped."),
                     text(" and provides script-free native controls"),
                     Footnotes.ref(
                         "zero-js",
                         "Search includes its JavaScript module; speculation rules are declarative JSON."),
                     text(".")))
         .code(
-            "p().children(text(\"Tessera targets one engine\"),",
-            "    Footnotes.ref(\"engine\", \"Chrome 155 or later.\"));",
+            "p().children(text(\"Tessera targets the latest Chromium and Firefox\"),",
+            "    Footnotes.ref(\"engine\", \"latest Chromium and Firefox.\"));",
             "Footnotes.section(\"Notes\"); // optional: placement of the list");
   }
 

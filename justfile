@@ -59,10 +59,10 @@ clean:
 test:
     {{mvn}} test
 
-# Install configured Playwright Chromium; pass --with-deps to install Linux system packages too.
+# Install Playwright Chromium and Firefox; pass --with-deps to install Linux system packages too.
 [group('test')]
 browsers options="":
-    {{mvn}} -q test-compile exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install {{options}} chromium"
+    {{mvn}} -q test-compile exec:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install {{options}} chromium firefox"
 
 # Canonical gate: unit tests, browser E2E, strict compilation, coverage, and quality checks.
 [group('test')]

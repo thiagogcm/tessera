@@ -100,6 +100,28 @@ Pass it to `.child(...)` or `.children(...)` like any other component. The compi
 
 Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
 
+## Group siblings and name custom elements
+
+Use `Elements.fragment()` when a component owns several roots or when a wrapper would change the parent content model. The fragment emits no markup:
+
+```java
+Elements.ul().child(
+    Elements.fragment().children(li().text("One"), li().text("Two")));
+```
+
+`HtmlTag` covers the built-in vocabulary, including `video`, `audio`, `iframe`, `canvas`, `template`, `slot`, `picture`, `source`, and `track`. `Elements.custom("my-widget")` emits an autonomous custom element. Custom element names must start with a lowercase letter, contain a hyphen, and avoid the names reserved by the HTML standard. Pair the element with a `ClientBehavior` so the browser upgrades it.
+
+## Contribute a client behavior
+
+A behavior is an ES module with a stable id. Components contribute it through the render context:
+
+```java
+var behavior = new ClientBehavior("my-widget", moduleSource);
+RenderContext.current().contributeBehavior(behavior);
+```
+
+The compiler emits each behavior once per page. `OutputMode.inlineStyle()` inlines a `<script type="module">`. `OutputMode.externalAsset("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and `SiteCompiler` merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `Tabs.ContentTabs` use this path for their bundled modules.
+
 ## Lay out a row or column
 
 `FlexLayout` sets display, direction, gap, alignment, and wrapping on the element that should be the flex container. The element keeps its own tag.
@@ -147,7 +169,7 @@ var close = IconButton.of("Close", Elements.span().text("×"))
 
 `IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(name, content)` keeps `name` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
 
-`Button.interestTooltip(...)` adds a hint popover on hover or focus. `Overlays.modal(...).opened()` renders a dialog visible in the non-modal `open` state.
+`Button.interestTooltip(...)` adds a hint popover on hover or focus. Native interest invokers drive it where available; a bundled `TooltipBehavior` mirrors hover and focus handling in Firefox, which does not ship the API yet. `Overlays.modal(...).opened()` renders a dialog visible in the non-modal `open` state.
 
 ## Open a component case
 
@@ -301,7 +323,7 @@ var search = SearchPalette.create("search", "Search pages and sections...")
 Elements.main().children(search.triggerButton(), search.asDeferred(10));
 ```
 
-The palette contributes one inline ES module per document, shared by all palettes on the page. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `PageCompiler.compile(...)` output. Pages without palettes receive no search script.
+The palette contributes one client behavior per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed asset through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `PageCompiler.compile(...)` output. Pages without palettes receive no search script.
 
 The module registers a customized native `<dialog is="tessera-search">` element. The browser upgrades each instance and owns modal opening, focus trapping, and light dismissal. Escape requests native dialog dismissal through `requestClose()`. Component lifecycle callbacks install event listeners with an `AbortSignal` and release them on disconnection. CSS `:has()` hides empty result groups; JavaScript handles filtering and result selection.
 
@@ -313,11 +335,13 @@ The runtime reads the palette's rendered links. The generated `search-index.json
 
 ```sh
 just test       # fast compiler, component, and site tests
-just browsers   # install the configured Chromium build
-just verify     # unit tests, browser tests, and quality gates
-just guide     # generate the runnable example
+just browsers   # install the latest Chromium and Firefox builds
+just verify     # unit tests, both browser suites, audits, and quality gates
+just guide      # generate the runnable example
 ```
 
 Upload the entire `target/guide` directory, including its assets. This example publishes at the origin root. Configure your host to serve directory indexes and redirect `/guide` to `/guide/`.
 
-For failures in the showcase's browser suite, inspect the reports under `tessera-showcase/target/failsafe-reports` and traces/screenshots under `tessera-showcase/target/playwright`.
+The browser suite runs on latest Chromium and latest Firefox. It includes axe-core WCAG A/AA audits, keyboard flows for interactive widgets, forced-colors, reduced-motion, 200% zoom, text-spacing checks, and committed accessibility-tree snapshots. A changed snapshot is a changed experience: review the diff, then regenerate with `-Dtessera.bless=true` when the change is intentional.
+
+For failures in the showcase's browser suite, inspect the reports under `tessera-showcase/target/failsafe-reports` and traces/screenshots under `tessera-showcase/target/playwright/{chromium,firefox}`.

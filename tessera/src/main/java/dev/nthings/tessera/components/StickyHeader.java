@@ -19,8 +19,9 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 
-/// State-aware sticky header backed by Chrome 156+ `container-type: scroll-state` and `@container
-/// <name> scroll-state(stuck: top)`.
+/// State-aware sticky header backed by `container-type: scroll-state` and `@container <name>
+/// scroll-state(stuck: top)` where supported; sticky positioning and the base surface remain
+/// available otherwise.
 ///
 /// The outer `:scope` acts as the `position: sticky` scroll-state container, while the inner
 /// `<header class="sticky-surface">` queries `scroll-state(stuck: top)` to apply backdrop blur

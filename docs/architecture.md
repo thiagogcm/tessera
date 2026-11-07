@@ -12,7 +12,10 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 
 - `IntoElement` is the authoring conversion contract. The sealed `Element` hierarchy allows exhaustive compiler dispatch.
 - `RenderOnce` expands without adding a scope. `RenderView` establishes an identity namespace and optional CSS scope before expansion.
+- `FragmentElement` groups sibling elements without emitting a wrapper, preserving direct-child content models.
+- `TagName` is the sealed element-name family: the built-in `HtmlTag` enum or an author-defined `CustomElement`.
 - `ElementRef` is an identity token, `ElementId` a local identifier, and `IdReference` an attribute reference resolved after expansion.
+- `ClientBehavior` is a deduplicated ES module contribution. It emits inline for standalone pages or as a content-hashed asset when output publishes external files.
 - `Styled`, `InteractiveElement`, `ParentElement`, and `FluentBuilder` share authoring operations without unchecked self casts.
 - `Styled` composes six traits by concern: `LayoutStyled`, `BoxStyled`, `TextStyled`, `EffectStyled`, `ScrollStyled`, and `AnchorStyled`. Every style method takes a typed value of the category its property accepts, so a color cannot be passed where a length belongs.
 - `CssValue` is the sealed family of those values: `CssLength` (dimensions, `calc`, `min`/`max`, `anchor()`), `CssColor` (OKLCH, `color-mix`, `light-dark`, relative colors), `CssNumber`, `CssDuration`, `Easing`, `Border`, `Shadow`, `Background`, `TrackList`, `GridPlacement`, `Transform`, `AspectRatio`, `CssIdent`, and enums for keyword sets (`CssKeyword`). `StyleRefinement` accepts declarations only from the `css` package, so no declaration is built from raw text.
@@ -107,8 +110,9 @@ block
 
 | Task | Entry points and contracts |
 | --- | --- |
-| Author HTML | `Elements`, `TagElement`, `IntoElement`, sealed `Element` variants |
+| Author HTML | `Elements`, `TagElement`, `TagName` (`HtmlTag`, `CustomElement`), `FragmentElement`, `IntoElement`, sealed `Element` variants |
 | Build components | `RenderOnce`, `RenderView`, `ParentElement`, `InteractiveElement`, `Styled` |
+| Add client behavior | `ClientBehavior`, `RenderContext.contributeBehavior(...)`, `CompiledPage.assets()` |
 | Author styles | `Styled` and its six traits, the `CssValue` family (`CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, ...), `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
 | Declare accessibility semantics | `Accessible`, `Role` (name, children, state, and `aria-*` requirements) |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
@@ -121,7 +125,7 @@ block
 | Derive navigation | `navigation.SiteNavigation.searchPalette(...)`, `docPager(...)` |
 | Use supplied UI | Public factories and builders in `components` |
 
-`CompiledPage` contains HTML, an optional external stylesheet path, and CSS text. `CompiledSite` contains ordered routes and published files, shared CSS, and readers for generated artifacts. Output types are independent of the functions producing them.
+`CompiledPage` contains HTML, an optional external stylesheet path, CSS text, and generated assets such as external client behavior modules. `CompiledSite` contains ordered routes and published files, shared CSS, and readers for generated artifacts. Output types are independent of the functions producing them.
 
 ## Page compilation contracts
 
@@ -152,9 +156,9 @@ flowchart TD
 
 `ResolvedNode` and its variants are package-private. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
 
-`PreparedPage` has no public constructor, node accessors, or document-state accessor. Public metadata consists of snapshots of IDs, outgoing URLs, transition keys, and headings. Its stylesheet collector is copied and privately owned. `contributeStylesTo(target)` copies rules into a caller-owned collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
+`PreparedPage` has no public constructor, node accessors, or document-state accessor. Public metadata consists of snapshots of IDs, outgoing URLs, transition keys, headings, and client behaviors. Its stylesheet collector is copied and privately owned. `contributeStylesTo(target)` copies rules into a caller-owned collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
 
-`HtmlWriter` owns HTML context encoding and the document envelope. External CSS paths derive from final stylesheet content, allowing every route to reference the same merged stylesheet. Authored CSS and explicitly raw HTML remain trusted input.
+`HtmlWriter` owns HTML context encoding and the document envelope. External CSS paths derive from final stylesheet content, allowing every route to reference the same merged stylesheet. Client behaviors are emitted once per page: inline module scripts for `OutputMode.InlineStyle`, or content-hashed module assets under the same external asset base for `OutputMode.ExternalAsset`. Authored CSS and explicitly raw HTML remain trusted input.
 
 ## Document metadata and component state
 
@@ -276,9 +280,9 @@ Existing tests cover scoped identities, linking failures, late TOCs, deferred fo
 
 The showcase is also the browser acceptance suite. It compiles through public `SiteCompiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
 
-JUnit reuses Chromium across the suite and creates a fresh browser context per test. Documentation routes are opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Named cases are routes under `/stories/{case}/{variant}/{appearance}/{density}/`. Documentation sections and browser tests call the same factories, and each case page contributes the chosen `color-scheme` and density in its document head. Those cases are opened at the same widths for the overflow check. Each component case is also compared with a committed accessibility-tree snapshot (`ShowcaseIT`, `src/test/resources/aria`); a changed snapshot is a changed experience for assistive technology, and `-Dtessera.bless=true` rewrites them. Interaction tests exercise dialog focus and dismissal, popover light dismissal, field labels and validation, tabs, exclusive accordions, route and fragment navigation, switches, and case freshness. These complement the library tests' compiler diagnostics and output assertions.
+JUnit runs the same browser suite on the latest Playwright Chromium and Firefox, reusing each browser across its class and creating a fresh browser context per test. Documentation routes are opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Named cases are routes under `/stories/{case}/{variant}/{appearance}/{density}/`. Documentation sections and browser tests call the same factories, and each case page contributes the chosen `color-scheme` and density in its document head. Those cases are opened at the same widths for the overflow check. Each component case is also compared with a committed accessibility-tree snapshot (`src/test/resources/aria`); a changed snapshot is a changed experience for assistive technology, and `-Dtessera.bless=true` rewrites them. Documentation routes additionally run axe-core WCAG A/AA audits, keyboard flows for every interactive widget, forced-colors, reduced-motion, 200% zoom, and text-spacing checks. These complement the library tests' compiler diagnostics and output assertions.
 
-Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium and operating-system dependencies before full verification. There is no browser-version matrix. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright` directory.
+Surefire runs unit tests during `test`. Failsafe runs `*IT` tests during `integration-test` and checks results at `verify`. Browser installation is an explicit setup command (`just browsers`); CI installs the configured release's Chromium, Firefox, and operating-system dependencies before full verification. There is no browser-version matrix: the contract is the latest stable release of each supported engine. Tests retain Playwright traces and failure screenshots under the showcase module's `target/playwright/{chromium,firefox}` directory.
 
 Invoker checks establish target existence and require the appropriate dialog or popover target for Tessera's built-in commands. Custom commands remain valid for arbitrary existing targets. Trusted raw HTML is not parsed, and JSON escaping retains the existing serializer's behavior. These concerns have isolated owners in validators and artifact serialization.
 
@@ -286,8 +290,8 @@ Invoker checks establish target existence and require the appropriate dialog or 
 
 The design-token registry covers colors, font families, the type scale, tracking, spacing, corner radii, line height, motion durations, and component density. `DesignToken` is sealed by category: `Color`, `Length`, `Duration`, `FontFamily`, and `Number`. `Length` tokens are `CssLength` values, so they work in length-valued authoring directly. `withValue` overrides a token without changing its category. Spacing tokens include the density multiplier; font sizes, tracking, and durations do not. `Typography` and `Motion` expand into the same declaration pipeline as other style values. Component roles in `Roles` alias registry tokens, so a theme replaces the role or the underlying scale through `Tokens.register`. Built-in components use CSS variable references, so an override changes rendered appearance without changing the component tree. Layout widths and breakpoint definitions remain separately authored values. `Button` and `IconButton` emit native buttons. Tone, surface, and size are separate from submit and invoker behavior.
 
-`SearchPalette` always renders a functional search input and grouped result links. It contributes a bundled inline ES module once per document using the render context, so standalone pages and compiled sites carry the behavior automatically. No component-to-site dependency or manual asset registration is needed.
+`SearchPalette` always renders a functional search input and grouped result links. It contributes a `ClientBehavior` once per document using the render context, so standalone pages and compiled sites carry the behavior automatically. The behavior is inlined for standalone output and published as a content-hashed module asset when the page uses external assets. No component-to-site dependency or manual asset registration is needed. `ContentTabs` uses the same path for ARIA tab selection and roving tabindex. `TooltipBehavior` is contributed when an `interestTooltip` is resolved; it supplies hover and focus handling where native interest invokers are absent.
 
-The module defines a customized built-in `HTMLDialogElement`. Browser upgrade and lifecycle callbacks scope behavior to each palette; `AbortController` removes listeners when an instance disconnects. Native invoker commands and dialog behavior handle opening, focus trapping, and dismissal. Selection uses native `requestClose()` and anchor navigation, while CSS `:has()` controls empty-group visibility. The module has private instance fields and caches normalized search entries per instance. It needs no document-wide initializer, index fetch, or polyfills for the target browser.
+The search module defines a customized built-in `HTMLDialogElement`. Browser upgrade and lifecycle callbacks scope behavior to each palette; `AbortController` removes listeners when an instance disconnects. Native invoker commands and dialog behavior handle opening, focus trapping, and dismissal. Selection uses native `requestClose()` and anchor navigation, while CSS `:has()` controls empty-group visibility. The module has private instance fields and caches normalized search entries per instance. It needs no document-wide initializer, index fetch, or polyfills for the target browsers. The tabs module defines an autonomous `tessera-tabs` element, selects panels through `aria-controls`, and moves focus with Arrow Left, Arrow Right, Home, and End.
 
 The [consumer guide](consumer-guide.md) and its runnable `GuideSite` demonstrate these public APIs together. Browser tests cover filtered navigation, empty-state recovery, custom token rendering, and encoded relative links over published files.

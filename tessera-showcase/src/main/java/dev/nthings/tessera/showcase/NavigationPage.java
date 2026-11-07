@@ -78,19 +78,20 @@ final class NavigationPage {
   private static Demo contentTabs() {
     return Demo.of("content-tabs", "Content tabs")
         .summary(
-            "In-page tab panels driven by a radio group: the checked label anchors the sliding "
-                + "indicator and :has() reveals the matching panel.")
-        .features(":has(:checked)", "anchor positioning", "radio group")
+            "In-page tab panels follow the ARIA tabs pattern with roving tabindex and arrow-key "
+                + "navigation; a bundled client behavior switches the server-rendered panels.")
+        .features("role=tablist", "roving tabindex", "Arrow keys")
         .example(
             Tabs.contentTabs(
                 "demo-tabs",
+                "Pipeline stages",
                 List.of(
                     TabPanel.of(
                         "Java", p().text("Components are plain Java records and builders.")),
                     TabPanel.of("HTML", p().text("Output is semantic, validated HTML.")),
                     TabPanel.of("CSS", p().text("Styles compile into one layered stylesheet.")))))
         .code(
-            "Tabs.contentTabs(\"tabs\", List.of(",
+            "Tabs.contentTabs(\"tabs\", \"Pipeline stages\", List.of(",
             "    TabPanel.of(\"Java\", p().text(\"…\")), TabPanel.of(\"HTML\", p().text(\"…\"))));");
   }
 

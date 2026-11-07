@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <name>tessera</name>
-    <description>Declarative, multi-phase HTML/CSS view engine for JDK 25 targeting Baseline 2026+ (Chrome 156+).</description>
+    <description>Declarative, multi-phase HTML/CSS view engine for JDK 25 targeting the latest Chromium and Firefox.</description>
     <url>https://github.com/thiagogcm/tessera</url>
     <inceptionYear>2026</inceptionYear>
 
@@ -46,6 +46,7 @@
         <exec-maven-plugin.version>3.6.4</exec-maven-plugin.version>
         <playwright.version>1.64.0</playwright.version>
         <assertj-core.version>3.27.7</assertj-core.version>
+        <axe-core.version>4.14.0</axe-core.version>
         <checkstyle.version>14.4.0</checkstyle.version>
         <errorprone.version>2.51.0</errorprone.version>
         <google-java-format.version>1.32.0</google-java-format.version>

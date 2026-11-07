@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -62,6 +63,11 @@ final class PageValidator {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedSlot _ -> throw unlinked();
+      case ResolvedFragment fragment -> {
+        for (var child : fragment.children()) {
+          validateNodeTree(child, state);
+        }
+      }
       case ResolvedTag tag -> {
         validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
@@ -218,6 +224,7 @@ final class PageValidator {
             case ResolvedText(var text) -> !text.isBlank();
             case ResolvedRaw(var raw) -> !raw.isBlank();
             case ResolvedEmpty _ -> false;
+            case ResolvedFragment(var nestedChildren) -> containsReadableText(nestedChildren);
             case ResolvedSlot _ -> throw unlinked();
             case ResolvedTag nested ->
                 (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))

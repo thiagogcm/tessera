@@ -15,6 +15,7 @@ public final class DocumentState {
   private final Map<DocumentKey<?>, Object> values = new LinkedHashMap<>();
   private final List<Contribution<Element>> headElements = new ArrayList<>();
   private final Map<String, DocumentHeading> headings = new LinkedHashMap<>();
+  private final Map<String, ClientBehavior> behaviors = new LinkedHashMap<>();
   private final Map<DocumentKey<?>, Contribution<Supplier<? extends IntoElement>>>
       documentEndSections = new LinkedHashMap<>();
 
@@ -48,6 +49,16 @@ public final class DocumentState {
       List<String> componentPath,
       @Nullable SourceLocation origin) {
     documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath, origin));
+  }
+
+  /// Registers `behavior` once per document; later contributions with the same id are ignored.
+  void contributeBehavior(ClientBehavior behavior) {
+    behaviors.putIfAbsent(behavior.id(), behavior);
+  }
+
+  /// Registered client behaviors in contribution order.
+  public List<ClientBehavior> behaviors() {
+    return List.copyOf(behaviors.values());
   }
 
   public List<Contribution<Element>> headElements() {

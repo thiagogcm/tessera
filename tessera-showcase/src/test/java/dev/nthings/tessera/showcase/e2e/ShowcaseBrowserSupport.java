@@ -4,11 +4,14 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.ForcedColors;
+import com.microsoft.playwright.options.ReducedMotion;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
 import dev.nthings.tessera.components.Card;
@@ -31,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
@@ -40,25 +44,31 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-@DisplayName("Showcase browser behavior")
-class ShowcaseIT {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+abstract class ShowcaseBrowserSupport {
   private static final Path ARIA_SNAPSHOTS = Path.of("src", "test", "resources", "aria");
-  @TempDir private static Path publishedSite;
-  private static HttpServer server;
-  private static Playwright playwright;
-  private static Browser browser;
-  private static String baseUrl;
+  private Path publishedSite;
+  private HttpServer server;
+  private Playwright playwright;
+  private Browser browser;
+  private String baseUrl;
   private BrowserContext context;
   private Page page;
+
+  /// Browser under test, provided by the concrete Chromium or Firefox suite.
+  protected abstract BrowserType browserType(Playwright playwright);
+
+  /// Stable directory name for traces and failure screenshots.
+  protected abstract String browserSlug();
 
   @RegisterExtension
   final TestExecutionExceptionHandler screenshotOnFailure =
@@ -71,7 +81,8 @@ class ShowcaseIT {
       };
 
   @BeforeAll
-  static void publishAndLaunch() {
+  void publishAndLaunch() throws IOException {
+    publishedSite = Files.createTempDirectory("tessera-showcase");
     var compiled = SiteCompiler.compile(ShowcaseSite.createDefinition());
     SiteWriter.writeToDirectory(compiled, publishedSite);
     // This published fixture proves one theme can change multiple independently authored
@@ -155,11 +166,11 @@ class ShowcaseIT {
     server.start();
     baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
     playwright = Playwright.create();
-    browser = playwright.chromium().launch();
+    browser = browserType(playwright).launch();
   }
 
   @AfterAll
-  static void stop() {
+  void stop() {
     if (playwright != null) {
       playwright.close();
     }
@@ -183,8 +194,9 @@ class ShowcaseIT {
     context.close();
   }
 
-  private static Path artifactPath(String test, String extension) {
-    return Path.of("target", "playwright", test.replaceAll("[^a-zA-Z0-9-]", "_") + extension);
+  private Path artifactPath(String test, String extension) {
+    return Path.of(
+        "target", "playwright", browserSlug(), test.replaceAll("[^a-zA-Z0-9-]", "_") + extension);
   }
 
   private static Stream<Arguments> routesAndViewports() {
@@ -374,8 +386,7 @@ class ShowcaseIT {
   @DisplayName("search filters visible links and navigates by keyboard")
   void searchFiltersVisibleLinksAndNavigatesByKeyboard() {
     page.navigate(baseUrl + "/");
-    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search").setExact(true))
-        .click();
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search")).click();
     var dialog =
         page.getByRole(
             AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Quick open command palette"));
@@ -399,8 +410,7 @@ class ShowcaseIT {
   @DisplayName("search handles empty results clearing and enter from the query")
   void searchHandlesEmptyResultsClearingAndEnterFromTheQuery() {
     page.navigate(baseUrl + "/");
-    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search").setExact(true))
-        .click();
+    page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Search")).click();
     var dialog = page.getByRole(AriaRole.DIALOG);
     var query = dialog.getByRole(AriaRole.SEARCHBOX);
     query.fill("not-a-real-component");
@@ -646,7 +656,264 @@ class ShowcaseIT {
     Assertions.assertThat(actual).isEqualTo(Files.readString(snapshot));
   }
 
-  private static String caseUrl(String story, String variant) {
+  @Test
+  @DisplayName("documentation routes have no WCAG A/AA axe violations")
+  void documentationRoutesHaveNoAxeViolations() {
+    // Auditing the settled, reduced-motion rendering keeps entry animations from changing
+    // computed contrast while axe samples the page.
+    page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+    for (var route : documentationRoutes()) {
+      page.navigate(baseUrl + route.path());
+      waitForBehaviors();
+      var violations = Axe.violations(page);
+      Assertions.assertThat(violations).as("axe violations on %s", route.path()).isEmpty();
+    }
+  }
+
+  @Test
+  @DisplayName("content tabs switch with arrow, Home, and End keys")
+  void contentTabsSwitchWithKeyboard() {
+    page.navigate(baseUrl + "/navigation");
+    waitForBehaviors();
+    var javaTab = tab("Java");
+    javaTab.focus();
+    page.keyboard().press("ArrowRight");
+    var htmlTab = tab("HTML");
+    assertThat(htmlTab).isFocused();
+    assertThat(htmlTab).hasAttribute("aria-selected", "true");
+    assertThat(htmlTab).hasAttribute("tabindex", "0");
+    assertThat(javaTab).hasAttribute("tabindex", "-1");
+    assertThat(page.getByRole(AriaRole.TABPANEL, new Page.GetByRoleOptions().setName("HTML")))
+        .isVisible();
+    page.keyboard().press("End");
+    assertThat(tab("CSS")).isFocused();
+    page.keyboard().press("Home");
+    assertThat(javaTab).isFocused();
+  }
+
+  @Test
+  @DisplayName("content tabs follow RTL visual order")
+  void contentTabsFollowRtlOrder() {
+    page.navigate(baseUrl + "/navigation");
+    waitForBehaviors();
+    page.evaluate("document.querySelector('tessera-tabs').dir = 'rtl'");
+    var javaTab = tab("Java");
+    javaTab.focus();
+    page.keyboard().press("ArrowLeft");
+    assertThat(tab("HTML")).isFocused();
+    page.keyboard().press("ArrowRight");
+    assertThat(javaTab).isFocused();
+  }
+
+  @Test
+  @DisplayName("modal opens from the keyboard and restores focus on Escape")
+  void modalKeyboardFlow() {
+    page.navigate(caseUrl("modal", "closed"));
+    waitForBehaviors();
+    var trigger = namedButton("Open modal");
+    var dialog =
+        page.getByRole(AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?"));
+    trigger.focus();
+    page.keyboard().press("Enter");
+    assertThat(dialog).isVisible();
+    assertThat(dialog.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Got it")))
+        .isFocused();
+    page.keyboard().press("Escape");
+    assertThat(dialog).isHidden();
+    assertThat(trigger).isFocused();
+  }
+
+  @Test
+  @DisplayName("drawer opens from the keyboard and restores focus on Escape")
+  void drawerKeyboardFlow() {
+    page.navigate(baseUrl + "/overlays");
+    waitForBehaviors();
+    var trigger =
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Open start drawer"));
+    var drawer =
+        page.getByRole(
+            AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Filters").setExact(true));
+    trigger.focus();
+    page.keyboard().press("Enter");
+    assertThat(drawer).isVisible();
+    page.keyboard().press("Escape");
+    assertThat(drawer).isHidden();
+    assertThat(trigger).isFocused();
+  }
+
+  @Test
+  @DisplayName("popover opens from the keyboard and dismisses with Escape")
+  void popoverKeyboardFlow() {
+    page.navigate(caseUrl("popover", "toggle"));
+    waitForBehaviors();
+    var trigger =
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Toggle popover"));
+    trigger.focus();
+    page.keyboard().press("Enter");
+    assertThat(popoverCopy()).isVisible();
+    page.keyboard().press("Escape");
+    assertThat(popoverCopy()).isHidden();
+    assertThat(trigger).isFocused();
+  }
+
+  @Test
+  @DisplayName("interest tooltip opens on hover and focus")
+  void interestTooltipOpensOnHoverAndFocus() {
+    page.navigate(baseUrl + "/overlays");
+    waitForBehaviors();
+    var trigger = namedButton("Hover me");
+    var tooltip =
+        page.locator("[role=tooltip]")
+            .filter(new Locator.FilterOptions().setHasText("Saved 2 minutes ago"));
+    trigger.hover();
+    assertThat(tooltip).isVisible();
+    page.mouse().move(0, 0);
+    assertThat(tooltip).isHidden();
+    trigger.focus();
+    assertThat(tooltip).isVisible();
+    page.evaluate("document.activeElement.blur()");
+    assertThat(tooltip).isHidden();
+  }
+
+  @Test
+  @DisplayName("dropdown opens from the keyboard and dismisses with Escape")
+  void dropdownKeyboardFlow() {
+    page.navigate(baseUrl + "/");
+    waitForBehaviors();
+    var trigger = namedButton("Pages");
+    var panel = page.locator("[popover]:popover-open");
+    trigger.focus();
+    page.keyboard().press("Enter");
+    assertThat(panel).isVisible();
+    assertThat(panel.getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName("Layout")))
+        .isVisible();
+    page.keyboard().press("Escape");
+    assertThat(panel).isHidden();
+    assertThat(trigger).isFocused();
+  }
+
+  @Test
+  @DisplayName("accordion toggles from the keyboard")
+  void accordionKeyboardFlow() {
+    page.navigate(baseUrl + "/navigation");
+    waitForBehaviors();
+    var summary =
+        page.locator("summary")
+            .filter(new Locator.FilterOptions().setHasText("Does it need JavaScript?"));
+    var body =
+        page.getByText(
+            "No. Disclosure is native HTML.", new Page.GetByTextOptions().setExact(true));
+    summary.focus();
+    page.keyboard().press("Enter");
+    assertThat(body).isHidden();
+    page.keyboard().press("Enter");
+    assertThat(body).isVisible();
+  }
+
+  @Test
+  @DisplayName("switch toggles with Space")
+  void switchKeyboardFlow() {
+    page.navigate(caseUrl("switches", "on"));
+    waitForBehaviors();
+    var toggle =
+        page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest"));
+    toggle.focus();
+    page.keyboard().press("Space");
+    assertThat(toggle).not().isChecked();
+    page.keyboard().press("Space");
+    assertThat(toggle).isChecked();
+  }
+
+  @Test
+  @DisplayName("carousel scrolls horizontally from the keyboard")
+  void carouselScrollsFromKeyboard() {
+    page.setViewportSize(390, 900);
+    page.navigate(baseUrl + "/navigation");
+    waitForBehaviors();
+    var carousel =
+        page.getByRole(AriaRole.REGION, new Page.GetByRoleOptions().setName("Platform highlights"));
+    carousel.scrollIntoViewIfNeeded();
+    carousel.focus();
+    var before = number(carousel.evaluate("el => el.scrollLeft"));
+    page.keyboard().press("ArrowRight");
+    page.waitForTimeout(400);
+    var after = number(carousel.evaluate("el => el.scrollLeft"));
+    Assertions.assertThat(after).as("keyboard scrolls the carousel").isGreaterThan(before);
+  }
+
+  @Test
+  @DisplayName("documentation content stays visible in forced colors")
+  void forcedColorsKeepContentVisible() {
+    page.emulateMedia(new Page.EmulateMediaOptions().setForcedColors(ForcedColors.ACTIVE));
+    page.navigate(baseUrl + "/docs");
+    assertThat(page.locator("h1")).isVisible();
+    Assertions.assertThat(page.evaluate("matchMedia('(forced-colors: active)').matches"))
+        .isEqualTo(true);
+    Assertions.assertThat(fitsViewport()).as("no horizontal overflow").isTrue();
+    var button = page.getByRole(AriaRole.BUTTON).first();
+    var visibleBoundary =
+        button.evaluate(
+            """
+            (el) => {
+              const style = getComputedStyle(el);
+              return style.borderTopStyle !== 'none'
+                || style.outlineStyle !== 'none'
+                || style.backgroundColor !== 'rgba(0, 0, 0, 0)';
+            }
+            """);
+    Assertions.assertThat(visibleBoundary).isEqualTo(true);
+  }
+
+  @Test
+  @DisplayName("reduced motion removes motion-safe transitions")
+  void reducedMotionRemovesMotionSafeTransitions() {
+    page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+    page.navigate(baseUrl + "/navigation");
+    Assertions.assertThat(page.evaluate("matchMedia('(prefers-reduced-motion: reduce)').matches"))
+        .isEqualTo(true);
+    var duration =
+        (String)
+            page.locator("summary .accordion-chevron")
+                .first()
+                .evaluate("el => getComputedStyle(el).transitionDuration");
+    Assertions.assertThat(duration).contains("0s").doesNotContain("0.15s", "0.2s", "0.25s");
+  }
+
+  @Test
+  @DisplayName("200% zoom with enlarged text spacing keeps content reachable")
+  void textSpacingAtTwoHundredPercentZoom() {
+    page.setViewportSize(640, 900);
+    page.navigate(baseUrl + "/docs");
+    page.addStyleTag(
+        new Page.AddStyleTagOptions()
+            .setContent(
+                """
+                * {
+                  line-height: 1.5 !important;
+                  letter-spacing: 0.12em !important;
+                  word-spacing: 0.16em !important;
+                }
+                p { margin-bottom: 2em !important; }
+                """));
+    assertThat(page.locator("h1")).isVisible();
+    Assertions.assertThat(fitsViewport()).as("no horizontal overflow with enlarged text").isTrue();
+  }
+
+  private Locator tab(String name) {
+    return page.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName(name).setExact(true));
+  }
+
+  private List<SiteRoute> documentationRoutes() {
+    return ShowcaseSite.createDefinition().routes().stream()
+        .filter(route -> !route.path().startsWith("/stories/"))
+        .toList();
+  }
+
+  private void waitForBehaviors() {
+    page.waitForFunction("() => document.querySelectorAll(':not(:defined)').length === 0");
+  }
+
+  private String caseUrl(String story, String variant) {
     return baseUrl + Catalog.casePath(story, variant);
   }
 

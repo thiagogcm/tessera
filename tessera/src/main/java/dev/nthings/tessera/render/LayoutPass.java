@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.DocumentState;
 import dev.nthings.tessera.core.DocumentState.Contribution;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.EmptyElement;
+import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.LateElement;
@@ -20,6 +21,7 @@ import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -108,6 +110,16 @@ final class LayoutPass {
                 state.lateSlots.set(
                     slot, ctx.reenter(() -> requestLayout(content.get().intoElement(), state))));
         yield new ResolvedSlot(slot);
+      }
+      case FragmentElement fragment -> {
+        var children = new ArrayList<ResolvedNode>(fragment.childrenList().size());
+        for (var child : fragment.childrenList()) {
+          var resolved = requestLayout(child, state);
+          if (!(resolved instanceof ResolvedEmpty)) {
+            children.add(resolved);
+          }
+        }
+        yield new ResolvedFragment(children);
       }
       case RenderViewElement(var view, var source) -> {
         var entityId = view.entityId();
@@ -235,6 +247,7 @@ final class LayoutPass {
       var tooltipDomId = domId + "--tooltip";
       attrs.put("interestfor", tooltipDomId);
       state.registerDomId(tooltipDomId, location);
+      ctx.contributeBehavior(TooltipBehavior.INSTANCE);
       companionTooltip = resolveTag(tooltipElement, tooltipDomId, state);
     }
 

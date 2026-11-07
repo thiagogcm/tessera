@@ -24,19 +24,21 @@ import org.jspecify.annotations.Nullable;
 public final class Badge implements RenderView, FluentBuilder<Badge> {
 
   public enum Tone {
-    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD),
-    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
-    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white()),
-    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75)),
-    DANGER(Tokens.STATUS_DANGER, CssColor.white()),
-    INFO(Tokens.STATUS_INFO, CssColor.white());
+    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD, Tokens.TEXT_MUTED),
+    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white(), Tokens.ACCENT_TEXT),
+    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white(), Tokens.STATUS_SUCCESS_TEXT),
+    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75), Tokens.STATUS_WARNING_TEXT),
+    DANGER(Tokens.STATUS_DANGER, CssColor.white(), Tokens.STATUS_DANGER_TEXT),
+    INFO(Tokens.STATUS_INFO, CssColor.white(), Tokens.STATUS_INFO_TEXT);
 
     private final DesignToken.Color token;
     private final CssColor onSolid;
+    private final DesignToken.Color onTint;
 
-    Tone(DesignToken.Color token, CssColor onSolid) {
+    Tone(DesignToken.Color token, CssColor onSolid, DesignToken.Color onTint) {
       this.token = token;
       this.onSolid = onSolid;
+      this.onTint = onTint;
     }
 
     public DesignToken.Color token() {
@@ -301,10 +303,10 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
       scope
           .select(
               selector + cssName(Variant.TINTED),
-              s -> s.bg(tintFill).textColor(token).borderSubtle(tintEdge))
+              s -> s.bg(tintFill).textColor(tone.onTint).borderSubtle(tintEdge))
           .select(
               selector + cssName(Variant.OUTLINE),
-              s -> s.bg(CssColor.transparent()).textColor(token).borderSubtle(outlineEdge))
+              s -> s.bg(CssColor.transparent()).textColor(tone.onTint).borderSubtle(outlineEdge))
           .select(
               selector + cssName(Variant.SOLID),
               s -> s.bg(token).textColor(tone.onSolid).borderSubtle(CssColor.transparent()));

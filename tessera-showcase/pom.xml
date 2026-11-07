@@ -38,6 +38,12 @@
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>axe-core</artifactId>
+            <version>${axe-core.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

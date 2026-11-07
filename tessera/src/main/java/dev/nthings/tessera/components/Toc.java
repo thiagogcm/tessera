@@ -197,7 +197,7 @@ public final class Toc {
           .select(
               ":scope a:target-current",
               s ->
-                  s.textColor(Tokens.ACCENT_PRIMARY)
+                  s.textColor(Tokens.ACCENT_TEXT)
                       .fontWeight(600)
                       .borderInlineStart(Border.solid(CssLength.px(3), Tokens.ACCENT_PRIMARY))
                       .bg(HighlightTone.ACCENT.background()));

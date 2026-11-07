@@ -30,9 +30,10 @@ import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Pure CSS scroll-snap carousel backed by Chrome 156+ `scroll-snap-type: x mandatory`,
-/// `container-type: scroll-state` with `@container scroll-state(snapped: x)`, and native
-/// `scroll-marker-group: after` / `::scroll-marker:target-current` pagination dots.
+/// Pure CSS scroll-snap carousel backed by `scroll-snap-type: x mandatory`. Chromium adds
+/// `container-type: scroll-state` with `@container scroll-state(snapped: x)` and native
+/// `scroll-marker-group` / `::scroll-marker` pagination; other browsers keep the scrollable track
+/// and keyboard access.
 public final class Carousel implements RenderView {
 
   private static final CssIdent ITEM_COUNTER = CssIdent.of("carousel-item");
@@ -208,7 +209,7 @@ public final class Carousel implements RenderView {
 
   @Override
   public Element render() {
-    var track = div().role(Role.REGION).ariaLabel(ariaLabel);
+    var track = div().role(Role.REGION).ariaLabel(ariaLabel).tabIndex(0);
     for (var slide : slides) {
       track.child(
           div()

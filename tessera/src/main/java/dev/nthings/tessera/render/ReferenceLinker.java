@@ -2,6 +2,7 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IdReference;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import java.util.ArrayList;
@@ -21,6 +22,13 @@ final class ReferenceLinker {
         throw new IllegalStateException("Late element was linked before it was laid out");
       }
       return link(content, state);
+    }
+    if (node instanceof ResolvedFragment fragment) {
+      var children = new ArrayList<ResolvedNode>(fragment.children().size());
+      for (var child : fragment.children()) {
+        children.add(link(child, state));
+      }
+      return new ResolvedFragment(children);
     }
     if (!(node instanceof ResolvedTag tag)) {
       return node;

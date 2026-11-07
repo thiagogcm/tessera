@@ -3,6 +3,7 @@ package dev.nthings.tessera.render;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -56,6 +57,11 @@ final class AccessibilityRules {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedSlot _ -> throw PageValidator.unlinked();
+      case ResolvedFragment fragment -> {
+        for (var child : fragment.children()) {
+          visit(child, context);
+        }
+      }
       case ResolvedTag tag -> {
         checkTag(tag, context);
         var inner =
@@ -179,8 +185,8 @@ final class AccessibilityRules {
     }
     var attrs = tag.attributes();
     return switch (tag.tag()) {
-      case IMG -> PageValidator.isNonBlank(attrs.get("alt"));
-      case INPUT, SELECT, TEXTAREA -> {
+      case HtmlTag.IMG -> PageValidator.isNonBlank(attrs.get("alt"));
+      case HtmlTag.INPUT, HtmlTag.SELECT, HtmlTag.TEXTAREA -> {
         var id = attrs.get("id");
         yield context.labelled()
             || (id != null && state.labelledControlIds.contains(id))
@@ -200,17 +206,24 @@ final class AccessibilityRules {
 
   private static boolean ownsAny(ResolvedTag tag, Set<Role> roles) {
     for (var child : tag.children()) {
-      if (child instanceof ResolvedTag nested && isOrOwnsAny(nested, roles)) {
+      if (ownsAny(child, roles)) {
         return true;
       }
     }
     var companion = tag.companionSibling();
-    return companion != null && isOrOwnsAny(companion, roles);
+    return companion != null && ownsAny(companion, roles);
   }
 
-  private static boolean isOrOwnsAny(ResolvedTag tag, Set<Role> roles) {
-    var role = effectiveRole(tag);
-    return (role != null && roles.contains(role)) || ownsAny(tag, roles);
+  private static boolean ownsAny(ResolvedNode node, Set<Role> roles) {
+    return switch (node) {
+      case ResolvedTag tag -> {
+        var role = effectiveRole(tag);
+        yield (role != null && roles.contains(role)) || ownsAny(tag, roles);
+      }
+      case ResolvedFragment fragment ->
+          fragment.children().stream().anyMatch(child -> ownsAny(child, roles));
+      default -> false;
+    };
   }
 
   // --- Roles, explicit and implicit ---
@@ -230,27 +243,27 @@ final class AccessibilityRules {
   private static @Nullable Role implicitRole(ResolvedTag tag) {
     var attrs = tag.attributes();
     return switch (tag.tag()) {
-      case MAIN -> Role.MAIN;
-      case NAV -> Role.NAVIGATION;
-      case ASIDE -> Role.COMPLEMENTARY;
-      case SEARCH -> Role.SEARCH;
-      case DIALOG -> Role.DIALOG;
-      case UL, OL -> Role.LIST;
-      case LI -> Role.LISTITEM;
-      case H1, H2, H3, H4, H5, H6 -> Role.HEADING;
-      case BUTTON -> Role.BUTTON;
-      case A -> attrs.containsKey("href") ? Role.LINK : null;
-      case IMG -> "".equals(attrs.get("alt")) ? Role.PRESENTATION : Role.IMG;
-      case TABLE -> Role.TABLE;
-      case HR -> Role.SEPARATOR;
-      case ARTICLE -> Role.ARTICLE;
-      case OUTPUT -> Role.STATUS;
-      case OPTION -> Role.OPTION;
-      case TEXTAREA -> Role.TEXTBOX;
-      case SELECT -> Role.COMBOBOX;
-      case FORM -> PageValidator.hasAriaName(tag) ? Role.FORM : null;
-      case SECTION -> PageValidator.hasAriaName(tag) ? Role.REGION : null;
-      case INPUT ->
+      case HtmlTag.MAIN -> Role.MAIN;
+      case HtmlTag.NAV -> Role.NAVIGATION;
+      case HtmlTag.ASIDE -> Role.COMPLEMENTARY;
+      case HtmlTag.SEARCH -> Role.SEARCH;
+      case HtmlTag.DIALOG -> Role.DIALOG;
+      case HtmlTag.UL, HtmlTag.OL -> Role.LIST;
+      case HtmlTag.LI -> Role.LISTITEM;
+      case HtmlTag.H1, HtmlTag.H2, HtmlTag.H3, HtmlTag.H4, HtmlTag.H5, HtmlTag.H6 -> Role.HEADING;
+      case HtmlTag.BUTTON -> Role.BUTTON;
+      case HtmlTag.A -> attrs.containsKey("href") ? Role.LINK : null;
+      case HtmlTag.IMG -> "".equals(attrs.get("alt")) ? Role.PRESENTATION : Role.IMG;
+      case HtmlTag.TABLE -> Role.TABLE;
+      case HtmlTag.HR -> Role.SEPARATOR;
+      case HtmlTag.ARTICLE -> Role.ARTICLE;
+      case HtmlTag.OUTPUT -> Role.STATUS;
+      case HtmlTag.OPTION -> Role.OPTION;
+      case HtmlTag.TEXTAREA -> Role.TEXTBOX;
+      case HtmlTag.SELECT -> Role.COMBOBOX;
+      case HtmlTag.FORM -> PageValidator.hasAriaName(tag) ? Role.FORM : null;
+      case HtmlTag.SECTION -> PageValidator.hasAriaName(tag) ? Role.REGION : null;
+      case HtmlTag.INPUT ->
           switch (attrs.getOrDefault("type", "text")) {
             case "hidden" -> null;
             case "checkbox" -> Role.CHECKBOX;
@@ -330,6 +343,11 @@ final class AccessibilityRules {
       case ResolvedTag tag -> {
         var text = new StringBuilder();
         tag.children().forEach(child -> text.append(textOf(child)));
+        yield text.toString();
+      }
+      case ResolvedFragment fragment -> {
+        var text = new StringBuilder();
+        fragment.children().forEach(child -> text.append(textOf(child)));
         yield text.toString();
       }
       default -> "";
@@ -444,8 +462,8 @@ final class AccessibilityRules {
 
   private static boolean isLabelable(ResolvedTag tag) {
     return switch (tag.tag()) {
-      case BUTTON, SELECT, TEXTAREA, OUTPUT -> true;
-      case INPUT -> !"hidden".equals(tag.attributes().get("type"));
+      case HtmlTag.BUTTON, HtmlTag.SELECT, HtmlTag.TEXTAREA, HtmlTag.OUTPUT -> true;
+      case HtmlTag.INPUT -> !"hidden".equals(tag.attributes().get("type"));
       default -> false;
     };
   }
@@ -491,9 +509,9 @@ final class AccessibilityRules {
       return tabIndex(declared) >= 0;
     }
     return switch (tag.tag()) {
-      case A -> attrs.containsKey("href");
-      case BUTTON, SELECT, TEXTAREA, SUMMARY -> true;
-      case INPUT -> !"hidden".equals(attrs.get("type"));
+      case HtmlTag.A -> attrs.containsKey("href");
+      case HtmlTag.BUTTON, HtmlTag.SELECT, HtmlTag.TEXTAREA, HtmlTag.SUMMARY -> true;
+      case HtmlTag.INPUT -> !"hidden".equals(attrs.get("type"));
       default -> false;
     };
   }

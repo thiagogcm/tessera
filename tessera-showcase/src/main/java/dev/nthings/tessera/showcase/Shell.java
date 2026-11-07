@@ -172,8 +172,9 @@ record Shell(Page page) implements RenderOnce {
                 .textColor(Tokens.TEXT_MUTED)
                 .fontSize(CssLength.rem(0.875))
                 .text(
-                    "Compiled by Tessera on JDK 25 into static HTML and CSS for Chrome 155+. "
-                        + "Search includes its module automatically; controls use native HTML and CSS."));
+                    "Compiled by Tessera on JDK 25 into static HTML and CSS for the latest Chromium"
+                        + " and Firefox. Behaviors ship automatically; controls use native HTML and"
+                        + " CSS."));
   }
 
   private static DocPager.PageRef pageRef(Page target) {

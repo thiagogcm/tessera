@@ -1,5 +1,6 @@
 package dev.nthings.tessera.render;
 
+import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
@@ -22,6 +23,7 @@ public final class PreparedPage {
   private final Map<String, CompilationLocation> outgoingLinks;
   private final Map<TransitionKey, CompilationLocation> transitionLocations;
   private final List<DocumentHeading> headings;
+  private final List<ClientBehavior> behaviors;
 
   PreparedPage(
       PageDocument document,
@@ -31,7 +33,8 @@ public final class PreparedPage {
       Map<String, CompilationLocation> outgoingLinks,
       Map<TransitionKey, CompilationLocation> transitionLocations,
       List<ResolvedNode> headNodes,
-      List<DocumentHeading> headings) {
+      List<DocumentHeading> headings,
+      List<ClientBehavior> behaviors) {
     this.document = document;
     this.styles = new StyleSheetCollector();
     this.styles.mergeFrom(styles);
@@ -42,6 +45,7 @@ public final class PreparedPage {
     this.transitionLocations =
         Collections.unmodifiableMap(new LinkedHashMap<>(transitionLocations));
     this.headings = List.copyOf(headings);
+    this.behaviors = List.copyOf(behaviors);
   }
 
   PageDocument document() {
@@ -71,6 +75,11 @@ public final class PreparedPage {
 
   public List<DocumentHeading> headings() {
     return headings;
+  }
+
+  /// Client behaviors registered by components on this page, in contribution order.
+  public List<ClientBehavior> behaviors() {
+    return behaviors;
   }
 
   /// Snapshot of the linked element tree, for inspection.

@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// HTML element node backed by [HtmlTag], [StyleRefinement], and [Interactivity].
+/// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity].
 ///
 /// An element gets a scoped DOM id by binding an [ElementRef] ([#id(ElementRef)], [#id(String)]);
 /// features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an
@@ -24,7 +24,7 @@ public final class TagElement
         ParentElement<TagElement>,
         FluentBuilder<TagElement> {
 
-  private final HtmlTag tag;
+  private final TagName tag;
   private final StyleRefinement style = new StyleRefinement();
   private final Interactivity interactivity = new Interactivity();
   private final Map<String, String> attributes = new LinkedHashMap<>();
@@ -37,7 +37,7 @@ public final class TagElement
   private @Nullable TransitionKey transitionKey;
   private final @Nullable SourceLocation source = SourceTracking.capture();
 
-  public TagElement(HtmlTag tag) {
+  public TagElement(TagName tag) {
     this.tag = tag;
   }
 
@@ -51,7 +51,7 @@ public final class TagElement
     return source;
   }
 
-  public HtmlTag tag() {
+  public TagName tag() {
     return tag;
   }
 

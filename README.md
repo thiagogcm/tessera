@@ -1,16 +1,16 @@
 # Tessera
 
-> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and Chrome 156+ (Baseline 2026+), with native platform controls and automatically bundled search behavior.**
+> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and the latest Chromium and Firefox, with native platform controls and automatically bundled client behaviors.**
 
-[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browser Baseline](https://img.shields.io/badge/Browser-Chrome%20156%2B%20%7C%20Baseline%202026%2B-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Bundled%20when%20needed-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
+[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browsers](https://img.shields.io/badge/Browser-latest%20Chromium%20%7C%20Firefox-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Bundled%20when%20needed-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
 
 ---
 
 ## Overview
 
-Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and **Baseline 2026+ web standards**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
+Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and the **latest Chromium and Firefox**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
 
-Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. `SearchPalette` automatically embeds its JavaScript module for live filtering and keyboard navigation. Pages without a palette receive no search script.
+The supported browser contract is deliberately bleeding-edge: the latest stable Chromium and Firefox, with no fallback matrix and no legacy polyfills. Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components contribute deduplicated ES modules as client behaviors; `SearchPalette` and `ContentTabs` use that path for live filtering, keyboard navigation, and ARIA tabs. Pages that use no behavior receive no script.
 
 Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search.
 
@@ -43,7 +43,7 @@ flowchart LR
 
 ## Core Pillars & Architectural Principles
 
-### 1. Baseline 2026+ Native Web Standards
+### 1. Bleeding-Edge Native Web Standards
 
 Tessera emits purely standard HTML and CSS features available in modern browsers:
 
@@ -53,12 +53,16 @@ Tessera emits purely standard HTML and CSS features available in modern browsers
 - **Scoped Styling (`@scope`)**: Modular CSS styling isolated directly to component boundaries (`@scope ([data-view="tessera-card"])`) without CSS Modules or naming collisions.
 - **OKLCH & `light-dark()`**: Perceptually uniform OKLCH color palettes with automatic OS light/dark mode adaptation via pure CSS variables.
 - **Subgrid & Anchor Positioning**: Seamless multi-column card alignments, sticky headers, and pure CSS anchored tooltips.
-- **Link Speculation Rules**: Native Chrome prefetch and prerender for instant multi-page transitions.
+- **Link Speculation Rules**: Native browser prefetch and prerender for instant multi-page transitions.
+
+#### Browser support
+
+The contract is the latest stable Chromium and Firefox, tested on every build. Features that are still Chromium-leading (`::scroll-button`, `::scroll-marker`, `appearance: base-select`, `@container scroll-state`) degrade to the native behavior in Firefox. `interestfor` hint popovers ship a small fallback behavior where interest invokers are not yet available. There are no polyfills, no version matrix, and no legacy engines.
 
 ### 2. JDK 25 Idiomatic Language Features
 
 - **`ScopedValue<RenderContext>` (JEP 506)**: Implicit, thread-confined, immutable context propagation across component trees.
-- **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tags (`HtmlTag`), and tokens.
+- **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
 - **Typed Style Values**: Style methods accept `CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, keyword enums, and other sealed values, so no declaration is built from raw text.
@@ -129,7 +133,7 @@ just guide
 ### Running Tests & Quality Gates
 
 ```bash
-# Install Playwright Chromium (once, and after upgrades)
+# Install Playwright Chromium and Firefox (once, and after upgrades)
 just browsers
 
 # On Linux hosts needing system packages (requires sudo)
@@ -183,7 +187,7 @@ Badge.warning("Deprecated").outline();
 Badge.info("v0.1.0").pill();
 
 // Ergonomic Pill factory
-Pill.accent("Baseline 2026+");
+Pill.accent("Latest Chromium + Firefox");
 Pill.neutral("JDK 25");
 ```
 
@@ -223,14 +227,14 @@ treeView-beta
         justfile ## Build, test, browser setup, and demo commands
         .github/
             workflows/
-                ci.yml ## Full verification with Chromium
+                ci.yml ## Full verification with Chromium and Firefox
 ```
 
 The showcase depends on the library's public API. Playwright is test-scoped in the showcase module and never becomes a library dependency. Maven `test` runs the unit suite; Maven `verify` also runs the showcase's Failsafe browser tests.
 
-The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It opens documentation routes and component cases at desktop and mobile widths, and exercises native interactions. Tests use the Chromium bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure.
+The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It opens documentation routes and component cases at desktop and mobile widths, and exercises native interactions on both latest Chromium and latest Firefox. Tests use the browser builds bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/{chromium,firefox}/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure. The suite also runs axe-core WCAG A/AA audits, keyboard flows, forced-colors, reduced-motion, 200% zoom, and text-spacing checks.
 
-For library-only verification, run `./mvnw -pl tessera verify`. For a focused browser run after compilation, use `./mvnw -pl tessera-showcase -am verify -Dit.test=ShowcaseIT`.
+For library-only verification, run `./mvnw -pl tessera verify`. For a focused browser run after compilation, use `./mvnw -pl tessera-showcase -am verify -Dit.test=ChromiumShowcaseIT` or `-Dit.test=FirefoxShowcaseIT`.
 
 ---
 

@@ -102,7 +102,7 @@ public sealed interface CssLength extends CssValue
   record Fluid(CssLength min, CssLength preferred, CssLength max) implements CssLength {
     @Override
     public String toCss() {
-      return "--fluid(" + min.toCss() + ", " + preferred.toCss() + ", " + max.toCss() + ")";
+      return "clamp(" + min.toCss() + ", " + preferred.toCss() + ", " + max.toCss() + ")";
     }
   }
 

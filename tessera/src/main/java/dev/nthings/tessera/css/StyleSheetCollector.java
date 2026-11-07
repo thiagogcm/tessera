@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// Deduplicating stylesheet collector emitting the 7-layer Chrome 156+ cascade: `@layer reset,
-/// base, theme, components, utilities, interactive, container;`.
+/// Deduplicating stylesheet collector emitting the 7-layer modern cascade: `@layer reset, base,
+/// theme, components, utilities, interactive, container;`.
 public final class StyleSheetCollector {
 
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
@@ -142,10 +142,6 @@ public final class StyleSheetCollector {
 
     // 3. @layer theme
     sb.append("@layer theme{");
-    sb.append(
-        "@function --fluid(--min <length>, --pref <length>, --max <length>) returns <length>{"
-            + "result:clamp(var(--min), var(--pref), var(--max))"
-            + "}");
     sb.append(":root{");
     for (var token : tokens.all()) {
       sb.append(token.customPropertyName()).append(':').append(token.cssDefinition()).append(';');

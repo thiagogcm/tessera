@@ -2,8 +2,8 @@ package dev.nthings.tessera.core;
 
 import java.util.Locale;
 
-/// Semantic HTML5 tags with HTML5 void-element classification.
-public enum HtmlTag {
+/// Semantic HTML tags with void-element classification.
+public enum HtmlTag implements TagName {
   DIV,
   SPAN,
   MAIN,
@@ -57,6 +57,12 @@ public enum HtmlTag {
   PICTURE,
   SOURCE,
   TRACK,
+  VIDEO,
+  AUDIO,
+  IFRAME,
+  CANVAS,
+  TEMPLATE,
+  SLOT,
   CODE,
   PRE,
   KBD,
@@ -82,6 +88,7 @@ public enum HtmlTag {
 
   private final String tagName = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
+  @Override
   public String tagName() {
     return tagName;
   }
@@ -112,6 +119,7 @@ public enum HtmlTag {
     };
   }
 
+  @Override
   public boolean isVoid() {
     return switch (this) {
       case INPUT, IMG, SOURCE, TRACK, BR, HR, META, LINK -> true;

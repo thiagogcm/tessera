@@ -2,8 +2,8 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.SourceLocation;
+import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
@@ -43,7 +43,7 @@ final class CompilationState {
 
   CompilationLocation location(
       List<String> components,
-      HtmlTag tag,
+      TagName tag,
       Map<String, String> attrs,
       @Nullable SourceLocation source) {
     var id = attrs.get("id");
@@ -74,7 +74,7 @@ final class CompilationState {
     }
   }
 
-  String bind(ElementRef ref, ViewScope scope, HtmlTag tag, CompilationLocation location) {
+  String bind(ElementRef ref, ViewScope scope, TagName tag, CompilationLocation location) {
     var existing = boundDomIds.get(ref);
     if (existing != null) {
       ambiguousDomIds.add(existing);

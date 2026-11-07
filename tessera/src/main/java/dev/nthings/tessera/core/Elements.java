@@ -7,8 +7,18 @@ public final class Elements {
 
   private Elements() {}
 
-  public static TagElement el(HtmlTag tag) {
+  public static TagElement el(TagName tag) {
     return new TagElement(tag);
+  }
+
+  /// Element with an author-defined custom element name, such as `my-widget`.
+  public static TagElement custom(String name) {
+    return new TagElement(new CustomElement(name));
+  }
+
+  /// Transparent group that emits no wrapper markup.
+  public static FragmentElement fragment() {
+    return new FragmentElement();
   }
 
   public static TagElement div() {
@@ -182,6 +192,42 @@ public final class Elements {
         .attr("alt", alt)
         .attr("loading", "lazy")
         .attr("decoding", "async");
+  }
+
+  public static TagElement video() {
+    return new TagElement(HtmlTag.VIDEO);
+  }
+
+  public static TagElement audio() {
+    return new TagElement(HtmlTag.AUDIO);
+  }
+
+  public static TagElement iframe() {
+    return new TagElement(HtmlTag.IFRAME);
+  }
+
+  public static TagElement canvas() {
+    return new TagElement(HtmlTag.CANVAS);
+  }
+
+  public static TagElement template() {
+    return new TagElement(HtmlTag.TEMPLATE);
+  }
+
+  public static TagElement slot() {
+    return new TagElement(HtmlTag.SLOT);
+  }
+
+  public static TagElement picture() {
+    return new TagElement(HtmlTag.PICTURE);
+  }
+
+  public static TagElement source() {
+    return new TagElement(HtmlTag.SOURCE);
+  }
+
+  public static TagElement track() {
+    return new TagElement(HtmlTag.TRACK);
   }
 
   public static TagElement figure() {

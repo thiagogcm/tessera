@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
 /// Lightweight, zero-dependency HTTP server backed by JDK [HttpServer] and Virtual Threads for
-/// previewing and evaluating a [CompiledSite] in Chrome 156+.
+/// previewing and evaluating a [CompiledSite] in the latest Chromium and Firefox.
 public final class SitePreviewServer implements AutoCloseable {
 
   private final HttpServer server;

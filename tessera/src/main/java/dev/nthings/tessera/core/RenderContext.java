@@ -74,6 +74,11 @@ public final class RenderContext {
     docState.atDocumentEnd(owner, section, componentPath, origin);
   }
 
+  /// Contributes `behavior` to the document once, regardless of how many components request it.
+  public void contributeBehavior(ClientBehavior behavior) {
+    docState.contributeBehavior(behavior);
+  }
+
   public DocumentState documentState() {
     return docState;
   }

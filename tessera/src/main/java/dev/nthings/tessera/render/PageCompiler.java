@@ -44,8 +44,7 @@ public final class PageCompiler {
     var bodyNodes = prepaint(p1.root(), state);
     var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
     for (var head : p1.headNodes()) {
-      var linked = ReferenceLinker.link(head, state);
-      headNodes.add(linked);
+      ReferenceLinker.link(head, state, headNodes);
     }
 
     for (var node : bodyNodes) {
@@ -89,10 +88,10 @@ public final class PageCompiler {
 
   private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
     var bodyNodes = new ArrayList<ResolvedNode>();
-    bodyNodes.add(ReferenceLinker.link(root, state));
+    ReferenceLinker.link(root, state, bodyNodes);
     for (CompilationState.ResolvedDeferred deferred;
         (deferred = state.deferredQueue.poll()) != null; ) {
-      bodyNodes.add(ReferenceLinker.link(deferred.node(), state));
+      ReferenceLinker.link(deferred.node(), state, bodyNodes);
     }
     return bodyNodes;
   }

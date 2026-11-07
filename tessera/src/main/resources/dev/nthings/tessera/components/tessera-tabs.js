@@ -1,3 +1,5 @@
+const NAVIGATION_KEYS = new Set(["ArrowLeft", "ArrowRight", "Home", "End"]);
+
 class TesseraTabs extends HTMLElement {
   #controller;
   #tabs = [];
@@ -34,6 +36,7 @@ class TesseraTabs extends HTMLElement {
 
   #navigate(event) {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!NAVIGATION_KEYS.has(event.key)) return;
     const tab = event.target.closest('[role="tab"]');
     const current = this.#tabs.indexOf(tab);
     if (current < 0) return;

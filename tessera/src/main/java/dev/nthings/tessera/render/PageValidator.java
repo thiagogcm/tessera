@@ -62,12 +62,7 @@ final class PageValidator {
   static void validateNodeTree(ResolvedNode node, CompilationState state) {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
-      case ResolvedSlot _ -> throw unlinked();
-      case ResolvedFragment fragment -> {
-        for (var child : fragment.children()) {
-          validateNodeTree(child, state);
-        }
-      }
+      case ResolvedSlot _, ResolvedFragment _ -> throw unlinked();
       case ResolvedTag tag -> {
         validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
@@ -224,8 +219,7 @@ final class PageValidator {
             case ResolvedText(var text) -> !text.isBlank();
             case ResolvedRaw(var raw) -> !raw.isBlank();
             case ResolvedEmpty _ -> false;
-            case ResolvedFragment(var nestedChildren) -> containsReadableText(nestedChildren);
-            case ResolvedSlot _ -> throw unlinked();
+            case ResolvedSlot _, ResolvedFragment _ -> throw unlinked();
             case ResolvedTag nested ->
                 (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
                     || isNonBlank(nested.attributes().get("aria-label"))
@@ -239,7 +233,8 @@ final class PageValidator {
   }
 
   static IllegalStateException unlinked() {
-    return new IllegalStateException("Late-element slot reached validation/paint before linking");
+    return new IllegalStateException(
+        "Late-element slot or fragment reached validation/paint before linking");
   }
 
   static boolean isNonBlank(@Nullable String value) {

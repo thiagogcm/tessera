@@ -11,9 +11,4 @@ class ChromiumShowcaseIT extends ShowcaseBrowserSupport {
   protected BrowserType browserType(Playwright playwright) {
     return playwright.chromium();
   }
-
-  @Override
-  protected String browserSlug() {
-    return "chromium";
-  }
 }

@@ -6,6 +6,7 @@ import static dev.nthings.tessera.core.Elements.fragment;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.ul;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.render.CompilationException;
@@ -27,9 +28,25 @@ class ElementSurfaceTest {
   @Test
   @DisplayName("an unlabelled button inside a fragment is reported")
   void fragmentChildrenParticipateInDiagnostics() {
-    org.assertj.core.api.Assertions.assertThatThrownBy(() -> renderMain(fragment().child(button())))
-        .isInstanceOf(CompilationException.class)
-        .hasMessageContaining("interactive-label");
+    assertThatExceptionOfType(CompilationException.class)
+        .isThrownBy(() -> renderMain(fragment().child(button())))
+        .withMessageContaining("interactive-label");
+  }
+
+  record Rows() implements RenderView {
+    @Override
+    public Element render() {
+      return fragment().children(li().text("One"), li().text("Two"));
+    }
+  }
+
+  @Test
+  @DisplayName("a view rooted in a fragment is hosted by one div carrying its data-view")
+  void fragmentRootedViewGetsOneHost() {
+    var page = renderMain(ul().child(new Rows()));
+
+    assertThat(page.elements("ul > div[data-view=rows]")).hasSize(1);
+    assertThat(page.elements("ul > div[data-view=rows] > li")).hasSize(2);
   }
 
   @Test

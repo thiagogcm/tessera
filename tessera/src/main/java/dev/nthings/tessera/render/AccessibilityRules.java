@@ -56,12 +56,7 @@ final class AccessibilityRules {
   private void visit(ResolvedNode node, Context context) {
     switch (node) {
       case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
-      case ResolvedSlot _ -> throw PageValidator.unlinked();
-      case ResolvedFragment fragment -> {
-        for (var child : fragment.children()) {
-          visit(child, context);
-        }
-      }
+      case ResolvedSlot _, ResolvedFragment _ -> throw PageValidator.unlinked();
       case ResolvedTag tag -> {
         checkTag(tag, context);
         var inner =
@@ -206,24 +201,17 @@ final class AccessibilityRules {
 
   private static boolean ownsAny(ResolvedTag tag, Set<Role> roles) {
     for (var child : tag.children()) {
-      if (ownsAny(child, roles)) {
+      if (child instanceof ResolvedTag nested && hasOrOwnsAny(nested, roles)) {
         return true;
       }
     }
     var companion = tag.companionSibling();
-    return companion != null && ownsAny(companion, roles);
+    return companion != null && hasOrOwnsAny(companion, roles);
   }
 
-  private static boolean ownsAny(ResolvedNode node, Set<Role> roles) {
-    return switch (node) {
-      case ResolvedTag tag -> {
-        var role = effectiveRole(tag);
-        yield (role != null && roles.contains(role)) || ownsAny(tag, roles);
-      }
-      case ResolvedFragment fragment ->
-          fragment.children().stream().anyMatch(child -> ownsAny(child, roles));
-      default -> false;
-    };
+  private static boolean hasOrOwnsAny(ResolvedTag tag, Set<Role> roles) {
+    var role = effectiveRole(tag);
+    return (role != null && roles.contains(role)) || ownsAny(tag, roles);
   }
 
   // --- Roles, explicit and implicit ---
@@ -343,11 +331,6 @@ final class AccessibilityRules {
       case ResolvedTag tag -> {
         var text = new StringBuilder();
         tag.children().forEach(child -> text.append(textOf(child)));
-        yield text.toString();
-      }
-      case ResolvedFragment fragment -> {
-        var text = new StringBuilder();
-        fragment.children().forEach(child -> text.append(textOf(child)));
         yield text.toString();
       }
       default -> "";

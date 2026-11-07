@@ -111,16 +111,8 @@ final class LayoutPass {
                     slot, ctx.reenter(() -> requestLayout(content.get().intoElement(), state))));
         yield new ResolvedSlot(slot);
       }
-      case FragmentElement fragment -> {
-        var children = new ArrayList<ResolvedNode>(fragment.childrenList().size());
-        for (var child : fragment.childrenList()) {
-          var resolved = requestLayout(child, state);
-          if (!(resolved instanceof ResolvedEmpty)) {
-            children.add(resolved);
-          }
-        }
-        yield new ResolvedFragment(children);
-      }
+      case FragmentElement fragment ->
+          new ResolvedFragment(resolveChildren(fragment.childrenList(), state));
       case RenderViewElement(var view, var source) -> {
         var entityId = view.entityId();
         yield ctx.withViewScope(
@@ -179,6 +171,19 @@ final class LayoutPass {
         Map.of(),
         List.of(node),
         null);
+  }
+
+  /// Lays out `children` in order, dropping the ones that emit nothing.
+  private static List<ResolvedNode> resolveChildren(
+      List<Element> children, CompilationState state) {
+    var resolved = new ArrayList<ResolvedNode>(children.size());
+    for (var child : children) {
+      var node = requestLayout(child, state);
+      if (!(node instanceof ResolvedEmpty)) {
+        resolved.add(node);
+      }
+    }
+    return resolved;
   }
 
   /// Resolves `tag`; `forcedDomId` (already registered) overrides ref binding for companions.
@@ -251,13 +256,7 @@ final class LayoutPass {
       companionTooltip = resolveTag(tooltipElement, tooltipDomId, state);
     }
 
-    var resolvedChildren = new ArrayList<ResolvedNode>(tag.childrenList().size());
-    for (var child : tag.childrenList()) {
-      var resolvedChild = requestLayout(child, state);
-      if (!(resolvedChild instanceof ResolvedEmpty)) {
-        resolvedChildren.add(resolvedChild);
-      }
-    }
+    var resolvedChildren = resolveChildren(tag.childrenList(), state);
 
     return new ResolvedTag(
         tag.tag(),

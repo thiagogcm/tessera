@@ -28,11 +28,7 @@ import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 /// Navigation and in-page content tab components backed by CSS Anchor Positioning (`anchor-name`,
 /// `position-anchor`, `anchor(left)`, `anchor(right)`, `anchor(bottom)`) for animated active tab
@@ -140,22 +136,8 @@ public final class Tabs {
   /// selection and focus.
   public static final class ContentTabs implements RenderView {
 
-    private static final class ClientScript {
-      private static final String SOURCE = readScript();
-
-      private static String readScript() {
-        try (var input =
-            Objects.requireNonNull(
-                ContentTabs.class.getResourceAsStream("tessera-tabs.js"), "Bundled tabs module")) {
-          return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-          throw new UncheckedIOException(e);
-        }
-      }
-    }
-
     private static final ClientBehavior TABS_BEHAVIOR =
-        new ClientBehavior("tessera-tabs", ClientScript.SOURCE);
+        ClientBehavior.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
 
     private final ElementId id;
     private final String ariaLabel;
@@ -238,34 +220,24 @@ public final class Tabs {
       RenderContext.current().contributeBehavior(TABS_BEHAVIOR);
 
       var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(ariaLabel);
-      var root = custom("tessera-tabs").attr("class", "tabs");
-      var tabRefs = new ElementRef[panels.size()];
-      var panelRefs = new ElementRef[panels.size()];
+      var root = custom("tessera-tabs").child(tabBar);
 
       for (var i = 0; i < panels.size(); i++) {
-        tabRefs[i] = ElementRef.named("tab-" + i);
-        panelRefs[i] = ElementRef.named("panel-" + i);
+        var tabRef = ElementRef.named("tab-" + i);
+        var panelRef = ElementRef.named("panel-" + i);
         tabBar.child(
             button()
-                .id(tabRefs[i])
+                .id(tabRef)
                 .role(Role.TAB)
-                .attr("class", "tab")
-                .attr("data-tab-index", Integer.toString(i))
                 .ariaSelected(i == 0)
-                .ariaControls(panelRefs[i])
+                .ariaControls(panelRef)
                 .tabIndex(i == 0 ? 0 : -1)
                 .text(panels.get(i).label()));
-      }
-
-      root.child(tabBar);
-      for (var i = 0; i < panels.size(); i++) {
         root.child(
             div()
-                .id(panelRefs[i])
+                .id(panelRef)
                 .role(Role.TABPANEL)
-                .attr("class", "tab-panel")
-                .attr("data-panel-index", Integer.toString(i))
-                .ariaLabelledBy(tabRefs[i])
+                .ariaLabelledBy(tabRef)
                 .tabIndex(0)
                 .boolAttr("hidden", i != 0)
                 .child(panels.get(i).content()));

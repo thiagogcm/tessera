@@ -8,31 +8,35 @@ import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /// Resolves late slots and symbolic references after all identities are bound.
 final class ReferenceLinker {
   private ReferenceLinker() {}
 
-  /// Substitutes late-element slots and folds pending [IdReference]s into attributes, now that
-  /// every ref on the page is bound.
-  static ResolvedNode link(ResolvedNode node, CompilationState state) {
-    if (node instanceof ResolvedSlot slot) {
-      var content = state.lateSlots.get(slot.index());
-      if (content == null) {
-        throw new IllegalStateException("Late element was linked before it was laid out");
+  /// Substitutes late-element slots, folds pending [IdReference]s into attributes now that every
+  /// ref on the page is bound, and splices fragments into their parent, appending the result to
+  /// `out`. Nothing downstream of linking sees a slot or a fragment.
+  static void link(ResolvedNode node, CompilationState state, List<ResolvedNode> out) {
+    switch (node) {
+      case ResolvedSlot slot -> {
+        var content = state.lateSlots.get(slot.index());
+        if (content == null) {
+          throw new IllegalStateException("Late element was linked before it was laid out");
+        }
+        link(content, state, out);
       }
-      return link(content, state);
-    }
-    if (node instanceof ResolvedFragment fragment) {
-      var children = new ArrayList<ResolvedNode>(fragment.children().size());
-      for (var child : fragment.children()) {
-        children.add(link(child, state));
+      case ResolvedFragment fragment -> {
+        for (var child : fragment.children()) {
+          link(child, state, out);
+        }
       }
-      return new ResolvedFragment(children);
+      case ResolvedTag tag -> out.add(linkTag(tag, state));
+      default -> out.add(node);
     }
-    if (!(node instanceof ResolvedTag tag)) {
-      return node;
-    }
+  }
+
+  private static ResolvedTag linkTag(ResolvedTag tag, CompilationState state) {
     var attrs = tag.attributes();
     var unresolved = new LinkedHashMap<String, IdReference>();
     if (!tag.idReferences().isEmpty()) {
@@ -61,7 +65,7 @@ final class ReferenceLinker {
     }
     var children = new ArrayList<ResolvedNode>(tag.children().size());
     for (var child : tag.children()) {
-      children.add(link(child, state));
+      link(child, state, children);
     }
     var companion = tag.companionSibling();
     var resolved =
@@ -71,7 +75,7 @@ final class ReferenceLinker {
             attrs,
             Collections.unmodifiableMap(unresolved),
             Collections.unmodifiableList(children),
-            companion != null ? (ResolvedTag) link(companion, state) : null);
+            companion != null ? linkTag(companion, state) : null);
     var id = attrs.get("id");
     if (id != null && !id.isBlank()) {
       state.elementsById.putIfAbsent(id, resolved);

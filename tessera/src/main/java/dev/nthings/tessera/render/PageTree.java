@@ -125,9 +125,9 @@ public record PageTree(List<Node> head, List<Node> body) {
       switch (node) {
         case ResolvedNode.ResolvedText(var content) -> converted.add(new Text(content));
         case ResolvedNode.ResolvedRaw(var html) -> converted.add(new Raw(html.length()));
-        case ResolvedNode.ResolvedEmpty _, ResolvedNode.ResolvedSlot _ -> {}
-        case ResolvedNode.ResolvedFragment fragment ->
-            converted.addAll(convert(fragment.children()));
+        case ResolvedNode.ResolvedEmpty _ -> {}
+        case ResolvedNode.ResolvedSlot _, ResolvedNode.ResolvedFragment _ ->
+            throw PageValidator.unlinked();
         case ResolvedNode.ResolvedTag tag -> {
           var location = tag.location();
           converted.add(

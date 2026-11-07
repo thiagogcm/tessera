@@ -11,9 +11,4 @@ class FirefoxShowcaseIT extends ShowcaseBrowserSupport {
   protected BrowserType browserType(Playwright playwright) {
     return playwright.firefox();
   }
-
-  @Override
-  protected String browserSlug() {
-    return "firefox";
-  }
 }

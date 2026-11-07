@@ -67,9 +67,6 @@ abstract class ShowcaseBrowserSupport {
   /// Browser under test, provided by the concrete Chromium or Firefox suite.
   protected abstract BrowserType browserType(Playwright playwright);
 
-  /// Stable directory name for traces and failure screenshots.
-  protected abstract String browserSlug();
-
   @RegisterExtension
   final TestExecutionExceptionHandler screenshotOnFailure =
       (test, failure) -> {
@@ -196,12 +193,14 @@ abstract class ShowcaseBrowserSupport {
 
   private Path artifactPath(String test, String extension) {
     return Path.of(
-        "target", "playwright", browserSlug(), test.replaceAll("[^a-zA-Z0-9-]", "_") + extension);
+        "target",
+        "playwright",
+        browser.browserType().name(),
+        test.replaceAll("[^a-zA-Z0-9-]", "_") + extension);
   }
 
   private static Stream<Arguments> routesAndViewports() {
-    return ShowcaseSite.createDefinition().routes().stream()
-        .filter(route -> !route.path().startsWith("/stories/"))
+    return documentationRoutes().stream()
         .flatMap(
             route ->
                 Stream.of(390, 1440)
@@ -662,6 +661,7 @@ abstract class ShowcaseBrowserSupport {
     // Auditing the settled, reduced-motion rendering keeps entry animations from changing
     // computed contrast while axe samples the page.
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+    Axe.install(page);
     for (var route : documentationRoutes()) {
       page.navigate(baseUrl + route.path());
       waitForBehaviors();
@@ -903,7 +903,7 @@ abstract class ShowcaseBrowserSupport {
     return page.getByRole(AriaRole.TAB, new Page.GetByRoleOptions().setName(name).setExact(true));
   }
 
-  private List<SiteRoute> documentationRoutes() {
+  private static List<SiteRoute> documentationRoutes() {
     return ShowcaseSite.createDefinition().routes().stream()
         .filter(route -> !route.path().startsWith("/stories/"))
         .toList();

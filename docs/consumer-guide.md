@@ -98,6 +98,8 @@ public record MetricCard(String id, String title, String value) implements Rende
 
 Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the view's namespace before calling its render method. Repeated instances need distinct instance IDs within the same enclosing scope. Omitting `entityId()` lets the compiler assign deterministic IDs.
 
+The compiler marks the view's root element with `data-view` and `data-view-id`, which scope its styles. A view whose `render()` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
+
 Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
 
 ## Group siblings and name custom elements

@@ -8,7 +8,6 @@ import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -22,11 +21,7 @@ final class HtmlWriter {
 
   private HtmlWriter() {}
 
-  record PaintResult(@Nullable String externalCssPath, List<CompiledAsset> assets) {
-    PaintResult {
-      assets = List.copyOf(assets);
-    }
-  }
+  record PaintResult(@Nullable String externalCssPath, List<CompiledAsset> assets) {}
 
   static PaintResult paint(
       PageDocument doc,
@@ -59,10 +54,9 @@ final class HtmlWriter {
         out.append("</style>\n");
       }
       case OutputMode.ExternalAsset(var basePath) -> {
-        var cssHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, cssContent);
         assetBasePath =
             basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
-        externalCssPath = assetBasePath + "/styles-" + Fnv1a64.toBase36Hash(cssHash) + ".css";
+        externalCssPath = hashedPath(assetBasePath, "styles", cssContent, ".css");
         out.append("<link rel=\"stylesheet\" href=\"");
         out.append(Encode.forHtmlAttribute(externalCssPath));
         out.append("\">\n");
@@ -76,22 +70,16 @@ final class HtmlWriter {
         out.append(inlineModule(behavior.module()));
         out.append("\n</script>\n");
       } else {
-        var behaviorHash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, behavior.module());
         var path =
-            assetBasePath
-                + "/behaviors/"
-                + Fnv1a64.sanitizeIdentifier(behavior.id())
-                + "-"
-                + Fnv1a64.toBase36Hash(behaviorHash)
-                + ".js";
+            hashedPath(
+                assetBasePath + "/behaviors",
+                Fnv1a64.sanitizeIdentifier(behavior.id()),
+                behavior.module(),
+                ".js");
         out.append("<script type=\"module\" src=\"");
         out.append(Encode.forHtmlAttribute(path));
         out.append("\"></script>\n");
-        assets.add(
-            new CompiledAsset(
-                path,
-                "text/javascript; charset=utf-8",
-                behavior.module().getBytes(StandardCharsets.UTF_8)));
+        assets.add(new CompiledAsset(path, behavior.module()));
       }
     }
 
@@ -103,6 +91,12 @@ final class HtmlWriter {
     return new PaintResult(externalCssPath, assets);
   }
 
+  /// `dir/name-<content hash>ext`, so a changed file never serves stale from a cache.
+  private static String hashedPath(String dir, String name, String content, String extension) {
+    var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, content);
+    return dir + "/" + name + "-" + Fnv1a64.toBase36Hash(hash) + extension;
+  }
+
   /// Keeps a module containing a literal end tag from closing the script element.
   private static String inlineModule(String module) {
     return SCRIPT_CLOSE.matcher(module).replaceAll(ignored -> "<\\/script");
@@ -111,13 +105,7 @@ final class HtmlWriter {
   private static void paintNode(ResolvedNode node, StringBuilder out) {
     switch (node) {
       case ResolvedEmpty _ -> {}
-      case ResolvedSlot _ ->
-          throw new IllegalStateException("Unlinked late slot reached HTML output");
-      case ResolvedFragment(var children) -> {
-        for (var child : children) {
-          paintNode(child, out);
-        }
-      }
+      case ResolvedSlot _, ResolvedFragment _ -> throw PageValidator.unlinked();
       case ResolvedText(var content) -> out.append(Encode.forHtmlContent(content));
       case ResolvedRaw(var trustedHtml) -> out.append(trustedHtml);
       case ResolvedTag tag -> {

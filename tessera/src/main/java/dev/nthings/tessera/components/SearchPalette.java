@@ -33,37 +33,18 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// Native quick-open dialog with live filtering and keyboard selection.
 /// Rendering a palette automatically contributes its ES module once per document.
 public final class SearchPalette implements RenderView {
 
-  private static final class ClientScript {
-    private static final String SOURCE = readScript();
-
-    private static String readScript() {
-      try (var input =
-          Objects.requireNonNull(
-              SearchPalette.class.getResourceAsStream("search-palette.js"),
-              "Bundled search palette module")) {
-        return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-      } catch (IOException e) {
-        throw new UncheckedIOException(e);
-      }
-    }
-  }
-
   private static final ClientBehavior SEARCH_BEHAVIOR =
-      new ClientBehavior("tessera-search", ClientScript.SOURCE);
+      ClientBehavior.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
 
   private static final String SEARCH_ICON_SVG =
       "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""

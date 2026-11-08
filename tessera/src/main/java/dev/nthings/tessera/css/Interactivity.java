@@ -71,6 +71,21 @@ public final class Interactivity {
     containerRules.add(new ContainerRule(containerName, minInlineSize, style));
   }
 
+  /// Adds `other`'s rules to this one, copying each refinement so the two stay independent.
+  public Interactivity mergeFrom(Interactivity other) {
+    other.states.forEach(
+        (rule, style) -> states.computeIfAbsent(rule, _ -> new StyleRefinement()).mergeFrom(style));
+    keyframes.addAll(other.keyframes);
+    other.containerRules.forEach(
+        rule ->
+            containerRules.add(
+                new ContainerRule(
+                    rule.containerName(),
+                    rule.minInlineSize(),
+                    new StyleRefinement().mergeFrom(rule.style()))));
+    return this;
+  }
+
   public SortedMap<StateRule, StyleRefinement> states() {
     return Collections.unmodifiableSortedMap(states);
   }

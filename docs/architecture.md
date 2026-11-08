@@ -158,6 +158,8 @@ flowchart TD
 
 `PreparedPage` has no public constructor, node accessors, or document-state accessor. Public metadata consists of snapshots of IDs, outgoing URLs, transition keys, headings, and client behaviors. Its stylesheet collector is copied and privately owned. `contributeStylesTo(target)` copies rules into a caller-owned collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
 
+Field rendering copies the retained control's authoring configuration before wiring labels, hints, errors and anchors. The copy retains reference identities and child definitions but owns its attribute and reference maps. Setting `hint(null)` or `error(null)` removes that contribution on the next render without leaving stale references on the retained builder.
+
 `HtmlWriter` owns HTML context encoding and the document envelope. External CSS paths derive from final stylesheet content, allowing every route to reference the same merged stylesheet. Client behaviors are emitted once per page: inline module scripts for `OutputMode.InlineStyle`, or content-hashed module assets under the same external asset base for `OutputMode.ExternalAsset`. Authored CSS and explicitly raw HTML remain trusted input.
 
 ## Document metadata and component state

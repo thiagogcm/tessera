@@ -32,6 +32,7 @@ import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /// Accessible Forms and Form Controls Suite backed by CSS Level 4 `:user-invalid` / `:user-valid`
@@ -122,7 +123,7 @@ public final class Forms {
 
   /// Creates a full accessible field wrapper for a customizable select control.
   public static Field field(String labelText, SelectControl select) {
-    return new Field(labelText, select.control(), select);
+    return new Field(labelText, select.control(), SelectControl::new);
   }
 
   /// Creates an inline row pairing a label and a switch control.
@@ -154,20 +155,20 @@ public final class Forms {
 
     private final String labelText;
     private final TagElement control;
-    private final IntoElement controlNode;
+    private final Function<TagElement, IntoElement> controlView;
     private @Nullable String hintText;
     private @Nullable String errorText;
     private @Nullable String anchorTooltipText;
 
     public Field(String labelText, TagElement control) {
-      this(labelText, control, control);
+      this(labelText, control, element -> element);
     }
 
-    /// `control` is the labelled element; `controlNode` is what gets placed (e.g. its view).
-    private Field(String labelText, TagElement control, IntoElement controlNode) {
+    private Field(
+        String labelText, TagElement control, Function<TagElement, IntoElement> controlView) {
       this.labelText = labelText;
       this.control = control;
-      this.controlNode = controlNode;
+      this.controlView = controlView;
     }
 
     /// Names the control's DOM id (scoped to this field) instead of a compiler-assigned one.
@@ -176,15 +177,14 @@ public final class Forms {
       return this;
     }
 
-    /// Sets format hint text placed above the input, preventing autocomplete overlays from
-    /// obscuring it.
-    public Field hint(String hintText) {
+    /// Sets format hint text above the input, or removes it when `null`.
+    public Field hint(@Nullable String hintText) {
       this.hintText = hintText;
       return this;
     }
 
-    /// Sets validation error message text revealed when the field matches `:user-invalid`.
-    public Field error(String errorText) {
+    /// Sets error text revealed for `:user-invalid`, or removes it when `null`.
+    public Field error(@Nullable String errorText) {
       this.errorText = errorText;
       return this;
     }
@@ -202,6 +202,7 @@ public final class Forms {
 
     @Override
     public Element render(RenderContext context) {
+      var control = this.control.copy();
       var ctrl = control.ref();
 
       var container = div().attr("class", "field-container");
@@ -223,7 +224,7 @@ public final class Forms {
       }
 
       // 4. Control
-      container.child(controlNode);
+      container.child(controlView.apply(control));
 
       // 5. Error message placed immediately after control for adjacent sibling styling
       if (errorText != null) {
@@ -307,6 +308,10 @@ public final class Forms {
     public record OptionItem(String value, String label, boolean selected) {}
 
     private final TagElement select;
+
+    private SelectControl(TagElement select) {
+      this.select = select;
+    }
 
     public SelectControl(String name) {
       this.select =

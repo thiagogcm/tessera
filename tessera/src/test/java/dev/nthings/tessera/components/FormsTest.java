@@ -38,6 +38,57 @@ class FormsTest {
   }
 
   @Nested
+  @DisplayName("field across renders")
+  class RepeatedFields {
+
+    @Test
+    @DisplayName("repeated renders follow the current hint and error without mutating the control")
+    void repeatedRendersDoNotMutateTheControl() {
+      var control = Forms.text("name");
+      var field = Forms.field("Name", control).id("name").anchorTooltip("Enter your name");
+
+      for (var turn = 0; turn < 4; turn++) {
+        var enabled = turn % 2 == 0;
+        field.hint(enabled ? "Full name" : null).error(enabled ? "Name is required" : null);
+        var page = renderMain(field);
+
+        var input = page.element("input[name=name]");
+        assertThat(page.element("label")).hasAttribute("for", input.id());
+        assertThat(page.elements(".field-hint")).hasSize(enabled ? 1 : 0);
+        assertThat(page.elements(".field-error")).hasSize(enabled ? 1 : 0);
+        if (enabled) {
+          assertThat(page.elementById(input.attr("aria-describedby")).text())
+              .isEqualTo("Full name");
+          assertThat(page.elementById(input.attr("aria-errormessage")).text())
+              .contains("Name is required");
+        } else {
+          assertThat(input).doesNotHaveAttribute("aria-describedby");
+          assertThat(input).doesNotHaveAttribute("aria-errormessage");
+        }
+      }
+      assertThat(control.idReferences()).isEmpty();
+      assertThat(control.isAnchor()).isFalse();
+    }
+
+    @Test
+    @DisplayName("a select field keeps its options and links its hint on every render")
+    void selectFieldRendersRepeatedly() {
+      var select =
+          Forms.selectControl("size").option("small", "Small").option("large", "Large", true);
+      var field = Forms.field("Size", select).hint("Choose a size");
+
+      for (var turn = 0; turn < 2; turn++) {
+        var page = renderMain(field);
+        var element = page.element("select");
+        assertThat(page.elements("option")).hasSize(2);
+        assertThat(page.element("label")).hasAttribute("for", element.id());
+        assertThat(page.elementById(element.attr("aria-describedby")).text())
+            .isEqualTo("Choose a size");
+      }
+    }
+  }
+
+  @Nested
   @DisplayName("customizable select")
   class CustomizableSelect {
 

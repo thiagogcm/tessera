@@ -35,10 +35,31 @@ public final class TagElement
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
   private @Nullable TransitionKey transitionKey;
-  private final @Nullable SourceLocation source = SourceTracking.capture();
+  private final @Nullable SourceLocation source;
 
   public TagElement(TagName tag) {
+    this(tag, SourceTracking.capture());
+  }
+
+  private TagElement(TagName tag, @Nullable SourceLocation source) {
     this.tag = tag;
+    this.source = source;
+  }
+
+  /// Copies this builder's configuration; child elements and reference identities are shared.
+  public TagElement copy() {
+    var copy = new TagElement(tag, source);
+    copy.style.mergeFrom(style);
+    copy.interactivity.mergeFrom(interactivity);
+    copy.attributes.putAll(attributes);
+    copy.idReferences.putAll(idReferences);
+    copy.children.addAll(children);
+    copy.ref = ref;
+    copy.interestTooltip = interestTooltip;
+    copy.anchorSelf = anchorSelf;
+    copy.anchorTarget = anchorTarget;
+    copy.transitionKey = transitionKey;
+    return copy;
   }
 
   @Override

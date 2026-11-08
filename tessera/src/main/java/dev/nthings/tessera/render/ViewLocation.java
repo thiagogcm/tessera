@@ -17,6 +17,10 @@ public record ViewLocation(
     componentPath = List.copyOf(componentPath);
   }
 
+  public ViewLocation withDomId(String id) {
+    return new ViewLocation(componentPath, tagName, id, source);
+  }
+
   /// `Outer > Inner > <tag id="x"> (File.java:42)`, omitting the parts that are absent.
   public String describe() {
     var path = new StringJoiner(" > ");

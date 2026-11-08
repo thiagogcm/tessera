@@ -1,18 +1,24 @@
 package dev.nthings.tessera.render;
 
+import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.core.ViewScope;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
-/// What one page publishes and validates: its DOM ids, transitions, outgoing links and
-/// diagnostics. Component expansion keeps its own bindings and placement in [ViewExpansion].
+/// One page's identities and what it publishes and validates: DOM ids and the references bound
+/// to them, transitions, outgoing links and diagnostics. Expansion and linking share it;
+/// [ViewExpansion] keeps only placement.
 final class CompilationState {
   final Set<String> registeredDomIds = new LinkedHashSet<>();
   final Set<String> ambiguousDomIds = new HashSet<>();
@@ -21,21 +27,28 @@ final class CompilationState {
   final Map<String, ResolvedTag> elementsById = new HashMap<>();
   final Set<String> labelledControlIds = new HashSet<>();
   final List<CompilationDiagnostic> diagnostics = new ArrayList<>();
+  private final Map<ElementRef, String> references = new IdentityHashMap<>();
+  private final Map<IdCounter, Integer> counters = new HashMap<>();
+  private final Set<String> transitionNames = new HashSet<>();
   private final String pageTitle;
+
+  /// Generated ids are numbered per scope and prefix.
+  private record IdCounter(ViewScope scope, String prefix) {}
 
   CompilationState(String pageTitle) {
     this.pageTitle = pageTitle;
   }
 
+  /// `view` placed on this page.
   CompilationLocation location(ViewLocation view) {
     return new CompilationLocation(pageTitle, null, view);
   }
 
-  void report(CompilationLocation location, String rule, String message, String suggestion) {
-    diagnostics.add(new CompilationDiagnostic(rule, location, message, suggestion));
+  void report(ViewLocation location, String rule, String message, String suggestion) {
+    diagnostics.add(new CompilationDiagnostic(rule, location(location), message, suggestion));
   }
 
-  void registerDomId(String domId, CompilationLocation location) {
+  void registerDomId(String domId, ViewLocation location) {
     if (!registeredDomIds.add(domId)) {
       ambiguousDomIds.add(domId);
       report(
@@ -44,5 +57,62 @@ final class CompilationState {
           "Duplicate DOM id '" + domId + "' on the same page",
           "Give each element a distinct ID within its view scope.");
     }
+  }
+
+  /// Binds `ref` within `scope` and registers its DOM id; a second binding reports and keeps the
+  /// first id.
+  String bind(ElementRef ref, ViewScope scope, ViewLocation location) {
+    var existing = references.get(ref);
+    if (existing != null) {
+      ambiguousDomIds.add(existing);
+      report(
+          location,
+          "duplicate-reference-binding",
+          ref + " is bound to more than one element on the same page",
+          "Bind this ElementRef once; use a separate reference for the other element.");
+      return existing;
+    }
+    var local = ref.localId();
+    var domId = scope.extend(local != null ? local : nextId(location.tagName(), scope)).domId();
+    references.put(ref, domId);
+    registerDomId(domId, location.withDomId(domId));
+    return domId;
+  }
+
+  /// The DOM id bound to `ref`, or `null` when it is ambiguous or unbound; reports an unbound
+  /// reference.
+  @Nullable String boundId(ElementRef ref, String usage, ViewLocation location) {
+    var id = references.get(ref);
+    if (ambiguousDomIds.contains(id)) {
+      return null;
+    }
+    if (id == null) {
+      report(
+          location,
+          "unbound-reference",
+          usage + " references " + ref + ", which is not bound to any element on this page",
+          "Bind this reference with .id(ref) on the intended target.");
+    }
+    return id;
+  }
+
+  /// `<prefix>-<n>`, numbered within `scope` so ids elsewhere on the page never shift it.
+  ElementId nextId(String prefix, ViewScope scope) {
+    return ElementId.of(
+        prefix + "-" + counters.merge(new IdCounter(scope, prefix), 1, Integer::sum));
+  }
+
+  /// Records `key` at `location`, reporting a name another key already uses.
+  void registerTransition(TransitionKey key, ViewLocation location) {
+    if (!transitionNames.add(key.name())) {
+      report(
+          location,
+          "duplicate-transition-key",
+          "Duplicate TransitionKey name '"
+              + key.name()
+              + "' found on the same page. TransitionKey names must be unique per document.",
+          "Give each transitioning element a distinct TransitionKey name.");
+    }
+    transitionLocations.putIfAbsent(key, location(location));
   }
 }

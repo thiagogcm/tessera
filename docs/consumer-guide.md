@@ -198,7 +198,7 @@ Route and asset definitions use their logical paths, such as `/guides/café`. Li
 
 ## Read compilation diagnostics
 
-`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title and route (for sites); its `view()` holds the enclosing component path and separate `tagName` and nullable `domId` fields. `CompilationDiagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback propagates unchanged, with a suppressed `CompilationException` naming the component path.
+`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title and route (for sites); its `view()` holds the enclosing component path and separate `tagName` and nullable `domId` fields. `CompilationDiagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback, or by a late or document-end callback, propagates unchanged, with a suppressed `CompilationException` naming the component path.
 
 ```java
 try {

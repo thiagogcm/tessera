@@ -1,21 +1,21 @@
 package dev.nthings.tessera.render;
 
-import dev.nthings.tessera.core.IdReference;
 import dev.nthings.tessera.core.TagName;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /// Linked page content: what validation, inspection and painting walk.
 sealed interface ResolvedNode
     permits ResolvedNode.ResolvedTag, ResolvedNode.ResolvedText, ResolvedNode.ResolvedRaw {
 
-  /// Linked element; `idReferences` keeps the references whose targets were reported as missing
-  /// or ambiguous, so validators skip secondary errors for them.
+  /// Linked element; `unresolvedAttributes` names reference attributes whose targets were
+  /// reported as missing or ambiguous, so validators skip secondary errors for them.
   record ResolvedTag(
       TagName tag,
-      CompilationLocation location,
+      ViewLocation location,
       Map<String, String> attributes,
-      Map<String, IdReference> idReferences,
+      Set<String> unresolvedAttributes,
       List<ResolvedNode> children)
       implements ResolvedNode {}
 

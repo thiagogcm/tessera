@@ -1,57 +1,57 @@
 package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.IdReference;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 /// Turns expanded [ViewNode]s into [ResolvedNode]s once every identity on the page is bound.
 final class ReferenceLinker {
-  private final ViewExpansion expansion;
-  private final CompilationState state;
-
-  ReferenceLinker(ViewExpansion expansion, CompilationState state) {
-    this.expansion = expansion;
-    this.state = state;
-  }
+  private ReferenceLinker() {}
 
   /// Substitutes late slots, splices fragments into their parent, places tooltip companions after
   /// their invoker and folds pending [IdReference]s into attributes, appending the result to
   /// `out`.
-  void link(ViewNode node, List<ResolvedNode> out) {
+  static void link(ViewNode node, CompilationState state, List<ResolvedNode> out) {
     switch (node) {
-      case ViewNode.Slot slot -> link(expansion.resolveSlot(slot.index()), out);
-      case ViewNode.Fragment fragment -> fragment.children().forEach(child -> link(child, out));
+      case ViewNode.Slot slot -> link(slot.content(), state, out);
+      case ViewNode.Fragment fragment -> {
+        for (var child : fragment.children()) {
+          link(child, state, out);
+        }
+      }
       case ViewNode.Empty _ -> {}
       case ResolvedText text -> out.add(text);
       case ResolvedRaw raw -> out.add(raw);
       case ViewNode.Tag tag -> {
-        out.add(linkTag(tag));
+        out.add(linkTag(tag, state));
         var companion = tag.companion();
         if (companion != null) {
-          link(companion, out);
+          link(companion, state, out);
         }
       }
     }
   }
 
-  private ResolvedTag linkTag(ViewNode.Tag tag) {
+  private static ResolvedTag linkTag(ViewNode.Tag tag, CompilationState state) {
     var attrs = tag.attributes();
-    var unresolved = new LinkedHashMap<String, IdReference>();
+    Set<String> unresolved = Set.of();
     if (!tag.references().isEmpty()) {
       var linked = new LinkedHashMap<>(attrs);
+      var missing = new LinkedHashSet<String>();
       tag.references()
           .forEach(
               (name, reference) -> {
                 var ids = new ArrayList<String>(reference.targets().size());
                 for (var target : reference.targets()) {
                   var id =
-                      expansion.boundId(
+                      state.boundId(
                           target, "<" + tag.tag().tagName() + " " + name + ">", tag.location());
                   if (id != null) {
                     ids.add(id);
@@ -62,20 +62,19 @@ final class ReferenceLinker {
                   linked.put(name, reference.prefix() + String.join(" ", ids));
                 } else {
                   linked.remove(name);
-                  unresolved.put(name, reference);
+                  missing.add(name);
                 }
               });
       attrs = Collections.unmodifiableMap(linked);
+      unresolved = Collections.unmodifiableSet(missing);
     }
     var children = new ArrayList<ResolvedNode>(tag.children().size());
-    tag.children().forEach(child -> link(child, children));
+    for (var child : tag.children()) {
+      link(child, state, children);
+    }
     var resolved =
         new ResolvedTag(
-            tag.tag(),
-            tag.location(),
-            attrs,
-            Collections.unmodifiableMap(unresolved),
-            Collections.unmodifiableList(children));
+            tag.tag(), tag.location(), attrs, unresolved, Collections.unmodifiableList(children));
     var id = attrs.get("id");
     if (id != null && !id.isBlank()) {
       state.elementsById.putIfAbsent(id, resolved);

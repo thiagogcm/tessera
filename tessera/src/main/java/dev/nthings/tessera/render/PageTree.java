@@ -126,7 +126,7 @@ public record PageTree(List<Node> head, List<Node> body) {
         case ResolvedNode.ResolvedText(var content) -> converted.add(new Text(content));
         case ResolvedNode.ResolvedRaw(var html) -> converted.add(new Raw(html.length()));
         case ResolvedNode.ResolvedTag tag -> {
-          var location = tag.location().view();
+          var location = tag.location();
           converted.add(
               new Element(
                   tag.tag().tagName(),

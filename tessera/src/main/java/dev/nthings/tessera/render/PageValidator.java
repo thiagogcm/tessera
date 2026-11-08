@@ -24,7 +24,7 @@ final class PageValidator {
       Map<String, String> attrs,
       StyleRefinement style,
       CompilationState state,
-      CompilationLocation location) {
+      ViewLocation location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       state.report(
@@ -105,7 +105,7 @@ final class PageValidator {
             "Correct the URL syntax and percent-encode spaces and literal percent signs.");
         continue;
       }
-      state.outgoingLinks.putIfAbsent(url, tag.location());
+      state.outgoingLinks.putIfAbsent(url, state.location(tag.location()));
       if (tag.tag() == HtmlTag.A
           && urlAttribute.equals("href")
           && url.startsWith("#")
@@ -199,7 +199,7 @@ final class PageValidator {
   /// Whether `tag` is named through `aria-label` or `aria-labelledby`.
   static boolean hasAriaName(ResolvedTag tag) {
     var attrs = tag.attributes();
-    return tag.idReferences().containsKey("aria-labelledby")
+    return tag.unresolvedAttributes().contains("aria-labelledby")
         || isNonBlank(attrs.get("aria-label"))
         || isNonBlank(attrs.get("aria-labelledby"));
   }

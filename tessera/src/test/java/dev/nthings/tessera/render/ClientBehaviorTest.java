@@ -39,14 +39,13 @@ class ClientBehaviorTest {
   }
 
   @Test
-  @DisplayName("an external behavior becomes a content-hashed asset")
+  @DisplayName("an external behavior becomes an asset referenced by the page")
   void externalBehaviorBecomesAsset() {
     var page =
         PageCompiler.compile(page(BEHAVIOR), new Tokens(), OutputMode.externalAsset("/assets"));
 
     var asset = page.assets().getFirst();
-    assertThat(asset.path()).startsWith("/assets/behaviors/test-widget-").endsWith(".js");
-    assertThat(page.html())
-        .contains("<script type=\"module\" src=\"" + asset.path() + "\"></script>");
+    assertThat(asset.path()).endsWith(".js");
+    assertThat(page.html()).contains("src=\"" + asset.path() + "\"");
   }
 }

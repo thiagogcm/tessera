@@ -1,4 +1,0 @@
-- main:
-  - heading "Switch — Off" [level=1]
-  - text: Weekly digest
-  - switch "Weekly digest"

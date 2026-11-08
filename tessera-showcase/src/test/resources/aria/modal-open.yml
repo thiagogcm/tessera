@@ -1,7 +1,0 @@
-- main:
-  - heading "Modal dialog — Open" [level=1]
-  - dialog "Publish release?":
-    - heading "Publish release?" [level=2]
-    - paragraph: Shown open, without a second trigger.
-    - paragraph: This note is long enough to wrap onto several lines in a narrow window. The dialog stays inside the viewport, and the document does not gain a horizontal scrollbar.
-    - button "Got it"

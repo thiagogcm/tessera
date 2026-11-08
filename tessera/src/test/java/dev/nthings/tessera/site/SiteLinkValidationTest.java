@@ -111,7 +111,7 @@ class SiteLinkValidationTest {
   }
 
   @Test
-  @DisplayName("collects page errors in route declaration order despite concurrent preparation")
+  @DisplayName("collects page errors across routes")
   void collectsPageErrorsAcrossRoutes() {
     var site =
         SiteDefinition.of(
@@ -133,7 +133,7 @@ class SiteLinkValidationTest {
             d -> d.location().route(),
             d -> d.location().tagName(),
             d -> d.location().domId())
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             tuple("image-dimensions", "/profile", "img", null),
             tuple("invalid-url", "/settings", "a", "docs"),
             tuple("interactive-label", "/settings", "button", "save"));

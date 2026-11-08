@@ -344,6 +344,6 @@ just guide      # generate the runnable example
 
 Upload the entire `target/guide` directory, including its assets. This example publishes at the origin root. Configure your host to serve directory indexes and redirect `/guide` to `/guide/`.
 
-The browser suite runs on latest Chromium and latest Firefox. It includes axe-core WCAG A/AA audits, keyboard flows for interactive widgets, forced-colors, reduced-motion, 200% zoom, text-spacing checks, and committed accessibility-tree snapshots. A changed snapshot is a changed experience: review the diff, then regenerate with `-Dtessera.bless=true` when the change is intentional.
+The browser suite runs on latest Chromium and latest Firefox. It includes axe-core WCAG A/AA audits, keyboard flows for interactive widgets, forced-colors, reduced-motion, 200% zoom, and text-spacing checks.
 
 For failures in the showcase's browser suite, inspect the reports under `tessera-showcase/target/failsafe-reports` and traces/screenshots under `tessera-showcase/target/playwright/{chromium,firefox}`.

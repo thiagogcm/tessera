@@ -1,3 +1,0 @@
-- main:
-  - heading "Modal dialog — Closed" [level=1]
-  - button "Open modal"

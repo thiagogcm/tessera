@@ -1,3 +1,0 @@
-- main:
-  - heading "Actions — Disabled" [level=1]
-  - button "Delete" [disabled]

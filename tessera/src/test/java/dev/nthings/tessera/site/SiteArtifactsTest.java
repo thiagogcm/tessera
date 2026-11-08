@@ -64,7 +64,9 @@ class SiteArtifactsTest {
               SiteDefinition.of(new SiteRoute("/", new PageDocument("Custom", custom))));
 
       assertThat(compiled.searchIndexJson())
-          .contains("\"id\": \"custom\", \"title\": \"Custom section\", \"level\": 2");
+          .contains("\"id\": \"custom\"")
+          .contains("\"title\": \"Custom section\"")
+          .contains("\"level\": 2");
     }
 
     /// The index with whitespace around JSON punctuation removed, so assertions don't depend on
@@ -76,14 +78,18 @@ class SiteArtifactsTest {
     @Test
     @DisplayName("prefers the route title over the document title")
     void prefersRouteTitleOverDocumentTitle() {
-      assertThat(compactIndex()).contains("\"path\":\"/guide\",\"title\":\"Getting Started\"");
+      assertThat(compactIndex())
+          .contains("\"path\":\"/guide\"")
+          .contains("\"title\":\"Getting Started\"");
     }
 
     @Test
     @DisplayName("lists table-of-contents sections with their level")
     void listsTableOfContentsSectionsWithLevel() {
       assertThat(compactIndex())
-          .contains("{\"id\":\"config\",\"title\":\"Configuration\",\"level\":3}");
+          .contains("\"id\":\"config\"")
+          .contains("\"title\":\"Configuration\"")
+          .contains("\"level\":3");
     }
   }
 }

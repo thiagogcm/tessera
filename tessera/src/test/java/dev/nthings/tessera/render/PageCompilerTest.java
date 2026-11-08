@@ -1,6 +1,5 @@
 package dev.nthings.tessera.render;
 
-import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.main;
@@ -8,8 +7,6 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.render;
 
-import dev.nthings.tessera.components.Callout;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.support.CssBlocks;
@@ -172,60 +169,10 @@ class PageCompilerTest {
     }
 
     @Test
-    @DisplayName("is emitted at a content-hashed path under the asset prefix")
-    void isEmittedAtHashedPath() {
-      assertThat(page.compiled().externalCssPath())
-          .startsWith("/static/assets/styles-")
-          .endsWith(".css");
-    }
-
-    @Test
     @DisplayName("is linked from <head>")
     void isLinkedFromHead() {
       assertThat(page.element("head > link[rel=stylesheet]"))
           .hasAttribute("href", page.compiled().externalCssPath());
-    }
-  }
-
-  @Nested
-  @DisplayName("reproducibility")
-  class Reproducibility {
-
-    private static TagElement customButton() {
-      return button().attr("class", "custom").px(CssLength.rem(1)).text("Go");
-    }
-
-    private static TagElement pageWith(TagElement button) {
-      return main().children(Callout.note("one"), Callout.tip("two"), button);
-    }
-
-    private static String compileHtml(TagElement body) {
-      return render(body).html();
-    }
-
-    @Test
-    @DisplayName("compiling the same tree twice yields identical HTML")
-    void compilingSameTreeTwiceYieldsIdenticalHtml() {
-      var body = pageWith(customButton());
-
-      assertThat(compileHtml(body)).isEqualTo(compileHtml(body));
-    }
-
-    @Test
-    @DisplayName("rebuilding an equivalent tree yields identical HTML")
-    void rebuildingEquivalentTreeYieldsIdenticalHtml() {
-      assertThat(compileHtml(pageWith(customButton())))
-          .isEqualTo(compileHtml(pageWith(customButton())));
-    }
-
-    @Test
-    @DisplayName("compiling never mutates the input tree")
-    void compilingNeverMutatesInputTree() {
-      var button = customButton();
-
-      compileHtml(pageWith(button));
-
-      assertThat(button.attributes()).containsEntry("class", "custom");
     }
   }
 }

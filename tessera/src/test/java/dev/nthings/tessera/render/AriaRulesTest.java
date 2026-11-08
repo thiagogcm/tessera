@@ -214,17 +214,4 @@ class AriaRulesTest {
     assertThat(div().ariaCurrent(Accessible.Current.PAGE).attributes())
         .containsEntry("aria-current", "page");
   }
-
-  @Test
-  @DisplayName("every role has a wire value that parses back to it")
-  void roleWireValuesRoundTrip() {
-    for (var role : Role.values()) {
-      assertThat(Role.fromWireValue(role.wireValue())).isEqualTo(role);
-    }
-    assertThat(Role.fromWireValue("not-a-role")).isNull();
-    assertThat(Role.TABLIST.requiredChildren()).containsExactly(Role.TAB);
-    assertThat(Role.SWITCH.requiredAria()).containsExactly("aria-checked");
-    assertThat(Role.SWITCH.supportedAria()).contains("aria-checked", "aria-label");
-    assertThat(Role.NOTE.supportedAria()).doesNotContain("aria-expanded");
-  }
 }

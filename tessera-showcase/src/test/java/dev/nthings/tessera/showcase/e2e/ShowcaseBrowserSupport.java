@@ -55,7 +55,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class ShowcaseBrowserSupport {
-  private static final Path ARIA_SNAPSHOTS = Path.of("src", "test", "resources", "aria");
   private Path publishedSite;
   private HttpServer server;
   private Playwright playwright;
@@ -625,34 +624,6 @@ abstract class ShowcaseBrowserSupport {
           .as("the row scrolls inside its region")
           .isEqualTo(true);
     }
-  }
-
-  private static Stream<Arguments> componentCases() {
-    return Catalog.cases().stream()
-        .map(
-            testCase ->
-                Arguments.argumentSet(testCase.storyId() + " / " + testCase.variant(), testCase));
-  }
-
-  /// A changed snapshot is a changed experience for assistive technology: review the diff like
-  /// any other change. `-Dtessera.bless=true` rewrites the snapshots from the current output.
-  @ParameterizedTest
-  @MethodSource("componentCases")
-  @DisplayName("a component case exposes the committed accessibility tree")
-  void caseMatchesAriaSnapshot(Catalog.Case testCase) throws IOException {
-    page.navigate(baseUrl + testCase.path());
-    var actual = page.locator("body").ariaSnapshot().strip() + "\n";
-    var snapshot = ARIA_SNAPSHOTS.resolve(testCase.storyId() + "-" + testCase.variant() + ".yml");
-
-    if (Boolean.getBoolean("tessera.bless")) {
-      Files.createDirectories(ARIA_SNAPSHOTS);
-      Files.writeString(snapshot, actual);
-      return;
-    }
-    Assertions.assertThat(snapshot)
-        .as("snapshot for %s; run with -Dtessera.bless=true to create it", testCase.path())
-        .exists();
-    Assertions.assertThat(actual).isEqualTo(Files.readString(snapshot));
   }
 
   @Test

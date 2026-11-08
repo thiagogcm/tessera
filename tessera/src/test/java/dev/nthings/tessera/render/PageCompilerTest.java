@@ -141,16 +141,21 @@ class PageCompilerTest {
         render(
             div()
                 .children(
-                    deferred(div().id("toast-high-1").text("High 1"), 20),
+                    deferred(
+                        div()
+                            .id("toast-high-1")
+                            .text("High 1")
+                            .child(deferred(div().id("nested").text("Nested"), 20)),
+                        20),
                     deferred(div().id("modal-low").text("Low"), 5),
                     deferred(div().id("toast-high-2").text("High 2"), 20)));
 
     var bodyChildren = page.dom().body().children();
 
-    assertThat(bodyChildren).hasSize(4);
-    assertThat(bodyChildren.subList(1, 4))
+    assertThat(bodyChildren).hasSize(5);
+    assertThat(bodyChildren.subList(1, 5))
         .extracting(e -> e.id())
-        .containsExactly("modal-low", "toast-high-1", "toast-high-2");
+        .containsExactly("modal-low", "nested", "toast-high-1", "toast-high-2");
   }
 
   @Nested

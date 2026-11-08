@@ -10,6 +10,8 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
@@ -87,7 +89,35 @@ class ViewExpansionTest {
                 assertThat(context)
                     .hasMessageContaining(
                         "[callback-failure]",
+                        "page \"Broken\"",
                         "box[outer] > Exploding",
                         "Render callback failed: Broken render"));
+  }
+
+  @Test
+  @DisplayName("late conversion failures retain their page and component context")
+  void lateConversionFailuresRetainContext() {
+    IntoElement broken =
+        () -> {
+          throw new IllegalStateException("Broken conversion");
+        };
+    var failure =
+        catchThrowable(
+            () ->
+                PageCompiler.compile(
+                    new PageDocument(
+                        "Late page", main().child(new Box("outer", Elements.late(_ -> broken))))));
+
+    assertThat(failure).isInstanceOf(IllegalStateException.class).hasMessage("Broken conversion");
+    assertThat(failure.getSuppressed())
+        .singleElement()
+        .satisfies(
+            context ->
+                assertThat(context)
+                    .hasMessageContaining(
+                        "[callback-failure]",
+                        "page \"Late page\"",
+                        "box[outer]",
+                        "Late callback failed: Broken conversion"));
   }
 }

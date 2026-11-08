@@ -60,7 +60,7 @@ public final class Overlays {
   public static final class Modal implements RenderView {
 
     private final ElementId id;
-    private final ElementRef dialog = ElementRef.named("dialog");
+    private ElementRef dialog = ElementRef.named("dialog");
     private final String title;
     private @Nullable String description;
     private final List<Element> bodyNodes = new ArrayList<>();
@@ -114,6 +114,13 @@ public final class Overlays {
     /// The `<dialog>` element, for invokers placed outside this view.
     public ElementRef dialogRef() {
       return dialog;
+    }
+
+    /// Binds the `<dialog>` to an application-owned reference. Pass the same reference on every
+    /// render when work that outlives a render, such as a timer or request callback, targets it.
+    public Modal dialogRef(ElementRef dialog) {
+      this.dialog = dialog;
+      return this;
     }
 
     /// Wraps this modal in a [DeferredElement] to hoist it to the end of `<body>`.
@@ -229,7 +236,7 @@ public final class Overlays {
   public static final class Drawer implements RenderView {
 
     private final ElementId id;
-    private final ElementRef dialog = ElementRef.named("dialog");
+    private ElementRef dialog = ElementRef.named("dialog");
     private final String title;
     private final DrawerSide side;
     private @Nullable String subtitle;
@@ -267,6 +274,12 @@ public final class Overlays {
     /// The `<dialog>` element, for invokers placed outside this view.
     public ElementRef dialogRef() {
       return dialog;
+    }
+
+    /// Binds the `<dialog>` to an application-owned reference; see [Modal#dialogRef(ElementRef)].
+    public Drawer dialogRef(ElementRef dialog) {
+      this.dialog = dialog;
+      return this;
     }
 
     public DeferredElement asDeferred(int priority) {

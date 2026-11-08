@@ -72,8 +72,9 @@ public final class RenderContext {
     docState.contributeBehavior(behavior);
   }
 
-  public DocumentState documentState() {
-    return docState;
+  /// Headings registered so far on the page, in registration order.
+  public List<DocumentHeading> headings() {
+    return docState.headings();
   }
 
   /// Registers metadata for a local element id in the current view scope.

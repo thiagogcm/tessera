@@ -2,7 +2,6 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.css.CssProperty;
-import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
@@ -22,7 +21,7 @@ final class PageValidator {
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   static void validateImage(
       Map<String, String> attrs,
-      StyleRefinement style,
+      Map<CssProperty, String> style,
       CompilationState state,
       ViewLocation location) {
     var alt = attrs.get("alt");

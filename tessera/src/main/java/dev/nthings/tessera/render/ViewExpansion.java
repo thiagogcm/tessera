@@ -18,38 +18,32 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Expands authoring elements into [ViewNode]s for one page.
 ///
-/// Collects styles and schedules deferred and late content. Identities, transitions and
+/// Collects styles and delegates deferred and late placement. Identities, transitions and
 /// diagnostics go to the page's [CompilationState]; [LayoutPass] orders the document and
 /// [ReferenceLinker] links the result.
 final class ViewExpansion {
   private final CompilationState state;
-  private final PriorityQueue<Deferred> deferred = new PriorityQueue<>();
-  private final ArrayDeque<Runnable> pending = new ArrayDeque<>();
-  private long sequence;
+  private final Placement placement;
 
-  private record Deferred(int priority, long sequence, ViewNode node)
-      implements Comparable<Deferred> {
-    @Override
-    public int compareTo(Deferred other) {
-      var order = Integer.compare(priority, other.priority);
-      return order != 0 ? order : Long.compare(sequence, other.sequence);
-    }
+  interface Placement {
+    ViewNode defer(Supplier<ViewNode> content, int priority);
+
+    ViewNode late(Supplier<ViewNode> content);
   }
 
-  ViewExpansion(CompilationState state) {
+  ViewExpansion(CompilationState state, Placement placement) {
     this.state = state;
+    this.placement = placement;
   }
 
   ViewNode expand(Element element, RenderContext context) {
@@ -57,15 +51,9 @@ final class ViewExpansion {
       case EmptyElement _ -> ViewNode.Empty.INSTANCE;
       case TextElement(var content) -> new ResolvedText(content);
       case RawHtmlElement(var html) -> new ResolvedRaw(html);
-      case DeferredElement child -> {
-        defer(child.priority(), expand(child.child(), context));
-        yield ViewNode.Empty.INSTANCE;
-      }
-      case LateElement(var content) -> {
-        var slot = new ViewNode.Slot();
-        pending.add(() -> slot.fill(expand(context, "Late", content)));
-        yield slot;
-      }
+      case DeferredElement child ->
+          placement.defer(() -> expand(child.child(), context), child.priority());
+      case LateElement(var content) -> placement.late(() -> expand(context, "Late", content));
       case FragmentElement fragment ->
           new ViewNode.Fragment(children(fragment.childrenList(), context));
       case RenderOnceElement(var component, var source) -> {
@@ -104,24 +92,6 @@ final class ViewExpansion {
   ViewNode expand(
       RenderContext context, String phase, Function<RenderContext, ? extends IntoElement> content) {
     return expand(callback(context, phase, () -> content.apply(context).intoElement()), context);
-  }
-
-  /// Places `node` after the main flow, ordered by `priority` and then by placement order.
-  void defer(int priority, ViewNode node) {
-    deferred.add(new Deferred(priority, sequence++, node));
-  }
-
-  /// The next deferred node, or `null` once every one was taken.
-  @Nullable ViewNode nextDeferred() {
-    var next = deferred.poll();
-    return next == null ? null : next.node();
-  }
-
-  /// Expands the late elements placed so far, including those their content places.
-  void resolveLate() {
-    for (Runnable next; (next = pending.poll()) != null; ) {
-      next.run();
-    }
   }
 
   /// Adds the view's scope attributes to its root element, or wraps a root that is not one.
@@ -199,7 +169,7 @@ final class ViewExpansion {
 
     var style = identityStyles(element, domId, location);
     if (element.tag() == HtmlTag.IMG) {
-      PageValidator.validateImage(attrs, style, state, location);
+      PageValidator.validateImage(attrs, style.properties(), state, location);
     }
 
     var transition = element.transitionKey();

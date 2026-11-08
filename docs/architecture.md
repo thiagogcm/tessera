@@ -164,7 +164,7 @@ Field rendering copies the retained control's authoring configuration before wir
 
 ## Document metadata and component state
 
-`DocumentState` owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations; the site layer never receives this mutable state.
+`DocumentState` owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations and a `headings()` snapshot; components and the site layer never receive this mutable state. Overlay and dropdown factories accept caller-owned element references, allowing independent invokers to target their content.
 
 `DocumentHeading(targetDomId, title, level)` is component-independent metadata. `registerHeading(localId, title, level)` resolves the local ID in the current view scope and records it. The component emits the referenced element. Registration does not automatically index every HTML heading.
 

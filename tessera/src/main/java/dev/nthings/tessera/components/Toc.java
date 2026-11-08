@@ -95,8 +95,7 @@ public final class Toc {
   /// TOC of every section registered on the page, resolved after layout so it may precede them.
   public static Element fromContext(String id, String heading) {
     return Elements.late(
-        context ->
-            new TableOfContents(ElementId.of(id), heading, context.documentState().headings()));
+        context -> new TableOfContents(ElementId.of(id), heading, context.headings()));
   }
 
   public static TableOfContents of(String id, String heading, List<DocumentHeading> explicitItems) {

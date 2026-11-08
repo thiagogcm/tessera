@@ -4,6 +4,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -40,11 +41,12 @@ class DropdownTest {
   @Test
   @DisplayName("exposes its panel to invokers outside the view")
   void exposesItsPanelToInvokersOutsideTheView() {
-    var dropdown = Dropdown.create("tools", "Tools").linkItem("/logs", "View Logs", "G L");
+    var reference = ElementRef.named("tools-panel");
+    var dropdown =
+        Dropdown.create("tools", "Tools").panelRef(reference).linkItem("/logs", "View Logs", "G L");
     var outside =
         renderMain(
-            dropdown,
-            Button.of("Toggle tools").command(dropdown.panelRef(), BuiltinCommand.TOGGLE_POPOVER));
+            dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
     var panel = outside.element("button.dropdown-trigger").nextElementSibling();
 
     assertThat(outside.element("main > button.button"))

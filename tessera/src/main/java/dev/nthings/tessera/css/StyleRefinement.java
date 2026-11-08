@@ -67,6 +67,11 @@ public final class StyleRefinement
     return declarations.isEmpty() && customProperties.isEmpty();
   }
 
+  /// Snapshot of computed declarations, independent of this authoring builder.
+  public Map<CssProperty, String> properties() {
+    return Map.copyOf(declarations);
+  }
+
   public @Nullable String get(CssProperty property) {
     return declarations.get(property);
   }

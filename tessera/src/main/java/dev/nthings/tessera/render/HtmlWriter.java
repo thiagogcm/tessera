@@ -2,10 +2,7 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.foundation.Fnv1a64;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.util.ArrayList;
@@ -104,8 +101,6 @@ final class HtmlWriter {
 
   private static void paintNode(ResolvedNode node, StringBuilder out) {
     switch (node) {
-      case ResolvedEmpty _ -> {}
-      case ResolvedSlot _, ResolvedFragment _ -> throw PageValidator.unlinked();
       case ResolvedText(var content) -> out.append(Encode.forHtmlContent(content));
       case ResolvedRaw(var trustedHtml) -> out.append(trustedHtml);
       case ResolvedTag tag -> {
@@ -117,7 +112,7 @@ final class HtmlWriter {
             out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');
           }
         }
-        var source = tag.location().source();
+        var source = tag.location().view().source();
         if (source != null) {
           out.append(" data-src=\"").append(Encode.forHtmlAttribute(source.toString())).append('"');
         }
@@ -128,11 +123,6 @@ final class HtmlWriter {
             paintNode(child, out);
           }
           out.append("</").append(tag.tag().tagName()).append('>');
-        }
-
-        var companion = tag.companionSibling();
-        if (companion != null) {
-          paintNode(companion, out);
         }
       }
     }

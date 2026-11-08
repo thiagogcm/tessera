@@ -14,4 +14,11 @@
         <Class name="dev.nthings.tessera.site.SiteCompiler"/>
         <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
     </Match>
+
+    <!-- Preserve callback exception types after attaching component context. -->
+    <Match>
+        <Class name="dev.nthings.tessera.render.ViewExpansion"/>
+        <Method name="callback"/>
+        <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
+    </Match>
 </FindBugsFilter>

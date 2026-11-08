@@ -38,7 +38,7 @@ public final class TagElement
   private final @Nullable SourceLocation source;
 
   public TagElement(TagName tag) {
-    this(tag, SourceTracking.capture());
+    this(tag, SourceProvenance.capture());
   }
 
   private TagElement(TagName tag, @Nullable SourceLocation source) {
@@ -67,7 +67,7 @@ public final class TagElement
     return this;
   }
 
-  /// The authoring call site, present only while [SourceTracking] is active.
+  /// The authoring call site, present only while JVM source tracking is active.
   public @Nullable SourceLocation source() {
     return source;
   }

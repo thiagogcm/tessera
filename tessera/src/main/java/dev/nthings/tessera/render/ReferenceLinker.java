@@ -2,52 +2,56 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IdReference;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
+import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-/// Resolves late slots and symbolic references after all identities are bound.
+/// Turns expanded [ViewNode]s into [ResolvedNode]s once every identity on the page is bound.
 final class ReferenceLinker {
-  private ReferenceLinker() {}
+  private final ViewExpansion expansion;
+  private final CompilationState state;
 
-  /// Substitutes late-element slots, folds pending [IdReference]s into attributes now that every
-  /// ref on the page is bound, and splices fragments into their parent, appending the result to
-  /// `out`. Nothing downstream of linking sees a slot or a fragment.
-  static void link(ResolvedNode node, CompilationState state, List<ResolvedNode> out) {
+  ReferenceLinker(ViewExpansion expansion, CompilationState state) {
+    this.expansion = expansion;
+    this.state = state;
+  }
+
+  /// Substitutes late slots, splices fragments into their parent, places tooltip companions after
+  /// their invoker and folds pending [IdReference]s into attributes, appending the result to
+  /// `out`.
+  void link(ViewNode node, List<ResolvedNode> out) {
     switch (node) {
-      case ResolvedSlot slot -> {
-        var content = state.lateSlots.get(slot.index());
-        if (content == null) {
-          throw new IllegalStateException("Late element was linked before it was laid out");
+      case ViewNode.Slot slot -> link(expansion.resolveSlot(slot.index()), out);
+      case ViewNode.Fragment fragment -> fragment.children().forEach(child -> link(child, out));
+      case ViewNode.Empty _ -> {}
+      case ResolvedText text -> out.add(text);
+      case ResolvedRaw raw -> out.add(raw);
+      case ViewNode.Tag tag -> {
+        out.add(linkTag(tag));
+        var companion = tag.companion();
+        if (companion != null) {
+          link(companion, out);
         }
-        link(content, state, out);
       }
-      case ResolvedFragment fragment -> {
-        for (var child : fragment.children()) {
-          link(child, state, out);
-        }
-      }
-      case ResolvedTag tag -> out.add(linkTag(tag, state));
-      default -> out.add(node);
     }
   }
 
-  private static ResolvedTag linkTag(ResolvedTag tag, CompilationState state) {
+  private ResolvedTag linkTag(ViewNode.Tag tag) {
     var attrs = tag.attributes();
     var unresolved = new LinkedHashMap<String, IdReference>();
-    if (!tag.idReferences().isEmpty()) {
+    if (!tag.references().isEmpty()) {
       var linked = new LinkedHashMap<>(attrs);
-      tag.idReferences()
+      tag.references()
           .forEach(
               (name, reference) -> {
                 var ids = new ArrayList<String>(reference.targets().size());
                 for (var target : reference.targets()) {
                   var id =
-                      state.boundDomId(
+                      expansion.boundId(
                           target, "<" + tag.tag().tagName() + " " + name + ">", tag.location());
                   if (id != null) {
                     ids.add(id);
@@ -64,18 +68,14 @@ final class ReferenceLinker {
       attrs = Collections.unmodifiableMap(linked);
     }
     var children = new ArrayList<ResolvedNode>(tag.children().size());
-    for (var child : tag.children()) {
-      link(child, state, children);
-    }
-    var companion = tag.companionSibling();
+    tag.children().forEach(child -> link(child, children));
     var resolved =
         new ResolvedTag(
             tag.tag(),
             tag.location(),
             attrs,
             Collections.unmodifiableMap(unresolved),
-            Collections.unmodifiableList(children),
-            companion != null ? linkTag(companion, state) : null);
+            Collections.unmodifiableList(children));
     var id = attrs.get("id");
     if (id != null && !id.isBlank()) {
       state.elementsById.putIfAbsent(id, resolved);

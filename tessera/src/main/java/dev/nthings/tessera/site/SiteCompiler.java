@@ -4,7 +4,7 @@ import static dev.nthings.tessera.site.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.site.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.SourceTracking;
+import dev.nthings.tessera.core.SourceProvenance;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.render.CompilationDiagnostic;
 import dev.nthings.tessera.render.CompilationException;
@@ -147,11 +147,11 @@ public final class SiteCompiler {
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.
   private static <T, R> List<R> parallelMap(List<T> inputs, Function<T, R> fn) {
-    var tracking = SourceTracking.active();
+    var capture = SourceProvenance.current();
     try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
       var futures = new ArrayList<Future<R>>(inputs.size());
       for (var input : inputs) {
-        futures.add(executor.submit(() -> SourceTracking.with(tracking, () -> fn.apply(input))));
+        futures.add(executor.submit(() -> SourceProvenance.with(capture, () -> fn.apply(input))));
       }
       var results = new ArrayList<R>(futures.size());
       for (var future : futures) {

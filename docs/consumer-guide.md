@@ -159,7 +159,7 @@ For document navigation, the example uses `Toc.section(...)`. It registers headi
 
 ## Add a button
 
-`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(...)` targets a dialog or popover, including one emitted later in the document. Navigation stays on anchors.
+`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(...)` targets a dialog or popover, including one emitted later in the document: `Overlays.Modal.dialogRef()`, `Overlays.Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. Navigation stays on anchors.
 
 ```java
 var confirm = Overlays.modal("confirm", "Confirm");
@@ -198,7 +198,7 @@ Route and asset definitions use their logical paths, such as `/guides/café`. Li
 
 ## Read compilation diagnostics
 
-`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title, route (for sites), enclosing component path, and separate `tagName` and nullable `domId` fields. The exception formats those fields for display.
+`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title and route (for sites); its `view()` holds the enclosing component path and separate `tagName` and nullable `domId` fields. `CompilationDiagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback propagates unchanged, with a suppressed `CompilationException` naming the component path.
 
 ```java
 try {
@@ -300,7 +300,7 @@ just demo                 # serves the showcase with tracking on
 just explain /overlays/   # prints one route's element tree with source lines
 ```
 
-With `-Dtessera.sources=true`, or inside `SourceTracking.enabled(() -> ...)`, every element records where it was built. Rendered HTML carries `data-src="Page.java:42"`, diagnostics print the line (`<button> (Page.java:42)`), and `PageCompiler.explain(document)` returns a `PageTree` of tags, ids, components, CSS scopes, and sources. Elements a Tessera component builds are attributed to the line that placed the component. Tracking walks the stack per element, so leave it off in production.
+Inside `SourceTracking.enabled(() -> ...)` (`dev.nthings.tessera.render`), every element records where it was built. Rendered HTML carries `data-src="Page.java:42"`, diagnostics print the line (`<button> (Page.java:42)`), and `PageCompiler.explain(document)` returns a `PageTree` of tags, ids, components, CSS scopes, and sources. Elements a Tessera component builds are attributed to the line that placed the component. Tracking walks the stack per element, so leave it off in production.
 
 ## Publish assets
 

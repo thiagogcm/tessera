@@ -4,8 +4,8 @@ import java.io.Serializable;
 
 /// Where authoring code built an element: its source file and line.
 ///
-/// Captured only while [SourceTracking] is active. [#toString()] is the `File.java:42` form shown
-/// in diagnostics and emitted as `data-src`.
+/// Captured only while JVM source tracking is active.
+/// [#toString()] supplies the `File.java:42` form for diagnostics and `data-src`.
 public record SourceLocation(String file, int line) implements Serializable {
 
   @Override

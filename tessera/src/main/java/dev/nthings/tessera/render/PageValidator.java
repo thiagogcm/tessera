@@ -3,10 +3,7 @@ package dev.nthings.tessera.render;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.StyleRefinement;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.net.URI;
@@ -61,16 +58,11 @@ final class PageValidator {
 
   static void validateNodeTree(ResolvedNode node, CompilationState state) {
     switch (node) {
-      case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
-      case ResolvedSlot _, ResolvedFragment _ -> throw unlinked();
+      case ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedTag tag -> {
         validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
           validateNodeTree(child, state);
-        }
-        var companion = tag.companionSibling();
-        if (companion != null) {
-          validateNodeTree(companion, state);
         }
       }
     }
@@ -218,8 +210,6 @@ final class PageValidator {
           switch (child) {
             case ResolvedText(var text) -> !text.isBlank();
             case ResolvedRaw(var raw) -> !raw.isBlank();
-            case ResolvedEmpty _ -> false;
-            case ResolvedSlot _, ResolvedFragment _ -> throw unlinked();
             case ResolvedTag nested ->
                 (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
                     || isNonBlank(nested.attributes().get("aria-label"))
@@ -230,11 +220,6 @@ final class PageValidator {
       }
     }
     return false;
-  }
-
-  static IllegalStateException unlinked() {
-    return new IllegalStateException(
-        "Late-element slot or fragment reached validation/paint before linking");
   }
 
   static boolean isNonBlank(@Nullable String value) {

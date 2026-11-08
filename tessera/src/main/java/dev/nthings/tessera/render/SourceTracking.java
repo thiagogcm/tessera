@@ -1,5 +1,9 @@
-package dev.nthings.tessera.core;
+package dev.nthings.tessera.render;
 
+import dev.nthings.tessera.core.SourceBoundary;
+import dev.nthings.tessera.core.SourceCapture;
+import dev.nthings.tessera.core.SourceLocation;
+import dev.nthings.tessera.core.SourceProvenance;
 import java.security.CodeSource;
 import java.util.Objects;
 import java.util.Optional;
@@ -8,18 +12,15 @@ import org.jspecify.annotations.Nullable;
 
 /// Opt-in capture of the Java call site that builds each element.
 ///
-/// While active, every [TagElement] and component wrapper records the first frame of the calling
+/// While active, each element and component wrapper records the first calling frame
 /// code that is neither Tessera's own nor the platform's. Compilation carries it into diagnostics
 /// and, as `data-src="File.java:42"`, into the emitted HTML, so a rendered element leads back to
 /// the line that wrote it. Tracking costs a stack walk per element; leave it off in production.
 ///
-/// Turn it on for the whole process with `-Dtessera.sources=true`, or for the authoring and
-/// compilation done inside [#enabled(Supplier)]. Elements that a Tessera component builds itself
-/// during compilation are attributed to the line that placed the component.
+/// Use [#enabled(Supplier)] for tracked authoring and compilation.
+/// Component-generated elements point to the line that placed the component.
 public final class SourceTracking {
 
-  private static final ScopedValue<Boolean> TRACKING = ScopedValue.newInstance();
-  private static final boolean BY_DEFAULT = Boolean.getBoolean("tessera.sources");
   private static final StackWalker WALKER =
       StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
   private static final @Nullable String LIBRARY_LOCATION = locationOf(SourceTracking.class);
@@ -43,11 +44,6 @@ public final class SourceTracking {
 
   private SourceTracking() {}
 
-  /// Whether elements built now record their call site.
-  public static boolean active() {
-    return TRACKING.orElse(BY_DEFAULT);
-  }
-
   /// Runs `work` with tracking on; elements it builds or compiles carry their call sites.
   public static <R> R enabled(Supplier<R> work) {
     return with(true, work);
@@ -56,11 +52,12 @@ public final class SourceTracking {
   /// Runs `work` with tracking set to `tracking`. Compilation uses this to carry the caller's
   /// setting onto the threads it compiles on.
   public static <R> R with(boolean tracking, Supplier<R> work) {
-    return ScopedValue.where(TRACKING, tracking).call(work::get);
+    SourceCapture capture = tracking ? SourceTracking::capture : SourceCapture.NONE;
+    return SourceProvenance.with(capture, work);
   }
 
-  static @Nullable SourceLocation capture() {
-    return active() ? WALKER.walk(SourceTracking::authoringFrame).orElse(null) : null;
+  private static @Nullable SourceLocation capture() {
+    return WALKER.walk(SourceTracking::authoringFrame).orElse(null);
   }
 
   private static Optional<SourceLocation> authoringFrame(
@@ -69,6 +66,9 @@ public final class SourceTracking {
     while (iterator.hasNext()) {
       var frame = iterator.next();
       var type = frame.getDeclaringClass();
+      if (type == SourceTracking.class) {
+        continue;
+      }
       if (COMPILER_CLASSES.get(type)) {
         // Reached the compiler before any authoring code: a library component is expanding.
         return Optional.empty();

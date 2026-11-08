@@ -21,7 +21,8 @@ public final class ElementRef {
     return new ElementRef(ElementId.of(name));
   }
 
-  /// Ref whose local id is assigned by the compiler (`<tag>-<n>`, deterministic per page).
+  /// Ref whose local id is assigned by the compiler (`<tag>-<n>`, numbered within its
+  /// view scope, so ids elsewhere on the page never shift it).
   public static ElementRef anonymous() {
     return new ElementRef(null);
   }

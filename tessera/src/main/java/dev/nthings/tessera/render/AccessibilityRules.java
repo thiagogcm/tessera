@@ -2,10 +2,7 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedEmpty;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedFragment;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
-import dev.nthings.tessera.render.ResolvedNode.ResolvedSlot;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.util.ArrayList;
@@ -55,8 +52,7 @@ final class AccessibilityRules {
 
   private void visit(ResolvedNode node, Context context) {
     switch (node) {
-      case ResolvedEmpty _, ResolvedText _, ResolvedRaw _ -> {}
-      case ResolvedSlot _, ResolvedFragment _ -> throw PageValidator.unlinked();
+      case ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedTag tag -> {
         checkTag(tag, context);
         var inner =
@@ -65,10 +61,6 @@ final class AccessibilityRules {
                 context.unexposed() || isUnexposed(tag));
         for (var child : tag.children()) {
           visit(child, inner);
-        }
-        var companion = tag.companionSibling();
-        if (companion != null) {
-          visit(companion, context);
         }
       }
     }
@@ -205,8 +197,7 @@ final class AccessibilityRules {
         return true;
       }
     }
-    var companion = tag.companionSibling();
-    return companion != null && hasOrOwnsAny(companion, roles);
+    return false;
   }
 
   private static boolean hasOrOwnsAny(ResolvedTag tag, Set<Role> roles) {

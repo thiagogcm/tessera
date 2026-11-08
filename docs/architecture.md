@@ -20,7 +20,7 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 - `Styled` composes six traits by concern: `LayoutStyled`, `BoxStyled`, `TextStyled`, `EffectStyled`, `ScrollStyled`, and `AnchorStyled`. Every style method takes a typed value of the category its property accepts, so a color cannot be passed where a length belongs.
 - `CssValue` is the sealed family of those values: `CssLength` (dimensions, `calc`, `min`/`max`, `anchor()`), `CssColor` (OKLCH, `color-mix`, `light-dark`, relative colors), `CssNumber`, `CssDuration`, `Easing`, `Border`, `Shadow`, `Background`, `TrackList`, `GridPlacement`, `Transform`, `AspectRatio`, `CssIdent`, and enums for keyword sets (`CssKeyword`). `StyleRefinement` accepts declarations only from the `css` package, so no declaration is built from raw text.
 - `Accessible` writes the element's `Role` and typed `aria-*` states. The generic `attr`, `boolAttr`, and `idRef` methods refuse `role` and `aria-*`.
-- `SourceTracking` optionally records the Java call site of each element as a `SourceLocation`.
+- `SourceProvenance` lets elements record their Java call site as a `SourceLocation` through a scoped `SourceCapture`; `render.SourceTracking` supplies the JVM stack-walking capture, so `core` has no stack-walker dependency.
 - `DocumentKey<T>` supports per-compilation component state. Footnotes and image coordination retain their own registries without site-layer knowledge.
 - `OutputMode` describes CSS publication independently of filesystem I/O.
 
@@ -132,8 +132,8 @@ block
 ```mermaid
 flowchart TD
     Input["PageDocument, Tokens, and shared head contributions"]
-    Layout["LayoutPass<br/>Expand components, bind identities, collect styles"]
-    Linker["ReferenceLinker<br/>Resolve late slots and symbolic ID attributes"]
+    Layout["LayoutPass and ViewExpansion<br/>Expand components, bind identities, collect styles"]
+    Linker["ReferenceLinker<br/>Resolve late slots, fragments, tooltip companions and symbolic ID attributes"]
     Validator["PageValidator<br/>Check linked nodes and collect valid URLs"]
     Prepared["PreparedPage<br/>Opaque tree, metadata snapshots, and private CSS"]
     Selection["Standalone stylesheet or site validation<br/>and ordered stylesheet merge"]
@@ -150,11 +150,11 @@ flowchart TD
 
 `PageCompiler` coordinates passes. `CompilationState` belongs to one preparation: identity bindings, counters, deferred priorities, late slots, and collected metadata. It does not escape preparation.
 
-`LayoutPass` creates an explicit document context. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
+`LayoutPass` orders the document and `ViewExpansion` expands components into `ViewNode`s, binding element references and numbering generated ids within each identity scope, so content added in one view never renumbers another. A render or style callback failure propagates unchanged, with a suppressed `CompilationException` naming the component path. `LayoutPass` creates an explicit document context. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
-`ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. `AccessibilityRules` checks the linked body tree (see below). It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
+`ReferenceLinker` turns `ViewNode`s into `ResolvedNode`s after identity allocation: it substitutes late slots, splices fragments, places each tooltip companion after its invoker and resolves references. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. `AccessibilityRules` checks the linked body tree (see below). It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
 
-`ResolvedNode` and its variants are package-private. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
+`ViewNode` and `ResolvedNode` are package-private. Only linked `ResolvedNode`s (tags, text and raw HTML) reach validation, inspection and painting. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
 
 `PreparedPage` has no public constructor, node accessors, or document-state accessor. Public metadata consists of snapshots of IDs, outgoing URLs, transition keys, headings, and client behaviors. Its stylesheet collector is copied and privately owned. `contributeStylesTo(target)` copies rules into a caller-owned collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
 
@@ -193,7 +193,7 @@ Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark 
 
 ## Source provenance
 
-`SourceTracking` is off by default. While it is active (`-Dtessera.sources=true`, or inside `SourceTracking.enabled(...)`), each `TagElement` and component wrapper records the first stack frame that is neither Tessera's nor the platform's. Frames are classified by code source, so a library user's own code is never mistaken for Tessera's, even in the same package.
+`SourceTracking` is off by default. While it is active (inside `SourceTracking.enabled(...)` or `SourceTracking.with(true, ...)`), each `TagElement` and component wrapper records the first stack frame that is neither Tessera's nor the platform's. Frames are classified by code source, so a library user's own code is never mistaken for Tessera's, even in the same package.
 
 - An element a Tessera component builds during compilation is attributed to the line that placed the component, through the origin carried by `RenderContext` and by head and end-section contributions.
 - `CompilationLocation` carries the `SourceLocation`; `CompilationException` prints it as `<button> (Page.java:42)`.
@@ -203,7 +203,7 @@ Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark 
 
 ## Compilation diagnostics
 
-`CompilationLocation` records the page title, optional route, enclosing component path, element tag name, and optional DOM ID. Element descriptions are formatted when presenting the exception.
+`CompilationLocation` records the page title, optional route and a `ViewLocation`: enclosing component path, element tag name, optional DOM ID and source. `CompilationDiagnostic.format()` presents it; a component-level location omits the element.
 
 `RenderContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head or end-section content with that path, allowing layout to expand it with its originating component context. These authoring types have no dependency on `render`.
 

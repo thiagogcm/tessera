@@ -23,7 +23,7 @@ flowchart LR
     end
 
     subgraph Compiler["PageCompiler"]
-        Layout["1. LayoutPass<br/>Expand components, bind IDs, collect styles"]
+        Layout["1. LayoutPass and ViewExpansion<br/>Expand components, bind IDs, collect styles"]
         Prepaint["2. ReferenceLinker and PageValidator<br/>Link references and collect diagnostics"]
         Paint["3. HtmlWriter<br/>Encode and emit HTML with selected CSS"]
         Layout --> Prepaint -->|Valid page| Paint

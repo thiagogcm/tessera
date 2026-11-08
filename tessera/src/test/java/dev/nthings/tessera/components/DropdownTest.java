@@ -38,6 +38,21 @@ class DropdownTest {
   }
 
   @Test
+  @DisplayName("exposes its panel to invokers outside the view")
+  void exposesItsPanelToInvokersOutsideTheView() {
+    var dropdown = Dropdown.create("tools", "Tools").linkItem("/logs", "View Logs", "G L");
+    var outside =
+        renderMain(
+            dropdown,
+            Button.of("Toggle tools").command(dropdown.panelRef(), BuiltinCommand.TOGGLE_POPOVER));
+    var panel = outside.element("button.dropdown-trigger").nextElementSibling();
+
+    assertThat(outside.element("main > button.button"))
+        .hasAttribute("commandfor", panel.id())
+        .hasAttribute("command", "toggle-popover");
+  }
+
+  @Test
   @DisplayName("claims no menu semantics it does not implement")
   void claimsNoFalseMenuSemantics() {
     assertThat(page.element("button.dropdown-trigger")).doesNotHaveAttribute("aria-haspopup");

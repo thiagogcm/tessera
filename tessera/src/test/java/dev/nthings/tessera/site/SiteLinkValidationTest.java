@@ -131,8 +131,8 @@ class SiteLinkValidationTest {
         .extracting(
             CompilationDiagnostic::rule,
             d -> d.location().route(),
-            d -> d.location().tagName(),
-            d -> d.location().domId())
+            d -> d.location().view().tagName(),
+            d -> d.location().view().domId())
         .containsExactlyInAnyOrder(
             tuple("image-dimensions", "/profile", "img", null),
             tuple("invalid-url", "/settings", "a", "docs"),

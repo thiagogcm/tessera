@@ -9,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 /// Immutable snapshot of a compiled page's element tree for inspection: each element's tag, DOM
 /// id, attributes, enclosing components, CSS scope, and authoring call site.
 ///
-/// Source locations are present only while [dev.nthings.tessera.core.SourceTracking] is active.
+/// Source locations are present only while [dev.nthings.tessera.render.SourceTracking] is active.
 /// Obtain a tree from [PreparedPage#tree()] or [PageCompiler#explain(PageDocument)].
 public record PageTree(List<Node> head, List<Node> body) {
 
@@ -125,11 +125,8 @@ public record PageTree(List<Node> head, List<Node> body) {
       switch (node) {
         case ResolvedNode.ResolvedText(var content) -> converted.add(new Text(content));
         case ResolvedNode.ResolvedRaw(var html) -> converted.add(new Raw(html.length()));
-        case ResolvedNode.ResolvedEmpty _ -> {}
-        case ResolvedNode.ResolvedSlot _, ResolvedNode.ResolvedFragment _ ->
-            throw PageValidator.unlinked();
         case ResolvedNode.ResolvedTag tag -> {
-          var location = tag.location();
+          var location = tag.location().view();
           converted.add(
               new Element(
                   tag.tag().tagName(),
@@ -137,10 +134,6 @@ public record PageTree(List<Node> head, List<Node> body) {
                   location.source(),
                   tag.attributes(),
                   convert(tag.children())));
-          var companion = tag.companionSibling();
-          if (companion != null) {
-            converted.addAll(convert(List.of(companion)));
-          }
         }
       }
     }

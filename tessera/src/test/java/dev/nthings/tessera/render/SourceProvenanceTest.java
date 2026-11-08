@@ -12,7 +12,6 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.SourceLocation;
-import dev.nthings.tessera.core.SourceTracking;
 import dev.nthings.tessera.site.LinkSpeculation;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
@@ -88,7 +87,7 @@ class SourceProvenanceTest {
         catchThrowableOfType(CompilationException.class, () -> PageCompiler.compile(page));
 
     var diagnostic = failure.diagnostics().getFirst();
-    assertThat(diagnostic.location().source()).isEqualTo(sourceAt(line));
+    assertThat(diagnostic.location().view().source()).isEqualTo(sourceAt(line));
     assertThat(failure.getMessage()).contains("<button> (" + THIS_FILE + ":" + line + "): ");
   }
 
@@ -100,7 +99,7 @@ class SourceProvenanceTest {
             CompilationException.class,
             () -> PageCompiler.compile(new PageDocument("Bad", main().child(button()))));
 
-    assertThat(failure.diagnostics().getFirst().location().source()).isNull();
+    assertThat(failure.diagnostics().getFirst().location().view().source()).isNull();
     assertThat(failure.getMessage()).contains("<button>: Interactive <button>");
   }
 

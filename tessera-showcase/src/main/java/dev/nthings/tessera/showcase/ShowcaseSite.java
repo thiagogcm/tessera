@@ -1,8 +1,8 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.core.SourceTracking;
 import dev.nthings.tessera.render.PageCompiler;
 import dev.nthings.tessera.render.PageDocument;
+import dev.nthings.tessera.render.SourceTracking;
 import dev.nthings.tessera.site.SiteCompiler;
 import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SitePreviewServer;

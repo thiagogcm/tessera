@@ -29,7 +29,7 @@ public interface RenderView extends IntoElement {
 
   @Override
   default Element intoElement() {
-    return new RenderViewElement(this, SourceTracking.capture());
+    return new RenderViewElement(this, SourceProvenance.capture());
   }
 }
 

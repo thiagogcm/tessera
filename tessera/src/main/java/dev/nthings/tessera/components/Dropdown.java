@@ -36,6 +36,7 @@ import org.jspecify.annotations.Nullable;
 /// span-inline-end`, `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`),
 /// and `@starting-style` top-layer entry/exit transitions.
 public final class Dropdown implements RenderView {
+  private final ElementRef panel = ElementRef.named("panel");
 
   private final ElementId id;
   private final String triggerLabel;
@@ -178,9 +179,13 @@ public final class Dropdown implements RenderView {
                         start -> start.opacity(0).translate(Translation.y(CssLength.rem(-0.25)))));
   }
 
+  /// The popover panel, for opening or closing it from outside this view.
+  public ElementRef panelRef() {
+    return panel;
+  }
+
   @Override
   public Element render(RenderContext context) {
-    var panel = ElementRef.named("panel");
     var trigger =
         button()
             .id("trigger")

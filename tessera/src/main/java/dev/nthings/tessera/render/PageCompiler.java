@@ -3,7 +3,6 @@ package dev.nthings.tessera.render;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
-import java.util.ArrayList;
 import java.util.List;
 
 /// Coordinates layout, reference linking, validation, and HTML emission.
@@ -38,14 +37,9 @@ public final class PageCompiler {
     var styles = new StyleSheetCollector();
     var state = new CompilationState(document.title());
 
-    var p1 = LayoutPass.layout(document, tokens, siteHead, styles, state);
-
-    // Phase 2: prepaint
-    var bodyNodes = prepaint(p1.root(), state);
-    var headNodes = new ArrayList<ResolvedNode>(p1.headNodes().size());
-    for (var head : p1.headNodes()) {
-      ReferenceLinker.link(head, state, headNodes);
-    }
+    var layout = LayoutPass.layout(document, tokens, siteHead, styles, state);
+    var bodyNodes = layout.bodyNodes();
+    var headNodes = layout.headNodes();
 
     for (var node : bodyNodes) {
       PageValidator.validateNodeTree(node, state);
@@ -66,8 +60,8 @@ public final class PageCompiler {
         state.outgoingLinks,
         state.transitionLocations,
         headNodes,
-        p1.state().headings(),
-        p1.state().behaviors());
+        layout.contributions().headings(),
+        layout.contributions().behaviors());
   }
 
   public static CompiledPage paintPrepared(
@@ -84,15 +78,5 @@ public final class PageCompiler {
             htmlBuffer);
     return new CompiledPage(
         htmlBuffer.toString(), result.externalCssPath(), cssContent, result.assets());
-  }
-
-  private static List<ResolvedNode> prepaint(ResolvedNode root, CompilationState state) {
-    var bodyNodes = new ArrayList<ResolvedNode>();
-    ReferenceLinker.link(root, state, bodyNodes);
-    for (CompilationState.ResolvedDeferred deferred;
-        (deferred = state.deferredQueue.poll()) != null; ) {
-      ReferenceLinker.link(deferred.node(), state, bodyNodes);
-    }
-    return bodyNodes;
   }
 }

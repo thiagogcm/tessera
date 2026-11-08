@@ -102,9 +102,9 @@ class AccessibilityRulesTest {
         .extracting(
             CompilationDiagnostic::rule,
             d -> d.location().pageTitle(),
-            d -> d.location().componentPath(),
-            d -> d.location().tagName(),
-            d -> d.location().domId())
+            d -> d.location().view().componentPath(),
+            d -> d.location().view().tagName(),
+            d -> d.location().view().domId())
         .containsExactlyInAnyOrder(
             tuple(
                 "image-dimensions",
@@ -164,8 +164,8 @@ class AccessibilityRulesTest {
     assertThat(failure.diagnostics())
         .extracting(
             CompilationDiagnostic::rule,
-            d -> d.location().componentPath(),
-            d -> d.location().tagName())
+            d -> d.location().view().componentPath(),
+            d -> d.location().view().tagName())
         .containsExactlyInAnyOrder(
             tuple(
                 "invalid-url",

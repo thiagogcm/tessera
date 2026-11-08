@@ -95,7 +95,7 @@ public final class RenderContext {
     return componentPath;
   }
 
-  /// The call site that placed the innermost enclosing component, while [SourceTracking] is
+  /// The call site that placed the innermost enclosing component, while JVM source tracking is
   /// active. Elements a component builds itself are attributed to it.
   public @Nullable SourceLocation origin() {
     return origin;

@@ -63,7 +63,7 @@ abstract class ShowcaseBrowserSupport {
   private BrowserContext context;
   private Page page;
 
-  /// Browser under test, provided by the concrete Chromium or Firefox suite.
+  /// Provided by the Chromium or Firefox suite.
   protected abstract BrowserType browserType(Playwright playwright);
 
   @RegisterExtension
@@ -81,8 +81,7 @@ abstract class ShowcaseBrowserSupport {
     publishedSite = Files.createTempDirectory("tessera-showcase");
     var compiled = SiteCompiler.compile(ShowcaseSite.createDefinition());
     SiteWriter.writeToDirectory(compiled, publishedSite);
-    // This published fixture proves one theme can change multiple independently authored
-    // components.
+    // One theme must restyle several independently authored components.
     var themed =
         SiteDefinition.builder()
             .outputMode(OutputMode.inlineStyle())
@@ -496,7 +495,7 @@ abstract class ShowcaseBrowserSupport {
     page.onRequestFailed(request -> failures.add(request.url() + ": " + request.failure()));
     page.setViewportSize(width, 900);
     for (var route : ShowcaseSite.createDefinition().routes()) {
-      // Color scheme cannot change layout, so the dark cases add navigations but no coverage.
+      // Color scheme does not change layout, so dark cases add no coverage.
       if (!route.path().startsWith("/stories/") || route.path().contains("/dark/")) {
         continue;
       }
@@ -629,8 +628,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("documentation routes have no WCAG A/AA axe violations")
   void documentationRoutesHaveNoAxeViolations() {
-    // Auditing the settled, reduced-motion rendering keeps entry animations from changing
-    // computed contrast while axe samples the page.
+    // Audit the settled reduced-motion page so entry animations don't skew contrast.
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
     Axe.install(page);
     for (var route : documentationRoutes()) {

@@ -4,8 +4,8 @@ import java.util.function.UnaryOperator;
 
 /// Composable fluent styling: layout, box, text, effects, scrolling, and anchoring.
 ///
-/// Each concern is its own trait; this interface composes them. Every method takes values of the
-/// type its property accepts ([CssLength], [CssColor], [Border], ...).
+/// Each concern is its own trait; methods take the value type their property accepts
+/// ([CssLength], [CssColor], [Border], ...).
 ///
 /// @param <SELF> concrete element or style builder type
 public interface Styled<SELF extends Styled<SELF>>

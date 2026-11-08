@@ -13,8 +13,7 @@ import java.util.PriorityQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/// Orders one document's expansion: body, late elements, end-of-document sections and head
-/// contributions, then links the expanded nodes for validation and painting.
+/// Orders one document's expansion (body, late elements, end sections, head), then links it.
 final class LayoutPass implements ViewExpansion.Placement {
   private final ViewExpansion expansion;
   private final ArrayDeque<Runnable> pending = new ArrayDeque<>();
@@ -77,11 +76,12 @@ final class LayoutPass implements ViewExpansion.Placement {
     }
     var headNodes = new ArrayList<ResolvedNode>(heads.size());
     heads.forEach(head -> ReferenceLinker.link(head, state, headNodes));
+    PageValidator.index(bodyNodes, state);
+    PageValidator.index(headNodes, state);
     return new Result(bodyNodes, headNodes, contributions);
   }
 
-  /// Expands a contribution in the component context it was registered from, then its late
-  /// elements.
+  /// Expands a contribution in its registering component context, then its late elements.
   private ViewNode expand(
       RenderContext root,
       Contribution<?> contribution,

@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.SequencedMap;
 import org.jspecify.annotations.Nullable;
 
-/// Compiled routes plus every other file the site publishes, keyed by URL path: registered
-/// assets, the shared stylesheet, `sitemap.xml` and `search-index.json`.
+/// Compiled routes and every other published file, keyed by URL path: assets, the shared
+/// stylesheet, `sitemap.xml` and `search-index.json`.
 public record CompiledSite(
     Map<String, CompiledPage> pagesByRoute,
     @Nullable String sharedCssPath,

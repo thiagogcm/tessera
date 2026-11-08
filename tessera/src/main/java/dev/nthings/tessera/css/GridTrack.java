@@ -2,7 +2,7 @@ package dev.nthings.tessera.css;
 
 import java.util.List;
 
-/// One entry of a [TrackList]: a size, a flexible fraction, a range, or a repetition.
+/// One entry of a [TrackList].
 public sealed interface GridTrack extends CssValue
     permits GridTrack.Fr,
         GridTrack.Size,
@@ -19,7 +19,6 @@ public sealed interface GridTrack extends CssValue
     }
   }
 
-  /// A track sized by a length.
   record Size(CssLength length) implements GridTrack {
     @Override
     public String toCss() {
@@ -27,7 +26,7 @@ public sealed interface GridTrack extends CssValue
     }
   }
 
-  /// Intrinsic sizing keywords, and `subgrid` for a track list inherited from the parent grid.
+  /// Intrinsic sizing keywords, or `subgrid` (inherits the parent's tracks).
   enum Keyword implements GridTrack, CssKeyword {
     AUTO,
     MIN_CONTENT,

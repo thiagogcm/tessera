@@ -11,17 +11,11 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Scoped CSS Subgrid container for [Card] items.
-///
-/// Aligns the 4 canonical card regions (`media`, `header`, `content`, `footer`) across sibling
-/// cards in the same row using `grid-template-rows: subgrid; grid-row: span 4`.
+/// Subgrid container for [Card]s. Sibling cards align their four regions (media, header, content,
+/// footer) row by row.
 public record CardGrid(
     String id, CssLength minCardWidth, CssLength gap, List<? extends IntoElement> cards)
     implements RenderView {
-
-  public CardGrid {
-    cards = List.copyOf(cards);
-  }
 
   public static CardGrid of(
       String id, CssLength minCardWidth, CssLength gap, IntoElement... cards) {
@@ -42,7 +36,7 @@ public record CardGrid(
             s ->
                 s.subgridRows(4)
                     .rowGap(Tokens.SPACE_3)
-                    // A query container is layout-contained and cannot be a subgrid.
+                    // Layout containment (container-type) would break subgrid.
                     .containerNormal());
   }
 

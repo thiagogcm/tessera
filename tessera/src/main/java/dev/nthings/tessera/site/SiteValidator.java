@@ -70,7 +70,7 @@ final class SiteValidator {
         var location = link.getValue().atRoute(sourceRoute);
         var reference = URI.create(href);
         if (!reference.isAbsolute() && reference.getRawAuthority() == null) {
-          // Empty paths (query-only and fragment-only references) retain the current document.
+          // Empty path (query or fragment only) means the current document.
           var referencePath = Objects.requireNonNull(reference.getRawPath());
           var rawPath =
               Objects.requireNonNull(

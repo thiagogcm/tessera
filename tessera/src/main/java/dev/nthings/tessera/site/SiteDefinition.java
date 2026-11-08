@@ -9,9 +9,9 @@ import org.jspecify.annotations.Nullable;
 
 /// Multi-page static site specification; build one with [#builder()] or [#of(SiteRoute...)].
 ///
-/// Defaults to [OutputMode#externalAsset(String)] (`"/assets"`) so all pages share a single
-/// deduplicated, content-hashed CSS stylesheet across Cross-Document View Transitions, and to
-/// [LinkSpeculation#PRERENDER] for same-site links.
+/// Defaults to [OutputMode#externalAsset(String)] (`"/assets"`), so pages share one
+/// content-hashed stylesheet across cross-document view transitions, and to
+/// [LinkSpeculation#PRERENDER].
 public record SiteDefinition(
     Tokens tokens,
     OutputMode outputMode,
@@ -37,12 +37,10 @@ public record SiteDefinition(
     }
   }
 
-  /// Site with default settings serving `routes`.
   public static SiteDefinition of(SiteRoute... routes) {
     return builder().routes(List.of(routes)).build();
   }
 
-  /// Site with default settings serving `routes`.
   public static SiteDefinition of(Collection<SiteRoute> routes) {
     return builder().routes(routes).build();
   }
@@ -51,8 +49,8 @@ public record SiteDefinition(
     return new Builder();
   }
 
-  /// Accumulates routes and assets in declaration order; every other setting starts at the
-  /// defaults documented on [SiteDefinition].
+  /// Routes and assets keep declaration order. Other settings start at the
+  /// [SiteDefinition] defaults.
   public static final class Builder {
 
     private Tokens tokens = new Tokens();
@@ -84,8 +82,7 @@ public record SiteDefinition(
       return this;
     }
 
-    /// Absolute origin (e.g. `https://example.com`) used for `sitemap.xml`; without it no
-    /// sitemap is generated.
+    /// Absolute origin (`https://example.com`) for `sitemap.xml`; unset means no sitemap.
     public Builder baseUrl(String url) {
       this.baseUrl = url;
       return this;

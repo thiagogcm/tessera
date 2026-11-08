@@ -4,7 +4,6 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.DocumentHeading;
@@ -73,12 +72,12 @@ class TocTest {
     @Test
     @DisplayName("reusing a section id on one page is rejected")
     void rejectsDuplicateSectionIds() {
-      assertThatIllegalArgumentException()
+      assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(
               () ->
                   renderMain(
                       Toc.section("intro", "Intro", p()), Toc.section("intro", "Again", p())))
-          .withMessageContaining("Duplicate section id");
+          .withMessageContaining("duplicate-id");
     }
   }
 

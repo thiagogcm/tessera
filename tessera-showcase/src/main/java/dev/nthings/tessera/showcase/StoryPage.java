@@ -11,7 +11,7 @@ import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 
-/// Minimal document for one case, appearance, and density. The factory runs during render.
+/// Document for one case, appearance and density; the factory runs during render.
 record StoryPage(
     Story story, Story.Variant variant, Catalog.Appearance appearance, Catalog.Density density)
     implements RenderOnce {

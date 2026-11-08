@@ -12,12 +12,11 @@ public record Shadow(
     CssColor color)
     implements CssValue {
 
-  /// A shadow offset only vertically.
   public static Shadow drop(CssLength offsetY, CssLength blur, CssColor color) {
     return new Shadow(false, CssLength.zero(), offsetY, blur, null, color);
   }
 
-  /// A shadow offset only vertically that also grows or shrinks by `spread`.
+  /// Vertical offset that also grows or shrinks by `spread`.
   public static Shadow drop(CssLength offsetY, CssLength blur, CssLength spread, CssColor color) {
     return new Shadow(false, CssLength.zero(), offsetY, blur, spread, color);
   }

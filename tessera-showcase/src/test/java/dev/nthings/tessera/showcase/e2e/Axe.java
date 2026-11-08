@@ -7,20 +7,19 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-/// Runs axe-core against a page through the WebJar-bundled script.
+/// Runs the WebJar-bundled axe-core against a page.
 final class Axe {
 
   private static final String SOURCE = load();
 
   private Axe() {}
 
-  /// Loads axe-core into every document `page` navigates to from now on, sending the script once.
+  /// Injects axe-core into every document `page` navigates to; sends the script once.
   static void install(Page page) {
     page.addInitScript(SOURCE);
   }
 
-  /// WCAG A and AA violations in the current document of a page [#install]ed earlier, formatted as
-  /// one block per rule for a readable test failure.
+  /// WCAG A/AA violations in the current document, one block per rule. Needs [#install].
   static String violations(Page page) {
     var result =
         page.evaluate(
@@ -44,7 +43,7 @@ final class Axe {
     return result instanceof String text ? text : String.valueOf(result);
   }
 
-  /// Reads the script of whichever axe-core version the WebJar dependency resolves to.
+  /// Reads the axe-core script of the WebJar version on the classpath.
   private static String load() {
     try {
       var pom = new Properties();

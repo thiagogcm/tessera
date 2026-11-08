@@ -3,7 +3,6 @@ package dev.nthings.tessera.css;
 /// A timing function: a keyword or a cubic Bézier curve.
 public sealed interface Easing extends CssValue permits Easing.Preset, Easing.CubicBezier {
 
-  /// Keyword timing functions.
   enum Preset implements Easing, CssKeyword {
     LINEAR,
     EASE,

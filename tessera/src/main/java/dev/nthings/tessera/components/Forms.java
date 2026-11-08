@@ -35,14 +35,12 @@ import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// Accessible Forms and Form Controls Suite backed by CSS Level 4 `:user-invalid` / `:user-valid`
-/// pseudo-classes, HTML `<input type="checkbox" switch>`, `appearance: base-select` where
-/// supported, and CSS Anchor Positioning tooltips.
+/// Accessible form controls: `:user-invalid` / `:user-valid`, `<input type="checkbox" switch>`,
+/// `appearance: base-select` where supported, and anchor-positioned tooltips.
 public final class Forms {
 
   private Forms() {}
 
-  /// Creates a styled form input element with default focus and validation styling.
   public static TagElement inputControl(String name, String type) {
     return controlChrome(input(type).attr("name", name))
         .focusVisible(Forms::controlFocusRing)
@@ -73,8 +71,7 @@ public final class Forms {
     return inputControl(name, "search");
   }
 
-  /// Creates a styled multiline `<textarea>` that grows with its content (`field-sizing:
-  /// content`) from a minimum of `minRows` lines.
+  /// Auto-growing `<textarea>` (`field-sizing: content`), at least `minRows` lines tall.
   public static TagElement textareaControl(String name, int minRows) {
     return controlChrome(textarea().attr("name", name))
         .fieldSizingContent()
@@ -85,11 +82,10 @@ public final class Forms {
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
-  /// Creates a binary on/off toggle: a `role="switch"` checkbox drawn as a track and thumb.
+  /// Binary on/off toggle: a `role="switch"` checkbox drawn as a track and thumb.
   ///
-  /// The target browsers have no native `<input switch>`, so the control is `appearance: none`
-  /// with the thumb
-  /// as a background layer that slides on `:checked`.
+  /// No native `<input switch>` exists, so this is `appearance: none` with the thumb as a
+  /// background layer that slides on `:checked`.
   public static TagElement switchInput(String name, boolean checked) {
     return input("checkbox")
         .attr("name", name)
@@ -116,17 +112,14 @@ public final class Forms {
         trackColor);
   }
 
-  /// Creates a full accessible field wrapper for an input or control.
   public static Field field(String labelText, TagElement control) {
     return new Field(labelText, control);
   }
 
-  /// Creates a full accessible field wrapper for a customizable select control.
   public static Field field(String labelText, SelectControl select) {
     return new Field(labelText, select.control(), SelectControl::new);
   }
 
-  /// Creates an inline row pairing a label and a switch control.
   public static TagElement switchField(String labelText, String name, boolean checked) {
     var sw = switchInput(name, checked).id("switch-" + name);
     return div()
@@ -171,7 +164,7 @@ public final class Forms {
       this.controlView = controlView;
     }
 
-    /// Names the control's DOM id (scoped to this field) instead of a compiler-assigned one.
+    /// DOM id for the control, scoped to this field instead of a compiler-assigned one.
     public Field id(String name) {
       control.id(name);
       return this;
@@ -189,7 +182,7 @@ public final class Forms {
       return this;
     }
 
-    /// Attaches a CSS Anchor Positioning floating tooltip to this field.
+    /// Anchor-positioned floating tooltip for this field.
     public Field anchorTooltip(String tooltipText) {
       this.anchorTooltipText = tooltipText;
       return this;
@@ -207,26 +200,22 @@ public final class Forms {
 
       var container = div().attr("class", "field-container");
 
-      // 1. Label
       var labelEl = label().labelFor(ctrl).attr("class", "field-label").text(labelText);
       container.child(labelEl);
 
-      // 2. Format hint placed above input per modern guidance
       if (hintText != null) {
         var hint = ElementRef.named("hint");
         container.child(span().id(hint).attr("class", "field-hint").text(hintText));
         control.ariaDescribedBy(hint);
       }
 
-      // 3. Optional anchor for the floating tooltip
       if (anchorTooltipText != null) {
         control.anchorName();
       }
 
-      // 4. Control
       container.child(controlView.apply(control));
 
-      // 5. Error message placed immediately after control for adjacent sibling styling
+      // Follows the control so adjacent-sibling selectors can style it.
       if (errorText != null) {
         var error = ElementRef.named("error");
         control.ariaErrorMessage(error);
@@ -239,7 +228,6 @@ public final class Forms {
         container.child(errEl);
       }
 
-      // 6. Anchor-positioned floating tooltip
       if (anchorTooltipText != null) {
         var tooltipEl =
             div()
@@ -301,8 +289,7 @@ public final class Forms {
     }
   }
 
-  /// Customizable `<select>` component implementing `appearance: base-select` and top-layer option
-  /// picker styling where supported, with a native select fallback elsewhere.
+  /// Customizable `<select>` using `appearance: base-select` where supported; native elsewhere.
   public static final class SelectControl implements RenderView {
 
     public record OptionItem(String value, String label, boolean selected) {}
@@ -346,7 +333,7 @@ public final class Forms {
       return this;
     }
 
-    /// The `<select>` element, for wiring labels and descriptions to it.
+    /// Underlying `<select>`, for label and description wiring.
     TagElement control() {
       return select;
     }

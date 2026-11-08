@@ -11,17 +11,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-/// A compiled page paired with its parsed DOM. A test states what to render once, then asserts on
-/// markup ([#dom()], [#element(String)]) and styles ([#css()], [#ruleOf(Element, String)]) without
-/// re-compiling or re-parsing.
+/// A compiled page with its parsed DOM, so assertions on markup and styles never re-compile
+/// or re-parse.
 public record RenderedPage(CompiledPage compiled, Document dom) {
 
-  /// Compiles `body` as the whole `<body>` of a page.
   public static RenderedPage render(IntoElement body) {
     return of(new PageDocument("Test", body));
   }
 
-  /// Compiles `content` wrapped in a `<main>`.
   public static RenderedPage renderMain(IntoElement... content) {
     return render(main().children(content));
   }
@@ -42,7 +39,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return compiled.cssContent();
   }
 
-  /// The first element matching `selector`, failing the test with the selector if there is none.
+  /// First element matching `selector`; fails the test if there is none.
   public Element element(String selector) {
     var found = dom.selectFirst(selector);
     if (found == null) {
@@ -55,7 +52,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return dom.select(selector);
   }
 
-  /// The element with DOM id `id`, failing the test if there is none.
+  /// Element with DOM id `id`; fails the test if there is none.
   public Element elementById(String id) {
     var found = dom.getElementById(id);
     if (found == null) {

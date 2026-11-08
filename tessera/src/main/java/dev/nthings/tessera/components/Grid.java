@@ -12,8 +12,7 @@ import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.TrackList;
 import java.util.List;
 
-/// Responsive CSS Grid component supporting intrinsic `auto-fit` columns, container-adaptive
-/// multi-column tracks, and bento cell spanning.
+/// CSS Grid with intrinsic `auto-fit` columns, container-adaptive tracks, and bento spanning.
 public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, List<Element> items)
     implements RenderOnce {
 
@@ -38,9 +37,6 @@ public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, L
   }
 
   public static Grid columns(int count, CssLength gap, List<? extends IntoElement> items) {
-    if (count <= 0) {
-      throw new IllegalArgumentException("Grid column count must be > 0");
-    }
     var template = TrackList.of(GridTrack.repeat(count, GridTrack.flexible()));
     return new Grid(
         template, gap, count > 1, items.stream().map(IntoElement::intoElement).toList());

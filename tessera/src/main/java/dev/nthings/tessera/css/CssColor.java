@@ -1,6 +1,5 @@
 package dev.nthings.tessera.css;
 
-/// Sealed CSS colors: OKLCH and sRGB literals, keywords, derived colors, and design tokens.
 public sealed interface CssColor extends CssValue
     permits CssColor.Oklch,
         CssColor.Srgb,
@@ -46,7 +45,6 @@ public sealed interface CssColor extends CssValue
     }
   }
 
-  /// Color keywords.
   enum Named implements CssColor, CssKeyword {
     TRANSPARENT,
     CURRENT_COLOR;
@@ -147,7 +145,6 @@ public sealed interface CssColor extends CssValue
     return mix(Space.OKLCH, percent, transparent());
   }
 
-  /// This color at `percent` mixed with `other` in `space`.
   default CssColor mix(Space space, int percent, CssColor other) {
     return mix(space, CssLength.pct(percent), other);
   }

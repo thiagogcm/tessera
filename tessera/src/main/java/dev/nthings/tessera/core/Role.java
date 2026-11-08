@@ -8,11 +8,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
-/// WAI-ARIA roles that an element can declare, with what each role demands of its element.
-///
-/// The compiler checks every element that declares a role against these requirements: whether the
-/// role needs an accessible name, which descendants it must own, which state attributes it needs,
-/// and which `aria-*` attributes it supports.
+/// WAI-ARIA roles an element can declare. The compiler checks each declared role against its
+/// requirements: accessible name, owned descendants, required states and supported `aria-*`.
 public enum Role {
   // Landmarks
   BANNER(Naming.OPTIONAL),
@@ -78,11 +75,11 @@ public enum Role {
   DOC_FOOTNOTE(Naming.OPTIONAL),
   DOC_NOTEREF(Naming.REQUIRED, true);
 
-  /// Whether the role's element must be given an accessible name.
+  /// Whether the element must be given an accessible name.
   public enum Naming {
     /// A name is optional.
     OPTIONAL,
-    /// A name is required, from an author-supplied label or, for some roles, the content.
+    /// Required, from a label or, for some roles, from content.
     REQUIRED
   }
 
@@ -108,7 +105,7 @@ public enum Role {
           "aria-relevant",
           "aria-roledescription");
 
-  /// Each role's supported set, built once after every constant exists.
+  /// Built once after every constant exists.
   private static final class Supported {
     static final List<Set<String>> BY_ORDINAL =
         Stream.of(values())
@@ -134,7 +131,6 @@ public enum Role {
     this.namedFromContent = namedFromContent;
   }
 
-  /// The `role` attribute value.
   public String wireValue() {
     return wireValue;
   }
@@ -148,8 +144,7 @@ public enum Role {
     return namedFromContent;
   }
 
-  /// Roles of which an element with this role must own at least one descendant; empty when it
-  /// owns none by definition.
+  /// Roles that an element with this role must own as a descendant; empty if none.
   public Set<Role> requiredChildren() {
     return switch (this) {
       case LIST -> EnumSet.of(LISTITEM);
@@ -162,8 +157,8 @@ public enum Role {
     };
   }
 
-  /// State attributes a custom element with this role must declare. A native element that
-  /// already exposes the state, such as `<input type="checkbox">`, is exempt.
+  /// State attributes a custom element with this role must declare. Native elements that expose
+  /// the state, such as `<input type="checkbox">`, are exempt.
   public Set<String> requiredAria() {
     return switch (this) {
       case CHECKBOX, SWITCH, RADIO, MENUITEMCHECKBOX, MENUITEMRADIO -> Set.of("aria-checked");
@@ -174,7 +169,7 @@ public enum Role {
     };
   }
 
-  /// Every `aria-*` attribute this role supports: the global set plus those specific to it.
+  /// Supported `aria-*` attributes: the global set plus role-specific ones.
   public Set<String> supportedAria() {
     return Supported.BY_ORDINAL.get(ordinal());
   }
@@ -263,11 +258,10 @@ public enum Role {
     };
   }
 
-  /// The role with the given `role` attribute value, or `null` when it is not a modeled role.
+  /// Role for a `role` attribute value, or `null` if not modeled.
   public static @Nullable Role fromWireValue(String value) {
-    var normalized = value.strip().toLowerCase(Locale.ROOT);
     for (var role : values()) {
-      if (role.wireValue.equals(normalized)) {
+      if (role.wireValue.equals(value)) {
         return role;
       }
     }

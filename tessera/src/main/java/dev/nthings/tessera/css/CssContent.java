@@ -40,7 +40,7 @@ public sealed interface CssContent extends CssValue
     }
   }
 
-  /// Parts rendered one after another.
+  /// Parts joined with spaces.
   record Sequence(List<CssContent> parts) implements CssContent {
     public Sequence {
       parts = List.copyOf(parts);

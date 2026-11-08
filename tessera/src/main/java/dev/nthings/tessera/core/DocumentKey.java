@@ -2,9 +2,7 @@ package dev.nthings.tessera.core;
 
 import java.util.function.Supplier;
 
-/// Typed slot of per-page state in a [DocumentState], created on first use.
-///
-/// Keys compare by identity; components keep theirs private so only they can read the state.
+/// Typed per-page state slot in a [DocumentState], created on first use. Compared by identity.
 ///
 /// @param <T> state type
 public final class DocumentKey<T> {

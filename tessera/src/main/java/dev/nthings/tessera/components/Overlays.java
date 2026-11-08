@@ -31,9 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Zero-JavaScript top-layer [Modal] and slide-over [Drawer] components backed by `<dialog
-/// closedby="any">`, Declarative Invoker Commands (`commandfor` / `command="show-modal"`),
-/// `@starting-style`, and `transition-behavior: allow-discrete`.
+/// Zero-JavaScript [Modal] and [Drawer] on `<dialog closedby="any">`, using invoker commands
+/// (`commandfor` / `command="show-modal"`), `@starting-style`, and
+/// `transition-behavior: allow-discrete`.
 public final class Overlays {
 
   private Overlays() {}
@@ -55,8 +55,7 @@ public final class Overlays {
     return new Drawer(ElementId.of(id), title, side);
   }
 
-  /// Top-layer modal dialog (`<dialog closedby="any">`) with smooth `@starting-style` scale/fade
-  /// transitions and `::backdrop` dimming.
+  /// Top-layer `<dialog closedby="any">` with `@starting-style` fades and `::backdrop` dimming.
   public static final class Modal implements RenderView {
 
     private final ElementId id;
@@ -100,13 +99,13 @@ public final class Overlays {
       return this;
     }
 
-    /// Shows the dialog when the document loads (`open`). The dialog is visible and non-modal.
+    /// Renders the dialog with `open` on load, so it is visible and non-modal.
     public Modal opened() {
       opened = true;
       return this;
     }
 
-    /// Creates a trigger button wired via `command="show-modal"` to this modal.
+    /// Trigger button using `command="show-modal"`.
     public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }
@@ -116,8 +115,8 @@ public final class Overlays {
       return dialog;
     }
 
-    /// Binds the `<dialog>` to an application-owned reference. Pass the same reference on every
-    /// render when work that outlives a render, such as a timer or request callback, targets it.
+    /// Binds the `<dialog>` to an app-owned reference. Pass the same reference on every render
+    /// if a timer or request callback that outlives the render targets it.
     public Modal dialogRef(ElementRef dialog) {
       this.dialog = dialog;
       return this;
@@ -230,9 +229,8 @@ public final class Overlays {
     }
   }
 
-  /// Top-layer slide-over sheet (`<dialog closedby="any">`) docked to the inline-start or
-  /// inline-end viewport edge and animated via `translate` + `@starting-style` +
-  /// `transition-behavior: allow-discrete`.
+  /// Top-layer `<dialog closedby="any">` sheet docked to the inline-start or inline-end edge,
+  /// animated with `translate`, `@starting-style`, and `transition-behavior: allow-discrete`.
   public static final class Drawer implements RenderView {
 
     private final ElementId id;
@@ -266,7 +264,7 @@ public final class Overlays {
       return this;
     }
 
-    /// Creates a trigger button wired via `command="show-modal"` to this drawer.
+    /// Trigger button using `command="show-modal"`.
     public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }

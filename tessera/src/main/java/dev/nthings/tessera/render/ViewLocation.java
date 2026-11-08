@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import org.jspecify.annotations.Nullable;
 
-/// Where an element sits among its components, independent of the page that places it.
+/// Where an element sits among its components, independent of the placing page.
 public record ViewLocation(
     List<String> componentPath,
     String tagName,

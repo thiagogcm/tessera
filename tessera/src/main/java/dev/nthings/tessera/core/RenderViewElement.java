@@ -2,6 +2,6 @@ package dev.nthings.tessera.core;
 
 import org.jspecify.annotations.Nullable;
 
-/// Wrapper element holding a scoped [RenderView] boundary prior to Phase 1 expansion.
+/// Holds a [RenderView] boundary until Phase 1 expands it.
 public record RenderViewElement(RenderView view, @Nullable SourceLocation source)
     implements Element {}

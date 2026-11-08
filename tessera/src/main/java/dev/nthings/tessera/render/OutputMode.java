@@ -1,6 +1,6 @@
 package dev.nthings.tessera.render;
 
-/// Configures how compiled CSS is packaged into the rendered document.
+/// How compiled CSS is packaged into the rendered document.
 public sealed interface OutputMode permits OutputMode.InlineStyle, OutputMode.ExternalAsset {
 
   /// Embeds the compiled stylesheet directly inside a `<style>` tag in `<head>`.

@@ -63,11 +63,10 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  /// Registers a view's `@scope` CSS body under a content-addressed key.
-  ///
-  /// The key is `<viewType>-<hash(scopedCss)>`, a pure function of the view type and its rules,
-  /// so identical bodies share one `@scope` block and collectors from different pages merge
-  /// without conflicts. Views without scoped CSS keep the bare type as a scope boundary.
+  /// Registers a view's `@scope` body under a content-addressed key:
+  /// `<viewType>-<hash(scopedCss)>`. Identical bodies share one `@scope` block; collectors from
+  /// different pages merge without conflicts. Views without scoped CSS keep the bare type as
+  /// their scope boundary.
   ///
   /// @return the resolved `data-view` attribute value
   public String registerViewScope(String viewType, String scopedCss) {
@@ -85,7 +84,7 @@ public final class StyleSheetCollector {
     transitionClasses.add(transitionClass);
   }
 
-  /// Merges another collector's rules into this collector in deterministic insertion order.
+  /// Merges another collector's rules into this one, in deterministic insertion order.
   public void mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
@@ -112,7 +111,6 @@ public final class StyleSheetCollector {
     var sb = new StringBuilder(2048);
     sb.append("@layer reset, base, theme, components, utilities, interactive, container;\n");
 
-    // 1. @layer reset
     sb.append(
         "@layer reset{"
             + "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}"
@@ -121,7 +119,6 @@ public final class StyleSheetCollector {
             + "img,svg,video{max-inline-size:100%;block-size:auto}"
             + "}\n");
 
-    // 2. @layer base
     sb.append("@layer base{");
     sb.append("@media (prefers-reduced-motion: no-preference){");
     sb.append("@view-transition{navigation:auto}");
@@ -140,7 +137,6 @@ public final class StyleSheetCollector {
     keyframeRules.forEach(sb::append);
     sb.append("}\n");
 
-    // 3. @layer theme
     sb.append("@layer theme{");
     sb.append(":root{");
     for (var token : tokens.all()) {
@@ -148,7 +144,6 @@ public final class StyleSheetCollector {
     }
     sb.append("}}\n");
 
-    // 4. @layer components
     if (!viewScopeBodies.isEmpty()) {
       sb.append("@layer components{");
       for (var entry : viewScopeBodies.entrySet()) {
@@ -161,13 +156,10 @@ public final class StyleSheetCollector {
       sb.append("}\n");
     }
 
-    // 5. @layer utilities
     appendLayer(sb, "utilities", utilityRules.values());
 
-    // 6. @layer interactive
     appendLayer(sb, "interactive", interactiveRules.values());
 
-    // 7. @layer container
     appendLayer(sb, "container", containerRules.values());
 
     return sb.toString();

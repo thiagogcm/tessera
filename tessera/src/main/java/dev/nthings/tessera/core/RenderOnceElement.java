@@ -2,6 +2,6 @@ package dev.nthings.tessera.core;
 
 import org.jspecify.annotations.Nullable;
 
-/// Wrapper element holding a lazy [RenderOnce] component prior to Phase 1 expansion.
+/// Holds a [RenderOnce] until Phase 1 expands it.
 public record RenderOnceElement(RenderOnce component, @Nullable SourceLocation source)
     implements Element {}

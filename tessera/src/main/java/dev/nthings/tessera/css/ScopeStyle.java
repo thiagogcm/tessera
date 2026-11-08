@@ -5,13 +5,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-/// Type-safe builder for `@scope ([data-view="..."]) to (:scope [data-view] > *)` rules in `@layer
-/// components`.
-///
-/// Eliminates raw CSS strings inside [dev.nthings.tessera.core.RenderView] implementations by
-/// expressing `:scope`, descendant selectors, `@starting-style` entry animations, `@container` size
-/// and `scroll-state(...)` queries, and `@media (prefers-reduced-motion: no-preference)` blocks
-/// through [StyleRefinement].
+/// Type-safe builder for `@scope ([data-view="..."]) to (:scope [data-view] > *)` rules in
+/// `@layer components`, so [dev.nthings.tessera.core.RenderView] implementations need no raw CSS.
 public final class ScopeStyle {
 
   private final Map<String, StyleRefinement> selectorRules = new LinkedHashMap<>();
@@ -28,8 +23,7 @@ public final class ScopeStyle {
     return this;
   }
 
-  /// Defines an open/active selector alongside its nested `@starting-style` entry transition
-  /// block.
+  /// Defines an open/active selector with its nested `@starting-style` entry transition.
   public ScopeStyle selectWithStartingStyle(
       String selector,
       UnaryOperator<StyleRefinement> openMutator,
@@ -50,8 +44,7 @@ public final class ScopeStyle {
     return container("(inline-size < " + maxInlineSize.toCss() + ")", nestedBuilder);
   }
 
-  /// Emits a `@container scroll-state(<stateQuery>)` block (e.g., `stuck: top`,
-  /// `snapped: inline`, `scrollable: block`) against the nearest scroll-state container.
+  /// Emits a `@container scroll-state(<stateQuery>)` block, e.g. `stuck: top`.
   public ScopeStyle containerScrollState(String stateQuery, Consumer<ScopeStyle> nestedBuilder) {
     return container("scroll-state(" + stateQuery + ")", nestedBuilder);
   }
@@ -62,7 +55,7 @@ public final class ScopeStyle {
     return container(containerName.toCss() + " scroll-state(" + stateQuery + ")", nestedBuilder);
   }
 
-  /// Emits a `@container <name> (inline-size >= <min>)` block against a named container.
+  /// Emits a `@container <name> (inline-size >= <min>)` block.
   public ScopeStyle containerMinInlineSize(
       CssIdent containerName, CssLength minInlineSize, Consumer<ScopeStyle> nestedBuilder) {
     return container(

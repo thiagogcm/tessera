@@ -117,6 +117,32 @@ class AriaRulesTest {
     assertThat(rulesOf(body)).contains(rule);
   }
 
+  static Stream<Arguments> unnamedDeclaredRoles() {
+    return Stream.of(
+        argumentSet(
+            "an icon-only button declared as a tab",
+            main()
+                .child(
+                    div()
+                        .role(Role.TABLIST)
+                        .ariaLabel("Sections")
+                        .child(button().role(Role.TAB).ariaSelected(true))),
+            "role-name-required"),
+        argumentSet(
+            "a custom heading with no text",
+            main().children(h1().text("Title"), div().role(Role.HEADING).ariaLevel(2)),
+            "role-name-required"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("unnamedDeclaredRoles")
+  @DisplayName("a missing name is reported once, under the declared role")
+  void missingNameIsReportedOnce(Element body, String rule) {
+    assertThat(rulesOf(body))
+        .filteredOn(List.of("interactive-label", "role-name-required", "empty-heading")::contains)
+        .containsExactly(rule);
+  }
+
   @Test
   @DisplayName("a diagnostic explains the role and its remedy")
   void diagnosticNamesRoleAndFix() {

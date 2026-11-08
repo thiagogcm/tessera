@@ -12,7 +12,6 @@ public record Translation(CssLength x, CssLength y) implements CssValue {
     return new Translation(CssLength.zero(), CssLength.zero());
   }
 
-  /// A vertical offset only.
   public static Translation y(CssLength y) {
     return new Translation(CssLength.zero(), y);
   }

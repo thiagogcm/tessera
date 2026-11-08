@@ -2,7 +2,7 @@ package dev.nthings.tessera.core;
 
 import java.util.function.Function;
 
-/// Static factory entry points for building semantic HTML5 elements and deferred overlays.
+/// Factory entry points for semantic HTML5 elements and deferred overlays.
 public final class Elements {
 
   private Elements() {}
@@ -11,7 +11,7 @@ public final class Elements {
     return new TagElement(tag);
   }
 
-  /// Element with an author-defined custom element name, such as `my-widget`.
+  /// Element with an author-defined name, such as `my-widget`.
   public static TagElement custom(String name) {
     return new TagElement(new CustomElement(name));
   }

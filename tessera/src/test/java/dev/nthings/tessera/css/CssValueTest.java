@@ -177,6 +177,8 @@ class CssValueTest {
     assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("1st"));
     assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("has space"));
     assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("--dashed"));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("None"));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("inherit"));
     assertThat(CssIdent.custom("anchor-x").toCss()).isEqualTo("--anchor-x");
   }
 

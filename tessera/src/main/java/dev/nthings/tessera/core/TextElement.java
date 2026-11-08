@@ -1,5 +1,4 @@
 package dev.nthings.tessera.core;
 
-/// Escaped text node. Content is streamed through [org.owasp.encoder.Encode#forHtmlContent] during
-/// the paint phase.
+/// Text node, HTML-escaped with [org.owasp.encoder.Encode#forHtmlContent] at paint.
 public record TextElement(String content) implements Element {}

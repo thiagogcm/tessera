@@ -1,10 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A complete flex formatting context: display, direction, gap, item alignment, and wrapping.
-///
-/// Apply it with [Styled#layout(FlexLayout)]. The value is copied into the element's
-/// [StyleRefinement], so a later declaration replaces that one property on that element. Block
-/// (`row`, `column`) and inline (`inlineRow`, `inlineColumn`) layouts are separate choices.
+/// Apply with [Styled#layout(FlexLayout)]. Copied into the element's [StyleRefinement], so a later
+/// declaration replaces only that property. Block and inline layouts are separate choices.
 public record FlexLayout(
     Display display, Direction direction, CssLength gap, Align align, Wrap wrap) {
 
@@ -28,7 +25,6 @@ public record FlexLayout(
     return new FlexLayout(Display.INLINE_FLEX, Direction.COLUMN, gap, align, wrap);
   }
 
-  /// Copies these declarations into `style`.
   public StyleRefinement apply(StyleRefinement style) {
     return style
         .put(CssProperty.DISPLAY, display)
@@ -38,19 +34,16 @@ public record FlexLayout(
         .put(CssProperty.GAP, gap);
   }
 
-  /// `display` value. Block flex and inline flex are explicit.
   public enum Display implements CssKeyword {
     FLEX,
     INLINE_FLEX
   }
 
-  /// `flex-direction` value.
   public enum Direction implements CssKeyword {
     ROW,
     COLUMN
   }
 
-  /// `align-items` value.
   public enum Align implements CssKeyword {
     START,
     CENTER,
@@ -68,7 +61,6 @@ public record FlexLayout(
     }
   }
 
-  /// `flex-wrap` value.
   public enum Wrap implements CssKeyword {
     NOWRAP,
     WRAP

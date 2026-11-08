@@ -26,8 +26,8 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Map;
 
-/// A view that exercises scoped ids, invokers, interest tooltips, custom actions, container
-/// queries and deferred portals together. [PageCompilerTest] asserts each feature separately.
+/// Exercises scoped ids, invokers, interest tooltips, custom actions, container queries and
+/// portals in one view. [PageCompilerTest] asserts each feature separately.
 record WorkspacePanelView(String workspaceSlug) implements RenderView {
 
   private static final CssIdent METRIC_CARD = CssIdent.of("metric-card");

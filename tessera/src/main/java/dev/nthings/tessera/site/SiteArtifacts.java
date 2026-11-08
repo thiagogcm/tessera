@@ -4,7 +4,7 @@ import dev.nthings.tessera.render.PreparedPage;
 import java.util.List;
 import org.owasp.encoder.Encode;
 
-/// Serializes generated sitemap and search metadata into published artifacts.
+/// Serializes sitemap and search metadata.
 final class SiteArtifacts {
   private SiteArtifacts() {}
 

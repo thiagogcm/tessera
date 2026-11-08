@@ -15,8 +15,8 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Editorial typographic container providing proportional vertical rhythm, fluid font sizing, and
-/// optimal reading line-length (measure) for documentation and narrative prose.
+/// Typographic container with proportional vertical rhythm, fluid font sizing, and a readable
+/// measure (line length).
 public final class Prose implements RenderView, ParentElement<Prose> {
 
   private final ElementId id;

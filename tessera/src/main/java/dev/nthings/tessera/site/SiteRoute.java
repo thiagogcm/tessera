@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import org.jspecify.annotations.Nullable;
 
-/// Represents a single route and its associated [PageDocument] in a multi-page site.
+/// A route and the [PageDocument] it publishes.
 public record SiteRoute(
     String path, PageDocument document, @Nullable String title, @Nullable String description) {
 
@@ -56,7 +56,7 @@ public record SiteRoute(
     }
   }
 
-  /// Maps a normalized route path to its output file relative to the site root.
+  /// Expects a normalized route path.
   public static Path outputPathFor(String routePath) {
     if ("/".equals(routePath)) {
       return Path.of("index.html");

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/// One component case: the copy shown in the docs, and a fresh factory per variant.
+/// One component case: docs copy and a fresh factory per variant.
 record Story(
     String id,
     String title,
@@ -17,20 +17,11 @@ record Story(
     List<String> code,
     List<Variant> variants) {
 
-  /// A named state of this case. `content` runs on every render.
+  /// Named state of this case; `content` runs on every render.
   record Variant(String name, String label, boolean inDocs, Supplier<IntoElement> content) {
     IntoElement create() {
       return content.get();
     }
-  }
-
-  Variant variant(String name) {
-    for (var variant : variants) {
-      if (variant.name().equals(name)) {
-        return variant;
-      }
-    }
-    throw new IllegalArgumentException("Unknown variant " + name + " of " + id);
   }
 
   String heading(Variant variant) {

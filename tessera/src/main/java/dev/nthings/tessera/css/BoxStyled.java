@@ -1,7 +1,5 @@
 package dev.nthings.tessera.css;
 
-/// Spacing, background, borders, shadows, outlines, and form-control presentation.
-///
 /// @param <SELF> concrete element or style builder type
 public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SELF> {
 
@@ -63,13 +61,12 @@ public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SEL
     return self();
   }
 
-  /// A solid background color.
   default SELF bg(CssColor color) {
     style().put(CssProperty.BACKGROUND, color);
     return self();
   }
 
-  /// A background of image layers over a fill color.
+  /// A single dot over a fill color.
   default SELF background(Background background) {
     style().put(CssProperty.BACKGROUND, background);
     return self();
@@ -194,7 +191,7 @@ public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SEL
     return resize(Resize.NONE);
   }
 
-  /// `field-sizing: content`: form controls grow with their content instead of fixed rows/cols.
+  /// Emits `field-sizing: content`: form controls grow with their content.
   default SELF fieldSizingContent() {
     style().put(CssProperty.FIELD_SIZING, "content");
     return self();

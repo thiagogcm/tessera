@@ -2,13 +2,13 @@ package dev.nthings.tessera.support;
 
 import java.util.Arrays;
 
-/// Extracts rule blocks from compiled stylesheets so tests can assert where a declaration lives
-/// instead of matching whole minified strings.
+/// Extracts rule blocks so tests can assert where a declaration lives, not match whole
+/// minified CSS.
 public final class CssBlocks {
 
   private CssBlocks() {}
 
-  /// The `{...}` body of the first rule whose prelude is exactly `.className`.
+  /// Body of the first rule whose selector is exactly `.className`.
   public static String classRule(String css, String className) {
     return block(css, "." + className + "{");
   }
@@ -21,7 +21,7 @@ public final class CssBlocks {
         .orElseThrow(() -> new AssertionError("No " + prefix + "* class in: " + classAttr));
   }
 
-  /// The brace-balanced body following the first occurrence of `opening` (which ends with `{`).
+  /// Brace-balanced body after the first `opening` (which ends with `{`).
   public static String block(String css, String opening) {
     var start = css.indexOf(opening);
     if (start < 0) {

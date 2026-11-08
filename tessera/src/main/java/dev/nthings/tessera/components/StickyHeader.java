@@ -20,13 +20,11 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 
-/// State-aware sticky header backed by `container-type: scroll-state` and `@container <name>
-/// scroll-state(stuck: top)` where supported; sticky positioning and the base surface remain
-/// available otherwise.
+/// Sticky header using `container-type: scroll-state` where supported; sticky positioning and
+/// the base surface work without it.
 ///
-/// The outer `:scope` acts as the `position: sticky` scroll-state container, while the inner
-/// `<header class="sticky-surface">` queries `scroll-state(stuck: top)` to apply backdrop blur
-/// and elevation shadow only when actively stuck.
+/// The outer `:scope` is the `position: sticky` scroll-state container. The inner
+/// `<header class="sticky-surface">` applies blur and shadow via `scroll-state(stuck: top)`.
 public final class StickyHeader implements RenderView {
 
   private final ElementId id;

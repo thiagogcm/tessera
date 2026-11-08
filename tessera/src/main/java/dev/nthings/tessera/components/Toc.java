@@ -34,10 +34,10 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.css.Transform;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-/// Scroll-Spy Table of Contents and documentation layout primitives.
+/// Scroll-spy TOC and documentation layout primitives.
 public final class Toc {
 
   private static final String CHEVRON_SVG =
@@ -48,13 +48,12 @@ public final class Toc {
 
   private Toc() {}
 
-  /// Section that registers with [RenderContext] during layout expansion.
+  /// Registers with [RenderContext] during layout expansion.
   public record DocSection(String id, String title, int level, List<Element> body)
       implements RenderOnce {
 
     public DocSection {
       ContentSection.checkHeadingLevel(level);
-      body = List.copyOf(body);
     }
 
     @Override
@@ -85,14 +84,10 @@ public final class Toc {
 
   private static DocSection createSection(
       String id, String title, int level, IntoElement... children) {
-    var list = new ArrayList<Element>(children.length);
-    for (var child : children) {
-      list.add(child.intoElement());
-    }
-    return new DocSection(id, title, level, list);
+    return new DocSection(id, title, level, elements(children));
   }
 
-  /// TOC of every section registered on the page, resolved after layout so it may precede them.
+  /// Lists every section on the page; resolved after layout, so it may precede them.
   public static Element fromContext(String id, String heading) {
     return Elements.late(
         context -> new TableOfContents(ElementId.of(id), heading, context.headings()));
@@ -103,14 +98,14 @@ public final class Toc {
   }
 
   public static DocLayout docLayout(String tocId, String tocHeading, IntoElement... sections) {
-    var list = new ArrayList<Element>(sections.length);
-    for (var s : sections) {
-      list.add(s.intoElement());
-    }
-    return new DocLayout(tocId, tocHeading, list);
+    return new DocLayout(tocId, tocHeading, elements(sections));
   }
 
-  /// Scroll-Spy Table of Contents view with collapsible disclosure.
+  private static List<Element> elements(IntoElement... children) {
+    return Arrays.stream(children).map(IntoElement::intoElement).toList();
+  }
+
+  /// Scroll-spy TOC view with collapsible disclosure.
   public static final class TableOfContents implements RenderView {
 
     private final ElementId id;
@@ -229,21 +224,16 @@ public final class Toc {
     }
   }
 
-  /// Two-column documentation layout with main prose and sticky Table of Contents rail.
+  /// Two-column doc layout: main prose plus a sticky TOC rail.
   public record DocLayout(String tocId, String tocHeading, List<Element> sections)
       implements RenderView {
-
-    public DocLayout {
-      sections = List.copyOf(sections);
-    }
 
     @Override
     public ElementId entityId() {
       return layoutId(tocId);
     }
 
-    /// DOM id of section `sectionId` placed directly in a top-level `docLayout(tocId, ...)`, for
-    /// building links to it from other pages.
+    /// DOM id of section `sectionId` in a top-level `docLayout(tocId, ...)`, for cross-page links.
     public static String sectionDomId(String tocId, String sectionId) {
       return ViewScope.ROOT.extend(layoutId(tocId)).extend(ElementId.of(sectionId)).domId();
     }

@@ -13,14 +13,12 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.Locale;
 
-/// Shared face of [Button] and [IconButton]. Appearance classes never change the button type or
-/// invoker attributes.
+/// Shared face of [Button] and [IconButton]; classes never alter type or invoker attributes.
 final class ButtonFace {
 
   private ButtonFace() {}
 
-  /// Emits only the rules the given face can use: the icon-only face has square boxes and a
-  /// decorative icon slot, the text face has padded boxes.
+  /// Emits rules for the given face only: icon faces get square boxes, text faces get padding.
   static void configure(ScopeStyle scope, boolean icon) {
     scope
         .root(

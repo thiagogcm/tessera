@@ -6,14 +6,12 @@ import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// Opaque, reusable result of layout and validation. Public metadata is snapshotted;
-/// the linked tree and stylesheet collector remain owned by the compiler.
+/// Reusable layout and validation result. Metadata is snapshotted; the linked tree and
+/// stylesheet collector stay with the compiler.
 public final class PreparedPage {
   private final PageDocument document;
   private final StyleSheetCollector styles;
@@ -36,16 +34,15 @@ public final class PreparedPage {
       List<DocumentHeading> headings,
       List<ClientBehavior> behaviors) {
     this.document = document;
-    this.styles = new StyleSheetCollector();
-    this.styles.mergeFrom(styles);
-    this.bodyNodes = List.copyOf(bodyNodes);
-    this.headNodes = List.copyOf(headNodes);
-    this.registeredDomIds = Collections.unmodifiableSet(new LinkedHashSet<>(registeredDomIds));
-    this.outgoingLinks = Collections.unmodifiableMap(new LinkedHashMap<>(outgoingLinks));
-    this.transitionLocations =
-        Collections.unmodifiableMap(new LinkedHashMap<>(transitionLocations));
-    this.headings = List.copyOf(headings);
-    this.behaviors = List.copyOf(behaviors);
+    // Taken over as is: the compilation that produced it is finished and discarded.
+    this.styles = styles;
+    this.bodyNodes = bodyNodes;
+    this.headNodes = headNodes;
+    this.registeredDomIds = Collections.unmodifiableSet(registeredDomIds);
+    this.outgoingLinks = Collections.unmodifiableMap(outgoingLinks);
+    this.transitionLocations = Collections.unmodifiableMap(transitionLocations);
+    this.headings = headings;
+    this.behaviors = behaviors;
   }
 
   PageDocument document() {
@@ -77,12 +74,11 @@ public final class PreparedPage {
     return headings;
   }
 
-  /// Client behaviors registered by components on this page, in contribution order.
+  /// Client behaviors registered on this page, in contribution order.
   public List<ClientBehavior> behaviors() {
     return behaviors;
   }
 
-  /// Snapshot of the linked element tree, for inspection.
   public PageTree tree() {
     return PageTree.of(headNodes, bodyNodes);
   }
@@ -91,7 +87,7 @@ public final class PreparedPage {
     return styles.toCssStylesheet(tokens);
   }
 
-  /// Copies this page's CSS contribution into a site-owned collector without exposing its state.
+  /// Copies this page's CSS into a site-owned collector without exposing its state.
   public void contributeStylesTo(StyleSheetCollector target) {
     target.mergeFrom(styles);
   }

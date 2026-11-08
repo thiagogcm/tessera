@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Navigation and search metadata pointing to an existing document element.
+/// Navigation and search metadata for an existing document element.
 public record DocumentHeading(String targetDomId, String title, int level) {
   public DocumentHeading {
     if (level < 1 || level > 6) {

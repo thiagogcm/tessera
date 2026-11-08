@@ -4,8 +4,8 @@ import dev.nthings.tessera.core.IntoElement;
 
 /// Top-level HTML5 document specification compiled by [PageCompiler].
 ///
-/// Design tokens are a compile setting ([PageCompiler#compile(PageDocument, Tokens, OutputMode)],
-/// or the site's tokens for every page of a site), not part of the document.
+/// Design tokens are a compile setting ([PageCompiler#compile(PageDocument, Tokens, OutputMode)]
+/// or the site's tokens), not part of the document.
 public record PageDocument(String lang, String title, IntoElement bodyRoot) {
 
   public PageDocument(String title, IntoElement bodyRoot) {

@@ -2,12 +2,12 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.SourceLocation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Immutable snapshot of a compiled page's element tree for inspection: each element's tag, DOM
-/// id, attributes, enclosing components, CSS scope, and authoring call site.
+/// Immutable snapshot of a compiled page's element tree, for inspection.
 ///
 /// Source locations are present only while [dev.nthings.tessera.render.SourceTracking] is active.
 /// Obtain a tree from [PreparedPage#tree()] or [PageCompiler#explain(PageDocument)].
@@ -18,7 +18,6 @@ public record PageTree(List<Node> head, List<Node> body) {
     body = List.copyOf(body);
   }
 
-  /// A node of the tree.
   public sealed interface Node permits Element, Text, Raw {}
 
   /// An element after expansion and linking.
@@ -36,28 +35,26 @@ public record PageTree(List<Node> head, List<Node> body) {
 
     public Element {
       componentPath = List.copyOf(componentPath);
-      attributes = Map.copyOf(attributes);
+      attributes = Collections.unmodifiableMap(attributes);
       children = List.copyOf(children);
     }
 
-    /// The element's DOM id, if it has one.
     public @Nullable String id() {
       return attributes.get("id");
     }
 
-    /// The `data-view` key of the CSS `@scope` block the element roots, if it roots one.
+    /// `data-view` key of the `@scope` block the element roots, if any.
     public @Nullable String scope() {
       return attributes.get("data-view");
     }
   }
 
-  /// Text content.
   public record Text(String content) implements Node {}
 
-  /// Trusted raw HTML, which compilation does not inspect.
+  /// Trusted raw HTML, not inspected by compilation.
   public record Raw(int length) implements Node {}
 
-  /// The tree as indented text: one line per node, with its component and source location.
+  /// Indented text, one line per node.
   public String toText() {
     var out = new StringBuilder();
     appendSection(out, "head", head);

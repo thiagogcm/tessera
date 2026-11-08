@@ -11,14 +11,12 @@ public final class SiteNavigation {
 
   private SiteNavigation() {}
 
-  /// Automatically initializes a `SearchPalette` indexed from all routes in the given
-  /// [SiteDefinition].
+  /// `SearchPalette` indexed from all routes of the given [SiteDefinition].
   public static SearchPalette searchPalette(SiteDefinition site) {
     return searchPalette("search-palette", site.routes());
   }
 
-  /// Initializes a `SearchPalette` indexed with the given route list under a "Pages & Guides"
-  /// group.
+  /// `SearchPalette` over the given routes, under a "Pages & Guides" group.
   public static SearchPalette searchPalette(String id, List<SiteRoute> routes) {
     var palette = SearchPalette.create(id);
     for (var route : routes) {

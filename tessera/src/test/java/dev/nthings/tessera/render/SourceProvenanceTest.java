@@ -25,7 +25,6 @@ class SourceProvenanceTest {
 
   private static final String THIS_FILE = "SourceProvenanceTest.java";
 
-  /// The line number of the call to this method.
   private static int here() {
     return new Throwable().getStackTrace()[1].getLineNumber();
   }

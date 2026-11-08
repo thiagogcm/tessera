@@ -10,12 +10,10 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Native `<button>`. Tone, surface, and size are independent of submission and invoker commands.
-/// An ordinary button is `type="button"`; [Button#submit] opts into form submission. Navigation
-/// stays on anchors.
+/// Native `<button>`, `type="button"` unless [Button#submit]. Navigation uses anchors.
 public final class Button extends ButtonBase<Button> implements RenderView {
 
-  /// Semantic color. It does not choose the surface or the button's behavior.
+  /// Semantic color only; does not set the surface or behavior.
   public enum Tone {
     NEUTRAL(Tokens.TEXT_PRIMARY, Tokens.SURFACE_CARD, Tokens.BORDER_SUBTLE, Tokens.SURFACE_SUBTLE),
     ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
@@ -47,7 +45,6 @@ public final class Button extends ButtonBase<Button> implements RenderView {
       return onSolid;
     }
 
-    /// Outline border color.
     DesignToken.Color edge() {
       return edge;
     }
@@ -58,14 +55,14 @@ public final class Button extends ButtonBase<Button> implements RenderView {
     }
   }
 
-  /// Surface treatment, independent of tone and behavior.
+  /// Surface treatment, independent of tone.
   public enum Variant {
     SOLID,
     OUTLINE,
     GHOST
   }
 
-  /// Control size. Padding follows density. The type size does not.
+  /// Control size. Padding follows density; type size does not.
   public enum Size {
     SM(Tokens.FONT_SIZE_XS, Tokens.SPACE_3, Tokens.SPACE_1, Tokens.SPACE_8),
     MD(Tokens.CONTROL_FONT_SIZE, Tokens.CONTROL_PADDING_INLINE, Tokens.SPACE_2, Tokens.SPACE_10),
@@ -118,7 +115,7 @@ public final class Button extends ButtonBase<Button> implements RenderView {
     return new Button(label, List.of());
   }
 
-  /// Button with custom content. `accessibleName` stays the accessible name.
+  /// Custom content; `accessibleName` stays the accessible name.
   public static Button of(String accessibleName, IntoElement... content) {
     return new Button(accessibleName, List.of(content));
   }

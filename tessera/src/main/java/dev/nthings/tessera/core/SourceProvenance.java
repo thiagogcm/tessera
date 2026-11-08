@@ -3,7 +3,7 @@ package dev.nthings.tessera.core;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/// Turn-scoped source capture without a dependency on a platform stack walker.
+/// Turn-scoped source capture that avoids a platform stack walker.
 public final class SourceProvenance {
 
   private static final ScopedValue<SourceCapture> CAPTURE = ScopedValue.newInstance();

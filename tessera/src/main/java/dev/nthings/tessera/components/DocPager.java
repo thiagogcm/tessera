@@ -18,8 +18,7 @@ import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
 
-/// Editorial documentation pager providing prev/next navigation cards between site documentation
-/// routes.
+/// Prev/next navigation cards between documentation pages.
 public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
   public record PageRef(String href, String title) {}
@@ -50,7 +49,7 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
     return this;
   }
 
-  /// The landmark's accessible name. Pages with several pagers need a distinct name for each.
+  /// Accessible name of the landmark; make it distinct when a page has several pagers.
   public DocPager label(String label) {
     this.label = label;
     return this;

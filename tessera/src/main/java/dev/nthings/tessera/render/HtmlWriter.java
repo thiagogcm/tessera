@@ -32,7 +32,7 @@ final class HtmlWriter {
     out.append(Encode.forHtmlAttribute(doc.lang()));
     out.append("\">\n<head>\n<meta charset=\"utf-8\">\n");
     out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
-    // rem-based layouts follow the OS text size setting, not only the browser's.
+    // rem layouts follow the OS text size, not only the browser's.
     out.append("<meta name=\"text-scale\" content=\"scale\">\n");
     out.append("<title>");
     out.append(Encode.forHtmlContent(doc.title()));
@@ -88,7 +88,7 @@ final class HtmlWriter {
     return new PaintResult(externalCssPath, assets);
   }
 
-  /// `dir/name-<content hash>ext`, so a changed file never serves stale from a cache.
+  /// `dir/name-<content hash>ext`, so changed files are never served stale from cache.
   private static String hashedPath(String dir, String name, String content, String extension) {
     var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, content);
     return dir + "/" + name + "-" + Fnv1a64.toBase36Hash(hash) + extension;

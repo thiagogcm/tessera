@@ -107,7 +107,7 @@ class FormsTest {
     @Test
     @DisplayName("adds a selectedcontent trigger as the first child of the <select>")
     void addsSelectedContentTrigger() {
-      // Jsoup's legacy parser hoists <button> out of <select>, so inspect the emitted markup.
+      // Jsoup's parser hoists <button> out of <select>; inspect the emitted markup.
       assertThat(page.html())
           .contains("class=\"select-trigger\"")
           .contains("Select theme_mode")

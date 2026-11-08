@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Font family, size, weight, line height, and tracking applied as separate declarations.
+/// Font family, size, weight, line height, and tracking, as separate declarations.
 public record Typography(
     DesignToken.FontFamily family,
     DesignToken.Length size,

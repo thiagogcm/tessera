@@ -16,9 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// One page's identities and what it publishes and validates: DOM ids and the references bound
-/// to them, transitions, outgoing links and diagnostics. Expansion and linking share it;
-/// [ViewExpansion] keeps only placement.
+/// One page's identities, transitions, outgoing links and diagnostics.
+/// Expansion and linking share it; [ViewExpansion] keeps only placement.
 final class CompilationState {
   final Set<String> registeredDomIds = new LinkedHashSet<>();
   final Set<String> ambiguousDomIds = new HashSet<>();
@@ -39,7 +38,6 @@ final class CompilationState {
     this.pageTitle = pageTitle;
   }
 
-  /// `view` placed on this page.
   CompilationLocation location(ViewLocation view) {
     return new CompilationLocation(pageTitle, null, view);
   }
@@ -59,8 +57,8 @@ final class CompilationState {
     }
   }
 
-  /// Binds `ref` within `scope` and registers its DOM id; a second binding reports and keeps the
-  /// first id.
+  /// Binds `ref` in `scope` and registers its DOM id. A second binding reports and keeps the
+  /// first.
   String bind(ElementRef ref, ViewScope scope, ViewLocation location) {
     var existing = references.get(ref);
     if (existing != null) {
@@ -79,8 +77,7 @@ final class CompilationState {
     return domId;
   }
 
-  /// The DOM id bound to `ref`, or `null` when it is ambiguous or unbound; reports an unbound
-  /// reference.
+  /// DOM id bound to `ref`, or `null` when ambiguous or unbound (unbound is reported).
   @Nullable String boundId(ElementRef ref, String usage, ViewLocation location) {
     var id = references.get(ref);
     if (ambiguousDomIds.contains(id)) {
@@ -96,7 +93,7 @@ final class CompilationState {
     return id;
   }
 
-  /// `<prefix>-<n>`, numbered within `scope` so ids elsewhere on the page never shift it.
+  /// `<prefix>-<n>`, numbered within `scope` so other scopes never shift it.
   ElementId nextId(String prefix, ViewScope scope) {
     return ElementId.of(
         prefix + "-" + counters.merge(new IdCounter(scope, prefix), 1, Integer::sum));

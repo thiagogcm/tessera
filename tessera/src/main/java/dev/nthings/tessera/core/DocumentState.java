@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// Per-page state shared by every [RenderContext] of one compilation: component registries keyed
-/// by [DocumentKey], `<head>` contributions, and end-of-document sections.
+/// Per-page state shared by all [RenderContext]s of one compilation.
 public final class DocumentState {
 
   private final Map<DocumentKey<?>, Object> values = new LinkedHashMap<>();
@@ -23,20 +22,9 @@ public final class DocumentState {
     return key.cast(values.computeIfAbsent(key, _ -> key.create()));
   }
 
-  /// State stored under `key`, or `null` if no component on the page created it.
-  public <T> @Nullable T get(DocumentKey<T> key) {
-    var value = values.get(key);
-    return value != null ? key.cast(value) : null;
-  }
-
-  /// Content registered for a document-level position, with its originating component path and
-  /// the call site that placed that component.
+  /// Content placed at a document-level position, with its component path and placing call site.
   public record Contribution<T>(
-      T content, List<String> componentPath, @Nullable SourceLocation origin) {
-    public Contribution {
-      componentPath = List.copyOf(componentPath);
-    }
-  }
+      T content, List<String> componentPath, @Nullable SourceLocation origin) {}
 
   void contributeHead(
       Element element, List<String> componentPath, @Nullable SourceLocation origin) {
@@ -65,19 +53,17 @@ public final class DocumentState {
     return Collections.unmodifiableList(headElements);
   }
 
+  /// Keeps the first heading per target; a reused id is reported as `duplicate-id`.
   void registerHeading(DocumentHeading heading) {
-    if (headings.putIfAbsent(heading.targetDomId(), heading) != null) {
-      throw new IllegalArgumentException(
-          "Duplicate section id '" + heading.targetDomId() + "' on the same page");
-    }
+    headings.putIfAbsent(heading.targetDomId(), heading);
   }
 
-  /// Registered navigation headings in registration order, independent of component types.
+  /// Headings in registration order.
   public List<DocumentHeading> headings() {
     return List.copyOf(headings.values());
   }
 
-  /// Snapshot of the registered end-of-document sections, in registration order.
+  /// End-of-document sections in registration order.
   public List<Contribution<Function<RenderContext, ? extends IntoElement>>> documentEndSections() {
     return List.copyOf(documentEndSections.values());
   }

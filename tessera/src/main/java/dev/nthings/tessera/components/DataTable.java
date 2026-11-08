@@ -18,14 +18,13 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
 
-/// Strongly typed, responsive data table component (`DataTable<T>`).
+/// Typed, responsive data table.
 ///
-/// - Wraps the semantic `<table>` in a keyboard-scrollable `<div tabindex="0" role="region"
-///   aria-labelledby="...">` container with `container-type: inline-size`.
-/// - Emits sticky column headers (`thead`) and sticky row headers (`tbody th`).
-/// - Transforms into a mobile-friendly stacked card layout inside narrow containers (`@container
-///   (inline-size < breakpoint)`) by hiding `thead` and injecting `--label-N` CSS variables into
-///   `td:nth-child(N)::before`.
+/// - Wraps `<table>` in a keyboard-scrollable `role="region"` div
+///   (`container-type: inline-size`).
+/// - Sticky column headers (`thead`) and sticky row headers (`tbody th`).
+/// - Below `stackBreakpoint`, rows stack as cards: `thead` is hidden and each cell's header
+///   comes from `--label-N` via `td:nth-child(N)::before`.
 ///
 /// @param <T> row model type
 public record DataTable<T>(
@@ -135,8 +134,7 @@ public record DataTable<T>(
                     .fontWeight(600))
         .select(":scope thead th", s -> s.textColor(Tokens.TEXT_MUTED));
 
-    // Column alignment once per column instead of a utility class on every cell; START is
-    // inherited from the table.
+    // Align per column, not per cell. START is inherited from the table.
     for (var i = 0; i < columns.size(); i++) {
       var align = columns.get(i).align();
       if (align != CellAlign.START) {
@@ -155,7 +153,7 @@ public record DataTable<T>(
                   ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
                   s -> s.block())
               .select(":scope thead", s -> s.hidden())
-              // Card mode: label and value read left to right regardless of column alignment.
+              // Card mode: label and value read left to right whatever the alignment.
               .select(":scope tr > :nth-child(n)", s -> s.textAlign(TextAlign.START))
               .select(
                   ":scope tr",

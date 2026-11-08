@@ -67,17 +67,17 @@ public final class RenderContext {
     docState.atDocumentEnd(owner, section, componentPath, origin);
   }
 
-  /// Contributes `behavior` to the document once, regardless of how many components request it.
+  /// Contributes `behavior` once, however many components request it.
   public void contributeBehavior(ClientBehavior behavior) {
     docState.contributeBehavior(behavior);
   }
 
-  /// Headings registered so far on the page, in registration order.
+  /// Headings registered so far, in registration order.
   public List<DocumentHeading> headings() {
     return docState.headings();
   }
 
-  /// Registers metadata for a local element id in the current view scope.
+  /// Registers a heading for `localId` in the current view scope.
   public DocumentHeading registerHeading(String localId, String title, int level) {
     var heading =
         new DocumentHeading(viewScope.extend(ElementId.of(localId)).domId(), title, level);
@@ -85,33 +85,32 @@ public final class RenderContext {
     return heading;
   }
 
-  /// Derives a context whose identity scope is nested under `viewEntityId`.
+  /// Context whose view scope is nested under `viewEntityId`.
   public RenderContext withViewScope(ElementId viewEntityId) {
     return new RenderContext(
         viewScope.extend(viewEntityId), styles, tokens, docState, componentPath, origin);
   }
 
-  /// Enclosing components of the current expansion, retained by document contributions.
+  /// Enclosing components, retained by document contributions.
   public List<String> componentPath() {
     return componentPath;
   }
 
-  /// The call site that placed the innermost enclosing component, while JVM source tracking is
-  /// active. Elements a component builds itself are attributed to it.
+  /// Call site of the innermost enclosing component (JVM source tracking only). Elements it builds
+  /// itself are attributed to it.
   public @Nullable SourceLocation origin() {
     return origin;
   }
 
-  /// Enters a component without changing its element identity scope. `placedAt` is where
-  /// authoring code placed the component; without one, the enclosing component's origin stays.
+  /// Enters a component without changing its view scope. Without `placedAt`, the enclosing origin
+  /// is kept.
   public RenderContext withComponent(String component, @Nullable SourceLocation placedAt) {
     var path = new ArrayList<>(componentPath);
     path.add(component);
     return withComponentPath(path, placedAt != null ? placedAt : origin);
   }
 
-  /// Expands registered document content with the component path and origin captured at
-  /// registration.
+  /// Context for registered document content, with the path and origin captured at registration.
   public RenderContext withComponentPath(List<String> path, @Nullable SourceLocation origin) {
     return new RenderContext(viewScope, styles, tokens, docState, path, origin);
   }

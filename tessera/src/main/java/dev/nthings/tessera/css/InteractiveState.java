@@ -1,9 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// Element-relative interactive state that wraps a [StyleRefinement] in a nested CSS rule.
-///
-/// Declaration order is emission order, so later states win the cascade at equal specificity
-/// (e.g. [#ACTIVE] overrides [#HOVER]).
+/// Wraps a [StyleRefinement] in a nested rule. Declaration order is emission order, so later
+/// states win at equal specificity (e.g. [#ACTIVE] overrides [#HOVER]).
 public enum InteractiveState {
   HOVER,
   FOCUS_VISIBLE,
@@ -17,7 +15,7 @@ public enum InteractiveState {
   HAS,
   MOTION_SAFE;
 
-  /// Opening of the nested rule for this state; the caller appends the block body and `}`.
+  /// Opens the nested rule; the caller appends the body and `}`.
   String openRule(String argument) {
     return switch (this) {
       case HOVER -> "&:hover:not(:disabled){";

@@ -5,7 +5,6 @@ package dev.nthings.tessera.css;
 public sealed interface CssNumber extends CssValue
     permits CssNumber.Literal, CssNumber.Reference, CssNumber.Sibling, DesignToken.Number {
 
-  /// A number written inline.
   record Literal(double value) implements CssNumber {
     @Override
     public String toCss() {

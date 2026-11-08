@@ -12,10 +12,10 @@ import org.jspecify.annotations.Nullable;
 
 /// Opt-in capture of the Java call site that builds each element.
 ///
-/// While active, each element and component wrapper records the first calling frame
-/// code that is neither Tessera's own nor the platform's. Compilation carries it into diagnostics
-/// and, as `data-src="File.java:42"`, into the emitted HTML, so a rendered element leads back to
-/// the line that wrote it. Tracking costs a stack walk per element; leave it off in production.
+/// While active, each element and component wrapper records the first calling frame that is
+/// neither Tessera's nor the platform's. Compilation carries it into diagnostics and, as
+/// `data-src="File.java:42"`, into the emitted HTML. Tracking costs a stack walk per element;
+/// leave it off in production.
 ///
 /// Use [#enabled(Supplier)] for tracked authoring and compilation.
 /// Component-generated elements point to the line that placed the component.
@@ -49,8 +49,8 @@ public final class SourceTracking {
     return with(true, work);
   }
 
-  /// Runs `work` with tracking set to `tracking`. Compilation uses this to carry the caller's
-  /// setting onto the threads it compiles on.
+  /// Runs `work` with tracking set to `tracking`; compilation uses this to pass the setting to
+  /// its threads.
   public static <R> R with(boolean tracking, Supplier<R> work) {
     SourceCapture capture = tracking ? SourceTracking::capture : SourceCapture.NONE;
     return SourceProvenance.with(capture, work);
@@ -70,7 +70,7 @@ public final class SourceTracking {
         continue;
       }
       if (COMPILER_CLASSES.get(type)) {
-        // Reached the compiler before any authoring code: a library component is expanding.
+        // Reached before any authoring code: a library component is expanding.
         return Optional.empty();
       }
       if (LIBRARY_CLASSES.get(type) || isPlatform(type)) {

@@ -29,8 +29,8 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 
-/// Site chrome shared by every route: sticky header with navigation, search palette, quick
-/// actions and inspector drawer; page heading; previous/next pager; footer.
+/// Chrome shared by every route: header, search, quick actions, inspector, heading,
+/// pager and footer.
 record Shell(Page page) implements RenderOnce {
 
   static final CssLength MAX_WIDTH = CssLength.rem(76);

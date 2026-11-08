@@ -11,15 +11,12 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 
-/// Stores pseudo-class, group-hover, relational `:has()`, `@container` query, and scroll-driven
-/// animation styles for an element.
+/// Pseudo-class, group-hover, `:has()`, `@container` and scroll-driven styles for an element.
 public final class Interactivity {
 
-  /// Styles applied while the named container is at least `minInlineSize` wide.
   public record ContainerRule(
       CssIdent containerName, CssLength minInlineSize, StyleRefinement style) {
 
-    /// The `@container` condition this rule applies under.
     public String condition() {
       return "(inline-size >= " + minInlineSize.toCss() + ")";
     }
@@ -32,7 +29,7 @@ public final class Interactivity {
     }
   }
 
-  /// Interactive state rule key; ordered by state, then argument, for deterministic emission.
+  /// Sorted by state, then argument, so emission is deterministic.
   public record StateRule(InteractiveState state, String argument)
       implements Comparable<StateRule> {
     private static final Comparator<StateRule> ORDER =
@@ -71,7 +68,7 @@ public final class Interactivity {
     containerRules.add(new ContainerRule(containerName, minInlineSize, style));
   }
 
-  /// Adds `other`'s rules to this one, copying each refinement so the two stay independent.
+  /// Merges `other` into this one, copying refinements so the two stay independent.
   public Interactivity mergeFrom(Interactivity other) {
     other.states.forEach(
         (rule, style) -> states.computeIfAbsent(rule, _ -> new StyleRefinement()).mergeFrom(style));

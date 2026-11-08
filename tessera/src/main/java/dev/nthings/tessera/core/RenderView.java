@@ -4,17 +4,14 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
-/// Scoped view boundary representing a persistent domain entity with isolated `@scope` styles and
-/// a dedicated [ViewScope] namespace.
+/// Scoped view boundary for a persistent domain entity, with isolated `@scope` styles and a
+/// [ViewScope] namespace.
 ///
-/// - [#viewType()] identifies the component type for `data-view` and deduplicates identical
-///   `@scope` blocks across all instances of the view.
-/// - [#entityId()] identifies the specific instance for [ViewScope] path folding and
-///   `data-view-id`.
+/// - [#viewType()] names the `data-view` and dedupes identical `@scope` blocks across instances.
+/// - [#entityId()] names the instance in [ViewScope] folding and `data-view-id`.
 public interface RenderView extends IntoElement {
 
-  /// Instance id within the enclosing view scope; `null` lets the compiler assign
-  /// `<viewType>-<n>` deterministically per page.
+  /// Instance id in the enclosing view scope; `null` makes the compiler assign `<viewType>-<n>`.
   default @Nullable ElementId entityId() {
     return null;
   }

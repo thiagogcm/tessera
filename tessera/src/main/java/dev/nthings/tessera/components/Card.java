@@ -22,16 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Semantic 4-region card component (`media`, `header`, `content`, `footer`) implementing modern
-/// container-aware and subgrid-compatible layout patterns.
+/// Four-region card (`media`, `header`, `content`, `footer`), rooted at `<article>`, or `<label>`
+/// for choice cards.
 ///
-/// - Uses `<article>` (or `<label>` for choice cards) as root with direct child regions in source
-///   order.
-/// - Adapts to wide containers via `@container` + `:has(> img, > picture, > .media)` so only
-///   cards with media switch to a side-by-side column layout.
-/// - Supports [Interaction.Content], [Interaction.StretchedLink] (`a.card-link::after` with
-///   `z-index: 1` on secondary controls), and [Interaction.Choice] (`:has(> input:checked)`
-///   without layout-shifting border widths).
+/// - Regions are direct children in source order.
+/// - Media cards switch to side-by-side columns on wide containers, via `@container` and
+///   `:has(> img, > picture, > .media)`.
+/// - Interactions: [Interaction.Content], [Interaction.StretchedLink] (`a.card-link::after`
+///   overlay), [Interaction.Choice] (`:has(> input:checked)`, no border-width shift).
 public final class Card implements RenderView, FluentBuilder<Card> {
 
   public sealed interface Interaction
@@ -74,20 +72,20 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
-  /// Image media rendered as the card's direct `<img>` child.
+  /// Image media as a direct `<img>` child, never wrapped.
   public Card media(Image image) {
     this.media = image.intoElement();
     return this;
   }
 
-  /// Arbitrary media (video, figure, illustration) wrapped in a `div.media` region.
+  /// Other media, wrapped in a `div.media` region.
   public Card media(IntoElement mediaContent) {
     this.media = Elements.div().attr("class", "media").child(mediaContent);
     return this;
   }
 
-  /// The heading level of the title, 2 through 6 (3 by default). Pick the level that follows the
-  /// heading of the section holding the card, so the page outline has no gaps.
+  /// Title heading level, 2 to 6 (default 3). Match the enclosing section so the page
+  /// outline has no gaps.
   public Card headingLevel(int level) {
     if (level < 2 || level > 6) {
       throw new IllegalArgumentException("Card heading level must be 2 to 6: " + level);
@@ -147,8 +145,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
 
   private static final String MEDIA_CARD = ":scope:has(> img, > picture, > .media)";
 
-  /// Query container name for the card's own width; [CardGrid] switches it off so its cards can
-  /// be subgrids (layout containment would make `grid-template-rows: subgrid` compute to `none`).
+  /// Container name for the card's width. [CardGrid] resets it, since layout containment makes
+  /// `subgrid` compute to `none`.
   static final CssIdent CONTAINER = CssIdent.of("tessera-card");
 
   @Override
@@ -181,17 +179,15 @@ public final class Card implements RenderView, FluentBuilder<Card> {
             s ->
                 s.border(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY))
                     .bg(Tokens.SURFACE_SUBTLE))
-        // Fixed region rows, so sibling cards line up when a CardGrid makes them subgrids
-        // (ignored while the card lays out as a flex column).
+        // Fixed rows so siblings align under a CardGrid subgrid; ignored in flex-column layout.
         .select(":scope > :is(img, picture, .media, input)", s -> s.gridRow(GridPlacement.at(1)))
         .select(":scope > :is(h2, h3, h4, h5, h6, hgroup)", s -> s.gridRow(GridPlacement.at(2)))
         .select(
             ":scope > :not(img, picture, .media, input, h2, h3, h4, h5, h6, hgroup, footer)",
             s -> s.gridRow(GridPlacement.at(3)))
         .select(":scope > footer", s -> s.gridRow(GridPlacement.at(4)))
-        // Media cards: a two-column template whose children span both columns until the card
-        // itself is wide enough (the card is the query container for its children, not for
-        // itself, so the template cannot be conditional).
+        // Media cards: children span both columns until the 28rem container query places them.
+        // The card cannot query its own size, so the base template is unconditional.
         .select(
             MEDIA_CARD,
             s ->
@@ -241,12 +237,12 @@ public final class Card implements RenderView, FluentBuilder<Card> {
           case Interaction.Content _, Interaction.StretchedLink _ -> Elements.article();
         };
 
-    // Region 1: Media (direct child, never wrapped if <img> or <picture>)
+    // Region 1: media, never wrapped for img/picture.
     if (media != null) {
       root.child(media);
     }
 
-    // Region 2: Header (direct heading or <hgroup> when subtitle is present)
+    // Region 2: header; <hgroup> when there is a subtitle.
     if (!headingText.isEmpty()) {
       var headingInner =
           switch (interaction) {
@@ -272,15 +268,14 @@ public final class Card implements RenderView, FluentBuilder<Card> {
       }
     }
 
-    // Region 3: Content (single element stands on its own; multiple elements grouped in one <div>
-    // for subgrid track alignment)
+    // Region 3: content. Several items share one wrapper div so they occupy one grid row.
     if (contentItems.size() == 1) {
       root.child(contentItems.getFirst());
     } else if (contentItems.size() > 1) {
       root.child(Elements.div().flex().flexCol().gap(Tokens.SPACE_2).children(contentItems));
     }
 
-    // Region 4: Footer (holds independent actions as native links/buttons)
+    // Region 4: footer for actions (links/buttons).
     if (!footerActions.isEmpty()) {
       root.child(
           Elements.footer().flex().itemsCenter().gap(Tokens.SPACE_3).children(footerActions));

@@ -22,8 +22,7 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Landing page: what Tessera is, a card per showcase area, the compiler pipeline, and the
-/// guarantees checked at build time.
+/// Landing page: pitch, area cards, compiler pipeline and build-time guarantees.
 final class OverviewPage {
 
   static final TransitionKey DOCS_HERO = TransitionKey.of("docs-hero", "hero-morph");

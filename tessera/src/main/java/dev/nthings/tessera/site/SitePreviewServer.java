@@ -8,8 +8,8 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
-/// Lightweight, zero-dependency HTTP server backed by JDK [HttpServer] and Virtual Threads for
-/// previewing and evaluating a [CompiledSite] in the latest Chromium and Firefox.
+/// Zero-dependency preview server (JDK [HttpServer], virtual threads) for a [CompiledSite],
+/// targeting the latest Chromium and Firefox.
 public final class SitePreviewServer implements AutoCloseable {
 
   private final HttpServer server;

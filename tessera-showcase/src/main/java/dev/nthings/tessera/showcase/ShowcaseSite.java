@@ -12,7 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Showcase site entry point: the page registry drives routes, navigation, search, and pagers.
+/// Entry point; the page registry drives routes, navigation, search and pagers.
 public final class ShowcaseSite {
 
   private static final List<Page> PAGES =

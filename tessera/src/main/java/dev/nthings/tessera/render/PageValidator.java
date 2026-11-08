@@ -1,7 +1,9 @@
 package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.CssProperty;
+import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
@@ -21,7 +23,7 @@ final class PageValidator {
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   static void validateImage(
       Map<String, String> attrs,
-      Map<CssProperty, String> style,
+      StyleRefinement style,
       CompilationState state,
       ViewLocation location) {
     var alt = attrs.get("alt");
@@ -55,6 +57,23 @@ final class PageValidator {
     }
   }
 
+  /// Indexes the linked elements checks look up: by id and labelled control ids.
+  static void index(List<ResolvedNode> nodes, CompilationState state) {
+    for (var node : nodes) {
+      if (node instanceof ResolvedTag tag) {
+        var id = tag.attributes().get("id");
+        if (id != null && !id.isBlank()) {
+          state.elementsById.putIfAbsent(id, tag);
+        }
+        var labelled = tag.attributes().get("for");
+        if (tag.tag() == HtmlTag.LABEL && labelled != null) {
+          state.labelledControlIds.add(labelled);
+        }
+        index(tag.children(), state);
+      }
+    }
+  }
+
   static void validateNodeTree(ResolvedNode node, CompilationState state) {
     switch (node) {
       case ResolvedText _, ResolvedRaw _ -> {}
@@ -71,7 +90,8 @@ final class PageValidator {
     var attrs = tag.attributes();
     var registeredDomIds = state.registeredDomIds;
 
-    if (tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) {
+    // A declared role hands naming to AccessibilityRules' role-name-required.
+    if ((tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) && !declaresRole(tag)) {
       if (!hasAccessibleLabel(tag)) {
         state.report(
             tag.location(),
@@ -164,7 +184,7 @@ final class PageValidator {
               target.attributes().containsKey("popover")
                   ? null
                   : "an element with a popover attribute";
-          default -> null; // Custom commands and platform commands outside Tessera's built-in set.
+          default -> null; // Custom and platform commands are outside Tessera's built-in set.
         };
     if (requirement != null) {
       state.report(
@@ -184,6 +204,12 @@ final class PageValidator {
               + requirement
               + ", or choose a command compatible with the target.");
     }
+  }
+
+  /// Whether `tag` declares a role that the accessibility rules model.
+  static boolean declaresRole(ResolvedTag tag) {
+    var role = tag.attributes().get("role");
+    return role != null && Role.fromWireValue(role) != null;
   }
 
   private static boolean hasAccessibleLabel(ResolvedTag tag) {

@@ -3,8 +3,6 @@ package dev.nthings.tessera.css;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/// Sealed algebraic CSS lengths: dimensions, math functions over lengths, anchor references, and
-/// design tokens.
 public sealed interface CssLength extends CssValue
     permits CssLength.Dimension,
         CssLength.Zero,
@@ -24,8 +22,7 @@ public sealed interface CssLength extends CssValue
         .toPlainString();
   }
 
-  /// This length as an operand of a surrounding math expression. Compound expressions are
-  /// parenthesized, so nesting never changes evaluation order.
+  /// Compound expressions are parenthesized, so nesting keeps evaluation order.
   default String operand() {
     return toCss();
   }
@@ -50,7 +47,6 @@ public sealed interface CssLength extends CssValue
     return new Scaled(this, divisor, true);
   }
 
-  /// Numeric length in a CSS unit.
   enum Unit {
     PX("px"),
     REM("rem"),
@@ -148,7 +144,7 @@ public sealed interface CssLength extends CssValue
     }
   }
 
-  /// Which edge of the position anchor an `anchor()` length resolves to.
+  /// Edge of the position anchor that `anchor()` resolves to.
   enum AnchorSide implements CssKeyword {
     TOP,
     BOTTOM,

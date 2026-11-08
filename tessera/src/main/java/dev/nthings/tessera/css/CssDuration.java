@@ -4,7 +4,6 @@ package dev.nthings.tessera.css;
 public sealed interface CssDuration extends CssValue
     permits CssDuration.Time, DesignToken.Duration {
 
-  /// A time in milliseconds.
   record Time(double millis) implements CssDuration {
     public Time {
       if (millis < 0) {

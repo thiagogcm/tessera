@@ -10,8 +10,8 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.UnderlineStyle;
 
-/// Semantic HTML5 inline text formatting primitives backed by CSS Text Decoration Level 4 and
-/// adaptive `color-mix(in oklch, ...)` tokens.
+/// Semantic inline text formatting backed by CSS Text Decoration Level 4 and
+/// `color-mix(in oklch, ...)` adaptive color tokens.
 public final class Formatting {
 
   private Formatting() {}

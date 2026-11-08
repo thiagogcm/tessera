@@ -15,9 +15,8 @@ import org.jspecify.annotations.Nullable;
 
 /// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity].
 ///
-/// An element gets a scoped DOM id by binding an [ElementRef] ([#id(ElementRef)], [#id(String)]);
-/// features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an
-/// anonymous ref automatically.
+/// Features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an
+/// anonymous [ElementRef] automatically.
 public final class TagElement
     implements Element,
         InteractiveElement<TagElement>,
@@ -109,7 +108,7 @@ public final class TagElement
     children.add(child);
   }
 
-  /// Binds `elementRef` to this element; its DOM id is resolved at the bind site.
+  /// Binds `elementRef` here; its DOM id resolves at this site.
   public TagElement id(ElementRef elementRef) {
     if (ref != null && ref != elementRef) {
       throw new IllegalStateException("Element already bound to " + ref);
@@ -143,8 +142,8 @@ public final class TagElement
     return dispatchAction(target.ref(), action);
   }
 
-  /// Interest Invoker tooltip emitted as the next sibling (`interestfor` + `popover="hint"`),
-  /// positioned above the element with flip fallbacks unless `tooltipBuilder` overrides it.
+  /// Tooltip emitted as the next sibling (`interestfor` + `popover="hint"`), above the element with
+  /// flip fallbacks unless `tooltipBuilder` overrides it.
   public TagElement interestTooltip(UnaryOperator<TagElement> tooltipBuilder) {
     ref();
     var base =

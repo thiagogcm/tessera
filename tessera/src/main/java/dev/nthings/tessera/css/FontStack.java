@@ -7,7 +7,6 @@ import org.owasp.encoder.Encode;
 /// A `font-family` list of named families and generic fallbacks, or a design token.
 public record FontStack(List<Entry> entries) implements CssValue {
 
-  /// One family in the list.
   public sealed interface Entry extends CssValue permits Named, Generic, DesignToken.FontFamily {}
 
   /// A family looked up by name; names that are not plain identifiers are quoted.

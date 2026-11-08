@@ -8,8 +8,7 @@ import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// Tone, surface, size, and behavior options shared by [Button] and [IconButton]. The fields are
-/// read by [ButtonFace] when rendering.
+/// Options shared by [Button] and [IconButton], read by [ButtonFace] at render time.
 abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
 
   Button.Tone tone;

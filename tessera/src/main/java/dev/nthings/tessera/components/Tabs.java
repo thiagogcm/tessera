@@ -30,10 +30,9 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.List;
 
-/// Navigation and in-page content tab components backed by CSS Anchor Positioning (`anchor-name`,
-/// `position-anchor`, `anchor(left)`, `anchor(right)`, `anchor(bottom)`) for animated active tab
-/// underlines. Content tabs use the ARIA tabs pattern and a bundled `tessera-tabs` client behavior
-/// with roving tabindex and arrow-key navigation.
+/// Navigation and in-page tabs. The active underline uses CSS Anchor Positioning
+/// (`anchor-name`, `position-anchor`, `anchor()`). Content tabs follow the ARIA tabs
+/// pattern with the bundled `tessera-tabs` behavior (roving tabindex, arrow keys).
 public final class Tabs {
 
   private Tabs() {}
@@ -59,8 +58,7 @@ public final class Tabs {
     return new ContentTabs(ElementId.of(id), ariaLabel, panels);
   }
 
-  /// Route navigation tab bar using CSS Anchor Positioning (`ul::before` tethered to `li.active`)
-  /// and `aria-current="page"`.
+  /// Route nav bar: `ul::before` is tethered to `li.active`; sets `aria-current="page"`.
   public static final class NavTabs implements RenderView {
 
     private final ElementId id;
@@ -131,9 +129,8 @@ public final class Tabs {
     }
   }
 
-  /// Accessible in-page tab set backed by the ARIA tabs pattern, roving tabindex, and the bundled
-  /// `tessera-tabs` client behavior. Panels stay server-rendered; the behavior only switches
-  /// selection and focus.
+  /// In-page ARIA tab set with roving tabindex, driven by `tessera-tabs`. Panels stay
+  /// server-rendered; the client only switches selection and focus.
   public static final class ContentTabs implements RenderView {
 
     private static final ClientBehavior TABS_BEHAVIOR =
@@ -208,8 +205,7 @@ public final class Tabs {
               ":scope > .tab-bar > [role=\"tab\"][aria-selected=\"true\"]",
               s -> s.anchorName(anchorIdent).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600))
           .select(":scope > [role=\"tabpanel\"]", s -> s.p(Tokens.SPACE_5))
-          // Before the behavior upgrades the element, expose every panel instead of hiding all
-          // but the first.
+          // Before `tessera-tabs` upgrades, show every panel rather than hiding all but the first.
           .select(":scope:not(:defined) > .tab-bar", s -> s.hidden())
           .select(":scope:not(:defined) > [role=\"tabpanel\"][hidden]", s -> s.block());
       anchorUnderline(scope, ":scope > .tab-bar::before", anchorIdent);

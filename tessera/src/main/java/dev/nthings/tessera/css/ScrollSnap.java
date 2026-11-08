@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// A `scroll-snap-type`: the snapping axis and how strictly the scroller snaps.
+/// A `scroll-snap-type`: snapping axis and strictness.
 public record ScrollSnap(Axis axis, Strictness strictness) implements CssValue {
 
   public enum Axis implements CssKeyword {

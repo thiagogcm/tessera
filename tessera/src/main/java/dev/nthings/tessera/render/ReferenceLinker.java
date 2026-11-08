@@ -1,11 +1,9 @@
 package dev.nthings.tessera.render;
 
-import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.render.ResolvedNode.ResolvedText;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -15,9 +13,8 @@ import java.util.Set;
 final class ReferenceLinker {
   private ReferenceLinker() {}
 
-  /// Substitutes late slots, splices fragments into their parent, places tooltip companions after
-  /// their invoker and folds pending [IdReference]s into attributes, appending the result to
-  /// `out`.
+  /// Substitutes late slots, splices fragments, places tooltip companions after their invoker and
+  /// folds [IdReference]s into attributes; appends to `out`.
   static void link(ViewNode node, CompilationState state, List<ResolvedNode> out) {
     switch (node) {
       case ViewNode.Slot slot -> link(slot.content(), state, out);
@@ -57,7 +54,7 @@ final class ReferenceLinker {
                     ids.add(id);
                   }
                 }
-                // An unresolved attribute cannot be validated meaningfully. Other nodes still can.
+                // Unresolved attributes cannot be validated; other nodes still can.
                 if (ids.size() == reference.targets().size()) {
                   linked.put(name, reference.prefix() + String.join(" ", ids));
                 } else {
@@ -65,24 +62,13 @@ final class ReferenceLinker {
                   missing.add(name);
                 }
               });
-      attrs = Collections.unmodifiableMap(linked);
-      unresolved = Collections.unmodifiableSet(missing);
+      attrs = linked;
+      unresolved = missing;
     }
     var children = new ArrayList<ResolvedNode>(tag.children().size());
     for (var child : tag.children()) {
       link(child, state, children);
     }
-    var resolved =
-        new ResolvedTag(
-            tag.tag(), tag.location(), attrs, unresolved, Collections.unmodifiableList(children));
-    var id = attrs.get("id");
-    if (id != null && !id.isBlank()) {
-      state.elementsById.putIfAbsent(id, resolved);
-    }
-    var labelled = attrs.get("for");
-    if (tag.tag() == HtmlTag.LABEL && labelled != null) {
-      state.labelledControlIds.add(labelled);
-    }
-    return resolved;
+    return new ResolvedTag(tag.tag(), tag.location(), attrs, unresolved, children);
   }
 }

@@ -1,9 +1,8 @@
 package dev.nthings.tessera.css;
 
-/// A border or outline: a line with width, style, and color, or none.
+/// A border or outline: a line, or `none`.
 public sealed interface Border extends CssValue permits Border.Line, Border.None {
 
-  /// Line styles.
   enum LineStyle implements CssKeyword {
     SOLID,
     DASHED,

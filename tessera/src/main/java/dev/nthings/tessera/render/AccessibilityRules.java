@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Accessibility contracts checked on the linked tree: what each declared role requires, landmark
-/// and heading structure, focus order, and label targets.
+/// Accessibility contracts on the linked tree: role requirements, landmark and heading
+/// structure, focus order and label targets.
 ///
-/// Rules that depend on a role apply to elements that declare one; native elements are checked
-/// where their semantics are unambiguous (`<dialog>`, headings, landmarks, `<label for>`).
+/// Role rules apply to elements that declare a role; native elements are checked where their
+/// semantics are unambiguous (`<dialog>`, headings, landmarks, `<label for>`).
 final class AccessibilityRules {
 
   private static final Set<Role> NAMED_LANDMARKS =
@@ -217,8 +217,7 @@ final class AccessibilityRules {
     return explicit != null ? explicit : implicitRole(tag);
   }
 
-  /// The role a native element exposes without a `role` attribute, for the elements whose
-  /// semantics are unconditional enough to check.
+  /// Implicit role of a native element, for elements whose semantics are unconditional.
   private static @Nullable Role implicitRole(ResolvedTag tag) {
     var attrs = tag.attributes();
     return switch (tag.tag()) {
@@ -283,7 +282,8 @@ final class AccessibilityRules {
 
   private static int ariaLevel(ResolvedTag tag) {
     var declared = tag.attributes().get("aria-level");
-    return declared == null ? 0 : parseIntOr(declared, 0);
+    // Only Accessible.ariaLevel writes it, already checked to be 1-6.
+    return declared == null ? 0 : Integer.parseInt(declared);
   }
 
   private static int parseIntOr(String text, int fallback) {
@@ -294,8 +294,8 @@ final class AccessibilityRules {
     }
   }
 
-  /// A comparable form of the element's author-supplied name: its label text, or the text of the
-  /// elements that label it. `null` when it has none.
+  /// Comparable form of the author-supplied name: label text, or the text of the elements that
+  /// label it; `null` when there is none.
   private @Nullable String nameKey(ResolvedTag tag) {
     var label = tag.attributes().get("aria-label");
     if (label != null && !label.isBlank()) {
@@ -365,7 +365,8 @@ final class AccessibilityRules {
   private void checkHeadings() {
     Heading previous = null;
     for (var heading : headings) {
-      if (!hasHeadingText(heading.tag())) {
+      // A declared heading role is named under role-name-required instead.
+      if (!PageValidator.declaresRole(heading.tag()) && !hasHeadingText(heading.tag())) {
         state.report(
             heading.tag().location(),
             "empty-heading",

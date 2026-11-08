@@ -15,7 +15,7 @@ public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<S
     return self();
   }
 
-  /// Text color that contrasts with `background` (`contrast-color()`), e.g. for filled buttons.
+  /// Text color contrasting with `background` (`contrast-color()`), e.g. on filled buttons.
   default SELF textColorOn(CssColor background) {
     return textColor(background.contrast());
   }
@@ -86,7 +86,7 @@ public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<S
     return self();
   }
 
-  /// Underlines the text at `offset` from the baseline, leaving color and thickness to the cascade.
+  /// Underlines at `offset` from the baseline; color and thickness come from the cascade.
   default SELF textDecorationUnderline(CssLength offset) {
     style().put(CssProperty.TEXT_DECORATION_LINE, "underline");
     style().put(CssProperty.TEXT_UNDERLINE_OFFSET, offset);

@@ -68,8 +68,7 @@ class SiteArtifactsTest {
           .contains("\"level\": 2");
     }
 
-    /// The index with whitespace around JSON punctuation removed, so assertions don't depend on
-    /// the layout but still see spaces inside values.
+    /// Index with whitespace around JSON punctuation removed; spaces inside values are kept.
     private String compactIndex() {
       return site.searchIndexJson().replaceAll("\\s*([{}\\[\\]:,])\\s*", "$1");
     }

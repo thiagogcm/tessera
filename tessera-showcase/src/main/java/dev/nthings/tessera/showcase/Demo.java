@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/// One showcase section: what a component does, the platform features it compiles to, a live
-/// example, and the Java that produced it.
+/// One showcase section: description, platform features, live example and its Java source.
 final class Demo implements RenderOnce {
 
   private final String id;
@@ -45,7 +44,6 @@ final class Demo implements RenderOnce {
     return this;
   }
 
-  /// Platform features (CSS/HTML) the component relies on, shown as chips.
   Demo features(String... names) {
     this.features = List.of(names);
     return this;
@@ -58,13 +56,12 @@ final class Demo implements RenderOnce {
     return this;
   }
 
-  /// Example built when the section renders, so each compilation gets new elements.
+  /// Called on each render, so every compilation gets fresh elements.
   Demo stage(Supplier<List<IntoElement>> content) {
     this.stage = content;
     return this;
   }
 
-  /// Java source shown under the example.
   Demo code(String... lines) {
     this.code = List.of(lines);
     return this;
@@ -75,12 +72,11 @@ final class Demo implements RenderOnce {
     return this;
   }
 
-  /// Card-surface styling shared by example panels, popovers and tooltips.
+  /// Card styling shared by panels, popovers and tooltips.
   static TagElement surface(TagElement box, CssLength radius) {
     return box.rounded(radius).bg(Tokens.SURFACE_CARD).borderSubtle(Tokens.BORDER_SUBTLE);
   }
 
-  /// Labelled card-surface tile for layout and motion examples.
   static TagElement tile(String label) {
     return surface(div().p(CssLength.rem(1)).fontWeight(600).text(label), CssLength.rem(0.75));
   }

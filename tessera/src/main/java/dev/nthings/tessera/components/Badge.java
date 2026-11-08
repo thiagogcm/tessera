@@ -20,8 +20,7 @@ import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Compact badge and pill label component with adaptive OKLCH tints, status dots, and outline/solid
-/// variants.
+/// Compact label: OKLCH tints, optional status dot, tinted/outline/solid variants.
 public final class Badge implements RenderView, FluentBuilder<Badge> {
 
   public enum Tone {
@@ -333,7 +332,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
       el.child(span().attr("class", "badge-dot").ariaHidden(true));
     }
 
-    if (iconSvg != null && !iconSvg.isBlank()) {
+    if (iconSvg != null) {
       el.child(span().attr("class", "badge-icon").ariaHidden(true).child(rawHtml(iconSvg)));
     }
 

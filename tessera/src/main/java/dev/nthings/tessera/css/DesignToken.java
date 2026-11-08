@@ -2,8 +2,8 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.Fnv1a64;
 
-/// CSS custom property registered with [Tokens]. Each category exposes only the operations that
-/// match its CSS type, and its value is a typed [CssValue] of that category.
+/// A CSS custom property registered with [Tokens]; each category exposes only operations matching
+/// its CSS type.
 public sealed interface DesignToken
     permits DesignToken.Color,
         DesignToken.Length,
@@ -13,10 +13,9 @@ public sealed interface DesignToken
 
   String name();
 
-  /// The typed value the custom property is defined as.
   CssValue value();
 
-  /// The value as CSS, the right-hand side of the custom property declaration.
+  /// Right-hand side of the custom property declaration.
   default String cssDefinition() {
     return value().toCss();
   }
@@ -35,13 +34,13 @@ public sealed interface DesignToken
       name = Fnv1a64.sanitizeIdentifier(name);
     }
 
-    /// The color as `var(--name)`, usable wherever a [CssColor] is accepted.
+    /// `var(--name)`.
     @Override
     public String toCss() {
       return varReference();
     }
 
-    /// The same token with a different value, for theme overrides that keep its category.
+    /// Same token with a new value, for theme overrides.
     public Color withValue(CssColor replacement) {
       return new Color(name, replacement);
     }
@@ -50,30 +49,29 @@ public sealed interface DesignToken
       return new Color(name, CssColor.lightDark(light, dark));
     }
 
-    /// The same token with an adaptive value, for theme overrides.
     public Color withLightDark(CssColor light, CssColor dark) {
       return withValue(CssColor.lightDark(light, dark));
     }
 
-    /// Role whose value is another color token, so a theme can replace the role or the source.
+    /// Role defined as another color token, so themes can override either.
     public static Color alias(String name, Color source) {
       return new Color(name, source);
     }
   }
 
-  /// Length token. Spacing tokens multiply a length by `--density`; other lengths do not.
+  /// Spacing tokens multiply by `--density`; other lengths do not.
   record Length(String name, CssLength value) implements DesignToken, CssLength {
     public Length {
       name = Fnv1a64.sanitizeIdentifier(name);
     }
 
-    /// The length as `var(--name)`, usable wherever a [CssLength] is accepted.
+    /// `var(--name)`.
     @Override
     public String toCss() {
       return varReference();
     }
 
-    /// The same token with a different value, for theme overrides that keep its category.
+    /// Same token with a new value, for theme overrides.
     public Length withValue(CssLength replacement) {
       return new Length(name, replacement);
     }
@@ -94,7 +92,7 @@ public sealed interface DesignToken
       return varReference();
     }
 
-    /// The same token with a different value, for theme overrides that keep its category.
+    /// Same token with a new value, for theme overrides.
     public Duration withValue(CssDuration replacement) {
       return new Duration(name, replacement);
     }
@@ -105,13 +103,13 @@ public sealed interface DesignToken
       name = Fnv1a64.sanitizeIdentifier(name);
     }
 
-    /// The font family as `var(--name)`, usable wherever a font stack entry is.
+    /// `var(--name)`.
     @Override
     public String toCss() {
       return varReference();
     }
 
-    /// The same token with a different value, for theme overrides that keep its category.
+    /// Same token with a new value, for theme overrides.
     public FontFamily withValue(FontStack replacement) {
       return new FontFamily(name, replacement);
     }
@@ -136,7 +134,7 @@ public sealed interface DesignToken
       return varReference();
     }
 
-    /// The same token with a different value, for theme overrides that keep its category.
+    /// Same token with a new value, for theme overrides.
     public Number withValue(double replacement) {
       return new Number(name, CssNumber.of(replacement));
     }

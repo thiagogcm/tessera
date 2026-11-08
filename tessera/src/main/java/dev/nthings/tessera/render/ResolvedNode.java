@@ -9,8 +9,8 @@ import java.util.Set;
 sealed interface ResolvedNode
     permits ResolvedNode.ResolvedTag, ResolvedNode.ResolvedText, ResolvedNode.ResolvedRaw {
 
-  /// Linked element; `unresolvedAttributes` names reference attributes whose targets were
-  /// reported as missing or ambiguous, so validators skip secondary errors for them.
+  /// Linked element. `unresolvedAttributes` names reference attributes already reported as
+  /// missing or ambiguous, so validators skip them.
   record ResolvedTag(
       TagName tag,
       ViewLocation location,

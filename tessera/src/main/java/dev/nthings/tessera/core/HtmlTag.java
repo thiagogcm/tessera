@@ -86,14 +86,13 @@ public enum HtmlTag implements TagName {
   STYLE,
   SCRIPT;
 
-  private final String tagName = name().toLowerCase(Locale.ROOT).replace('_', '-');
+  private final String tagName = name().toLowerCase(Locale.ROOT);
 
   @Override
   public String tagName() {
     return tagName;
   }
 
-  /// The heading level of `<h1>` through `<h6>`, or 0 for any other tag.
   public int headingLevel() {
     return switch (this) {
       case H1 -> 1;
@@ -106,7 +105,6 @@ public enum HtmlTag implements TagName {
     };
   }
 
-  /// The heading tag of `level`, 1 through 6.
   public static HtmlTag heading(int level) {
     return switch (level) {
       case 1 -> H1;

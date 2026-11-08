@@ -14,16 +14,12 @@ import dev.nthings.tessera.css.StyleRefinement;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Core Web Vitals-optimized image component enforcing LCP priority hoisting and layout
-/// stability.
+/// Image with LCP priority hoisting and layout-shift prevention.
 ///
-/// - [#hero(String, String)] tags the page's primary Largest Contentful Paint candidate,
-///   emitting `fetchpriority="high"` and hoisting an explicit `<link rel="preload" as="image">`
-///   into the document `<head>`.
-/// - [#of(String, String)] provisions below-the-fold images with `loading="lazy"` and
-///   `decoding="async"`.
-/// - Compile-time Phase 2 enforcement requires either explicit dimensions or a CSS `aspect-ratio`
-///   to eliminate Cumulative Layout Shift (CLS).
+/// - [#hero(String, String)] marks the primary LCP candidate: `fetchpriority="high"` plus a
+///   `<link rel="preload" as="image">` hoisted into `<head>`.
+/// - [#of(String, String)] is below the fold: `loading="lazy"` and `decoding="async"`.
+/// - Compile-time enforced: explicit dimensions or a CSS `aspect-ratio` (avoids CLS).
 public final class Image implements RenderOnce, InteractiveElement<Image> {
 
   private static final class HeroSlot {
@@ -114,8 +110,7 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
   @Override
   public Element render(RenderContext context) {
     if (hero) {
-      var ctx = context;
-      var slot = ctx.document(HERO);
+      var slot = context.document(HERO);
       if (slot.src != null) {
         throw new IllegalStateException(
             "Only one hero image allowed per page: already registered '"
@@ -125,7 +120,7 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
                 + "'");
       }
       slot.src = src;
-      ctx.contributeHead(
+      context.contributeHead(
           Elements.link()
               .attr("rel", "preload")
               .attr("as", "image")

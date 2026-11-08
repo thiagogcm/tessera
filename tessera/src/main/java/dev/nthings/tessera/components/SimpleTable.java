@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Lightweight semantic `<table>` builder for ad-hoc tabular data.
 public final class SimpleTable implements RenderOnce {
 
   private @Nullable String caption;

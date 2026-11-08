@@ -28,9 +28,8 @@ import org.jspecify.annotations.Nullable;
 
 /// Expands authoring elements into [ViewNode]s for one page.
 ///
-/// Collects styles and delegates deferred and late placement. Identities, transitions and
-/// diagnostics go to the page's [CompilationState]; [LayoutPass] orders the document and
-/// [ReferenceLinker] links the result.
+/// Collects styles and delegates placement. Identities, transitions and diagnostics go to the
+/// [CompilationState]; [LayoutPass] orders the document and [ReferenceLinker] links it.
 final class ViewExpansion {
   private final CompilationState state;
   private final Placement placement;
@@ -87,8 +86,7 @@ final class ViewExpansion {
     };
   }
 
-  /// Expands what an authoring callback returns for `context`; a failing callback names its
-  /// component.
+  /// Expands an authoring callback's result; a failure names its component.
   ViewNode expand(
       RenderContext context, String phase, Function<RenderContext, ? extends IntoElement> content) {
     return expand(callback(context, phase, () -> content.apply(context).intoElement()), context);
@@ -145,8 +143,7 @@ final class ViewExpansion {
     return result;
   }
 
-  /// Expands `element`; `forcedId` (already registered) overrides reference binding for
-  /// companions.
+  /// Expands `element`. `forcedId` (already registered) is used for companions, not bound.
   private ViewNode.Tag tag(TagElement element, @Nullable String forcedId, RenderContext context) {
     var attrs = new LinkedHashMap<>(element.attributes());
     var source = element.source() != null ? element.source() : context.origin();
@@ -169,7 +166,7 @@ final class ViewExpansion {
 
     var style = identityStyles(element, domId, location);
     if (element.tag() == HtmlTag.IMG) {
-      PageValidator.validateImage(attrs, style.properties(), state, location);
+      PageValidator.validateImage(attrs, style, state, location);
     }
 
     var transition = element.transitionKey();
@@ -190,7 +187,7 @@ final class ViewExpansion {
 
     ViewNode.Tag companion = null;
     var tooltip = element.interestTooltip();
-    if (tooltip != null && domId != null) {
+    if (tooltip != null) {
       var tooltipId = domId + "--tooltip";
       attrs.put("interestfor", tooltipId);
       state.registerDomId(tooltipId, location);

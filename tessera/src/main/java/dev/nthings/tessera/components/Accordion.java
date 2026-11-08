@@ -20,9 +20,8 @@ import dev.nthings.tessera.css.Transform;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Exclusive or multi-open disclosure accordion backed by semantic `<details>` / `<summary>`
-/// elements, shared `name="..."` exclusive grouping, native "Find in page" searchability, and
-/// smooth `::details-content` intrinsic height animation (`interpolate-size: allow-keywords`).
+/// Accordion on native `<details>`/`<summary>`, so "Find in page" works. Exclusive mode shares a
+/// `name` group. Height animates via `::details-content` (`interpolate-size: allow-keywords`).
 public final class Accordion implements RenderView {
 
   public record Item(String summaryTitle, Element content, boolean initiallyOpen) {

@@ -2,7 +2,7 @@ package dev.nthings.tessera.core;
 
 import java.util.Locale;
 
-/// Native HTML Invoker Commands (`command` attribute) supported by the target browsers.
+/// Native Invoker Commands (`command` attribute) supported by target browsers.
 public enum BuiltinCommand {
   SHOW_MODAL,
   CLOSE,

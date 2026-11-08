@@ -3,9 +3,9 @@ package dev.nthings.tessera.render;
 import java.io.Serializable;
 import org.jspecify.annotations.Nullable;
 
-/// A view location placed on a page; `route` is absent for standalone page compilation.
+/// A view location on a page; `route` is absent for standalone page compilation.
 ///
-/// The view's source is the authoring call site, present only while [SourceTracking] is active.
+/// Source is the authoring call site, present only while [SourceTracking] is active.
 public record CompilationLocation(String pageTitle, @Nullable String route, ViewLocation view)
     implements Serializable {
 

@@ -5,8 +5,8 @@ import java.util.Objects;
 import org.assertj.core.api.AbstractAssert;
 import org.jsoup.nodes.Element;
 
-/// AssertJ assertions for a jsoup [Element]. Failures print the element's opening tag instead of
-/// the bare `expected: true` a `hasClass(..)` / `hasAttr(..)` boolean assertion would give.
+/// AssertJ assertions for a jsoup [Element]; failures print its opening tag, not a bare
+/// `expected: true`.
 public final class ElementAssert extends AbstractAssert<ElementAssert, Element> {
 
   ElementAssert(Element actual) {

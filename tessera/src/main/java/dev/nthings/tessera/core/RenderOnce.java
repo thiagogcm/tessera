@@ -1,8 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Stateless component contract, typically implemented by Java 25 `record` types.
-///
-/// Consumed during expansion with an explicit turn context.
+/// Stateless component, typically a record. Expanded with an explicit render context.
 @FunctionalInterface
 public interface RenderOnce extends IntoElement {
 

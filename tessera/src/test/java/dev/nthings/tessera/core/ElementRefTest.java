@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @DisplayName("ElementRef")
 class ElementRefTest {
 
-  /// View wrapping arbitrary content so a test can place elements in a nested scope.
+  /// Wraps content in a nested scope for tests.
   record Panel(String id, Element content) implements RenderView {
 
     @Override

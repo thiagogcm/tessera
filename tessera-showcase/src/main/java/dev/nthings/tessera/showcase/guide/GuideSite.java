@@ -99,7 +99,7 @@ public final class GuideSite {
             search.asDeferred(10));
   }
 
-  /// A scoped component with a stable instance id and styles expressed through shared tokens.
+  /// Scoped component with a stable id, styled through shared tokens.
   public record MetricCard(String id, String title, String value) implements RenderView {
     @Override
     public ElementId entityId() {

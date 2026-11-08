@@ -17,9 +17,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/// Dual-mode Footnote system combining inline `interestfor` hover/focus preview popovers with
-/// auto-numbered, bidirectionally linked WAI-ARIA Digital Publishing endnotes
-/// (`role="doc-endnotes"`).
+/// Footnotes as inline `interestfor` previews plus auto-numbered, bidirectionally linked
+/// endnotes (`role="doc-endnotes"`).
 public final class Footnotes {
 
   /// Numbered footnote registered on the page; ids are fixed at the reference site.
@@ -101,7 +100,7 @@ public final class Footnotes {
     }
   }
 
-  /// Endnotes list; rendered after layout so it lists every reference regardless of placement.
+  /// Endnotes list, rendered after layout so it covers every reference.
   public record FootnotesSection(String heading) implements RenderOnce {
 
     @Override

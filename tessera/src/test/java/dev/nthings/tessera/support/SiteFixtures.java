@@ -12,7 +12,7 @@ import dev.nthings.tessera.site.SiteDefinition;
 import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 
-/// Route sets shared by the site tests, each built fresh so no test can affect another.
+/// Route sets built fresh per call, so tests cannot affect each other.
 public final class SiteFixtures {
 
   public static final String LOGO_PATH = "/assets/logo.svg";
@@ -24,8 +24,8 @@ public final class SiteFixtures {
     return SiteAsset.text(LOGO_PATH, LOGO_CONTENT);
   }
 
-  /// A home page embedding [#LOGO_PATH] and linking to a guide. The logo is not registered, so
-  /// compiling these routes alone is invalid; see [#siteWithLogo()].
+  /// Embeds unregistered [#LOGO_PATH], so compiling these routes alone fails; see
+  /// [#siteWithLogo()].
   public static List<SiteRoute> homeWithLogoAndGuide() {
     var home =
         new PageDocument(
@@ -41,8 +41,7 @@ public final class SiteFixtures {
     return SiteDefinition.builder().routes(homeWithLogoAndGuide()).asset(logo()).build();
   }
 
-  /// Three documentation routes: a titled home and guide with table-of-contents sections, and an
-  /// untitled FAQ that falls back to its document title.
+  /// Three documentation routes; the untitled FAQ falls back to its document title.
   public static List<SiteRoute> documentationRoutes() {
     return List.of(
         new SiteRoute(

@@ -6,8 +6,8 @@ import dev.nthings.tessera.core.IntoElement;
 import java.util.List;
 import java.util.function.Supplier;
 
-/// Showcase route: navigation metadata, the demo sections it indexes for search, and its body
-/// (by default the demos in a scroll-spy documentation layout).
+/// Showcase route: nav metadata, search-indexed demo sections, and body (by default a
+/// scroll-spy documentation layout).
 record Page(
     String path,
     String navLabel,
@@ -36,13 +36,12 @@ record Page(
     return body.get().intoElement();
   }
 
-  /// The showcase's scroll-spy documentation layout around `sections`.
   static Element docLayout(List<? extends IntoElement> sections) {
     return Toc.docLayout(TOC_ID, "On this page", sections.toArray(IntoElement[]::new))
         .intoElement();
   }
 
-  /// Fragment link to a demo section (sections are scoped inside the doc layout view).
+  /// Fragment link to a demo section, scoped inside the doc layout view.
   String sectionHref(Demo demo) {
     return path + "#" + Toc.DocLayout.sectionDomId(TOC_ID, demo.id());
   }

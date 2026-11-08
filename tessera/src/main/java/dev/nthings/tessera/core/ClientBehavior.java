@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-/// ES module contributed to a document as browser behavior.
+/// ES module emitted once per compiled page or site, keyed by [#id].
 ///
-/// A behavior is identified by [#id] and emitted once per compiled page or site. When the page
-/// publishes external assets, the module becomes a content-hashed file; otherwise it is inlined as
+/// Written as a content-hashed file when the page publishes external assets, otherwise inlined as
 /// a module script.
 public record ClientBehavior(String id, String module) {
 

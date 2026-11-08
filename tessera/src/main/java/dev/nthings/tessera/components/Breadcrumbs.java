@@ -16,9 +16,8 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Semantic breadcrumb navigation (`<nav aria-label="Breadcrumb"><ol>`) using CSS `content: "/" /
-/// ""` decorative separators (silent to screen readers) and `aria-current="page"` on the terminal
-/// item.
+/// Breadcrumb trail (`<nav><ol>`). Separators are CSS `content`, so screen readers skip them.
+/// `aria-current="page"` marks the last item.
 public final class Breadcrumbs implements RenderView {
 
   public record Crumb(String href, String label) {
@@ -43,7 +42,7 @@ public final class Breadcrumbs implements RenderView {
     return new Breadcrumbs(id, List.of(crumbs));
   }
 
-  /// The landmark's accessible name. Pages with several trails need a distinct name for each.
+  /// Accessible name of the landmark; make it distinct when a page has several trails.
   public Breadcrumbs label(String label) {
     this.label = label;
     return this;

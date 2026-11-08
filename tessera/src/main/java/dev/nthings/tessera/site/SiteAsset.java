@@ -7,10 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
-/// Static file (image, font, icon, ...) published at `path` alongside the compiled pages.
-///
-/// Internal `href`, `src` and `poster` URLs are validated against registered assets, just like
-/// routes.
+/// Static file published at `path` beside the compiled pages. Internal `href`, `src` and
+/// `poster` URLs are validated against registered assets, as routes are.
 public record SiteAsset(String path, String contentType, byte[] content) {
 
   public SiteAsset {
@@ -23,7 +21,7 @@ public record SiteAsset(String path, String contentType, byte[] content) {
     content = content.clone();
   }
 
-  /// Asset with its content type inferred from the file extension.
+  /// Content type inferred from the file extension.
   public static SiteAsset of(String path, byte[] content) {
     return new SiteAsset(path, contentTypeFor(path), content);
   }
@@ -33,7 +31,6 @@ public record SiteAsset(String path, String contentType, byte[] content) {
     return of(path, content.getBytes(StandardCharsets.UTF_8));
   }
 
-  /// Asset read from `source` on disk.
   public static SiteAsset file(String path, Path source) {
     try {
       return of(path, Files.readAllBytes(source));
@@ -47,12 +44,11 @@ public record SiteAsset(String path, String contentType, byte[] content) {
     return content.clone();
   }
 
-  /// The owned bytes without a defensive copy, for writing and serving.
+  /// Owned bytes, not a defensive copy.
   byte[] contentView() {
     return content;
   }
 
-  /// Output location relative to the site root.
   Path relativeOutputPath() {
     return Path.of(path.substring(1));
   }

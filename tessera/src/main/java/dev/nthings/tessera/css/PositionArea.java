@@ -2,7 +2,7 @@ package dev.nthings.tessera.css;
 
 import org.jspecify.annotations.Nullable;
 
-/// A `position-area`: where an anchored element sits around its anchor, as one or two keywords.
+/// A `position-area`: one or two keywords placing an element around its anchor.
 public record PositionArea(Part first, @Nullable Part second) implements CssValue {
 
   /// Area keywords, including spans toward one edge.

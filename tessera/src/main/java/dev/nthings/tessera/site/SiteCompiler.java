@@ -22,7 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-/// Coordinates concurrent page compilation, site validation, shared CSS, and artifacts.
+/// Compiles pages concurrently, then validates and adds shared CSS and artifacts.
 public final class SiteCompiler {
   private SiteCompiler() {}
 
@@ -47,17 +47,15 @@ public final class SiteCompiler {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
 
-    // Verify cross-route links and #fragment targets
     var diagnostics = new ArrayList<CompilationDiagnostic>();
     SiteValidator.validateSiteLinks(preparedByRoute, files.keySet(), diagnostics);
 
-    // Verify TransitionKey appearance across multiple routes
     SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
     if (!diagnostics.isEmpty()) {
       throw new CompilationException(diagnostics);
     }
 
-    // Deterministically merge all route stylesheets in route order
+    // Merge route stylesheets in route order so output is deterministic.
     var sharedCollector = new StyleSheetCollector();
     for (var prepared : preparedPages) {
       prepared.contributeStylesTo(sharedCollector);
@@ -79,7 +77,7 @@ public final class SiteCompiler {
       }
     }
     generatedAssets.values().forEach(asset -> addFile(files, seenPaths, asset));
-    // Every page is painted with the same output mode and stylesheet, so they share one path.
+    // All pages share one output mode and stylesheet, so one path is enough.
     var sharedCssPath = painted.getFirst().externalCssPath();
 
     if (sharedCssPath != null) {
@@ -101,7 +99,7 @@ public final class SiteCompiler {
     return new CompiledSite(compiledPages, sharedCssPath, sharedCssContent, files);
   }
 
-  /// Registers `file`, rejecting a path already taken by a route or another file.
+  /// Adds `file`; rejects a path already used by a route or another file.
   private static void addFile(
       Map<String, SiteAsset> files, Set<String> routePaths, SiteAsset file) {
     if (routePaths.contains(file.path())) {

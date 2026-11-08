@@ -23,22 +23,20 @@ import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Semantic `<section>` container with configurable surface elevations ([SurfaceKind]), automatic
-/// Table of Contents registration, and optional lead text and badges.
+/// `<section>` whose heading is registered in the Table of Contents when rendered.
 public final class ContentSection implements RenderOnce, ParentElement<ContentSection> {
 
-  /// Surface presentation styling.
   public enum SurfaceKind {
-    /// Clean borderless continuous narrative flow (default for docs).
+    /// Borderless, continuous flow. Default.
     GHOST,
-    /// Subtle flat surface with bottom border divider.
+    /// Flat surface with a bottom divider.
     FLAT,
-    /// Framed card surface with subtle border and shadow (for interactive widgets and forms).
+    /// Bordered, shadowed card for widgets and forms.
     CARD,
-    /// Accent-tinted OKLCH highlight surface for key announcements and callouts.
+    /// Accent-tinted surface for key announcements.
     HIGHLIGHT;
 
-    private final String value = name().toLowerCase(Locale.ROOT).replace('_', '-');
+    private final String value = name().toLowerCase(Locale.ROOT);
 
     public String wireValue() {
       return value;
@@ -179,7 +177,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     return level;
   }
 
-  /// Builds the `<h2>`–`<h4>` heading for a TOC-registered section, id'd `<sectionDomId>--heading`.
+  /// `<h2>` to `<h4>` heading; id is `<sectionDomId>--heading`.
   static TagElement sectionHeading(int level, String sectionDomId, String title) {
     var heading =
         switch (level) {

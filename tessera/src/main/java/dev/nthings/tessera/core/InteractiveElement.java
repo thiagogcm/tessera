@@ -13,8 +13,8 @@ import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
-/// Shared interactive, attribute, id-reference, container-query, and scroll-driven animation
-/// capabilities of element builders.
+/// Shared interactive, attribute, id-reference, container-query and scroll-animation capabilities
+/// of element builders.
 ///
 /// @param <SELF> concrete element type
 public interface InteractiveElement<
@@ -23,8 +23,8 @@ public interface InteractiveElement<
 
   Interactivity interactivity();
 
-  /// Sets an arbitrary attribute. Roles and `aria-*` attributes have typed methods ([Accessible]),
-  /// so this refuses them.
+  /// Sets an arbitrary attribute. Roles and `aria-*` have typed methods ([Accessible]) and are
+  /// refused here.
   default SELF attr(String name, String value) {
     requireNotAria(name);
     attributes().put(name, value);
@@ -48,7 +48,7 @@ public interface InteractiveElement<
 
   private SELF idRef(String attribute, IdReference reference) {
     requireNotAria(attribute);
-    // Reserve the attribute's position so resolved ids keep declaration order.
+    // Reserve the slot so resolved ids keep declaration order.
     attributes().putIfAbsent(attribute, "");
     idReferences().put(attribute, reference);
     return self();
@@ -99,8 +99,8 @@ public interface InteractiveElement<
     return attr("width", Integer.toString(width)).attr("height", Integer.toString(height));
   }
 
-  /// Cross-document view transition identity: emits `view-transition-name` (and class), checked
-  /// to be unique per page and present on at least two routes of a site.
+  /// Emits `view-transition-name` (and class) for a cross-document transition. Checked for
+  /// uniqueness per page.
   SELF transitionKey(TransitionKey key);
 
   default SELF title(String title) {
@@ -176,9 +176,9 @@ public interface InteractiveElement<
     return scrollDriven(preset, axis, false);
   }
 
-  /// Plays `preset` once, the first time any part of the element scrolls into view (CSS
-  /// scroll-triggered animation; elements already visible on load play immediately). Unlike
-  /// [#scrollReveal(ScrollReveal)], progress is time-based and does not reverse on scroll back.
+  /// Plays `preset` once when the element first scrolls into view (CSS scroll-triggered; elements
+  /// visible on load play immediately). Unlike [#scrollReveal(ScrollReveal)], it is time-based and
+  /// does not reverse.
   default SELF revealOnce(ScrollReveal preset) {
     interactivity().registerKeyframeRule(preset.keyframeRule());
     interactivity().on(InteractiveState.MOTION_SAFE, preset::revealOnce);

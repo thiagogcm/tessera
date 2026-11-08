@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Which axes a user can resize an element along.
+/// Axes a user can resize along.
 public enum Resize implements CssKeyword {
   NONE,
   BOTH,

@@ -19,10 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/// Named component cases shared by the showcase pages and the browser fixtures.
+/// Named component cases shared by showcase pages and browser fixtures.
 public final class Catalog {
 
-  /// Color scheme compiled into a case page.
   public enum Appearance {
     LIGHT("light"),
     DARK("dark");
@@ -39,7 +38,7 @@ public final class Catalog {
     }
   }
 
-  /// Density compiled into a case page. Compact is `0.8`; regular leaves the token at `1`.
+  /// Compact is `0.8`; regular leaves the density token at `1`.
   public enum Density {
     REGULAR("regular", "1"),
     COMPACT("compact", "0.8");
@@ -52,7 +51,6 @@ public final class Catalog {
       this.value = value;
     }
 
-    /// Path segment for this density.
     public String wire() {
       return wire;
     }
@@ -72,30 +70,15 @@ public final class Catalog {
 
   private Catalog() {}
 
-  /// Direct URL path for one case. The viewport is the browser window, not part of the path.
+  /// The viewport is the browser window, so it is not part of the path.
   public static String casePath(
       String storyId, String variant, Appearance appearance, Density density) {
     return "/stories/" + storyId + "/" + variant + "/" + appearance.wire() + "/" + density.wire();
   }
 
-  /// Light, regular-density case path: the default view linked from the docs.
+  /// Light, regular-density path: the default view linked from docs.
   public static String casePath(String storyId, String variant) {
     return casePath(storyId, variant, Appearance.LIGHT, Density.REGULAR);
-  }
-
-  /// One case of a story: its id, variant name, and light, regular-density path.
-  public record Case(String storyId, String variant, String path) {}
-
-  /// Every variant of every story at light appearance and regular density. Appearance and density
-  /// do not change what assistive technology sees, so this is the set to inspect once each.
-  public static List<Case> cases() {
-    var cases = new ArrayList<Case>();
-    for (var story : STORIES) {
-      for (var variant : story.variants()) {
-        cases.add(new Case(story.id(), variant.name(), casePath(story.id(), variant.name())));
-      }
-    }
-    return cases;
   }
 
   static List<SiteRoute> routes() {

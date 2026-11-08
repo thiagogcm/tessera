@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Sealed algebraic sum type representing all nodes in a Tessera view tree.
+/// Any node in a Tessera view tree.
 public sealed interface Element extends IntoElement
     permits TagElement,
         FragmentElement,

@@ -2,12 +2,11 @@ package dev.nthings.tessera.core;
 
 import org.jspecify.annotations.Nullable;
 
-/// Identity handle for an element's DOM id, resolved by the compiler like a linker symbol.
+/// Linker-style handle for an element's DOM id, resolved by the compiler.
 ///
-/// Bind it once per page with [TagElement#id(ElementRef)]; its DOM id is the enclosing
-/// [ViewScope] at the bind site extended by [#localId()]. Any number of elements may reference it
-/// (`commandfor`, `for`, `aria-*`, `href="#…"`, CSS anchors) from anywhere on the page, before or
-/// after the bind site. Two refs are equal only if they are the same instance.
+/// Bind once per page with [TagElement#id(ElementRef)]. The DOM id is the bind site's [ViewScope]
+/// plus [#localId()]. Any element may reference it (`commandfor`, `for`, `aria-*`, `href="#…"`,
+/// CSS anchors), before or after the bind site. Equality is identity.
 public final class ElementRef {
 
   private final @Nullable ElementId localId;
@@ -21,8 +20,7 @@ public final class ElementRef {
     return new ElementRef(ElementId.of(name));
   }
 
-  /// Ref whose local id is assigned by the compiler (`<tag>-<n>`, numbered within its
-  /// view scope, so ids elsewhere on the page never shift it).
+  /// Ref whose local id is assigned by the compiler (`<tag>-<n>`, numbered per view scope).
   public static ElementRef anonymous() {
     return new ElementRef(null);
   }

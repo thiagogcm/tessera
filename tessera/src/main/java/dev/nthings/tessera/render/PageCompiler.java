@@ -5,7 +5,7 @@ import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Coordinates layout, reference linking, validation, and HTML emission.
+/// Coordinates layout, linking, validation and HTML emission.
 public final class PageCompiler {
   private PageCompiler() {}
 
@@ -30,8 +30,8 @@ public final class PageCompiler {
     return prepare(document, tokens, List.of()).tree();
   }
 
-  /// Runs layout and prepaint for `document` under `tokens`, with `siteHead` elements (shared by
-  /// every page of a site) placed in `<head>` ahead of anything the page contributes.
+  /// Runs layout and prepaint for `document` under `tokens`. `siteHead` (shared by a site's
+  /// pages) goes in `<head>` before the page's own contributions.
   public static PreparedPage prepare(
       PageDocument document, Tokens tokens, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheetCollector();

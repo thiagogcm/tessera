@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Accessible keyboard-scrollable code block backed by CSS counter line numbers
-/// (`counter-increment: code-line`), line highlighting, diff annotations, and optional header bars.
+/// Keyboard-scrollable code block. Line numbers come from CSS counters, so they are not copied
+/// with the text.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
   private final List<String> lines = new ArrayList<>();
@@ -220,7 +220,6 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
                         .counterReset(CssIdent.of("code-line")))
             .child(codeEl);
 
-    // CSS counter increment on lines
     return wrapper.child(preEl);
   }
 }

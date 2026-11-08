@@ -56,7 +56,6 @@ public sealed interface Transform extends CssValue
     return new TranslateY(distance);
   }
 
-  /// This transform followed by `next`.
   default Transform then(Transform next) {
     var steps = new ArrayList<Transform>();
     steps.addAll(this instanceof Chain chain ? chain.steps() : List.of(this));

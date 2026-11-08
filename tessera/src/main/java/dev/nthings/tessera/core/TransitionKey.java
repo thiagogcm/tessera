@@ -2,22 +2,26 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.foundation.Fnv1a64;
+import java.util.Locale;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Typed identity shared by counterpart elements across routes for Cross-Document View
-/// Transitions.
+/// Identity shared by counterpart elements across routes for Cross-Document View Transitions.
 ///
-/// Applying the same key to an element on two routes emits a matching `view-transition-name`, so
-/// the browser morphs one into the other during navigation. The optional `transitionClass` emits
-/// `view-transition-class` and receives shared `::view-transition-group(*.<class>)` timing rules.
+/// The same key on two routes emits a matching `view-transition-name`, so the browser morphs one
+/// into the other. The optional `transitionClass` emits `view-transition-class` and receives shared
+/// `::view-transition-group(*.<class>)` timing rules.
 ///
-/// Compile-time invariants: a key appears at most once per page (`PageCompiler`) and on at least
-/// two routes site-wide (`SiteCompiler`).
+/// Invariants: a key appears at most once per page (`PageCompiler`) and on at least two routes
+/// site-wide (`SiteCompiler`).
 public record TransitionKey(String name, @Nullable String transitionClass) {
+
+  private static final Set<String> RESERVED = Set.of("root", "auto", "match-element");
 
   public TransitionKey {
     name = Fnv1a64.sanitizeIdentifier(name);
-    if ("root".equals(name) || "none".equals(name) || "auto".equals(name)) {
+    // Reserved names are case-insensitive; CssIdent rejects `none` and CSS-wide keywords.
+    if (RESERVED.contains(name.toLowerCase(Locale.ROOT))) {
       throw new IllegalArgumentException("TransitionKey name is reserved: " + name);
     }
     CssIdent.of(name);

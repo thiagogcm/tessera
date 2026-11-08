@@ -8,9 +8,8 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.ScopeStyle;
 
-/// Icon-only native `<button>`. `accessibleName` is the accessible name. The icon is decorative
-/// and is hidden from assistive technology. Tone, surface, and size use the same choices as
-/// [Button].
+/// Icon-only `<button>`; `accessibleName` labels it. The icon is decorative and hidden from
+/// assistive technology. Tone, surface and size match [Button].
 public final class IconButton extends ButtonBase<IconButton> implements RenderView {
 
   private final String name;

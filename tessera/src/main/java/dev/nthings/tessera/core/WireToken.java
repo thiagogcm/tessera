@@ -2,10 +2,9 @@ package dev.nthings.tessera.core;
 
 import java.util.Locale;
 
-/// An enum whose kebab-case constant name is the attribute value that represents it.
+/// Enum whose kebab-case constant name is its attribute value.
 interface WireToken {
 
-  /// The constant name, supplied by [Enum#name()].
   String name();
 
   default String wireValue() {

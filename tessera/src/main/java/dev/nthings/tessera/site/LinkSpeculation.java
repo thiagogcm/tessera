@@ -7,10 +7,8 @@ import dev.nthings.tessera.core.TagElement;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Same-site navigation speculation emitted as declarative `<script type="speculationrules">`
-/// (no JavaScript executes): links are prefetched or prerendered on hover/pointer-down
-/// (`moderate` eagerness), making route changes and their cross-document view transitions
-/// near-instant.
+/// Same-site speculation as declarative `<script type="speculationrules">` (no JavaScript):
+/// links are prefetched or prerendered on hover or pointer-down (`moderate` eagerness).
 public enum LinkSpeculation {
   NONE(null),
   PREFETCH("prefetch"),

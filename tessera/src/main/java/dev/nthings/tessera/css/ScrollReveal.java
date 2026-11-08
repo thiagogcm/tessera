@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Compositor-friendly scroll-driven reveal and exit presets (`opacity`, `transform`) linked to
+/// Compositor-friendly reveal and exit presets (`opacity`, `transform`) on
 /// `animation-timeline: view()`.
 public enum ScrollReveal {
   FADE_IN("tessera-fade-in", "@keyframes tessera-fade-in{from{opacity:0}to{opacity:1}}"),
@@ -33,8 +33,8 @@ public enum ScrollReveal {
     return keyframeRule;
   }
 
-  /// Drives this preset by the element's progress through the viewport on `axis`: the entry range
-  /// for a reveal, the exit range when `exit` is set.
+  /// Drives the preset by progress through the viewport on `axis`: the entry range, or the exit
+  /// range when `exit` is set.
   public StyleRefinement scrollDriven(StyleRefinement style, TimelineAxis axis, boolean exit) {
     var phase = exit ? "exit" : "entry";
     return style
@@ -45,7 +45,7 @@ public enum ScrollReveal {
         .put(CssProperty.ANIMATION_RANGE, phase + " 0% " + phase + " 100%");
   }
 
-  /// Plays this preset once, the first time any part of the element scrolls into view.
+  /// Plays once, the first time any part of the element scrolls into view.
   public StyleRefinement revealOnce(StyleRefinement style) {
     return style
         .put(CssProperty.ANIMATION, keyframeName + " 0.5s ease-out both")

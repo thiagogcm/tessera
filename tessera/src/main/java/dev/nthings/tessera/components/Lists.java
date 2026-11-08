@@ -21,9 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-/// Semantic HTML5 list primitives: [BulletList] (`<ul>`), [NumberedList] (`<ol>`),
-/// [DescriptionList] (`<dl>`), and [StepList] (numbered steps powered by modern
-/// `sibling-index()`).
+/// List primitives: [BulletList] (`<ul>`), [NumberedList] (`<ol>`),
+/// [DescriptionList] (`<dl>`), and [StepList] (numbered steps via `sibling-index()`).
 public final class Lists {
 
   private Lists() {}

@@ -3,7 +3,7 @@ package dev.nthings.tessera.render;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/// Reports independent authoring errors found during page or site compilation.
+/// Authoring errors found during page or site compilation.
 /// HTML is emitted only after validation succeeds.
 public final class CompilationException extends RuntimeException {
 

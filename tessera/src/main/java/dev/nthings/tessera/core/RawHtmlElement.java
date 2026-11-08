@@ -1,4 +1,4 @@
 package dev.nthings.tessera.core;
 
-/// Pre-sanitized HTML fragment or inline SVG node emitted verbatim during the paint phase.
+/// Pre-sanitized HTML or inline SVG, emitted verbatim at paint.
 public record RawHtmlElement(String trustedHtml) implements Element {}

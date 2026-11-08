@@ -2,13 +2,11 @@ package dev.nthings.tessera.css;
 
 import java.util.Locale;
 
-/// Canonical CSS property keys in deterministic ordinal order for [java.util.EnumMap] storage and
+/// CSS property keys. Declaration order is fixed: it drives [java.util.EnumMap] storage and
 /// FNV-1a hashing.
 ///
-/// Note:
-///
-/// - [#ANIMATION] precedes [#ANIMATION_DELAY], [#ANIMATION_TIMELINE], and [#ANIMATION_RANGE] so
-///   the `animation` shorthand never resets scroll-driven timeline or range declarations.
+/// [#ANIMATION] must precede [#ANIMATION_DELAY], [#ANIMATION_TIMELINE] and [#ANIMATION_RANGE], so
+/// the `animation` shorthand does not reset scroll-driven timeline or range declarations.
 public enum CssProperty {
   CONTENT,
   DISPLAY,

@@ -40,7 +40,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /// Native quick-open dialog with live filtering and keyboard selection.
-/// Rendering a palette automatically contributes its ES module once per document.
+/// Its ES module is contributed once per document automatically.
 public final class SearchPalette implements RenderView {
 
   private static final ClientBehavior SEARCH_BEHAVIOR =
@@ -52,7 +52,6 @@ public final class SearchPalette implements RenderView {
           + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
           + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
-  /// Search entry item representation.
   public record SearchItem(
       String group,
       String title,
@@ -113,8 +112,7 @@ public final class SearchPalette implements RenderView {
     return this;
   }
 
-  /// Creates an accessible header trigger button wired via `command="show-modal"` to this search
-  /// palette, complete with keyboard shortcut badge.
+  /// Header trigger button (`command="show-modal"`) with a keyboard shortcut badge.
   public TagElement triggerButton(String buttonId, String label) {
     return button()
         .id(buttonId)
@@ -225,10 +223,11 @@ public final class SearchPalette implements RenderView {
                     div()
                         .attr("class", "palette-item-main")
                         .child(span().attr("class", "palette-item-title").text(item.title()))
-                        .child(
-                            item.description() != null
-                                ? span().attr("class", "palette-item-desc").text(item.description())
-                                : div().hidden()));
+                        .whenPresent(
+                            item.description(),
+                            (main, description) ->
+                                main.child(
+                                    span().attr("class", "palette-item-desc").text(description))));
 
         if (item.badge() != null) {
           link.child(span().attr("class", "palette-item-badge").text(item.badge()));

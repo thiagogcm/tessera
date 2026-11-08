@@ -11,10 +11,10 @@ import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.css.Tokens;
 
-/// Scroll-driven progress indicator bound to `animation-timeline: scroll(root <axis>)` and gated
-/// behind `@media (prefers-reduced-motion: no-preference)`.
+/// Scroll-driven progress bar (`animation-timeline: scroll(root <axis>)`), gated behind
+/// `@media (prefers-reduced-motion: no-preference)`.
 ///
-/// Emits `aria-hidden="true"` so assistive technologies skip the decorative indicator.
+/// Emits `aria-hidden="true"`, since the indicator is decorative.
 public record ScrollProgressBar(
     String id, DesignToken.Color barColor, CssLength thickness, TimelineAxis axis)
     implements RenderOnce {

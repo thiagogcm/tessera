@@ -4,11 +4,11 @@ import dev.nthings.tessera.css.CssLength;
 import java.util.List;
 import java.util.Map;
 
-/// Typed WAI-ARIA authoring: the element's role, its accessible name, and its states.
+/// Typed WAI-ARIA authoring: role, accessible name and states.
 ///
-/// A role is a [Role]; each `aria-*` attribute has a method taking the type it accepts. The
-/// generic attribute methods refuse `role` and `aria-*`, so semantics are never written as text.
-/// The compiler checks the result against the role's requirements ([Role]).
+/// Each `aria-*` attribute has a method taking its accepted type. The generic attribute methods
+/// refuse `role` and `aria-*`, so semantics are never written as text. The compiler checks the
+/// result against the [Role] requirements.
 ///
 /// @param <SELF> concrete element type
 public interface Accessible<SELF extends Accessible<SELF>> {
@@ -20,7 +20,6 @@ public interface Accessible<SELF extends Accessible<SELF>> {
   /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler.
   Map<String, IdReference> idReferences();
 
-  /// The `aria-current` token marking the current item of a set.
   enum Current implements WireToken {
     PAGE,
     STEP,
@@ -63,7 +62,7 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return set("aria-label", label);
   }
 
-  /// The accessible name, taken from the elements `labels` once they are bound on the page.
+  /// Accessible name from the bound `labels` elements.
   default SELF ariaLabelledBy(ElementRef... labels) {
     return reference("aria-labelledby", labels);
   }
@@ -76,7 +75,7 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return reference("aria-errormessage", message);
   }
 
-  /// The elements this one controls, such as the panel a tab shows.
+  /// Elements this one controls, e.g. a tab's panel.
   default SELF ariaControls(ElementRef... controlled) {
     return reference("aria-controls", controlled);
   }
@@ -141,7 +140,7 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return set("aria-level", Integer.toString(level));
   }
 
-  /// The shortcut keys that activate the element, such as `Alt+K`.
+  /// Shortcut keys that activate the element, e.g. `Alt+K`.
   default SELF ariaKeyShortcuts(String shortcuts) {
     return set("aria-keyshortcuts", shortcuts);
   }
@@ -168,10 +167,7 @@ public interface Accessible<SELF extends Accessible<SELF>> {
   }
 
   private SELF reference(String attribute, ElementRef... targets) {
-    if (targets.length == 0) {
-      throw new IllegalArgumentException(attribute + " needs at least one target");
-    }
-    // Reserve the attribute's position so resolved ids keep declaration order.
+    // Reserve the slot so resolved ids keep declaration order.
     attributes().putIfAbsent(attribute, "");
     idReferences().put(attribute, new IdReference("", List.of(targets)));
     return self();

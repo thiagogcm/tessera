@@ -31,10 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Viewport-aware popover action dropdown backed by Declarative Invoker Commands (`commandfor` /
-/// `command="toggle-popover"`), implicit CSS Anchor Positioning (`position-area: block-end
-/// span-inline-end`, `position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline`),
-/// and `@starting-style` top-layer entry/exit transitions.
+/// Popover action menu. Invoker commands toggle it, CSS anchor positioning places it with flip
+/// fallbacks, and `@starting-style` animates entry and exit.
 public final class Dropdown implements RenderView {
   private ElementRef panel = ElementRef.named("panel");
 
@@ -179,13 +177,13 @@ public final class Dropdown implements RenderView {
                         start -> start.opacity(0).translate(Translation.y(CssLength.rem(-0.25)))));
   }
 
-  /// The popover panel, for opening or closing it from outside this view.
+  /// The popover panel, for toggling it from outside this view.
   public ElementRef panelRef() {
     return panel;
   }
 
-  /// Binds the popover panel to an application-owned reference. Pass the same reference on every
-  /// render when work that outlives a render targets it.
+  /// Binds the panel to an app-owned ref. Reuse one ref across renders when deferred work
+  /// targets the panel.
   public Dropdown panelRef(ElementRef panel) {
     this.panel = panel;
     return this;

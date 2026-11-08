@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
-/// Sparse, cascade-mergeable CSS declarations (property → value) and scoped custom properties,
-/// backed by an [EnumMap] for O(1) overrides and deterministic ordinal-ordered hashing.
+/// Sparse, cascade-mergeable declarations and custom properties, backed by an [EnumMap]
+/// (O(1) overrides) with deterministic ordinal-ordered hashing.
 public final class StyleRefinement
     implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
 
@@ -28,8 +28,7 @@ public final class StyleRefinement
     return this;
   }
 
-  /// Declarations are made through the typed [Styled] methods; this stays package-private so no
-  /// declaration is built from raw text outside the value types.
+  /// Package-private: declarations go through the typed [Styled] methods, never raw text.
   StyleRefinement put(CssProperty property, String value) {
     declarations.put(property, value);
     return this;
@@ -51,7 +50,7 @@ public final class StyleRefinement
     return put(property, values);
   }
 
-  /// Defines the custom property `name` (a dashed identifier) as `value`.
+  /// Defines custom property `name` (a dashed identifier).
   public StyleRefinement customProperty(CssIdent name, CssValue value) {
     customProperties.put(name.requireCustom().value(), value.toCss());
     return this;
@@ -65,11 +64,6 @@ public final class StyleRefinement
 
   public boolean isEmpty() {
     return declarations.isEmpty() && customProperties.isEmpty();
-  }
-
-  /// Snapshot of computed declarations, independent of this authoring builder.
-  public Map<CssProperty, String> properties() {
-    return Map.copyOf(declarations);
   }
 
   public @Nullable String get(CssProperty property) {

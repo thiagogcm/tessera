@@ -1,5 +1,5 @@
-// Firefox has not shipped interest invokers. Mirror the browser behavior for `interestfor`
-// triggers so hint popovers open on hover and focus and close when interest leaves.
+// Firefox lacks interest invokers: mirror `interestfor` so hint popovers open on hover and
+// focus and close when interest leaves.
 if (!("interestForElement" in HTMLElement.prototype)) {
   const controller = new AbortController();
   const { signal } = controller;

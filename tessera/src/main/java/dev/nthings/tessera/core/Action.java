@@ -3,8 +3,7 @@ package dev.nthings.tessera.core;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.Map;
 
-/// Declarative custom action contract that compiles to custom `--namespace-name` Invoker
-/// Commands.
+/// Custom action that compiles to a `--namespace-name` Invoker Command.
 public interface Action {
 
   String namespace();

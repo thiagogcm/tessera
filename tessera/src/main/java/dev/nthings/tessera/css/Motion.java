@@ -2,10 +2,8 @@ package dev.nthings.tessera.css;
 
 import java.util.List;
 
-/// Duration, easing, and transitioned properties for one purpose.
-///
-/// Spatial presets belong inside `prefers-reduced-motion: no-preference`. The visible end state
-/// stays outside that query, so the control is already in place when the transition does not run.
+/// Spatial presets belong inside `prefers-reduced-motion: no-preference`. Keep the visible end
+/// state outside it, so the control is in place even when no transition runs.
 public record Motion(
     CssDuration duration, Easing easing, List<Animatable> properties, boolean allowDiscrete) {
 
@@ -16,7 +14,6 @@ public record Motion(
     properties = List.copyOf(properties);
   }
 
-  /// Transitions `properties` over `duration` with `easing`.
   public static Motion of(CssDuration duration, Easing easing, Animatable... properties) {
     return new Motion(duration, easing, List.of(properties), false);
   }
@@ -57,7 +54,7 @@ public record Motion(
     return new Motion(duration, easing, List.of(replacement), allowDiscrete);
   }
 
-  /// The same motion, also animating properties that switch between discrete values.
+  /// Also transitions properties that switch between discrete values.
   public Motion allowingDiscrete() {
     return new Motion(duration, easing, properties, true);
   }

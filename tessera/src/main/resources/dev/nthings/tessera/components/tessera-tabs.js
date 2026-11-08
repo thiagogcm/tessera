@@ -41,7 +41,7 @@ class TesseraTabs extends HTMLElement {
     const current = this.#tabs.indexOf(tab);
     if (current < 0) return;
 
-    // Home and End move to the ends; the horizontal arrows wrap and follow visual order.
+    // Home/End jump to the ends; arrows wrap and follow visual (RTL-aware) order.
     const rtl = getComputedStyle(this).direction === "rtl";
     const forward = rtl ? "ArrowLeft" : "ArrowRight";
     const backward = rtl ? "ArrowRight" : "ArrowLeft";

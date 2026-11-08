@@ -1,15 +1,12 @@
 package dev.nthings.tessera.core;
 
-/// Name of an emitted HTML element: a built-in [HtmlTag] or an author-defined [CustomElement].
-///
-/// The sealed hierarchy keeps compiler dispatch exhaustive while allowing custom elements alongside
-/// the closed set of semantic tags.
+/// Emitted element name: a built-in [HtmlTag] or an author-defined [CustomElement].
+/// Sealed so compiler dispatch stays exhaustive.
 public sealed interface TagName permits HtmlTag, CustomElement {
 
-  /// The serialized element name, such as `div` or `my-widget`.
   String tagName();
 
-  /// Whether the element cannot have children or an end tag.
+  /// Whether the element has no children or end tag.
   boolean isVoid();
 
   /// Native heading level, or 0 for elements that are not headings.

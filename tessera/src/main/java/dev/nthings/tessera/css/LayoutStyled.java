@@ -5,9 +5,8 @@ package dev.nthings.tessera.css;
 /// @param <SELF> concrete element or style builder type
 public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF> {
 
-  /// Applies a complete row or column. Later calls such as [#gap(CssLength)],
-  /// [#blockSize(CssLength)], or [#flexShrink(int)] replace the matching declaration on this
-  /// element.
+  /// Sets a full row or column; later [#gap(CssLength)], [#blockSize(CssLength)] or
+  /// [#flexShrink(int)] calls replace its matching declarations.
   default SELF layout(FlexLayout layout) {
     layout.apply(style());
     return self();
@@ -225,11 +224,8 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// A grid container whose rows are the parent grid's, spanning `trackSpan` of its rows.
+  /// Subgrid rows across `trackSpan` of the parent's rows.
   default SELF subgridRows(int trackSpan) {
-    if (trackSpan < 1) {
-      throw new IllegalArgumentException("trackSpan must be >= 1");
-    }
     return grid().gridRow(GridPlacement.span(trackSpan)).gridRows(TrackList.subgrid());
   }
 
@@ -327,13 +323,13 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return containerInlineSize();
   }
 
-  /// Resets `container-type` so a descendant does not query this element.
+  /// Resets `container-type`, so descendants don't query this element.
   default SELF containerNormal() {
     style().put(CssProperty.CONTAINER_TYPE, "normal");
     return self();
   }
 
-  /// Anonymous `container-type: scroll-state` (queried by the nearest `scroll-state()` query).
+  /// Anonymous `container-type: scroll-state`, queried by the nearest `scroll-state()`.
   default SELF containerScrollState() {
     style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
     return self();

@@ -184,8 +184,8 @@ public final class SearchPalette implements RenderView {
   }
 
   @Override
-  public Element render() {
-    RenderContext.current().contributeBehavior(SEARCH_BEHAVIOR);
+  public Element render(RenderContext context) {
+    context.contributeBehavior(SEARCH_BEHAVIOR);
 
     var headerEl =
         Elements.search()

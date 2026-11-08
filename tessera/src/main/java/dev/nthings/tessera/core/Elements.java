@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /// Static factory entry points for building semantic HTML5 elements and deferred overlays.
 public final class Elements {
@@ -359,7 +359,7 @@ public final class Elements {
   }
 
   /// Element resolved after the rest of the page's layout; see [LateElement].
-  public static LateElement late(Supplier<? extends IntoElement> content) {
+  public static LateElement late(Function<RenderContext, ? extends IntoElement> content) {
     return new LateElement(content);
   }
 

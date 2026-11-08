@@ -17,8 +17,8 @@ record StoryPage(
     implements RenderOnce {
 
   @Override
-  public Element render() {
-    RenderContext.current().contributeHead(Elements.el(HtmlTag.STYLE).text(appearanceStyle()));
+  public Element render(RenderContext context) {
+    context.contributeHead(Elements.el(HtmlTag.STYLE).text(appearanceStyle()));
     return main()
         .px(CssLength.rem(1))
         .py(CssLength.rem(1.5))

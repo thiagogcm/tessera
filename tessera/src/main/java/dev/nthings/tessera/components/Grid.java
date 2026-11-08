@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssIdent;
@@ -52,7 +53,7 @@ public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, L
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     if (!collapseOnNarrow) {
       return Elements.div()
           .containerInlineSize(GRID_CONTAINER)

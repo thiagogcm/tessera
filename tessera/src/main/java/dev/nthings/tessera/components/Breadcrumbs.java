@@ -8,6 +8,7 @@ import static dev.nthings.tessera.core.Elements.ol;
 import dev.nthings.tessera.core.Accessible;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
@@ -80,7 +81,7 @@ public final class Breadcrumbs implements RenderView {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var list = ol();
     for (var i = 0; i < crumbs.size(); i++) {
       var isCurrent = i == crumbs.size() - 1;

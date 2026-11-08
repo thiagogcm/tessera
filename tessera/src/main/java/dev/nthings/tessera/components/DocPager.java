@@ -5,6 +5,7 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssLength;
@@ -122,7 +123,7 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var navEl = nav().ariaLabel(label).attr("class", "doc-pager");
 
     if (prev != null) {

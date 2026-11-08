@@ -9,6 +9,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Border;
@@ -189,7 +190,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var displayTitle = customTitle != null ? customTitle : tone.defaultTitle();
     var header =
         div()

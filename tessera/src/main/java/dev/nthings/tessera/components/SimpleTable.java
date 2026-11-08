@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextAlign;
@@ -51,7 +52,7 @@ public final class SimpleTable implements RenderOnce {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var table =
         Elements.table()
             .fullWidth()

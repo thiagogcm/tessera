@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.css.Border;
@@ -226,7 +227,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var root =
         switch (interaction) {
           case Interaction.Choice choice -> {

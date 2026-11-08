@@ -68,7 +68,7 @@ Use `route.documentUri()` when you need the canonical public URL for a route. Pr
 Use `RenderOnce` for composition without adding a scope:
 
 ```java
-RenderOnce notice = () -> div().child(p().text("Build completed"));
+RenderOnce notice = context -> div().child(p().text("Build completed"));
 ```
 
 Use `RenderView` for a reusable component with an identity namespace and isolated CSS. The runnable example includes this component:
@@ -90,7 +90,7 @@ public record MetricCard(String id, String title, String value) implements Rende
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     return div().children(h2().text(title), p().text(value));
   }
 }
@@ -98,9 +98,9 @@ public record MetricCard(String id, String title, String value) implements Rende
 
 Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the view's namespace before calling its render method. Repeated instances need distinct instance IDs within the same enclosing scope. Omitting `entityId()` lets the compiler assign deterministic IDs.
 
-The compiler marks the view's root element with `data-view` and `data-view-id`, which scope its styles. A view whose `render()` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
+The compiler marks the view's root element with `data-view` and `data-view-id`, which scope its styles. A view whose `render(context)` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
 
-Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
+Both callbacks receive an explicit `RenderContext` for that turn. Do not retain it for later async work. Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
 
 ## Group siblings and name custom elements
 
@@ -119,7 +119,7 @@ A behavior is an ES module with a stable id. Components contribute it through th
 
 ```java
 var behavior = new ClientBehavior("my-widget", moduleSource);
-RenderContext.current().contributeBehavior(behavior);
+context.contributeBehavior(behavior);
 ```
 
 The compiler emits each behavior once per page. `OutputMode.inlineStyle()` inlines a `<script type="module">`. `OutputMode.externalAsset("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and `SiteCompiler` merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `Tabs.ContentTabs` use this path for their bundled modules.
@@ -155,7 +155,7 @@ var body = Elements.main().children(trigger, dialog);
 
 The reference is an identity token; another `ElementRef.named("help")` is a different token. An unbound reference fails compilation. Higher-level components such as `Overlays.modal(...)` expose their own trigger helpers to manage these references.
 
-For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, emits a target ID, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components can call `RenderContext.current().registerHeading(localId, title, level)` and emit the returned `targetDomId` themselves.
+For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, emits a target ID, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components can call `context.registerHeading(localId, title, level)` inside their render callback and emit the returned `targetDomId` themselves.
 
 ## Add a button
 

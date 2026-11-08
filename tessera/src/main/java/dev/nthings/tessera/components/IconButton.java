@@ -4,6 +4,7 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.ScopeStyle;
 
@@ -36,7 +37,7 @@ public final class IconButton extends ButtonBase<IconButton> implements RenderVi
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     return ButtonFace.element(this, true)
         .ariaLabel(name)
         .child(span().attr("class", "button-icon").ariaHidden(true).child(icon));

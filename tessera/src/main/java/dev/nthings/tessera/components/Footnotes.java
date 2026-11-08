@@ -36,8 +36,7 @@ public final class Footnotes {
 
   private Footnotes() {}
 
-  private static Entry register(String rawId, Element content) {
-    var ctx = RenderContext.current();
+  private static Entry register(RenderContext ctx, String rawId, Element content) {
     var registry = ctx.document(REGISTRY);
     var local = ElementId.of(rawId);
     var slug = local.slug();
@@ -55,7 +54,7 @@ public final class Footnotes {
     // Without an explicit section on the page, endnotes are appended after all content.
     ctx.atDocumentEnd(
         REGISTRY,
-        () -> registry.sectionPlaced ? Elements.empty() : new FootnotesSection("Footnotes"));
+        _ -> registry.sectionPlaced ? Elements.empty() : new FootnotesSection("Footnotes"));
     return entry;
   }
 
@@ -78,8 +77,8 @@ public final class Footnotes {
   public record FootnoteRef(String id, Element content) implements RenderOnce {
 
     @Override
-    public Element render() {
-      var entry = register(id, content);
+    public Element render(RenderContext context) {
+      var entry = register(context, id, content);
       var label = "[" + entry.number() + "]";
       var triggerLink =
           Elements.a("#" + entry.noteDomId())
@@ -106,11 +105,11 @@ public final class Footnotes {
   public record FootnotesSection(String heading) implements RenderOnce {
 
     @Override
-    public Element render() {
-      var registry = RenderContext.current().document(REGISTRY);
+    public Element render(RenderContext context) {
+      var registry = context.document(REGISTRY);
       registry.sectionPlaced = true;
       return Elements.late(
-          () ->
+          _ ->
               registry.entries.isEmpty()
                   ? Elements.empty()
                   : new EndnotesView(heading, List.copyOf(registry.entries.values())));
@@ -150,7 +149,7 @@ public final class Footnotes {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var ol = Elements.ol().tabularNums();
       for (var entry : entries) {
         var backlink =

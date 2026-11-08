@@ -6,6 +6,7 @@ import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
@@ -162,7 +163,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var wrapper = div().attr("class", "code-block-wrapper");
     if (filename != null || language != null) {
       var header = div().attr("class", "code-header");

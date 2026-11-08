@@ -7,6 +7,7 @@ import static dev.nthings.tessera.core.Elements.p;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Animatable;
@@ -208,7 +209,7 @@ public final class Carousel implements RenderView {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var track = div().role(Role.REGION).ariaLabel(ariaLabel).tabIndex(0);
     for (var slide : slides) {
       track.child(

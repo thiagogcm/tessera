@@ -8,6 +8,7 @@ import dev.nthings.tessera.components.ContentSection.SurfaceKind;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
@@ -93,7 +94,7 @@ final class Demo implements RenderOnce {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var stageItems = new ArrayList<IntoElement>(examples);
     var fresh = stage;
     if (fresh != null) {

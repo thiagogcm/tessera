@@ -112,9 +112,9 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     if (hero) {
-      var ctx = RenderContext.current();
+      var ctx = context;
       var slot = ctx.document(HERO);
       if (slot.src != null) {
         throw new IllegalStateException(

@@ -22,6 +22,7 @@ import dev.nthings.tessera.components.Tabs.NavItem;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
@@ -37,7 +38,7 @@ record Shell(Page page) implements RenderOnce {
       CssLength.fluid(CssLength.rem(1), CssLength.cqi(3), CssLength.rem(2));
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var pages = ShowcaseSite.pages();
     var inspector =
         Overlays.drawer("inspector", "Compiler & Cascade Inspector")

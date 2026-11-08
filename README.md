@@ -61,7 +61,7 @@ The contract is the latest stable Chromium and Firefox, tested on every build. F
 
 ### 2. JDK 25 Idiomatic Language Features
 
-- **`ScopedValue<RenderContext>` (JEP 506)**: Implicit, thread-confined, immutable context propagation across component trees.
+- **Explicit `RenderContext`**: Render and document callbacks receive their turn's tokens, identity scope and contribution capabilities directly.
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
@@ -169,7 +169,7 @@ public record MetricCard(String title, String value, Badge badge) implements Ren
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     return div()
         .child(div().children(span().text(title), badge))
         .child(div().attr("class", "metric-value").text(value))

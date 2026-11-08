@@ -11,7 +11,7 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 ## Core abstractions
 
 - `IntoElement` is the authoring conversion contract. The sealed `Element` hierarchy allows exhaustive compiler dispatch.
-- `RenderOnce` expands without adding a scope. `RenderView` establishes an identity namespace and optional CSS scope before expansion.
+- `RenderOnce.render(context)` expands without adding a scope. `RenderView.render(context)` establishes an identity namespace and optional CSS scope before expansion. `configureScope(scope)` declares the scoped CSS.
 - `FragmentElement` groups sibling elements without emitting a wrapper, preserving direct-child content models.
 - `TagName` is the sealed element-name family: the built-in `HtmlTag` enum or an author-defined `CustomElement`.
 - `ElementRef` is an identity token, `ElementId` a local identifier, and `IdReference` an attribute reference resolved after expansion.
@@ -38,11 +38,11 @@ classDiagram
     }
     class RenderOnce {
         <<interface>>
-        +render() Element
+        +render(RenderContext) Element
     }
     class RenderView {
         <<interface>>
-        +render() Element
+        +render(RenderContext) Element
         +configureScope(ScopeStyle) void
     }
     class TagElement
@@ -117,7 +117,7 @@ block
 | Declare accessibility semantics | `Accessible`, `Role` (name, children, state, and `aria-*` requirements) |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
 | Trace elements to source | `SourceTracking`, `SourceLocation`, `PageCompiler.explain(...)`, `PreparedPage.tree()`, `PageTree` |
-| Contribute document content | `RenderContext.current()`, `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
+| Contribute document content | The callback's `RenderContext`: `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
 | Compile a page | `PageDocument`, `PageCompiler.compile(...)`, `CompiledPage`, `OutputMode` |
 | Coordinate page phases | `PageCompiler.prepare(...)`, opaque `PreparedPage`, `PageCompiler.paintPrepared(...)` |
 | Define and compile sites | `SiteDefinition.builder()`, `SiteRoute`, `SiteAsset`, `LinkSpeculation`, `SiteCompiler.compile(...)`, `CompiledSite` |
@@ -150,7 +150,7 @@ flowchart TD
 
 `PageCompiler` coordinates passes. `CompilationState` belongs to one preparation: identity bindings, counters, deferred priorities, late slots, and collected metadata. It does not escape preparation.
 
-`LayoutPass` runs inside `RenderContext.runRoot`. Child view scopes share page state and styles. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late elements capture their lexical context and expand after ordinary traversal. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
+`LayoutPass` creates an explicit document context. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
 `ReferenceLinker` substitutes slots and resolves references after identity allocation. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. `AccessibilityRules` checks the linked body tree (see below). It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
 

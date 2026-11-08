@@ -4,7 +4,6 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.render.PageDocument;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,8 +54,8 @@ class SiteArtifactsTest {
     @Test
     void indexesHeadingsFromCustomComponents() {
       RenderOnce custom =
-          () -> {
-            var heading = RenderContext.current().registerHeading("custom", "Custom section", 2);
+          context -> {
+            var heading = context.registerHeading("custom", "Custom section", 2);
             return Elements.h2().attr("id", heading.targetDomId()).text(heading.title());
           };
       var compiled =

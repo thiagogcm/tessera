@@ -17,6 +17,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssIdent;
@@ -69,7 +70,7 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var confirmRef = ElementRef.named("confirm-archive");
     var confirmModal =
         dialog()

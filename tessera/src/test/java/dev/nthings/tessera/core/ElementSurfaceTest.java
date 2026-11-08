@@ -35,7 +35,7 @@ class ElementSurfaceTest {
 
   record Rows() implements RenderView {
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return fragment().children(li().text("One"), li().text("Two"));
     }
   }

@@ -9,6 +9,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.SourceTracking;
@@ -32,7 +33,7 @@ class SourceProvenanceTest {
 
   record Panel(String text) implements RenderOnce {
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return div().child(p().text(text));
     }
   }

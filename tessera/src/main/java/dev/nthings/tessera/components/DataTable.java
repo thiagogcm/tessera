@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.CssContent;
@@ -188,7 +189,7 @@ public record DataTable<T>(
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var caption = ElementRef.named("caption");
 
     var headerRow = Elements.tr();

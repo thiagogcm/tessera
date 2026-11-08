@@ -13,6 +13,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
@@ -200,7 +201,7 @@ public final class Forms {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var ctrl = control.ref();
 
       var container = div().attr("class", "field-container");
@@ -351,7 +352,7 @@ public final class Forms {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return select;
     }
 

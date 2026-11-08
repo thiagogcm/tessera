@@ -15,6 +15,7 @@ import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
@@ -185,7 +186,7 @@ public final class Overlays {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var titleRef = ElementRef.named("title");
       var headerEl =
           header()
@@ -345,7 +346,7 @@ public final class Overlays {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var titleRef = ElementRef.named("title");
       var closeBtn =
           Button.of(closeLabel)

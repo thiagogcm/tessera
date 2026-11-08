@@ -105,8 +105,8 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
   }
 
   @Override
-  public Element render() {
-    var entry = RenderContext.current().registerHeading(rawId, title, level);
+  public Element render(RenderContext context) {
+    var entry = context.registerHeading(rawId, title, level);
 
     var heading = sectionHeading(level, entry.targetDomId(), title);
 

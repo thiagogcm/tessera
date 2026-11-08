@@ -32,7 +32,7 @@ class ElementRefTest {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return div().child(content);
     }
   }

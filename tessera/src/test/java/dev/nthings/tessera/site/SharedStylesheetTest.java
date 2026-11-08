@@ -5,7 +5,6 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
@@ -42,9 +41,7 @@ class SharedStylesheetTest {
     static void compileSiteWithBrandToken() {
       var brand = new DesignToken.Color("brand-hue", CssColor.oklch(60, 0.2, 300));
       RenderOnce tokenProbe =
-          () ->
-              p().text(
-                      RenderContext.current().tokens().all().contains(brand) ? "brand" : "default");
+          context -> p().text(context.tokens().all().contains(brand) ? "brand" : "default");
       site =
           SiteCompiler.compile(
               SiteDefinition.builder()

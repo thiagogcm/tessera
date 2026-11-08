@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /// Expands authoring nodes and collects page-local identities and styles.
@@ -47,103 +47,80 @@ final class LayoutPass {
       StyleSheetCollector styles,
       CompilationState state) {
     // Phase 1: requestLayout, then late elements, then end-of-document sections
-    return RenderContext.runRoot(
-        styles,
-        tokens,
-        () -> {
-          siteHead.forEach(RenderContext.current()::contributeHead);
-          var root = requestLayout(document.bodyRoot().intoElement(), state);
-          resolveLateElements(state);
-          var docState = RenderContext.current().documentState();
-          var resolvedSections = 0;
-          List<Contribution<Supplier<? extends IntoElement>>> sections;
-          while ((sections = docState.documentEndSections()).size() > resolvedSections) {
-            var section = sections.get(resolvedSections++);
-            state.enqueueDeferred(
-                Integer.MAX_VALUE,
-                RenderContext.current()
-                    .withComponentPath(
-                        section.componentPath(),
-                        section.origin(),
-                        () -> requestLayout(section.content().get().intoElement(), state)));
-            resolveLateElements(state);
-          }
-          // Indexed: laying out a head element may contribute further head elements.
-          var headNodes = new ArrayList<ResolvedNode>();
-          for (var i = 0; i < docState.headElements().size(); i++) {
-            var head = docState.headElements().get(i);
-            headNodes.add(
-                RenderContext.current()
-                    .withComponentPath(
-                        head.componentPath(),
-                        head.origin(),
-                        () -> requestLayout(head.content(), state)));
-            resolveLateElements(state);
-          }
-          return new Result(root, headNodes, docState);
-        });
+    var docState = new DocumentState();
+    var root = RenderContext.forDocument(styles, tokens, docState);
+    siteHead.forEach(root::contributeHead);
+    var body = requestLayout(document.bodyRoot().intoElement(), root, state);
+    resolveLateElements(state);
+    var resolvedSections = 0;
+    List<Contribution<Function<RenderContext, ? extends IntoElement>>> sections;
+    while ((sections = docState.documentEndSections()).size() > resolvedSections) {
+      var section = sections.get(resolvedSections++);
+      var context = root.withComponentPath(section.componentPath(), section.origin());
+      state.enqueueDeferred(
+          Integer.MAX_VALUE,
+          requestLayout(section.content().apply(context).intoElement(), context, state));
+      resolveLateElements(state);
+    }
+    // Indexed: laying out a head element may contribute further head elements.
+    var headNodes = new ArrayList<ResolvedNode>();
+    for (var i = 0; i < docState.headElements().size(); i++) {
+      var head = docState.headElements().get(i);
+      var context = root.withComponentPath(head.componentPath(), head.origin());
+      headNodes.add(requestLayout(head.content(), context, state));
+      resolveLateElements(state);
+    }
+    return new Result(body, headNodes, docState);
   }
 
-  private static ResolvedNode requestLayout(Element element, CompilationState state) {
-    var ctx = RenderContext.current();
+  private static ResolvedNode requestLayout(
+      Element element, RenderContext ctx, CompilationState state) {
     return switch (element) {
       case EmptyElement _ -> ResolvedEmpty.INSTANCE;
       case TextElement(var content) -> new ResolvedText(content);
       case RawHtmlElement(var html) -> new ResolvedRaw(html);
       case DeferredElement deferred -> {
-        var resolvedDeferredChild = requestLayout(deferred.child(), state);
+        var resolvedDeferredChild = requestLayout(deferred.child(), ctx, state);
         state.enqueueDeferred(deferred.priority(), resolvedDeferredChild);
         yield ResolvedEmpty.INSTANCE;
       }
-      case RenderOnceElement(var component, var source) ->
-          ctx.withComponent(
-              component.getClass().isSynthetic()
-                  ? "RenderOnce"
-                  : component.getClass().getSimpleName(),
-              source,
-              () -> requestLayout(component.render(), state));
+      case RenderOnceElement(var component, var source) -> {
+        var child =
+            ctx.withComponent(
+                component.getClass().isSynthetic()
+                    ? "RenderOnce"
+                    : component.getClass().getSimpleName(),
+                source);
+        yield requestLayout(component.render(child), child, state);
+      }
       case LateElement(var content) -> {
         var slot = state.lateSlots.size();
         state.lateSlots.add(null);
         state.pendingLate.add(
             () ->
                 state.lateSlots.set(
-                    slot, ctx.reenter(() -> requestLayout(content.get().intoElement(), state))));
+                    slot, requestLayout(content.apply(ctx).intoElement(), ctx, state)));
         yield new ResolvedSlot(slot);
       }
       case FragmentElement fragment ->
-          new ResolvedFragment(resolveChildren(fragment.childrenList(), state));
+          new ResolvedFragment(resolveChildren(fragment.childrenList(), ctx, state));
       case RenderViewElement(var view, var source) -> {
         var entityId = view.entityId();
-        yield ctx.withViewScope(
-            entityId != null ? entityId : state.nextAutoId(view.viewType()),
-            () -> {
-              var instanceScopeId = RenderContext.current().viewScope().domId();
-              return RenderContext.current()
-                  .withComponent(
-                      view.viewType() + "[" + instanceScopeId + "]",
-                      source,
-                      () -> {
-                        var scope = new ScopeStyle();
-                        view.configureScope(scope);
-                        var resolvedViewType =
-                            RenderContext.current()
-                                .styles()
-                                .registerViewScope(view.viewType(), scope.toCssBody());
-                        var inner = requestLayout(view.render(), state);
-                        return attachViewScopeAttributes(
-                            inner,
-                            resolvedViewType,
-                            instanceScopeId,
-                            state.location(
-                                RenderContext.current().componentPath(),
-                                HtmlTag.DIV,
-                                Map.of(),
-                                RenderContext.current().origin()));
-                      });
-            });
+        var scoped =
+            ctx.withViewScope(entityId != null ? entityId : state.nextAutoId(view.viewType()));
+        var instanceScopeId = scoped.viewScope().domId();
+        var child = scoped.withComponent(view.viewType() + "[" + instanceScopeId + "]", source);
+        var scope = new ScopeStyle();
+        view.configureScope(scope);
+        var resolvedViewType = child.styles().registerViewScope(view.viewType(), scope.toCssBody());
+        var inner = requestLayout(view.render(child), child, state);
+        yield attachViewScopeAttributes(
+            inner,
+            resolvedViewType,
+            instanceScopeId,
+            state.location(child.componentPath(), HtmlTag.DIV, Map.of(), child.origin()));
       }
-      case TagElement tag -> resolveTag(tag, null, state);
+      case TagElement tag -> resolveTag(tag, null, ctx, state);
     };
   }
 
@@ -175,10 +152,10 @@ final class LayoutPass {
 
   /// Lays out `children` in order, dropping the ones that emit nothing.
   private static List<ResolvedNode> resolveChildren(
-      List<Element> children, CompilationState state) {
+      List<Element> children, RenderContext ctx, CompilationState state) {
     var resolved = new ArrayList<ResolvedNode>(children.size());
     for (var child : children) {
-      var node = requestLayout(child, state);
+      var node = requestLayout(child, ctx, state);
       if (!(node instanceof ResolvedEmpty)) {
         resolved.add(node);
       }
@@ -188,8 +165,7 @@ final class LayoutPass {
 
   /// Resolves `tag`; `forcedDomId` (already registered) overrides ref binding for companions.
   private static ResolvedTag resolveTag(
-      TagElement tag, @Nullable String forcedDomId, CompilationState state) {
-    var ctx = RenderContext.current();
+      TagElement tag, @Nullable String forcedDomId, RenderContext ctx, CompilationState state) {
     var attrs = new LinkedHashMap<>(tag.attributes());
     var components = ctx.componentPath();
     var source = tag.source() != null ? tag.source() : ctx.origin();
@@ -253,10 +229,10 @@ final class LayoutPass {
       attrs.put("interestfor", tooltipDomId);
       state.registerDomId(tooltipDomId, location);
       ctx.contributeBehavior(TooltipBehavior.INSTANCE);
-      companionTooltip = resolveTag(tooltipElement, tooltipDomId, state);
+      companionTooltip = resolveTag(tooltipElement, tooltipDomId, ctx, state);
     }
 
-    var resolvedChildren = resolveChildren(tag.childrenList(), state);
+    var resolvedChildren = resolveChildren(tag.childrenList(), ctx, state);
 
     return new ResolvedTag(
         tag.tag(),

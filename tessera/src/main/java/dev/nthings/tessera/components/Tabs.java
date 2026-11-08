@@ -116,7 +116,7 @@ public final class Tabs {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var list = ul();
       for (var item : items) {
         var isActive = item.href().equals(activeHref);
@@ -216,8 +216,8 @@ public final class Tabs {
     }
 
     @Override
-    public Element render() {
-      RenderContext.current().contributeBehavior(TABS_BEHAVIOR);
+    public Element render(RenderContext context) {
+      context.contributeBehavior(TABS_BEHAVIOR);
 
       var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(ariaLabel);
       var root = custom("tessera-tabs").child(tabBar);

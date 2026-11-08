@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -62,7 +63,7 @@ public final class Prose implements RenderView, ParentElement<Prose> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var container = div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10);
     container.children(children);
     return container;

@@ -14,6 +14,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -116,7 +117,7 @@ public final class GuideSite {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return div().children(h2().text(title), p().text(value));
     }
   }

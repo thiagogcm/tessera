@@ -2,6 +2,7 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
@@ -26,7 +27,7 @@ public record ScrollProgressBar(
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var el =
         Elements.div()
             .id(id)

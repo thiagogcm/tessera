@@ -58,8 +58,8 @@ public final class Toc {
     }
 
     @Override
-    public Element render() {
-      var entry = RenderContext.current().registerHeading(id, title, level);
+    public Element render(RenderContext context) {
+      var entry = context.registerHeading(id, title, level);
       var heading = ContentSection.sectionHeading(level, entry.targetDomId(), title);
 
       var sectionEl =
@@ -95,9 +95,8 @@ public final class Toc {
   /// TOC of every section registered on the page, resolved after layout so it may precede them.
   public static Element fromContext(String id, String heading) {
     return Elements.late(
-        () ->
-            new TableOfContents(
-                ElementId.of(id), heading, RenderContext.current().documentState().headings()));
+        context ->
+            new TableOfContents(ElementId.of(id), heading, context.documentState().headings()));
   }
 
   public static TableOfContents of(String id, String heading, List<DocumentHeading> explicitItems) {
@@ -204,7 +203,7 @@ public final class Toc {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var list = ol();
       for (var item : items) {
         list.child(
@@ -321,7 +320,7 @@ public final class Toc {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var proseCol = div().attr("class", "doc-prose-col").flex().flexCol().gap(Tokens.SPACE_10);
       proseCol.children(sections);
       var sidebar = aside().attr("class", "doc-toc-rail").child(fromContext(tocId, tocHeading));

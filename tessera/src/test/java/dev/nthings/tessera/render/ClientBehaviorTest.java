@@ -5,7 +5,6 @@ import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 
 import dev.nthings.tessera.core.ClientBehavior;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.Tokens;
 import org.junit.jupiter.api.DisplayName;
@@ -20,9 +19,9 @@ class ClientBehaviorTest {
 
   private static PageDocument page(ClientBehavior... behaviors) {
     RenderOnce component =
-        () -> {
+        context -> {
           for (var behavior : behaviors) {
-            RenderContext.current().contributeBehavior(behavior);
+            context.contributeBehavior(behavior);
           }
           return custom("test-widget");
         };

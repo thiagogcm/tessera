@@ -6,6 +6,7 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
@@ -316,7 +317,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var cls =
         "badge badge--"
             + cssName(tone)

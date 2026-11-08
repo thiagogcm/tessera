@@ -64,7 +64,7 @@ class AccessibilityRulesTest {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return div().child(content);
     }
   }
@@ -87,7 +87,7 @@ class AccessibilityRulesTest {
                             div()
                                 .children(
                                     late(
-                                        () ->
+                                        _ ->
                                             button()
                                                 .id("save")
                                                 .command(missing, BuiltinCommand.SHOW_MODAL)
@@ -144,11 +144,10 @@ class AccessibilityRulesTest {
     }
 
     @Override
-    public Element render() {
-      var context = RenderContext.current();
+    public Element render(RenderContext context) {
       context.contributeHead(
           el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
-      context.atDocumentEnd(ACTIONS, () -> button().id("subscribe"));
+      context.atDocumentEnd(ACTIONS, _ -> button().id("subscribe"));
       return div();
     }
   }

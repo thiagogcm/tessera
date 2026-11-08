@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
@@ -50,7 +51,7 @@ public final class Lists {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var ul = Elements.ul().flex().flexCol().gap(Tokens.SPACE_2).px(Tokens.SPACE_5);
       ul.children(listItems(items));
       return ul;
@@ -68,7 +69,7 @@ public final class Lists {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var ol = Elements.ol().flex().flexCol().gap(Tokens.SPACE_2).px(Tokens.SPACE_5).tabularNums();
       ol.children(listItems(items));
       return ol;
@@ -92,7 +93,7 @@ public final class Lists {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       var dl =
           Elements.dl()
               .grid()
@@ -173,7 +174,7 @@ public final class Lists {
     }
 
     @Override
-    public Element render() {
+    public Element render(RenderContext context) {
       return Elements.ol().children(listItems(steps));
     }
   }

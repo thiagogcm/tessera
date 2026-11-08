@@ -25,7 +25,7 @@ public interface RenderView extends IntoElement {
 
   default void configureScope(ScopeStyle scope) {}
 
-  Element render();
+  Element render(RenderContext context);
 
   @Override
   default Element intoElement() {

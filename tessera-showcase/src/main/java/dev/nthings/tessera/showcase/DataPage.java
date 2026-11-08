@@ -86,7 +86,7 @@ final class DataPage {
         .features("counter-increment", "tabindex=\"0\" region", "white-space: pre")
         .example(
             CodeBlock.ofLines(
-                    "public Element render() {",
+                    "public Element render(RenderContext context) {",
                     "-  return div().attr(\"id\", \"dialog\");",
                     "+  var dialog = ElementRef.named(\"dialog\");",
                     "+  return dialog().id(dialog).dialogClosedByAny();",

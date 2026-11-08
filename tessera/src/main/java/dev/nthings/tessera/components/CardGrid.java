@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -46,7 +47,7 @@ public record CardGrid(
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     return Elements.section().children(cards);
   }
 }

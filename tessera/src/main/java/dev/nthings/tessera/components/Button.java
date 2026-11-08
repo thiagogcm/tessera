@@ -2,6 +2,7 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
@@ -133,7 +134,7 @@ public final class Button extends ButtonBase<Button> implements RenderView {
   }
 
   @Override
-  public Element render() {
+  public Element render(RenderContext context) {
     var el = ButtonFace.element(this, false);
     if (content.isEmpty()) {
       el.text(name);

@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /// Per-page state shared by every [RenderContext] of one compilation: component registries keyed
@@ -16,7 +16,7 @@ public final class DocumentState {
   private final List<Contribution<Element>> headElements = new ArrayList<>();
   private final Map<String, DocumentHeading> headings = new LinkedHashMap<>();
   private final Map<String, ClientBehavior> behaviors = new LinkedHashMap<>();
-  private final Map<DocumentKey<?>, Contribution<Supplier<? extends IntoElement>>>
+  private final Map<DocumentKey<?>, Contribution<Function<RenderContext, ? extends IntoElement>>>
       documentEndSections = new LinkedHashMap<>();
 
   <T> T getOrCreate(DocumentKey<T> key) {
@@ -45,7 +45,7 @@ public final class DocumentState {
 
   void atDocumentEnd(
       DocumentKey<?> owner,
-      Supplier<? extends IntoElement> section,
+      Function<RenderContext, ? extends IntoElement> section,
       List<String> componentPath,
       @Nullable SourceLocation origin) {
     documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath, origin));
@@ -78,7 +78,7 @@ public final class DocumentState {
   }
 
   /// Snapshot of the registered end-of-document sections, in registration order.
-  public List<Contribution<Supplier<? extends IntoElement>>> documentEndSections() {
+  public List<Contribution<Function<RenderContext, ? extends IntoElement>>> documentEndSections() {
     return List.copyOf(documentEndSections.values());
   }
 }

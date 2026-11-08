@@ -4,14 +4,11 @@ import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// Implicit lexical render context propagated across component boundaries via JDK 25
-/// [ScopedValue].
+/// Explicit context for one expansion turn, passed to every render and document callback.
 public final class RenderContext {
-
-  private static final ScopedValue<RenderContext> CURRENT = ScopedValue.newInstance();
 
   private final ViewScope viewScope;
   private final StyleSheetCollector styles;
@@ -19,10 +16,6 @@ public final class RenderContext {
   private final DocumentState docState;
   private final List<String> componentPath;
   private final @Nullable SourceLocation origin;
-
-  public RenderContext(ViewScope viewScope, StyleSheetCollector styles, Tokens tokens) {
-    this(viewScope, styles, tokens, new DocumentState(), List.of(), null);
-  }
 
   private RenderContext(
       ViewScope viewScope,
@@ -39,11 +32,10 @@ public final class RenderContext {
     this.origin = origin;
   }
 
-  public static RenderContext current() {
-    return CURRENT.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "RenderContext accessed outside an active PageCompiler pass"));
+  /// Creates the root context of one document compilation.
+  public static RenderContext forDocument(
+      StyleSheetCollector styles, Tokens tokens, DocumentState state) {
+    return new RenderContext(ViewScope.ROOT, styles, tokens, state, List.of(), null);
   }
 
   public ViewScope viewScope() {
@@ -70,7 +62,8 @@ public final class RenderContext {
 
   /// Appends `section` to the end of `<body>` after layout; only the first registration per
   /// `owner` counts.
-  public void atDocumentEnd(DocumentKey<?> owner, Supplier<? extends IntoElement> section) {
+  public void atDocumentEnd(
+      DocumentKey<?> owner, Function<RenderContext, ? extends IntoElement> section) {
     docState.atDocumentEnd(owner, section, componentPath, origin);
   }
 
@@ -91,16 +84,10 @@ public final class RenderContext {
     return heading;
   }
 
-  /// Runs `work` with this context current again (used to resolve [LateElement]s in place).
-  public <R> R reenter(Supplier<R> work) {
-    return ScopedValue.where(CURRENT, this).call(work::get);
-  }
-
-  public <R> R withViewScope(ElementId viewEntityId, Supplier<R> work) {
-    var childContext =
-        new RenderContext(
-            viewScope.extend(viewEntityId), styles, tokens, docState, componentPath, origin);
-    return ScopedValue.where(CURRENT, childContext).call(work::get);
+  /// Derives a context whose identity scope is nested under `viewEntityId`.
+  public RenderContext withViewScope(ElementId viewEntityId) {
+    return new RenderContext(
+        viewScope.extend(viewEntityId), styles, tokens, docState, componentPath, origin);
   }
 
   /// Enclosing components of the current expansion, retained by document contributions.
@@ -116,23 +103,15 @@ public final class RenderContext {
 
   /// Enters a component without changing its element identity scope. `placedAt` is where
   /// authoring code placed the component; without one, the enclosing component's origin stays.
-  public <R> R withComponent(
-      String component, @Nullable SourceLocation placedAt, Supplier<R> work) {
+  public RenderContext withComponent(String component, @Nullable SourceLocation placedAt) {
     var path = new ArrayList<>(componentPath);
     path.add(component);
-    return withComponentPath(path, placedAt != null ? placedAt : origin, work);
+    return withComponentPath(path, placedAt != null ? placedAt : origin);
   }
 
   /// Expands registered document content with the component path and origin captured at
   /// registration.
-  public <R> R withComponentPath(
-      List<String> path, @Nullable SourceLocation origin, Supplier<R> work) {
-    var context = new RenderContext(viewScope, styles, tokens, docState, path, origin);
-    return context.reenter(work);
-  }
-
-  public static <R> R runRoot(StyleSheetCollector styles, Tokens tokens, Supplier<R> work) {
-    var rootContext = new RenderContext(ViewScope.ROOT, styles, tokens);
-    return ScopedValue.where(CURRENT, rootContext).call(work::get);
+  public RenderContext withComponentPath(List<String> path, @Nullable SourceLocation origin) {
+    return new RenderContext(viewScope, styles, tokens, docState, path, origin);
   }
 }

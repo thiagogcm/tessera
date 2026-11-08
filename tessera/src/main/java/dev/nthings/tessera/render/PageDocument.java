@@ -2,7 +2,8 @@ package dev.nthings.tessera.render;
 
 import dev.nthings.tessera.core.IntoElement;
 
-/// Top-level HTML5 document specification compiled by [PageCompiler].
+/// Top-level HTML5 document specification compiled by [PageCompiler]. The two-argument constructor
+/// sets `lang` to `en`.
 ///
 /// Design tokens are a compile setting ([PageCompiler#compile(PageDocument, Tokens, OutputMode)]
 /// or the site's tokens), not part of the document.

@@ -2,11 +2,15 @@ package dev.nthings.tessera.core;
 
 import org.jspecify.annotations.Nullable;
 
-/// Linker-style handle for an element's DOM id, resolved by the compiler.
+/// Identity handle for an element's DOM id, resolved by the compiler once the page is expanded.
 ///
-/// Bind once per page with [TagElement#id(ElementRef)]. The DOM id is the bind site's [ViewScope]
-/// plus [#localId()]. Any element may reference it (`commandfor`, `for`, `aria-*`, `href="#…"`,
-/// CSS anchors), before or after the bind site. Equality is identity.
+/// Bind a ref once per page with [TagElement#id(ElementRef)], or with [TagElement#ref()] for an
+/// anonymous ref. The DOM id is the bind site's view scope followed by the local id. Elements may
+/// reference a bound ref through `for`, `commandfor`, `aria-*` or `href`, before or after the bind
+/// site. Anchor positioning is the exception: [TagElement#anchoredTo] needs its anchor bound
+/// earlier on the page, or the compiler reports `unbound-reference`. Binding a ref twice on a page
+/// reports `duplicate-reference-binding`, but refs can be reused across pages. Equality is
+/// identity.
 public final class ElementRef {
 
   private final @Nullable ElementId localId;
@@ -15,16 +19,18 @@ public final class ElementRef {
     this.localId = localId;
   }
 
-  /// Ref whose DOM id ends in `name` (sanitized) within the bind site's view scope.
+  /// Creates a ref with the local id `name`, sanitized as [ElementId] does, in the bind site's view
+  /// scope. Two bound refs with the same name in one view scope report `duplicate-id`.
   public static ElementRef named(String name) {
     return new ElementRef(ElementId.of(name));
   }
 
-  /// Ref whose local id is assigned by the compiler (`<tag>-<n>`, numbered per view scope).
+  /// Creates a ref whose local id the compiler assigns as `<tag>-<n>`, numbered per view scope.
   public static ElementRef anonymous() {
     return new ElementRef(null);
   }
 
+  /// Compiler-facing: the local id this ref asks for, or `null` when the compiler assigns one.
   public @Nullable ElementId localId() {
     return localId;
   }

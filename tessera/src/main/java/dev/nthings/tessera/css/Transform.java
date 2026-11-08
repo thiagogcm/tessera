@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/// A `transform` function or a sequence of them.
+/// A `transform` function or a sequence of them, applied with [EffectStyled#transform(Transform)].
 public sealed interface Transform extends CssValue
     permits Transform.Scale, Transform.Rotate, Transform.TranslateY, Transform.Chain {
 
@@ -32,7 +32,8 @@ public sealed interface Transform extends CssValue
     }
   }
 
-  /// Functions applied left to right.
+  /// Functions written space-separated in the CSS `transform` list, in the order given. CSS
+  /// composes them right to left, so the last function acts first on the element.
   record Chain(List<Transform> steps) implements Transform {
     public Chain {
       steps = List.copyOf(steps);
@@ -56,6 +57,7 @@ public sealed interface Transform extends CssValue
     return new TranslateY(distance);
   }
 
+  /// A chain of this transform followed by `next`, written in that order in the CSS list.
   default Transform then(Transform next) {
     var steps = new ArrayList<Transform>();
     steps.addAll(this instanceof Chain chain ? chain.steps() : List.of(this));

@@ -10,8 +10,11 @@ import org.jspecify.annotations.Nullable;
 /// Same-site speculation as declarative `<script type="speculationrules">` (no JavaScript):
 /// links are prefetched or prerendered on hover or pointer-down (`moderate` eagerness).
 public enum LinkSpeculation {
+  /// Emits no speculation rules.
   NONE(null),
+  /// Prefetches same-site links with `moderate` eagerness.
   PREFETCH("prefetch"),
+  /// Prerenders same-site links with `moderate` eagerness.
   PRERENDER("prerender");
 
   private final @Nullable String rulesJson;

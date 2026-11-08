@@ -1,5 +1,7 @@
 package dev.nthings.tessera.css;
 
+/// A CSS color: OKLCH and sRGB literals, keywords, derived colors (`color-mix`, relative
+/// `oklch(from ...)`, `light-dark`, `contrast-color`), and design tokens.
 public sealed interface CssColor extends CssValue
     permits CssColor.Oklch,
         CssColor.Srgb,
@@ -45,6 +47,7 @@ public sealed interface CssColor extends CssValue
     }
   }
 
+  /// The keywords `transparent` and `currentColor`.
   enum Named implements CssColor, CssKeyword {
     TRANSPARENT,
     CURRENT_COLOR;
@@ -107,35 +110,44 @@ public sealed interface CssColor extends CssValue
     }
   }
 
+  /// `oklch(L% C H)` with lightness as a percentage, such as `oklch(54% 0.21 262)`.
   static CssColor oklch(double lightnessPercent, double chroma, double hue) {
     return new Oklch(lightnessPercent, chroma, hue, 1);
   }
 
+  /// `oklch(L% C H / A)`, or `oklch(L% C H)` at full opacity. Throws IllegalArgumentException if
+  /// `alpha` is outside `[0, 1]`.
   static CssColor oklch(double lightnessPercent, double chroma, double hue, double alpha) {
     return new Oklch(lightnessPercent, chroma, hue, alpha);
   }
 
+  /// `#rrggbb` from a 24-bit value, such as `0x1d4ed8`. Throws IllegalArgumentException outside
+  /// `0x000000` to `0xffffff`.
   static CssColor srgb(int rgb) {
     return new Srgb(rgb);
   }
 
+  /// `#ffffff`.
   static CssColor white() {
     return new Srgb(0xffffff);
   }
 
+  /// `transparent`.
   static CssColor transparent() {
     return Named.TRANSPARENT;
   }
 
+  /// `currentColor`, the element's `color` value.
   static CssColor currentColor() {
     return Named.CURRENT_COLOR;
   }
 
-  /// `base`'s hue at a fixed lightness (a percentage) and chroma.
+  /// `oklch(from base L% C h)`: `base`'s hue at a fixed lightness (a percentage) and chroma.
   static CssColor sameHue(CssColor base, double lightnessPercent, double chroma) {
     return new Relative(base, lightnessPercent, chroma);
   }
 
+  /// `light-dark(light, dark)`, following the page's color scheme.
   static CssColor lightDark(CssColor light, CssColor dark) {
     return new LightDark(light, dark);
   }
@@ -145,16 +157,18 @@ public sealed interface CssColor extends CssValue
     return mix(Space.OKLCH, percent, transparent());
   }
 
+  /// This color at `percent`% weight against `other`, mixed in `space`.
   default CssColor mix(Space space, int percent, CssColor other) {
     return mix(space, CssLength.pct(percent), other);
   }
 
-  /// This color weighted by `weight` (a percentage or a calculation of one) against `other`.
+  /// This color weighted by `weight` (a percentage or a calculation of one) against `other`,
+  /// mixed in `space`.
   default CssColor mix(Space space, CssLength weight, CssColor other) {
     return new Mix(space, this, weight, other);
   }
 
-  /// A readable foreground for this color.
+  /// A readable foreground for this color: `contrast-color(this)`, black or white.
   default CssColor contrast() {
     return new ContrastOn(this);
   }

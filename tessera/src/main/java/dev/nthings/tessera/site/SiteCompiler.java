@@ -22,10 +22,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
-/// Compiles pages concurrently, then validates and adds shared CSS and artifacts.
+/// Compiles a [SiteDefinition] into a [CompiledSite].
 public final class SiteCompiler {
   private SiteCompiler() {}
 
+  /// Compiles every route of `site`. Pages are prepared concurrently, then links, fragments and
+  /// transition keys are checked across all pages, the shared stylesheet is merged, and pages are
+  /// painted concurrently. Render callbacks run on virtual threads, so they must not change shared
+  /// application state. Exceptions thrown by render callbacks propagate unchanged.
+  ///
+  /// Throws [CompilationException] with the page diagnostics in route order. If every page
+  /// compiled, it throws with the cross-route link and transition-key diagnostics instead. Throws
+  /// IllegalArgumentException if two routes share a path, if an asset or generated file (such as
+  /// `/sitemap.xml`) has the path of a route, if two files share a path, or if an external output
+  /// base path is relative.
   public static CompiledSite compile(SiteDefinition site) {
     var routes = site.routes();
     var seenPaths = new LinkedHashSet<String>(routes.size());

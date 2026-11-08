@@ -11,12 +11,14 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Subgrid container for [Card]s. Sibling cards align their four regions (media, header, content,
-/// footer) row by row.
+/// Responsive grid of [Card]s, created with `CardGrid.of`. Cards in the same row align their media,
+/// header, content, and footer regions, so their footers line up.
 public record CardGrid(
     String id, CssLength minCardWidth, CssLength gap, List<? extends IntoElement> cards)
     implements RenderView {
 
+  /// Creates a grid with `id` as its instance id. It fits as many columns as are at least
+  /// `minCardWidth` wide, and `gap` sets the row and column gap.
   public static CardGrid of(
       String id, CssLength minCardWidth, CssLength gap, IntoElement... cards) {
     return new CardGrid(id, minCardWidth, gap, List.of(cards));

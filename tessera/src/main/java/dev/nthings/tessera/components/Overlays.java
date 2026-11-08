@@ -31,31 +31,37 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Zero-JavaScript [Modal] and [Drawer] on `<dialog closedby="any">`, using invoker commands
-/// (`commandfor` / `command="show-modal"`), `@starting-style`, and
-/// `transition-behavior: allow-discrete`.
+/// Modal dialogs and side drawers that open and close without author JavaScript. Create one with
+/// [#modal(String, String)] or [#drawer(String, String)], place it on the page (directly or with
+/// `asDeferred`), and open it with its `triggerButton` or a button that targets its
+/// `dialogRef()`. Each has a close button, and Escape or a click outside dismisses it.
 public final class Overlays {
 
   private Overlays() {}
 
+  /// Edge a [Drawer] docks to. `INLINE_START` is the left edge in left-to-right text.
   public enum DrawerSide {
     INLINE_START,
     INLINE_END
   }
 
+  /// Creates a centered modal with the given `id` and title.
   public static Modal modal(String id, String title) {
     return new Modal(ElementId.of(id), title);
   }
 
+  /// Creates a drawer on the inline-end edge with the given `id` and title.
   public static Drawer drawer(String id, String title) {
     return new Drawer(ElementId.of(id), title, DrawerSide.INLINE_END);
   }
 
+  /// Creates a drawer on `side` with the given `id` and title.
   public static Drawer drawer(String id, String title, DrawerSide side) {
     return new Drawer(ElementId.of(id), title, side);
   }
 
-  /// Top-layer `<dialog closedby="any">` with `@starting-style` fades and `::backdrop` dimming.
+  /// Centered modal dialog with a title, optional description, body, footer actions and a close
+  /// button. Create one with [Overlays#modal(String, String)].
   public static final class Modal implements RenderView {
 
     private final ElementId id;
@@ -89,6 +95,7 @@ public final class Overlays {
       return this;
     }
 
+    /// Adds an action to the footer, before the close button.
     public Modal action(IntoElement action) {
       footerActions.add(action.intoElement());
       return this;
@@ -105,24 +112,28 @@ public final class Overlays {
       return this;
     }
 
-    /// Trigger button using `command="show-modal"`.
+    /// Creates a button that opens this modal with `command="show-modal"`. The button is neutral
+    /// and outlined. `buttonId` is local to the enclosing view scope.
     public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }
 
-    /// The `<dialog>` element, for invokers placed outside this view.
+    /// Reference to the `<dialog>`, for invokers placed elsewhere. The modal must still be placed
+    /// on the page, directly or through [#asDeferred(int)]; otherwise the compiler reports
+    /// `unbound-reference` for the invoker.
     public ElementRef dialogRef() {
       return dialog;
     }
 
-    /// Binds the `<dialog>` to an app-owned reference. Pass the same reference on every render
-    /// if a timer or request callback that outlives the render targets it.
+    /// Uses an application-owned reference for the `<dialog>`, so a callback that outlives the
+    /// render can still target it. Reuse the same reference on every render.
     public Modal dialogRef(ElementRef dialog) {
       this.dialog = dialog;
       return this;
     }
 
-    /// Wraps this modal in a [DeferredElement] to hoist it to the end of `<body>`.
+    /// Hoists this modal to the end of `<body>`. Lower priority values come first among
+    /// deferred elements.
     public DeferredElement asDeferred(int priority) {
       return deferred(this, priority);
     }
@@ -229,8 +240,8 @@ public final class Overlays {
     }
   }
 
-  /// Top-layer `<dialog closedby="any">` sheet docked to the inline-start or inline-end edge,
-  /// animated with `translate`, `@starting-style`, and `transition-behavior: allow-discrete`.
+  /// Sheet that slides in from the edge set by its [DrawerSide]. Create one with
+  /// [Overlays#drawer(String, String)]; its close button sits in the header.
   public static final class Drawer implements RenderView {
 
     private final ElementId id;
@@ -264,22 +275,27 @@ public final class Overlays {
       return this;
     }
 
-    /// Trigger button using `command="show-modal"`.
+    /// Creates a button that opens this drawer with `command="show-modal"`. The button is neutral
+    /// and outlined. `buttonId` is local to the enclosing view scope.
     public Button triggerButton(String buttonId, String label) {
       return showModalTrigger(dialog, buttonId, label);
     }
 
-    /// The `<dialog>` element, for invokers placed outside this view.
+    /// Reference to the `<dialog>`, for invokers placed elsewhere. The drawer must still be placed
+    /// on the page, directly or through [#asDeferred(int)], or the invoker reports
+    /// `unbound-reference`.
     public ElementRef dialogRef() {
       return dialog;
     }
 
-    /// Binds the `<dialog>` to an application-owned reference; see [Modal#dialogRef(ElementRef)].
+    /// Uses an application-owned reference for the `<dialog>`; see [Modal#dialogRef(ElementRef)].
     public Drawer dialogRef(ElementRef dialog) {
       this.dialog = dialog;
       return this;
     }
 
+    /// Hoists this drawer to the end of `<body>`. Lower priority values come first among
+    /// deferred elements.
     public DeferredElement asDeferred(int priority) {
       return deferred(this, priority);
     }

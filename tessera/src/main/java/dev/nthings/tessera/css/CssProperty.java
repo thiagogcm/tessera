@@ -2,11 +2,10 @@ package dev.nthings.tessera.css;
 
 import java.util.Locale;
 
-/// CSS property keys. Declaration order is fixed: it drives [java.util.EnumMap] storage and
-/// FNV-1a hashing.
-///
-/// [#ANIMATION] must precede [#ANIMATION_DELAY], [#ANIMATION_TIMELINE] and [#ANIMATION_RANGE], so
-/// the `animation` shorthand does not reset scroll-driven timeline or range declarations.
+/// CSS property keys, used with [StyleRefinement#get]. Declarations are emitted in constant order,
+/// and the `animation` shorthand depends on it: [#ANIMATION] must precede [#ANIMATION_DELAY],
+/// [#ANIMATION_TIMELINE] and [#ANIMATION_RANGE], so the shorthand does not reset scroll-driven
+/// timeline or range declarations.
 public enum CssProperty {
   CONTENT,
   DISPLAY,
@@ -124,6 +123,7 @@ public enum CssProperty {
 
   private final String cssName = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
+  /// The kebab-case CSS property name, such as `padding-inline`.
   public String cssName() {
     return cssName;
   }

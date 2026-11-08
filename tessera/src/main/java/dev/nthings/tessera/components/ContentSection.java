@@ -23,9 +23,12 @@ import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// `<section>` whose heading is registered in the Table of Contents when rendered.
+/// Titled `<section>` whose heading is registered as a document heading, listed by
+/// `Toc.fromContext` and the site search index. Use `Toc.section` for plain documentation sections;
+/// use this type for a surface, a lead paragraph, or a badge.
 public final class ContentSection implements RenderOnce, ParentElement<ContentSection> {
 
+  /// Visual surface of a [ContentSection].
   public enum SurfaceKind {
     /// Borderless, continuous flow. Default.
     GHOST,
@@ -38,6 +41,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
 
     private final String value = name().toLowerCase(Locale.ROOT);
 
+    /// Compiler-facing: the `data-surface` attribute value for this surface.
     public String wireValue() {
       return value;
     }
@@ -56,37 +60,47 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     this.title = title;
   }
 
+  /// Creates a section at heading level 2 with the `GHOST` surface. `id` names it in the enclosing
+  /// view scope.
   public static ContentSection create(String id, String title) {
     return new ContentSection(id, title);
   }
 
+  /// Creates a section with the `GHOST` surface.
   public static ContentSection ghost(String id, String title) {
     return new ContentSection(id, title).surface(SurfaceKind.GHOST);
   }
 
+  /// Creates a section with the `CARD` surface.
   public static ContentSection card(String id, String title) {
     return new ContentSection(id, title).surface(SurfaceKind.CARD);
   }
 
+  /// Creates a section with the `HIGHLIGHT` surface.
   public static ContentSection highlight(String id, String title) {
     return new ContentSection(id, title).surface(SurfaceKind.HIGHLIGHT);
   }
 
+  /// Sets the heading level, 2 to 4 (default 2). Throws IllegalArgumentException outside that
+  /// range.
   public ContentSection level(int headingLevel) {
     this.level = checkHeadingLevel(headingLevel);
     return this;
   }
 
+  /// Sets the surface. The default is `GHOST`.
   public ContentSection surface(SurfaceKind kind) {
     this.surface = kind;
     return this;
   }
 
+  /// Sets a larger muted paragraph shown under the heading.
   public ContentSection leadText(String lead) {
     this.leadText = lead;
     return this;
   }
 
+  /// Sets a small accent label shown above the heading.
   public ContentSection badge(String badgeText) {
     this.badge = badgeText;
     return this;

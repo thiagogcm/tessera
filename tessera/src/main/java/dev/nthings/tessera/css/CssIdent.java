@@ -4,8 +4,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/// A validated CSS identifier: a container, anchor, counter, or view-transition name, or a custom
-/// property name.
+/// A CSS identifier for names such as containers, anchors, counters, and view transitions. Use
+/// [#of] for a plain name and [#custom] for a dashed identifier (`--name`), such as a custom
+/// property.
 public record CssIdent(String value) implements CssValue {
 
   private static final Pattern IDENT =
@@ -16,13 +17,16 @@ public record CssIdent(String value) implements CssValue {
   private static final Set<String> RESERVED =
       Set.of("initial", "inherit", "unset", "revert", "revert-layer", "default", "none");
 
+  /// Checks identifier syntax only. Use [#of] or [#custom], which also apply the name rules.
   public CssIdent {
     if (!IDENT.matcher(value).matches()) {
       throw new IllegalArgumentException("Not a CSS identifier: '" + value + "'");
     }
   }
 
-  /// Non-dashed name. Reserved keywords are rejected in any case.
+  /// A plain name, such as `metric-card`. Throws IllegalArgumentException for a dashed name, for
+  /// `none`, `default`, or a CSS-wide keyword in any letter case, and for text that is not an
+  /// identifier.
   public static CssIdent of(String name) {
     var ident = new CssIdent(name);
     if (ident.isCustom()) {
@@ -35,16 +39,19 @@ public record CssIdent(String value) implements CssValue {
     return ident;
   }
 
-  /// Dashed identifier `--<name>`.
+  /// A dashed identifier `--name`. Pass `name` without the leading `--`: `custom("x")` is `--x`,
+  /// while `custom("--x")` is `----x`. Throws IllegalArgumentException if `name` is empty or has
+  /// characters outside `[A-Za-z0-9_-]`.
   public static CssIdent custom(String name) {
     return new CssIdent("--" + name);
   }
 
+  /// Whether this is a dashed identifier (`--name`).
   public boolean isCustom() {
     return value.startsWith("--");
   }
 
-  /// Throws unless this is a dashed (`--name`) identifier.
+  /// Returns this identifier if it is dashed. Throws IllegalArgumentException otherwise.
   public CssIdent requireCustom() {
     if (!isCustom()) {
       throw new IllegalArgumentException("Not a custom property name: " + value);

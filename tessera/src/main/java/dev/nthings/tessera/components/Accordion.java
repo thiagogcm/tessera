@@ -20,11 +20,16 @@ import dev.nthings.tessera.css.Transform;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Accordion on native `<details>`/`<summary>`, so "Find in page" works. Exclusive mode shares a
-/// `name` group. Height animates via `::details-content` (`interpolate-size: allow-keywords`).
+/// Stack of collapsible sections on native `<details>` and `<summary>` elements, so "Find in
+/// page" can reach closed items. Create one with [#exclusive(String)], where opening an item
+/// closes the others, or [#multiOpen(String)]. The open and close animation is skipped under
+/// reduced motion.
 public final class Accordion implements RenderView {
 
+  /// One section: the `summaryTitle` shown in its summary, its `content`, and whether it starts
+  /// open.
   public record Item(String summaryTitle, Element content, boolean initiallyOpen) {
+    /// Creates an item whose body is `bodyText` in a muted paragraph.
     public static Item ofText(String summaryTitle, String bodyText, boolean initiallyOpen) {
       return new Item(
           summaryTitle,
@@ -32,6 +37,7 @@ public final class Accordion implements RenderView {
           initiallyOpen);
     }
 
+    /// Creates an item whose body is `content`.
     public static Item of(String summaryTitle, IntoElement content, boolean initiallyOpen) {
       return new Item(summaryTitle, content.intoElement(), initiallyOpen);
     }
@@ -48,19 +54,26 @@ public final class Accordion implements RenderView {
     this.exclusive = exclusive;
   }
 
+  /// Creates an accordion where opening one item closes the others. Its `name` group is the slug of
+  /// `id`, so give each accordion on a page a distinct id. Throws IllegalArgumentException if `id`
+  /// is empty.
   public static Accordion exclusive(String id) {
     return new Accordion(id, true);
   }
 
+  /// Creates an accordion where any number of items can be open at once. Throws
+  /// IllegalArgumentException if `id` is empty.
   public static Accordion multiOpen(String id) {
     return new Accordion(id, false);
   }
 
+  /// Adds an item whose body is `bodyText` in a muted paragraph.
   public Accordion item(String summaryTitle, String bodyText, boolean initiallyOpen) {
     items.add(Item.ofText(summaryTitle, bodyText, initiallyOpen));
     return this;
   }
 
+  /// Adds an item whose body is `content`.
   public Accordion item(String summaryTitle, IntoElement content, boolean initiallyOpen) {
     items.add(Item.of(summaryTitle, content, initiallyOpen));
     return this;

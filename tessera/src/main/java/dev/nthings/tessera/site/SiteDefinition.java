@@ -8,6 +8,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Multi-page static site specification; build one with [#builder()] or [#of(SiteRoute...)].
+/// Throws IllegalArgumentException if it has no routes.
 ///
 /// Defaults to [OutputMode#externalAsset(String)] (`"/assets"`), so pages share one
 /// content-hashed stylesheet across cross-document view transitions, and to
@@ -37,14 +38,17 @@ public record SiteDefinition(
     }
   }
 
+  /// Returns a site with `routes` and default settings.
   public static SiteDefinition of(SiteRoute... routes) {
     return builder().routes(List.of(routes)).build();
   }
 
+  /// Returns a site with `routes`, in iteration order, and default settings.
   public static SiteDefinition of(Collection<SiteRoute> routes) {
     return builder().routes(routes).build();
   }
 
+  /// Returns an empty builder. Settings start at the [SiteDefinition] defaults.
   public static Builder builder() {
     return new Builder();
   }
@@ -62,47 +66,62 @@ public record SiteDefinition(
 
     private Builder() {}
 
+    /// Sets the design tokens for every page. Defaults to `new Tokens()`.
     public Builder tokens(Tokens siteTokens) {
       this.tokens = siteTokens;
       return this;
     }
 
+    /// Sets how the shared stylesheet and client behavior modules are packaged. Under
+    /// [OutputMode#externalAsset(String)] the base path must start with `/`; a relative path makes
+    /// [SiteCompiler#compile(SiteDefinition)] throw IllegalArgumentException.
     public Builder outputMode(OutputMode mode) {
       this.outputMode = mode;
       return this;
     }
 
+    /// Adds a route. Routes keep the order they are added in, which sets the order of diagnostics,
+    /// `sitemap.xml` entries and `search-index.json` entries.
     public Builder route(SiteRoute route) {
       routes.add(route);
       return this;
     }
 
+    /// Adds `siteRoutes` in iteration order.
     public Builder routes(Collection<SiteRoute> siteRoutes) {
       routes.addAll(siteRoutes);
       return this;
     }
 
-    /// Absolute origin (`https://example.com`) for `sitemap.xml`; unset means no sitemap.
+    /// Sets the base URL prepended to route paths in `sitemap.xml`, such as
+    /// `https://example.com`. Without one, no sitemap is generated. A trailing `/` is removed.
+    /// Throws IllegalArgumentException from [#build()] if the value is empty or only `/`.
     public Builder baseUrl(String url) {
       this.baseUrl = url;
       return this;
     }
 
+    /// Sets the same-site speculation rules added to each page's `<head>`. Defaults to
+    /// [LinkSpeculation#PRERENDER].
     public Builder linkSpeculation(LinkSpeculation speculation) {
       this.linkSpeculation = speculation;
       return this;
     }
 
+    /// Adds a file published beside the pages.
     public Builder asset(SiteAsset asset) {
       assets.add(asset);
       return this;
     }
 
+    /// Adds `siteAssets` in iteration order.
     public Builder assets(Collection<SiteAsset> siteAssets) {
       assets.addAll(siteAssets);
       return this;
     }
 
+    /// Builds the site. Throws IllegalArgumentException if no route was added, or if the base URL
+    /// is empty or only `/`.
     public SiteDefinition build() {
       return new SiteDefinition(tokens, outputMode, routes, baseUrl, linkSpeculation, assets);
     }

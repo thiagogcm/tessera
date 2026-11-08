@@ -22,8 +22,9 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Keyboard-scrollable code block. Line numbers come from CSS counters, so they are not copied
-/// with the text.
+/// Source listing in a keyboard-focusable `<pre>`, one `<span class="code-line">` per line. It can
+/// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
+/// Line numbers are display-only and are not part of the copied text.
 public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
 
   private final List<String> lines = new ArrayList<>();
@@ -38,15 +39,20 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     this.lines.addAll(lines);
   }
 
+  /// Creates a block from `code`, splitting lines on `\n`, `\r\n`, or `\r`. A trailing newline adds
+  /// an empty last line.
   public static CodeBlock of(String code) {
     var normalized = code.replace("\r\n", "\n").replace('\r', '\n');
     return new CodeBlock(Arrays.asList(normalized.split("\n", -1)));
   }
 
+  /// Creates a block with one line per element. An element is not split, so an embedded newline
+  /// stays on one numbered line.
   public static CodeBlock ofLines(String... lines) {
     return new CodeBlock(Arrays.asList(lines));
   }
 
+  /// Creates a block with one line per element, as [#ofLines(String...)] does.
   public static CodeBlock ofLines(List<String> lines) {
     return new CodeBlock(lines);
   }
@@ -56,16 +62,20 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     return this;
   }
 
+  /// Shows `filename` in the header above the code.
   public CodeBlock filename(String filename) {
     this.filename = filename;
     return this;
   }
 
+  /// Shows `language` as a small pill in the header. No syntax highlighting is applied.
   public CodeBlock language(String language) {
     this.language = language;
     return this;
   }
 
+  /// Highlights the given 1-based line numbers; numbers past the last line have no effect. A line
+  /// that is also added or deleted shows that state, with added before deleted before highlighted.
   public CodeBlock highlightLines(int... lineNumbers) {
     for (var line : lineNumbers) {
       this.highlightedLines.add(line);
@@ -73,6 +83,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     return this;
   }
 
+  /// Marks the given 1-based line numbers as added.
   public CodeBlock addedLines(int... lineNumbers) {
     for (var line : lineNumbers) {
       this.addedLines.add(line);
@@ -80,6 +91,7 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     return this;
   }
 
+  /// Marks the given 1-based line numbers as deleted.
   public CodeBlock deletedLines(int... lineNumbers) {
     for (var line : lineNumbers) {
       this.deletedLines.add(line);
@@ -87,6 +99,8 @@ public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
     return this;
   }
 
+  /// When enabled, a line starting with `+` is marked added and one starting with `-` is marked
+  /// deleted. The marker stays in the text. Explicit line numbers still apply.
   public CodeBlock diffAutoDetect(boolean enabled) {
     this.diffAutoDetect = enabled;
     return this;

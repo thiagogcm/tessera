@@ -16,10 +16,12 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Breadcrumb trail (`<nav><ol>`). Separators are CSS `content`, so screen readers skip them.
-/// `aria-current="page"` marks the last item.
+/// Breadcrumb trail, first crumb to last, rendered as a `<nav>` around an ordered list. The last
+/// crumb gets `aria-current="page"`, and every crumb stays a link. Separators are decorative, so
+/// screen readers skip them.
 public final class Breadcrumbs implements RenderView {
 
+  /// One breadcrumb: the link target `href` and the visible `label`.
   public record Crumb(String href, String label) {
     public static Crumb of(String href, String label) {
       return new Crumb(href, label);
@@ -38,11 +40,14 @@ public final class Breadcrumbs implements RenderView {
     this.crumbs = crumbs;
   }
 
+  /// Creates a trail of `crumbs` with `id` as the instance id. Throws IllegalArgumentException if
+  /// no crumbs are given or `id` is empty.
   public static Breadcrumbs of(String id, Crumb... crumbs) {
     return new Breadcrumbs(id, List.of(crumbs));
   }
 
-  /// Accessible name of the landmark; make it distinct when a page has several trails.
+  /// Accessible name of the landmark; make it distinct when a page has several trails. The default
+  /// is `Breadcrumb`.
   public Breadcrumbs label(String label) {
     this.label = label;
     return this;

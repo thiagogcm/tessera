@@ -5,8 +5,8 @@ package dev.nthings.tessera.css;
 /// @param <SELF> concrete element or style builder type
 public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF> {
 
-  /// Sets a full row or column; later [#gap(CssLength)], [#blockSize(CssLength)] or
-  /// [#flexShrink(int)] calls replace its matching declarations.
+  /// Sets `display`, `flex-direction`, `flex-wrap`, `align-items` and `gap` from `layout`. A later
+  /// call that sets one of those (e.g. [#gap(CssLength)]) replaces only that declaration.
   default SELF layout(FlexLayout layout) {
     layout.apply(style());
     return self();
@@ -37,6 +37,7 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
+  /// Sets `display: none`, removing the element from layout and the accessibility tree.
   default SELF hidden() {
     style().put(CssProperty.DISPLAY, "none");
     return self();
@@ -138,7 +139,7 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// Generated content of a `::before` or `::after` pseudo-element.
+  /// Generated content of a `::before`, `::after` or `::scroll-button()` pseudo-element.
   default SELF content(CssContent content) {
     style().put(CssProperty.CONTENT, content);
     return self();
@@ -224,7 +225,8 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// Subgrid rows across `trackSpan` of the parent's rows.
+  /// Sets `display: grid` with rows inherited from the parent grid (`subgrid`), spanning
+  /// `trackSpan` of the parent's rows. Throws IllegalArgumentException if `trackSpan` is below 1.
   default SELF subgridRows(int trackSpan) {
     return grid().gridRow(GridPlacement.span(trackSpan)).gridRows(TrackList.subgrid());
   }
@@ -239,10 +241,12 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
+  /// Spans `columns` grid columns. Throws IllegalArgumentException if `columns` is below 1.
   default SELF colSpan(int columns) {
     return gridColumn(GridPlacement.span(columns));
   }
 
+  /// Spans `rows` grid rows. Throws IllegalArgumentException if `rows` is below 1.
   default SELF rowSpan(int rows) {
     return gridRow(GridPlacement.span(rows));
   }
@@ -311,13 +315,14 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return inlineSize(CssLength.pct(100));
   }
 
-  /// Unnamed `container-type: inline-size`.
+  /// Sets `container-type: inline-size`, so descendants can query this element's inline size.
   default SELF containerInlineSize() {
     style().put(CssProperty.CONTAINER_TYPE, "inline-size");
     return self();
   }
 
-  /// Named inline-size query container (`container: <name> / inline-size`).
+  /// Sets `container-name` to `name` and `container-type: inline-size`, for `@container <name>`
+  /// queries. Container calls share `container-type`, so the last one on an element wins.
   default SELF containerInlineSize(CssIdent name) {
     style().put(CssProperty.CONTAINER_NAME, name);
     return containerInlineSize();
@@ -329,12 +334,15 @@ public interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// Anonymous `container-type: scroll-state`, queried by the nearest `scroll-state()`.
+  /// Sets `container-type: scroll-state`, so unnamed `@container scroll-state(...)` rules match
+  /// this element. Container calls share `container-type`, so the last one on an element wins.
   default SELF containerScrollState() {
     style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
     return self();
   }
 
+  /// Sets `container-name` to `name` and `container-type: scroll-state`, for
+  /// `@container <name> scroll-state(...)` rules.
   default SELF containerScrollState(CssIdent name) {
     style().put(CssProperty.CONTAINER_NAME, name);
     return containerScrollState();

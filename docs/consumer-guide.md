@@ -111,7 +111,7 @@ Elements.ul().child(
     Elements.fragment().children(li().text("One"), li().text("Two")));
 ```
 
-`HtmlTag` covers the built-in vocabulary, including `video`, `audio`, `iframe`, `canvas`, `template`, `slot`, `picture`, `source`, and `track`. `Elements.custom("my-widget")` emits an autonomous custom element. Custom element names must start with a lowercase letter, contain a hyphen, and avoid the names reserved by the HTML standard. Pair the element with a `ClientBehavior` so the browser upgrades it.
+`HtmlTag` covers the built-in vocabulary, including `video`, `audio`, `iframe`, `canvas`, `template`, `slot`, `picture`, `source`, and `track`. `Elements.custom("my-widget")` emits an autonomous custom element. Custom element names must be lowercase and contain a hyphen; follow the HTML standard's other naming rules yourself, since Tessera does not check them. Pair the element with a `ClientBehavior` so the browser upgrades it.
 
 ## Contribute a client behavior
 
@@ -138,7 +138,7 @@ Elements.section().layout(stack).children(
     p().text("Introduction"));
 ```
 
-`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A later `gap(...)`, `blockSize(...)`, `minBlockSize(...)`, or `flexShrink(...)` replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length` tokens.
+`inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A layout sets `display`, `flex-direction`, `flex-wrap`, `align-items`, and `gap`; a later call that sets one of those, such as `gap(...)`, replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length` tokens.
 
 A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowYAuto()`.
 
@@ -262,7 +262,7 @@ Density scales spacing tokens, including control padding. It does not scale the 
 
 ## Write styles with typed values
 
-Style methods take values of the type their property accepts. There is no method that takes raw CSS text.
+Style methods take values of the type their property accepts; no style method takes raw declaration text. `ScopeStyle` selectors and container conditions, and `whenHas(...)`, are trusted strings emitted as written.
 
 ```java
 div()

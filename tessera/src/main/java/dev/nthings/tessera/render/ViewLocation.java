@@ -17,6 +17,7 @@ public record ViewLocation(
     componentPath = List.copyOf(componentPath);
   }
 
+  /// Compiler-facing: returns this location with its DOM id set to `id`.
   public ViewLocation withDomId(String id) {
     return new ViewLocation(componentPath, tagName, id, source);
   }

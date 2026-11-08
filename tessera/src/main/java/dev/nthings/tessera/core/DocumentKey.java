@@ -2,9 +2,16 @@ package dev.nthings.tessera.core;
 
 import java.util.function.Supplier;
 
-/// Typed per-page state slot in a [DocumentState], created on first use. Compared by identity.
+/// Typed state for one page, created on first use by [RenderContext#document(DocumentKey)]. Keys
+/// compare by identity, so declare them `static final`; a key created inside a render callback is a
+/// new slot on each call, so its state is never shared. `initial` runs once per page compilation.
 ///
-/// @param <T> state type
+/// ```java
+/// private static final DocumentKey<AtomicInteger> NOTES =
+///     DocumentKey.of("notes", AtomicInteger.class, AtomicInteger::new);
+///
+/// int number = context.document(NOTES).incrementAndGet();
+/// ```
 public final class DocumentKey<T> {
 
   private final String name;
@@ -17,10 +24,13 @@ public final class DocumentKey<T> {
     this.initial = initial;
   }
 
+  /// Creates a key whose state `initial` supplies on first use. `name` labels the key in
+  /// `toString()` and does not affect its identity.
   public static <T> DocumentKey<T> of(String name, Class<T> type, Supplier<? extends T> initial) {
     return new DocumentKey<>(name, type, initial);
   }
 
+  /// The label given to [#of].
   public String name() {
     return name;
   }

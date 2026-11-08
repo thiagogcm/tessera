@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// An `aspect-ratio` of `width / height`.
+/// An `aspect-ratio` of `width / height`, set with [LayoutStyled#aspectRatio]. Throws
+/// IllegalArgumentException unless both terms are positive.
 public record AspectRatio(int width, int height) implements CssValue {
 
   public AspectRatio {
@@ -9,10 +10,12 @@ public record AspectRatio(int width, int height) implements CssValue {
     }
   }
 
+  /// A ratio `width / height`, such as `16 / 9`.
   public static AspectRatio of(int width, int height) {
     return new AspectRatio(width, height);
   }
 
+  /// `1 / 1`.
   public static AspectRatio square() {
     return new AspectRatio(1, 1);
   }

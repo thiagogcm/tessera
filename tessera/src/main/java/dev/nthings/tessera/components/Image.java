@@ -14,12 +14,16 @@ import dev.nthings.tessera.css.StyleRefinement;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Image with LCP priority hoisting and layout-shift prevention.
+/// Image with an accessible description and reserved layout space.
 ///
-/// - [#hero(String, String)] marks the primary LCP candidate: `fetchpriority="high"` plus a
-///   `<link rel="preload" as="image">` hoisted into `<head>`.
-/// - [#of(String, String)] is below the fold: `loading="lazy"` and `decoding="async"`.
-/// - Compile-time enforced: explicit dimensions or a CSS `aspect-ratio` (avoids CLS).
+/// - [#of(String, String)] loads lazily: `loading="lazy"` and `decoding="async"`.
+/// - [#hero(String, String)] is the page's main above-the-fold image: it loads eagerly with
+///   `fetchpriority="high"`, and its `<link rel="preload">` goes in `<head>`. A page allows one
+///   hero; a second throws IllegalStateException during render.
+/// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports
+///   `image-dimensions`.
+/// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
+///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
 public final class Image implements RenderOnce, InteractiveElement<Image> {
 
   private static final class HeroSlot {
@@ -48,10 +52,12 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
     }
   }
 
+  /// Creates an image that loads lazily. Throws IllegalArgumentException if `src` is blank.
   public static Image of(String src, String alt) {
     return new Image(src, alt, false);
   }
 
+  /// Creates the page's hero image. Throws IllegalArgumentException if `src` is blank.
   public static Image hero(String src, String alt) {
     return new Image(src, alt, true);
   }
@@ -87,6 +93,8 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
     return img.idReferences();
   }
 
+  /// Sets the `width` and `height` attributes. Throws IllegalArgumentException if either is not
+  /// positive.
   @Override
   public Image dimensions(int width, int height) {
     if (width <= 0 || height <= 0) {
@@ -103,6 +111,7 @@ public final class Image implements RenderOnce, InteractiveElement<Image> {
     return alt;
   }
 
+  /// Whether this image was created with [#hero(String, String)].
   public boolean isHero() {
     return hero;
   }

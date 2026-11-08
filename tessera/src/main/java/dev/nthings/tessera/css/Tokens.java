@@ -5,7 +5,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/// Registry of design tokens emitted into `@layer theme`.
+/// The design tokens emitted as custom properties on `:root` in `@layer theme`. `new Tokens()`
+/// registers every default; [#register] adds a token or replaces the one with the same name. Pass
+/// the registry to `PageCompiler.compile` or to `SiteDefinition.Builder#tokens`. Spacing tokens
+/// scale with the density token.
 public final class Tokens {
 
   public static final DesignToken.FontFamily FONT_BODY =
@@ -106,6 +109,7 @@ public final class Tokens {
 
   private final Map<String, DesignToken> entries = new LinkedHashMap<>();
 
+  /// Creates a registry holding every default token.
   public Tokens() {
     for (var token :
         new DesignToken[] {
@@ -168,11 +172,13 @@ public final class Tokens {
     register(CONTROL_FG);
   }
 
+  /// Adds `token`, or replaces the token with the same name in place. Returns this registry.
   public Tokens register(DesignToken token) {
     entries.put(token.name(), token);
     return this;
   }
 
+  /// Every registered token, in registration order. The view is read-only.
   public Collection<DesignToken> all() {
     return Collections.unmodifiableCollection(entries.values());
   }

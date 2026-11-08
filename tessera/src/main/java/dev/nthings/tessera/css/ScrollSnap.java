@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A `scroll-snap-type`: snapping axis and strictness.
+/// A `scroll-snap-type`: snapping axis and strictness. Applied with
+/// [ScrollStyled#scrollSnapType].
 public record ScrollSnap(Axis axis, Strictness strictness) implements CssValue {
 
   public enum Axis implements CssKeyword {
@@ -16,6 +17,7 @@ public record ScrollSnap(Axis axis, Strictness strictness) implements CssValue {
     MANDATORY
   }
 
+  /// `<axis> mandatory`: snaps to child positions along `axis`, always.
   public static ScrollSnap mandatory(Axis axis) {
     return new ScrollSnap(axis, Strictness.MANDATORY);
   }

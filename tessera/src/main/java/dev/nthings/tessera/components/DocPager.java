@@ -18,9 +18,12 @@ import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
 
-/// Prev/next navigation cards between documentation pages.
+/// Previous and next page cards in a `<nav>`. Each card shows "← Previous" or "Next →" above the
+/// page title; those labels are fixed English. The cards sit side by side when the nearest ancestor
+/// container, such as the one `Toc.docLayout` sets, is 36rem or wider. Otherwise they stack.
 public final class DocPager implements RenderView, FluentBuilder<DocPager> {
 
+  /// A page link: its `href` and the `title` shown in the card.
   public record PageRef(String href, String title) {}
 
   private @Nullable PageRef prev;
@@ -32,14 +35,17 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
     this.next = next;
   }
 
+  /// Creates a pager with an optional previous and next page. A null side is omitted.
   public static DocPager of(@Nullable PageRef prev, @Nullable PageRef next) {
     return new DocPager(prev, next);
   }
 
+  /// Creates a pager with only a previous page link.
   public static DocPager prev(String href, String title) {
     return new DocPager(new PageRef(href, title), null);
   }
 
+  /// Creates a pager with only a next page link.
   public static DocPager next(String href, String title) {
     return new DocPager(null, new PageRef(href, title));
   }
@@ -49,26 +55,33 @@ public final class DocPager implements RenderView, FluentBuilder<DocPager> {
     return this;
   }
 
-  /// Accessible name of the landmark; make it distinct when a page has several pagers.
+  /// Accessible name of the landmark; make it distinct when a page has several pagers. The default
+  /// is `Documentation navigation`.
   public DocPager label(String label) {
     this.label = label;
     return this;
   }
 
+  /// Sets the previous page link, replacing any earlier one.
   public DocPager prevPage(String href, String title) {
     this.prev = new PageRef(href, title);
     return this;
   }
 
+  /// Sets the next page link, replacing any earlier one.
   public DocPager nextPage(String href, String title) {
     this.next = new PageRef(href, title);
     return this;
   }
 
+  /// Returns the previous page link set on this pager, or `null` if there is none. This reads the
+  /// link; it is not the [#prev(String, String)] factory.
   public @Nullable PageRef prev() {
     return prev;
   }
 
+  /// Returns the next page link set on this pager, or `null` if there is none. This reads the
+  /// link; it is not the [#next(String, String)] factory.
   public @Nullable PageRef next() {
     return next;
   }

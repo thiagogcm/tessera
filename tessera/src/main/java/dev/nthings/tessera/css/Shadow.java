@@ -2,7 +2,7 @@ package dev.nthings.tessera.css;
 
 import org.jspecify.annotations.Nullable;
 
-/// One `box-shadow` layer.
+/// One `box-shadow` layer. Applied with [BoxStyled#shadow].
 public record Shadow(
     boolean inset,
     CssLength offsetX,
@@ -12,11 +12,13 @@ public record Shadow(
     CssColor color)
     implements CssValue {
 
+  /// A drop shadow without spread, as `0 <offsetY> <blur> <color>`.
   public static Shadow drop(CssLength offsetY, CssLength blur, CssColor color) {
     return new Shadow(false, CssLength.zero(), offsetY, blur, null, color);
   }
 
-  /// Vertical offset that also grows or shrinks by `spread`.
+  /// A drop shadow that also grows or shrinks by `spread`, as `0 <offsetY> <blur> <spread>
+  /// <color>`.
   public static Shadow drop(CssLength offsetY, CssLength blur, CssLength spread, CssColor color) {
     return new Shadow(false, CssLength.zero(), offsetY, blur, spread, color);
   }

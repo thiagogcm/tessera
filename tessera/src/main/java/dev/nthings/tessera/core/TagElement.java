@@ -13,10 +13,12 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity].
+/// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity]. Authors usually
+/// create one through the [Elements] factories.
 ///
-/// Features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an
-/// anonymous [ElementRef] automatically.
+/// Features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an anonymous
+/// [ElementRef] automatically. Call [#id(ElementRef)] or [#id(String)] before them, because binding
+/// a different ref afterwards throws IllegalStateException.
 public final class TagElement
     implements Element,
         InteractiveElement<TagElement>,
@@ -36,6 +38,7 @@ public final class TagElement
   private @Nullable TransitionKey transitionKey;
   private final @Nullable SourceLocation source;
 
+  /// Creates an element for `tag`. Authors normally use the [Elements] factories.
   public TagElement(TagName tag) {
     this(tag, SourceProvenance.capture());
   }
@@ -66,11 +69,12 @@ public final class TagElement
     return this;
   }
 
-  /// The authoring call site, present only while JVM source tracking is active.
+  /// Compiler-facing: the authoring call site, present only while source tracking is active.
   public @Nullable SourceLocation source() {
     return source;
   }
 
+  /// Compiler-facing: the emitted tag name.
   public TagName tag() {
     return tag;
   }
@@ -95,10 +99,13 @@ public final class TagElement
     return idReferences;
   }
 
+  /// Compiler-facing: the child elements in the order they were added.
   public List<Element> childrenList() {
     return children;
   }
 
+  /// Appends `child`. Throws IllegalStateException if this is a void element, which cannot have
+  /// children.
   @Override
   public void appendChild(Element child) {
     if (tag.isVoid()) {
@@ -108,7 +115,10 @@ public final class TagElement
     children.add(child);
   }
 
-  /// Binds `elementRef` here; its DOM id resolves at this site.
+  /// Binds `elementRef` to this element; its DOM id is resolved on the page. Throws
+  /// IllegalStateException if this element already has a different ref. That includes an anonymous
+  /// ref bound by [#ref()], [#anchorName()], [#interestTooltip(UnaryOperator)], or by this element
+  /// being the target of `command` or `dispatchAction`. Call this first.
   public TagElement id(ElementRef elementRef) {
     if (ref != null && ref != elementRef) {
       throw new IllegalStateException("Element already bound to " + ref);
@@ -117,12 +127,16 @@ public final class TagElement
     return this;
   }
 
-  /// Binds a fresh [ElementRef#named(String)] ref.
+  /// Binds a new [ElementRef#named(String)] for `name`. Inside a view the DOM id gets the view's
+  /// prefix, so `id("foo")` in a view emits `<scope>--foo`, not `foo`. Link to it with an
+  /// [ElementRef] rather than a hand-written `#foo`. Calling this twice on one element throws
+  /// IllegalStateException, because each call makes a different ref.
   public TagElement id(String name) {
     return id(ElementRef.named(name));
   }
 
-  /// This element's ref, binding an anonymous one if none was set.
+  /// Returns this element's ref, binding an anonymous one if none is set. Its DOM id is
+  /// `<tag>-<n>`, numbered per view scope.
   public ElementRef ref() {
     if (ref == null) {
       ref = ElementRef.anonymous();
@@ -130,20 +144,27 @@ public final class TagElement
     return ref;
   }
 
+  /// Compiler-facing: the ref bound to this element, or `null` if none is bound.
   public @Nullable ElementRef boundRef() {
     return ref;
   }
 
+  /// Binds `target`'s ref (anonymously if unset), then behaves as
+  /// [InteractiveElement#command(ElementRef, BuiltinCommand)].
   public TagElement command(TagElement target, BuiltinCommand command) {
     return command(target.ref(), command);
   }
 
+  /// Binds `target`'s ref (anonymously if unset), then behaves as
+  /// [InteractiveElement#dispatchAction(ElementRef, Action)].
   public TagElement dispatchAction(TagElement target, Action action) {
     return dispatchAction(target.ref(), action);
   }
 
-  /// Tooltip emitted as the next sibling (`interestfor` + `popover="hint"`), above the element with
-  /// flip fallbacks unless `tooltipBuilder` overrides it.
+  /// Adds a hint tooltip that this element's `interestfor` points at, shown on hover or focus. The
+  /// tooltip is emitted right after this element and positioned above it, with flip fallbacks.
+  /// `tooltipBuilder` receives the default tooltip, a `<span>` with `popover="hint"` and
+  /// `role="tooltip"`, and returns the one to emit. Binds this element's ref.
   public TagElement interestTooltip(UnaryOperator<TagElement> tooltipBuilder) {
     ref();
     var base =
@@ -158,38 +179,47 @@ public final class TagElement
     return this;
   }
 
+  /// Compiler-facing: the tooltip element, or `null` if none was added.
   public @Nullable TagElement interestTooltip() {
     return interestTooltip;
   }
 
-  /// Declares `anchor-name` derived from this element's DOM id.
+  /// Declares an anchor named after this element's DOM id, so [#anchoredTo] elements can position
+  /// against it. Binds this element's ref.
   public TagElement anchorName() {
     ref();
     this.anchorSelf = true;
     return this;
   }
 
+  /// Compiler-facing: whether [#anchorName()] was called.
   public boolean isAnchor() {
     return anchorSelf;
   }
 
-  /// Positions this element against `anchor` (which must be laid out earlier on the page).
+  /// Positions this element against `anchor`, with `area` and the given fallbacks. The anchor must
+  /// call [#anchorName()] and be laid out earlier on the page. Otherwise the position names
+  /// nothing, and no error is reported. An unbound `anchor` is reported as `unbound-reference`.
   public TagElement anchoredTo(
       ElementRef anchor, PositionArea area, PositionTry firstFallback, PositionTry... fallbacks) {
     this.anchorTarget = anchor;
     return positionArea(area).positionTryFallbacks(firstFallback, fallbacks);
   }
 
+  /// Compiler-facing: the element this one is positioned against, or `null`.
   public @Nullable ElementRef anchorTarget() {
     return anchorTarget;
   }
 
+  /// Sets the cross-document transition key, which emits `view-transition-name`. See
+  /// [TransitionKey].
   @Override
   public TagElement transitionKey(TransitionKey key) {
     this.transitionKey = key;
     return this;
   }
 
+  /// Compiler-facing: the transition key, or `null` if none was set.
   public @Nullable TransitionKey transitionKey() {
     return transitionKey;
   }

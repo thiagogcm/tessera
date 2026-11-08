@@ -24,9 +24,12 @@ import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// `<aside role="note">` admonition; tint is `color-mix(in oklab, <tone> 14%, card surface)`.
+/// Admonition rendered as an `<aside role="note">` with a tone-colored icon, a title, and a tinted
+/// background. Create one with a tone factory such as [#note(String)]. The title defaults to the
+/// English name of the tone; [#title(String)] replaces it.
 public final class Callout implements RenderView, FluentBuilder<Callout>, ParentElement<Callout> {
 
+  /// Admonition kind, each with its own icon, color, and default title.
   public enum Tone {
     NOTE(
         "Note",
@@ -59,14 +62,17 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
       this.iconSvg = iconSvg;
     }
 
+    /// Compiler-facing: the title shown when no custom title is set.
     public String defaultTitle() {
       return defaultTitle;
     }
 
+    /// Compiler-facing: the color that tints the icon, the border, and the background.
     public DesignToken.Color token() {
       return token;
     }
 
+    /// Compiler-facing: the inline SVG markup of the tone's icon.
     public String iconSvg() {
       return iconSvg;
     }
@@ -120,10 +126,12 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
     return of(Tone.CAUTION, elements);
   }
 
+  /// Creates a callout of `tone` whose body is one paragraph of `text`.
   public static Callout of(Tone tone, String text) {
     return new Callout(tone).child(Elements.p().text(text));
   }
 
+  /// Creates a callout of `tone` whose body is `elements`.
   public static Callout of(Tone tone, IntoElement... elements) {
     return new Callout(tone).children(elements);
   }
@@ -133,6 +141,7 @@ public final class Callout implements RenderView, FluentBuilder<Callout>, Parent
     return this;
   }
 
+  /// Sets the header title, replacing the tone's default title.
   public Callout title(String title) {
     this.customTitle = title;
     return this;

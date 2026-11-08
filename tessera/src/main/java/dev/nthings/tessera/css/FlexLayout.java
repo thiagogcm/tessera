@@ -1,30 +1,32 @@
 package dev.nthings.tessera.css;
 
-/// Apply with [Styled#layout(FlexLayout)]. Copied into the element's [StyleRefinement], so a later
-/// declaration replaces only that property. Block and inline layouts are separate choices.
+/// A flex layout preset, applied with [LayoutStyled#layout(FlexLayout)]. The preset is copied into
+/// the element's [StyleRefinement], so a later declaration replaces only that property. Block and
+/// inline layouts are separate choices.
 public record FlexLayout(
     Display display, Direction direction, CssLength gap, Align align, Wrap wrap) {
 
-  /// Block flex, along the inline axis.
+  /// Block flex with `flex-direction: row`.
   public static FlexLayout row(CssLength gap, Align align, Wrap wrap) {
     return new FlexLayout(Display.FLEX, Direction.ROW, gap, align, wrap);
   }
 
-  /// Block flex, along the block axis.
+  /// Block flex with `flex-direction: column`.
   public static FlexLayout column(CssLength gap, Align align, Wrap wrap) {
     return new FlexLayout(Display.FLEX, Direction.COLUMN, gap, align, wrap);
   }
 
-  /// Inline flex, along the inline axis. The container stays on the surrounding line.
+  /// Inline flex with `flex-direction: row`. The container stays on the surrounding line.
   public static FlexLayout inlineRow(CssLength gap, Align align, Wrap wrap) {
     return new FlexLayout(Display.INLINE_FLEX, Direction.ROW, gap, align, wrap);
   }
 
-  /// Inline flex, along the block axis. The container stays on the surrounding line.
+  /// Inline flex with `flex-direction: column`. The container stays on the surrounding line.
   public static FlexLayout inlineColumn(CssLength gap, Align align, Wrap wrap) {
     return new FlexLayout(Display.INLINE_FLEX, Direction.COLUMN, gap, align, wrap);
   }
 
+  /// Writes this layout's declarations into `style`; [LayoutStyled#layout(FlexLayout)] calls it.
   public StyleRefinement apply(StyleRefinement style) {
     return style
         .put(CssProperty.DISPLAY, display)
@@ -34,16 +36,19 @@ public record FlexLayout(
         .put(CssProperty.GAP, gap);
   }
 
+  /// The `display` of a flex layout: block or inline flex.
   public enum Display implements CssKeyword {
     FLEX,
     INLINE_FLEX
   }
 
+  /// The `flex-direction` of a flex layout.
   public enum Direction implements CssKeyword {
     ROW,
     COLUMN
   }
 
+  /// Cross-axis alignment (`align-items`). `START` and `END` emit `flex-start` and `flex-end`.
   public enum Align implements CssKeyword {
     START,
     CENTER,
@@ -61,6 +66,7 @@ public record FlexLayout(
     }
   }
 
+  /// The `flex-wrap` of a flex layout.
   public enum Wrap implements CssKeyword {
     NOWRAP,
     WRAP

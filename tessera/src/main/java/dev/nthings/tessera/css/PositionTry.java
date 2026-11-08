@@ -3,7 +3,8 @@ package dev.nthings.tessera.css;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/// One `position-try-fallbacks` candidate: flips tried together on overflow.
+/// One `position-try-fallbacks` candidate: flips tried together on overflow. Applied with
+/// [AnchorStyled#positionTryFallbacks].
 public record PositionTry(List<Flip> flips) implements CssValue {
 
   /// Axes an anchored element can flip across its anchor.
@@ -25,6 +26,8 @@ public record PositionTry(List<Flip> flips) implements CssValue {
     flips = List.copyOf(flips);
   }
 
+  /// A candidate that applies `flips` together, as `flip-<flip> ...`. Throws
+  /// IllegalArgumentException if no flips are given.
   public static PositionTry flip(Flip... flips) {
     return new PositionTry(List.of(flips));
   }

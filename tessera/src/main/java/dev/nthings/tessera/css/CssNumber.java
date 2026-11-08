@@ -5,6 +5,7 @@ package dev.nthings.tessera.css;
 public sealed interface CssNumber extends CssValue
     permits CssNumber.Literal, CssNumber.Reference, CssNumber.Sibling, DesignToken.Number {
 
+  /// A literal number.
   record Literal(double value) implements CssNumber {
     @Override
     public String toCss() {
@@ -35,10 +36,13 @@ public sealed interface CssNumber extends CssValue
     }
   }
 
+  /// A literal number, such as `1.5`.
   static CssNumber of(double value) {
     return new Literal(value);
   }
 
+  /// `var(--name)` of a number-valued custom property. Throws IllegalArgumentException unless
+  /// `customProperty` is dashed.
   static CssNumber property(CssIdent customProperty) {
     return new Reference(customProperty);
   }

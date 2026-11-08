@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Immutable snapshot of a compiled page's element tree, for inspection.
-///
-/// Source locations are present only while [dev.nthings.tessera.render.SourceTracking] is active.
-/// Obtain a tree from [PreparedPage#tree()] or [PageCompiler#explain(PageDocument)].
+/// Immutable snapshot of a compiled page's element tree, for inspection. Source locations are
+/// present only while [SourceTracking] is active. Obtain a tree from [PreparedPage#tree()] or
+/// [PageCompiler#explain(PageDocument)].
 public record PageTree(List<Node> head, List<Node> body) {
 
   public PageTree {
@@ -18,13 +17,12 @@ public record PageTree(List<Node> head, List<Node> body) {
     body = List.copyOf(body);
   }
 
+  /// A node in the snapshot: an element, text, or trusted raw HTML.
   public sealed interface Node permits Element, Text, Raw {}
 
-  /// An element after expansion and linking.
-  ///
-  /// @param componentPath enclosing components, outermost first; view entries carry their instance
-  ///     scope
-  /// @param source where authoring code built the element, if tracked
+  /// An element after expansion and linking. The component path lists the enclosing components,
+  /// outermost first; view entries include their instance scope. The source is where authoring
+  /// code built the element, when tracked.
   public record Element(
       String tag,
       List<String> componentPath,
@@ -54,7 +52,7 @@ public record PageTree(List<Node> head, List<Node> body) {
   /// Trusted raw HTML, not inspected by compilation.
   public record Raw(int length) implements Node {}
 
-  /// Indented text, one line per node.
+  /// Renders the tree as indented text, with `<head>` and `<body>` sections and one line per node.
   public String toText() {
     var out = new StringBuilder();
     appendSection(out, "head", head);

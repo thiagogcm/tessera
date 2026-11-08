@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.owasp.encoder.Encode;
 
-/// A `content` value, or a custom property holding a string.
+/// A `content` value: text, a counter, or a string custom property, combined as needed. Set it
+/// with [LayoutStyled#content(CssContent)].
 public sealed interface CssContent extends CssValue
     permits CssContent.Text,
         CssContent.Counter,
@@ -28,7 +29,7 @@ public sealed interface CssContent extends CssValue
     }
   }
 
-  /// `var(--name)` of a custom property that holds a string.
+  /// `var(--name)` of a custom property that holds a string; `name` must be dashed.
   record Property(CssIdent name) implements CssContent {
     public Property {
       name.requireCustom();
@@ -60,37 +61,43 @@ public sealed interface CssContent extends CssValue
     }
   }
 
+  /// A quoted, CSS-escaped string, such as `"Slide "`.
   static CssContent text(String value) {
     return new Text(value);
   }
 
+  /// `""`.
   static CssContent empty() {
     return new Text("");
   }
 
+  /// `counter(name)`.
   static CssContent counter(CssIdent name) {
     return new Counter(name);
   }
 
+  /// `var(--name)`. Throws IllegalArgumentException unless `customProperty` is dashed.
   static CssContent property(CssIdent customProperty) {
     return new Property(customProperty);
   }
 
+  /// The parts joined with spaces.
   static CssContent sequence(CssContent... parts) {
     return new Sequence(List.of(parts));
   }
 
-  /// A glyph hidden from assistive technology.
+  /// `"glyph" / ""`: a glyph hidden from assistive technology.
   static CssContent decorative(String glyph) {
     return new Alternative(text(glyph), empty());
   }
 
-  /// A glyph that assistive technology announces as `name`.
+  /// `"glyph" / "name"`: a glyph that assistive technology announces as `name`.
   static CssContent labelled(String glyph, String name) {
     return new Alternative(text(glyph), text(name));
   }
 
-  /// `content` that assistive technology reads as the concatenation of `alternative`.
+  /// `content / "alternative"`: `content` that assistive technology reads as the concatenation of
+  /// `alternative`.
   static CssContent withAlternative(CssContent content, CssContent... alternative) {
     return new Alternative(content, sequence(alternative));
   }

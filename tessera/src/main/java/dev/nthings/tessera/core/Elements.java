@@ -2,21 +2,28 @@ package dev.nthings.tessera.core;
 
 import java.util.function.Function;
 
-/// Factory entry points for semantic HTML5 elements and deferred overlays.
+/// Static factories for element trees, usually imported statically. Most [HtmlTag] values have a
+/// factory returning a mutable [TagElement]; tags without one, such as `time`, are built with
+/// [#el(TagName)]. Also [#fragment()], [#text], [#custom], [#rawHtml], [#deferred] and [#late].
 public final class Elements {
 
   private Elements() {}
 
+  /// Creates an element for any tag, including those without a factory here, such as
+  /// `HtmlTag.TIME`. Text children are HTML-escaped, so `script` and `style` content needs
+  /// [#rawHtml].
   public static TagElement el(TagName tag) {
     return new TagElement(tag);
   }
 
-  /// Element with an author-defined name, such as `my-widget`.
+  /// Creates an autonomous custom element, such as `<my-widget>`. Throws IllegalArgumentException
+  /// unless the name is lowercase and contains a hyphen. Pair it with a [ClientBehavior] registered
+  /// through [RenderContext#contributeBehavior].
   public static TagElement custom(String name) {
     return new TagElement(new CustomElement(name));
   }
 
-  /// Transparent group that emits no wrapper markup.
+  /// Creates a [FragmentElement], a transparent group that emits no wrapper markup.
   public static FragmentElement fragment() {
     return new FragmentElement();
   }
@@ -118,10 +125,12 @@ public final class Elements {
     return new TagElement(HtmlTag.DD);
   }
 
+  /// Creates a `<button type="button">`, which does not submit its form.
   public static TagElement button() {
     return new TagElement(HtmlTag.BUTTON).attr("type", "button");
   }
 
+  /// Creates a `<button type="submit">`.
   public static TagElement submitButton() {
     return new TagElement(HtmlTag.BUTTON).attr("type", "submit");
   }
@@ -186,6 +195,10 @@ public final class Elements {
     return new TagElement(HtmlTag.OUTPUT);
   }
 
+  /// Creates an `<img>` with `loading="lazy"` and `decoding="async"`. The compiler requires `alt`
+  /// (`image-alt`); an empty `alt` also needs `role="presentation"` or `aria-hidden="true"`
+  /// (`decorative-image`). It also requires `width` and `height`, or a CSS aspect ratio
+  /// (`image-dimensions`). For a hero image that needs priority loading, use `components.Image`.
   public static TagElement img(String src, String alt) {
     return new TagElement(HtmlTag.IMG)
         .attr("src", src)
@@ -338,27 +351,40 @@ public final class Elements {
     return new TagElement(HtmlTag.HR);
   }
 
+  /// Creates a text node. Its content is HTML-escaped.
   public static TextElement text(String content) {
     return new TextElement(content);
   }
 
+  /// Creates a node for pre-sanitized HTML or inline SVG, emitted verbatim without escaping,
+  /// parsing or validation. Ids, links and ARIA inside it are not checked by `duplicate-id`,
+  /// `missing-fragment`, site link validation or the accessibility rules, so never pass
+  /// user-controlled text.
   public static RawHtmlElement rawHtml(String trustedHtml) {
     return new RawHtmlElement(trustedHtml);
   }
 
+  /// Returns an element that emits no markup.
   public static EmptyElement empty() {
     return EmptyElement.INSTANCE;
   }
 
+  /// Moves `child` to the end of `<body>` at priority 0, for content that cannot sit in its
+  /// parent's content model, such as a dialog or popover inside a parent that does not allow it.
+  /// The child keeps its view scope and DOM ids.
   public static DeferredElement deferred(IntoElement child) {
     return new DeferredElement(child.intoElement(), 0);
   }
 
+  /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
+  /// equal priorities keep placement order. The child keeps its view scope and DOM ids.
   public static DeferredElement deferred(IntoElement child, int priority) {
     return new DeferredElement(child.intoElement(), priority);
   }
 
-  /// Element resolved after the rest of the page's layout; see [LateElement].
+  /// Creates an element resolved after the rest of the page is laid out, in the context where it
+  /// appears. Use it to read what other elements register, such as [RenderContext#headings()].
+  /// See [LateElement].
   public static LateElement late(Function<RenderContext, ? extends IntoElement> content) {
     return new LateElement(content);
   }

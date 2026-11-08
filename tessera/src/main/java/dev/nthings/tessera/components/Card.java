@@ -22,25 +22,31 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Four-region card (`media`, `header`, `content`, `footer`), rooted at `<article>`, or `<label>`
-/// for choice cards.
+/// Card with four regions, in source order: media, header (title and subtitle), content, and
+/// footer (actions). It renders as an `<article>`, or as a `<label>` after `choiceRadio` or
+/// `choiceCheckbox`. Create one with [#create(String)].
 ///
-/// - Regions are direct children in source order.
-/// - Media cards switch to side-by-side columns on wide containers, via `@container` and
-///   `:has(> img, > picture, > .media)`.
-/// - Interactions: [Interaction.Content], [Interaction.StretchedLink] (`a.card-link::after`
-///   overlay), [Interaction.Choice] (`:has(> input:checked)`, no border-width shift).
+/// - A card whose media is an image or a `media` region places the media beside the other regions
+///   once the card is 28rem or wider.
+/// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
+///   buttons, and form controls in the card stay clickable.
+/// - Only one of `stretchedLink`, `choiceRadio`, and `choiceCheckbox` applies; the last call wins.
 public final class Card implements RenderView, FluentBuilder<Card> {
 
+  /// How a card responds to interaction. Set it with `stretchedLink`, `choiceRadio`, or
+  /// `choiceCheckbox`; a card without one has only its own content.
   public sealed interface Interaction
       permits Interaction.Content, Interaction.StretchedLink, Interaction.Choice {
 
+    /// No interaction: the card has only its own content.
     enum Content implements Interaction {
       INSTANCE
     }
 
+    /// The title links to `href`, covering the whole card.
     record StretchedLink(String href) implements Interaction {}
 
+    /// The card is a `<label>` around a radio or checkbox input, named `name` with `value`.
     record Choice(String name, String value, boolean multiSelect, boolean checked)
         implements Interaction {}
   }
@@ -58,6 +64,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     this.id = id;
   }
 
+  /// Creates a card. `id` names its instance in the enclosing view scope, as `card-<id>`, so
+  /// repeated cards need distinct ids.
   public static Card create(String id) {
     return new Card(id);
   }
@@ -67,6 +75,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
+  /// Sets the media to an `<img>` with `alt` text, in an `aspectRatio` box, cropped to cover.
   public Card mediaImg(String src, String alt, AspectRatio aspectRatio) {
     this.media = Elements.img(src, alt).aspectRatio(aspectRatio).objectCover().fullWidth();
     return this;
@@ -84,8 +93,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
-  /// Title heading level, 2 to 6 (default 3). Match the enclosing section so the page
-  /// outline has no gaps.
+  /// Sets the title's heading level, 2 to 6 (default 3), to match the enclosing section and keep
+  /// the outline free of gaps. Throws IllegalArgumentException outside that range.
   public Card headingLevel(int level) {
     if (level < 2 || level > 6) {
       throw new IllegalArgumentException("Card heading level must be 2 to 6: " + level);
@@ -94,21 +103,26 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
+  /// Sets the title, rendered as the card heading. An empty title renders no heading, so the
+  /// subtitle and any stretched link are not rendered either.
   public Card title(String heading) {
     this.headingText = heading;
     return this;
   }
 
+  /// Sets muted text under the title. It is rendered only when the card has a title.
   public Card subtitle(String subtitle) {
     this.subtitleText = subtitle;
     return this;
   }
 
+  /// Adds a paragraph to the content region.
   public Card bodyText(String paragraph) {
     this.contentItems.add(Elements.p().textPretty().text(paragraph));
     return this;
   }
 
+  /// Adds items to the content region, in order.
   public Card content(IntoElement... items) {
     for (var item : items) {
       this.contentItems.add(item.intoElement());
@@ -116,6 +130,7 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
+  /// Adds links or buttons to the footer region, which is omitted when there are none.
   public Card action(IntoElement... actions) {
     for (var action : actions) {
       this.footerActions.add(action.intoElement());
@@ -123,16 +138,22 @@ public final class Card implements RenderView, FluentBuilder<Card> {
     return this;
   }
 
+  /// Makes the title a link to `href` that covers the whole card. Without a title, no link is
+  /// rendered.
   public Card stretchedLink(String href) {
     this.interaction = new Interaction.StretchedLink(href);
     return this;
   }
 
+  /// Makes the card a radio choice: a `<label>` around a radio input in the `groupName` group with
+  /// `value`, checked when `checked` is true.
   public Card choiceRadio(String groupName, String value, boolean checked) {
     this.interaction = new Interaction.Choice(groupName, value, false, checked);
     return this;
   }
 
+  /// Makes the card a checkbox choice: a `<label>` around a checkbox input named `name` with
+  /// `value`, checked when `checked` is true.
   public Card choiceCheckbox(String name, String value, boolean checked) {
     this.interaction = new Interaction.Choice(name, value, true, checked);
     return this;

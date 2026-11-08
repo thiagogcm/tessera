@@ -10,8 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// Reusable layout and validation result. Metadata is snapshotted; the linked tree and
-/// stylesheet collector stay with the compiler.
+/// A page that has been laid out and validated but not yet painted to HTML. Obtain one from
+/// [PageCompiler#prepare], then paint it with [PageCompiler#paintPrepared]. `SiteCompiler` uses
+/// it to check links across pages and to merge stylesheets before painting. The page's element
+/// tree stays private; read it through [#tree()].
 public final class PreparedPage {
   private final PageDocument document;
   private final StyleSheetCollector styles;
@@ -57,19 +59,23 @@ public final class PreparedPage {
     return headNodes;
   }
 
+  /// Compiler-facing: DOM ids declared on this page, for checking fragment links across pages.
   public Set<String> registeredDomIds() {
     return registeredDomIds;
   }
 
-  /// First authoring location of each outgoing URL, for cross-route diagnostics.
+  /// Compiler-facing: the first authoring location of each outgoing URL, for cross-route
+  /// diagnostics.
   public Map<String, CompilationLocation> outgoingLinks() {
     return outgoingLinks;
   }
 
+  /// Compiler-facing: the first authoring location of each transition key on this page.
   public Map<TransitionKey, CompilationLocation> transitionLocations() {
     return transitionLocations;
   }
 
+  /// Navigation headings registered while the page was built, in registration order.
   public List<DocumentHeading> headings() {
     return headings;
   }
@@ -79,15 +85,17 @@ public final class PreparedPage {
     return behaviors;
   }
 
+  /// An inspection snapshot of this page's element tree, as a [PageTree].
   public PageTree tree() {
     return PageTree.of(headNodes, bodyNodes);
   }
 
+  /// Returns this page's own CSS under `tokens`, without any shared site stylesheet.
   public String stylesheet(Tokens tokens) {
     return styles.toCssStylesheet(tokens);
   }
 
-  /// Copies this page's CSS into a site-owned collector without exposing its state.
+  /// Compiler-facing: copies this page's CSS into `target`, a site-level stylesheet collector.
   public void contributeStylesTo(StyleSheetCollector target) {
     target.mergeFrom(styles);
   }

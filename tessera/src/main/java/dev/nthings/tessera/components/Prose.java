@@ -15,8 +15,10 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Typographic container with proportional vertical rhythm, fluid font sizing, and a readable
-/// measure (line length).
+/// Container for long-form text. It spaces paragraphs, lists, headings, quotes and rules, and
+/// limits the line length to 75ch unless [#maxMeasure(CssLength)] changes it. Create one with
+/// [#of(IntoElement...)], or with [#create(String)] when a second container shares its view
+/// scope. Paragraphs with a class attribute keep their own styling.
 public final class Prose implements RenderView, ParentElement<Prose> {
 
   private final ElementId id;
@@ -27,12 +29,15 @@ public final class Prose implements RenderView, ParentElement<Prose> {
     this.id = id;
   }
 
+  /// Creates a prose container with the id `prose` containing `elements`. Two containers with
+  /// that id in one view scope share ids; use [#create(String)] for the second.
   public static Prose of(IntoElement... elements) {
     var prose = new Prose(ElementId.of("prose"));
     prose.children(elements);
     return prose;
   }
 
+  /// Creates an empty prose container with the given `id`, unique within its view scope.
   public static Prose create(String id) {
     return new Prose(ElementId.of(id));
   }
@@ -47,6 +52,7 @@ public final class Prose implements RenderView, ParentElement<Prose> {
     children.add(child);
   }
 
+  /// Sets the maximum line length of the container. The default is 75ch.
   public Prose maxMeasure(CssLength measure) {
     this.maxMeasure = measure;
     return this;

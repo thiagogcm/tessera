@@ -92,6 +92,7 @@ public sealed interface GridTrack extends CssValue
     return new MinMax(min, max);
   }
 
+  /// `repeat(<count>, <tracks>)`. Throws IllegalArgumentException if `count` is below 1.
   static GridTrack repeat(int count, GridTrack... tracks) {
     return new Repeat(count, List.of(tracks));
   }

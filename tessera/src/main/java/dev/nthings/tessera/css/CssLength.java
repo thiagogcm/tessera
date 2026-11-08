@@ -3,6 +3,9 @@ package dev.nthings.tessera.css;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+/// A CSS length: a dimension (`px`, `rem`, ...), `0`, `auto`, `clamp()` from [#fluid], `min()` or
+/// `max()`, `calc()` from [#plus], [#minus], [#times], and [#dividedBy], `anchor()` from [#anchor],
+/// or a length token ([DesignToken.Length]).
 public sealed interface CssLength extends CssValue
     permits CssLength.Dimension,
         CssLength.Zero,
@@ -14,7 +17,7 @@ public sealed interface CssLength extends CssValue
         CssLength.Anchor,
         DesignToken.Length {
 
-  /// Formats `value` with at most three fraction digits (half-even) and no trailing zeros.
+  /// Compiler-facing: formats `value` for CSS, with at most three fraction digits.
   static String formatNumber(double value) {
     return new BigDecimal(value)
         .setScale(3, RoundingMode.HALF_EVEN)
@@ -22,7 +25,8 @@ public sealed interface CssLength extends CssValue
         .toPlainString();
   }
 
-  /// Compound expressions are parenthesized, so nesting keeps evaluation order.
+  /// Compiler-facing: the form used as an operand inside `calc()`. Compound expressions are
+  /// parenthesized, so nesting keeps evaluation order.
   default String operand() {
     return toCss();
   }
@@ -47,6 +51,7 @@ public sealed interface CssLength extends CssValue
     return new Scaled(this, divisor, true);
   }
 
+  /// CSS length units and their suffixes.
   enum Unit {
     PX("px"),
     REM("rem"),
@@ -69,6 +74,7 @@ public sealed interface CssLength extends CssValue
     }
   }
 
+  /// A number with a unit, such as `12px`.
   record Dimension(double value, Unit unit) implements CssLength {
     @Override
     public String toCss() {
@@ -86,6 +92,7 @@ public sealed interface CssLength extends CssValue
     }
   }
 
+  /// The `auto` keyword.
   enum Auto implements CssLength {
     INSTANCE;
 
@@ -95,6 +102,7 @@ public sealed interface CssLength extends CssValue
     }
   }
 
+  /// `clamp(min, preferred, max)`.
   record Fluid(CssLength min, CssLength preferred, CssLength max) implements CssLength {
     @Override
     public String toCss() {
@@ -161,63 +169,78 @@ public sealed interface CssLength extends CssValue
     }
   }
 
+  /// A length in pixels, such as `12px`.
   static CssLength px(double value) {
     return new Dimension(value, Unit.PX);
   }
 
+  /// A length in root font sizes, such as `1rem`.
   static CssLength rem(double value) {
     return new Dimension(value, Unit.REM);
   }
 
+  /// A length in the element's font size, such as `1em`.
   static CssLength em(double value) {
     return new Dimension(value, Unit.EM);
   }
 
+  /// A length in the width of the `0` glyph, such as `2ch`.
   static CssLength ch(double value) {
     return new Dimension(value, Unit.CH);
   }
 
-  /// A multiple of the element's computed line height.
+  /// A multiple of the element's computed line height, such as `1.5lh`.
   static CssLength lh(double value) {
     return new Dimension(value, Unit.LH);
   }
 
+  /// A percentage, such as `50%`.
   static CssLength pct(double value) {
     return new Dimension(value, Unit.PERCENT);
   }
 
+  /// A percentage of the nearest query container's inline size, such as `50cqi`.
   static CssLength cqi(double value) {
     return new Dimension(value, Unit.CQI);
   }
 
+  /// A percentage of the dynamic viewport height, such as `100dvh`.
   static CssLength dvh(double value) {
     return new Dimension(value, Unit.DVH);
   }
 
+  /// A percentage of the dynamic viewport width, such as `100dvw`.
   static CssLength dvw(double value) {
     return new Dimension(value, Unit.DVW);
   }
 
+  /// `0`, valid wherever a length is.
   static CssLength zero() {
     return Zero.INSTANCE;
   }
 
+  /// `auto`. Not valid for padding or gap; the methods that take those do not reject it.
   static CssLength auto() {
     return Auto.INSTANCE;
   }
 
+  /// `clamp(min, preferred, max)`: `preferred`, kept between `min` and `max`.
   static CssLength fluid(CssLength min, CssLength preferred, CssLength max) {
     return new Fluid(min, preferred, max);
   }
 
+  /// `min(first, second)`.
   static CssLength min(CssLength first, CssLength second) {
     return new Extremum(first, second, false);
   }
 
+  /// `max(first, second)`.
   static CssLength max(CssLength first, CssLength second) {
     return new Extremum(first, second, true);
   }
 
+  /// `anchor(side)`: an edge of the position anchor, for inset properties such as
+  /// [LayoutStyled#insetBlockStart(CssLength)].
   static CssLength anchor(AnchorSide side) {
     return new Anchor(side);
   }

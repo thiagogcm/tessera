@@ -4,22 +4,27 @@ import dev.nthings.tessera.css.CssLength;
 import java.util.List;
 import java.util.Map;
 
-/// Typed WAI-ARIA authoring: role, accessible name and states.
+/// Typed WAI-ARIA authoring: role, accessible name and states on an element builder.
 ///
-/// Each `aria-*` attribute has a method taking its accepted type. The generic attribute methods
-/// refuse `role` and `aria-*`, so semantics are never written as text. The compiler checks the
-/// result against the [Role] requirements.
-///
-/// @param <SELF> concrete element type
+/// Each `aria-*` attribute has a method taking the type it accepts. The generic attribute method,
+/// [InteractiveElement#attr], refuses `role` and `aria-*`, so use these methods for them. The
+/// compiler checks the result against the [Role] requirements.
 public interface Accessible<SELF extends Accessible<SELF>> {
 
+  /// Returns this builder, typed as `SELF`.
   SELF self();
 
+  /// Returns the live attribute map of the element that will be emitted. A wrapper builder must
+  /// return the map of the element it delegates to, not a copy, so typed methods take effect.
+  /// Entries are emitted as written, except that a bound [ElementRef] replaces `id` and generated
+  /// style classes are appended to `class`. A literal `id` is not scoped to its view scope.
   Map<String, String> attributes();
 
-  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler.
+  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler. Returns
+  /// the live map, under the same delegation rule as [#attributes()].
   Map<String, IdReference> idReferences();
 
+  /// Value of `aria-current`, marking the item that is current within a set.
   enum Current implements WireToken {
     PAGE,
     STEP,
@@ -52,21 +57,25 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     DIALOG
   }
 
+  /// Sets `role`. The compiler checks the required name, children and attributes of the role.
   default SELF role(Role role) {
     attributes().put("role", role.wireValue());
     return self();
   }
 
-  /// The accessible name, as text.
+  /// Sets `aria-label`, the accessible name as text.
   default SELF ariaLabel(String label) {
     return set("aria-label", label);
   }
 
-  /// Accessible name from the bound `labels` elements.
+  /// Sets `aria-labelledby` to the bound `labels`, which name the element. Throws
+  /// IllegalArgumentException with no targets.
   default SELF ariaLabelledBy(ElementRef... labels) {
     return reference("aria-labelledby", labels);
   }
 
+  /// Sets `aria-describedby` to the bound `descriptions`. Throws IllegalArgumentException with no
+  /// targets.
   default SELF ariaDescribedBy(ElementRef... descriptions) {
     return reference("aria-describedby", descriptions);
   }
@@ -75,7 +84,8 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return reference("aria-errormessage", message);
   }
 
-  /// Elements this one controls, e.g. a tab's panel.
+  /// Sets `aria-controls` to the bound `controlled` elements, e.g. a tab's panel. Throws
+  /// IllegalArgumentException with no targets.
   default SELF ariaControls(ElementRef... controlled) {
     return reference("aria-controls", controlled);
   }
@@ -132,7 +142,8 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return set("aria-haspopup", popup.wireValue());
   }
 
-  /// The heading level, 1 through 6, of `role="heading"`.
+  /// Sets `aria-level`, the level of a `role="heading"`. Throws IllegalArgumentException outside
+  /// 1 through 6.
   default SELF ariaLevel(int level) {
     if (level < 1 || level > 6) {
       throw new IllegalArgumentException("aria-level must be 1 to 6: " + level);
@@ -140,7 +151,7 @@ public interface Accessible<SELF extends Accessible<SELF>> {
     return set("aria-level", Integer.toString(level));
   }
 
-  /// Shortcut keys that activate the element, e.g. `Alt+K`.
+  /// Sets `aria-keyshortcuts`, the keys that activate the element, e.g. `Alt+K`.
   default SELF ariaKeyShortcuts(String shortcuts) {
     return set("aria-keyshortcuts", shortcuts);
   }

@@ -31,8 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Popover action menu. Invoker commands toggle it, CSS anchor positioning places it with flip
-/// fallbacks, and `@starting-style` animates entry and exit.
+/// Menu of links, command buttons, and custom items, opened from a trigger button. The panel opens
+/// below the trigger, flips to another side when it does not fit, and closes on Escape or on an
+/// outside click. Create one with [#create(String, String)].
 public final class Dropdown implements RenderView {
   private ElementRef panel = ElementRef.named("panel");
 
@@ -45,10 +46,14 @@ public final class Dropdown implements RenderView {
     this.triggerLabel = triggerLabel;
   }
 
+  /// Creates a menu whose trigger reads `triggerLabel`. `id` names the instance in the enclosing
+  /// view scope. Throws IllegalArgumentException if `id` is empty.
   public static Dropdown create(String id, String triggerLabel) {
     return new Dropdown(id, triggerLabel);
   }
 
+  /// Adds a link item. A non-null `shortcutHint` is shown at its end, hidden from assistive
+  /// technology.
   public Dropdown linkItem(String href, String label, @Nullable String shortcutHint) {
     var link =
         a(href)
@@ -62,6 +67,8 @@ public final class Dropdown implements RenderView {
     return this;
   }
 
+  /// Adds a button item that runs `command` on `target`, under the rules of [Button#command].
+  /// `buttonId` is its DOM id within the menu; reusing an id fails with `duplicate-id`.
   public Dropdown commandItem(
       String buttonId, ElementRef target, BuiltinCommand command, String label) {
     var btn =
@@ -74,6 +81,7 @@ public final class Dropdown implements RenderView {
     return this;
   }
 
+  /// Adds a custom item. Give it the `dropdown-item` class to get the menu item styling.
   public Dropdown item(IntoElement customItem) {
     items.add(customItem.intoElement());
     return this;
@@ -177,13 +185,13 @@ public final class Dropdown implements RenderView {
                         start -> start.opacity(0).translate(Translation.y(CssLength.rem(-0.25)))));
   }
 
-  /// The popover panel, for toggling it from outside this view.
+  /// Returns the ref bound to the popover panel, for use as a command target outside the menu.
   public ElementRef panelRef() {
     return panel;
   }
 
-  /// Binds the panel to an app-owned ref. Reuse one ref across renders when deferred work
-  /// targets the panel.
+  /// Binds the panel to `panel` instead of a generated ref. Refs compare by identity, so pass the
+  /// same ref in every render that targets the panel.
   public Dropdown panelRef(ElementRef panel) {
     this.panel = panel;
     return this;

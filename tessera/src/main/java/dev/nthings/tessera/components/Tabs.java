@@ -30,35 +30,46 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.List;
 
-/// Navigation and in-page tabs. The active underline uses CSS Anchor Positioning
-/// (`anchor-name`, `position-anchor`, `anchor()`). Content tabs follow the ARIA tabs
-/// pattern with the bundled `tessera-tabs` behavior (roving tabindex, arrow keys).
+/// Tab bars for site navigation ([#navTabs]) and for switching between panels of content
+/// ([#contentTabs]). Both mark the active tab with an underline that slides between tabs.
 public final class Tabs {
 
   private Tabs() {}
 
+  /// Link in a [Tabs#navTabs] bar: the `href` it points to and the `label` shown.
   public record NavItem(String href, String label) {}
 
+  /// Panel of a [Tabs#contentTabs(String, List)] set: `label` names its tab and `content` fills
+  /// the panel.
   public record TabPanel(String label, Element content) {
+    /// Creates a panel whose content may contain markup.
     public static TabPanel of(String label, IntoElement content) {
       return new TabPanel(label, content.intoElement());
     }
   }
 
+  /// Creates a navigation bar of links. The item whose `href` equals `activeHref` is marked
+  /// with `aria-current="page"`; the comparison is exact, so `/guide` and `/guide/` differ.
+  /// `ariaLabel` names the `<nav>`.
   public static NavTabs navTabs(
       String id, String ariaLabel, String activeHref, List<NavItem> items) {
     return new NavTabs(ElementId.of(id), ariaLabel, activeHref, items);
   }
 
+  /// Creates in-page tabs whose tab list is named "Content tabs". Prefer
+  /// [#contentTabs(String, String, List)] to give the tab list a specific name.
   public static ContentTabs contentTabs(String id, List<TabPanel> panels) {
     return contentTabs(id, "Content tabs", panels);
   }
 
+  /// Creates in-page tabs whose tab list is named `ariaLabel`. The first panel starts selected.
+  /// Throws IllegalArgumentException if `panels` is empty.
   public static ContentTabs contentTabs(String id, String ariaLabel, List<TabPanel> panels) {
     return new ContentTabs(ElementId.of(id), ariaLabel, panels);
   }
 
-  /// Route nav bar: `ul::before` is tethered to `li.active`; sets `aria-current="page"`.
+  /// Navigation bar of links, created with [Tabs#navTabs]. The active link is marked with
+  /// `aria-current="page"`.
   public static final class NavTabs implements RenderView {
 
     private final ElementId id;
@@ -129,8 +140,10 @@ public final class Tabs {
     }
   }
 
-  /// In-page ARIA tab set with roving tabindex, driven by `tessera-tabs`. Panels stay
-  /// server-rendered; the client only switches selection and focus.
+  /// In-page tabs, created with [Tabs#contentTabs(String, List)] or its labelled overload. All
+  /// panels
+  /// are in the page; the tab behavior shows the selected one, and arrow, Home and End keys move
+  /// between tabs. Until the behavior loads, the tab bar is hidden and every panel is visible.
   public static final class ContentTabs implements RenderView {
 
     private static final ClientBehavior TABS_BEHAVIOR =

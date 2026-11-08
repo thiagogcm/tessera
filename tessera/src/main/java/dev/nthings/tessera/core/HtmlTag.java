@@ -2,7 +2,8 @@ package dev.nthings.tessera.core;
 
 import java.util.Locale;
 
-/// Semantic HTML tags with void-element classification.
+/// HTML element names known to Tessera, including the non-semantic `div` and `span`, with
+/// void-element classification.
 public enum HtmlTag implements TagName {
   DIV,
   SPAN,
@@ -93,6 +94,7 @@ public enum HtmlTag implements TagName {
     return tagName;
   }
 
+  /// Returns the level, 1 through 6, of `H1` through `H6`, or 0 for other tags.
   public int headingLevel() {
     return switch (this) {
       case H1 -> 1;
@@ -105,6 +107,8 @@ public enum HtmlTag implements TagName {
     };
   }
 
+  /// Returns the `H1` through `H6` tag for `level`. Throws IllegalArgumentException outside 1
+  /// through 6.
   public static HtmlTag heading(int level) {
     return switch (level) {
       case 1 -> H1;

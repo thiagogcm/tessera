@@ -8,8 +8,10 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.css.ScopeStyle;
 
-/// Icon-only `<button>`; `accessibleName` labels it. The icon is decorative and hidden from
-/// assistive technology. Tone, surface and size match [Button].
+/// Icon-only `<button>` created with [#of(String, IntoElement)]. The name you pass is its only
+/// accessible name, because the icon is decorative and hidden from assistive technology, so pass
+/// a non-blank name. It defaults to the neutral tone, ghost variant and medium size, and takes
+/// the same tone, variant, size, command and disabled settings as [Button].
 public final class IconButton extends ButtonBase<IconButton> implements RenderView {
 
   private final String name;
@@ -21,6 +23,7 @@ public final class IconButton extends ButtonBase<IconButton> implements RenderVi
     this.icon = icon;
   }
 
+  /// Creates an icon button named `accessibleName` that shows `icon`.
   public static IconButton of(String accessibleName, IntoElement icon) {
     return new IconButton(accessibleName, icon);
   }

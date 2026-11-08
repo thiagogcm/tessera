@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// @param <SELF> concrete element or style builder type
+/// Spacing, background, borders, shadows, outlines, and form-control presentation.
 public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SELF> {
 
   default SELF px(CssLength length) {
@@ -66,12 +66,13 @@ public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SEL
     return self();
   }
 
-  /// A single dot over a fill color.
+  /// Sets the background to a single soft-edged dot over a fill color.
   default SELF background(Background background) {
     style().put(CssProperty.BACKGROUND, background);
     return self();
   }
 
+  /// Sets the border on all four sides. [Border#none] removes it.
   default SELF border(Border border) {
     style().put(CssProperty.BORDER, border);
     return self();
@@ -118,7 +119,7 @@ public interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SEL
     return self();
   }
 
-  /// Separate, gapless table borders.
+  /// Sets `border-collapse: separate` with zero `border-spacing`, for gapless table borders.
   default SELF borderSeparateZero() {
     style().put(CssProperty.BORDER_COLLAPSE, "separate");
     style().put(CssProperty.BORDER_SPACING, CssLength.zero());

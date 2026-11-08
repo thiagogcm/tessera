@@ -12,17 +12,23 @@ import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.TrackList;
 import java.util.List;
 
-/// CSS Grid with intrinsic `auto-fit` columns, container-adaptive tracks, and bento spanning.
+/// Grid of items in columns. Create one with [#autoFit] (as many columns as fit, each at least
+/// the minimum width) or [#columns] (a fixed count). A `columns` grid stacks into one column
+/// while it is narrower than 36rem. Wrap an item in [#cell] to span columns or rows; spans apply
+/// only when the grid is 36rem or wider.
 public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, List<Element> items)
     implements RenderOnce {
 
   private static final CssIdent GRID_CONTAINER = CssIdent.of("tessera-grid");
   private static final CssLength MULTI_COL_MIN_WIDTH = CssLength.rem(36);
 
+  /// Creates a grid with as many columns as fit, each at least `minColumnWidth` wide. A grid
+  /// narrower than `minColumnWidth` gets one full-width column.
   public static Grid autoFit(CssLength minColumnWidth, CssLength gap, IntoElement... items) {
     return autoFit(minColumnWidth, gap, List.of(items));
   }
 
+  /// Creates a grid with as many columns as fit, each at least `minColumnWidth` wide.
   public static Grid autoFit(
       CssLength minColumnWidth, CssLength gap, List<? extends IntoElement> items) {
     return new Grid(
@@ -32,16 +38,22 @@ public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, L
         items.stream().map(IntoElement::intoElement).toList());
   }
 
+  /// Creates a grid of `count` equal columns that stack into one column while the grid is
+  /// narrower than 36rem. Throws IllegalArgumentException if `count` is less than 1.
   public static Grid columns(int count, CssLength gap, IntoElement... items) {
     return columns(count, gap, List.of(items));
   }
 
+  /// Creates a grid of `count` equal columns that stack into one column while the grid is
+  /// narrower than 36rem. Throws IllegalArgumentException if `count` is less than 1.
   public static Grid columns(int count, CssLength gap, List<? extends IntoElement> items) {
     var template = TrackList.of(GridTrack.repeat(count, GridTrack.flexible()));
     return new Grid(
         template, gap, count > 1, items.stream().map(IntoElement::intoElement).toList());
   }
 
+  /// Wraps `content` in a cell spanning `colSpan` columns and `rowSpan` rows. Spans apply only
+  /// when the enclosing grid is 36rem or wider; otherwise the cell takes one column and row.
   public static TagElement cell(int colSpan, int rowSpan, IntoElement content) {
     return Elements.div()
         .onContainer(GRID_CONTAINER, MULTI_COL_MIN_WIDTH, s -> s.colSpan(colSpan).rowSpan(rowSpan))

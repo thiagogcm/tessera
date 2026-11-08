@@ -1,6 +1,8 @@
 package dev.nthings.tessera.css;
 
-/// Font family, size, weight, line height, and tracking, as separate declarations.
+/// Font family, size, weight, line height, and tracking, applied with
+/// [TextStyled#typography(Typography)]. Every field is a design token except `weight`, a plain
+/// font weight.
 public record Typography(
     DesignToken.FontFamily family,
     DesignToken.Length size,
@@ -8,6 +10,7 @@ public record Typography(
     DesignToken.Number lineHeight,
     DesignToken.Length tracking) {
 
+  /// Writes the five declarations to `style`; [TextStyled#typography(Typography)] calls it.
   public StyleRefinement apply(StyleRefinement style) {
     return style
         .put(CssProperty.FONT_FAMILY, family.varReference())

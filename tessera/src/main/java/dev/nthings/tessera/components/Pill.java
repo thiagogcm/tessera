@@ -1,6 +1,7 @@
 package dev.nthings.tessera.components;
 
-/// Factory for fully rounded pill badges.
+/// Shorthand for the pill shape of [Badge]: each factory is the matching `Badge` factory followed
+/// by [Badge#pill()]. [#of(String)] is [Badge#pill(String)].
 public final class Pill {
 
   private Pill() {}

@@ -31,13 +31,17 @@ import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Pure-CSS scroll-snap carousel (`scroll-snap-type: x mandatory`). Chromium adds scroll-marker
-/// pagination and snapped-state styling; other browsers keep the scrollable track.
+/// Horizontal carousel of slides that snap into place as the user scrolls. It needs no script. The
+/// track is a focusable region named by the `ariaLabel`. Chromium also shows native previous and
+/// next buttons and slide markers; other browsers keep the scrollable track.
 public final class Carousel implements RenderView {
 
   private static final CssIdent ITEM_COUNTER = CssIdent.of("carousel-item");
 
+  /// One slide. `title` and `summary` are rendered only for slides made with [#ofText]; a slide
+  /// made with [#of] renders just its content.
   public record Slide(String title, String summary, Element content) {
+    /// Creates a slide with an `h3` title and a muted summary paragraph.
     public static Slide ofText(String title, String summary) {
       return new Slide(
           title,
@@ -51,6 +55,7 @@ public final class Carousel implements RenderView {
                   p().textColor(Tokens.TEXT_MUTED).textPretty().text(summary)));
     }
 
+    /// Creates a slide whose body is `content`. `title` and `summary` are not rendered.
     public static Slide of(String title, String summary, IntoElement content) {
       return new Slide(title, summary, content.intoElement());
     }
@@ -65,15 +70,21 @@ public final class Carousel implements RenderView {
     this.ariaLabel = ariaLabel;
   }
 
+  /// Creates a carousel with `id` as its instance id. `ariaLabel` names the track region. Throws
+  /// IllegalArgumentException if `id` is empty.
   public static Carousel create(String id, String ariaLabel) {
     return new Carousel(id, ariaLabel);
   }
 
+  /// Adds a slide with an `h3` title and a muted summary. The heading level does not follow the
+  /// page outline.
   public Carousel slide(String title, String summary) {
     slides.add(Slide.ofText(title, summary));
     return this;
   }
 
+  /// Adds a slide whose body is `content`. `title` and `summary` are not rendered, so include
+  /// them in `content` when they should appear.
   public Carousel slide(String title, String summary, IntoElement content) {
     slides.add(Slide.of(title, summary, content));
     return this;

@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// Deduplicating stylesheet collector emitting the 7-layer modern cascade: `@layer reset, base,
-/// theme, components, utilities, interactive, container;`.
+/// Compiler-facing: collects the rules of one compilation and deduplicates them. Renders the
+/// stylesheet in the layer order `reset, base, theme, components, utilities, interactive,
+/// container`.
 public final class StyleSheetCollector {
 
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
@@ -20,6 +21,8 @@ public final class StyleSheetCollector {
   private final Set<String> keyframeRules = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
 
+  /// Compiler-facing: registers an element's base, interactive and container rules, and returns
+  /// the class names that reference them.
   public List<String> registerElementStyles(
       StyleRefinement baseStyle, Interactivity interactivity) {
     var classNames = new ArrayList<String>(3);
@@ -63,12 +66,10 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  /// Registers a view's `@scope` body under a content-addressed key:
-  /// `<viewType>-<hash(scopedCss)>`. Identical bodies share one `@scope` block; collectors from
-  /// different pages merge without conflicts. Views without scoped CSS keep the bare type as
-  /// their scope boundary.
-  ///
-  /// @return the resolved `data-view` attribute value
+  /// Compiler-facing: registers the view scope for `viewType` and returns its `data-view` value,
+  /// `<viewType>-<hash>`. `scopedCss` is raw CSS, copied into the view scope without validation.
+  /// Identical bodies share one `@scope` block, and collectors from different pages merge without
+  /// conflicts. A view without scoped CSS keeps the bare type as its scope boundary.
   public String registerViewScope(String viewType, String scopedCss) {
     var safeType = Fnv1a64.sanitizeIdentifier(viewType);
     if (scopedCss.isBlank()) {
@@ -80,11 +81,13 @@ public final class StyleSheetCollector {
     return key;
   }
 
+  /// Compiler-facing: records a class whose view transition group uses the shared 0.35s timing.
   public void registerTransitionClass(String transitionClass) {
     transitionClasses.add(transitionClass);
   }
 
-  /// Merges another collector's rules into this one, in deterministic insertion order.
+  /// Compiler-facing: merges another collector's rules into this one, in deterministic insertion
+  /// order.
   public void mergeFrom(StyleSheetCollector other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
@@ -107,6 +110,8 @@ public final class StyleSheetCollector {
     return sb.toString();
   }
 
+  /// Compiler-facing: renders the complete stylesheet, with `tokens` as the `:root` custom
+  /// properties in `@layer theme`.
   public String toCssStylesheet(Tokens tokens) {
     var sb = new StringBuilder(2048);
     sb.append("@layer reset, base, theme, components, utilities, interactive, container;\n");

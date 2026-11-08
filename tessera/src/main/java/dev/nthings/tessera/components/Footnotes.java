@@ -17,8 +17,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/// Footnotes as inline `interestfor` previews plus auto-numbered, bidirectionally linked
-/// endnotes (`role="doc-endnotes"`).
+/// Numbered footnotes. Each [#ref(String, String)] shows its note as a hover or focus preview
+/// and links to an endnote, and each endnote links back to its reference. References are
+/// numbered in the order they render. Endnotes go at the end of the document unless
+/// [#section()] places them. The endnotes heading is always an `<h2>`, and link names such as
+/// "Footnote 1" are fixed English text.
 public final class Footnotes {
 
   /// Numbered footnote registered on the page; ids are fixed at the reference site.
@@ -57,22 +60,33 @@ public final class Footnotes {
     return entry;
   }
 
+  /// Creates a reference whose note is the plain text `noteText`. `id` names the footnote and
+  /// must be unique within its view scope; a duplicate throws IllegalArgumentException during
+  /// render.
   public static FootnoteRef ref(String id, String noteText) {
     return new FootnoteRef(id, Elements.text(noteText));
   }
 
+  /// Creates a reference whose note is `noteContent`, which may contain markup. The content
+  /// appears in both the preview and the endnotes, so keep element ids out of it.
   public static FootnoteRef ref(String id, IntoElement noteContent) {
     return new FootnoteRef(id, noteContent.intoElement());
   }
 
+  /// Places the endnotes list here, titled "Footnotes". Without a section, the list is appended
+  /// after the document content. Use one section per page: a second one repeats every note and
+  /// reports `duplicate-id`.
   public static FootnotesSection section() {
     return new FootnotesSection("Footnotes");
   }
 
+  /// Places the endnotes list here, titled `title`. The title is the list's heading and its
+  /// accessible name.
   public static FootnotesSection section(String title) {
     return new FootnotesSection(title);
   }
 
+  /// Inline footnote marker. Create it with [Footnotes#ref(String, String)].
   public record FootnoteRef(String id, Element content) implements RenderOnce {
 
     @Override
@@ -100,7 +114,8 @@ public final class Footnotes {
     }
   }
 
-  /// Endnotes list, rendered after layout so it covers every reference.
+  /// Endnotes list at this position. The list is filled after layout, so it covers every
+  /// reference on the page.
   public record FootnotesSection(String heading) implements RenderOnce {
 
     @Override

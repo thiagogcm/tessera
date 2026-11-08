@@ -7,8 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
-/// Static file published at `path` beside the compiled pages. Internal `href`, `src` and
-/// `poster` URLs are validated against registered assets, as routes are.
+/// Static file published at `path` beside the compiled pages. The path must start with `/` and
+/// must not end with `/`, contain `..`, or contain `//`; the content type must not be blank.
+/// Violations throw IllegalArgumentException. Internal `href`, `src` and `poster` URLs are
+/// validated against registered assets, as routes are.
 public record SiteAsset(String path, String contentType, byte[] content) {
 
   public SiteAsset {
@@ -21,16 +23,18 @@ public record SiteAsset(String path, String contentType, byte[] content) {
     content = content.clone();
   }
 
-  /// Content type inferred from the file extension.
+  /// Creates an asset with `content`, whose content type is inferred from the extension of `path`.
   public static SiteAsset of(String path, byte[] content) {
     return new SiteAsset(path, contentTypeFor(path), content);
   }
 
-  /// UTF-8 text asset (SVG, JSON, CSS, ...).
+  /// Creates a UTF-8 text asset, such as SVG, JSON or CSS.
   public static SiteAsset text(String path, String content) {
     return of(path, content.getBytes(StandardCharsets.UTF_8));
   }
 
+  /// Reads `source` into memory now and creates an asset at `path` from its bytes. Throws
+  /// UncheckedIOException if the file cannot be read.
   public static SiteAsset file(String path, Path source) {
     try {
       return of(path, Files.readAllBytes(source));
@@ -39,6 +43,7 @@ public record SiteAsset(String path, String contentType, byte[] content) {
     }
   }
 
+  /// A copy of the file's bytes.
   @Override
   public byte[] content() {
     return content.clone();

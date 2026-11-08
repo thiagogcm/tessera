@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /// Sparse, cascade-mergeable declarations and custom properties, backed by an [EnumMap]
-/// (O(1) overrides) with deterministic ordinal-ordered hashing.
+/// (O(1) overrides) with deterministic ordinal-ordered hashing. Writing a property again replaces
+/// its value. Declarations are emitted in [CssProperty] order, with shorthands before longhands, so
+/// a longhand wins over its shorthand regardless of call order.
 public final class StyleRefinement
     implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
 
@@ -50,12 +52,14 @@ public final class StyleRefinement
     return put(property, values);
   }
 
-  /// Defines custom property `name` (a dashed identifier).
+  /// Defines custom property `name`, which must be a dashed identifier such as `--gap`. Throws
+  /// IllegalArgumentException otherwise.
   public StyleRefinement customProperty(CssIdent name, CssValue value) {
     customProperties.put(name.requireCustom().value(), value.toCss());
     return this;
   }
 
+  /// Copies `other`'s declarations and custom properties into this one. `other` wins on conflicts.
   public StyleRefinement mergeFrom(StyleRefinement other) {
     declarations.putAll(other.declarations);
     customProperties.putAll(other.customProperties);
@@ -66,10 +70,12 @@ public final class StyleRefinement
     return declarations.isEmpty() && customProperties.isEmpty();
   }
 
+  /// The serialized value of `property`, or `null` if it is not set.
   public @Nullable String get(CssProperty property) {
     return declarations.get(property);
   }
 
+  /// Compiler-facing: a content hash of the declarations, used to name the generated class.
   public long contentHash() {
     var hash = Fnv1a64.OFFSET_BASIS;
     for (var entry : declarations.entrySet()) {
@@ -83,6 +89,7 @@ public final class StyleRefinement
     return hash;
   }
 
+  /// Compiler-facing: the declarations as a CSS block body, without braces.
   public String toCssBlockBody() {
     var sb = new StringBuilder();
     for (var entry : declarations.entrySet()) {

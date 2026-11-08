@@ -1,10 +1,14 @@
 package dev.nthings.tessera.css;
 
-/// Wraps a [StyleRefinement] in a nested rule. Declaration order is emission order, so later
-/// states win at equal specificity (e.g. [#ACTIVE] overrides [#HOVER]).
+/// The condition a nested style applies under, set through the `InteractiveElement` methods
+/// (`hover`, `focusVisible`, `motionSafe`, ...). Rules are emitted in constant order, not in call
+/// order, so when two rules match at equal specificity the later constant wins: ACTIVE overrides
+/// HOVER.
 public enum InteractiveState {
+  /// `:hover`, excluding disabled elements.
   HOVER,
   FOCUS_VISIBLE,
+  /// `:active`, excluding disabled elements.
   ACTIVE,
   CHECKED,
   USER_INVALID,
@@ -13,6 +17,7 @@ public enum InteractiveState {
   GROUP_HOVER,
   /// Argument: relative selector inside `:has(...)`.
   HAS,
+  /// `@media (prefers-reduced-motion: no-preference)` around the nested rule, not a pseudo-class.
   MOTION_SAFE;
 
   /// Opens the nested rule; the caller appends the body and `}`.

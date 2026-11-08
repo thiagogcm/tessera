@@ -12,26 +12,33 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
+/// Simple data table with an optional caption and a header row. Create one with [#create()],
+/// then add headers and rows. Header cells get `scope="col"`. The table does not check that
+/// each row has as many cells as there are headers.
 public final class SimpleTable implements RenderOnce {
 
   private @Nullable String caption;
   private final List<String> headers = new ArrayList<>();
   private final List<List<Element>> rows = new ArrayList<>();
 
+  /// Creates an empty table.
   public static SimpleTable create() {
     return new SimpleTable();
   }
 
+  /// Sets the caption shown above the table.
   public SimpleTable caption(String captionText) {
     this.caption = captionText;
     return this;
   }
 
+  /// Adds column headers, in order.
   public SimpleTable headers(String... columnHeaders) {
     this.headers.addAll(List.of(columnHeaders));
     return this;
   }
 
+  /// Adds a row of plain text cells.
   public SimpleTable row(String... cellTexts) {
     var cells = new ArrayList<Element>(cellTexts.length);
     for (var text : cellTexts) {
@@ -41,6 +48,7 @@ public final class SimpleTable implements RenderOnce {
     return this;
   }
 
+  /// Adds a row of cells, each of which may contain markup.
   public SimpleTable row(IntoElement... cells) {
     var rowCells = new ArrayList<Element>(cells.length);
     for (var cell : cells) {

@@ -39,8 +39,10 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Native quick-open dialog with live filtering and keyboard selection.
-/// Its ES module is contributed once per document automatically.
+/// Quick-open search dialog over the links you add with [#item(String, String, String)]. Create
+/// one with [#create(String)], place [#triggerButton()] where users open it, and place the
+/// palette itself, usually with [#asDeferred(int)]. The palette's script is contributed once per
+/// document, shared by every palette on the page.
 public final class SearchPalette implements RenderView {
 
   private static final ClientBehavior SEARCH_BEHAVIOR =
@@ -52,6 +54,7 @@ public final class SearchPalette implements RenderView {
           + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
           + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
+  /// Link in the palette. `description` and `badge` may be null.
   public record SearchItem(
       String group,
       String title,
@@ -69,32 +72,41 @@ public final class SearchPalette implements RenderView {
     this.id = id;
   }
 
+  /// Creates a palette with `id`, which also names the default trigger button.
   public static SearchPalette create(String id) {
     return new SearchPalette(ElementId.of(id));
   }
 
+  /// Creates a palette with `id` and the search field's `placeholder`.
   public static SearchPalette create(String id, String placeholder) {
     return new SearchPalette(ElementId.of(id)).placeholder(placeholder);
   }
 
+  /// Sets the search field's placeholder text.
   public SearchPalette placeholder(String placeholder) {
     this.placeholder = placeholder;
     return this;
   }
 
+  /// Sets the visible label of the default trigger button.
   public SearchPalette triggerLabel(String label) {
     this.triggerLabel = label;
     return this;
   }
 
+  /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order
+  /// they are first used, and links keep their insertion order.
   public SearchPalette item(String group, String title, String href) {
     return item(group, title, href, null, null);
   }
 
+  /// Adds a link with a secondary `description` line.
   public SearchPalette item(String group, String title, String href, @Nullable String description) {
     return item(group, title, href, description, null);
   }
 
+  /// Adds a link with a description and a badge. A badge replaces the arrow at the end of the
+  /// link. Either may be null.
   public SearchPalette item(
       String group,
       String title,
@@ -107,12 +119,17 @@ public final class SearchPalette implements RenderView {
     return this;
   }
 
+  /// Adds `items` to `groupName`, creating the group if needed.
   public SearchPalette group(String groupName, List<SearchItem> items) {
     groupedItems.computeIfAbsent(groupName, _ -> new ArrayList<>()).addAll(items);
     return this;
   }
 
-  /// Header trigger button (`command="show-modal"`) with a keyboard shortcut badge.
+  /// Creates a button that opens the palette with `command="show-modal"` and shows an Alt K
+  /// hint. `buttonId` is local to the enclosing view scope. The button's `accesskey` is `k`, but
+  /// the browser chooses the chord that activates it, which differs by browser and operating
+  /// system. The visible hint and `aria-keyshortcuts="Alt+K"` may therefore not match the chord
+  /// that works. Returns a plain [TagElement].
   public TagElement triggerButton(String buttonId, String label) {
     return button()
         .id(buttonId)
@@ -167,11 +184,14 @@ public final class SearchPalette implements RenderView {
                         .text("K")));
   }
 
+  /// Creates the trigger button with the default id, derived from this palette's id, and the
+  /// trigger label.
   public TagElement triggerButton() {
     return triggerButton(id.slug() + "-trigger", triggerLabel);
   }
 
-  /// Wraps this search palette in a [DeferredElement] to hoist it to the end of body.
+  /// Hoists the palette to the end of `<body>`. Lower priority values come first among deferred
+  /// elements.
   public DeferredElement asDeferred(int priority) {
     return deferred(this, priority);
   }

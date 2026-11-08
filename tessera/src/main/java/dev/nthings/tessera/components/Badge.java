@@ -20,9 +20,11 @@ import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Compact label: OKLCH tints, optional status dot, tinted/outline/solid variants.
+/// Compact label such as a status or a count. Create one with `Badge.of` or a tone factory such as
+/// `Badge.success`. It renders a `<span>`, or an `<a>` when given an [#href(String)].
 public final class Badge implements RenderView, FluentBuilder<Badge> {
 
+  /// Semantic color of a badge. `NEUTRAL` is the default.
   public enum Tone {
     NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD, Tokens.TEXT_MUTED),
     ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white(), Tokens.ACCENT_TEXT),
@@ -41,17 +43,20 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
       this.onTint = onTint;
     }
 
+    /// Compiler-facing: the semantic color token this tone paints.
     public DesignToken.Color token() {
       return token;
     }
   }
 
+  /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
   public enum Variant {
     TINTED,
     OUTLINE,
     SOLID
   }
 
+  /// Size: `SM`, `MD` (the default), or `LG`.
   public enum Size {
     SM,
     MD,
@@ -72,10 +77,12 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     this.text = text;
   }
 
+  /// Creates a neutral tinted badge with `text`.
   public static Badge of(String text) {
     return new Badge(text);
   }
 
+  /// Creates a badge with fully rounded corners.
   public static Badge pill(String text) {
     return new Badge(text).pill();
   }
@@ -104,6 +111,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     return new Badge(text).tone(Tone.INFO);
   }
 
+  /// Creates a tone-colored badge with a status dot.
   public static Badge dot(String text, Tone tone) {
     return new Badge(text).tone(tone).dot();
   }
@@ -118,6 +126,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     return entityId;
   }
 
+  /// Sets the instance id in the enclosing view scope. The badge emits no DOM ids of its own.
   public Badge id(String id) {
     this.entityId = ElementId.of(id);
     return this;
@@ -209,11 +218,14 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
     return dot(true);
   }
 
+  /// Adds an icon from trusted SVG markup, inserted unescaped in an `aria-hidden` span. Never pass
+  /// user input.
   public Badge icon(String iconSvg) {
     this.iconSvg = iconSvg;
     return this;
   }
 
+  /// Renders the badge as an `<a href>` link instead of a `<span>`.
   public Badge href(String href) {
     this.href = href;
     return this;

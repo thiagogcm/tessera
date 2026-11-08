@@ -35,12 +35,17 @@ import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// Accessible form controls: `:user-invalid` / `:user-valid`, `<input type="checkbox" switch>`,
-/// `appearance: base-select` where supported, and anchor-positioned tooltips.
+/// Form controls: text-like inputs, a textarea, a switch and a customizable select. The
+/// controls are bare: wrap one with [#field(String, TagElement)] (or
+/// [#field(String, SelectControl)]) to add a visible label, hint and error text. [#switchField]
+/// is a labelled switch and needs no wrapper. Validation styling follows the browser's
+/// `:user-invalid` and `:user-valid` states.
 public final class Forms {
 
   private Forms() {}
 
+  /// Styled `<input>` of `type` named `name`. Wrap it with [#field(String, TagElement)] to label
+  /// it.
   public static TagElement inputControl(String name, String type) {
     return controlChrome(input(type).attr("name", name))
         .focusVisible(Forms::controlFocusRing)
@@ -71,7 +76,9 @@ public final class Forms {
     return inputControl(name, "search");
   }
 
-  /// Auto-growing `<textarea>` (`field-sizing: content`), at least `minRows` lines tall.
+  /// Styled `<textarea>` named `name` with a minimum height of `minRows` lines plus 1rem. It
+  /// grows with its content where the browser supports that. Wrap it with
+  /// [#field(String, TagElement)] to label it.
   public static TagElement textareaControl(String name, int minRows) {
     return controlChrome(textarea().attr("name", name))
         .fieldSizingContent()
@@ -82,10 +89,10 @@ public final class Forms {
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
-  /// Binary on/off toggle: a `role="switch"` checkbox drawn as a track and thumb.
+  /// On/off switch named `name`: a checkbox with `role="switch"`, drawn as a track and a thumb.
   ///
-  /// No native `<input switch>` exists, so this is `appearance: none` with the thumb as a
-  /// background layer that slides on `:checked`.
+  /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
+  /// background layer that slides when checked. Use [#switchField] to add a label.
   public static TagElement switchInput(String name, boolean checked) {
     return input("checkbox")
         .attr("name", name)
@@ -112,14 +119,19 @@ public final class Forms {
         trackColor);
   }
 
+  /// Wraps a text-like control in a labelled [Field].
   public static Field field(String labelText, TagElement control) {
     return new Field(labelText, control);
   }
 
+  /// Wraps a select in a labelled [Field].
   public static Field field(String labelText, SelectControl select) {
     return new Field(labelText, select.control(), SelectControl::new);
   }
 
+  /// Labelled switch row: the label names the switch. The switch's id is `switch-<name>` in the
+  /// enclosing view scope, so two switches with the same name in one view scope report
+  /// `duplicate-id`.
   public static TagElement switchField(String labelText, String name, boolean checked) {
     var sw = switchInput(name, checked).id("switch-" + name);
     return div()
@@ -138,12 +150,16 @@ public final class Forms {
         .child(sw);
   }
 
-  /// Creates a customizable [SelectControl] with `appearance: base-select`.
+  /// Creates a customizable [SelectControl] named `name`. Wrap it with
+  /// [#field(String, SelectControl)] to label it.
   public static SelectControl selectControl(String name) {
     return new SelectControl(name);
   }
 
-  /// Accessible field container providing label, format hints, and error messaging.
+  /// Labelled container for a control: a `<label>`, optional hint text that describes the
+  /// control, error text shown while the control is `:user-invalid`, and an optional
+  /// [#anchorTooltip(String)] tooltip. Create one with [Forms#field(String, TagElement)] or
+  /// [Forms#field(String, SelectControl)].
   public static final class Field implements RenderView {
 
     private final String labelText;
@@ -164,25 +180,29 @@ public final class Forms {
       this.controlView = controlView;
     }
 
-    /// DOM id for the control, scoped to this field instead of a compiler-assigned one.
+    /// Sets the DOM id of the control, replacing the compiler-assigned one.
     public Field id(String name) {
       control.id(name);
       return this;
     }
 
-    /// Sets format hint text above the input, or removes it when `null`.
+    /// Sets hint text shown above the control and linked to it with `aria-describedby`, or
+    /// removes it when `null`.
     public Field hint(@Nullable String hintText) {
       this.hintText = hintText;
       return this;
     }
 
-    /// Sets error text revealed for `:user-invalid`, or removes it when `null`.
+    /// Sets error text shown while the control is `:user-invalid`, or removes it when `null`.
+    /// The control references the text through `aria-errormessage`.
     public Field error(@Nullable String errorText) {
       this.errorText = errorText;
       return this;
     }
 
-    /// Anchor-positioned floating tooltip for this field.
+    /// Sets a tooltip anchored above the control while it is hovered or focused. The tooltip
+    /// is visual only: the control does not reference it, so assistive technology does not
+    /// read it.
     public Field anchorTooltip(String tooltipText) {
       this.anchorTooltipText = tooltipText;
       return this;
@@ -289,7 +309,9 @@ public final class Forms {
     }
   }
 
-  /// Customizable `<select>` using `appearance: base-select` where supported; native elsewhere.
+  /// Select whose open list the library styles where the browser supports customizable
+  /// selects; other browsers show their native list. Create one with
+  /// [Forms#selectControl(String)].
   public static final class SelectControl implements RenderView {
 
     public record OptionItem(String value, String label, boolean selected) {}

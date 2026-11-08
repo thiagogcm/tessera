@@ -10,11 +10,14 @@ public final class CompilationException extends RuntimeException {
   private static final long serialVersionUID = 1L;
   private final CompilationDiagnostic[] diagnostics;
 
+  /// Compiler-facing: wraps the diagnostics collected for one compilation.
   public CompilationException(List<CompilationDiagnostic> diagnostics) {
     super(format(diagnostics));
     this.diagnostics = diagnostics.toArray(CompilationDiagnostic[]::new);
   }
 
+  /// The diagnostics in the order they were reported. Site compilation lists page errors in route
+  /// order before cross-route errors.
   public List<CompilationDiagnostic> diagnostics() {
     return List.of(diagnostics);
   }

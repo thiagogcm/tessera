@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// Per-page state shared by all [RenderContext]s of one compilation.
+/// Compiler-facing: per-page state shared by all [RenderContext]s of one page compilation.
+/// Components reach it through [RenderContext], not directly.
 public final class DocumentState {
 
   private final Map<DocumentKey<?>, Object> values = new LinkedHashMap<>();
@@ -22,7 +23,8 @@ public final class DocumentState {
     return key.cast(values.computeIfAbsent(key, _ -> key.create()));
   }
 
-  /// Content placed at a document-level position, with its component path and placing call site.
+  /// Compiler-facing: content placed at a page-level position, with the component path and the
+  /// call site that placed it.
   public record Contribution<T>(
       T content, List<String> componentPath, @Nullable SourceLocation origin) {}
 
@@ -39,31 +41,34 @@ public final class DocumentState {
     documentEndSections.putIfAbsent(owner, new Contribution<>(section, componentPath, origin));
   }
 
-  /// Registers `behavior` once per document; later contributions with the same id are ignored.
+  /// Registers `behavior` once per page; a later behavior with the same id is ignored.
   void contributeBehavior(ClientBehavior behavior) {
     behaviors.putIfAbsent(behavior.id(), behavior);
   }
 
-  /// Registered client behaviors in contribution order.
+  /// Compiler-facing: registered client behaviors, in registration order.
   public List<ClientBehavior> behaviors() {
     return List.copyOf(behaviors.values());
   }
 
+  /// Compiler-facing: head contributions, in registration order.
   public List<Contribution<Element>> headElements() {
     return Collections.unmodifiableList(headElements);
   }
 
-  /// Keeps the first heading per target; a reused id is reported as `duplicate-id`.
+  /// Registers `heading` for its target. A second heading for the same target is ignored silently;
+  /// a repeated element id is reported as `duplicate-id`.
   void registerHeading(DocumentHeading heading) {
     headings.putIfAbsent(heading.targetDomId(), heading);
   }
 
-  /// Headings in registration order.
+  /// Compiler-facing: headings, in registration order.
   public List<DocumentHeading> headings() {
     return List.copyOf(headings.values());
   }
 
-  /// End-of-document sections in registration order.
+  /// Compiler-facing: end-of-page sections, in registration order. Only the first section per owner
+  /// key is kept.
   public List<Contribution<Function<RenderContext, ? extends IntoElement>>> documentEndSections() {
     return List.copyOf(documentEndSections.values());
   }

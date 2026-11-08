@@ -8,8 +8,11 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
-/// Zero-dependency preview server (JDK [HttpServer], virtual threads) for a [CompiledSite],
-/// targeting the latest Chromium and Firefox.
+/// Local preview server for a [CompiledSite], built on the JDK's `HttpServer` with virtual
+/// threads. It listens on `127.0.0.1` only and serves a fixed snapshot of the site, so recompile
+/// and restart after a change. Responses carry `Cache-Control: no-store`. A route requested
+/// without its trailing slash gets a 308 redirect to its directory URL, keeping the query string,
+/// and `index.html` aliases are accepted. Other paths return 404.
 public final class SitePreviewServer implements AutoCloseable {
 
   private final HttpServer server;
@@ -18,6 +21,8 @@ public final class SitePreviewServer implements AutoCloseable {
     this.server = server;
   }
 
+  /// Starts a server for `site` on `port`. Pass 0 to pick a free port, then read it with [#port()].
+  /// Throws UncheckedIOException if the port cannot be bound.
   public static SitePreviewServer start(CompiledSite site, int port) {
     try {
       var httpServer = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
@@ -30,14 +35,17 @@ public final class SitePreviewServer implements AutoCloseable {
     }
   }
 
+  /// The port the server is listening on.
   public int port() {
     return server.getAddress().getPort();
   }
 
+  /// The origin to open in a browser, `http://localhost:<port>`.
   public String baseUrl() {
     return "http://localhost:" + port();
   }
 
+  /// Stops the server immediately, without waiting for in-flight requests.
   @Override
   public void close() {
     server.stop(0);

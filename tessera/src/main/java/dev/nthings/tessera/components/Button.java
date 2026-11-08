@@ -10,10 +10,12 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Native `<button>`, `type="button"` unless [Button#submit]. Navigation uses anchors.
+/// Native `<button>`, `type="button"` unless [Button#submit()] is called. Use an anchor for
+/// navigation.
 public final class Button extends ButtonBase<Button> implements RenderView {
 
-  /// Semantic color only; does not set the surface or behavior.
+  /// Semantic color: `NEUTRAL`, `ACCENT` (the default), `SUCCESS`, `WARNING`, or `DANGER`. It does
+  /// not change the surface or behavior.
   public enum Tone {
     NEUTRAL(Tokens.TEXT_PRIMARY, Tokens.SURFACE_CARD, Tokens.BORDER_SUBTLE, Tokens.SURFACE_SUBTLE),
     ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
@@ -55,7 +57,8 @@ public final class Button extends ButtonBase<Button> implements RenderView {
     }
   }
 
-  /// Surface treatment, independent of tone.
+  /// Surface: `SOLID` (filled with the tone, the default), `OUTLINE` (transparent with a tone
+  /// border), or `GHOST` (transparent with tone text).
   public enum Variant {
     SOLID,
     OUTLINE,
@@ -115,7 +118,8 @@ public final class Button extends ButtonBase<Button> implements RenderView {
     return new Button(label, List.of());
   }
 
-  /// Custom content; `accessibleName` stays the accessible name.
+  /// Button with custom `content`. `accessibleName` is set as `aria-label`, so assistive technology
+  /// announces it instead of the content text. Keep it matching the visible words.
   public static Button of(String accessibleName, IntoElement... content) {
     return new Button(accessibleName, List.of(content));
   }

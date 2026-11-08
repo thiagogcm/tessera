@@ -20,17 +20,17 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 
-/// Sticky header using `container-type: scroll-state` where supported; sticky positioning and
-/// the base surface work without it.
-///
-/// The outer `:scope` is the `position: sticky` scroll-state container. The inner
-/// `<header class="sticky-surface">` applies blur and shadow via `scroll-state(stuck: top)`.
+/// Header that stays at the top of the viewport while the page scrolls. Once it is stuck, its
+/// surface turns translucent, blurs what is behind it and casts a shadow. Browsers without
+/// scroll-state support still keep the header at the top, with the plain surface. The content
+/// is placed inside a `<header>` element.
 public final class StickyHeader implements RenderView {
 
   private final ElementId id;
   private final CssIdent containerName;
   private final Element content;
 
+  /// Creates a sticky header with the given `id`, which is unique within its view scope.
   public StickyHeader(String id, IntoElement content) {
     this.id = ElementId.of(id);
     this.containerName = CssIdent.of("sticky-" + this.id.slug());

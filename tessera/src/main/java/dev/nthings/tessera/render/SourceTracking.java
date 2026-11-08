@@ -49,8 +49,7 @@ public final class SourceTracking {
     return with(true, work);
   }
 
-  /// Runs `work` with tracking set to `tracking`; compilation uses this to pass the setting to
-  /// its threads.
+  /// Runs `work` with tracking on or off, e.g. from a command-line flag.
   public static <R> R with(boolean tracking, Supplier<R> work) {
     SourceCapture capture = tracking ? SourceTracking::capture : SourceCapture.NONE;
     return SourceProvenance.with(capture, work);

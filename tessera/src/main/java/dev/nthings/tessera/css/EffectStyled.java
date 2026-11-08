@@ -1,10 +1,12 @@
 package dev.nthings.tessera.css;
 
-/// @param <SELF> concrete element or style builder type
+/// Motion, transforms, filters, cursors, animation, and view transitions.
 public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF> {
 
-  /// A preset that moves an element belongs in a `prefers-reduced-motion: no-preference` block;
-  /// the visible end state stays outside it.
+  /// Sets `transition-property`, `transition-duration`, and `transition-timing-function` from
+  /// `motion`, plus `transition-behavior: allow-discrete` when it allows discrete transitions. In
+  /// scoped CSS, a preset that moves an element belongs inside [ScopeStyle#motionSafe], with its
+  /// visible end state kept outside that block.
   default SELF motion(Motion motion) {
     motion.apply(style());
     return self();
@@ -35,7 +37,7 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return cursor(Cursor.POINTER);
   }
 
-  /// Cross-document view transition name.
+  /// Sets `view-transition-name`, which pairs this element across a view transition.
   default SELF viewTransitionName(CssIdent name) {
     style().put(CssProperty.VIEW_TRANSITION_NAME, name);
     return self();
@@ -46,13 +48,15 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// Scroll-driven view timeline.
+  /// Sets `view-timeline` to track this element's visibility in its scrollport along `axis`.
+  /// `name` must be a dashed identifier (`--name`); this method does not check it.
   default SELF viewTimeline(CssIdent name, TimelineAxis axis) {
     style().put(CssProperty.VIEW_TIMELINE, name.toCss() + " " + axis.toCss());
     return self();
   }
 
-  /// Delays each element by `stepMilliseconds` per sibling index, starting at 0 for the first.
+  /// Delays each element by `stepMilliseconds` per sibling position, so the first sibling has no
+  /// delay. Throws IllegalArgumentException if `stepMilliseconds` is negative.
   default SELF animationStaggerBySiblingIndex(int stepMilliseconds) {
     if (stepMilliseconds < 0) {
       throw new IllegalArgumentException("stepMilliseconds must be >= 0");
@@ -64,7 +68,9 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return self();
   }
 
-  /// Plays the keyframes `name` once over the whole root scroll range on `axis`.
+  /// Plays the `@keyframes` named `keyframes` once over the whole root scroll range along `axis`.
+  /// This call does not register the keyframes; define them with
+  /// [Interactivity#registerKeyframeRule(String)].
   default SELF scrollProgressAnimation(CssIdent keyframes, TimelineAxis axis) {
     style().put(CssProperty.ANIMATION, keyframes.toCss() + " auto linear");
     style().put(CssProperty.ANIMATION_TIMELINE, "scroll(root " + axis.toCss() + ")");

@@ -16,6 +16,8 @@ public interface Styled<SELF extends Styled<SELF>>
         ScrollStyled<SELF>,
         AnchorStyled<SELF> {
 
+  /// Applies `mutator` to this target's declarations, so a style function can be shared with
+  /// [ScopeStyle#select] or state callbacks.
   default SELF refine(UnaryOperator<StyleRefinement> mutator) {
     mutator.apply(style());
     return self();

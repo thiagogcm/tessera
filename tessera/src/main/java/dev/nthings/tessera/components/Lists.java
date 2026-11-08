@@ -21,8 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-/// List primitives: [BulletList] (`<ul>`), [NumberedList] (`<ol>`),
-/// [DescriptionList] (`<dl>`), and [StepList] (numbered steps via `sibling-index()`).
+/// List primitives: [BulletList] (`<ul>`), [NumberedList] (`<ol>`), [DescriptionList] (`<dl>`),
+/// and [StepList] (an `<ol>` drawn as numbered steps). Items of the bullet, numbered and step
+/// lists are wrapped in `<li>`.
 public final class Lists {
 
   private Lists() {}
@@ -39,12 +40,15 @@ public final class Lists {
     return items.stream().map(item -> Elements.li().child(item));
   }
 
+  /// Unordered list of items.
   public record BulletList(List<Element> items) implements RenderOnce {
 
+    /// Creates a list from plain text items.
     public static BulletList ofStrings(String... items) {
       return new BulletList(texts(items));
     }
 
+    /// Creates a list from elements, each of which may contain markup.
     public static BulletList of(IntoElement... items) {
       return new BulletList(elements(items));
     }
@@ -57,12 +61,15 @@ public final class Lists {
     }
   }
 
+  /// Ordered list of items.
   public record NumberedList(List<Element> items) implements RenderOnce {
 
+    /// Creates a list from plain text items.
     public static NumberedList ofStrings(String... items) {
       return new NumberedList(texts(items));
     }
 
+    /// Creates a list from elements, each of which may contain markup.
     public static NumberedList of(IntoElement... items) {
       return new NumberedList(elements(items));
     }
@@ -75,18 +82,23 @@ public final class Lists {
     }
   }
 
+  /// Term and its description, for a [DescriptionList].
   public record Term(String term, Element description) {
+    /// Creates a term whose description is plain text.
     public static Term of(String term, String description) {
       return new Term(term, Elements.text(description));
     }
 
+    /// Creates a term whose description is `description`, which may contain markup.
     public static Term of(String term, IntoElement description) {
       return new Term(term, description.intoElement());
     }
   }
 
+  /// Description list: each term is a `<dt>` and each description a `<dd>`.
   public record DescriptionList(List<Term> terms) implements RenderOnce {
 
+    /// Creates a description list from `terms`.
     public static DescriptionList of(Term... terms) {
       return new DescriptionList(List.of(terms));
     }
@@ -111,15 +123,19 @@ public final class Lists {
     }
   }
 
+  /// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the
+  /// steps progress. `id` identifies the list within its view scope.
   public record StepList(String id, List<Element> steps) implements RenderView {
 
     private static final CssIdent STEP_INDEX = CssIdent.custom("step-index");
     private static final CssIdent STEP_TOTAL = CssIdent.custom("step-total");
 
+    /// Creates a step list from plain text steps.
     public static StepList ofStrings(String id, String... steps) {
       return new StepList(id, texts(steps));
     }
 
+    /// Creates a step list from elements, each of which may contain markup.
     public static StepList of(String id, IntoElement... steps) {
       return new StepList(id, elements(steps));
     }

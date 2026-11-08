@@ -6,10 +6,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/// Filesystem adapter for compiled site output.
+/// Writes a [CompiledSite] to disk.
 public final class SiteWriter {
   private SiteWriter() {}
 
+  /// Writes every page and file of `compiledSite` under `outputDirectory`, creating directories as
+  /// needed. Existing files are overwritten, and files left from an earlier build are kept. Throws
+  /// UncheckedIOException if a file cannot be written.
   public static void writeToDirectory(CompiledSite compiledSite, Path outputDirectory) {
     try {
       Files.createDirectories(outputDirectory);

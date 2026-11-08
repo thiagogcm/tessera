@@ -18,19 +18,20 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
 
-/// Typed, responsive data table.
+/// Table of `rows` described by `columns`, with `captionText` as its caption. The table sits in a
+/// focusable region named by the caption, which scrolls when the table is too wide. Create one with
+/// `new DataTable<>(id, captionText, columns, rows)`. `T` is the row model type.
 ///
-/// - Wraps `<table>` in a keyboard-scrollable `role="region"` div
-///   (`container-type: inline-size`).
-/// - Sticky column headers (`thead`) and sticky row headers (`tbody th`).
-/// - Below `stackBreakpoint`, rows stack as cards: `thead` is hidden and each cell's header
-///   comes from `--label-N` via `td:nth-child(N)::before`.
-///
-/// @param <T> row model type
+/// - Column headers stay at the top and row headers stay at the left while the region scrolls.
+/// - Narrower than `stackBreakpoint` (default 36rem, measured on the region), each row becomes a
+///   stacked card: the header row is hidden, and each cell that is not a row header is prefixed
+///   with its column header.
+/// - Ids it binds are prefixed `datatable-<id>`, for example `datatable-<id>--caption`.
 public record DataTable<T>(
     String id, String captionText, List<Column<T>> columns, List<T> rows, CssLength stackBreakpoint)
     implements RenderView {
 
+  /// Horizontal alignment of a column's cells. `NUMERIC` aligns to the end with tabular figures.
   public enum CellAlign {
     START(TextAlign.START, false),
     CENTER(TextAlign.CENTER, false),
@@ -45,42 +46,51 @@ public record DataTable<T>(
       this.tabularNums = tabularNums;
     }
 
+    /// Compiler-facing: the CSS text alignment for these cells.
     public TextAlign textAlign() {
       return textAlign;
     }
 
+    /// Compiler-facing: whether these cells use tabular figures.
     public boolean tabularNums() {
       return tabularNums;
     }
   }
 
+  /// One column: its `header` text, the `cellExtractor` that produces each row's cell, the `align`,
+  /// and whether its cells are row headers (`th scope="row"`).
   public record Column<T>(
       String header,
       Function<T, ? extends IntoElement> cellExtractor,
       CellAlign align,
       boolean rowHeader) {
 
+    /// Creates a start-aligned column whose cells are row headers.
     public static <T> Column<T> rowHeader(
         String header, Function<T, ? extends IntoElement> extractor) {
       return new Column<>(header, extractor, CellAlign.START, true);
     }
 
+    /// Creates a start-aligned column of plain text cells.
     public static <T> Column<T> text(String header, Function<T, String> stringExtractor) {
       return new Column<>(
           header, item -> Elements.text(stringExtractor.apply(item)), CellAlign.START, false);
     }
 
+    /// Creates a `NUMERIC` column of plain text cells.
     public static <T> Column<T> numeric(String header, Function<T, String> numericExtractor) {
       return new Column<>(
           header, item -> Elements.text(numericExtractor.apply(item)), CellAlign.NUMERIC, false);
     }
 
+    /// Creates a column whose cells are the elements `extractor` returns, aligned by `align`.
     public static <T> Column<T> of(
         String header, CellAlign align, Function<T, ? extends IntoElement> extractor) {
       return new Column<>(header, extractor, align, false);
     }
   }
 
+  /// Creates a table that stacks below the default 36rem breakpoint.
   public DataTable(String id, String captionText, List<Column<T>> columns, List<T> rows) {
     this(id, captionText, columns, rows, CssLength.rem(36));
   }

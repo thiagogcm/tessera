@@ -11,12 +11,15 @@ public final class SiteNavigation {
 
   private SiteNavigation() {}
 
-  /// `SearchPalette` indexed from all routes of the given [SiteDefinition].
+  /// `SearchPalette` listing every route of the given [SiteDefinition], with the fixed id
+  /// `search-palette`. Two palettes with that id on one page collide, so use
+  /// [#searchPalette(String, List)] for a second one.
   public static SearchPalette searchPalette(SiteDefinition site) {
     return searchPalette("search-palette", site.routes());
   }
 
-  /// `SearchPalette` over the given routes, under a "Pages & Guides" group.
+  /// `SearchPalette` over the given routes, under a "Pages & Guides" group. Each route is a link
+  /// to its path, with its description and path shown beside it.
   public static SearchPalette searchPalette(String id, List<SiteRoute> routes) {
     var palette = SearchPalette.create(id);
     for (var route : routes) {
@@ -26,7 +29,9 @@ public final class SiteNavigation {
     return palette;
   }
 
-  /// Previous/next pager for `currentPath` in route declaration order.
+  /// Previous/next pager for `currentPath` in route declaration order. The first route has no
+  /// previous link and the last has no next link. The path is normalized like a route path, so a
+  /// trailing `/` is accepted. Throws IllegalArgumentException if no route is registered at it.
   public static DocPager docPager(SiteDefinition site, String currentPath) {
     var normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
     var routes = site.routes();

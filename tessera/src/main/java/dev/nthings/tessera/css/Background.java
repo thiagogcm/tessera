@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A `background` of one soft-edged dot, positioned and sized, over a fill color.
+/// A `background` of one soft-edged dot, positioned and sized, over a fill color. Set it with
+/// [BoxStyled#background].
 public record Background(
     Dot dot, CssLength x, CssLength y, CssLength width, CssLength height, CssColor fill)
     implements CssValue {

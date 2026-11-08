@@ -5,6 +5,7 @@ package dev.nthings.tessera.css;
 /// @param <SELF> concrete element or style builder type
 public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
 
+  /// Applies the font family, size, weight, line height, and tracking of `typography`.
   default SELF typography(Typography typography) {
     typography.apply(style());
     return self();
@@ -93,6 +94,8 @@ public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<S
     return self();
   }
 
+  /// Sets a highlight background from `tone`, with `padding-inline: var(--space-1)` and
+  /// `border-radius: var(--radius-sm)`.
   default SELF highlight(HighlightTone tone) {
     style().put(CssProperty.BACKGROUND, tone.background());
     style().put(CssProperty.PADDING_INLINE, Tokens.SPACE_1);
@@ -100,10 +103,14 @@ public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<S
     return self();
   }
 
+  /// A solid underline in the accent token, as `underline(UnderlineStyle.SOLID, <accent>)`.
   default SELF underline() {
     return underline(UnderlineStyle.SOLID, Tokens.ACCENT_PRIMARY);
   }
 
+  /// Underlines in `color` with `lineStyle`, `0.1em` thick, offset `0.18em` from the baseline, with
+  /// `text-decoration-skip-ink: auto`. [#textDecorationUnderline(CssLength)] sets only the offset,
+  /// keeping the cascade's color and thickness.
   default SELF underline(UnderlineStyle lineStyle, CssColor color) {
     style().put(CssProperty.TEXT_DECORATION_LINE, "underline");
     style().put(CssProperty.TEXT_DECORATION_STYLE, lineStyle);
@@ -114,10 +121,12 @@ public interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<S
     return self();
   }
 
+  /// A solid strikethrough in the muted text token.
   default SELF strikethrough() {
     return strikethrough(Tokens.TEXT_MUTED);
   }
 
+  /// A solid strikethrough in `color`, `0.09em` thick.
   default SELF strikethrough(CssColor color) {
     style().put(CssProperty.TEXT_DECORATION_LINE, "line-through");
     style().put(CssProperty.TEXT_DECORATION_STYLE, UnderlineStyle.SOLID);

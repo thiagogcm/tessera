@@ -11,10 +11,10 @@ import dev.nthings.tessera.css.InteractiveState;
 import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.css.Tokens;
 
-/// Scroll-driven progress bar (`animation-timeline: scroll(root <axis>)`), gated behind
-/// `@media (prefers-reduced-motion: no-preference)`.
-///
-/// Emits `aria-hidden="true"`, since the indicator is decorative.
+/// Thin bar fixed to the top of the viewport that fills as the page scrolls. It is decorative
+/// and hidden from assistive technology. When the user prefers reduced motion, it stays a
+/// static, full-width bar. Use the canonical constructor to change its color, thickness or
+/// [TimelineAxis].
 public record ScrollProgressBar(
     String id, DesignToken.Color barColor, CssLength thickness, TimelineAxis axis)
     implements RenderOnce {
@@ -22,6 +22,8 @@ public record ScrollProgressBar(
   private static final String PROGRESS_KEYFRAME =
       "@keyframes tessera-scroll-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}";
 
+  /// Creates an accent-colored bar `id`, 0.25rem thick, that follows vertical scrolling in
+  /// horizontal text. `id` is local to the enclosing view scope.
   public ScrollProgressBar(String id) {
     this(id, Tokens.ACCENT_PRIMARY, CssLength.rem(0.25), TimelineAxis.BLOCK);
   }

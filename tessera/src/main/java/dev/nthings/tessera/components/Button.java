@@ -2,7 +2,6 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tone;
 import java.util.List;
 
@@ -38,16 +37,6 @@ public final class Button extends ButtonBase<Button> {
   @Override
   public Button self() {
     return this;
-  }
-
-  @Override
-  String viewType() {
-    return "button";
-  }
-
-  @Override
-  void configureScope(ScopeStyle scope) {
-    ButtonFace.configure(scope, false);
   }
 
   @Override

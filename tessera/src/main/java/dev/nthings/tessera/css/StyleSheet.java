@@ -20,7 +20,7 @@ public final class StyleSheet {
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
   private final Map<String, String> containerRules = new LinkedHashMap<>();
   private final Map<String, String> viewScopeBodies = new LinkedHashMap<>();
-  private final Set<String> keyframeRules = new LinkedHashSet<>();
+  private final Set<Keyframes> keyframes = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
 
   /// Creates an empty stylesheet.
@@ -32,20 +32,21 @@ public final class StyleSheet {
   /// (`interactive` layer), and one `cq-` class per container query (`container` layer). The
   /// keyframes the style uses are registered too.
   public List<String> registerElement(StyleRefinement style) {
+    if (!style.hasConditionalStyles()) {
+      return style.hasDeclarations() ? List.of(registerUtility(style)) : List.of();
+    }
     var classNames = new ArrayList<String>(3);
-    registerKeyframes(style::collectKeyframes);
+    style.collectKeyframes(keyframes);
 
     if (style.hasDeclarations()) {
-      var utilClass = "u-" + Fnv1a64.toBase36Hash(style.contentHash());
-      utilityRules.computeIfAbsent(utilClass, k -> "." + k + "{" + style.toCssBlockBody() + "}");
-      classNames.add(utilClass);
+      classNames.add(registerUtility(style));
     }
 
-    if (style.hasNestedRules(false)) {
-      var body = style.nestedRules(false);
-      var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, body);
+    var nested = style.nestedRules();
+    if (!nested.isEmpty()) {
+      var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, nested);
       var interactiveClass = "i-" + Fnv1a64.toBase36Hash(hash);
-      interactiveRules.computeIfAbsent(interactiveClass, k -> "." + k + "{" + body + "}");
+      interactiveRules.computeIfAbsent(interactiveClass, k -> "." + k + "{" + nested + "}");
       classNames.add(interactiveClass);
     }
 
@@ -65,19 +66,23 @@ public final class StyleSheet {
     return classNames;
   }
 
-  private void registerKeyframes(Consumer<Set<Keyframes>> source) {
-    var used = new LinkedHashSet<Keyframes>();
-    source.accept(used);
-    used.forEach(keyframes -> keyframeRules.add(keyframes.rule()));
+  /// Registers the plain declarations of `style` as a `u-` rule and returns its class.
+  private String registerUtility(StyleRefinement style) {
+    var utilClass = "u-" + Fnv1a64.toBase36Hash(style.contentHash());
+    utilityRules.computeIfAbsent(utilClass, k -> "." + k + "{" + style.toCssBlockBody() + "}");
+    return utilClass;
   }
 
-  /// Compiler-facing: registers `scope`, the styles of a view of `viewType`, and returns its
-  /// `data-view` value, `<viewType>-<hash>`. Identical scopes share one `@scope` block, and
-  /// stylesheets from different pages merge without conflicts. A view without scoped styles keeps
-  /// the bare (sanitized) type as its scope boundary.
-  public String registerViewScope(String viewType, ScopeStyle scope) {
+  /// Compiler-facing: registers the styles of a view of `viewType`, which `configure` writes into
+  /// a fresh [ScopeStyle], and returns its `data-view` value, `<viewType>-<hash>`. Identical
+  /// scopes share one `@scope` block, and stylesheets from different pages merge without
+  /// conflicts. A view without scoped styles keeps the bare (sanitized) type as its scope
+  /// boundary. Throws IllegalArgumentException if `viewType` is empty.
+  public String registerViewScope(String viewType, Consumer<ScopeStyle> configure) {
     var safeType = Fnv1a64.sanitizeIdentifier(viewType);
-    registerKeyframes(scope::collectKeyframes);
+    var scope = new ScopeStyle();
+    configure.accept(scope);
+    scope.collectKeyframes(keyframes);
     var scopedCss = scope.toCssBody();
     if (scopedCss.isBlank()) {
       return safeType;
@@ -89,9 +94,10 @@ public final class StyleSheet {
   }
 
   /// Compiler-facing: records a view transition class whose group uses the shared 0.35s timing.
-  /// Throws IllegalArgumentException if `transitionClass` is not a CSS identifier.
+  /// The compiler passes the class of a `TransitionKey`, which the key has already validated, so it
+  /// is emitted as given.
   public void registerTransitionClass(String transitionClass) {
-    transitionClasses.add(CssIdent.of(transitionClass).toCss());
+    transitionClasses.add(transitionClass);
   }
 
   /// Compiler-facing: merges another stylesheet's rules into this one, keeping first-registration
@@ -101,7 +107,7 @@ public final class StyleSheet {
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
     other.containerRules.forEach(containerRules::putIfAbsent);
     other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
-    keyframeRules.addAll(other.keyframeRules);
+    keyframes.addAll(other.keyframes);
     transitionClasses.addAll(other.transitionClasses);
   }
 
@@ -134,7 +140,7 @@ public final class StyleSheet {
             + "background:var(--surface-canvas);color:var(--text-primary);line-height:var(--line-height-body)}"
             + "button,input,select,textarea{font-family:inherit}"
             + "dialog{margin:auto;overscroll-behavior:contain}");
-    keyframeRules.forEach(sb::append);
+    keyframes.forEach(rule -> sb.append(rule.rule()));
     sb.append("}\n");
 
     sb.append("@layer theme{");

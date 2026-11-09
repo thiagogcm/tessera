@@ -13,10 +13,8 @@ final class PageCompiler {
   static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
     var prepared = prepare(document, List.of());
     var css = prepared.stylesheet(theme);
-    return new CompiledPage(
-        paint(prepared, css, outputMode),
-        css,
-        HtmlWriter.assets(css, outputMode, prepared.behaviors()));
+    var resources = new HtmlWriter.Resources(css, outputMode, prepared.behaviors());
+    return new CompiledPage(paint(prepared, resources), css, resources.assets());
   }
 
   /// Lays out and validates `document` without emitting HTML. `siteHead` goes in
@@ -53,15 +51,14 @@ final class PageCompiler {
         layout.contributions().behaviors());
   }
 
-  /// Paints `prepared` with `css`, the stylesheet the page links or inlines: its own stylesheet
-  /// for a standalone page, or the merged stylesheet of a site.
-  static String paint(PreparedPage prepared, String css, OutputMode outputMode) {
+  /// Paints `prepared` with `resources`, the stylesheet and modules the page links or inlines:
+  /// its own for a standalone page, or the shared ones of a site.
+  static String paint(PreparedPage prepared, HtmlWriter.Resources resources) {
     return HtmlWriter.paint(
         prepared.document(),
         prepared.bodyNodes(),
         prepared.headNodes(),
-        css,
-        outputMode,
+        resources,
         prepared.behaviors());
   }
 }

@@ -11,18 +11,19 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.WhiteSpace;
-import dev.nthings.tessera.foundation.FluentBuilder;
-import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Compact label such as a status or a count. Create one with [#of(String)]; it is a neutral,
 /// tinted, medium badge until [#tone(Tone)], [#variant(Variant)] or [#size(Size)] change it. It
 /// renders a `<span>`, or an `<a>` when given an [#href(String)].
-public final class Badge extends BuiltinView implements FluentBuilder<Badge> {
+///
+/// Without an [#id(String)], the compiler numbers instances `tessera-badge-<n>`.
+public final class Badge extends BuiltinView<Badge> {
 
   /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
   public enum Variant {
@@ -51,13 +52,6 @@ public final class Badge extends BuiltinView implements FluentBuilder<Badge> {
 
   @Override
   public Badge self() {
-    return this;
-  }
-
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `tessera-badge-<n>`.
-  public Badge id(String id) {
-    this.id = id;
     return this;
   }
 
@@ -164,45 +158,37 @@ public final class Badge extends BuiltinView implements FluentBuilder<Badge> {
       CssColor tintFill = neutral ? Tokens.SURFACE_SUBTLE : token.mixTransparent(14);
       CssColor tintEdge = neutral ? Tokens.BORDER_SUBTLE : token.mixTransparent(28);
       var outlineEdge = neutral ? Tokens.BORDER_SUBTLE : token;
-      var selector = ":scope.badge--" + cssName(tone) + ".badge--";
+      var selector = ":scope.badge--" + CssNames.of(tone) + ".badge--";
       scope
           .select(
-              selector + cssName(Variant.TINTED),
+              selector + CssNames.of(Variant.TINTED),
               s -> s.bg(tintFill).textColor(tone.textColor()).border(Border.hairline(tintEdge)))
           .select(
-              selector + cssName(Variant.OUTLINE),
+              selector + CssNames.of(Variant.OUTLINE),
               s ->
                   s.bg(CssColor.transparent())
                       .textColor(tone.textColor())
                       .border(Border.hairline(outlineEdge)))
           .select(
-              selector + cssName(Variant.SOLID),
+              selector + CssNames.of(Variant.SOLID),
               s ->
                   s.bg(token)
-                      .textColor(onSolid(tone))
+                      .textColor(tone.onSolid())
                       .border(Border.hairline(CssColor.transparent())));
     }
 
-    scope.select("a:scope:hover", s -> s.opacity(0.85));
-  }
-
-  private static CssColor onSolid(Tone tone) {
-    return switch (tone) {
-      case NEUTRAL -> Tokens.SURFACE_CARD;
-      case WARNING -> CssColor.oklch(15, 0.02, 75);
-      case ACCENT, INFO, SUCCESS, DANGER -> CssColor.white();
-    };
+    scope.select("a:scope", s -> s.on(State.HOVER, h -> h.opacity(0.85)));
   }
 
   @Override
   IntoElement render(RenderContext context) {
     var cls =
         "badge badge--"
-            + cssName(tone)
+            + CssNames.of(tone)
             + " badge--"
-            + cssName(variant)
+            + CssNames.of(variant)
             + " badge--"
-            + cssName(size)
+            + CssNames.of(size)
             + (pill ? " is-pill" : "");
 
     var el = (href != null ? a(href) : span()).attr("class", cls);
@@ -217,9 +203,5 @@ public final class Badge extends BuiltinView implements FluentBuilder<Badge> {
 
     el.child(span().attr("class", "badge-label").text(text));
     return el;
-  }
-
-  private static String cssName(Enum<?> value) {
-    return value.name().toLowerCase(Locale.ROOT);
   }
 }

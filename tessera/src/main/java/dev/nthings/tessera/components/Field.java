@@ -1,7 +1,6 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.select;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.ElementRef;
@@ -18,24 +17,32 @@ import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// Labelled container for a form control: a visible `<label>` that names the control, optional
 /// hint text that describes it, error text shown while it is `:user-invalid`, and an optional
 /// visual tooltip. Create one with [#of(String, TagElement)] for a control from [Forms] or
 /// [#of(String, Select)].
-public final class Field extends BuiltinView {
+///
+/// The control, hint and error ids are prefixed with its [#id(String)]. Without an id, the
+/// compiler numbers instances `form-field-<n>`.
+public final class Field extends BuiltinView<Field> {
 
   private final String label;
-  private final TagElement control;
+
+  /// Exactly one is set: the bare control from [#of(String, TagElement)], or the select from
+  /// [#of(String, Select)], whose `<select>` is the control.
+  private final @Nullable TagElement bareControl;
+
   private final @Nullable Select select;
   private @Nullable String hint;
   private @Nullable String error;
   private @Nullable String tooltip;
 
-  private Field(String label, TagElement control, @Nullable Select select) {
+  private Field(String label, @Nullable TagElement bareControl, @Nullable Select select) {
     this.label = label;
-    this.control = control;
+    this.bareControl = bareControl;
     this.select = select;
   }
 
@@ -47,14 +54,7 @@ public final class Field extends BuiltinView {
 
   /// Wraps `select` in a field labelled `label`.
   public static Field of(String label, Select select) {
-    return new Field(label, select.control(), select);
-  }
-
-  /// Names this instance in the enclosing view scope; the control, hint and error ids are
-  /// prefixed with it. Without it, the compiler assigns `form-field-<n>`.
-  public Field id(String id) {
-    this.id = id;
-    return this;
+    return new Field(label, null, select);
   }
 
   /// Sets hint text shown above the control and linked to it with `aria-describedby`.
@@ -78,13 +78,20 @@ public final class Field extends BuiltinView {
   }
 
   @Override
+  public Field self() {
+    return this;
+  }
+
+  @Override
   String viewType() {
     return "form-field";
   }
 
   @Override
   IntoElement render(RenderContext context) {
-    var control = this.control.copy();
+    var wrapper = select;
+    var control =
+        (wrapper != null ? wrapper.control() : Objects.requireNonNull(bareControl)).copy();
     var ctrl = control.ref();
 
     var container = div().attr("class", "field-container");
@@ -102,7 +109,6 @@ public final class Field extends BuiltinView {
       control.anchorName();
     }
 
-    var wrapper = select;
     container.child(wrapper != null ? wrapper.around(control) : control);
 
     // Follows the control so adjacent-sibling selectors can style it.

@@ -19,8 +19,8 @@ public final class ScopeStyle {
   private final Map<String, StyleRefinement> selectorRules = new LinkedHashMap<>();
   private final Map<Condition.Query, ScopeStyle> queryBlocks = new LinkedHashMap<>();
 
-  /// Compiler-facing: creates an empty scope for the compiler to pass to `configureScope`.
-  public ScopeStyle() {}
+  /// Created by [StyleSheet#registerViewScope(String, Consumer)].
+  ScopeStyle() {}
 
   /// Styles the view's root element, `:scope`.
   public ScopeStyle root(Consumer<StyleRefinement> styles) {

@@ -31,8 +31,10 @@ public final class StyleRefinement
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
-  private final Map<Condition, StyleRefinement> conditional = new LinkedHashMap<>();
-  private final Set<Keyframes> keyframes = new LinkedHashSet<>();
+  /// Created on first use, so a plain style allocates no conditional state.
+  private @Nullable Map<Condition, StyleRefinement> conditional;
+
+  private @Nullable Set<Keyframes> keyframes;
   private @Nullable StyleRefinement startingStyle;
 
   /// Creates an empty refinement, for building a style outside an element.
@@ -99,8 +101,14 @@ public final class StyleRefinement
     }
     other.declarations.forEach(this::put);
     customProperties.putAll(other.customProperties);
-    other.conditional.forEach((condition, style) -> nested(condition).mergeFrom(style));
-    keyframes.addAll(other.keyframes);
+    var otherConditional = other.conditional;
+    if (otherConditional != null) {
+      otherConditional.forEach((condition, style) -> nested(condition).mergeFrom(style));
+    }
+    var otherKeyframes = other.keyframes;
+    if (otherKeyframes != null) {
+      keyframes().addAll(otherKeyframes);
+    }
     var otherStart = other.startingStyle;
     if (otherStart != null) {
       startingStyle(start -> start.mergeFrom(otherStart));
@@ -110,20 +118,46 @@ public final class StyleRefinement
 
   /// The refinement holding the styles for `condition`, created on first use.
   StyleRefinement nested(Condition condition) {
-    return conditional.computeIfAbsent(condition, _ -> new StyleRefinement());
+    var rules = conditional;
+    if (rules == null) {
+      rules = new LinkedHashMap<>();
+      conditional = rules;
+    }
+    return rules.computeIfAbsent(condition, _ -> new StyleRefinement());
+  }
+
+  private Set<Keyframes> keyframes() {
+    var used = keyframes;
+    if (used == null) {
+      used = new LinkedHashSet<>();
+      keyframes = used;
+    }
+    return used;
   }
 
   /// Records `animation`'s keyframes for registration and writes it under [Media#MOTION_SAFE].
   StyleRefinement animate(Animation animation) {
-    keyframes.add(animation.keyframes());
+    keyframes().add(animation.keyframes());
     animation.apply(nested(Media.MOTION_SAFE));
     return this;
   }
 
+  /// Whether conditional styles, a starting style or keyframes were written, so the style may
+  /// emit more than its plain declarations.
+  boolean hasConditionalStyles() {
+    return conditional != null || startingStyle != null || keyframes != null;
+  }
+
   /// Every keyframes rule this style or a nested one uses.
   void collectKeyframes(Set<Keyframes> target) {
-    target.addAll(keyframes);
-    conditional.values().forEach(style -> style.collectKeyframes(target));
+    var used = keyframes;
+    if (used != null) {
+      target.addAll(used);
+    }
+    var rules = conditional;
+    if (rules != null) {
+      rules.values().forEach(style -> style.collectKeyframes(target));
+    }
     var start = startingStyle;
     if (start != null) {
       start.collectKeyframes(target);
@@ -131,12 +165,13 @@ public final class StyleRefinement
   }
 
   /// Compiler-facing: sets `view-transition-name` to `name` and, when `transitionClass` is not
-  /// null, `view-transition-class`. Authors attach a `TransitionKey` to the element instead.
-  /// Throws IllegalArgumentException if either is not a CSS identifier or is a CSS keyword.
+  /// null, `view-transition-class`. Authors attach a `TransitionKey` to the element instead; the
+  /// compiler passes that key's name and class, which the key has already validated, so they are
+  /// emitted as given.
   public StyleRefinement viewTransition(String name, @Nullable String transitionClass) {
-    put(CssProperty.VIEW_TRANSITION_NAME, CssIdent.of(name));
+    put(CssProperty.VIEW_TRANSITION_NAME, name);
     if (transitionClass != null) {
-      put(CssProperty.VIEW_TRANSITION_CLASS, CssIdent.of(transitionClass));
+      put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
     }
     return this;
   }
@@ -149,7 +184,7 @@ public final class StyleRefinement
 
   /// Whether this style emits nothing, including its nested rules.
   boolean isEmpty() {
-    return !hasDeclarations() && !hasNestedRules(true);
+    return !hasDeclarations() && !hasNestedRules();
   }
 
   /// Whether plain declarations or custom properties are set.
@@ -157,15 +192,21 @@ public final class StyleRefinement
     return !declarations.isEmpty() || !customProperties.isEmpty();
   }
 
-  /// Whether a nested rule emits something; container queries count only if `includeContainers`.
-  boolean hasNestedRules(boolean includeContainers) {
+  /// Whether a nested rule, container queries included, emits something.
+  private boolean hasNestedRules() {
     var start = startingStyle;
-    return (start != null && !start.isEmpty())
-        || conditional.entrySet().stream()
-            .anyMatch(
-                entry ->
-                    (includeContainers || !(entry.getKey() instanceof ContainerQuery))
-                        && !entry.getValue().isEmpty());
+    if (start != null && !start.isEmpty()) {
+      return true;
+    }
+    var rules = conditional;
+    if (rules != null) {
+      for (var style : rules.values()) {
+        if (!style.isEmpty()) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /// A content hash of the declarations, used to name the generated class.
@@ -182,41 +223,61 @@ public final class StyleRefinement
     return hash;
   }
 
-  /// The full block body, without braces: the declarations, then the nested rules.
+  /// The full block body, without braces: the declarations, then the state and media rules, the
+  /// container queries and `@starting-style`.
   String toCssBody() {
+    var nested = new StringBuilder();
+    appendStateAndMediaRules(nested);
+    containerRules().forEach((query, style) -> appendRule(nested, prelude(query), style));
+    appendStartingStyle(nested);
     var sb = new StringBuilder(toCssBlockBody());
-    var nested = nestedRules(true);
     if (!sb.isEmpty() && !nested.isEmpty()) {
       sb.append(';');
     }
     return sb.append(nested).toString();
   }
 
-  /// The nested rules only: state and media rules, then container queries when
-  /// `includeContainers` is set, then `@starting-style`.
-  String nestedRules(boolean includeContainers) {
+  /// The nested rules except container queries: state and media rules, then `@starting-style`.
+  /// Empty when none emits anything.
+  String nestedRules() {
     var sb = new StringBuilder();
-    conditional.entrySet().stream()
-        .filter(entry -> includeContainers || !(entry.getKey() instanceof ContainerQuery))
+    appendStateAndMediaRules(sb);
+    appendStartingStyle(sb);
+    return sb.toString();
+  }
+
+  /// The container-query rules that emit something, in first-use order.
+  Map<ContainerQuery, StyleRefinement> containerRules() {
+    var rules = conditional;
+    if (rules == null) {
+      return Map.of();
+    }
+    var queries = new LinkedHashMap<ContainerQuery, StyleRefinement>();
+    rules.forEach(
+        (condition, style) -> {
+          if (condition instanceof ContainerQuery query && !style.isEmpty()) {
+            queries.put(query, style);
+          }
+        });
+    return queries;
+  }
+
+  private void appendStateAndMediaRules(StringBuilder sb) {
+    var rules = conditional;
+    if (rules == null) {
+      return;
+    }
+    rules.entrySet().stream()
+        .filter(entry -> !(entry.getKey() instanceof ContainerQuery))
         .sorted(Map.Entry.comparingByKey(EMISSION_ORDER))
         .forEach(entry -> appendRule(sb, prelude(entry.getKey()), entry.getValue()));
+  }
+
+  private void appendStartingStyle(StringBuilder sb) {
     var start = startingStyle;
     if (start != null) {
       appendRule(sb, "@starting-style", start);
     }
-    return sb.toString();
-  }
-
-  /// The container-query rules, in first-use order.
-  Map<ContainerQuery, StyleRefinement> containerRules() {
-    var rules = new LinkedHashMap<ContainerQuery, StyleRefinement>();
-    conditional.forEach(
-        (condition, style) -> {
-          if (condition instanceof ContainerQuery query && !style.isEmpty()) {
-            rules.put(query, style);
-          }
-        });
-    return rules;
   }
 
   private static void appendRule(StringBuilder sb, String prelude, StyleRefinement style) {

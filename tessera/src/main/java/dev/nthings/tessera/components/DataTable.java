@@ -27,7 +27,9 @@ import java.util.function.Function;
 ///   becomes a stacked card: the header row is hidden, and each cell that is not a row header is
 ///   prefixed with its column header.
 /// - The caption's id is `<instance id>--caption`.
-public final class DataTable<T> extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `data-table-<n>`.
+public final class DataTable<T> extends BuiltinView<DataTable<T>> {
 
   /// The scroll region; the stacked layout queries its width.
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
@@ -106,16 +108,14 @@ public final class DataTable<T> extends BuiltinView {
     return new DataTable<>(caption, columns, rows);
   }
 
-  /// Names this instance in the enclosing view scope; the caption's id is prefixed with it.
-  /// Without it, the compiler assigns `data-table-<n>`.
-  public DataTable<T> id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Sets the region width below which rows stack as cards. The default is 36rem.
   public DataTable<T> stackBelow(CssLength width) {
     this.stackBelow = width;
+    return this;
+  }
+
+  @Override
+  public DataTable<T> self() {
     return this;
   }
 

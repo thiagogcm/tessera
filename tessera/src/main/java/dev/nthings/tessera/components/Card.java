@@ -17,7 +17,6 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
-import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -31,7 +30,9 @@ import org.jspecify.annotations.Nullable;
 /// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
 ///   buttons, and form controls in the card stay clickable.
 /// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins.
-public final class Card extends BuiltinView implements FluentBuilder<Card> {
+///
+/// Without an [#id(String)], the compiler numbers instances `card-<n>`.
+public final class Card extends BuiltinView<Card> {
 
   /// How a card responds to interaction; a card without one has only its own content.
   private sealed interface Interaction {}
@@ -61,13 +62,6 @@ public final class Card extends BuiltinView implements FluentBuilder<Card> {
 
   @Override
   public Card self() {
-    return this;
-  }
-
-  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
-  /// it. Without it, the compiler assigns `card-<n>`.
-  public Card id(String id) {
-    this.id = id;
     return this;
   }
 

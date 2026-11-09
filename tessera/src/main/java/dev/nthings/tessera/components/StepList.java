@@ -17,7 +17,9 @@ import java.util.List;
 /// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the
 /// steps progress. Create one with [#of(String...)] for plain text steps or
 /// [#of(IntoElement...)] for steps with markup.
-public final class StepList extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `step-list-<n>`.
+public final class StepList extends BuiltinView<StepList> {
 
   private static final Counter STEP = Counter.named("step");
   private static final CustomProperty STEP_INDEX = CustomProperty.named("step-index");
@@ -39,10 +41,8 @@ public final class StepList extends BuiltinView {
     return new StepList(ListItems.elements(steps));
   }
 
-  /// Names this instance in the enclosing view scope; ids bound in its steps are prefixed with it.
-  /// Without it, the compiler assigns `step-list-<n>`.
-  public StepList id(String id) {
-    this.id = id;
+  @Override
+  public StepList self() {
     return this;
   }
 

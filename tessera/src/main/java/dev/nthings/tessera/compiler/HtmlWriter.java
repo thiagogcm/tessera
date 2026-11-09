@@ -6,8 +6,12 @@ import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
 
 /// Encodes a linked document for the HTML output boundary.
@@ -17,14 +21,56 @@ final class HtmlWriter {
 
   private HtmlWriter() {}
 
+  /// The stylesheet and behavior modules shared by the pages of one compilation, hashed and
+  /// encoded once: under external output each file is an [Asset] at a content-hashed path, which
+  /// every page painted with these resources links.
+  static final class Resources {
+    private final String css;
+    private final OutputMode outputMode;
+    private final @Nullable Asset stylesheet;
+    private final Map<ClientBehavior, Asset> modules = new LinkedHashMap<>();
+
+    /// Resources for `css` and every module in `behaviors`, in order; a repeated behavior is
+    /// encoded once.
+    Resources(String css, OutputMode outputMode, Iterable<ClientBehavior> behaviors) {
+      this.css = css;
+      this.outputMode = outputMode;
+      if (outputMode instanceof ExternalOutput(var base)) {
+        stylesheet = Asset.text(stylesheetPath(base, css), css);
+        for (var behavior : behaviors) {
+          modules.computeIfAbsent(behavior, b -> Asset.text(behaviorPath(base, b), b.module()));
+        }
+      } else {
+        stylesheet = null;
+      }
+    }
+
+    /// The files the pages link: none inline; otherwise the stylesheet, then each module in
+    /// first-use order.
+    List<Asset> assets() {
+      var linked = stylesheet;
+      if (linked == null) {
+        return List.of();
+      }
+      var assets = new ArrayList<Asset>(modules.size() + 1);
+      assets.add(linked);
+      assets.addAll(modules.values());
+      return assets;
+    }
+
+    /// The path of `behavior`'s module, which must be one these resources were built with.
+    private String moduleHref(ClientBehavior behavior) {
+      return Objects.requireNonNull(modules.get(behavior), behavior.id()).path();
+    }
+  }
+
   /// Paints the document envelope and linked nodes. Under external output the stylesheet and
-  /// modules are linked at the paths [#assets] returns for the same inputs.
+  /// `behaviors` are linked at the paths of `resources`' assets.
   static String paint(
       PageDocument doc,
       List<ResolvedNode> bodyNodes,
       List<ResolvedNode> headNodes,
-      String css,
-      OutputMode outputMode,
+      Resources resources,
       List<ClientBehavior> behaviors) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
@@ -41,10 +87,10 @@ final class HtmlWriter {
       out.append('\n');
     }
 
-    switch (outputMode) {
+    switch (resources.outputMode) {
       case InlineOutput _ -> {
         out.append("<style>\n");
-        out.append(css);
+        out.append(resources.css);
         out.append("</style>\n");
         for (var behavior : behaviors) {
           out.append("<script type=\"module\">\n");
@@ -52,13 +98,14 @@ final class HtmlWriter {
           out.append("\n</script>\n");
         }
       }
-      case ExternalOutput(var base) -> {
+      case ExternalOutput _ -> {
         out.append("<link rel=\"stylesheet\" href=\"");
-        out.append(Encode.forHtmlAttribute(stylesheetPath(base, css)));
+        var stylesheet = Objects.requireNonNull(resources.stylesheet);
+        out.append(Encode.forHtmlAttribute(stylesheet.path()));
         out.append("\">\n");
         for (var behavior : behaviors) {
           out.append("<script type=\"module\" src=\"");
-          out.append(Encode.forHtmlAttribute(behaviorPath(base, behavior)));
+          out.append(Encode.forHtmlAttribute(resources.moduleHref(behavior)));
           out.append("\"></script>\n");
         }
       }
@@ -70,22 +117,6 @@ final class HtmlWriter {
     }
     out.append("\n</body>\n</html>\n");
     return out.toString();
-  }
-
-  /// The files a page painted with these inputs links: none inline; otherwise the stylesheet,
-  /// then each behavior module.
-  static List<Asset> assets(String css, OutputMode outputMode, List<ClientBehavior> behaviors) {
-    return switch (outputMode) {
-      case InlineOutput _ -> List.of();
-      case ExternalOutput(var base) -> {
-        var assets = new ArrayList<Asset>(behaviors.size() + 1);
-        assets.add(Asset.text(stylesheetPath(base, css), css));
-        for (var behavior : behaviors) {
-          assets.add(Asset.text(behaviorPath(base, behavior), behavior.module()));
-        }
-        yield assets;
-      }
-    };
   }
 
   private static String stylesheetPath(String base, String css) {

@@ -50,7 +50,7 @@ public interface Styled<SELF extends Styled<SELF>>
   }
 
   /// Runs `styles` on declarations that apply only while `condition` holds: a [State] such as
-  /// [State#HOVER] (a nested `&:hover:not(:disabled)` rule), a [Media] feature such as
+  /// [State#HOVER] (a nested `&:hover:not(:where(:disabled))` rule), a [Media] feature such as
   /// [Media#MOTION_SAFE], or a [ContainerQuery] from a [Container]. Calling again with an equal
   /// condition extends the same rules, and `styles` may call `on` again to nest conditions.
   ///

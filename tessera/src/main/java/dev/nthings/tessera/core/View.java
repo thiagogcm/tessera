@@ -1,7 +1,6 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.ScopeStyle;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
 /// Reusable component with its own id namespace and scoped CSS. Each instance opens a view scope
@@ -24,7 +23,7 @@ public interface View extends IntoElement {
   /// so `MetricCard` gives `metric-card`. Anonymous classes and lambdas have no stable class name:
   /// the compiler reports `unstable-view-type` for them unless they override this method.
   default String viewType() {
-    return ViewTypes.DEFAULT_NAMES.get(getClass());
+    return ClassNames.defaultViewType(getClass());
   }
 
   /// Adds this view's styles through `scope`, usually `scope.root(...)` for its root element.
@@ -41,16 +40,4 @@ public interface View extends IntoElement {
   default Element intoElement() {
     return new ViewElement(this, SourceProvenance.capture());
   }
-}
-
-final class ViewTypes {
-  static final ClassValue<String> DEFAULT_NAMES =
-      new ClassValue<>() {
-        @Override
-        protected String computeValue(Class<?> type) {
-          return Fnv1a64.toKebabCase(type.getSimpleName());
-        }
-      };
-
-  private ViewTypes() {}
 }

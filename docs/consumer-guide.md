@@ -137,7 +137,7 @@ main().children(
     Elements.deferred(modal, 10));
 ```
 
-A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
+A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead; a button opens no scope of its own, so `ElementRef.scoped("save")` on a button inside a view with id `toolbar` emits `toolbar--save`. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
 
 The vocabulary is shared: `Tone` for semantic color, `Size` (`SM`, `MD`, `LG`) for buttons and badges, and `Link(href, label)` for `Breadcrumbs`, `NavTabs` and `DocPager`. A `label` is an accessible name, a `title` a visible heading, a `description` muted secondary text, and `actions(...)` footer actions. `Forms` (styled controls such as `Forms.email(name)`, wrapped by `Field.of(label, control)`) and `Formatting` (inline `mark`, `kbd`, `code`, ...) are plain functions that return elements.
 
@@ -343,7 +343,7 @@ scope.select(":scope > article", card);
 
 `on(condition, styles)` applies `styles` only while the condition holds. A `Condition` is a `State` (`HOVER` and `ACTIVE`, which skip disabled elements, `FOCUS_VISIBLE`, `CHECKED`, `OPEN`, `USER_INVALID`, `USER_VALID`, `DISABLED`), a `Media` feature (`MOTION_SAFE`, no reduced-motion preference), or a container query. States are emitted in that order whatever the call order, so `ACTIVE` beats `HOVER` and `DISABLED` beats both. Conditions nest: `on(Media.MOTION_SAFE, m -> m.on(State.HOVER, ...))`.
 
-On an element, state and media rules go to the `interactive` cascade layer and container queries to the `container` layer, both above the element's base styles. Inside a `ScopeStyle` rule they nest in that rule (`&:hover`, `@media`, `@container`), so a scope can style its links' hover state with `select(":scope a", s -> s.on(State.HOVER, ...))`. `ScopeStyle.on(query, rules)` wraps whole rules in a media feature or container query. `startingStyle(...)` writes the `@starting-style` values an entry transition starts from:
+On an element, state and media rules go to the `interactive` cascade layer and container queries to the `container` layer, both above the element's base styles. Inside a `ScopeStyle` rule they nest in that rule (`&:hover`, `@media`, `@container`), so a scope can style its links' hover state with `select(":scope a", s -> s.on(State.HOVER, ...))`, which is exactly as specific as `:scope a:hover` (the disabled guard is wrapped in `:where()`). `ScopeStyle.on(query, rules)` wraps whole rules in a media feature or container query. `startingStyle(...)` writes the `@starting-style` values an entry transition starts from:
 
 ```java
 scope.select(":scope:open", s -> s.opacity(1).startingStyle(start -> start.opacity(0)));

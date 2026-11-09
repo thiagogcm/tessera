@@ -11,7 +11,10 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
-abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinView implements FluentBuilder<B> {
+/// A button opens no view scope of its own: it renders a single `<button>` styled with
+/// element-level styles, so the refs it binds and targets resolve in the enclosing scope.
+abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
+    implements FluentBuilder<B> {
 
   Tone tone;
   Button.Variant variant;
@@ -66,9 +69,10 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinView implement
     return self();
   }
 
-  /// Binds `ref` to the `<button>` element, so other elements can reference it. Binding several
-  /// refs aliases them, as [TagElement#id(ElementRef)] does. Buttons take a ref rather than an
-  /// instance id, since they bind no ids of their own.
+  /// Binds `ref` to the `<button>` element, so other elements can reference it. The ref binds in
+  /// the enclosing view scope, so `ElementRef.scoped("save")` inside a view with id `toolbar`
+  /// emits `toolbar--save`. Binding several refs aliases them, as [TagElement#id(ElementRef)]
+  /// does.
   public B id(ElementRef ref) {
     domRefs.add(ref);
     return self();

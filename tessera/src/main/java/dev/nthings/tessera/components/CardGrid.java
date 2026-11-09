@@ -14,7 +14,9 @@ import java.util.List;
 /// Responsive grid of [Card]s, created with [#of(CssLength, IntoElement...)]. It fits as many
 /// columns as are at least the minimum card width. Cards in the same row align their media,
 /// header, body, and footer regions, so their footers line up.
-public final class CardGrid extends BuiltinView implements ParentElement<CardGrid> {
+///
+/// Without an [#id(String)], the compiler numbers instances `card-grid-<n>`.
+public final class CardGrid extends BuiltinView<CardGrid> implements ParentElement<CardGrid> {
 
   private final CssLength minCardWidth;
   private CssLength gap = Tokens.SPACE_4;
@@ -38,13 +40,6 @@ public final class CardGrid extends BuiltinView implements ParentElement<CardGri
   @Override
   public void appendChild(Element child) {
     cards.add(child);
-  }
-
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `card-grid-<n>`.
-  public CardGrid id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Sets the row and column gap. The default is [Tokens#SPACE_4].

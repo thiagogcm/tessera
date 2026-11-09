@@ -15,7 +15,6 @@ import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
-import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -27,7 +26,9 @@ import org.jspecify.annotations.Nullable;
 /// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
 /// Line numbers are display-only and are not part of the copied text. Create one with
 /// [#of(String)] for a source string or [#ofLines(String...)] for lines you already have.
-public final class CodeBlock extends BuiltinView implements FluentBuilder<CodeBlock> {
+///
+/// Without an [#id(String)], the compiler numbers instances `tessera-code-block-<n>`.
+public final class CodeBlock extends BuiltinView<CodeBlock> {
 
   private static final Counter LINE_COUNTER = Counter.named("code-line");
 
@@ -58,13 +59,6 @@ public final class CodeBlock extends BuiltinView implements FluentBuilder<CodeBl
 
   @Override
   public CodeBlock self() {
-    return this;
-  }
-
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `tessera-code-block-<n>`.
-  public CodeBlock id(String id) {
-    this.id = id;
     return this;
   }
 

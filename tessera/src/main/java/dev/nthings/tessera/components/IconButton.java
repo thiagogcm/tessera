@@ -1,10 +1,7 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.span;
-
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tone;
 
 /// Icon-only `<button>` created with [#of(String, IntoElement)]. The label you pass is its only
@@ -33,19 +30,7 @@ public final class IconButton extends ButtonBase<IconButton> {
   }
 
   @Override
-  String viewType() {
-    return "icon-button";
-  }
-
-  @Override
-  void configureScope(ScopeStyle scope) {
-    ButtonFace.configure(scope, true);
-  }
-
-  @Override
   IntoElement render(RenderContext context) {
-    return ButtonFace.element(this, true)
-        .ariaLabel(label)
-        .child(span().attr("class", "button-icon").ariaHidden(true).child(icon));
+    return ButtonFace.element(this, true).ariaLabel(label).child(ButtonFace.icon(icon));
   }
 }

@@ -2,6 +2,7 @@ package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
+import dev.nthings.tessera.core.ClassNames;
 import dev.nthings.tessera.core.ComponentElement;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
@@ -17,7 +18,6 @@ import dev.nthings.tessera.core.TextElement;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.core.ViewElement;
 import dev.nthings.tessera.css.Anchor;
-import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
@@ -80,15 +80,19 @@ final class ViewExpansion {
                   + " builds",
               "Implement the view as a named class or record, or override viewType().");
         }
-        var style = new ScopeStyle();
-        callback(
-            child,
-            "Style",
-            () -> {
-              view.configureScope(style);
-              return style;
-            });
-        var type = child.styles().registerViewScope(view.viewType(), style);
+        var type =
+            child
+                .styles()
+                .registerViewScope(
+                    view.viewType(),
+                    scope ->
+                        callback(
+                            child,
+                            "Style",
+                            () -> {
+                              view.configureScope(scope);
+                              return scope;
+                            }));
         yield scoped(expand(child, "Render", view::render), type, scopeId, child);
       }
       case TagElement tag -> tag(tag, null, context);
@@ -105,7 +109,7 @@ final class ViewExpansion {
   /// name: an anonymous class, or a lambda or other hidden class.
   private static boolean hasUnstableViewType(View view) {
     var type = view.getClass();
-    if (!type.isAnonymousClass() && !type.isHidden() && !type.isSynthetic()) {
+    if (!ClassNames.isUnstable(type)) {
       return false;
     }
     try {

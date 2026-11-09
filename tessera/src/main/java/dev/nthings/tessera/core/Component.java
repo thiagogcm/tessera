@@ -12,8 +12,7 @@ public interface Component extends IntoElement {
 
   @Override
   default Element intoElement() {
-    var type = getClass();
-    var name = type.isSynthetic() || type.isAnonymousClass() ? "Component" : type.getSimpleName();
-    return new ComponentElement(this, name, SourceProvenance.capture());
+    return new ComponentElement(
+        this, ClassNames.componentName(getClass()), SourceProvenance.capture());
   }
 }

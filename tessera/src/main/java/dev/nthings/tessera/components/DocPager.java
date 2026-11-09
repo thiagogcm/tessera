@@ -23,7 +23,9 @@ import org.jspecify.annotations.Nullable;
 /// "← Previous" or "Next →" above the link label; those hints are fixed English. The cards sit
 /// side by side when the nearest ancestor container, such as the one [DocLayout] sets, is 36rem
 /// or wider. Otherwise they stack.
-public final class DocPager extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
+public final class DocPager extends BuiltinView<DocPager> {
 
   private final @Nullable Link previous;
   private final @Nullable Link next;
@@ -39,17 +41,15 @@ public final class DocPager extends BuiltinView {
     return new DocPager(previous, next);
   }
 
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `tessera-doc-pager-<n>`.
-  public DocPager id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Sets the accessible name of the landmark; make it distinct when a page has several pagers.
   /// The default is `Documentation navigation`.
   public DocPager label(String label) {
     this.label = label;
+    return this;
+  }
+
+  @Override
+  public DocPager self() {
     return this;
   }
 

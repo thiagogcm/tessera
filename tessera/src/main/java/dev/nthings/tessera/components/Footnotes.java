@@ -77,7 +77,7 @@ public final class Footnotes extends BuiltinComponent {
   }
 
   /// The endnotes list, a view for its scoped styles.
-  private static final class EndnotesView extends BuiltinView {
+  private static final class EndnotesView extends BuiltinView<EndnotesView> {
 
     private final String title;
     private final List<Entry> entries;
@@ -86,6 +86,11 @@ public final class Footnotes extends BuiltinComponent {
       this.id = "footnotes";
       this.title = title;
       this.entries = entries;
+    }
+
+    @Override
+    public EndnotesView self() {
+      return this;
     }
 
     @Override

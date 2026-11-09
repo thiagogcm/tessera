@@ -23,7 +23,9 @@ import java.util.List;
 /// Customizable `<select>`: where the browser supports customizable selects, the library styles
 /// its button and open list; other browsers show their native list. Create one with
 /// [#of(String)], add options, and wrap it with [Field#of(String, Select)] to label it.
-public final class Select extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `custom-select-<n>`.
+public final class Select extends BuiltinView<Select> {
 
   /// One option: the submitted `value`, the visible `label`, and whether it starts selected.
   public record Option(String value, String label, boolean selected) {}
@@ -49,13 +51,6 @@ public final class Select extends BuiltinView {
   /// Creates an empty select submitted as `name`.
   public static Select of(String name) {
     return new Select(name);
-  }
-
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `custom-select-<n>`.
-  public Select id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Adds an option submitting `value` and showing `label`.
@@ -88,6 +83,11 @@ public final class Select extends BuiltinView {
     var copy = new Select(control);
     copy.id = id;
     return copy;
+  }
+
+  @Override
+  public Select self() {
+    return this;
   }
 
   @Override

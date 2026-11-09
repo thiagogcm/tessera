@@ -23,7 +23,9 @@ import dev.nthings.tessera.css.Transition;
 /// surface turns translucent, blurs what is behind it and casts a shadow. Browsers without
 /// scroll-state support still keep the header at the top, with the plain surface. Create one with
 /// [#of(IntoElement)]; the content is placed inside a `<header>` element.
-public final class StickyHeader extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `sticky-header-<n>`.
+public final class StickyHeader extends BuiltinView<StickyHeader> {
 
   /// Scroll-state container queried by the header's own surface.
   private static final Container STUCK =
@@ -40,10 +42,8 @@ public final class StickyHeader extends BuiltinView {
     return new StickyHeader(content.intoElement());
   }
 
-  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
-  /// it. Without it, the compiler assigns `sticky-header-<n>`.
-  public StickyHeader id(String id) {
-    this.id = id;
+  @Override
+  public StickyHeader self() {
     return this;
   }
 

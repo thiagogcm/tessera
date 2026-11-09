@@ -44,7 +44,10 @@ import org.jspecify.annotations.Nullable;
 /// its [#triggerButton()] where users open it, and place the palette itself, usually with
 /// `Elements.deferred`. The palette's script is contributed once per document, shared by every
 /// palette on the page.
-public final class SearchPalette extends BuiltinView {
+///
+/// The dialog and input ids are prefixed with its [#id(String)], as in `<id>--dialog`. Without an
+/// id, the compiler numbers instances `search-palette-<n>`.
+public final class SearchPalette extends BuiltinView<SearchPalette> {
 
   private static final ClientBehavior SEARCH_BEHAVIOR =
       ClientBehavior.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
@@ -68,13 +71,6 @@ public final class SearchPalette extends BuiltinView {
   /// Creates an empty palette.
   public static SearchPalette of() {
     return new SearchPalette();
-  }
-
-  /// Names this instance in the enclosing view scope; the dialog and input ids are prefixed with
-  /// it, as in `<id>--dialog`. Without it, the compiler assigns `search-palette-<n>`.
-  public SearchPalette id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Sets the search field's placeholder text.
@@ -165,6 +161,11 @@ public final class SearchPalette extends BuiltinView {
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
                         .text("K")));
+  }
+
+  @Override
+  public SearchPalette self() {
+    return this;
   }
 
   @Override

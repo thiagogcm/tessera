@@ -3,13 +3,13 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
+import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.StyleRefinement;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
@@ -175,15 +175,17 @@ final class PageValidator {
     if (command == null) {
       return;
     }
+    var builtin = BuiltinCommand.fromWireValue(command);
+    if (builtin == null) {
+      return; // Custom and platform commands are outside Tessera's built-in set.
+    }
     var requirement =
-        switch (command.toLowerCase(Locale.ROOT)) {
-          case "show-modal", "close", "request-close" ->
-              target.tag() == HtmlTag.DIALOG ? null : "a <dialog> element";
-          case "toggle-popover", "show-popover", "hide-popover" ->
+        switch (builtin.target()) {
+          case DIALOG -> target.tag() == HtmlTag.DIALOG ? null : "a <dialog> element";
+          case POPOVER ->
               target.attributes().containsKey("popover")
                   ? null
                   : "an element with a popover attribute";
-          default -> null; // Custom and platform commands are outside Tessera's built-in set.
         };
     if (requirement != null) {
       state.report(

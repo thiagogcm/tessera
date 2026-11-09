@@ -21,14 +21,13 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Titled `<section>` whose heading is registered as a document heading, so [TableOfContents]
 /// and the site search index list it. Create one with [#of(String, String)] and add its content
 /// as children. Its `id` is a page-level DOM id ([ElementRef#page(String)]), so
 /// `/guide/#installation` links to it from any page; two sections with one id on a page report
-/// `duplicate-id`.
+/// `duplicate-id`, and placing one instance twice on a page reports `duplicate-reference-binding`.
 public final class Section extends BuiltinComponent implements ParentElement<Section> {
 
   /// Visual surface of a [Section].
@@ -40,15 +39,10 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
     /// Bordered, shadowed card for widgets and forms.
     CARD,
     /// Accent-tinted surface for key announcements.
-    HIGHLIGHT;
-
-    /// The `data-surface` attribute value for this surface.
-    String wireValue() {
-      return name().toLowerCase(Locale.ROOT);
-    }
+    HIGHLIGHT
   }
 
-  private final String id;
+  private final ElementRef target;
   private final String title;
   private int level = 2;
   private Surface surface = Surface.GHOST;
@@ -56,19 +50,15 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
   private @Nullable String eyebrow;
   private final List<Element> children = new ArrayList<>();
 
-  private Section(String id, String title) {
-    this.id = id;
+  private Section(ElementRef target, String title) {
+    this.target = target;
     this.title = title;
   }
 
   /// Creates a level-2 section with the `GHOST` surface, page-level id `id` and visible heading
   /// `title`. Throws IllegalArgumentException if `id` is empty or contains whitespace.
   public static Section of(String id, String title) {
-    if (id.isEmpty() || id.chars().anyMatch(Character::isWhitespace)) {
-      throw new IllegalArgumentException(
-          "Section id must be non-empty and contain no whitespace: '" + id + "'");
-    }
-    return new Section(id, title);
+    return new Section(ElementRef.page(id), title);
   }
 
   /// Sets the heading level, 2 to 4 (default 2). A table of contents indents level-3 entries under
@@ -111,7 +101,6 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
 
   @Override
   IntoElement render(RenderContext context) {
-    var target = ElementRef.page(id);
     context.registerHeading(target, title, level);
 
     var tag =
@@ -157,7 +146,7 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
     var sectionEl =
         section()
             .id(target)
-            .attr("data-surface", surface.wireValue())
+            .attr("data-surface", CssNames.of(surface))
             .attr("class", "content-section-node")
             .flex()
             .flexCol()

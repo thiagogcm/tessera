@@ -11,7 +11,7 @@ package dev.nthings.tessera.css;
 /// an empty name, a name starting with `-`, or one with characters outside `[A-Za-z0-9_-]`.
 ///
 /// @param <V> the value category, such as [CssColor]
-public sealed interface DesignToken<V extends CssValue>
+public sealed interface DesignToken<V extends CssValue> extends CssValue
     permits DesignToken.Color,
         DesignToken.Length,
         DesignToken.Duration,
@@ -24,30 +24,24 @@ public sealed interface DesignToken<V extends CssValue>
   /// The value [Theme#defaults()] gives the token.
   V defaultValue();
 
+  /// `var(--name)`.
+  @Override
+  default String toCss() {
+    return CssIdent.custom(name()).varReference();
+  }
+
   /// A color token. Use `CssColor.lightDark(light, dark)` for a value that follows the color
   /// scheme, or another color token to alias it.
   record Color(String name, CssColor defaultValue) implements DesignToken<CssColor>, CssColor {
     public Color {
-      TokenNames.require(name);
-    }
-
-    /// `var(--name)`.
-    @Override
-    public String toCss() {
-      return TokenNames.varReference(name);
+      CssIdent.custom(name);
     }
   }
 
   /// A length token. Spacing tokens in [Tokens] multiply by `--density`; other lengths do not.
   record Length(String name, CssLength defaultValue) implements DesignToken<CssLength>, CssLength {
     public Length {
-      TokenNames.require(name);
-    }
-
-    /// `var(--name)`.
-    @Override
-    public String toCss() {
-      return TokenNames.varReference(name);
+      CssIdent.custom(name);
     }
   }
 
@@ -55,13 +49,7 @@ public sealed interface DesignToken<V extends CssValue>
   record Duration(String name, CssDuration defaultValue)
       implements DesignToken<CssDuration>, CssDuration {
     public Duration {
-      TokenNames.require(name);
-    }
-
-    /// `var(--name)`.
-    @Override
-    public String toCss() {
-      return TokenNames.varReference(name);
+      CssIdent.custom(name);
     }
   }
 
@@ -70,26 +58,14 @@ public sealed interface DesignToken<V extends CssValue>
   record FontFamily(String name, FontStack defaultValue)
       implements DesignToken<FontStack>, FontStack.Entry {
     public FontFamily {
-      TokenNames.require(name);
-    }
-
-    /// `var(--name)`.
-    @Override
-    public String toCss() {
-      return TokenNames.varReference(name);
+      CssIdent.custom(name);
     }
   }
 
   /// A unitless number token, such as a line height or the density multiplier.
   record Number(String name, CssNumber defaultValue) implements DesignToken<CssNumber>, CssNumber {
     public Number {
-      TokenNames.require(name);
-    }
-
-    /// `var(--name)`.
-    @Override
-    public String toCss() {
-      return TokenNames.varReference(name);
+      CssIdent.custom(name);
     }
   }
 }

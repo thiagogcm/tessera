@@ -17,18 +17,17 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
-import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Admonition rendered as an `<aside role="note">` with a colored icon, a title, and a tinted
 /// background. Create one with [#of(Kind, String)] or [#of(Kind, IntoElement...)], and add more
 /// content as children. The title defaults to the English name of the [Kind]; [#title(String)]
 /// replaces it.
-public final class Callout extends BuiltinView
-    implements FluentBuilder<Callout>, ParentElement<Callout> {
+///
+/// Without an [#id(String)], the compiler numbers instances `tessera-callout-<n>`.
+public final class Callout extends BuiltinView<Callout> implements ParentElement<Callout> {
 
   /// Admonition kind, each with its own icon, [Tone] and default title.
   public enum Kind {
@@ -84,13 +83,6 @@ public final class Callout extends BuiltinView
 
   @Override
   public Callout self() {
-    return this;
-  }
-
-  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
-  /// it. Without it, the compiler assigns `tessera-callout-<n>`.
-  public Callout id(String id) {
-    this.id = id;
     return this;
   }
 
@@ -165,7 +157,7 @@ public final class Callout extends BuiltinView
 
     return aside()
         .role(Role.NOTE)
-        .attr("class", "callout callout--" + kind.name().toLowerCase(Locale.ROOT))
+        .attr("class", "callout callout--" + CssNames.of(kind))
         .bg(tint)
         .borderInlineStart(Border.solid(CssLength.px(4), kind.tone.color()))
         .children(header, content);

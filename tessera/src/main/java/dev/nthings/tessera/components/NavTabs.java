@@ -11,6 +11,7 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.List;
@@ -19,7 +20,9 @@ import org.jspecify.annotations.Nullable;
 /// Navigation bar of links for site navigation, in a `<nav>`. Create one with
 /// [#of(String, List)]; the link whose `href` equals [#active(String)] is marked with
 /// `aria-current="page"` and an underline that slides between links.
-public final class NavTabs extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `nav-tabs-<n>`.
+public final class NavTabs extends BuiltinView<NavTabs> {
 
   /// The active link's anchor; each bar's underline is positioned inside its own list.
   private static final Anchor ACTIVE = Anchor.named("tessera-active-nav");
@@ -38,17 +41,15 @@ public final class NavTabs extends BuiltinView {
     return new NavTabs(label, links);
   }
 
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `nav-tabs-<n>`.
-  public NavTabs id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Marks the link whose `href` equals `href` as the current page. The comparison is exact, so
   /// `/guide` and `/guide/` differ.
   public NavTabs active(String href) {
     this.active = href;
+    return this;
+  }
+
+  @Override
+  public NavTabs self() {
     return this;
   }
 
@@ -85,8 +86,10 @@ public final class NavTabs extends BuiltinView {
                     .fontSize(Tokens.FONT_SIZE_SM)
                     .fontWeight(500)
                     .whiteSpace(WhiteSpace.NOWRAP)
-                    .textDecorationNone())
-        .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
+                    .textDecorationNone()
+                    .on(
+                        State.HOVER,
+                        h -> h.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE)))
         .select(":scope li.active > a", s -> s.textColor(Tokens.ACCENT_PRIMARY).fontWeight(600));
   }
 

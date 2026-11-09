@@ -96,14 +96,37 @@ class ButtonTest {
         .hasAttribute("aria-hidden", "true")
         .hasText("Dismiss");
 
-    var scope = page.scopeBody(button);
-    var media = scope.indexOf("@media (prefers-reduced-motion: no-preference)");
+    assertThat(page.ruleOf(button, "u-")).doesNotContain("transition-duration:");
+    var interactive = page.ruleOf(button, "i-");
+    var media = interactive.indexOf("@media (prefers-reduced-motion: no-preference)");
     assertThat(media).isPositive();
-    assertThat(scope.substring(0, media))
+    assertThat(interactive.substring(0, media))
         .contains("&:focus-visible{outline:2px solid var(--accent-primary)")
         .doesNotContain("transition-duration:");
-    assertThat(scope.substring(media))
+    assertThat(interactive.substring(media))
         .contains("transition-duration:var(--control-feedback-duration)");
+  }
+
+  @Test
+  @DisplayName("a button binds and targets refs in the enclosing view scope")
+  void refsResolveInTheCallersScope() {
+    var save = ElementRef.scoped("save");
+    var panel = ElementRef.scoped("panel");
+    var page =
+        renderMain(
+            Card.of("Toolbar")
+                .id("toolbar")
+                .body(
+                    Button.of("Save").id(save).command(panel, BuiltinCommand.TOGGLE_POPOVER),
+                    IconButton.of("Refresh", span().text("↻")).id(ElementRef.scoped("refresh")),
+                    div().id(panel).popover(PopoverMode.AUTO).text("Saved")));
+
+    assertThat(page.element("button:contains(Save)"))
+        .hasAttribute("id", "toolbar--save")
+        .hasAttribute("commandfor", "toolbar--panel")
+        .doesNotHaveAttribute("data-view");
+    assertThat(page.element("button.button--icon")).hasAttribute("id", "toolbar--refresh");
+    assertThat(page.css()).doesNotContain("data-view=\"button");
   }
 
   @Test

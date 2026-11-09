@@ -3,11 +3,13 @@ package dev.nthings.tessera.compiler;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
+import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.SourceProvenance;
 import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.SequencedMap;
@@ -68,12 +70,15 @@ final class SiteCompiler {
       prepared.contributeStylesTo(sharedStyles);
     }
     var css = sharedStyles.render(site.theme());
-    var outputMode = site.outputMode();
-    var linkedFiles = new LinkedHashMap<String, Asset>();
+    var behaviors = new LinkedHashSet<ClientBehavior>();
     for (var prepared : preparedPages) {
-      for (var asset : HtmlWriter.assets(css, outputMode, prepared.behaviors())) {
-        linkedFiles.putIfAbsent(asset.path(), asset);
-      }
+      behaviors.addAll(prepared.behaviors());
+    }
+    // One stylesheet and one file per distinct module, hashed and encoded once for every page.
+    var resources = new HtmlWriter.Resources(css, site.outputMode(), behaviors);
+    var linkedFiles = new LinkedHashMap<String, Asset>();
+    for (var asset : resources.assets()) {
+      linkedFiles.putIfAbsent(asset.path(), asset);
     }
     for (var asset : linkedFiles.values()) {
       addFile(files, pageTitles, asset, "Generated file", diagnostics);
@@ -82,7 +87,7 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
-    var painted = parallelMap(preparedPages, page -> PageCompiler.paint(page, css, outputMode));
+    var painted = parallelMap(preparedPages, page -> PageCompiler.paint(page, resources));
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       pages.put(routes.get(i).path(), painted.get(i));

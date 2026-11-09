@@ -49,5 +49,10 @@ class ModalTest {
         .hasAttribute("commandfor", "inspector--details");
     assertThat(page.element("dialog[data-view^=drawer-start-] h2")).hasText("Live Inspector");
     assertThat(page.element("dialog[open]")).hasAttribute("open");
+    assertThat(page.elementById("confirm-deploy--close"))
+        .hasAttribute("command", "close")
+        .hasAttribute("commandfor", "confirm-deploy--confirmation");
+    assertThat(page.elementById("inspector--close"))
+        .hasAttribute("commandfor", "inspector--details");
   }
 }

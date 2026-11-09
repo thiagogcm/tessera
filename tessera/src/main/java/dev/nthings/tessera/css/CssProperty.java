@@ -2,6 +2,7 @@ package dev.nthings.tessera.css;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 /// The CSS properties [StyleRefinement] can declare. Declarations are emitted in constant order,
 /// and every shorthand precedes its longhands, so a longhand written after its shorthand wins in
@@ -133,7 +134,15 @@ enum CssProperty {
   /// and the side borders overlap without either containing the other, so neither clears the other
   /// and a side border keeps its own color.
   List<CssProperty> longhands() {
-    return switch (this) {
+    return LONGHANDS.get(ordinal());
+  }
+
+  /// Each constant's longhands, indexed by ordinal and computed once.
+  private static final List<List<CssProperty>> LONGHANDS =
+      Stream.of(values()).map(CssProperty::computeLonghands).toList();
+
+  private static List<CssProperty> computeLonghands(CssProperty property) {
+    return switch (property) {
       case INSET ->
           List.of(INSET_BLOCK_START, INSET_BLOCK_END, INSET_INLINE_START, INSET_INLINE_END);
       case OVERFLOW -> List.of(OVERFLOW_X, OVERFLOW_Y);

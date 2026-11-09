@@ -37,7 +37,10 @@ import org.jspecify.annotations.Nullable;
 /// Menu of links, command buttons, and custom items, opened from a trigger button. The panel opens
 /// below the trigger, flips to another side when it does not fit, and closes on Escape or on an
 /// outside click. Create one with [#of(String)].
-public final class Dropdown extends BuiltinView {
+///
+/// The trigger, panel and command item ids are prefixed with its [#id(String)]. Without an id, the
+/// compiler numbers instances `dropdown-<n>`.
+public final class Dropdown extends BuiltinView<Dropdown> {
 
   private final String label;
   private final List<Element> items = new ArrayList<>();
@@ -50,13 +53,6 @@ public final class Dropdown extends BuiltinView {
   /// Creates an empty menu whose trigger button shows `label`, which also names it.
   public static Dropdown of(String label) {
     return new Dropdown(label);
-  }
-
-  /// Names this instance in the enclosing view scope; the trigger, panel and command item ids are
-  /// prefixed with it. Without it, the compiler assigns `dropdown-<n>`.
-  public Dropdown id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Adds a link item. A non-null `shortcutHint` is shown at its end, hidden from assistive
@@ -99,6 +95,11 @@ public final class Dropdown extends BuiltinView {
         hr().border(Border.none())
             .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
             .my(Tokens.SPACE_1));
+    return this;
+  }
+
+  @Override
+  public Dropdown self() {
     return this;
   }
 

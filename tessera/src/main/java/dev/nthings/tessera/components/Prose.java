@@ -17,7 +17,9 @@ import java.util.List;
 /// limits the line length to 75ch unless [#maxMeasure(CssLength)] changes it. Create one with
 /// [#of(IntoElement...)] and add more content as children. Paragraphs with a class attribute keep
 /// their own styling.
-public final class Prose extends BuiltinView implements ParentElement<Prose> {
+///
+/// Without an [#id(String)], the compiler numbers instances `prose-container-<n>`.
+public final class Prose extends BuiltinView<Prose> implements ParentElement<Prose> {
 
   private final List<Element> children = new ArrayList<>();
   private CssLength maxMeasure = CssLength.ch(75);
@@ -27,13 +29,6 @@ public final class Prose extends BuiltinView implements ParentElement<Prose> {
   /// Creates a prose container holding `content`.
   public static Prose of(IntoElement... content) {
     return new Prose().children(content);
-  }
-
-  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
-  /// it. Without it, the compiler assigns `prose-container-<n>`.
-  public Prose id(String id) {
-    this.id = id;
-    return this;
   }
 
   @Override

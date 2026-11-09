@@ -18,7 +18,9 @@ import java.util.List;
 /// Breadcrumb trail, first link to last, rendered as a `<nav>` around an ordered list. Create one
 /// with [#of(Link...)]. The last link gets `aria-current="page"`, and every crumb stays a link.
 /// Separators are decorative, so screen readers skip them.
-public final class Breadcrumbs extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `breadcrumbs-<n>`.
+public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
 
   private final List<Link> links;
   private String label = "Breadcrumb";
@@ -35,17 +37,15 @@ public final class Breadcrumbs extends BuiltinView {
     return new Breadcrumbs(List.of(links));
   }
 
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
-  /// `breadcrumbs-<n>`.
-  public Breadcrumbs id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Sets the accessible name of the landmark; make it distinct when a page has several trails.
   /// The default is `Breadcrumb`.
   public Breadcrumbs label(String label) {
     this.label = label;
+    return this;
+  }
+
+  @Override
+  public Breadcrumbs self() {
     return this;
   }
 

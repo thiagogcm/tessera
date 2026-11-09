@@ -2,21 +2,23 @@ package dev.nthings.tessera.css;
 
 /// The semantic color of a component or highlight, shared by `Button`, `Badge`,
 /// [Styled#highlight(Tone)] and others. Each component decides how a tone paints (fill, text,
-/// border); [#color()] and [#textColor()] are the theme tokens it draws from.
+/// border); [#color()], [#textColor()] and [#onSolid()] are the colors it draws from.
 public enum Tone {
-  NEUTRAL(Tokens.TEXT_MUTED, Tokens.TEXT_MUTED),
-  ACCENT(Tokens.ACCENT_PRIMARY, Tokens.ACCENT_TEXT),
-  INFO(Tokens.STATUS_INFO, Tokens.STATUS_INFO_TEXT),
-  SUCCESS(Tokens.STATUS_SUCCESS, Tokens.STATUS_SUCCESS_TEXT),
-  WARNING(Tokens.STATUS_WARNING, Tokens.STATUS_WARNING_TEXT),
-  DANGER(Tokens.STATUS_DANGER, Tokens.STATUS_DANGER_TEXT);
+  NEUTRAL(Tokens.TEXT_MUTED, Tokens.TEXT_MUTED, Tokens.SURFACE_CARD),
+  ACCENT(Tokens.ACCENT_PRIMARY, Tokens.ACCENT_TEXT, CssColor.white()),
+  INFO(Tokens.STATUS_INFO, Tokens.STATUS_INFO_TEXT, CssColor.white()),
+  SUCCESS(Tokens.STATUS_SUCCESS, Tokens.STATUS_SUCCESS_TEXT, CssColor.white()),
+  WARNING(Tokens.STATUS_WARNING, Tokens.STATUS_WARNING_TEXT, CssColor.oklch(15, 0.02, 75)),
+  DANGER(Tokens.STATUS_DANGER, Tokens.STATUS_DANGER_TEXT, CssColor.white());
 
   private final DesignToken.Color color;
   private final DesignToken.Color textColor;
+  private final CssColor onSolid;
 
-  Tone(DesignToken.Color color, DesignToken.Color textColor) {
+  Tone(DesignToken.Color color, DesignToken.Color textColor, CssColor onSolid) {
     this.color = color;
     this.textColor = textColor;
+    this.onSolid = onSolid;
   }
 
   /// The tone's base color token, for fills, borders and icons.
@@ -28,5 +30,11 @@ public enum Tone {
   /// [#color()] so it stays readable.
   public DesignToken.Color textColor() {
     return textColor;
+  }
+
+  /// The foreground color on a solid fill of the tone, such as the label of a solid button or
+  /// badge.
+  public CssColor onSolid() {
+    return onSolid;
   }
 }

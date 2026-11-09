@@ -31,7 +31,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /// page" can reach closed items. Create one with [#of()]; by default any number of items can be
 /// open, and [#exclusive()] makes opening one close the others. The open and close animation is
 /// skipped under reduced motion.
-public final class Accordion extends BuiltinView {
+///
+/// An exclusive accordion also uses its [#id(String)] as its `<details name>` group. Without an id,
+/// the compiler numbers instances `accordion-<n>` and the group gets a page-unique name.
+public final class Accordion extends BuiltinView<Accordion> {
 
   private static final DocumentKey<AtomicInteger> GROUPS =
       DocumentKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
@@ -46,14 +49,6 @@ public final class Accordion extends BuiltinView {
   /// Creates an empty accordion in which any number of items can be open.
   public static Accordion of() {
     return new Accordion();
-  }
-
-  /// Names this instance in the enclosing view scope; ids bound inside are prefixed with it. An
-  /// exclusive accordion also uses it as its `<details name>` group. Without it, the compiler
-  /// assigns `accordion-<n>` and the group gets a page-unique name.
-  public Accordion id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Makes opening one item close the others, through a shared `<details name>` group.
@@ -71,6 +66,11 @@ public final class Accordion extends BuiltinView {
   /// Adds an item titled `title` whose body is `content`, open on load when `open` is true.
   public Accordion item(String title, IntoElement content, boolean open) {
     items.add(new Item(title, content.intoElement(), open));
+    return this;
+  }
+
+  @Override
+  public Accordion self() {
     return this;
   }
 

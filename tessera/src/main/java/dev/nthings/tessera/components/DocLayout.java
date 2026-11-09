@@ -24,7 +24,9 @@ import java.util.List;
 /// table of contents stacks above the sections. Create one with [#of(IntoElement...)] and add
 /// more sections as children; they keep their page-level ids, so links to them do not depend on
 /// the layout.
-public final class DocLayout extends BuiltinView implements ParentElement<DocLayout> {
+///
+/// Without an [#id(String)], the compiler numbers instances `doc-layout-<n>`.
+public final class DocLayout extends BuiltinView<DocLayout> implements ParentElement<DocLayout> {
 
   private static final Container LAYOUT = Container.unnamed(Container.Type.INLINE_SIZE);
 
@@ -46,13 +48,6 @@ public final class DocLayout extends BuiltinView implements ParentElement<DocLay
   @Override
   public void appendChild(Element child) {
     sections.add(child);
-  }
-
-  /// Names this instance in the enclosing view scope; ids bound in its sections are prefixed with
-  /// it. Without it, the compiler assigns `doc-layout-<n>`.
-  public DocLayout id(String id) {
-    this.id = id;
-    return this;
   }
 
   /// Sets the table of contents title. The default is `On this page`.

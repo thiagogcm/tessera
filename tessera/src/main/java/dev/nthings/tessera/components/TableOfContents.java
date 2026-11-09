@@ -80,7 +80,7 @@ public final class TableOfContents extends BuiltinComponent {
   }
 
   /// The rendered list, a view for its scoped styles.
-  private static final class Links extends BuiltinView {
+  private static final class Links extends BuiltinView<Links> {
 
     private final String title;
     private final List<DocumentHeading> items;
@@ -89,6 +89,11 @@ public final class TableOfContents extends BuiltinComponent {
       this.title = title;
       this.id = id;
       this.items = List.copyOf(items);
+    }
+
+    @Override
+    public Links self() {
+      return this;
     }
 
     @Override
@@ -158,10 +163,12 @@ public final class TableOfContents extends BuiltinComponent {
                       .textDecorationNone()
                       .transition(
                           Transition.controlFeedback()
-                              .properties(Animatable.COLOR, Animatable.BACKGROUND)))
+                              .properties(Animatable.COLOR, Animatable.BACKGROUND))
+                      .on(
+                          State.HOVER,
+                          h -> h.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE)))
           .select(
               ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
-          .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
           .select(
               ":scope a:target-current",
               s ->

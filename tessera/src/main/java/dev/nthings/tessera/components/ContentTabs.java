@@ -28,7 +28,10 @@ import java.util.List;
 /// selected. All panels are in the page: the bundled tab behavior shows the selected one, and
 /// arrow, Home and End keys move between tabs. Until the behavior loads, the tab bar is hidden and
 /// every panel is visible. Tabs without any tab report `empty-content-tabs`.
-public final class ContentTabs extends BuiltinView {
+///
+/// The tab and panel ids are prefixed with its [#id(String)], as in `<id>--tab-0`. Without an id,
+/// the compiler numbers instances `content-tabs-<n>`.
+public final class ContentTabs extends BuiltinView<ContentTabs> {
 
   private static final ClientBehavior TABS_BEHAVIOR =
       ClientBehavior.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
@@ -50,16 +53,14 @@ public final class ContentTabs extends BuiltinView {
     return new ContentTabs(label);
   }
 
-  /// Names this instance in the enclosing view scope; the tab and panel ids are prefixed with it,
-  /// as in `<id>--tab-0`. Without it, the compiler assigns `content-tabs-<n>`.
-  public ContentTabs id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Adds a tab showing `label` whose panel holds `content`.
   public ContentTabs tab(String label, IntoElement content) {
     panels.add(new Panel(label, content.intoElement()));
+    return this;
+  }
+
+  @Override
+  public ContentTabs self() {
     return this;
   }
 
@@ -107,13 +108,8 @@ public final class ContentTabs extends BuiltinView {
                     .fontWeight(500)
                     .whiteSpace(WhiteSpace.NOWRAP)
                     .cursor(Cursor.POINTER)
+                    .on(State.HOVER, h -> h.bg(Tokens.SURFACE_CARD).textColor(Tokens.TEXT_PRIMARY))
                     .on(State.FOCUS_VISIBLE, f -> f.focusRing(Tokens.ACCENT_PRIMARY)))
-        .select(
-            ":scope > .tab-bar > [role=\"tab\"]:hover",
-            s -> s.bg(Tokens.SURFACE_CARD).textColor(Tokens.TEXT_PRIMARY))
-        .select(
-            ":scope > .tab-bar > [role=\"tab\"]:focus-visible",
-            s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .select(
             ":scope > .tab-bar > [role=\"tab\"][aria-selected=\"true\"]",
             s -> s.anchorName(ACTIVE).textColor(Tokens.ACCENT_PRIMARY).fontWeight(600))

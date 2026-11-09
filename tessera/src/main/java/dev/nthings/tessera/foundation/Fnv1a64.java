@@ -26,15 +26,6 @@ public final class Fnv1a64 {
     return h;
   }
 
-  /// Compiler-facing: folds the eight bytes of `value`, least significant first, into `hash`.
-  public static long updateLong(long hash, long value) {
-    var h = hash;
-    for (var shift = 0; shift < 64; shift += 8) {
-      h = updateByte(h, (int) ((value >>> shift) & 0xFFL));
-    }
-    return h;
-  }
-
   /// Compiler-facing: folds each UTF-16 code unit of `chars` into `hash`, low byte first.
   public static long updateChars(long hash, CharSequence chars) {
     var h = hash;

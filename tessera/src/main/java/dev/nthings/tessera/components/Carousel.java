@@ -39,7 +39,9 @@ import java.util.List;
 /// Create one with [#of(String)]; the track is a focusable region named by that label. Chromium
 /// also shows native previous and next buttons and slide markers; other browsers keep the
 /// scrollable track.
-public final class Carousel extends BuiltinView {
+///
+/// Without an [#id(String)], the compiler numbers instances `carousel-<n>`.
+public final class Carousel extends BuiltinView<Carousel> {
 
   private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
 
@@ -59,13 +61,6 @@ public final class Carousel extends BuiltinView {
     return new Carousel(label);
   }
 
-  /// Names this instance in the enclosing view scope; ids bound in its slides are prefixed with
-  /// it. Without it, the compiler assigns `carousel-<n>`.
-  public Carousel id(String id) {
-    this.id = id;
-    return this;
-  }
-
   /// Adds a slide with an `h3` title and a muted summary. The heading level does not follow the
   /// page outline.
   public Carousel slide(String title, String summary) {
@@ -82,6 +77,11 @@ public final class Carousel extends BuiltinView {
   /// Adds a slide whose body is `content`.
   public Carousel slide(IntoElement content) {
     slides.add(content.intoElement());
+    return this;
+  }
+
+  @Override
+  public Carousel self() {
     return this;
   }
 

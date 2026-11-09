@@ -32,8 +32,8 @@ class ConditionalStylingTest {
 
     assertThat(style.toCssBody())
         .isEqualTo(
-            "opacity:1;&:hover:not(:disabled){opacity:0.9;cursor:pointer}"
-                + "&:active:not(:disabled){opacity:0.8}");
+            "opacity:1;&:hover:not(:where(:disabled)){opacity:0.9;cursor:pointer}"
+                + "&:active:not(:where(:disabled)){opacity:0.8}");
   }
 
   @Test
@@ -69,7 +69,7 @@ class ConditionalStylingTest {
 
     var section = page.element("section");
     assertThat(page.ruleOf(section, "u-")).isEqualTo("padding-inline:1rem;padding-block:1rem");
-    assertThat(page.ruleOf(section, "i-")).isEqualTo("&:hover:not(:disabled){opacity:0.9}");
+    assertThat(page.ruleOf(section, "i-")).isEqualTo("&:hover:not(:where(:disabled)){opacity:0.9}");
     var cqClass = CssBlocks.generatedClass(section.className(), "cq-");
     assertThat(page.css())
         .contains("@layer container{@container cards (inline-size >= 30rem){." + cqClass + "{")
@@ -113,7 +113,7 @@ class ConditionalStylingTest {
 
     assertThat(scope.toCssBody())
         .isEqualTo(
-            ":scope a{opacity:1;&:hover:not(:disabled){opacity:0.8}@starting-style{opacity:0}}"
+            ":scope a{opacity:1;&:hover:not(:where(:disabled)){opacity:0.8}@starting-style{opacity:0}}"
                 + "@container (inline-size >= 48rem){:scope{flex-direction:row}}"
                 + "@media (prefers-reduced-motion: no-preference){:scope{opacity:1}}");
   }

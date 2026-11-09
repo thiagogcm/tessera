@@ -1,7 +1,8 @@
 package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.Decimals;
-import java.util.Map;
+import java.util.Collections;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
@@ -47,17 +48,22 @@ public final class Keyframes {
           .to(s -> s.opacity(0).transform(Transform.scale(0.95)));
 
   private final CssIdent ident;
-  private final Map<Double, String> steps;
 
-  private Keyframes(CssIdent ident, Map<Double, String> steps) {
+  /// Step bodies by offset, ascending.
+  private final SortedMap<Double, String> steps;
+
+  private final String rule;
+
+  private Keyframes(CssIdent ident, SortedMap<Double, String> steps) {
     this.ident = ident;
-    this.steps = steps;
+    this.steps = Collections.unmodifiableSortedMap(steps);
+    this.rule = rule(ident, steps);
   }
 
   /// Keyframes named `name`, with no steps yet. Throws IllegalArgumentException if `name` is not a
   /// CSS identifier, starts with `--`, or is `none`, `default` or a CSS-wide keyword.
   public static Keyframes named(String name) {
-    return new Keyframes(CssIdent.of(name), Map.of());
+    return new Keyframes(CssIdent.of(name), new TreeMap<>());
   }
 
   /// The same keyframes with a `from` (0%) step written by `styles`, replacing any 0% step.
@@ -80,7 +86,7 @@ public final class Keyframes {
     styles.accept(style);
     var next = new TreeMap<>(steps);
     next.put(percent, style.toCssBlockBody());
-    return new Keyframes(ident, Map.copyOf(next));
+    return new Keyframes(ident, next);
   }
 
   /// The animation name.
@@ -95,10 +101,13 @@ public final class Keyframes {
 
   /// The complete `@keyframes` rule.
   String rule() {
+    return rule;
+  }
+
+  private static String rule(CssIdent ident, SortedMap<Double, String> steps) {
     var sb = new StringBuilder("@keyframes ").append(ident.toCss()).append('{');
-    new TreeMap<>(steps)
-        .forEach(
-            (offset, body) -> sb.append(selector(offset)).append('{').append(body).append('}'));
+    steps.forEach(
+        (offset, body) -> sb.append(selector(offset)).append('{').append(body).append('}'));
     return sb.append('}').toString();
   }
 
@@ -126,6 +135,6 @@ public final class Keyframes {
 
   @Override
   public String toString() {
-    return rule();
+    return rule;
   }
 }

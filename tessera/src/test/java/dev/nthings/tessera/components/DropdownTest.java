@@ -22,9 +22,12 @@ class DropdownTest {
     var dropdown =
         Dropdown.of("Actions")
             .id("actions-menu")
-            .linkItem("/logs", "View Logs", "G L")
+            .item(Dropdown.Item.link("/logs", "View Logs").shortcut("G L"))
+            .item(Dropdown.Item.link("/status", "Status"))
             .separator()
-            .commandItem("open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now");
+            .item(
+                Dropdown.Item.command(
+                    "open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now"));
     page = renderMain(dropdown, deferred(modal, 10));
   }
 
@@ -44,7 +47,8 @@ class DropdownTest {
   @DisplayName("exposes its panel to invokers outside the view")
   void exposesItsPanelToInvokersOutsideTheView() {
     var reference = ElementRef.scoped("tools-panel");
-    var dropdown = Dropdown.of("Tools").panelRef(reference).linkItem("/logs", "View Logs", "G L");
+    var dropdown =
+        Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "View Logs"));
     var outside =
         renderMain(
             dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
@@ -67,5 +71,14 @@ class DropdownTest {
     assertThat(page.elementById("actions-menu--open-deploy"))
         .hasAttribute("command", "show-modal")
         .hasAttribute("commandfor", "confirm-deploy--dialog");
+  }
+
+  @Test
+  @DisplayName("a shortcut hint is shown at the end of its item and hidden from assistive tech")
+  void shortcutHintIsOptionalAndHidden() {
+    assertThat(page.element("a.dropdown-item[href=/logs] > .dropdown-hint"))
+        .hasText("G L")
+        .hasAttribute("aria-hidden", "true");
+    assertThat(page.element("a.dropdown-item[href=/status]").select(".dropdown-hint")).isEmpty();
   }
 }

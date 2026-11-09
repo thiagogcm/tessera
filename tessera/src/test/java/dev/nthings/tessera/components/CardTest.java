@@ -20,8 +20,8 @@ class CardTest {
             .id("architecture")
             .media(
                 Image.of("/assets/arch.webp", "Architecture diagram")
-                    .aspectRatio(AspectRatio.of(16, 9))
-                    .objectFit(ObjectFit.COVER))
+                    .element(
+                        img -> img.aspectRatio(AspectRatio.of(16, 9)).objectFit(ObjectFit.COVER)))
             .description("Three-pass static pipeline")
             .bodyText("Separates layout expansion, validation, and paint.")
             .stretchedLink("/docs/compiler")

@@ -8,6 +8,8 @@ import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Request;
+import com.microsoft.playwright.Response;
 import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ForcedColors;
@@ -39,6 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterAll;
@@ -166,6 +170,11 @@ abstract class ShowcaseBrowserSupport {
             new InetSocketAddress("127.0.0.1", 0),
             publishedSite,
             SimpleFileServer.OutputLevel.NONE);
+    // By default the JDK server parses and answers every exchange on its one dispatcher thread
+    // with blocking I/O, so a browser that stops reading one response (a context closed
+    // mid-load, a cancelled prefetch) stalls every other request. Serve each exchange on its own
+    // thread instead.
+    server.setExecutor(Executors.newVirtualThreadPerTaskExecutor());
     server.start();
     baseUrl = "http://127.0.0.1:" + server.getAddress().getPort();
     playwright = Playwright.create();
@@ -640,8 +649,7 @@ abstract class ShowcaseBrowserSupport {
     page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
     Axe.install(page);
     for (var route : documentationRoutes()) {
-      page.navigate(baseUrl + route.path());
-      waitForBehaviors();
+      openWithBehaviors(baseUrl + route.path());
       var violations = Axe.violations(page);
       Assertions.assertThat(violations).as("axe violations on %s", route.path()).isEmpty();
     }
@@ -650,8 +658,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("content tabs switch with arrow, Home, and End keys")
   void contentTabsSwitchWithKeyboard() {
-    page.navigate(baseUrl + "/navigation");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/navigation");
     var javaTab = tab("Java");
     javaTab.focus();
     page.keyboard().press("ArrowRight");
@@ -671,8 +678,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("content tabs follow RTL visual order")
   void contentTabsFollowRtlOrder() {
-    page.navigate(baseUrl + "/navigation");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/navigation");
     page.evaluate("document.querySelector('tessera-tabs').dir = 'rtl'");
     var javaTab = tab("Java");
     javaTab.focus();
@@ -685,8 +691,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("modal opens from the keyboard and restores focus on Escape")
   void modalKeyboardFlow() {
-    page.navigate(caseUrl("modal", "closed"));
-    waitForBehaviors();
+    openWithBehaviors(caseUrl("modal", "closed"));
     var trigger = namedButton("Open modal");
     var dialog =
         page.getByRole(AriaRole.DIALOG, new Page.GetByRoleOptions().setName("Publish release?"));
@@ -703,8 +708,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("drawer opens from the keyboard and restores focus on Escape")
   void drawerKeyboardFlow() {
-    page.navigate(baseUrl + "/overlays");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/overlays");
     var trigger =
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Open start drawer"));
     var drawer =
@@ -721,8 +725,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("popover opens from the keyboard and dismisses with Escape")
   void popoverKeyboardFlow() {
-    page.navigate(caseUrl("popover", "toggle"));
-    waitForBehaviors();
+    openWithBehaviors(caseUrl("popover", "toggle"));
     var trigger =
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Toggle popover"));
     trigger.focus();
@@ -736,8 +739,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("interest tooltip opens on hover and focus")
   void interestTooltipOpensOnHoverAndFocus() {
-    page.navigate(baseUrl + "/overlays");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/overlays");
     var trigger = namedButton("Hover me");
     var tooltip =
         page.locator("[role=tooltip]")
@@ -755,8 +757,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("dropdown opens from the keyboard and dismisses with Escape")
   void dropdownKeyboardFlow() {
-    page.navigate(baseUrl + "/");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/");
     var trigger = namedButton("Pages");
     var panel = page.locator("[popover]:popover-open");
     trigger.focus();
@@ -772,8 +773,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("accordion toggles from the keyboard")
   void accordionKeyboardFlow() {
-    page.navigate(baseUrl + "/navigation");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/navigation");
     var summary =
         page.locator("summary")
             .filter(new Locator.FilterOptions().setHasText("Does it need JavaScript?"));
@@ -790,8 +790,7 @@ abstract class ShowcaseBrowserSupport {
   @Test
   @DisplayName("switch toggles with Space")
   void switchKeyboardFlow() {
-    page.navigate(caseUrl("switches", "on"));
-    waitForBehaviors();
+    openWithBehaviors(caseUrl("switches", "on"));
     var toggle =
         page.getByRole(AriaRole.SWITCH, new Page.GetByRoleOptions().setName("Weekly digest"));
     toggle.focus();
@@ -805,8 +804,7 @@ abstract class ShowcaseBrowserSupport {
   @DisplayName("carousel scrolls horizontally from the keyboard")
   void carouselScrollsFromKeyboard() {
     page.setViewportSize(390, 900);
-    page.navigate(baseUrl + "/navigation");
-    waitForBehaviors();
+    openWithBehaviors(baseUrl + "/navigation");
     var carousel =
         page.getByRole(AriaRole.REGION, new Page.GetByRoleOptions().setName("Platform highlights"));
     carousel.scrollIntoViewIfNeeded();
@@ -886,8 +884,52 @@ abstract class ShowcaseBrowserSupport {
         .toList();
   }
 
-  private void waitForBehaviors() {
+  /// Opens `url` and returns once every custom element on it is defined by its behavior module.
+  ///
+  /// Module scripts run before `load`, so after navigation an element is either defined or its
+  /// module never ran: its request failed, it answered with an HTTP error, or it threw. Waiting
+  /// for such an element can only time out, so the load records those causes and fails with them.
+  /// A transport failure (a reset loopback connection, a network change reported by the browser)
+  /// says nothing about the published site, so that load is repeated once before failing.
+  private void openWithBehaviors(String url) {
+    var problems = loadRecordingScriptProblems(url);
+    if (!problems.isEmpty() && problems.stream().allMatch(p -> p.startsWith(TRANSPORT))) {
+      System.err.println("Reloading " + url + " after " + problems);
+      problems = loadRecordingScriptProblems(url);
+    }
+    Assertions.assertThat(problems).as("behavior scripts of %s", url).isEmpty();
     page.waitForFunction("() => document.querySelectorAll(':not(:defined)').length === 0");
+  }
+
+  private static final String TRANSPORT = "transport failure: ";
+
+  /// Navigates to `url` and returns what kept its scripts from running.
+  private List<String> loadRecordingScriptProblems(String url) {
+    var problems = new ArrayList<String>();
+    Consumer<Request> failed =
+        request -> {
+          if (request.resourceType().equals("script")) {
+            problems.add(TRANSPORT + request.url() + " " + request.failure());
+          }
+        };
+    Consumer<Response> answered =
+        response -> {
+          if (response.request().resourceType().equals("script") && response.status() >= 400) {
+            problems.add("HTTP " + response.status() + ": " + response.url());
+          }
+        };
+    Consumer<String> threw = error -> problems.add("script error: " + error);
+    page.onRequestFailed(failed);
+    page.onResponse(answered);
+    page.onPageError(threw);
+    try {
+      page.navigate(url);
+    } finally {
+      page.offRequestFailed(failed);
+      page.offResponse(answered);
+      page.offPageError(threw);
+    }
+    return problems;
   }
 
   private String caseUrl(String story, String variant) {

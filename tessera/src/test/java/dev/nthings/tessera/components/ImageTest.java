@@ -28,7 +28,7 @@ class ImageTest {
               Image.of("/assets/hero-banner.webp", "Hero Banner")
                   .hero()
                   .dimensions(1280, 720)
-                  .aspectRatio(AspectRatio.of(16, 9)),
+                  .element(img -> img.aspectRatio(AspectRatio.of(16, 9))),
               Image.of("/assets/thumbnail.webp", "Secondary Thumbnail").dimensions(400, 300));
     }
 
@@ -76,5 +76,21 @@ class ImageTest {
                           assertThat(d.rule()).isEqualTo("duplicate-hero-image");
                           assertThat(d.location().components()).containsExactly("Image");
                         }));
+  }
+
+  @Test
+  @DisplayName("element options reach the <img>, and a loading value they set wins")
+  void elementOptionsReachTheImg() {
+    var page =
+        renderMain(
+            Image.of("/assets/divider.svg", "")
+                .dimensions(640, 8)
+                .element(img -> img.ariaHidden(true).attr("loading", "eager")));
+
+    assertThat(page.element("img"))
+        .hasAttribute("aria-hidden", "true")
+        .hasAttribute("loading", "eager")
+        .hasAttribute("decoding", "async")
+        .hasAttribute("width", "640");
   }
 }

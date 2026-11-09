@@ -5,7 +5,7 @@ import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
 
-import dev.nthings.tessera.core.Accessible;
+import dev.nthings.tessera.core.AriaCurrent;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.CssContent;
@@ -93,7 +93,7 @@ public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
       list.child(
           li().child(
                   a(link.href())
-                      .onlyIf(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
+                      .onlyIf(isCurrent, el -> el.ariaCurrent(AriaCurrent.PAGE))
                       .text(link.label())));
     }
     return nav().ariaLabel(label).child(list);

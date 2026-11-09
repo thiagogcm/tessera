@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 /// Rules: `duplicate-transition-key` reports a name used twice on one page.
 /// `unshared-transition-key` reports a key that appears on fewer than two routes site-wide. Both
 /// name and class are part of the key, so the class must match too. Attach a key with
-/// [InteractiveElement#transitionKey(TransitionKey)].
+/// [TagElement#transitionKey(TransitionKey)].
 public record TransitionKey(String name, @Nullable String transitionClass) {
 
   private static final Set<String> RESERVED =

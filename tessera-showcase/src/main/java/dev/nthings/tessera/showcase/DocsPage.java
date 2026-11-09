@@ -41,10 +41,12 @@ final class DocsPage {
         Image.of(Art.DOCS_BANNER, "Tessera documentation banner")
             .hero()
             .dimensions(1200, 480)
-            .transitionKey(OverviewPage.DOCS_HERO)
-            .inlineSize(CssLength.pct(100))
-            .rounded(CssLength.rem(0.75))
-            .border(Border.hairline(Tokens.BORDER_SUBTLE));
+            .element(
+                img ->
+                    img.transitionKey(OverviewPage.DOCS_HERO)
+                        .inlineSize(CssLength.pct(100))
+                        .rounded(CssLength.rem(0.75))
+                        .border(Border.hairline(Tokens.BORDER_SUBTLE)));
     var sections = new ArrayList<IntoElement>(demos);
     sections.add(Footnotes.of().title("Notes"));
     return div().flex().flexCol().gap(CssLength.rem(2)).children(hero, Page.docLayout(sections));
@@ -64,7 +66,7 @@ final class DocsPage {
                         + "images that would cause layout shift. One hero per page is enforced."))
         .code(
             "Image.of(src, \"Docs banner\").hero().dimensions(1200, 480)",
-            "    .transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\"));");
+            "    .element(img -> img.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\")));");
   }
 
   private static Demo tableOfContents() {

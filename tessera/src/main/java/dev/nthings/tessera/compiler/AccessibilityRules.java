@@ -129,7 +129,7 @@ final class AccessibilityRules {
             describe(tag, role) + " must declare " + required,
             "Declare "
                 + required
-                + " with the matching Accessible method, or use a native element that exposes it.");
+                + " with its typed aria method, or use a native element that exposes it.");
       }
     }
 
@@ -282,7 +282,7 @@ final class AccessibilityRules {
 
   private static int ariaLevel(ResolvedTag tag) {
     var declared = tag.attributes().get("aria-level");
-    // Only Accessible.ariaLevel writes it, already checked to be 1-6.
+    // Only TagElement.ariaLevel writes it, already checked to be 1-6.
     return declared == null ? 0 : Integer.parseInt(declared);
   }
 

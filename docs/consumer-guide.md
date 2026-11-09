@@ -137,7 +137,7 @@ main().children(
     Elements.deferred(modal, 10));
 ```
 
-Initial state is a separate method or toggle, never a positional boolean: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)` beside `item(...)`, `Select.selectedOption(value, label)` beside `option(...)`, and `Forms.checkedSwitchField(label, name)` beside `switchField(...)`. For a condition known only at run time, branch inside the chain with `onlyIf(condition, x -> x.checked())`; `ifPresent(value, (x, v) -> ...)` does the same for a nullable value. Boolean attributes are set with `boolAttr("open")`.
+Initial state is a separate method or toggle, never a positional boolean: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)` beside `item(...)`, `Select.selectedOption(value, label)` beside `option(...)`, and `Forms.checkedSwitchField(label, name)` beside `switchField(...)`. For a condition known only at run time, branch inside the chain with `onlyIf(condition, x -> x.checked())`; `ifPresent(value, (x, v) -> ...)` does the same for a nullable value. Boolean attributes are set with `boolAttr("open")`. Optional parts are fluent options too, never nullable arguments: `DocPager.of().previous(link).next(link)`, `Dropdown.Item.link(href, label).shortcut("G F")` added with `dropdown.item(...)`, and `SearchPalette.Item.of(title, href).description(text).badge(text)`.
 
 A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead; a button opens no scope of its own, so `ElementRef.scoped("save")` on a button inside a view with id `toolbar` emits `toolbar--save`. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
 
@@ -200,7 +200,7 @@ var body = Elements.main().children(trigger, dialog);
 | `ElementRef.page("installation")` | `installation` exactly, wherever it is bound; use it for public fragments such as `/guide/#installation` |
 | `ElementRef.anonymous()` or `element.ref()` | Assigned by the compiler as `<tag>-<n>` within the view scope |
 
-The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`. Higher-level components such as `Modal` expose their own trigger helpers to manage these references.
+The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`, and so is `removeAttr` for them. Higher-level components such as `Modal` expose their own trigger helpers to manage these references.
 
 For document navigation, the example uses `Section.of(id, title)`. It registers heading metadata and binds the section to a page-level id, and `TableOfContents.of(title)` may appear before the sections it lists. `DocLayout.of(sections...)` places them beside a sticky table of contents. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
 
@@ -220,7 +220,15 @@ for (var post : posts) {
 }
 ```
 
-Ids bound inside keyed content are scoped by its key, so each post's `title` id stays the same when posts are added, removed or reordered. The content is emitted in place, with no wrapper. Keys are compared exactly and only among the children of one parent: two siblings with the same key report `duplicate-key`, while the same key under different parents is fine. A blank key throws `IllegalArgumentException`. Lists that never change order, or whose items carry no ids or links, do not need keys.
+Ids bound inside keyed content are scoped by its key, so each post's `title` id stays the same when posts are added, removed or reordered, and when other content, keyed or not, is added or removed elsewhere on the page. The content is emitted in place, with no wrapper. Keys are compared exactly and only among the children of one parent: two siblings with the same key report `duplicate-key`. A blank key throws `IllegalArgumentException`. Lists that never change order, or whose items carry no ids or links, do not need keys.
+
+The key's scope is the enclosing view plus the nearest enclosing element bound to a named ref (`ElementRef.scoped` or `ElementRef.page`), never a position. Two keyed lists in one view without such an element therefore share a namespace: if both use the same key and their items bind the same scoped ids, the page reports `duplicate-id`. Give each list's parent its own id to keep them apart:
+
+```java
+Elements.main().children(
+    Elements.ul().id(ElementRef.scoped("posts")).children(posts),
+    Elements.ul().id(ElementRef.scoped("drafts")).children(drafts));
+```
 
 ## Add a button
 
@@ -346,7 +354,7 @@ div()
     .transition(Transition.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
 ```
 
-Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). Names are small validated handles: `Container`, `Keyframes`, `Anchor`, `Counter`, and `CustomProperty` for a local custom property. Every style method is on `Styled`, which elements, components such as `Image`, and `StyleRefinement` implement.
+Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). `Shadow.drop(...)` and `Shadow.inset(...)` build `box-shadow` layers, and `offsetX(...)` shifts one sideways. Names are small validated handles: `Container`, `Keyframes`, `Anchor`, `Counter`, and `CustomProperty` for a local custom property. Every style method is on `Styled`, which elements and `StyleRefinement` implement; a component that owns an element, such as `Image`, styles it through `element(...)`.
 
 The last call wins. Writing a property again replaces it, and writing a shorthand removes the longhands it covers: `p(...)` replaces an earlier `pt(...)`/`pb(...)`/`ps(...)`/`pe(...)`, `border(...)` replaces earlier side borders and `borderColor(...)`, and `gap(...)` replaces `rowGap(...)`/`colGap(...)`. A longhand written after its shorthand refines it, so `p(Tokens.SPACE_4).pt(CssLength.zero())` keeps both.
 
@@ -400,7 +408,7 @@ bar.animation(Animation.scrollProgress(grow));                        // follows
 
 ## Declare roles and states
 
-Roles are `Role` constants and each `aria-*` attribute has a method taking the type it accepts. The generic `attr(...)` method refuses `role` and `aria-*`.
+Roles are `Role` constants and each `aria-*` attribute has a method on the element taking the type it accepts, such as `ariaCurrent(AriaCurrent.PAGE)` or `ariaChecked(AriaChecked.MIXED)`. The generic `attr(...)`, `boolAttr(...)` and `removeAttr(...)` methods refuse `role` and `aria-*`, and the element's attribute views are read-only, so the typed methods are the only way to write them.
 
 ```java
 var tabs = div().role(Role.TABLIST).ariaLabel("Sections")
@@ -431,7 +439,15 @@ builder.asset(Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
 builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
 ```
 
-Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Decorative images need the appropriate presentation or hidden semantics. The compiler reports missing alt text and missing dimensions/aspect ratios. `hero()` marks the page's main image: it loads eagerly with a `<head>` preload, and a second hero on one page reports `duplicate-hero-image`.
+Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Images load lazily and decode asynchronously. `hero()` marks the page's main image: it loads eagerly with `fetchpriority="high"` and a `<head>` preload, and a second hero on one page reports `duplicate-hero-image`. Everything else about the `<img>` (styles, an aspect ratio instead of dimensions, ARIA states, a ref, a transition key) goes through `element(...)`, which receives the element:
+
+```java
+Image.of("/assets/divider.svg", "")
+    .dimensions(640, 8)
+    .element(img -> img.ariaHidden(true).inlineSize(CssLength.pct(100)));
+```
+
+The compiler reports missing alt text and missing dimensions or aspect ratio. Empty alt marks the image decorative, which also needs `role(Role.PRESENTATION)` or `ariaHidden(true)`.
 
 ## Add static-site search
 
@@ -441,7 +457,7 @@ Rendering a `SearchPalette` includes its search input, result links, and JavaScr
 var search = SearchPalette.of()
     .placeholder("Search pages and sections...")
     .item("Guide", "Installation", "/guide/#installation")
-    .item("Guide", "Publishing", "/guide/#publishing");
+    .item("Guide", SearchPalette.Item.of("Publishing", "/guide/#publishing").description("Ship the site").badge("New"));
 
 Elements.main().children(search.triggerButton(), Elements.deferred(search, 10));
 ```
@@ -452,7 +468,7 @@ The module registers a customized native `<dialog is="tessera-search">` element.
 
 Typing filters the rendered links by group, title, and description. Matching is case- and accent-insensitive and accepts multiple words. Empty results show a message; clearing the query restores the directory. Arrow keys move focus through matching links. Enter on the input opens the first result, and Enter on a focused link uses native navigation. Selecting a result requests native dialog dismissal before the link navigates. Escape dismisses the dialog.
 
-The runtime reads the palette's rendered links. The generated `search-index.json` is a separate artifact for other consumers. Add the routes and sections you want to expose with `.item(...)`, or initialize a palette from routes using `SiteNavigation.searchPalette(site)`.
+The runtime reads the palette's rendered links. The generated `search-index.json` is a separate artifact for other consumers. Add the routes and sections you want to expose with `.item(group, title, href)`, or `.item(group, SearchPalette.Item.of(title, href))` for a link with a `description(...)` line or a `badge(...)`, or initialize a palette from routes using `SiteNavigation.searchPalette(site)`.
 
 ## Use from Kotlin
 
@@ -491,7 +507,7 @@ fun main() {
 
 ### Receiver lambdas
 
-Style callbacks (`StyleBlock`) and scope query groups (`ScopeBlock`) carry the `dev.nthings.tessera.foundation.KotlinReceiver` marker. Register it with Kotlin's `sam-with-receiver` compiler plugin and the object being configured becomes the lambda's receiver, so `div().on(State.HOVER) { it.bg(Tokens.SURFACE_SUBTLE) }` can be written `div().on(State.HOVER) { bg(Tokens.SURFACE_SUBTLE) }`, and a shared preset is `val card = StyleBlock { p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL) }`. The plugin applies to every `StyleBlock` and `ScopeBlock` lambda in the module, which then has a receiver and no `it`; without the plugin, write the `it.` form shown above.
+Style callbacks (`StyleBlock`), scope query groups (`ScopeBlock`) and element callbacks such as `Image.element(...)` (`ElementBlock`) carry the `dev.nthings.tessera.foundation.KotlinReceiver` marker. Register it with Kotlin's `sam-with-receiver` compiler plugin and the object being configured becomes the lambda's receiver, so `div().on(State.HOVER) { it.bg(Tokens.SURFACE_SUBTLE) }` can be written `div().on(State.HOVER) { bg(Tokens.SURFACE_SUBTLE) }`, and a shared preset is `val card = StyleBlock { p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL) }`. The plugin applies to every `StyleBlock`, `ScopeBlock` and `ElementBlock` lambda in the module, which then has a receiver and no `it`; without the plugin, write the `it.` form shown above.
 
 With Gradle:
 

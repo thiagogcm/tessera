@@ -61,6 +61,15 @@ class CssValueTest {
             Shadow.drop(CssLength.px(1), CssLength.zero(), Tokens.BORDER_SUBTLE),
             "0 1px 0 var(--border-subtle)"),
         argumentSet(
+            "inset shadow",
+            Shadow.inset(CssLength.px(2), CssLength.px(4), Tokens.BORDER_SUBTLE),
+            "inset 0 2px 4px var(--border-subtle)"),
+        argumentSet(
+            "inset shadow with spread and horizontal offset",
+            Shadow.inset(CssLength.zero(), CssLength.px(6), CssLength.px(-2), scrim)
+                .offsetX(CssLength.px(3)),
+            "inset 3px 0 6px -2px oklch(0% 0 0 / 0.28)"),
+        argumentSet(
             "hairline border",
             Border.hairline(Tokens.BORDER_SUBTLE),
             "1px solid var(--border-subtle)"),

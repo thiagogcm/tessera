@@ -6,6 +6,7 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.hr;
 import static dev.nthings.tessera.core.Elements.span;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.Element;
@@ -13,6 +14,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -32,15 +34,73 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Menu of links, command buttons, and custom items, opened from a trigger button. The panel opens
 /// below the trigger, flips to another side when it does not fit, and closes on Escape or on an
-/// outside click. Create one with [#of(String)].
+/// outside click. Create one with [#of(String)] and add [Item]s:
+///
+/// ```java
+/// Dropdown.of("Go to")
+///     .item(Dropdown.Item.link("/forms", "Forms").shortcut("G F"))
+///     .separator()
+///     .item(Dropdown.Item.command("open", inspector, BuiltinCommand.SHOW_MODAL, "Inspect"));
+/// ```
 ///
 /// The trigger, panel and command item ids are prefixed with its [#id(String)]. Without an id, the
 /// compiler numbers instances `dropdown-<n>`.
 public final class Dropdown extends BuiltinView<Dropdown> {
+
+  /// One link or command entry of a [Dropdown], added with [Dropdown#item(Item)]. The value is
+  /// immutable: [#shortcut(String)] returns a new one.
+  @CheckReturnValue
+  public static final class Item {
+    private final Supplier<TagElement> control;
+    private final String label;
+    private final @Nullable String shortcut;
+
+    private Item(Supplier<TagElement> control, String label, @Nullable String shortcut) {
+      this.control = control;
+      this.label = label;
+      this.shortcut = shortcut;
+    }
+
+    /// A link to `href` showing `label`.
+    public static Item link(String href, String label) {
+      return new Item(() -> a(href).attr("class", ITEM_CLASS), label, null);
+    }
+
+    /// A button showing `label` that runs `command` on `target`, under the rules of
+    /// [Button#command]. `buttonId` is its DOM id within the menu; reusing an id fails with
+    /// `duplicate-id`.
+    public static Item command(String buttonId, ElementRef target, Command command, String label) {
+      return new Item(
+          () ->
+              button()
+                  .id(ElementRef.scoped(buttonId))
+                  .attr("class", ITEM_CLASS)
+                  .command(target, command),
+          label,
+          null);
+    }
+
+    /// The same item with `hint`, such as `G F`, shown at its end. The hint is visual only and is
+    /// hidden from assistive technology.
+    public Item shortcut(String hint) {
+      return new Item(control, label, hint);
+    }
+
+    TagElement toElement() {
+      var element = control.get().child(span().text(label));
+      if (shortcut != null) {
+        element.child(span().attr("class", "dropdown-hint").ariaHidden(true).text(shortcut));
+      }
+      return element;
+    }
+  }
+
+  private static final String ITEM_CLASS = "dropdown-item";
 
   private final String label;
   private final List<Element> items = new ArrayList<>();
@@ -55,31 +115,9 @@ public final class Dropdown extends BuiltinView<Dropdown> {
     return new Dropdown(label);
   }
 
-  /// Adds a link item. A non-null `shortcutHint` is shown at its end, hidden from assistive
-  /// technology.
-  public Dropdown linkItem(String href, String label, @Nullable String shortcutHint) {
-    var link =
-        a(href)
-            .attr("class", "dropdown-item")
-            .child(span().text(label))
-            .ifPresent(
-                shortcutHint,
-                (el, hint) ->
-                    el.child(span().attr("class", "dropdown-hint").ariaHidden(true).text(hint)));
-    items.add(link);
-    return this;
-  }
-
-  /// Adds a button item that runs `command` on `target`, under the rules of [Button#command].
-  /// `buttonId` is its DOM id within the menu; reusing an id fails with `duplicate-id`.
-  public Dropdown commandItem(String buttonId, ElementRef target, Command command, String label) {
-    var btn =
-        button()
-            .id(ElementRef.scoped(buttonId))
-            .attr("class", "dropdown-item")
-            .command(target, command)
-            .child(span().text(label));
-    items.add(btn);
+  /// Adds a link or command item built with [Item#link] or [Item#command].
+  public Dropdown item(Item item) {
+    items.add(item.toElement());
     return this;
   }
 

@@ -25,7 +25,11 @@ class SearchPaletteTest {
           SearchPalette.of()
               .id("site-search")
               .triggerLabel("Search")
-              .item("Guides", "Getting Started", "/getting-started", "Introduction", "New");
+              .item(
+                  "Guides",
+                  SearchPalette.Item.of("Getting Started", "/getting-started")
+                      .description("Introduction")
+                      .badge("New"));
       page = renderMain(palette.triggerButton(), deferred(palette, 50));
     }
 
@@ -63,9 +67,16 @@ class SearchPaletteTest {
       page =
           renderMain(
               SearchPalette.of()
-                  .item("Routes", "Telemetry", "/telemetry", "Real-time metrics", null)
+                  .item(
+                      "Routes",
+                      SearchPalette.Item.of("Telemetry", "/telemetry")
+                          .description("Real-time metrics"))
                   .item("Routes", "Typography", "/typography")
-                  .item("Actions", "Toggle Dark Mode", "/theme", "Switch themes", "Action"));
+                  .item(
+                      "Actions",
+                      SearchPalette.Item.of("Toggle Dark Mode", "/theme")
+                          .description("Switch themes")
+                          .badge("Action")));
     }
 
     @Test
@@ -77,6 +88,18 @@ class SearchPaletteTest {
       assertThat(groups.getFirst().select("a.palette-item"))
           .extracting(a -> a.attr("href"))
           .containsExactly("/telemetry", "/typography");
+    }
+
+    @Test
+    @DisplayName("a description adds a secondary line and a badge replaces the arrow")
+    void descriptionAndBadgeAreOptional() {
+      var links = page.elements("a.palette-item");
+
+      assertThat(links.get(0).select(".palette-item-desc").text()).isEqualTo("Real-time metrics");
+      assertThat(links.get(0).select(".palette-item-arrow")).hasSize(1);
+      assertThat(links.get(1).select(".palette-item-desc")).isEmpty();
+      assertThat(links.get(2).select(".palette-item-badge").text()).isEqualTo("Action");
+      assertThat(links.get(2).select(".palette-item-arrow")).isEmpty();
     }
   }
 }

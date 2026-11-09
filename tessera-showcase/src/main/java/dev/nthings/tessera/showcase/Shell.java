@@ -69,16 +69,20 @@ record Shell(Page page) implements Component {
             .triggerLabel("Search");
     var quickActions = Dropdown.of("Pages").id("quick-actions");
     for (var p : pages) {
-      search.item("Pages", p.navLabel(), p.path(), p.summary(), null);
-      quickActions.linkItem(p.path(), p.navLabel(), null);
+      search.item("Pages", SearchPalette.Item.of(p.navLabel(), p.path()).description(p.summary()));
+      quickActions.item(Dropdown.Item.link(p.path(), p.navLabel()));
       for (var demo : p.demos()) {
         search.item(p.navLabel(), demo.title(), p.sectionHref(demo));
       }
     }
     quickActions
         .separator()
-        .commandItem(
-            "open-inspector", inspector.dialogRef(), BuiltinCommand.SHOW_MODAL, "Open inspector");
+        .item(
+            Dropdown.Item.command(
+                "open-inspector",
+                inspector.dialogRef(),
+                BuiltinCommand.SHOW_MODAL,
+                "Open inspector"));
 
     var nav =
         NavTabs.of(
@@ -127,10 +131,13 @@ record Shell(Page page) implements Component {
             .id("site-header");
 
     var index = pages.indexOf(page);
-    var pager =
-        DocPager.of(
-            index > 0 ? link(pages.get(index - 1)) : null,
-            index < pages.size() - 1 ? link(pages.get(index + 1)) : null);
+    var pager = DocPager.of();
+    if (index > 0) {
+      pager.previous(link(pages.get(index - 1)));
+    }
+    if (index < pages.size() - 1) {
+      pager.next(link(pages.get(index + 1)));
+    }
 
     var heading =
         section()

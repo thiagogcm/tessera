@@ -20,7 +20,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.core.Accessible;
+import dev.nthings.tessera.core.AriaChecked;
+import dev.nthings.tessera.core.AriaCurrent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Role;
@@ -173,11 +174,7 @@ class AriaRulesTest {
                     .role(Role.TABLIST)
                     .ariaLabel("Sections")
                     .child(div().role(Role.TAB).ariaSelected(true).text("One")),
-                div()
-                    .role(Role.CHECKBOX)
-                    .tabIndex(0)
-                    .ariaChecked(Accessible.Checked.MIXED)
-                    .text("All"),
+                div().role(Role.CHECKBOX).tabIndex(0).ariaChecked(AriaChecked.MIXED).text("All"),
                 div().role(Role.HEADING).ariaLevel(2).text("Section"),
                 button().role(Role.BUTTON).ariaExpanded(false).text("Menu"),
                 ul().role(Role.LIST).child(li().text("Item")),
@@ -236,7 +233,7 @@ class AriaRulesTest {
     assertThatIllegalArgumentException().isThrownBy(() -> div().attr("aria-label", "x"));
     assertThatIllegalArgumentException().isThrownBy(() -> div().boolAttr("aria-hidden"));
     assertThat(div().role(Role.NOTE).attributes()).containsEntry("role", "note");
-    assertThat(div().ariaCurrent(Accessible.Current.PAGE).attributes())
+    assertThat(div().ariaCurrent(AriaCurrent.PAGE).attributes())
         .containsEntry("aria-current", "page");
   }
 }

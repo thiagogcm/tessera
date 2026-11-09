@@ -2,6 +2,7 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /// Transparent group of siblings that emits no wrapper markup, created by [Elements#fragment()].
@@ -22,8 +23,8 @@ public final class FragmentElement
     children.add(child);
   }
 
-  /// Compiler-facing: the live list of children, in order.
+  /// Compiler-facing: a read-only view of the children, in order.
   public List<Element> childrenList() {
-    return children;
+    return Collections.unmodifiableList(children);
   }
 }

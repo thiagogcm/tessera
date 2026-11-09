@@ -12,7 +12,7 @@ final class Attributes {
     }
     if (attribute.equals("role") || attribute.startsWith("aria-")) {
       throw new IllegalArgumentException(
-          "Use the typed Accessible method (role(Role), aria...(...)) instead of the attribute '"
+          "Use the typed TagElement method (role(Role), aria...(...)) instead of the attribute '"
               + attribute
               + "'");
     }

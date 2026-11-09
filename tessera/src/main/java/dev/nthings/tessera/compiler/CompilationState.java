@@ -47,13 +47,22 @@ final class CompilationState {
   }
 
   void registerDomId(String domId, ViewLocation location) {
+    registerDomId(domId, location, DUPLICATE_ID_FIX);
+  }
+
+  private static final String DUPLICATE_ID_FIX =
+      "Give each element a distinct ID within its view scope.";
+
+  private static final String DUPLICATE_KEYED_ID_FIX =
+      "Give each element a distinct ID within its view scope. Keyed content is scoped by its view,"
+          + " the nearest enclosing element bound to a named ElementRef, and its key, so keyed"
+          + " lists in one view that reuse a key share ids: bind a named ElementRef"
+          + " (ElementRef.scoped or ElementRef.page) on each list's parent.";
+
+  private void registerDomId(String domId, ViewLocation location, String fix) {
     if (!registeredDomIds.add(domId)) {
       ambiguousDomIds.add(domId);
-      report(
-          location,
-          "duplicate-id",
-          "Duplicate DOM id '" + domId + "' on the same page",
-          "Give each element a distinct ID within its view scope.");
+      report(location, "duplicate-id", "Duplicate DOM id '" + domId + "' on the same page", fix);
     }
   }
 
@@ -119,7 +128,11 @@ final class CompilationState {
     for (var ref : refs) {
       references.put(ref, domId);
     }
-    registerDomId(domId, location.withDomId(domId));
+    var scopedInKeyedContent = scope.keyed() && (named == null || !named.pageLevel());
+    registerDomId(
+        domId,
+        location.withDomId(domId),
+        scopedInKeyedContent ? DUPLICATE_KEYED_ID_FIX : DUPLICATE_ID_FIX);
     return domId;
   }
 

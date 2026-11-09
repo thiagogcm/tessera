@@ -24,8 +24,9 @@ public final class SiteNavigation {
   public static SearchPalette searchPalette(List<SiteRoute> routes) {
     var palette = SearchPalette.of();
     for (var route : routes) {
-      palette.item(
-          "Pages & Guides", route.displayTitle(), route.path(), route.description(), route.path());
+      var item = SearchPalette.Item.of(route.displayTitle(), route.path()).badge(route.path());
+      var description = route.description();
+      palette.item("Pages & Guides", description != null ? item.description(description) : item);
     }
     return palette;
   }
@@ -40,9 +41,14 @@ public final class SiteNavigation {
                 () -> new IllegalArgumentException("No route registered at " + currentPath));
     var routes = site.routes();
     var index = routes.indexOf(current);
-    return DocPager.of(
-        index > 0 ? link(routes.get(index - 1)) : null,
-        index < routes.size() - 1 ? link(routes.get(index + 1)) : null);
+    var pager = DocPager.of();
+    if (index > 0) {
+      pager.previous(link(routes.get(index - 1)));
+    }
+    if (index < routes.size() - 1) {
+      pager.next(link(routes.get(index + 1)));
+    }
+    return pager;
   }
 
   private static Link link(SiteRoute route) {

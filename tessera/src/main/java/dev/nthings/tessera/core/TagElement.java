@@ -4,6 +4,8 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.css.Styled;
+import dev.nthings.tessera.foundation.Decimals;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,15 +18,23 @@ import org.jspecify.annotations.Nullable;
 /// HTML element node backed by a [TagName] and a [StyleRefinement]. Authors usually create one
 /// through the [Elements] factories.
 ///
+/// Besides the [Styled] methods and the child methods of [ParentElement], an element takes:
+///
+/// - Attributes: [#attr], [#boolAttr], [#removeAttr], and typed shortcuts such as [#title],
+///   [#tabIndex], [#popover] and [#dimensions].
+/// - References to other elements, resolved to their DOM ids: [#idRef], [#labelFor], [#list],
+///   [#href(ElementRef)] and [#command].
+/// - Accessibility: [#role(Role)] and one typed method per `aria-*` attribute, such as
+///   [#ariaLabel] or [#ariaExpanded]. The generic attribute methods refuse `id`, `role` and
+///   `aria-*`, so these go through the typed methods, and the compiler checks the result against
+///   the [Role] requirements.
+///
 /// Give the element an id with [#id(ElementRef)]. Features that need the element's own id
 /// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
 /// named ref bound before or after them gives the element its id, and every ref names the same
 /// element. Two named refs asking for different ids report `conflicting-element-id`.
 public final class TagElement
-    implements Element,
-        InteractiveElement<TagElement>,
-        ParentElement<TagElement>,
-        FluentBuilder<TagElement> {
+    implements Element, Styled<TagElement>, ParentElement<TagElement>, FluentBuilder<TagElement> {
 
   private final TagName tag;
   private final StyleRefinement style = new StyleRefinement();
@@ -83,19 +93,235 @@ public final class TagElement
     return style;
   }
 
-  @Override
+  /// Compiler-facing: a read-only view of the attributes, in the order they were first set. The
+  /// id comes from bound refs and generated style classes are appended to `class` at compile time,
+  /// so neither is in this map; slots of [#idReferences()] hold an empty placeholder.
   public Map<String, String> attributes() {
-    return attributes;
+    return Collections.unmodifiableMap(attributes);
   }
 
-  @Override
+  /// Compiler-facing: a read-only view of the attributes whose values are DOM ids of [ElementRef]
+  /// targets, resolved by the compiler.
   public Map<String, IdReference> idReferences() {
-    return idReferences;
+    return Collections.unmodifiableMap(idReferences);
   }
 
-  /// Compiler-facing: the child elements in the order they were added.
+  /// Compiler-facing: a read-only view of the child elements in the order they were added.
   public List<Element> childrenList() {
-    return children;
+    return Collections.unmodifiableList(children);
+  }
+
+  // --- Attributes -------------------------------------------------------------------------------
+
+  /// Sets an arbitrary attribute. `id` ([#id(ElementRef)]), `role` and `aria-*` have typed methods
+  /// and are refused here with IllegalArgumentException.
+  public TagElement attr(String name, String value) {
+    Attributes.requireGeneric(name);
+    attributes.put(name, value);
+    idReferences.remove(name);
+    return this;
+  }
+
+  /// Sets a boolean attribute such as `disabled` or `open`: present with an empty value. Use
+  /// `onlyIf(condition, el -> el.boolAttr(name))` to set it conditionally. Refuses `id`, `role` and
+  /// `aria-*` as [#attr(String, String)] does.
+  public TagElement boolAttr(String name) {
+    Attributes.requireGeneric(name);
+    attributes.put(name, "");
+    idReferences.remove(name);
+    return this;
+  }
+
+  /// Removes the attribute `name`, including one set through [#idRef], so it is not emitted. Does
+  /// nothing if it is not set. Refuses `id`, `role` and `aria-*` as [#attr(String, String)] does.
+  public TagElement removeAttr(String name) {
+    Attributes.requireGeneric(name);
+    attributes.remove(name);
+    idReferences.remove(name);
+    return this;
+  }
+
+  /// Sets `attribute` to the DOM ids of `targets` once they are bound on the page. Throws
+  /// IllegalArgumentException if no target is given, or for `id`, `role` and `aria-*`.
+  public TagElement idRef(String attribute, ElementRef... targets) {
+    Attributes.requireGeneric(attribute);
+    return reference(attribute, new IdReference("", List.of(targets)));
+  }
+
+  /// Sets `for` to the DOM id of `control`, on a `<label>`.
+  public TagElement labelFor(ElementRef control) {
+    return idRef("for", control);
+  }
+
+  /// Sets `list` to the DOM id of a `<datalist>` that offers suggestions for this input.
+  public TagElement list(ElementRef datalist) {
+    return idRef("list", datalist);
+  }
+
+  /// Same-page fragment link: `href="#<target dom id>"`.
+  public TagElement href(ElementRef target) {
+    return reference("href", new IdReference("#", List.of(target)));
+  }
+
+  /// Sets `commandfor` and `command`, so activating this element runs `command` on the element
+  /// bound to `target`, plus any payload attributes of a custom command. `show-modal`, `close` and
+  /// `request-close` need a `<dialog>` target, and `toggle-popover`, `show-popover` and
+  /// `hide-popover` need a target with a `popover` attribute; otherwise the compiler reports
+  /// `incompatible-command-target`. Custom commands accept any target. Use `element.ref()` to
+  /// target an element you hold.
+  public TagElement command(ElementRef target, Command command) {
+    idRef("commandfor", target).attr("command", command.wireValue());
+    command.payload().forEach(this::attr);
+    return this;
+  }
+
+  /// Sets the `popover` attribute to `mode`.
+  public TagElement popover(PopoverMode mode) {
+    return attr("popover", mode.wireValue());
+  }
+
+  /// Sets `closedby` on a `<dialog>`, choosing which user actions close it. See [ClosedBy].
+  public TagElement closedBy(ClosedBy closedBy) {
+    return attr("closedby", closedBy.wireValue());
+  }
+
+  /// Sets the `width` and `height` attributes, in CSS pixels.
+  public TagElement dimensions(int width, int height) {
+    return attr("width", Integer.toString(width)).attr("height", Integer.toString(height));
+  }
+
+  public TagElement title(String title) {
+    return attr("title", title);
+  }
+
+  /// Sets `tabindex`. A positive value is reported as `tabindex-positive`; use `0` or `-1`.
+  public TagElement tabIndex(int index) {
+    return attr("tabindex", Integer.toString(index));
+  }
+
+  // --- Accessibility ----------------------------------------------------------------------------
+
+  /// Sets `role`. The compiler checks the required name, children and attributes of the role.
+  public TagElement role(Role role) {
+    return aria("role", role.wireValue());
+  }
+
+  /// Sets `aria-label`, the accessible name as text.
+  public TagElement ariaLabel(String label) {
+    return aria("aria-label", label);
+  }
+
+  /// Sets `aria-labelledby` to the bound `labels`, which name the element. Throws
+  /// IllegalArgumentException with no targets.
+  public TagElement ariaLabelledBy(ElementRef... labels) {
+    return reference("aria-labelledby", new IdReference("", List.of(labels)));
+  }
+
+  /// Sets `aria-describedby` to the bound `descriptions`. Throws IllegalArgumentException with no
+  /// targets.
+  public TagElement ariaDescribedBy(ElementRef... descriptions) {
+    return reference("aria-describedby", new IdReference("", List.of(descriptions)));
+  }
+
+  public TagElement ariaErrorMessage(ElementRef message) {
+    return reference("aria-errormessage", new IdReference("", List.of(message)));
+  }
+
+  /// Sets `aria-controls` to the bound `controlled` elements, e.g. a tab's panel. Throws
+  /// IllegalArgumentException with no targets.
+  public TagElement ariaControls(ElementRef... controlled) {
+    return reference("aria-controls", new IdReference("", List.of(controlled)));
+  }
+
+  public TagElement ariaHidden(boolean hidden) {
+    return aria("aria-hidden", Boolean.toString(hidden));
+  }
+
+  public TagElement ariaCurrent(AriaCurrent current) {
+    return aria("aria-current", current.wireValue());
+  }
+
+  public TagElement ariaExpanded(boolean expanded) {
+    return aria("aria-expanded", Boolean.toString(expanded));
+  }
+
+  public TagElement ariaChecked(AriaChecked checked) {
+    return aria("aria-checked", checked.wireValue());
+  }
+
+  public TagElement ariaSelected(boolean selected) {
+    return aria("aria-selected", Boolean.toString(selected));
+  }
+
+  public TagElement ariaPressed(boolean pressed) {
+    return aria("aria-pressed", Boolean.toString(pressed));
+  }
+
+  public TagElement ariaBusy(boolean busy) {
+    return aria("aria-busy", Boolean.toString(busy));
+  }
+
+  public TagElement ariaDisabled(boolean disabled) {
+    return aria("aria-disabled", Boolean.toString(disabled));
+  }
+
+  public TagElement ariaInvalid(boolean invalid) {
+    return aria("aria-invalid", Boolean.toString(invalid));
+  }
+
+  public TagElement ariaRequired(boolean required) {
+    return aria("aria-required", Boolean.toString(required));
+  }
+
+  public TagElement ariaModal(boolean modal) {
+    return aria("aria-modal", Boolean.toString(modal));
+  }
+
+  public TagElement ariaLive(AriaLive live) {
+    return aria("aria-live", live.wireValue());
+  }
+
+  public TagElement ariaHasPopup(AriaPopup popup) {
+    return aria("aria-haspopup", popup.wireValue());
+  }
+
+  /// Sets `aria-level`, the level of a `role="heading"`. Throws IllegalArgumentException outside
+  /// 1 through 6.
+  public TagElement ariaLevel(int level) {
+    if (level < 1 || level > 6) {
+      throw new IllegalArgumentException("aria-level must be 1 to 6: " + level);
+    }
+    return aria("aria-level", Integer.toString(level));
+  }
+
+  /// Sets `aria-keyshortcuts`, the keys that activate the element, e.g. `Alt+K`.
+  public TagElement ariaKeyShortcuts(String shortcuts) {
+    return aria("aria-keyshortcuts", shortcuts);
+  }
+
+  public TagElement ariaValueNow(double value) {
+    return aria("aria-valuenow", Decimals.format(value));
+  }
+
+  public TagElement ariaValueMin(double value) {
+    return aria("aria-valuemin", Decimals.format(value));
+  }
+
+  public TagElement ariaValueMax(double value) {
+    return aria("aria-valuemax", Decimals.format(value));
+  }
+
+  private TagElement aria(String attribute, String value) {
+    attributes.put(attribute, value);
+    idReferences.remove(attribute);
+    return this;
+  }
+
+  private TagElement reference(String attribute, IdReference reference) {
+    // Reserve the slot so resolved ids keep declaration order.
+    attributes.putIfAbsent(attribute, "");
+    idReferences.put(attribute, reference);
+    return this;
   }
 
   /// Appends `child`. Throws IllegalStateException if this is a void element, which cannot have
@@ -189,9 +415,9 @@ public final class TagElement
     return anchorTarget;
   }
 
-  /// Sets the cross-document transition key, which emits `view-transition-name`. See
+  /// Emits `view-transition-name` (and class) for a cross-document transition. Keys are checked
+  /// per page (`duplicate-transition-key`) and across the site (`unshared-transition-key`). See
   /// [TransitionKey].
-  @Override
   public TagElement transitionKey(TransitionKey key) {
     this.transitionKey = key;
     return this;

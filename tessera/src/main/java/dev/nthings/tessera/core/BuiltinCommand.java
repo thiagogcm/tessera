@@ -4,7 +4,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Native Invoker Command, set with [InteractiveElement#command(ElementRef, Command)].
+/// Native Invoker Command, set with [TagElement#command(ElementRef, Command)].
 /// `SHOW_MODAL`, `CLOSE` and `REQUEST_CLOSE` need a `<dialog>` target, and the popover commands
 /// need a target with a `popover` attribute; otherwise the compiler reports
 /// `incompatible-command-target`. An unbound target reports `unbound-reference`.

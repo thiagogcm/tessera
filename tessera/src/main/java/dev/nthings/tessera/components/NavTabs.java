@@ -5,7 +5,7 @@ import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ul;
 
-import dev.nthings.tessera.core.Accessible;
+import dev.nthings.tessera.core.AriaCurrent;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Anchor;
@@ -100,7 +100,7 @@ public final class NavTabs extends BuiltinView<NavTabs> {
       var isActive = item.href().equals(active);
       var link =
           a(item.href())
-              .onlyIf(isActive, el -> el.ariaCurrent(Accessible.Current.PAGE))
+              .onlyIf(isActive, el -> el.ariaCurrent(AriaCurrent.PAGE))
               .text(item.label());
       var liEl = li().onlyIf(isActive, el -> el.attr("class", "active")).child(link);
       list.child(liEl);

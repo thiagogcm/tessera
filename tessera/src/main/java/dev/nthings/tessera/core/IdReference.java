@@ -4,7 +4,7 @@ import java.util.List;
 
 /// Compiler-facing: DOM ids of `targets` for an id-reference attribute such as `for`, `list`,
 /// `href` or `commandfor`. Authors set these through typed methods such as
-/// [InteractiveElement#labelFor(ElementRef)]. The ids are joined with spaces and written once after
+/// [TagElement#labelFor(ElementRef)]. The ids are joined with spaces and written once after
 /// `prefix`: `#` for `href` gives `#a b` for two targets. An unbound target is reported as
 /// `unbound-reference`, and the attribute is omitted.
 public record IdReference(String prefix, List<ElementRef> targets) {

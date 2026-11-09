@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Which user actions close a `<dialog>`, set with [InteractiveElement#closedBy(ClosedBy)].
+/// Which user actions close a `<dialog>`, set with [TagElement#closedBy(ClosedBy)].
 public enum ClosedBy {
   /// Clicking outside, Escape and close requests all close the dialog (`closedby="any"`).
   ANY("any"),

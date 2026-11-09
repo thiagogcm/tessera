@@ -53,7 +53,7 @@ final class OverviewPage {
         card.media(
             Image.of(Art.DOCS_BANNER, "Documentation page banner")
                 .dimensions(600, 240)
-                .transitionKey(DOCS_HERO));
+                .element(img -> img.transitionKey(DOCS_HERO)));
       }
       cards.add(card);
     }

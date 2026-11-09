@@ -3,7 +3,7 @@ package dev.nthings.tessera.core;
 import java.util.Map;
 
 /// What an invoker button does to its target, written as the `command` attribute and set with
-/// [InteractiveElement#command(ElementRef, Command)]. Either a native [BuiltinCommand], checked
+/// [TagElement#command(ElementRef, Command)]. Either a native [BuiltinCommand], checked
 /// against its target, or a custom command from [#custom(String, String)], which any existing
 /// target accepts.
 public sealed interface Command permits BuiltinCommand, CustomCommand {

@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.ClassNames;
 import dev.nthings.tessera.core.ComponentElement;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.EmptyElement;
 import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.HtmlTag;
@@ -64,7 +65,7 @@ final class ViewExpansion {
         var child = context.withComponent(name, source);
         yield expand(child, "Render", component::render);
       }
-      case KeyedElement keyed -> keyed(keyed, keyedContext(keyed, keyPrefix(context), context));
+      case KeyedElement keyed -> keyed(keyed, keyedContext(keyed, context));
       case ViewElement(var view, var source) -> {
         var id = view.viewId();
         var scoped =
@@ -161,20 +162,15 @@ final class ViewExpansion {
     }
   }
 
-  /// Lays out `children` in order, dropping the ones that emit nothing. Keyed children share one
-  /// scope prefix, created at the first of them, and report a key an earlier sibling uses.
+  /// Lays out `children` in order, dropping the ones that emit nothing, and reports a key an
+  /// earlier keyed sibling uses.
   private List<ViewNode> children(List<Element> children, PageContext context) {
     var result = new ArrayList<ViewNode>(children.size());
-    String prefix = null;
-    Set<String> keys = Set.of();
+    Set<String> keys = new HashSet<>();
     for (var child : children) {
       ViewNode node;
       if (child instanceof KeyedElement keyed) {
-        if (prefix == null) {
-          prefix = keyPrefix(context);
-          keys = new HashSet<>();
-        }
-        var keyedContext = keyedContext(keyed, prefix, context);
+        var keyedContext = keyedContext(keyed, context);
         if (!keys.add(keyed.key())) {
           state.report(
               keyedContext.location(),
@@ -193,12 +189,6 @@ final class ViewExpansion {
     return result;
   }
 
-  /// The scope prefix of one list of keyed siblings in `context`'s view scope; each sibling's key
-  /// completes it. Lists are numbered within the view scope, like generated ids.
-  private String keyPrefix(PageContext context) {
-    return state.nextId("key", context.viewScope()) + "-";
-  }
-
   /// Expands keyed content in the context [#keyedContext] made for it.
   private ViewNode keyed(KeyedElement keyed, PageContext child) {
     if (keyed.content() instanceof ComponentElement component) {
@@ -207,11 +197,18 @@ final class ViewExpansion {
     return expand(keyed.content(), child);
   }
 
-  /// The context of keyed content: the view scope `prefix` followed by its encoded key, and a
-  /// component path entry naming the key. A keyed component takes the key on its own entry
-  /// instead of gaining another.
-  private static PageContext keyedContext(KeyedElement keyed, String prefix, PageContext context) {
-    var scoped = context.withViewScope(prefix + encodeKey(keyed.key()));
+  /// The context of keyed content and a component path entry naming the key. A keyed component
+  /// takes the key on its own entry instead of gaining another.
+  ///
+  /// Its scope depends only on the enclosing view scope, the [PageContext#keyOwner()] and the key,
+  /// never on position, so adding or removing other content leaves its ids alone:
+  /// `key-<hex key>` without an owner and `<owner>-key-<hex key>` with one. The key's hexadecimal
+  /// UTF-16 units contain no `-`, so the slug splits back at its last `-key-` and distinct keys or
+  /// owner slugs never share a scope.
+  private static PageContext keyedContext(KeyedElement keyed, PageContext context) {
+    var owner = context.keyOwner();
+    var slug = (owner == null ? "" : owner + "-") + "key-" + encodeKey(keyed.key());
+    var scoped = context.withKeyedScope(slug);
     var label = "[key=" + keyed.key() + "]";
     if (keyed.content() instanceof ComponentElement component) {
       return scoped.withComponent(component.name() + label, component.source());
@@ -282,13 +279,28 @@ final class ViewExpansion {
     }
 
     var references = element.idReferences();
+    var owner = keyOwner(refs);
     return new ViewNode.Tag(
         element.tag(),
         location,
         attrs,
         references.isEmpty() ? Map.of() : new LinkedHashMap<>(references),
-        children(element.childrenList(), context),
+        children(element.childrenList(), owner == null ? context : context.withKeyOwner(owner)),
         companion);
+  }
+
+  /// The name keyed descendants of an element bound to `refs` are told apart by: its first named
+  /// ref's name, without leading or trailing `-` so it never forms the `--` scope separator, or
+  /// `null` when no ref is named.
+  private static @Nullable String keyOwner(List<ElementRef> refs) {
+    for (var ref : refs) {
+      var name = ref.name();
+      if (name != null) {
+        var slug = Fnv1a64.sanitizeLocalId(name).replaceAll("^-+|-+$", "");
+        return slug.isEmpty() ? null : slug;
+      }
+    }
+    return null;
   }
 
   /// Adds declarations derived from identity: anchor names and view-transition keys.

@@ -23,6 +23,7 @@ final class PageContext implements RenderContext {
   private final CompilationState state;
   private final List<String> componentPath;
   private final @Nullable SourceLocation origin;
+  private final @Nullable String keyOwner;
 
   private PageContext(
       ViewScope viewScope,
@@ -30,19 +31,21 @@ final class PageContext implements RenderContext {
       DocumentState docState,
       CompilationState state,
       List<String> componentPath,
-      @Nullable SourceLocation origin) {
+      @Nullable SourceLocation origin,
+      @Nullable String keyOwner) {
     this.viewScope = viewScope;
     this.styles = styles;
     this.docState = docState;
     this.state = state;
     this.componentPath = List.copyOf(componentPath);
     this.origin = origin;
+    this.keyOwner = keyOwner;
   }
 
   /// The root context of one page compilation.
   static PageContext forDocument(
       StyleSheet styles, DocumentState docState, CompilationState state) {
-    return new PageContext(ViewScope.ROOT, styles, docState, state, List.of(), null);
+    return new PageContext(ViewScope.ROOT, styles, docState, state, List.of(), null, null);
   }
 
   @Override
@@ -104,10 +107,27 @@ final class PageContext implements RenderContext {
     return new ViewLocation(componentPath, "", null, origin);
   }
 
+  /// The local name of the nearest enclosing element in this view scope that is bound to a named
+  /// ref, or `null` if there is none. Keyed lists use it to tell themselves apart.
+  @Nullable String keyOwner() {
+    return keyOwner;
+  }
+
   /// A context whose view scope is nested under the sanitized local id `viewId`.
   PageContext withViewScope(String viewId) {
     return new PageContext(
-        viewScope.extend(viewId), styles, docState, state, componentPath, origin);
+        viewScope.extend(viewId), styles, docState, state, componentPath, origin, null);
+  }
+
+  /// A context for keyed content, whose view scope is nested under the sanitized local id `slug`.
+  PageContext withKeyedScope(String slug) {
+    return new PageContext(
+        viewScope.extendKeyed(slug), styles, docState, state, componentPath, origin, null);
+  }
+
+  /// A context inside an element bound to a ref named `owner`, in the same view scope.
+  PageContext withKeyOwner(String owner) {
+    return new PageContext(viewScope, styles, docState, state, componentPath, origin, owner);
   }
 
   /// Enters `component` for diagnostics, keeping the view scope. Without `placedAt`, the enclosing
@@ -121,6 +141,6 @@ final class PageContext implements RenderContext {
   /// A context with the component path and origin of `placedBy`, keeping the view scope.
   PageContext withPlacement(ViewLocation placedBy) {
     return new PageContext(
-        viewScope, styles, docState, state, placedBy.componentPath(), placedBy.source());
+        viewScope, styles, docState, state, placedBy.componentPath(), placedBy.source(), keyOwner);
   }
 }

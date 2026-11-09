@@ -1,26 +1,24 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.DocumentKey;
+import dev.nthings.tessera.core.ElementBlock;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IdReference;
-import dev.nthings.tessera.core.InteractiveElement;
+import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.css.StyleRefinement;
-import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /// Image with an accessible description and reserved layout space. Create one with
-/// [#of(String, String)]; it loads lazily (`loading="lazy"`, `decoding="async"`) unless it is the
-/// page's [#hero()] image.
+/// [#of(String, String)]; it decodes asynchronously and loads lazily (`loading="lazy"`) unless it
+/// is the page's [#hero()] image. Style the `<img>`, give it ARIA states, a ref or a transition key
+/// with [#element(ElementBlock)].
 ///
 /// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports
 ///   `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
-public final class Image extends BuiltinComponent implements InteractiveElement<Image> {
+public final class Image extends BuiltinComponent {
 
   private static final class HeroSlot {
     private @Nullable String src;
@@ -38,7 +36,7 @@ public final class Image extends BuiltinComponent implements InteractiveElement<
       throw new IllegalArgumentException("Image src cannot be blank");
     }
     this.src = src;
-    this.img = Elements.img(src, alt);
+    this.img = new TagElement(HtmlTag.IMG).attr("src", src).attr("alt", alt);
   }
 
   /// Creates an image of `src` described by `alt`. Throws IllegalArgumentException if `src` is
@@ -52,49 +50,36 @@ public final class Image extends BuiltinComponent implements InteractiveElement<
   /// one hero; a second reports `duplicate-hero-image`.
   public Image hero() {
     this.hero = true;
-    img.attr("fetchpriority", "high");
-    img.attributes().remove("loading");
     return this;
   }
 
-  @Override
-  public Image self() {
-    return this;
-  }
-
-  @Override
-  public StyleRefinement style() {
-    return img.style();
-  }
-
-  @Override
-  public Image transitionKey(TransitionKey key) {
-    img.transitionKey(key);
-    return this;
-  }
-
-  @Override
-  public Map<String, String> attributes() {
-    return img.attributes();
-  }
-
-  @Override
-  public Map<String, IdReference> idReferences() {
-    return img.idReferences();
-  }
-
-  /// Sets the `width` and `height` attributes. Throws IllegalArgumentException if either is not
-  /// positive.
-  @Override
+  /// Sets the `width` and `height` attributes, which reserve the image's layout space. Throws
+  /// IllegalArgumentException if either is not positive.
   public Image dimensions(int width, int height) {
     if (width <= 0 || height <= 0) {
       throw new IllegalArgumentException("Image width and height must be positive");
     }
-    return InteractiveElement.super.dimensions(width, height);
+    img.dimensions(width, height);
+    return this;
+  }
+
+  /// Runs `block` on the `<img>` now, to set its styles, ARIA states, attributes, refs or
+  /// transition key. The image sets `loading`, `decoding` and `fetchpriority` when it renders,
+  /// so a value `block` gives one of them wins.
+  public Image element(ElementBlock block) {
+    block.configure(img);
+    return this;
   }
 
   @Override
   IntoElement render(RenderContext context) {
+    var element = img.copy();
+    if (hero) {
+      defaultAttr(element, "fetchpriority", "high");
+    } else {
+      defaultAttr(element, "loading", "lazy");
+    }
+    defaultAttr(element, "decoding", "async");
     if (hero) {
       var slot = context.document(HERO);
       var first = slot.src;
@@ -107,7 +92,7 @@ public final class Image extends BuiltinComponent implements InteractiveElement<
                 + src
                 + "' cannot be",
             "Call hero() on one image per page; load the others lazily.");
-        return img;
+        return element;
       }
       slot.src = src;
       context.contributeHead(
@@ -117,6 +102,12 @@ public final class Image extends BuiltinComponent implements InteractiveElement<
               .attr("href", src)
               .attr("fetchpriority", "high"));
     }
-    return img;
+    return element;
+  }
+
+  private static void defaultAttr(TagElement element, String name, String value) {
+    if (!element.attributes().containsKey(name)) {
+      element.attr(name, value);
+    }
   }
 }

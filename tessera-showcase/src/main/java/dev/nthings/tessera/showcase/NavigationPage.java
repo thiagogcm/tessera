@@ -141,15 +141,16 @@ final class NavigationPage {
         .example(
             Dropdown.of("Jump to")
                 .id("demo-menu")
-                .linkItem("/forms", "Forms", "G F")
-                .linkItem("/data", "Data & code", "G D")
+                .item(Dropdown.Item.link("/forms", "Forms").shortcut("G F"))
+                .item(Dropdown.Item.link("/data", "Data & code").shortcut("G D"))
                 .separator()
-                .linkItem("/", "Overview", null))
+                .item(Dropdown.Item.link("/", "Overview")))
         .code(
             "Dropdown.of(\"Jump to\")",
-            "    .linkItem(\"/forms\", \"Forms\", \"G F\")",
+            "    .item(Dropdown.Item.link(\"/forms\", \"Forms\").shortcut(\"G F\"))",
             "    .separator()",
-            "    .commandItem(\"open\", drawer.dialogRef(), BuiltinCommand.SHOW_MODAL, \"Inspect\");");
+            "    .item(Dropdown.Item.command(",
+            "        \"open\", drawer.dialogRef(), BuiltinCommand.SHOW_MODAL, \"Inspect\"));");
   }
 
   private static Demo pager() {
@@ -157,9 +158,13 @@ final class NavigationPage {
         .summary("Previous/next links between documents; every page of this site ends with one.")
         .features("<nav aria-label>", "rel-style links")
         .example(
-            DocPager.of(new Link("/layout", "Layout"), new Link("/overlays", "Overlays"))
+            DocPager.of()
+                .previous(new Link("/layout", "Layout"))
+                .next(new Link("/overlays", "Overlays"))
                 .label("Pager example"))
         .code(
-            "DocPager.of(new Link(\"/layout\", \"Layout\"), new Link(\"/overlays\", \"Overlays\"));");
+            "DocPager.of()",
+            "    .previous(new Link(\"/layout\", \"Layout\"))",
+            "    .next(new Link(\"/overlays\", \"Overlays\"));");
   }
 }

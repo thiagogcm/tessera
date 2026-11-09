@@ -334,12 +334,75 @@ class ViewExpansionTest {
                     div()
                         .child(
                             Elements.late(_ -> Field.of("Right", Forms.text("right")).key("same"))),
-                    ul().child(li().id(ElementRef.scoped("item")).key("same")),
-                    ul().child(li().id(ElementRef.scoped("item")).key("same"))));
+                    ul().id(ElementRef.scoped("first"))
+                        .child(li().id(ElementRef.scoped("item")).key("same")),
+                    ul().id(ElementRef.scoped("second"))
+                        .child(li().id(ElementRef.scoped("item")).key("same"))));
 
     assertThat(page.elements("input, li").eachAttr("id")).hasSize(4).doesNotHaveDuplicates();
     assertThat(page.elements("label").eachAttr("for"))
         .containsExactlyElementsOf(page.elements("input").eachAttr("id"));
+  }
+
+  /// A list of [#card]s whose parent is bound to the given refs, if any.
+  private static Element list(List<String> names, ElementRef... parent) {
+    var list = Elements.section().children(names.stream().map(ViewExpansionTest::card).toList());
+    for (var ref : parent) {
+      list.id(ref);
+    }
+    return list;
+  }
+
+  @Test
+  @DisplayName("keyed ids stay put when another keyed list is added or removed before them")
+  void keyedIdsIgnoreOtherKeyedLists() {
+    var alone = RenderedPage.render(main().child(list(List.of("a", "b"))));
+    var behindAnother =
+        RenderedPage.render(
+            main()
+                .children(
+                    list(List.of("x", "y")),
+                    p().id(ElementRef.anonymous()),
+                    list(List.of("a", "b"))));
+    var nested =
+        RenderedPage.render(
+            main()
+                .children(
+                    list(List.of("x"), ElementRef.scoped("drafts")),
+                    div().child(list(List.of("a", "b")))));
+
+    var ids = alone.elements("h2").eachAttr("id");
+    assertThat(behindAnother.elements("h2").eachAttr("id")).endsWith(ids.toArray(String[]::new));
+    assertThat(nested.elements("h2").eachAttr("id")).endsWith(ids.toArray(String[]::new));
+  }
+
+  @Test
+  @DisplayName(
+      "keyed lists in one view that reuse a key collide, and naming their parents fixes it")
+  void keyedListsSharingKeysNeedNamedParents() {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                Compiler.compile(
+                    new PageDocument(
+                        "Lists", main().children(list(List.of("a")), list(List.of("a"))))));
+
+    assertThat(failure.diagnostics()).extracting(Diagnostic::rule).containsOnly("duplicate-id");
+    assertThat(failure.diagnostics().getFirst().fix())
+        .contains("bind a named ElementRef")
+        .contains("each list's parent");
+
+    var named =
+        RenderedPage.render(
+            main()
+                .children(
+                    list(List.of("a"), ElementRef.scoped("posts")),
+                    list(List.of("a"), ElementRef.page("drafts"))));
+    var alone = RenderedPage.render(main().child(list(List.of("a"), ElementRef.scoped("posts"))));
+
+    assertThat(named.elements("h2").eachAttr("id")).hasSize(2).doesNotHaveDuplicates();
+    assertThat(named.elements("h2").first().id()).isEqualTo(alone.element("h2").id());
   }
 
   @Test

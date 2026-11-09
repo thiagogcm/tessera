@@ -10,6 +10,7 @@ import static dev.nthings.tessera.core.Elements.kbd;
 import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.ClosedBy;
@@ -58,8 +59,37 @@ public final class SearchPalette extends BuiltinView<SearchPalette> {
           + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
           + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
-  private record Item(
-      String title, String href, @Nullable String description, @Nullable String badge) {}
+  /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is
+  /// immutable: [#description(String)] and [#badge(String)] return a new one.
+  @CheckReturnValue
+  public static final class Item {
+    private final String title;
+    private final String href;
+    private final @Nullable String description;
+    private final @Nullable String badge;
+
+    private Item(String title, String href, @Nullable String description, @Nullable String badge) {
+      this.title = title;
+      this.href = href;
+      this.description = description;
+      this.badge = badge;
+    }
+
+    /// A link titled `title`, pointing to `href`.
+    public static Item of(String title, String href) {
+      return new Item(title, href, null, null);
+    }
+
+    /// The same link with a secondary `description` line under its title.
+    public Item description(String description) {
+      return new Item(title, href, description, badge);
+    }
+
+    /// The same link with `badge`, such as `New`, shown at its end instead of the arrow.
+    public Item badge(String badge) {
+      return new Item(title, href, description, badge);
+    }
+  }
 
   private final ElementRef dialog = ElementRef.scoped("dialog");
   private String placeholder = "Search documentation, routes, and sections...";
@@ -88,20 +118,13 @@ public final class SearchPalette extends BuiltinView<SearchPalette> {
   /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order
   /// they are first used, and links keep their insertion order.
   public SearchPalette item(String group, String title, String href) {
-    return item(group, title, href, null, null);
+    return item(group, Item.of(title, href));
   }
 
-  /// Adds a link with a secondary `description` line and a `badge` shown at its end instead of
-  /// the arrow. Either may be null.
-  public SearchPalette item(
-      String group,
-      String title,
-      String href,
-      @Nullable String description,
-      @Nullable String badge) {
-    groupedItems
-        .computeIfAbsent(group, _ -> new ArrayList<>())
-        .add(new Item(title, href, description, badge));
+  /// Adds `item` under `group`, for a link with a description or a badge:
+  /// `item("Guides", SearchPalette.Item.of("Install", "/install").description("Set up"))`.
+  public SearchPalette item(String group, Item item) {
+    groupedItems.computeIfAbsent(group, _ -> new ArrayList<>()).add(item);
     return this;
   }
 
@@ -208,21 +231,22 @@ public final class SearchPalette extends BuiltinView<SearchPalette> {
 
       for (var item : entry.getValue()) {
         var link =
-            a(item.href())
+            a(item.href)
                 .attr("class", "palette-item")
                 .tabIndex(0)
                 .child(
                     div()
                         .attr("class", "palette-item-main")
-                        .child(span().attr("class", "palette-item-title").text(item.title()))
+                        .child(span().attr("class", "palette-item-title").text(item.title))
                         .ifPresent(
-                            item.description(),
+                            item.description,
                             (main, description) ->
                                 main.child(
                                     span().attr("class", "palette-item-desc").text(description))));
 
-        if (item.badge() != null) {
-          link.child(span().attr("class", "palette-item-badge").text(item.badge()));
+        var badge = item.badge;
+        if (badge != null) {
+          link.child(span().attr("class", "palette-item-badge").text(badge));
         } else {
           link.child(span().attr("class", "palette-item-arrow").ariaHidden(true).text("→"));
         }

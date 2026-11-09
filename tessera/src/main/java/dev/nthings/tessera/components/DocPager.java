@@ -19,26 +19,36 @@ import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.css.Transition;
 import org.jspecify.annotations.Nullable;
 
-/// Previous and next page cards in a `<nav>`. Create one with [#of(Link, Link)]. Each card shows
-/// "← Previous" or "Next →" above the link label; those hints are fixed English. The cards sit
-/// side by side when the nearest ancestor container, such as the one [DocLayout] sets, is 36rem
-/// or wider. Otherwise they stack.
+/// Previous and next page cards in a `<nav>`. Create one with [#of()] and set the sides that
+/// exist with [#previous(Link)] and [#next(Link)]: `DocPager.of().previous(intro).next(setup)`.
+/// Each card shows "← Previous" or "Next →" above the link label; those hints are fixed English.
+/// The cards sit side by side when the nearest ancestor container, such as the one [DocLayout]
+/// sets, is 36rem or wider. Otherwise they stack.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
 public final class DocPager extends BuiltinView<DocPager> {
 
-  private final @Nullable Link previous;
-  private final @Nullable Link next;
+  private @Nullable Link previous;
+  private @Nullable Link next;
   private String label = "Documentation navigation";
 
-  private DocPager(@Nullable Link previous, @Nullable Link next) {
-    this.previous = previous;
-    this.next = next;
+  private DocPager() {}
+
+  /// Creates a pager with no links; a side without a link is omitted.
+  public static DocPager of() {
+    return new DocPager();
   }
 
-  /// Creates a pager linking to the `previous` and `next` pages; a `null` side is omitted.
-  public static DocPager of(@Nullable Link previous, @Nullable Link next) {
-    return new DocPager(previous, next);
+  /// Links the "← Previous" card to `previous`.
+  public DocPager previous(Link previous) {
+    this.previous = previous;
+    return this;
+  }
+
+  /// Links the "Next →" card to `next`.
+  public DocPager next(Link next) {
+    this.next = next;
+    return this;
   }
 
   /// Sets the accessible name of the landmark; make it distinct when a page has several pagers.

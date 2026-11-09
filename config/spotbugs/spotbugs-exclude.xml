@@ -11,13 +11,13 @@
 
     <!-- Permit runtime exception rethrow for multi-threaded future unwrapping -->
     <Match>
-        <Class name="dev.nthings.tessera.site.SiteCompiler"/>
+        <Class name="dev.nthings.tessera.compiler.SiteCompiler"/>
         <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
     </Match>
 
     <!-- Preserve callback exception types after attaching component context. -->
     <Match>
-        <Class name="dev.nthings.tessera.render.ViewExpansion"/>
+        <Class name="dev.nthings.tessera.compiler.ViewExpansion"/>
         <Method name="callback"/>
         <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
     </Match>

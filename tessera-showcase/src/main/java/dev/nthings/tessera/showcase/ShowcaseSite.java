@@ -1,13 +1,12 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageDocument;
-import dev.nthings.tessera.render.SourceTracking;
-import dev.nthings.tessera.site.SiteCompiler;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SitePreviewServer;
-import dev.nthings.tessera.site.SiteRoute;
-import dev.nthings.tessera.site.SiteWriter;
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SitePreviewServer;
+import dev.nthings.tessera.compiler.SiteRoute;
+import dev.nthings.tessera.compiler.SiteWriter;
+import dev.nthings.tessera.compiler.SourceTracking;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,13 +51,9 @@ public final class ShowcaseSite {
 
   /// The element tree of one route, with the Java line that built each element.
   static String explain(SiteDefinition definition, String path) {
-    var wanted = SiteRoute.normalizeRoutePath(path);
     var route =
-        definition.routes().stream()
-            .filter(candidate -> candidate.path().equals(wanted))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("No route " + wanted));
-    return SourceTracking.enabled(() -> PageCompiler.explain(route.document(), definition.tokens()))
+        definition.route(path).orElseThrow(() -> new IllegalArgumentException("No route " + path));
+    return SourceTracking.enabled(() -> Compiler.explain(route.document(), definition.tokens()))
         .toText();
   }
 
@@ -105,14 +100,14 @@ public final class ShowcaseSite {
       return;
     }
 
-    var compiled = SourceTracking.with(tracking, () -> SiteCompiler.compile(definition));
+    var compiled = SourceTracking.with(tracking, () -> Compiler.compile(definition));
     SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "
-            + compiled.pagesByRoute().size()
-            + " routes + shared stylesheet ("
-            + compiled.sharedCssPath()
-            + ") to "
+            + compiled.pages().size()
+            + " routes and "
+            + compiled.files().size()
+            + " files to "
             + outputDir.toAbsolutePath());
 
     if (serve) {

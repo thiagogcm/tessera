@@ -41,7 +41,7 @@ Add the following dependency to your application's POM and set `maven.compiler.r
 
 ## Define pages and publish files
 
-The example assembles `SiteRoute` values into a `SiteDefinition`:
+Everything for compiling and publishing lives in `dev.nthings.tessera.compiler`, with `Compiler` as the single entry point. The example assembles `SiteRoute` values into a `SiteDefinition`:
 
 ```java
 var site = SiteDefinition.builder()
@@ -49,11 +49,22 @@ var site = SiteDefinition.builder()
     .route(new SiteRoute("/guide", new PageDocument("Guide", Elements.main().text("Start here"))))
     .build();
 
-var compiled = SiteCompiler.compile(site);
+var compiled = Compiler.compile(site);
 SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 ```
 
-`PageDocument` accepts an optional language before the title; the two-argument constructor uses English. The default site output shares a content-hashed external stylesheet across all pages.
+`PageDocument` accepts an optional language before the title; the two-argument constructor uses English. The default site output shares a content-hashed external stylesheet across all pages. `CompiledSite` holds each route's HTML in `pages()`, the shared stylesheet text in `css()`, and every published file in `files()`. `site.route("/guide")` looks a route up by path.
+
+A single page compiles without a site:
+
+```java
+CompiledPage page = Compiler.compile(new PageDocument("Hello", Elements.main().text("Hi")));
+page.html();   // the document, with its CSS in a <style> element
+page.css();    // the stylesheet text
+page.assets(); // empty under inline output
+```
+
+`Compiler.compile(document, tokens, OutputMode.external("/assets"))` links a content-hashed stylesheet instead and lists it, followed by any client behavior modules, in `assets()`. Publish every `Asset` at its `path()`. The base must be an absolute path such as `/assets`; `OutputMode.external("assets")` throws `IllegalArgumentException`.
 
 | Route         | Public document URL | Generated file     |
 | ------------- | ------------------- | ------------------ |
@@ -122,7 +133,7 @@ var behavior = new ClientBehavior("my-widget", moduleSource);
 context.contributeBehavior(behavior);
 ```
 
-The compiler emits each behavior once per page. `OutputMode.inlineStyle()` inlines a `<script type="module">`. `OutputMode.externalAsset("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and `SiteCompiler` merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `Tabs.ContentTabs` use this path for their bundled modules.
+The compiler emits each behavior once per page. `OutputMode.inline()` inlines a `<script type="module">`. `OutputMode.external("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and site compilation merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `Tabs.ContentTabs` use this path for their bundled modules.
 
 ## Lay out a row or column
 
@@ -198,16 +209,16 @@ Route and asset definitions use their logical paths, such as `/guides/café`. Li
 
 ## Read compilation diagnostics
 
-`PageCompiler.compile(...)`, `PageCompiler.prepare(...)`, and `SiteCompiler.compile(...)` throw `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `CompilationDiagnostic` contains a rule code, a `CompilationLocation`, an error message, and a suggested correction. The location identifies the page title and route (for sites); its `view()` holds the enclosing component path and separate `tagName` and nullable `domId` fields. `CompilationDiagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback, or by a late or document-end callback, propagates unchanged, with a suppressed `CompilationException` naming the component path.
+Every `Compiler` method throws `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `Diagnostic` has a `rule` code, a `message`, a `fix`, and a `Location`. The location is flat: `route` (null for a standalone page), `page` title (route and page are both null for a file conflict that belongs to no page), enclosing `components`, element `tag`, nullable `domId`, and nullable `source`. `Diagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback, or by a late or document-end callback, propagates unchanged, with a suppressed `CompilationException` naming the component path.
 
 ```java
 try {
-  SiteCompiler.compile(site);
+  Compiler.compile(site);
 } catch (CompilationException failure) {
   for (var diagnostic : failure.diagnostics()) {
     System.err.println(diagnostic.rule() + ": " + diagnostic.message());
-    System.err.println(diagnostic.location());
-    System.err.println(diagnostic.suggestion());
+    System.err.println(diagnostic.location().describe());
+    System.err.println(diagnostic.fix());
   }
 }
 ```
@@ -220,7 +231,7 @@ Compilation failed with 1 error:
   Fix: Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.
 ```
 
-Independent image, identity, reference, URL syntax, and markup errors are collected before a page fails. Late and deferred elements retain their enclosing component path. Site compilation collects page errors in route declaration order; once all pages prepare successfully, it collects cross-route link and transition-key errors together. Cross-route diagnostics identify the first use of each outgoing URL on a page. Head and end-section contributions retain the component path from their registration, including when they expand further components.
+Independent image, identity, reference, URL syntax, and markup errors are collected before a page fails. Late and deferred elements retain their enclosing component path. Site compilation first checks paths: two routes with one path report `duplicate-route`, and a registered file at the path of a route, another file, or a generated file (`/search-index.json`, `/sitemap.xml`) reports `file-path-collision`. These stop compilation before any page renders. It then collects page errors in route declaration order; once all pages prepare successfully, it collects cross-route link and transition-key errors together, along with any generated stylesheet or module path that collides with a route or file. Cross-route diagnostics identify the first use of each outgoing URL on a page. Head and end-section contributions retain the component path from their registration, including when they expand further components.
 
 Native dialog commands (`show-modal`, `close`, `request-close`) require a `<dialog>` target. Popover commands (`toggle-popover`, `show-popover`, `hide-popover`) require a target with a `popover` attribute, following the [HTML command rules](https://html.spec.whatwg.org/multipage/form-elements.html#attr-button-command). Custom commands continue to use any existing target.
 
@@ -300,15 +311,15 @@ just demo                 # serves the showcase with tracking on
 just explain /overlays/   # prints one route's element tree with source lines
 ```
 
-Inside `SourceTracking.enabled(() -> ...)` (`dev.nthings.tessera.render`), every element records where it was built. Rendered HTML carries `data-src="Page.java:42"`, diagnostics print the line (`<button> (Page.java:42)`), and `PageCompiler.explain(document)` returns a `PageTree` of tags, ids, components, CSS scopes, and sources. Elements a Tessera component builds are attributed to the line that placed the component. Tracking walks the stack per element, so leave it off in production.
+Inside `SourceTracking.enabled(() -> ...)` (`dev.nthings.tessera.compiler`), every element records where it was built. Rendered HTML carries `data-src="Page.java:42"`, diagnostics print the line (`<button> (Page.java:42)`), and `Compiler.explain(document)` returns a `PageTree` of tags, ids, components, CSS scopes, and sources. Elements a Tessera component builds are attributed to the line that placed the component. Tracking walks the stack per element, so leave it off in production.
 
 ## Publish assets
 
 Register files at absolute logical paths. The writer publishes their bytes and site validation recognizes them as link and media targets:
 
 ```java
-builder.asset(SiteAsset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
-builder.asset(SiteAsset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
+builder.asset(Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
+builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
 ```
 
 Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Decorative images need the appropriate presentation or hidden semantics. The compiler reports missing alt text and missing dimensions/aspect ratios.
@@ -325,7 +336,7 @@ var search = SearchPalette.create("search", "Search pages and sections...")
 Elements.main().children(search.triggerButton(), search.asDeferred(10));
 ```
 
-The palette contributes one client behavior per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed asset through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `PageCompiler.compile(...)` output. Pages without palettes receive no search script.
+The palette contributes one client behavior per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed asset through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `Compiler.compile(...)` output. Pages without palettes receive no search script.
 
 The module registers a customized native `<dialog is="tessera-search">` element. The browser upgrades each instance and owns modal opening, focus trapping, and light dismissal. Escape requests native dialog dismissal through `requestClose()`. Component lifecycle callbacks install event listeners with an `AbortSignal` and release them on disconnection. CSS `:has()` hides empty result groups; JavaScript handles filtering and result selection.
 

@@ -4,12 +4,12 @@ import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.OutputMode;
+import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.render.OutputMode;
-import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ class ThemeRolesTest {
             .register(Tokens.CONTROL_FONT_SIZE.withValue(CssLength.rem(1.25)));
     var page =
         RenderedPage.of(
-            PageCompiler.compile(
+            Compiler.compile(
                 new PageDocument(
                     "Theme",
                     main()
@@ -36,7 +36,7 @@ class ThemeRolesTest {
                             Forms.field("Display name", Forms.text("name")),
                             Callout.note("Read this note"))),
                 tokens,
-                OutputMode.inlineStyle()));
+                OutputMode.inline()));
 
     var fieldScope = page.scopeBody(page.element(".field-label"));
     var calloutScope = page.scopeBody(page.element(".callout-title"));
@@ -63,10 +63,10 @@ class ThemeRolesTest {
     var tokens = new Tokens().register(Tokens.DENSITY.withValue(0.5));
     var page =
         RenderedPage.of(
-            PageCompiler.compile(
+            Compiler.compile(
                 new PageDocument("Density", main().child(Forms.field("Name", Forms.text("name")))),
                 tokens,
-                OutputMode.inlineStyle()));
+                OutputMode.inline()));
 
     assertThat(page.css())
         .contains("--density:0.5")

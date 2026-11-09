@@ -53,7 +53,7 @@ Start with portable package boundaries inside the existing `tessera` artifact. P
 
 ## Shared view and context contracts
 
-Introduce a backend-neutral snapshot before the current [HTML-oriented resolved nodes](../tessera/src/main/java/dev/nthings/tessera/render/ResolvedNode.java). It represents elements, text and wrapper-free fragments, with sibling keys, attributes, typed native-property bindings, symbolic references, style definitions and event bindings. It contains no native node handles. Static lowering produces the existing linked output model; live lowering reconciles snapshots against mounted instances.
+Introduce a backend-neutral snapshot before the current [HTML-oriented resolved nodes](../tessera/src/main/java/dev/nthings/tessera/compiler/ResolvedNode.java). It represents elements, text and wrapper-free fragments, with sibling keys, attributes, typed native-property bindings, symbolic references, style definitions and event bindings. It contains no native node handles. Static lowering produces the existing linked output model; live lowering reconciles snapshots against mounted instances.
 
 Rendering is repeatable: each turn produces a fresh snapshot from application state. Builder mutation constructs that snapshot; mutating a previously rendered builder does not update the DOM. Refactor components that mutate retained inputs while rendering, including [field reference wiring](../tessera/src/main/java/dev/nthings/tessera/components/Forms.java), so repeated renders do not accumulate children, stale references or duplicate contributions.
 

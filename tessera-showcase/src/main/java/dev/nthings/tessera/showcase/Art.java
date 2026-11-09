@@ -1,6 +1,6 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.site.SiteAsset;
+import dev.nthings.tessera.compiler.Asset;
 import java.util.List;
 import java.util.Locale;
 
@@ -12,10 +12,10 @@ final class Art {
 
   private Art() {}
 
-  static List<SiteAsset> assets() {
+  static List<Asset> assets() {
     return List.of(
-        SiteAsset.text(DOCS_BANNER, banner("Tessera docs")),
-        SiteAsset.text(MEDIA_BANNER, banner("Media card")));
+        Asset.text(DOCS_BANNER, banner("Tessera docs")),
+        Asset.text(MEDIA_BANNER, banner("Media card")));
   }
 
   /// Wide gradient banner with a tessellated tile motif.

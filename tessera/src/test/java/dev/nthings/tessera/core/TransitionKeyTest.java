@@ -5,7 +5,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfTy
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import dev.nthings.tessera.render.CompilationException;
+import dev.nthings.tessera.compiler.CompilationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

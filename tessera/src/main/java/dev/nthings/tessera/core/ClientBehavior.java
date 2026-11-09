@@ -5,7 +5,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 /// ES module emitted once per compiled page, identified by [#id]. A later behavior with the same id
-/// is ignored silently. With `render.OutputMode.externalAsset` the module is written as a
+/// is ignored silently. With `compiler.OutputMode.external` the module is written as a
 /// content-hashed file, and each page's script tag references it; otherwise it is inlined as a
 /// `<script type="module">`.
 public record ClientBehavior(String id, String module) {

@@ -5,11 +5,12 @@ import static dev.nthings.tessera.core.Elements.img;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 
+import dev.nthings.tessera.compiler.Asset;
+import dev.nthings.tessera.compiler.CompiledSite;
+import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.components.Toc;
-import dev.nthings.tessera.render.PageDocument;
-import dev.nthings.tessera.site.SiteAsset;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 
 /// Route sets built fresh per call, so tests cannot affect each other.
@@ -20,8 +21,16 @@ public final class SiteFixtures {
 
   private SiteFixtures() {}
 
-  public static SiteAsset logo() {
-    return SiteAsset.text(LOGO_PATH, LOGO_CONTENT);
+  /// URL path of the shared stylesheet of a site compiled with external output.
+  public static String stylesheetPath(CompiledSite site) {
+    return site.files().keySet().stream()
+        .filter(path -> path.endsWith(".css"))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No stylesheet published"));
+  }
+
+  public static Asset logo() {
+    return Asset.text(LOGO_PATH, LOGO_CONTENT);
   }
 
   /// Embeds unregistered [#LOGO_PATH], so compiling these routes alone fails; see

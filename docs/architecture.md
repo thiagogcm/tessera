@@ -20,9 +20,9 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 - `Styled` composes six traits by concern: `LayoutStyled`, `BoxStyled`, `TextStyled`, `EffectStyled`, `ScrollStyled`, and `AnchorStyled`. Every style method takes a typed value of the category its property accepts, so a color cannot be passed where a length belongs.
 - `CssValue` is the sealed family of those values: `CssLength` (dimensions, `calc`, `min`/`max`, `anchor()`), `CssColor` (OKLCH, `color-mix`, `light-dark`, relative colors), `CssNumber`, `CssDuration`, `Easing`, `Border`, `Shadow`, `Background`, `TrackList`, `GridPlacement`, `Transform`, `AspectRatio`, `CssIdent`, and enums for keyword sets (`CssKeyword`). `StyleRefinement` accepts declarations only from the `css` package, so no declaration is built from raw text.
 - `Accessible` writes the element's `Role` and typed `aria-*` states. The generic `attr`, `boolAttr`, and `idRef` methods refuse `role` and `aria-*`.
-- `SourceProvenance` lets elements record their Java call site as a `SourceLocation` through a scoped `SourceCapture`; `render.SourceTracking` supplies the JVM stack-walking capture, so `core` has no stack-walker dependency.
+- `SourceProvenance` lets elements record their Java call site as a `SourceLocation` through a scoped `SourceCapture`; `compiler.SourceTracking` supplies the JVM stack-walking capture, so `core` has no stack-walker dependency.
 - `DocumentKey<T>` supports per-compilation component state. Footnotes and image coordination retain their own registries without site-layer knowledge.
-- `OutputMode` describes CSS publication independently of filesystem I/O.
+- `OutputMode` (`inline()` or `external(assetBase)`) describes CSS and module publication independently of filesystem I/O.
 
 The authoring contracts convert components into element wrappers before the layout pass expands them. The class diagram shows the relevant subset of the sealed element hierarchy:
 
@@ -70,10 +70,9 @@ Arrows point from consumers to providers. The diagram omits transitive edges for
 ```mermaid
 flowchart TB
     showcase --> navigation
-    navigation --> site
+    navigation --> compiler
     navigation --> components
-    site --> render
-    render --> core
+    compiler --> core
     components --> core
     core --> css
     css --> foundation
@@ -84,13 +83,14 @@ flowchart TB
 | `foundation` | None | Fluent composition and deterministic identifiers/hashing |
 | `css` | `foundation` | CSS values, tokens, authoring traits, collection and serialization |
 | `core` | `foundation`, `css` | Elements, component contracts, identities, lexical context, document contributions |
-| `render` | `foundation`, `css`, `core` | Page compilation and output |
+| `compiler` | `foundation`, `css`, `core` | Page and site compilation, output, diagnostics, routes, artifacts, filesystem and preview adapters |
 | `components` | `foundation`, `css`, `core` | Reusable authored UI |
-| `site` | `css`, `core`, `render` | Routes, site compilation, artifacts, filesystem and preview adapters |
-| `navigation` | `components`, `site` | Route-derived search palette and pager composition |
-| `showcase` | `components`, `core`, `css`, `navigation`, `render`, `site` | Example application and CLI |
+| `navigation` | `components`, `compiler` | Route-derived search palette and pager composition |
+| `showcase` | `components`, `compiler`, `core`, `css`, `navigation` | Example application and CLI |
 
-The component catalog and page compiler are sibling consumers of the element/CSS model. Neither imports the other. Site compilation consumes page metadata without knowing which components produced it. Navigation integrates site models and UI.
+The component catalog and the compiler are sibling consumers of the element/CSS model. Neither imports the other. Site compilation consumes page metadata without knowing which components produced it. Navigation integrates site models and UI.
+
+Page and site compilation share one package so that the phase split between them (`PageCompiler.prepare`/`paint`, `PreparedPage`, `SiteCompiler`, validators, `HtmlWriter`) stays package-private. The public surface is `Compiler`, its inputs (`PageDocument`, `SiteDefinition`, `SiteRoute`, `Asset`, `OutputMode`, `LinkSpeculation`), its outputs (`CompiledPage`, `CompiledSite`, `PageTree`), its errors (`CompilationException`, `Diagnostic`, `Location`), the publishing adapters (`SiteWriter`, `SitePreviewServer`), and `SourceTracking`.
 
 The reactor builds two child modules under `tessera-parent`:
 
@@ -116,16 +116,16 @@ block
 | Author styles | `Styled` and its six traits, the `CssValue` family (`CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, ...), `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
 | Declare accessibility semantics | `Accessible`, `Role` (name, children, state, and `aria-*` requirements) |
 | Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
-| Trace elements to source | `SourceTracking`, `SourceLocation`, `PageCompiler.explain(...)`, `PreparedPage.tree()`, `PageTree` |
+| Trace elements to source | `SourceTracking`, `SourceLocation`, `Compiler.explain(...)`, `PageTree` |
 | Contribute document content | The callback's `RenderContext`: `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
-| Compile a page | `PageDocument`, `PageCompiler.compile(...)`, `CompiledPage`, `OutputMode` |
-| Coordinate page phases | `PageCompiler.prepare(...)`, opaque `PreparedPage`, `PageCompiler.paintPrepared(...)` |
-| Define and compile sites | `SiteDefinition.builder()`, `SiteRoute`, `SiteAsset`, `LinkSpeculation`, `SiteCompiler.compile(...)`, `CompiledSite` |
+| Compile a page | `PageDocument`, `Compiler.compile(...)`, `CompiledPage`, `OutputMode`, `Asset` |
+| Define and compile sites | `SiteDefinition.builder()`, `SiteDefinition.route(path)`, `SiteRoute`, `Asset`, `LinkSpeculation`, `Compiler.compile(site)`, `CompiledSite` |
+| Read compilation errors | `CompilationException.diagnostics()`, `Diagnostic`, `Location` |
 | Write and preview | `SiteWriter.writeToDirectory(...)`, `SitePreviewServer.start(...)` |
 | Derive navigation | `navigation.SiteNavigation.searchPalette(...)`, `docPager(...)` |
 | Use supplied UI | Public factories and builders in `components` |
 
-`CompiledPage` contains HTML, an optional external stylesheet path, CSS text, and generated assets such as external client behavior modules. `CompiledSite` contains ordered routes and published files, shared CSS, and readers for generated artifacts. Output types are independent of the functions producing them.
+`CompiledPage` contains HTML, CSS text, and the assets the HTML links: none under inline output; the stylesheet followed by client behavior modules under external output. Consumers publish every asset. `CompiledSite` contains each route's HTML in route order, the shared CSS text, every published file (registered assets, the stylesheet and modules, `search-index.json`, optional `sitemap.xml`), and readers for the generated artifacts. Output types are independent of the functions producing them.
 
 ## Page compilation contracts
 
@@ -148,7 +148,7 @@ flowchart TD
     Writer --> Output
 ```
 
-`PageCompiler` coordinates passes. `CompilationState` belongs to one preparation: the page's DOM ids and the references bound to them, generated-id counters, transitions, outgoing links and diagnostics. `ViewExpansion` keeps only deferred priorities and late slots. Neither escapes preparation.
+`PageCompiler` (package-private) coordinates passes. `CompilationState` belongs to one preparation: the page's DOM ids and the references bound to them, generated-id counters, transitions, outgoing links and diagnostics. `ViewExpansion` keeps only deferred priorities and late slots. Neither escapes preparation.
 
 `LayoutPass` orders the document and `ViewExpansion` expands components into `ViewNode`s. Generated ids are numbered within each identity scope, so content added in one view never renumbers another. A failing render, style, late or document-end callback propagates unchanged, with a suppressed `CompilationException` naming the component path. `LayoutPass` creates an explicit document context. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
@@ -156,11 +156,11 @@ flowchart TD
 
 `ViewNode` and `ResolvedNode` are package-private. Only linked `ResolvedNode`s (tags, text and raw HTML) reach validation, inspection and painting. Attributes and child lists are compiler-owned copies, so compilation does not modify authoring builders. Raw HTML is an explicit trusted escape hatch and remains opaque to validation.
 
-`PreparedPage` has no public constructor, node accessors, or document-state accessor. Public metadata consists of snapshots of IDs, outgoing URLs, transition keys, headings, and client behaviors. Its stylesheet collector is copied and privately owned. `contributeStylesTo(target)` copies rules into a caller-owned collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
+`PreparedPage` is package-private. Its metadata consists of snapshots of IDs, outgoing URLs, transition keys, headings, and client behaviors. Its stylesheet collector is privately owned. `contributeStylesTo(target)` copies rules into the site's collector; `stylesheet(tokens)` serializes the page contribution. Painting reuses prepared content without rerunning component callbacks.
 
 Field rendering copies the retained control's authoring configuration before wiring labels, hints, errors and anchors. The copy retains reference identities and child definitions but owns its attribute and reference maps. Setting `hint(null)` or `error(null)` removes that contribution on the next render without leaving stale references on the retained builder.
 
-`HtmlWriter` owns HTML context encoding and the document envelope. External CSS paths derive from final stylesheet content, allowing every route to reference the same merged stylesheet. Client behaviors are emitted once per page: inline module scripts for `OutputMode.InlineStyle`, or content-hashed module assets under the same external asset base for `OutputMode.ExternalAsset`. Authored CSS and explicitly raw HTML remain trusted input.
+`HtmlWriter` owns HTML context encoding and the document envelope. External CSS paths derive from final stylesheet content, allowing every route to reference the same merged stylesheet. Client behaviors are emitted once per page: inline module scripts for `OutputMode.inline()`, or content-hashed module assets under the same external asset base for `OutputMode.external(...)`. `HtmlWriter` derives the asset list and the linked paths from the same inputs, so site compilation can check generated paths for collisions before painting. The external base must be an absolute path; `OutputMode.external` rejects a relative one. Authored CSS and explicitly raw HTML remain trusted input.
 
 ## Document metadata and component state
 
@@ -196,33 +196,36 @@ Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark 
 `SourceTracking` is off by default. While it is active (inside `SourceTracking.enabled(...)` or `SourceTracking.with(true, ...)`), each `TagElement` and component wrapper records the first stack frame that is neither Tessera's nor the platform's. Frames are classified by code source, so a library user's own code is never mistaken for Tessera's, even in the same package.
 
 - An element a Tessera component builds during compilation is attributed to the line that placed the component, through the origin carried by `RenderContext` and by head and end-section contributions.
-- `CompilationLocation` carries the `SourceLocation`; `CompilationException` prints it as `<button> (Page.java:42)`.
+- `Location.source()` carries the `SourceLocation`; `CompilationException` prints it as `<button> (Page.java:42)`.
 - `HtmlWriter` emits `data-src="Page.java:42"` for tracked elements, so a rendered element leads back to the line that wrote it.
-- `SiteCompiler` carries the caller's setting onto its virtual threads.
-- `PreparedPage.tree()` snapshots the linked tree as `PageTree`: tag, DOM id, attributes, enclosing components, CSS scope, and source. `PageTree.toText()` prints it; `just explain <route>` prints a showcase route.
+- Site compilation carries the caller's setting onto its virtual threads.
+- `Compiler.explain(...)` snapshots the linked tree as `PageTree`: tag, DOM id, attributes, enclosing components, CSS scope, and source. `PageTree.toText()` prints it; `just explain <route>` prints a showcase route.
 
 ## Compilation diagnostics
 
-`CompilationLocation` records the page title, optional route and a `ViewLocation`: enclosing component path, element tag name, optional DOM ID and source. `CompilationDiagnostic.format()` presents it; a component-level location omits the element.
+`Location` is flat: optional route, page title, enclosing components, element tag, optional DOM ID and source. Internally, layout records a page-independent `ViewLocation` (components, tag, DOM ID, source) on each node; `CompilationState` adds the page title when it reports, and site compilation adds the route. `Diagnostic.format()` presents it; a component-level location omits the element, and a site-level file location has neither route nor page.
 
-`RenderContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head or end-section content with that path, allowing layout to expand it with its originating component context. These authoring types have no dependency on `render`.
+`RenderContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head or end-section content with that path, allowing layout to expand it with its originating component context. These authoring types have no dependency on `compiler`.
 
 Layout attaches diagnostic locations to resolved tags and retains them when expanding late or deferred content. Linking preserves the location when replacing symbolic attributes. `PreparedPage` snapshots the first location of each outgoing URL and each transition key so site validation can report errors without exposing the intermediate tree.
 
-`CompilationState` collects `CompilationDiagnostic` records containing a rule code, location, message, and suggested fix. Recoverable authoring errors accumulate through layout, linking, and validation. Duplicate reference bindings and DOM IDs are marked ambiguous, so target-dependent checks do not select an arbitrary element. Unresolved symbolic attributes remain marked as unresolved and are excluded from dependent checks, avoiding secondary errors such as a missing-label report caused by an unbound label reference. The compiler throws one `CompilationException` with the collected diagnostics before returning a prepared page or emitting HTML.
+`CompilationState` collects `Diagnostic` records containing a rule code, message, fix, and location. Recoverable authoring errors accumulate through layout, linking, and validation. Duplicate reference bindings and DOM IDs are marked ambiguous, so target-dependent checks do not select an arbitrary element. Unresolved symbolic attributes remain marked as unresolved and are excluded from dependent checks, avoiding secondary errors such as a missing-label report caused by an unbound label reference. The compiler throws one `CompilationException` with the collected diagnostics before returning a prepared page or emitting HTML.
 
-The preparation coordinator maps each route to either a prepared page or collected diagnostics, annotates failures with the route, and gathers diagnostics in route declaration order despite concurrent execution. The shared parallel mapper owns scheduling and result ordering; it has no diagnostic aggregation policy. URL syntax is validated once during page validation: malformed URLs become `invalid-url` diagnostics. Site validation consumes the syntactically valid URL metadata. Cross-route link and transition validation run only after every page prepares successfully and share one diagnostic report. Application callback failures and internal compiler failures continue to propagate rather than being converted to authoring diagnostics.
+Site compilation first checks paths, which are known before anything renders: duplicate route paths report `duplicate-route`, and a registered file whose path is taken by a route, another file, `/search-index.json` or (with a base URL) `/sitemap.xml` reports `file-path-collision`. Any such diagnostic stops compilation before pages are prepared. The preparation coordinator maps each route to either a prepared page or collected diagnostics, annotates failures with the route, and gathers diagnostics in route declaration order despite concurrent execution. The shared parallel mapper owns scheduling and result ordering; it has no diagnostic aggregation policy. URL syntax is validated once during page validation: malformed URLs become `invalid-url` diagnostics. Site validation consumes the syntactically valid URL metadata. Cross-route link and transition validation run only after every page prepares successfully and share one diagnostic report with collisions between generated stylesheet or module paths and routes or registered files, all before painting. Application callback failures and internal compiler failures continue to propagate rather than being converted to authoring diagnostics.
 
 For site compilation, validation gates the transition from prepared pages to painted output:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Preparing
+    [*] --> CheckingPaths
+    CheckingPaths: Check route and registered file paths
+    CheckingPaths --> Rejected: Path diagnostics
+    CheckingPaths --> Preparing: Paths are distinct
     Preparing: Prepare all routes and collect page diagnostics
     Preparing --> Rejected: Page authoring errors
     Preparing --> Prepared: Every page prepared successfully
     Prepared --> ValidatingSite
-    ValidatingSite: Check cross-route links and transition keys
+    ValidatingSite: Check cross-route links, transition keys and generated file paths
     ValidatingSite --> Rejected: Site diagnostics
     ValidatingSite --> Painting: Site is valid
     Painting: Merge CSS and paint prepared pages
@@ -245,7 +248,8 @@ sequenceDiagram
     participant Checks as SiteValidator
     participant Assets as SiteArtifacts
 
-    App->>Site: compile(definition)
+    App->>Site: Compiler.compile(definition)
+    Site->>Site: Check route and file paths
     par First route on a virtual thread
         Site->>Pages: prepare(...)
         Pages-->>Site: PreparedPage
@@ -256,13 +260,13 @@ sequenceDiagram
     Site->>Site: Gather results in route order
     Site->>Checks: Validate links and transition keys
     Checks-->>Site: No site diagnostics
-    Site->>Site: Merge CSS in route order
+    Site->>Site: Merge CSS in route order and check generated file paths
     par First prepared page on a virtual thread
-        Site->>Pages: paintPrepared(...)
-        Pages-->>Site: CompiledPage
+        Site->>Pages: paint(...)
+        Pages-->>Site: HTML
     and Other prepared pages on virtual threads
-        Site->>Pages: paintPrepared(...)
-        Pages-->>Site: CompiledPage
+        Site->>Pages: paint(...)
+        Pages-->>Site: HTML
     end
     Site->>Site: Assemble pages in route order
     Site->>Assets: Generate search index and optional sitemap
@@ -272,15 +276,15 @@ sequenceDiagram
 
 Site definitions require at least one route. Tasks use virtual threads; results are gathered in declaration order. Each page has separate compilation state. CSS merges sequentially and deterministically. Component callbacks should avoid mutating shared application state during concurrent rendering.
 
-`SiteValidator` receives prepared metadata and asset paths. It resolves relative and root-relative URLs against each route's published document URI, validates decoded paths and fragments, and excludes query strings from target lookup. Generated `index.html` URLs are accepted alongside route paths. Absolute and protocol-relative URLs are external to this validation. It also checks transition-key appearances on at least two routes. `SiteCompiler` retains output namespace collision checks. Compilation performs no filesystem writes.
+`SiteValidator` receives prepared metadata and asset paths. It resolves relative and root-relative URLs against each route's published document URI, validates decoded paths and fragments, and excludes query strings from target lookup. Generated `index.html` URLs are accepted alongside route paths. Absolute and protocol-relative URLs are external to this validation. It also checks transition-key appearances on at least two routes. Output namespace collisions are reported as `file-path-collision` diagnostics rather than thrown. Compilation performs no filesystem writes.
 
-`SiteArtifacts` owns XML/JSON serialization. `SiteWriter` owns directory creation, route-to-output-path mapping, and byte writes. `SitePreviewServer` serves the same compiled routes and assets. `SiteAsset.file(...)` remains explicit input I/O; byte-backed assets are shared by compilation and output adapters.
+`SiteArtifacts` owns XML/JSON serialization. `SiteWriter` owns directory creation, route-to-output-path mapping, and byte writes. `SitePreviewServer` serves the same compiled routes and assets. `Asset.file(...)` remains explicit input I/O; byte-backed assets are shared by compilation and output adapters.
 
 ## Verification and remaining limits
 
 Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, merged stylesheets, site links/assets, disk output, and preview HTTP responses. Search integration tests verify that output includes headings registered by a custom component without `Toc`. Tests exercise output rather than package shape or builder implementation details.
 
-The showcase is also the browser acceptance suite. It compiles through public `SiteCompiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
+The showcase is also the browser acceptance suite. It compiles through the public `Compiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
 
 JUnit runs the same browser suite on the latest Playwright Chromium and Firefox, reusing each browser across its class and creating a fresh browser context per test. Documentation routes are opened at desktop and narrow viewport widths, checking visible headings, applied CSS, image loading, HTTP failures, and horizontal overflow. Named cases are routes under `/stories/{case}/{variant}/{appearance}/{density}/`. Documentation sections and browser tests call the same factories, and each case page contributes the chosen `color-scheme` and density in its document head. Those cases are opened at the same widths for the overflow check. Documentation routes additionally run axe-core WCAG A/AA audits, keyboard flows for every interactive widget, forced-colors, reduced-motion, 200% zoom, and text-spacing checks. These complement the library tests' compiler diagnostics and output assertions.
 

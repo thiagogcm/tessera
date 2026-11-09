@@ -22,7 +22,7 @@ flowchart LR
         Styles["ScopeStyle and Tokens<br/>Scoped CSS and design tokens"]
     end
 
-    subgraph Compiler["PageCompiler"]
+    subgraph Compiler["Compiler"]
         Layout["1. LayoutPass and ViewExpansion<br/>Expand components, bind IDs, collect styles"]
         Prepaint["2. ReferenceLinker and PageValidator<br/>Link references and collect diagnostics"]
         Paint["3. HtmlWriter<br/>Encode and emit HTML with selected CSS"]
@@ -214,7 +214,7 @@ treeView-beta
         tessera/ ## Published dev.nthings:tessera library
             pom.xml
             src/
-                main/java/ ## foundation, css, core, render, components, site, navigation
+                main/java/ ## foundation, css, core, compiler, components, navigation
                 test/java/ ## Compiler, component, and site tests
         tessera-showcase/ ## Public API example and browser tests
             pom.xml

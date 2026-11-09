@@ -117,7 +117,7 @@ final class OverviewPage {
                         "        h1().textBalance().text(\"Hello\"),",
                         "        Callout.tip(\"Rendered without JavaScript\")));",
                         "",
-                        "CompiledPage out = PageCompiler.compile(page); // html + css")
+                        "CompiledPage out = Compiler.compile(page); // html + css")
                     .filename("Hello.java")
                     .language("java"),
                 pipeline),

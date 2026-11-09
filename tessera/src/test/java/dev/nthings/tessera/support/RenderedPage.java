@@ -2,10 +2,12 @@ package dev.nthings.tessera.support;
 
 import static dev.nthings.tessera.core.Elements.main;
 
+import dev.nthings.tessera.compiler.CompiledPage;
+import dev.nthings.tessera.compiler.CompiledSite;
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.render.CompiledPage;
-import dev.nthings.tessera.render.PageCompiler;
-import dev.nthings.tessera.render.PageDocument;
+import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,7 +26,16 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
   }
 
   public static RenderedPage of(PageDocument document) {
-    return of(PageCompiler.compile(document));
+    return of(Compiler.compile(document));
+  }
+
+  /// The page at `route` of `site`, with the site's shared stylesheet.
+  public static RenderedPage of(CompiledSite site, String route) {
+    var html = site.pages().get(route);
+    if (html == null) {
+      throw new AssertionError("No page at route: " + route);
+    }
+    return of(new CompiledPage(html, site.css(), List.of()));
   }
 
   public static RenderedPage of(CompiledPage compiled) {
@@ -36,7 +47,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
   }
 
   public String css() {
-    return compiled.cssContent();
+    return compiled.css();
   }
 
   /// First element matching `selector`; fails the test if there is none.

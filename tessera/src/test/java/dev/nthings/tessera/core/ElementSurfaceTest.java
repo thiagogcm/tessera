@@ -9,7 +9,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import dev.nthings.tessera.render.CompilationException;
+import dev.nthings.tessera.compiler.CompilationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

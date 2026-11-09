@@ -6,8 +6,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.core.DocumentHeading;
-import dev.nthings.tessera.render.CompilationException;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

@@ -11,8 +11,8 @@ import static dev.nthings.tessera.support.RenderedPage.render;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.render.CompilationDiagnostic;
-import dev.nthings.tessera.render.CompilationException;
+import dev.nthings.tessera.compiler.CompilationException;
+import dev.nthings.tessera.compiler.Diagnostic;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -94,7 +94,7 @@ class ElementRefTest {
     var failure = catchThrowableOfType(CompilationException.class, () -> render(body));
 
     assertThat(failure.diagnostics())
-        .extracting(CompilationDiagnostic::rule)
+        .extracting(Diagnostic::rule)
         .containsExactlyInAnyOrder(rule, "interactive-label");
   }
 }

@@ -7,7 +7,7 @@ import java.util.Map;
 
 /// The design tokens emitted as custom properties on `:root` in `@layer theme`. `new Tokens()`
 /// registers every default; [#register] adds a token or replaces the one with the same name. Pass
-/// the registry to `PageCompiler.compile` or to `SiteDefinition.Builder#tokens`. Spacing tokens
+/// the registry to `Compiler.compile` or to `SiteDefinition.Builder#tokens`. Spacing tokens
 /// scale with the density token.
 public final class Tokens {
 

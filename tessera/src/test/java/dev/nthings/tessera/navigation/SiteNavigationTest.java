@@ -6,10 +6,10 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
+import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.components.DocPager;
-import dev.nthings.tessera.render.PageDocument;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -14,6 +14,12 @@ import com.microsoft.playwright.options.ForcedColors;
 import com.microsoft.playwright.options.ReducedMotion;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.OutputMode;
+import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SiteRoute;
+import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
@@ -21,14 +27,8 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FontStack;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.render.OutputMode;
-import dev.nthings.tessera.render.PageDocument;
 import dev.nthings.tessera.showcase.Catalog;
 import dev.nthings.tessera.showcase.ShowcaseSite;
-import dev.nthings.tessera.site.SiteCompiler;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
-import dev.nthings.tessera.site.SiteWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
@@ -79,12 +79,12 @@ abstract class ShowcaseBrowserSupport {
   @BeforeAll
   void publishAndLaunch() throws IOException {
     publishedSite = Files.createTempDirectory("tessera-showcase");
-    var compiled = SiteCompiler.compile(ShowcaseSite.createDefinition());
+    var compiled = Compiler.compile(ShowcaseSite.createDefinition());
     SiteWriter.writeToDirectory(compiled, publishedSite);
     // One theme must restyle several independently authored components.
     var themed =
         SiteDefinition.builder()
-            .outputMode(OutputMode.inlineStyle())
+            .outputMode(OutputMode.inline())
             .tokens(
                 new Tokens()
                     .register(Tokens.DENSITY.withValue(0.5))
@@ -102,10 +102,10 @@ abstract class ShowcaseBrowserSupport {
                                 Card.create("custom").title("Themed card").bodyText("Body"),
                                 Forms.field("Custom field", Forms.text("custom"))))))
             .build();
-    SiteWriter.writeToDirectory(SiteCompiler.compile(themed), publishedSite.resolve("theme"));
+    SiteWriter.writeToDirectory(Compiler.compile(themed), publishedSite.resolve("theme"));
     var linked =
         SiteDefinition.builder()
-            .outputMode(OutputMode.inlineStyle())
+            .outputMode(OutputMode.inline())
             .route(
                 new SiteRoute(
                     "/links/start",
@@ -124,7 +124,7 @@ abstract class ShowcaseBrowserSupport {
                             .child(
                                 Elements.h1().attr("id", "café+intro").text("Café introduction")))))
             .build();
-    SiteWriter.writeToDirectory(SiteCompiler.compile(linked), publishedSite.resolve("urls"));
+    SiteWriter.writeToDirectory(Compiler.compile(linked), publishedSite.resolve("urls"));
     var firstSearch =
         SearchPalette.create("first-search")
             .item("Guides", "Café guide", "#cafe")
@@ -135,7 +135,7 @@ abstract class ShowcaseBrowserSupport {
             .item("Guides", "Forms guide", "#forms");
     var searchPage =
         SiteDefinition.builder()
-            .outputMode(OutputMode.inlineStyle())
+            .outputMode(OutputMode.inline())
             .route(
                 new SiteRoute(
                     "/",
@@ -152,7 +152,7 @@ abstract class ShowcaseBrowserSupport {
                                 firstSearch.asDeferred(10),
                                 secondSearch.asDeferred(20)))))
             .build();
-    SiteWriter.writeToDirectory(SiteCompiler.compile(searchPage), publishedSite.resolve("search"));
+    SiteWriter.writeToDirectory(Compiler.compile(searchPage), publishedSite.resolve("search"));
     server =
         SimpleFileServer.createFileServer(
             new InetSocketAddress("127.0.0.1", 0),

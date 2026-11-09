@@ -1,9 +1,9 @@
 package dev.nthings.tessera.navigation;
 
+import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.SearchPalette;
-import dev.nthings.tessera.site.SiteDefinition;
-import dev.nthings.tessera.site.SiteRoute;
 import java.util.List;
 
 /// Navigation components derived from a [SiteDefinition]'s routes.
@@ -33,12 +33,12 @@ public final class SiteNavigation {
   /// previous link and the last has no next link. The path is normalized like a route path, so a
   /// trailing `/` is accepted. Throws IllegalArgumentException if no route is registered at it.
   public static DocPager docPager(SiteDefinition site, String currentPath) {
-    var normalizedCurrent = SiteRoute.normalizeRoutePath(currentPath);
+    var current =
+        site.route(currentPath)
+            .orElseThrow(
+                () -> new IllegalArgumentException("No route registered at " + currentPath));
     var routes = site.routes();
-    var index = routes.stream().map(SiteRoute::path).toList().indexOf(normalizedCurrent);
-    if (index < 0) {
-      throw new IllegalArgumentException("No route registered at " + normalizedCurrent);
-    }
+    var index = routes.indexOf(current);
     return DocPager.of(
         index > 0 ? pageRef(routes.get(index - 1)) : null,
         index < routes.size() - 1 ? pageRef(routes.get(index + 1)) : null);

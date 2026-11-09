@@ -21,7 +21,7 @@ public record PageTree(List<Node> head, List<Node> body) {
   public sealed interface Node permits Tag, Text, Raw {}
 
   /// An element after expansion and linking. The component path lists the enclosing components,
-  /// outermost first; view entries include their instance scope. The source is where authoring
+  /// outermost first; scope entries include their instance id. The source is where authoring
   /// code built the element, when tracked.
   public record Tag(
       String tag,
@@ -42,9 +42,9 @@ public record PageTree(List<Node> head, List<Node> body) {
       return attributes.get("id");
     }
 
-    /// `data-view` key of the `@scope` block the element roots, if any.
+    /// `data-scope` key of the `@scope` block the element roots, if any.
     public @Nullable String scope() {
-      return attributes.get("data-view");
+      return attributes.get("data-scope");
     }
   }
 

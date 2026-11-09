@@ -3,9 +3,9 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.header;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
@@ -25,7 +25,7 @@ import dev.nthings.tessera.css.Transition;
 /// [#of(IntoElement)]; the content is placed inside a `<header>` element.
 ///
 /// Without an [#id(String)], the compiler numbers instances `sticky-header-<n>`.
-public final class StickyHeader extends BuiltinView<StickyHeader> {
+public final class StickyHeader extends BuiltinScope<StickyHeader> {
 
   /// Scroll-state container queried by the header's own surface.
   private static final Container STUCK =
@@ -48,7 +48,7 @@ public final class StickyHeader extends BuiltinView<StickyHeader> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "sticky-header";
   }
 
@@ -84,7 +84,7 @@ public final class StickyHeader extends BuiltinView<StickyHeader> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     return div().child(header().attr("class", "sticky-surface").child(content));
   }
 }

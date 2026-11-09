@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class CompilerTest {
 
   @Nested
-  @DisplayName("compiling a view with scoped ids, invokers, tooltips, actions and portals")
+  @DisplayName("compiling a scope with scoped ids, invokers, tooltips, actions and portals")
   class WorkspaceView {
 
     private static RenderedPage page;
@@ -37,21 +37,21 @@ class CompilerTest {
     @DisplayName("inlines its styles, so there are no assets to publish")
     void inlinesItsStyles() {
       assertThat(page.compiled().assets()).isEmpty();
-      assertThat(page.element("head > style").data()).contains("@scope ([data-view=");
+      assertThat(page.element("head > style").data()).contains("@scope ([data-scope=");
     }
 
     @Test
-    @DisplayName("keys the view's scoped rules by its data-view value")
+    @DisplayName("keys the scope's rules by its data-scope value")
     void keysScopedRulesByDataViewValue() {
-      var view = page.element("main[data-view-id=workspace-core]");
+      var view = page.element("main[data-scope-id=workspace-core]");
 
-      assertThat(page.css()).contains("@scope ([data-view=\"" + view.attr("data-view") + "\"])");
+      assertThat(page.css()).contains("@scope ([data-scope=\"" + view.attr("data-scope") + "\"])");
     }
 
     @Test
     @DisplayName("puts container-query rules in the container layer behind a generated class")
     void putsContainerQueriesInContainerLayer() {
-      var card = page.element("main[data-view-id=workspace-core] section");
+      var card = page.element("main[data-scope-id=workspace-core] section");
       var cqClass = CssBlocks.generatedClass(card.className(), "cq-");
 
       assertThat(CssBlocks.block(page.css(), "@layer container{"))
@@ -59,8 +59,8 @@ class CompilerTest {
     }
 
     @Test
-    @DisplayName("resolves invoker commands to view-scoped ids")
-    void resolvesInvokerCommandsToViewScopedIds() {
+    @DisplayName("resolves invoker commands to ids in the enclosing scope")
+    void resolvesInvokerCommandsToIdScopedIds() {
       assertThat(page.elementById("workspace-core--open-archive-btn"))
           .hasAttribute("commandfor", "workspace-core--confirm-archive");
     }

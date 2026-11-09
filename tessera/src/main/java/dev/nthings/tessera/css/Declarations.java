@@ -20,52 +20,51 @@ import org.jspecify.annotations.Nullable;
 /// and writing a shorthand (such as [#p(CssLength)] or [#border(Border)]) removes the longhands it
 /// covers (such as [#pt(CssLength)] or [#borderBlockEnd(Border)]), so a longhand only wins when
 /// written after its shorthand.
-public final class StyleRefinement
-    implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
+public final class Declarations implements Styled<Declarations>, FluentBuilder<Declarations> {
 
   /// Nested rules are emitted states first (in [State] order), then media, then container queries
   /// (in first-use order), so a later state wins over an earlier one at equal specificity.
   private static final Comparator<Condition> EMISSION_ORDER =
-      Comparator.comparingInt(StyleRefinement::emissionRank);
+      Comparator.comparingInt(Declarations::emissionRank);
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
   /// Created on first use, so a plain style allocates no conditional state.
-  private @Nullable Map<Condition, StyleRefinement> conditional;
+  private @Nullable Map<Condition, Declarations> conditional;
 
   private @Nullable Set<Keyframes> keyframes;
-  private @Nullable StyleRefinement startingStyle;
+  private @Nullable Declarations startingStyle;
 
   /// Creates an empty refinement, for building a style outside an element.
-  public StyleRefinement() {}
+  public Declarations() {}
 
   @Override
-  public StyleRefinement self() {
+  public Declarations self() {
     return this;
   }
 
   @Override
-  public StyleRefinement style() {
+  public Declarations style() {
     return this;
   }
 
   /// Every declaration goes through here, so a shorthand removes the longhands it covers.
-  StyleRefinement put(CssProperty property, String value) {
+  Declarations put(CssProperty property, String value) {
     property.longhands().forEach(declarations::remove);
     declarations.put(property, value);
     return this;
   }
 
-  StyleRefinement put(CssProperty property, CssValue value) {
+  Declarations put(CssProperty property, CssValue value) {
     return put(property, value.toCss());
   }
 
   /// A comma-separated list of values, as `box-shadow` and `transition-property` take.
-  StyleRefinement put(CssProperty property, List<? extends CssValue> values) {
+  Declarations put(CssProperty property, List<? extends CssValue> values) {
     return put(property, values.stream().map(CssValue::toCss).collect(Collectors.joining(", ")));
   }
 
-  StyleRefinement put(CssProperty property, CssValue first, CssValue... rest) {
+  Declarations put(CssProperty property, CssValue first, CssValue... rest) {
     var values = new ArrayList<CssValue>(rest.length + 1);
     values.add(first);
     values.addAll(List.of(rest));
@@ -73,7 +72,7 @@ public final class StyleRefinement
   }
 
   /// Defines `property` on the elements this style applies to, as `--name: value`.
-  public StyleRefinement customProperty(CustomProperty property, CssValue value) {
+  public Declarations customProperty(CustomProperty property, CssValue value) {
     customProperties.put(property.toCss(), value.toCss());
     return this;
   }
@@ -81,10 +80,10 @@ public final class StyleRefinement
   /// Runs `styles` on the values an entry transition starts from, emitted as a nested
   /// `@starting-style` block: when the element first renders or leaves `display: none`, it starts
   /// from these values and transitions to its normal style. Calling again extends the same block.
-  public StyleRefinement startingStyle(StyleBlock styles) {
+  public Declarations startingStyle(StyleBlock styles) {
     var start = startingStyle;
     if (start == null) {
-      start = new StyleRefinement();
+      start = new Declarations();
       startingStyle = start;
     }
     styles.configure(start);
@@ -94,7 +93,7 @@ public final class StyleRefinement
   /// Writes `other`'s declarations, custom properties and conditional styles into this one as if
   /// their style methods were called here: `other` wins on conflicts, and its shorthands remove
   /// this one's longhands.
-  public StyleRefinement mergeFrom(StyleRefinement other) {
+  public Declarations mergeFrom(Declarations other) {
     if (other == this) {
       return this;
     }
@@ -116,13 +115,13 @@ public final class StyleRefinement
   }
 
   /// The refinement holding the styles for `condition`, created on first use.
-  StyleRefinement nested(Condition condition) {
+  Declarations nested(Condition condition) {
     var rules = conditional;
     if (rules == null) {
       rules = new LinkedHashMap<>();
       conditional = rules;
     }
-    return rules.computeIfAbsent(condition, _ -> new StyleRefinement());
+    return rules.computeIfAbsent(condition, _ -> new Declarations());
   }
 
   private Set<Keyframes> keyframes() {
@@ -135,7 +134,7 @@ public final class StyleRefinement
   }
 
   /// Records `animation`'s keyframes for registration and writes it under [Media#MOTION_SAFE].
-  StyleRefinement animate(Animation animation) {
+  Declarations animate(Animation animation) {
     keyframes().add(animation.keyframes());
     animation.writeTo(nested(Media.MOTION_SAFE));
     return this;
@@ -167,7 +166,7 @@ public final class StyleRefinement
   /// null, `view-transition-class`. Authors attach a `TransitionKey` to the element instead; the
   /// compiler passes that key's name and class, which the key has already validated, so they are
   /// emitted as given.
-  public StyleRefinement viewTransition(String name, @Nullable String transitionClass) {
+  public Declarations viewTransition(String name, @Nullable String transitionClass) {
     put(CssProperty.VIEW_TRANSITION_NAME, name);
     if (transitionClass != null) {
       put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
@@ -246,12 +245,12 @@ public final class StyleRefinement
   }
 
   /// The container-query rules that emit something, in first-use order.
-  Map<ContainerQuery, StyleRefinement> containerRules() {
+  Map<ContainerQuery, Declarations> containerRules() {
     var rules = conditional;
     if (rules == null) {
       return Map.of();
     }
-    var queries = new LinkedHashMap<ContainerQuery, StyleRefinement>();
+    var queries = new LinkedHashMap<ContainerQuery, Declarations>();
     rules.forEach(
         (condition, style) -> {
           if (condition instanceof ContainerQuery query && !style.isEmpty()) {
@@ -279,7 +278,7 @@ public final class StyleRefinement
     }
   }
 
-  private static void appendRule(StringBuilder sb, String prelude, StyleRefinement style) {
+  private static void appendRule(StringBuilder sb, String prelude, Declarations style) {
     if (!style.isEmpty()) {
       sb.append(prelude).append('{').append(style.toCssBody()).append('}');
     }

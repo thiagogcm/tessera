@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Fluent, typed styling shared by element builders and [StyleRefinement]. Each method writes one
+/// Fluent, typed styling shared by element builders and [Declarations]. Each method writes one
 /// declaration (or a small fixed group) and returns the receiver; it takes the value category its
 /// property accepts ([CssLength], [CssColor], [Border], ...), so a color cannot be passed where a
 /// length belongs. The last call wins, and a shorthand removes the longhands it covers.

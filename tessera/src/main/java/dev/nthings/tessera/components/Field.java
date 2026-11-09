@@ -3,10 +3,10 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// The control, hint and error ids are prefixed with its [#id(String)]. Without an id, the
 /// compiler numbers instances `form-field-<n>`.
-public final class Field extends BuiltinView<Field> {
+public final class Field extends BuiltinScope<Field> {
 
   private final String label;
 
@@ -83,12 +83,12 @@ public final class Field extends BuiltinView<Field> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "form-field";
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var wrapper = select;
     var control =
         (wrapper != null ? wrapper.control() : Objects.requireNonNull(bareControl)).copy();

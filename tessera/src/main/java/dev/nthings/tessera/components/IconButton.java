@@ -1,7 +1,7 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Tone;
 
 /// Icon-only `<button>` created with [#of(String, IntoElement)]. The label you pass is its only
@@ -30,7 +30,7 @@ public final class IconButton extends ButtonBase<IconButton> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     return ButtonFace.element(this, true).ariaLabel(label).child(ButtonFace.icon(icon));
   }
 }

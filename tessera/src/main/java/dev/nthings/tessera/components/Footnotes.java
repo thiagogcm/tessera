@@ -1,11 +1,11 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -50,7 +50,7 @@ public final class Footnotes extends BuiltinComponent {
 
   /// Registers the next footnote on the page. `key` names its reference ids, or `null` to use its
   /// number.
-  static Entry register(RenderContext context, @Nullable String key, Element content) {
+  static Entry register(DocumentContext context, @Nullable String key, Element content) {
     var registry = context.document(REGISTRY);
     var number = registry.entries.size() + 1;
     var name = key != null ? key : Integer.toString(number);
@@ -65,7 +65,7 @@ public final class Footnotes extends BuiltinComponent {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var registry = context.document(REGISTRY);
     registry.sectionPlaced = true;
     var heading = title;
@@ -76,8 +76,8 @@ public final class Footnotes extends BuiltinComponent {
                 : new EndnotesView(heading, List.copyOf(registry.entries)));
   }
 
-  /// The endnotes list, a view for its scoped styles.
-  private static final class EndnotesView extends BuiltinView<EndnotesView> {
+  /// The endnotes list, a scope for its scoped styles.
+  private static final class EndnotesView extends BuiltinScope<EndnotesView> {
 
     private final String title;
     private final List<Entry> entries;
@@ -94,7 +94,7 @@ public final class Footnotes extends BuiltinComponent {
     }
 
     @Override
-    String viewType() {
+    String scopeName() {
       return "footnotes-section";
     }
 
@@ -119,7 +119,7 @@ public final class Footnotes extends BuiltinComponent {
     }
 
     @Override
-    IntoElement render(RenderContext context) {
+    IntoElement expand(DocumentContext context) {
       var ol = Elements.ol().tabularNums();
       for (var entry : entries) {
         var backlink =

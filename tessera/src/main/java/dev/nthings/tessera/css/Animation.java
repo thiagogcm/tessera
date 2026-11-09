@@ -12,8 +12,8 @@ import org.jspecify.annotations.Nullable;
 /// Timelines:
 ///
 /// - [#of]: plays once over a duration when the style applies.
-/// - [#reveal]: follows the element's progress into the viewport, so scrolling back reverses it.
-/// - [#exit]: follows the element's progress out of the viewport, and keeps the end state.
+/// - [#enterViewport]: progress into the viewport. Scrolling back reverses it.
+/// - [#leaveViewport]: follows the element's progress out of the viewport, and keeps the end state.
 /// - [#revealOnce]: plays once, over 0.5s, the first time the element scrolls into view.
 /// - [#scrollProgress]: follows the scroll position of the whole page.
 @CheckReturnValue
@@ -66,14 +66,14 @@ public final class Animation {
   /// (`animation-timeline: view()`, entry range). Before the element arrives it holds the first
   /// keyframe, and scrolling back reverses the animation. Throws IllegalArgumentException if
   /// `keyframes` has no steps.
-  public static Animation reveal(Keyframes keyframes) {
+  public static Animation enterViewport(Keyframes keyframes) {
     return on(keyframes, Timeline.VIEW_ENTRY);
   }
 
   /// Drives `keyframes` by the element's progress out of the viewport along the block axis (exit
   /// range), holding the last keyframe after it leaves. Throws IllegalArgumentException if
   /// `keyframes` has no steps.
-  public static Animation exit(Keyframes keyframes) {
+  public static Animation leaveViewport(Keyframes keyframes) {
     return on(keyframes, Timeline.VIEW_EXIT);
   }
 
@@ -116,7 +116,7 @@ public final class Animation {
   }
 
   /// Writes the animation declarations to `style`, without the reduced-motion guard.
-  void writeTo(StyleRefinement style) {
+  void writeTo(Declarations style) {
     var name = keyframes.name();
     switch (timeline) {
       case TIME -> {
@@ -146,7 +146,7 @@ public final class Animation {
     }
   }
 
-  private void viewRange(StyleRefinement style, String shorthand, String phase) {
+  private void viewRange(Declarations style, String shorthand, String phase) {
     style
         .put(CssProperty.ANIMATION, shorthand)
         .put(CssProperty.ANIMATION_TIMELINE, "view(" + axis.toCss() + ")")

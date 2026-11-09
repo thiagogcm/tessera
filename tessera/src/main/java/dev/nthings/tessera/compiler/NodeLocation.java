@@ -6,17 +6,17 @@ import org.jspecify.annotations.Nullable;
 
 /// Where an element sits among its components, independent of the placing page. Compilation
 /// turns it into a [Location] once the page is known.
-record ViewLocation(
+record NodeLocation(
     List<String> componentPath,
     String tagName,
     @Nullable String domId,
     @Nullable SourceLocation source) {
-  ViewLocation {
+  NodeLocation {
     componentPath = List.copyOf(componentPath);
   }
 
   /// Returns this location with its DOM id set to `id`.
-  ViewLocation withDomId(String id) {
-    return new ViewLocation(componentPath, tagName, id, source);
+  NodeLocation withDomId(String id) {
+    return new NodeLocation(componentPath, tagName, id, source);
   }
 }

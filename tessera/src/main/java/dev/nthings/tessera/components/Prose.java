@@ -2,10 +2,10 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -19,7 +19,7 @@ import java.util.List;
 /// their own styling.
 ///
 /// Without an [#id(String)], the compiler numbers instances `prose-container-<n>`.
-public final class Prose extends BuiltinView<Prose> implements ParentElement<Prose> {
+public final class Prose extends BuiltinScope<Prose> implements ParentElement<Prose> {
 
   private final List<Element> children = new ArrayList<>();
   private CssLength maxMeasure = CssLength.ch(75);
@@ -48,12 +48,12 @@ public final class Prose extends BuiltinView<Prose> implements ParentElement<Pro
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "prose-container";
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var container = div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10);
     container.children(children);
     return container;

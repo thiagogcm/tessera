@@ -4,8 +4,8 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
@@ -26,7 +26,7 @@ import org.jspecify.annotations.Nullable;
 /// sets, is 36rem or wider. Otherwise they stack.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
-public final class DocPager extends BuiltinView<DocPager> {
+public final class DocPager extends BuiltinScope<DocPager> {
 
   private @Nullable Link previous;
   private @Nullable Link next;
@@ -64,7 +64,7 @@ public final class DocPager extends BuiltinView<DocPager> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "tessera-doc-pager";
   }
 
@@ -115,7 +115,7 @@ public final class DocPager extends BuiltinView<DocPager> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var navEl = nav().ariaLabel(label).attr("class", "doc-pager");
 
     if (previous != null) {

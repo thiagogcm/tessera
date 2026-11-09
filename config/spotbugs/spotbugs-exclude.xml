@@ -17,7 +17,7 @@
 
     <!-- Preserve callback exception types after attaching component context. -->
     <Match>
-        <Class name="dev.nthings.tessera.compiler.ViewExpansion"/>
+        <Class name="dev.nthings.tessera.compiler.Expansion"/>
         <Method name="callback"/>
         <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
     </Match>

@@ -1,6 +1,6 @@
 # Tessera
 
-> **A declarative, type-safe HTML/CSS view engine and component system for JDK 25 and the latest Chromium and Firefox, with native platform controls and automatically bundled client behaviors.**
+> **A declarative, type-safe HTML/CSS compiler and component system for JDK 25 and the latest Chromium and Firefox, with native platform controls and page scripts bundled only when a component needs one.**
 
 [![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browsers](https://img.shields.io/badge/Browser-latest%20Chromium%20%7C%20Firefox-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Bundled%20when%20needed-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
 
@@ -10,23 +10,24 @@
 
 Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and the **latest Chromium and Firefox**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
 
-The supported browser contract is deliberately bleeding-edge: the latest stable Chromium and Firefox, with no fallback matrix and no legacy polyfills. Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components contribute deduplicated ES modules as client behaviors; `SearchPalette` and `ContentTabs` use that path for live filtering, keyboard navigation, and ARIA tabs. Pages that use no behavior receive no script.
+The supported browser contract is deliberately bleeding-edge: the latest stable Chromium and Firefox, with no fallback matrix. Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components contribute deduplicated page scripts only where HTML cannot do the job: `SearchPalette` filters links, and `ContentTabs` switches panels because HTML has no roving-tab widget. The interest-tooltip script is the Firefox polyfill for interest invokers. Pages that contribute no script receive none.
 
 Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search. The API is Java-first and also reads naturally from Kotlin 2.3.20+; see [Use from Kotlin](docs/consumer-guide.md#use-from-kotlin).
 
 ```mermaid
 flowchart LR
     subgraph Authoring["Java 25 authoring"]
-        Components["Component and View<br/>Reusable components"]
+        Components["Component and Scope<br/>Reusable components"]
         References["ElementRef and Command<br/>Symbolic identities and invokers"]
         Styles["ScopeStyle, Tokens and Theme<br/>Scoped CSS and design tokens"]
     end
 
     subgraph Compiler["Compiler"]
-        Layout["1. LayoutPass and ViewExpansion<br/>Expand components, bind IDs, collect styles"]
-        Prepaint["2. ReferenceLinker and PageValidator<br/>Link references and collect diagnostics"]
-        Paint["3. HtmlWriter<br/>Encode and emit HTML with selected CSS"]
-        Layout --> Prepaint -->|Valid page| Paint
+        Expand["1. Expansion<br/>Expand components, bind ids, collect styles"]
+        Link["2. ReferenceLinker<br/>Resolve references"]
+        Validate["3. PageValidator<br/>Check the linked tree"]
+        Emit["4. HtmlWriter<br/>Emit HTML with the selected CSS"]
+        Expand --> Link --> Validate -->|Valid page| Emit
     end
 
     subgraph Browser["Native browser platform"]
@@ -35,8 +36,8 @@ flowchart LR
         Search["SearchPalette module when used"]
     end
 
-    Authoring --> Layout
-    Paint --> Browser
+    Authoring --> Expand
+    Emit --> Browser
 ```
 
 ---
@@ -50,18 +51,18 @@ Tessera emits purely standard HTML and CSS features available in modern browsers
 - **Invoker Commands**: Declarative button interactions via `commandfor="target-id"` and `command="show-modal"` / `command="toggle-popover"` / custom commands without JavaScript event listeners.
 - **Native Light-Dismiss Overlays**: `<dialog closedby="any">` and `[popover="auto"]` with native backdrop styling and top-layer positioning.
 - **CSS Cascade Layers (`@layer`)**: Strict, deterministic cascade hierarchy: `@layer reset, base, theme, components, utilities, interactive, container;`
-- **Scoped Styling (`@scope`)**: Modular CSS styling isolated directly to component boundaries (`@scope ([data-view="tessera-card"])`) without CSS Modules or naming collisions.
+- **Scoped Styling (`@scope`)**: Modular CSS styling isolated directly to component boundaries (`@scope ([data-scope="tessera-card"])`) without CSS Modules or naming collisions.
 - **OKLCH & `light-dark()`**: Perceptually uniform OKLCH color palettes with automatic OS light/dark mode adaptation via pure CSS variables.
 - **Subgrid & Anchor Positioning**: Seamless multi-column card alignments, sticky headers, and pure CSS anchored tooltips.
 - **Link Speculation Rules**: Native browser prefetch and prerender for instant multi-page transitions.
 
 #### Browser support
 
-The contract is the latest stable Chromium and Firefox, tested on every build. Features that are still Chromium-leading (`::scroll-button`, `::scroll-marker`, `appearance: base-select`, `@container scroll-state`) degrade to the native behavior in Firefox. `interestfor` hint popovers ship a small fallback behavior where interest invokers are not yet available. There are no polyfills, no version matrix, and no legacy engines.
+The contract is the latest stable Chromium and Firefox, tested on every build. Features that are still Chromium-leading (`::scroll-button`, `::scroll-marker`, `appearance: base-select`, `@container scroll-state`) degrade to the native behavior in Firefox. `interestfor` hint popovers use the native invoker in Chromium. Firefox gets `interest-tooltip.js`, which listens for `pointerover`. There is no version matrix and no legacy engine.
 
 ### 2. JDK 25 Idiomatic Language Features
 
-- **Explicit `RenderContext`**: Render and document callbacks receive their turn's contribution capabilities (head content, behaviors, headings, per-page state, diagnostics) directly.
+- **Explicit `DocumentContext`**: Expand and document callbacks receive their turn's contribution capabilities (head content, page scripts, headings, per-page state, diagnostics) directly.
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `FluentBuilder<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
@@ -71,7 +72,7 @@ The contract is the latest stable Chromium and Firefox, tested on every build. F
 
 ### 3. Linker-Style Element Identity
 
-In Tessera, DOM ids come only from `ElementRef` tokens: `ElementRef.scoped(name)` for ids namespaced by the enclosing view, `ElementRef.page(name)` for stable public fragments, and anonymous refs for compiler-assigned ids. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) take the same refs. During compilation, the **Linker** statically resolves and verifies every reference:
+In Tessera, DOM ids come only from `ElementRef` tokens: `ElementRef.scoped(name)` for ids namespaced by the enclosing scope, `ElementRef.page(name)` for stable public fragments, and anonymous refs for compiler-assigned ids. A key's own slug has no sibling index. A scope that omits `scopeId()` is still numbered in encounter order, and keyed content inside that scope reports `generated-scope-id`. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) take the same refs. During compilation, the **Linker** statically resolves and verifies every reference:
 
 - Unbound references trigger compile-time errors.
 - Duplicate bindings, duplicate DOM IDs, and conflicting names on one element are reported before HTML is emitted.
@@ -158,10 +159,10 @@ just format
 
 ## Code Examples
 
-### 1. Defining a Scoped Component (`View`)
+### 1. Defining a Scoped Component (`Scope`)
 
 ```java
-public record MetricCard(String title, String value, Badge badge) implements View {
+public record MetricCard(String title, String value, Badge badge) implements Scope {
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
@@ -171,7 +172,7 @@ public record MetricCard(String title, String value, Badge badge) implements Vie
   }
 
   @Override
-  public IntoElement render(RenderContext context) {
+  public IntoElement expand(DocumentContext context) {
     return div()
         .child(div().children(span().text(title), badge))
         .child(div().attr("class", "metric-value").text(value));

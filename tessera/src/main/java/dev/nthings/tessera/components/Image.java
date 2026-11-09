@@ -1,11 +1,11 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.ElementBlock;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import org.jspecify.annotations.Nullable;
 
@@ -72,7 +72,7 @@ public final class Image extends BuiltinComponent {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var element = img.copy();
     if (hero) {
       defaultAttr(element, "fetchpriority", "high");

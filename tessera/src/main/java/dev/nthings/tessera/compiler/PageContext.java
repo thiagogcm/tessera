@@ -1,11 +1,11 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.ClientBehavior;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayList;
@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-/// The compiler's [RenderContext]: one expansion turn's view scope and component path over the
+/// The compiler's [DocumentContext]: one expansion turn's id scope and component path over the
 /// page's shared state. Derived contexts never change their parent.
-final class PageContext implements RenderContext {
+final class PageContext implements DocumentContext {
 
-  private final ViewScope viewScope;
+  private final IdScope idScope;
   private final StyleSheet styles;
   private final DocumentState docState;
   private final CompilationState state;
@@ -26,14 +26,14 @@ final class PageContext implements RenderContext {
   private final @Nullable String keyOwner;
 
   private PageContext(
-      ViewScope viewScope,
+      IdScope idScope,
       StyleSheet styles,
       DocumentState docState,
       CompilationState state,
       List<String> componentPath,
       @Nullable SourceLocation origin,
       @Nullable String keyOwner) {
-    this.viewScope = viewScope;
+    this.idScope = idScope;
     this.styles = styles;
     this.docState = docState;
     this.state = state;
@@ -45,7 +45,7 @@ final class PageContext implements RenderContext {
   /// The root context of one page compilation.
   static PageContext forDocument(
       StyleSheet styles, DocumentState docState, CompilationState state) {
-    return new PageContext(ViewScope.ROOT, styles, docState, state, List.of(), null, null);
+    return new PageContext(IdScope.ROOT, styles, docState, state, List.of(), null, null);
   }
 
   @Override
@@ -60,13 +60,13 @@ final class PageContext implements RenderContext {
 
   @Override
   public void atDocumentEnd(
-      DocumentKey<?> owner, Function<RenderContext, ? extends IntoElement> section) {
+      DocumentKey<?> owner, Function<DocumentContext, ? extends IntoElement> section) {
     docState.atDocumentEnd(owner, section, location());
   }
 
   @Override
-  public void contributeBehavior(ClientBehavior behavior) {
-    docState.contributeBehavior(behavior);
+  public void contributeScript(PageScript script) {
+    docState.contributeScript(script);
   }
 
   @Override
@@ -84,8 +84,8 @@ final class PageContext implements RenderContext {
     state.report(location(), rule, message, fix);
   }
 
-  ViewScope viewScope() {
-    return viewScope;
+  IdScope idScope() {
+    return idScope;
   }
 
   StyleSheet styles() {
@@ -103,44 +103,52 @@ final class PageContext implements RenderContext {
   }
 
   /// The current component, as a location without an element.
-  ViewLocation location() {
-    return new ViewLocation(componentPath, "", null, origin);
+  NodeLocation location() {
+    return new NodeLocation(componentPath, "", null, origin);
   }
 
-  /// The local name of the nearest enclosing element in this view scope that is bound to a named
+  /// The local name of the nearest enclosing element in this id scope that is bound to a named
   /// ref, or `null` if there is none. Keyed lists use it to tell themselves apart.
   @Nullable String keyOwner() {
     return keyOwner;
   }
 
-  /// A context whose view scope is nested under the sanitized local id `viewId`.
-  PageContext withViewScope(String viewId) {
+  /// A context whose id scope is nested under the sanitized local id `scopeId`. `generated` marks
+  /// that id as an encounter-order counter, which every nested scope keeps.
+  PageContext withIdScope(String scopeId, boolean generated) {
+    var nested = idScope.extend(scopeId);
     return new PageContext(
-        viewScope.extend(viewId), styles, docState, state, componentPath, origin, null);
+        generated ? nested.asGenerated() : nested,
+        styles,
+        docState,
+        state,
+        componentPath,
+        origin,
+        null);
   }
 
-  /// A context for keyed content, whose view scope is nested under the sanitized local id `slug`.
+  /// A context for keyed content, whose id scope is nested under the sanitized local id `slug`.
   PageContext withKeyedScope(String slug) {
     return new PageContext(
-        viewScope.extendKeyed(slug), styles, docState, state, componentPath, origin, null);
+        idScope.extendKeyed(slug), styles, docState, state, componentPath, origin, null);
   }
 
-  /// A context inside an element bound to a ref named `owner`, in the same view scope.
+  /// A context inside an element bound to a ref named `owner`, in the same id scope.
   PageContext withKeyOwner(String owner) {
-    return new PageContext(viewScope, styles, docState, state, componentPath, origin, owner);
+    return new PageContext(idScope, styles, docState, state, componentPath, origin, owner);
   }
 
-  /// Enters `component` for diagnostics, keeping the view scope. Without `placedAt`, the enclosing
+  /// Enters `component` for diagnostics, keeping the id scope. Without `placedAt`, the enclosing
   /// origin is kept.
   PageContext withComponent(String component, @Nullable SourceLocation placedAt) {
     var path = new ArrayList<>(componentPath);
     path.add(component);
-    return withPlacement(new ViewLocation(path, "", null, placedAt != null ? placedAt : origin));
+    return withPlacement(new NodeLocation(path, "", null, placedAt != null ? placedAt : origin));
   }
 
-  /// A context with the component path and origin of `placedBy`, keeping the view scope.
-  PageContext withPlacement(ViewLocation placedBy) {
+  /// A context with the component path and origin of `placedBy`, keeping the id scope.
+  PageContext withPlacement(NodeLocation placedBy) {
     return new PageContext(
-        viewScope, styles, docState, state, placedBy.componentPath(), placedBy.source(), keyOwner);
+        idScope, styles, docState, state, placedBy.componentPath(), placedBy.source(), keyOwner);
   }
 }

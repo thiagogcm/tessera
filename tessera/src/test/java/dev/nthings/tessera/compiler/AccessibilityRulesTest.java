@@ -17,15 +17,15 @@ import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.core.View;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -56,14 +56,14 @@ class AccessibilityRulesTest {
             "aspect-ratio"));
   }
 
-  record Panel(String id, Element content) implements View {
+  record Panel(String id, Element content) implements Scope {
     @Override
-    public String viewId() {
+    public String scopeId() {
       return id;
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return div().child(content);
     }
   }
@@ -135,17 +135,17 @@ class AccessibilityRulesTest {
         .contains("Settings", "settings--actions--save", "Fix:", ".id(ref)");
   }
 
-  record DocumentExtras() implements View {
+  record DocumentExtras() implements Scope {
     private static final DocumentKey<Object> ACTIONS =
         DocumentKey.of("extra-actions", Object.class, Object::new);
 
     @Override
-    public String viewId() {
+    public String scopeId() {
       return "extras";
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       context.contributeHead(
           el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
       context.atDocumentEnd(ACTIONS, _ -> button().id(ElementRef.scoped("subscribe")));

@@ -72,18 +72,20 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return found;
   }
 
-  /// The `@scope` body of the view that contains `element`.
+  /// The `@scope` body of the scope that contains `element`.
   public String scopeBody(Element element) {
     var current = element;
-    while (current != null && !current.hasAttr("data-view")) {
+    while (current != null && !current.hasAttr("data-scope")) {
       current = current.parent();
     }
     if (current == null) {
-      throw new AssertionError("No data-view ancestor");
+      throw new AssertionError("No data-scope ancestor");
     }
     return CssBlocks.block(
         css(),
-        "@scope ([data-view=\"" + current.attr("data-view") + "\"]) to (:scope [data-view] > *){");
+        "@scope ([data-scope=\""
+            + current.attr("data-scope")
+            + "\"]) to (:scope [data-scope] > *){");
   }
 
   /// The rule body of `element`'s generated class with the given `prefix` (`u-`, `i-`, `cq-`).

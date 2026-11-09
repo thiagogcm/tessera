@@ -5,16 +5,16 @@ import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
 import java.util.List;
 
-/// The page phases: [#prepare] lays out and validates, [#paint] emits HTML. [Compiler] runs both
-/// for one page; [SiteCompiler] validates every page before painting any.
+/// The page phases: [#prepare] expands, links and validates, [#emit] writes HTML. [Compiler] runs
+/// both for one page; [SiteCompiler] validates every page before emitting any.
 final class PageCompiler {
   private PageCompiler() {}
 
   static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
     var prepared = prepare(document, List.of());
     var css = prepared.stylesheet(theme);
-    var resources = new HtmlWriter.Resources(css, outputMode, prepared.behaviors());
-    return new CompiledPage(paint(prepared, resources), css, resources.assets());
+    var resources = new HtmlWriter.Resources(css, outputMode, prepared.scripts());
+    return new CompiledPage(emit(prepared, resources), css, resources.assets());
   }
 
   /// Lays out and validates `document` without emitting HTML. `siteHead` goes in
@@ -24,7 +24,7 @@ final class PageCompiler {
     var styles = new StyleSheet();
     var state = new CompilationState(document.title());
 
-    var layout = LayoutPass.layout(document, siteHead, styles, state);
+    var layout = DocumentPass.layout(document, siteHead, styles, state);
     var bodyNodes = layout.bodyNodes();
     var headNodes = layout.headNodes();
 
@@ -48,17 +48,17 @@ final class PageCompiler {
         state.transitionLocations,
         headNodes,
         layout.headings(),
-        layout.contributions().behaviors());
+        layout.contributions().scripts());
   }
 
-  /// Paints `prepared` with `resources`, the stylesheet and modules the page links or inlines:
+  /// Emits `prepared` with `resources`, the stylesheet and modules the page links or inlines:
   /// its own for a standalone page, or the shared ones of a site.
-  static String paint(PreparedPage prepared, HtmlWriter.Resources resources) {
-    return HtmlWriter.paint(
+  static String emit(PreparedPage prepared, HtmlWriter.Resources resources) {
+    return HtmlWriter.emit(
         prepared.document(),
         prepared.bodyNodes(),
         prepared.headNodes(),
         resources,
-        prepared.behaviors());
+        prepared.scripts());
   }
 }

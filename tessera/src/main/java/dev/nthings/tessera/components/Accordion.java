@@ -6,10 +6,10 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 ///
 /// An exclusive accordion also uses its [#id(String)] as its `<details name>` group. Without an id,
 /// the compiler numbers instances `accordion-<n>` and the group gets a page-unique name.
-public final class Accordion extends BuiltinView<Accordion> {
+public final class Accordion extends BuiltinScope<Accordion> {
 
   private static final DocumentKey<AtomicInteger> GROUPS =
       DocumentKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
@@ -94,7 +94,7 @@ public final class Accordion extends BuiltinView<Accordion> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "accordion";
   }
 
@@ -152,7 +152,7 @@ public final class Accordion extends BuiltinView<Accordion> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var root = div();
     var group = exclusive ? groupName(context) : null;
     for (var item : items) {
@@ -171,7 +171,7 @@ public final class Accordion extends BuiltinView<Accordion> {
     return root;
   }
 
-  private String groupName(RenderContext context) {
+  private String groupName(DocumentContext context) {
     var explicit = id;
     return explicit != null
         ? Fnv1a64.sanitizeLocalId(explicit)

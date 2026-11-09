@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -35,7 +35,7 @@ public final class Footnote extends BuiltinComponent {
     return new Footnote(note.intoElement());
   }
 
-  /// Names the reference's DOM ids `fnref-<id>` and `fnlink-<id>` in the enclosing view scope;
+  /// Names the reference's DOM ids `fnref-<id>` and `fnlink-<id>` in the enclosing id scope;
   /// reusing an id there reports `duplicate-id`. Without it, the footnote number is used.
   public Footnote id(String id) {
     this.id = id;
@@ -43,7 +43,7 @@ public final class Footnote extends BuiltinComponent {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var key = id;
     var entry = Footnotes.register(context, key, note);
     var name = key != null ? key : Integer.toString(entry.number());

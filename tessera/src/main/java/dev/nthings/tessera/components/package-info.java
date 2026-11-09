@@ -6,9 +6,9 @@
 /// factories (`Grid.autoFit` and `Grid.columns`, `CodeBlock.of` and `CodeBlock.ofLines`).
 /// Options are fluent setters, and a component is placed like any element with `.child(...)`.
 ///
-/// Scoped components take an optional `id(String)` that names the instance in the enclosing view
+/// Scoped components take an optional `id(String)` that names the instance in the enclosing id
 /// scope; the DOM ids they bind are prefixed with it (`<id>--dialog`). Without one the compiler
-/// assigns `<view type>-<n>`, numbered per scope, so give an instance an id when other code links
+/// assigns `<scopeName>-<n>`, numbered per scope, so give an instance an id when other code links
 /// to its ids. [Section] ids are the exception: they are page-level DOM ids, so other pages can
 /// link to `#<id>`. Buttons bind their own element with `id(ElementRef)` instead.
 ///

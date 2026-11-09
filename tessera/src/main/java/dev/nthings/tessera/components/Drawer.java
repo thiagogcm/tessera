@@ -4,9 +4,9 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.header;
 import static dev.nthings.tessera.core.Elements.p;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -57,7 +57,7 @@ public final class Drawer extends DialogView<Drawer> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return side == Side.INLINE_START ? "drawer-start" : "drawer-end";
   }
 
@@ -123,7 +123,7 @@ public final class Drawer extends DialogView<Drawer> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var titleRef = ElementRef.scoped("title");
     var closeBtn = closeButton().tone(Tone.NEUTRAL).variant(Button.Variant.OUTLINE).size(Size.SM);
 

@@ -85,7 +85,7 @@ public final class Keyframes {
     if (!(percent >= 0 && percent <= 100)) {
       throw new IllegalArgumentException("A keyframe offset is within 0..100: " + percent);
     }
-    var style = new StyleRefinement();
+    var style = new Declarations();
     styles.configure(style);
     var next = new TreeMap<>(steps);
     next.put(percent, style.toCssBlockBody());

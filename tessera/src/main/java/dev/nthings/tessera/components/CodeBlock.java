@@ -5,8 +5,8 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssContent;
@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 /// [#of(String)] for a source string or [#ofLines(String...)] for lines you already have.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-code-block-<n>`.
-public final class CodeBlock extends BuiltinView<CodeBlock> {
+public final class CodeBlock extends BuiltinScope<CodeBlock> {
 
   private static final Counter LINE_COUNTER = Counter.named("code-line");
 
@@ -107,7 +107,7 @@ public final class CodeBlock extends BuiltinView<CodeBlock> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "tessera-code-block";
   }
 
@@ -177,7 +177,7 @@ public final class CodeBlock extends BuiltinView<CodeBlock> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var wrapper = div().attr("class", "code-block-wrapper");
     if (filename != null || language != null) {
       var header = div().attr("class", "code-header");

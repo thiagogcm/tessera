@@ -9,10 +9,10 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
+import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.State;
-import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
@@ -63,7 +63,7 @@ final class ButtonFace {
         .child(icon);
   }
 
-  private static void face(StyleRefinement style, ButtonBase<?> model, boolean icon) {
+  private static void face(Declarations style, ButtonBase<?> model, boolean icon) {
     style
         .inlineFlex()
         .itemsCenter()
@@ -88,7 +88,7 @@ final class ButtonFace {
   }
 
   /// Square box for icon buttons; the icon box grows with the size.
-  private static StyleRefinement iconBox(StyleRefinement style, Size size) {
+  private static Declarations iconBox(Declarations style, Size size) {
     var box =
         switch (size) {
           case SM -> Tokens.SPACE_8;
@@ -99,7 +99,7 @@ final class ButtonFace {
   }
 
   /// Text buttons: padding follows density; type size does not.
-  private static StyleRefinement paddedBox(StyleRefinement style, Size size) {
+  private static Declarations paddedBox(Declarations style, Size size) {
     return switch (size) {
       case SM -> style.fontSize(Tokens.FONT_SIZE_XS).px(Tokens.SPACE_3).py(Tokens.SPACE_1);
       case MD ->
@@ -122,7 +122,7 @@ final class ButtonFace {
     return icon ? classes + " button--icon" : classes;
   }
 
-  private static StyleRefinement paint(StyleRefinement style, Tone tone, Button.Variant variant) {
+  private static Declarations paint(Declarations style, Tone tone, Button.Variant variant) {
     var ink = ink(tone);
     return switch (variant) {
       case SOLID -> style.bg(ink).textColor(tone.onSolid());
@@ -135,7 +135,7 @@ final class ButtonFace {
     };
   }
 
-  private static StyleRefinement hover(StyleRefinement style, Tone tone, Button.Variant variant) {
+  private static Declarations hover(Declarations style, Tone tone, Button.Variant variant) {
     return switch (variant) {
       case SOLID -> style.opacity(0.92);
       case OUTLINE, GHOST ->

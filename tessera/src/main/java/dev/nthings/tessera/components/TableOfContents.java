@@ -9,10 +9,10 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -56,7 +56,7 @@ public final class TableOfContents extends BuiltinComponent {
     return new TableOfContents(title);
   }
 
-  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
+  /// Names this instance in the enclosing id scope. Without it, the compiler assigns
   /// `table-of-contents-<n>`.
   public TableOfContents id(String id) {
     this.id = id;
@@ -70,7 +70,7 @@ public final class TableOfContents extends BuiltinComponent {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var fixed = headings;
     if (fixed != null) {
       return new Links(title, id, fixed);
@@ -79,8 +79,8 @@ public final class TableOfContents extends BuiltinComponent {
     return Elements.late(late -> new Links(title, instance, late.headings()));
   }
 
-  /// The rendered list, a view for its scoped styles.
-  private static final class Links extends BuiltinView<Links> {
+  /// The rendered list, a scope for its scoped styles.
+  private static final class Links extends BuiltinScope<Links> {
 
     private final String title;
     private final List<DocumentHeading> items;
@@ -97,7 +97,7 @@ public final class TableOfContents extends BuiltinComponent {
     }
 
     @Override
-    String viewType() {
+    String scopeName() {
       return "table-of-contents";
     }
 
@@ -179,7 +179,7 @@ public final class TableOfContents extends BuiltinComponent {
     }
 
     @Override
-    IntoElement render(RenderContext context) {
+    IntoElement expand(DocumentContext context) {
       var list = ol();
       for (var item : items) {
         list.child(

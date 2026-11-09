@@ -7,7 +7,7 @@ import java.util.Locale;
 /// The constructor requires a name that contains a hyphen and is lowercase, and throws
 /// IllegalArgumentException otherwise. Other HTML name rules are not checked, so a name the HTML
 /// standard reserves, such as `font-face`, is not rejected. Register the element's module with
-/// [RenderContext#contributeBehavior] so the browser upgrades it.
+/// [DocumentContext#contributeScript] so the browser upgrades it.
 public record CustomElement(String tagName) implements TagName {
 
   public CustomElement {

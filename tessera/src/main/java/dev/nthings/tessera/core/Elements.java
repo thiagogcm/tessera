@@ -18,8 +18,8 @@ public final class Elements {
   }
 
   /// Creates an autonomous custom element, such as `<my-widget>`. Throws IllegalArgumentException
-  /// unless the name is lowercase and contains a hyphen. Pair it with a [ClientBehavior] registered
-  /// through [RenderContext#contributeBehavior].
+  /// unless the name is lowercase and contains a hyphen. Pair it with a [PageScript] registered
+  /// through [DocumentContext#contributeScript].
   public static TagElement custom(String name) {
     return new TagElement(new CustomElement(name));
   }
@@ -374,22 +374,22 @@ public final class Elements {
 
   /// Moves `child` to the end of `<body>` at priority 0, for content that cannot sit in its
   /// parent's content model, such as a dialog or popover inside a parent that does not allow it.
-  /// The child keeps its view scope and DOM ids.
+  /// The child keeps its id scope and DOM ids.
   public static Element deferred(IntoElement child) {
     return new DeferredElement(child.intoElement(), 0);
   }
 
   /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
-  /// equal priorities keep placement order. The child keeps its view scope and DOM ids.
+  /// equal priorities keep placement order. The child keeps its id scope and DOM ids.
   public static Element deferred(IntoElement child, int priority) {
     return new DeferredElement(child.intoElement(), priority);
   }
 
   /// Creates an element resolved after the rest of the page body is expanded, in the context where
-  /// it appears. Use it to read what other elements register, such as [RenderContext#headings()].
+  /// it appears. Use it to read what other elements register, such as [DocumentContext#headings()].
   /// Late elements resolve first in, first out, before document-end sections and head
   /// contributions.
-  public static Element late(Function<RenderContext, ? extends IntoElement> content) {
+  public static Element late(Function<DocumentContext, ? extends IntoElement> content) {
     return new LateElement(content);
   }
 

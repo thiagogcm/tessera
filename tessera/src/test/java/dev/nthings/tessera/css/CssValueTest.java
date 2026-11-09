@@ -155,7 +155,7 @@ class CssValueTest {
   @Test
   @DisplayName("a motion lists its properties and keeps discrete transitions explicit")
   void motionDeclaresTransitionLonghands() {
-    var style = new StyleRefinement();
+    var style = new Declarations();
     style.transition(
         Transition.of(
                 CssDuration.ms(200), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE)
@@ -236,7 +236,7 @@ class CssValueTest {
   @Test
   @DisplayName("anchor names serialize as dashed identifiers")
   void anchorNamesAreDashed() {
-    var style = new StyleRefinement();
+    var style = new Declarations();
     style.anchorName(Anchor.named("plain"));
     assertThat(style.toCssBlockBody()).isEqualTo("anchor-name:--plain");
   }

@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.Locale;
 
 /// A file published at `path`: a static file registered on a site, or a stylesheet or client
-/// behavior module produced under [OutputMode#external(String)].
+/// page script produced under [OutputMode#external(String)].
 ///
 /// The path must start with `/` and must not end with `/`, contain `..`, or contain `//`; the
 /// content type must not be blank. Violations throw IllegalArgumentException. Site compilation

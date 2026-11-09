@@ -4,11 +4,11 @@ import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.div;
 
-import dev.nthings.tessera.core.ClientBehavior;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Border;
@@ -21,25 +21,28 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 /// In-page tabs that switch between panels of content, following the ARIA tabs pattern. Create
-/// one with [#of(String)] and add tabs with [#tab(String, IntoElement)]; the first tab starts
-/// selected. All panels are in the page: the bundled tab behavior shows the selected one, and
-/// arrow, Home and End keys move between tabs. Until the behavior loads, the tab bar is hidden and
-/// every panel is visible. Tabs without any tab report `empty-content-tabs`.
+/// one with [#of(String)] and add tabs with [#tab(String, String, IntoElement)]; the first tab
+/// starts selected. All panels are in the page. Arrow, Home and End keys move between tabs, which
+/// HTML does not do on its own, so the component contributes the `tessera-tabs` page script. Until
+/// that script loads, the tab bar is hidden and every panel is visible. Tabs without any tab
+/// report `empty-content-tabs`. Two tabs with the same key report `duplicate-tab`.
 ///
-/// The tab and panel ids are prefixed with its [#id(String)], as in `<id>--tab-0`. Without an id,
-/// the compiler numbers instances `content-tabs-<n>`.
-public final class ContentTabs extends BuiltinView<ContentTabs> {
+/// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting
+/// a tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-`. Without an
+/// [#id(String)], the compiler numbers instances `content-tabs-<n>`.
+public final class ContentTabs extends BuiltinScope<ContentTabs> {
 
-  private static final ClientBehavior TABS_BEHAVIOR =
-      ClientBehavior.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
+  private static final PageScript TABS_SCRIPT =
+      PageScript.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
 
   /// The selected tab's anchor; each bar's underline is positioned inside its own tab bar.
   private static final Anchor ACTIVE = Anchor.named("tessera-active-tab");
 
-  private record Panel(String label, Element content) {}
+  private record Panel(String key, String label, Element content) {}
 
   private final String label;
   private final List<Panel> panels = new ArrayList<>();
@@ -53,9 +56,13 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
     return new ContentTabs(label);
   }
 
-  /// Adds a tab showing `label` whose panel holds `content`.
-  public ContentTabs tab(String label, IntoElement content) {
-    panels.add(new Panel(label, content.intoElement()));
+  /// Adds a tab with the stable id suffix `key`, showing `label`, whose panel holds `content`.
+  /// Throws IllegalArgumentException if `key` is blank.
+  public ContentTabs tab(String key, String label, IntoElement content) {
+    if (key.isBlank()) {
+      throw new IllegalArgumentException("A tab key must not be blank");
+    }
+    panels.add(new Panel(key, label, content.intoElement()));
     return this;
   }
 
@@ -65,7 +72,7 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "content-tabs";
   }
 
@@ -121,21 +128,29 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
-    context.contributeBehavior(TABS_BEHAVIOR);
+  IntoElement expand(DocumentContext context) {
+    context.contributeScript(TABS_SCRIPT);
     if (panels.isEmpty()) {
       context.report(
           "empty-content-tabs",
           "ContentTabs '" + label + "' has no tabs",
-          "Add at least one tab with tab(label, content).");
+          "Add at least one tab with tab(key, label, content).");
     }
 
     var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(label);
     var root = custom("tessera-tabs").child(tabBar);
+    var seen = new HashSet<String>();
 
     for (var i = 0; i < panels.size(); i++) {
-      var tabRef = ElementRef.scoped("tab-" + i);
-      var panelRef = ElementRef.scoped("panel-" + i);
+      var panel = panels.get(i);
+      if (!seen.add(panel.key())) {
+        context.report(
+            "duplicate-tab",
+            "Duplicate tab key '" + panel.key() + "'",
+            "Give each tab of this ContentTabs a distinct key.");
+      }
+      var tabRef = ElementRef.scoped("tab-" + panel.key());
+      var panelRef = ElementRef.scoped("panel-" + panel.key());
       tabBar.child(
           button()
               .id(tabRef)
@@ -143,7 +158,7 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
               .ariaSelected(i == 0)
               .ariaControls(panelRef)
               .tabIndex(i == 0 ? 0 : -1)
-              .text(panels.get(i).label()));
+              .text(panel.label()));
       root.child(
           div()
               .id(panelRef)
@@ -151,7 +166,7 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
               .ariaLabelledBy(tabRef)
               .tabIndex(0)
               .onlyIf(i != 0, el -> el.boolAttr("hidden"))
-              .child(panels.get(i).content()));
+              .child(panel.content()));
     }
     return root;
   }

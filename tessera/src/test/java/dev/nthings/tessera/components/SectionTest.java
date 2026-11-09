@@ -35,7 +35,7 @@ class SectionTest {
   }
 
   @Test
-  @DisplayName("registers its heading and keeps its page-level id inside a view")
+  @DisplayName("registers its heading and keeps its page-level id inside an id scope")
   void registersHeadingWithPageLevelId() {
     var page =
         renderMain(

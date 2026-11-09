@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -16,7 +16,7 @@ import java.util.List;
 /// header, body, and footer regions, so their footers line up.
 ///
 /// Without an [#id(String)], the compiler numbers instances `card-grid-<n>`.
-public final class CardGrid extends BuiltinView<CardGrid> implements ParentElement<CardGrid> {
+public final class CardGrid extends BuiltinScope<CardGrid> implements ParentElement<CardGrid> {
 
   private final CssLength minCardWidth;
   private CssLength gap = Tokens.SPACE_4;
@@ -49,7 +49,7 @@ public final class CardGrid extends BuiltinView<CardGrid> implements ParentEleme
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "card-grid";
   }
 
@@ -67,7 +67,7 @@ public final class CardGrid extends BuiltinView<CardGrid> implements ParentEleme
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     return Elements.section().children(cards);
   }
 }

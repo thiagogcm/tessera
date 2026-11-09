@@ -2,9 +2,9 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.KotlinReceiver;
 
-/// Writes declarations into a [StyleRefinement]: the callback taken by
+/// Writes declarations into a [Declarations]: the callback taken by
 /// [Styled#on(Condition, StyleBlock)], [ScopeStyle#select(String, StyleBlock)],
-/// [StyleRefinement#startingStyle(StyleBlock)] and the [Keyframes] steps, and the type of a
+/// [Declarations#startingStyle(StyleBlock)] and the [Keyframes] steps, and the type of a
 /// reusable style preset applied with [Styled#styles(StyleBlock)]:
 ///
 /// ```java
@@ -19,5 +19,5 @@ import dev.nthings.tessera.foundation.KotlinReceiver;
 public interface StyleBlock {
 
   /// Writes this block's declarations into `style`.
-  void configure(StyleRefinement style);
+  void configure(Declarations style);
 }

@@ -26,8 +26,8 @@ public final class ElementRef {
     this.pageLevel = pageLevel;
   }
 
-  /// Creates a ref whose DOM id is `name` prefixed by the bind site's view scope: inside a view
-  /// with id `toolbar`, `scoped("save")` emits `toolbar--save`; at the top level of the page it
+  /// Creates a ref whose DOM id is `name` prefixed by the bind site's id scope. Inside an id
+  /// scope with id `toolbar`, `scoped("save")` emits `toolbar--save`. At the top of the page it
   /// emits `save`. Two refs with the same name bound in one scope report `duplicate-id`.
   public static ElementRef scoped(String name) {
     return new ElementRef(Fnv1a64.sanitizeLocalId(name), false);
@@ -46,7 +46,7 @@ public final class ElementRef {
     return new ElementRef(name, true);
   }
 
-  /// Creates a ref whose local id the compiler assigns as `<tag>-<n>`, numbered per view scope.
+  /// Creates a ref whose local id the compiler assigns as `<tag>-<n>`, numbered per id scope.
   /// When the element also has a named ref, it takes that ref's id instead.
   public static ElementRef anonymous() {
     return new ElementRef(null, false);
@@ -57,7 +57,7 @@ public final class ElementRef {
     return name;
   }
 
-  /// Compiler-facing: whether the name is used as is, without the view scope prefix.
+  /// Compiler-facing: whether the name is used as is, without the id scope prefix.
   public boolean pageLevel() {
     return pageLevel;
   }

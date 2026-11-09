@@ -3,7 +3,7 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
-import dev.nthings.tessera.core.ClientBehavior;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,24 +21,25 @@ final class HtmlWriter {
 
   private HtmlWriter() {}
 
-  /// The stylesheet and behavior modules shared by the pages of one compilation, hashed and
-  /// encoded once: under external output each file is an [Asset] at a content-hashed path, which
-  /// every page painted with these resources links.
+  /// The stylesheet and page scripts shared by the pages of one compilation, hashed and encoded
+  /// once: under external output each file is an [Asset] at a content-hashed path, which every
+  /// page emitted with these resources links.
   static final class Resources {
     private final String css;
     private final OutputMode outputMode;
     private final @Nullable Asset stylesheet;
-    private final Map<ClientBehavior, Asset> modules = new LinkedHashMap<>();
+    private final Map<PageScript, Asset> modules = new LinkedHashMap<>();
 
-    /// Resources for `css` and every module in `behaviors`, in order; a repeated behavior is
-    /// encoded once.
-    Resources(String css, OutputMode outputMode, Iterable<ClientBehavior> behaviors) {
+    /// Resources for `css` and every module in `scripts`, in order; a repeated script is encoded
+    /// once.
+    Resources(String css, OutputMode outputMode, Iterable<PageScript> scripts) {
       this.css = css;
       this.outputMode = outputMode;
       if (outputMode instanceof ExternalOutput(var base)) {
         stylesheet = Asset.text(stylesheetPath(base, css), css);
-        for (var behavior : behaviors) {
-          modules.computeIfAbsent(behavior, b -> Asset.text(behaviorPath(base, b), b.module()));
+        for (var script : scripts) {
+          modules.computeIfAbsent(
+              script, candidate -> Asset.text(scriptPath(base, candidate), candidate.module()));
         }
       } else {
         stylesheet = null;
@@ -58,20 +59,20 @@ final class HtmlWriter {
       return assets;
     }
 
-    /// The path of `behavior`'s module, which must be one these resources were built with.
-    private String moduleHref(ClientBehavior behavior) {
-      return Objects.requireNonNull(modules.get(behavior), behavior.id()).path();
+    /// The path of `script`'s module, which must be one these resources were built with.
+    private String moduleHref(PageScript script) {
+      return Objects.requireNonNull(modules.get(script), script.id()).path();
     }
   }
 
-  /// Paints the document envelope and linked nodes. Under external output the stylesheet and
-  /// `behaviors` are linked at the paths of `resources`' assets.
-  static String paint(
+  /// Writes the document envelope and linked nodes. Under external output the stylesheet and
+  /// `scripts` are linked at the paths of `resources`' assets.
+  static String emit(
       PageDocument doc,
       List<ResolvedNode> bodyNodes,
       List<ResolvedNode> headNodes,
       Resources resources,
-      List<ClientBehavior> behaviors) {
+      List<PageScript> scripts) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
     out.append(Encode.forHtmlAttribute(doc.lang()));
@@ -83,7 +84,7 @@ final class HtmlWriter {
     out.append(Encode.forHtmlContent(doc.title()));
     out.append("</title>\n");
     for (var head : headNodes) {
-      paintNode(head, out);
+      writeNode(head, out);
       out.append('\n');
     }
 
@@ -92,9 +93,9 @@ final class HtmlWriter {
         out.append("<style>\n");
         out.append(resources.css);
         out.append("</style>\n");
-        for (var behavior : behaviors) {
+        for (var script : scripts) {
           out.append("<script type=\"module\">\n");
-          out.append(inlineModule(behavior.module()));
+          out.append(inlineModule(script.module()));
           out.append("\n</script>\n");
         }
       }
@@ -103,9 +104,9 @@ final class HtmlWriter {
         var stylesheet = Objects.requireNonNull(resources.stylesheet);
         out.append(Encode.forHtmlAttribute(stylesheet.path()));
         out.append("\">\n");
-        for (var behavior : behaviors) {
+        for (var script : scripts) {
           out.append("<script type=\"module\" src=\"");
-          out.append(Encode.forHtmlAttribute(resources.moduleHref(behavior)));
+          out.append(Encode.forHtmlAttribute(resources.moduleHref(script)));
           out.append("\"></script>\n");
         }
       }
@@ -113,7 +114,7 @@ final class HtmlWriter {
 
     out.append("</head>\n<body>\n");
     for (var node : bodyNodes) {
-      paintNode(node, out);
+      writeNode(node, out);
     }
     out.append("\n</body>\n</html>\n");
     return out.toString();
@@ -123,9 +124,9 @@ final class HtmlWriter {
     return hashedPath(base, "styles", css, ".css");
   }
 
-  private static String behaviorPath(String base, ClientBehavior behavior) {
+  private static String scriptPath(String base, PageScript script) {
     return hashedPath(
-        base + "/behaviors", Fnv1a64.sanitizeIdentifier(behavior.id()), behavior.module(), ".js");
+        base + "/scripts", Fnv1a64.sanitizeIdentifier(script.id()), script.module(), ".js");
   }
 
   /// `dir/name-<content hash>ext`, so changed files are never served stale from cache.
@@ -139,7 +140,7 @@ final class HtmlWriter {
     return SCRIPT_CLOSE.matcher(module).replaceAll(ignored -> "<\\/script");
   }
 
-  private static void paintNode(ResolvedNode node, StringBuilder out) {
+  private static void writeNode(ResolvedNode node, StringBuilder out) {
     switch (node) {
       case ResolvedText(var content) -> out.append(Encode.forHtmlContent(content));
       case ResolvedRaw(var trustedHtml) -> out.append(trustedHtml);
@@ -160,7 +161,7 @@ final class HtmlWriter {
 
         if (!tag.tag().isVoid()) {
           for (var child : tag.children()) {
-            paintNode(child, out);
+            writeNode(child, out);
           }
           out.append("</").append(tag.tag().tagName()).append('>');
         }

@@ -9,24 +9,24 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/// Turns expanded [ViewNode]s into [ResolvedNode]s once every identity on the page is bound.
+/// Turns expanded [ExpandedNode]s into [ResolvedNode]s once every identity on the page is bound.
 final class ReferenceLinker {
   private ReferenceLinker() {}
 
   /// Substitutes late slots, splices fragments, places tooltip companions after their invoker and
   /// folds [IdReference]s into attributes; appends to `out`.
-  static void link(ViewNode node, CompilationState state, List<ResolvedNode> out) {
+  static void link(ExpandedNode node, CompilationState state, List<ResolvedNode> out) {
     switch (node) {
-      case ViewNode.Slot slot -> link(slot.content(), state, out);
-      case ViewNode.Fragment fragment -> {
+      case ExpandedNode.Slot slot -> link(slot.content(), state, out);
+      case ExpandedNode.Fragment fragment -> {
         for (var child : fragment.children()) {
           link(child, state, out);
         }
       }
-      case ViewNode.Empty _ -> {}
+      case ExpandedNode.Empty _ -> {}
       case ResolvedText text -> out.add(text);
       case ResolvedRaw raw -> out.add(raw);
-      case ViewNode.Tag tag -> {
+      case ExpandedNode.Tag tag -> {
         out.add(linkTag(tag, state));
         var companion = tag.companion();
         if (companion != null) {
@@ -36,7 +36,7 @@ final class ReferenceLinker {
     }
   }
 
-  private static ResolvedTag linkTag(ViewNode.Tag tag, CompilationState state) {
+  private static ResolvedTag linkTag(ExpandedNode.Tag tag, CompilationState state) {
     var attrs = tag.attributes();
     Set<String> unresolved = Set.of();
     if (!tag.references().isEmpty()) {

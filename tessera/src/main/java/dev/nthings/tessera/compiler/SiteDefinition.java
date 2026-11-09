@@ -79,7 +79,7 @@ public record SiteDefinition(
       return this;
     }
 
-    /// Sets how the shared stylesheet and client behavior modules are packaged. Defaults to
+    /// Sets how the shared stylesheet and page scripts are packaged. Defaults to
     /// [OutputMode#external(String)] with `/assets`.
     public Builder outputMode(OutputMode mode) {
       this.outputMode = mode;

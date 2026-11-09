@@ -1,9 +1,9 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.Tokens;
@@ -38,7 +38,7 @@ public final class DescriptionList extends BuiltinComponent {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var dl =
         Elements.dl()
             .grid()

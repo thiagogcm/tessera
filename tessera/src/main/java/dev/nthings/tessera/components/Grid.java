@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.ContainerQuery;
@@ -71,7 +71,7 @@ public final class Grid extends BuiltinComponent implements ParentElement<Grid> 
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var grid = Elements.div().grid();
     if (collapseOnNarrow) {
       grid.gridColumns(TrackList.of(GridTrack.flexible()))

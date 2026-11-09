@@ -16,7 +16,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// One page's identities, transitions, outgoing links and diagnostics.
-/// Expansion and linking share it; [ViewExpansion] keeps only placement.
+/// Expansion and linking share it; [Expansion] keeps only placement.
 final class CompilationState {
   final Set<String> registeredDomIds = new LinkedHashSet<>();
   final Set<String> ambiguousDomIds = new HashSet<>();
@@ -30,36 +30,37 @@ final class CompilationState {
   private final Set<String> transitionNames = new HashSet<>();
   private final String pageTitle;
 
-  /// Generated ids are numbered per scope and prefix.
-  private record IdCounter(ViewScope scope, String prefix) {}
+  /// Numbered per DOM id, keyed bit and prefix. [IdScope#generated] is not part of the key, so an
+  /// encounter-numbered scope and an explicit `scopeId` with the same DOM id share one counter.
+  private record IdCounter(String domId, boolean keyed, String prefix) {}
 
   CompilationState(String pageTitle) {
     this.pageTitle = pageTitle;
   }
 
-  Location location(ViewLocation view) {
+  Location location(NodeLocation node) {
     return new Location(
-        null, pageTitle, view.componentPath(), view.tagName(), view.domId(), view.source());
+        null, pageTitle, node.componentPath(), node.tagName(), node.domId(), node.source());
   }
 
-  void report(ViewLocation location, String rule, String message, String suggestion) {
+  void report(NodeLocation location, String rule, String message, String suggestion) {
     diagnostics.add(new Diagnostic(rule, message, suggestion, location(location)));
   }
 
-  void registerDomId(String domId, ViewLocation location) {
+  void registerDomId(String domId, NodeLocation location) {
     registerDomId(domId, location, DUPLICATE_ID_FIX);
   }
 
   private static final String DUPLICATE_ID_FIX =
-      "Give each element a distinct ID within its view scope.";
+      "Give each element a distinct ID within its id scope.";
 
   private static final String DUPLICATE_KEYED_ID_FIX =
-      "Give each element a distinct ID within its view scope. Keyed content is scoped by its view,"
-          + " the nearest enclosing element bound to a named ElementRef, and its key, so keyed"
-          + " lists in one view that reuse a key share ids: bind a named ElementRef"
+      "Give each element a distinct ID within its id scope. Keyed content is scoped by its id"
+          + " scope, the nearest enclosing element bound to a named ElementRef, and its key, so"
+          + " keyed lists in one id scope that reuse a key share ids: bind a named ElementRef"
           + " (ElementRef.scoped or ElementRef.page) on each list's parent.";
 
-  private void registerDomId(String domId, ViewLocation location, String fix) {
+  private void registerDomId(String domId, NodeLocation location, String fix) {
     if (!registeredDomIds.add(domId)) {
       ambiguousDomIds.add(domId);
       report(location, "duplicate-id", "Duplicate DOM id '" + domId + "' on the same page", fix);
@@ -70,7 +71,7 @@ final class CompilationState {
   /// from the first named ref, or is generated from the tag; a named ref asking for another id
   /// reports `conflicting-element-id`. A ref already bound on this page reports
   /// `duplicate-reference-binding`, and the element keeps that earlier id.
-  String bind(List<ElementRef> refs, ViewScope scope, ViewLocation location) {
+  String bind(List<ElementRef> refs, IdScope scope, NodeLocation location) {
     String earlier = null;
     for (var ref : refs) {
       var existing = references.get(ref);
@@ -137,7 +138,7 @@ final class CompilationState {
   }
 
   /// DOM id bound to `ref`, or `null` when ambiguous or unbound (unbound is reported).
-  @Nullable String boundId(ElementRef ref, String usage, ViewLocation location) {
+  @Nullable String boundId(ElementRef ref, String usage, NodeLocation location) {
     var id = references.get(ref);
     if (ambiguousDomIds.contains(id)) {
       return null;
@@ -153,13 +154,14 @@ final class CompilationState {
   }
 
   /// The local id `<prefix>-<n>`, numbered within `scope` so other scopes never shift it.
-  String nextId(String prefix, ViewScope scope) {
-    return Fnv1a64.sanitizeLocalId(
-        prefix + "-" + counters.merge(new IdCounter(scope, prefix), 1, Integer::sum));
+  /// [IdScope#generated] does not split the counter.
+  String nextId(String prefix, IdScope scope) {
+    var counter = new IdCounter(scope.domId(), scope.keyed(), prefix);
+    return Fnv1a64.sanitizeLocalId(prefix + "-" + counters.merge(counter, 1, Integer::sum));
   }
 
   /// Records `key` at `location`, reporting a name another key already uses.
-  void registerTransition(TransitionKey key, ViewLocation location) {
+  void registerTransition(TransitionKey key, NodeLocation location) {
     if (!transitionNames.add(key.name())) {
       report(
           location,

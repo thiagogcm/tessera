@@ -13,13 +13,13 @@ sealed interface ResolvedNode
   /// missing or ambiguous, so validators skip them.
   record ResolvedTag(
       TagName tag,
-      ViewLocation location,
+      NodeLocation location,
       Map<String, String> attributes,
       Set<String> unresolvedAttributes,
       List<ResolvedNode> children)
       implements ResolvedNode {}
 
-  record ResolvedText(String content) implements ResolvedNode, ViewNode {}
+  record ResolvedText(String content) implements ResolvedNode, ExpandedNode {}
 
-  record ResolvedRaw(String trustedHtml) implements ResolvedNode, ViewNode {}
+  record ResolvedRaw(String trustedHtml) implements ResolvedNode, ExpandedNode {}
 }

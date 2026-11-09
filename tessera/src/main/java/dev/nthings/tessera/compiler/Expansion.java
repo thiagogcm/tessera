@@ -5,6 +5,7 @@ import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
 import dev.nthings.tessera.core.ClassNames;
 import dev.nthings.tessera.core.ComponentElement;
 import dev.nthings.tessera.core.DeferredElement;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.EmptyElement;
@@ -14,13 +15,12 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.LateElement;
 import dev.nthings.tessera.core.RawHtmlElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.ScopeElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
-import dev.nthings.tessera.core.View;
-import dev.nthings.tessera.core.ViewElement;
 import dev.nthings.tessera.css.Anchor;
-import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -32,112 +32,114 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
-/// Expands authoring elements into [ViewNode]s for one page.
+/// Expands authoring elements into [ExpandedNode]s for one page.
 ///
 /// Collects styles and delegates placement. Identities, transitions and diagnostics go to the
-/// [CompilationState]; [LayoutPass] orders the document and [ReferenceLinker] links it.
-final class ViewExpansion {
+/// [CompilationState]; [DocumentPass] orders the document and [ReferenceLinker] links it.
+final class Expansion {
   private final CompilationState state;
   private final Placement placement;
 
   interface Placement {
-    ViewNode defer(Supplier<ViewNode> content, int priority);
+    ExpandedNode defer(Supplier<ExpandedNode> content, int priority);
 
-    ViewNode late(Supplier<ViewNode> content);
+    ExpandedNode late(Supplier<ExpandedNode> content);
   }
 
-  ViewExpansion(CompilationState state, Placement placement) {
+  Expansion(CompilationState state, Placement placement) {
     this.state = state;
     this.placement = placement;
   }
 
-  ViewNode expand(Element element, PageContext context) {
+  ExpandedNode expand(Element element, PageContext context) {
     return switch (element) {
-      case EmptyElement _ -> ViewNode.Empty.INSTANCE;
+      case EmptyElement _ -> ExpandedNode.Empty.INSTANCE;
       case TextElement(var content) -> new ResolvedText(content);
       case RawHtmlElement(var html) -> new ResolvedRaw(html);
       case DeferredElement child ->
           placement.defer(() -> expand(child.child(), context), child.priority());
       case LateElement(var content) -> placement.late(() -> expand(context, "Late", content));
       case FragmentElement fragment ->
-          new ViewNode.Fragment(children(fragment.childrenList(), context));
+          new ExpandedNode.Fragment(children(fragment.childrenList(), context));
       case ComponentElement(var component, var name, var source) -> {
         var child = context.withComponent(name, source);
-        yield expand(child, "Render", component::render);
+        yield expand(child, "Expand", component::expand);
       }
-      case KeyedElement keyed -> keyed(keyed, keyedContext(keyed, context));
-      case ViewElement(var view, var source) -> {
-        var id = view.viewId();
+      case KeyedElement keyed -> keyed(keyed, context);
+      case ScopeElement(var scope, var source) -> {
+        var explicit = scope.scopeId();
+        var generated = explicit == null;
         var scoped =
-            context.withViewScope(
-                id != null
-                    ? Fnv1a64.sanitizeLocalId(id)
-                    : state.nextId(view.viewType(), context.viewScope()));
-        var scopeId = scoped.viewScope().domId();
-        var child = scoped.withComponent(view.viewType() + "[" + scopeId + "]", source);
-        if (hasUnstableViewType(view)) {
+            context.withIdScope(
+                explicit != null
+                    ? Fnv1a64.sanitizeLocalId(explicit)
+                    : state.nextId(scope.scopeName(), context.idScope()),
+                generated);
+        var scopeId = scoped.idScope().domId();
+        var child = scoped.withComponent(scope.scopeName() + "[" + scopeId + "]", source);
+        if (hasUnstableScopeName(scope)) {
           state.report(
               child.location(),
-              "unstable-view-type",
-              "View "
-                  + view.getClass().getName()
-                  + " is an anonymous class or lambda, so its default viewType() changes between"
+              "unstable-scope-name",
+              "Scope "
+                  + scope.getClass().getName()
+                  + " is an anonymous class or lambda, so its default scopeName() changes between"
                   + " builds",
-              "Implement the view as a named class or record, or override viewType().");
+              "Implement the scope as a named class or record, or override scopeName().");
         }
         var type =
             child
                 .styles()
-                .registerViewScope(
-                    view.viewType(),
-                    scope ->
+                .registerScope(
+                    scope.scopeName(),
+                    block ->
                         callback(
                             child,
                             "Style",
                             () -> {
-                              view.configureScope(scope);
-                              return scope;
+                              scope.configureScope(block);
+                              return block;
                             }));
-        yield scoped(expand(child, "Render", view::render), type, scopeId, child);
+        yield scoped(expand(child, "Expand", scope::expand), type, scopeId, child);
       }
       case TagElement tag -> tag(tag, null, context);
     };
   }
 
   /// Expands an authoring callback's result; a failure names its component.
-  ViewNode expand(
-      PageContext context, String phase, Function<RenderContext, ? extends IntoElement> content) {
+  ExpandedNode expand(
+      PageContext context, String phase, Function<DocumentContext, ? extends IntoElement> content) {
     return expand(callback(context, phase, () -> content.apply(context).intoElement()), context);
   }
 
-  /// Whether `view` keeps the class-name default of [View#viewType()] on a class without a stable
-  /// name: an anonymous class, or a lambda or other hidden class.
-  private static boolean hasUnstableViewType(View view) {
-    var type = view.getClass();
+  /// Whether `scope` keeps the class-name default of [Scope#scopeName()] on a class without a
+  /// stable name: an anonymous class, or a lambda or other hidden class.
+  private static boolean hasUnstableScopeName(Scope scope) {
+    var type = scope.getClass();
     if (!ClassNames.isUnstable(type)) {
       return false;
     }
     try {
-      return type.getMethod("viewType").getDeclaringClass() == View.class;
+      return type.getMethod("scopeName").getDeclaringClass() == Scope.class;
     } catch (NoSuchMethodException impossible) {
       return false;
     }
   }
 
-  /// Adds the view's scope attributes to its root element, or wraps a root that is not one.
-  private ViewNode scoped(ViewNode node, String type, String scopeId, PageContext context) {
+  /// Adds the scope attributes to its root element, or wraps a root that is not one.
+  private ExpandedNode scoped(ExpandedNode node, String type, String scopeId, PageContext context) {
     var scope = new LinkedHashMap<String, String>();
-    if (node instanceof ViewNode.Tag tag) {
+    if (node instanceof ExpandedNode.Tag tag) {
       scope.putAll(tag.attributes());
     }
-    scope.put("data-view", type);
-    scope.put("data-view-id", scopeId);
-    if (node instanceof ViewNode.Tag tag) {
+    scope.put("data-scope", type);
+    scope.put("data-scope-id", scopeId);
+    if (node instanceof ExpandedNode.Tag tag) {
       return tag.withAttributes(scope);
     }
-    return new ViewNode.Tag(
+    return new ExpandedNode.Tag(
         HtmlTag.DIV,
-        new ViewLocation(context.componentPath(), HtmlTag.DIV.tagName(), null, context.origin()),
+        new NodeLocation(context.componentPath(), HtmlTag.DIV.tagName(), null, context.origin()),
         scope,
         Map.of(),
         List.of(node),
@@ -164,35 +166,46 @@ final class ViewExpansion {
 
   /// Lays out `children` in order, dropping the ones that emit nothing, and reports a key an
   /// earlier keyed sibling uses.
-  private List<ViewNode> children(List<Element> children, PageContext context) {
-    var result = new ArrayList<ViewNode>(children.size());
+  private List<ExpandedNode> children(List<Element> children, PageContext context) {
+    var result = new ArrayList<ExpandedNode>(children.size());
     Set<String> keys = new HashSet<>();
     for (var child : children) {
-      ViewNode node;
+      ExpandedNode node;
       if (child instanceof KeyedElement keyed) {
-        var keyedContext = keyedContext(keyed, context);
         if (!keys.add(keyed.key())) {
           state.report(
-              keyedContext.location(),
+              keyedContext(keyed, context).location(),
               "duplicate-key",
               "Duplicate sibling key '" + keyed.key() + "'",
               "Give each child of this parent a distinct key.");
         }
-        node = keyed(keyed, keyedContext);
+        node = keyed(keyed, context);
       } else {
         node = expand(child, context);
       }
-      if (node != ViewNode.Empty.INSTANCE) {
+      if (node != ExpandedNode.Empty.INSTANCE) {
         result.add(node);
       }
     }
     return result;
   }
 
-  /// Expands keyed content in the context [#keyedContext] made for it.
-  private ViewNode keyed(KeyedElement keyed, PageContext child) {
+  /// Expands keyed content in the context [#keyedContext] made for it. A generated enclosing id
+  /// scope reports `generated-scope-id` once for this key, then expansion continues.
+  private ExpandedNode keyed(KeyedElement keyed, PageContext context) {
+    var child = keyedContext(keyed, context);
+    if (context.idScope().generated()) {
+      state.report(
+          child.location(),
+          "generated-scope-id",
+          "Keyed content is inside scope '"
+              + context.idScope().domId()
+              + "', whose id was generated",
+          "Set scopeId() on each enclosing scope. A generated id is numbered in encounter"
+              + " order, so moving a sibling scope renames every keyed id inside it.");
+    }
     if (keyed.content() instanceof ComponentElement component) {
-      return expand(child, "Render", component.component()::render);
+      return expand(child, "Expand", component.component()::expand);
     }
     return expand(keyed.content(), child);
   }
@@ -200,8 +213,9 @@ final class ViewExpansion {
   /// The context of keyed content and a component path entry naming the key. A keyed component
   /// takes the key on its own entry instead of gaining another.
   ///
-  /// Its scope depends only on the enclosing view scope, the [PageContext#keyOwner()] and the key,
-  /// never on position, so adding or removing other content leaves its ids alone:
+  /// Its own slug depends only on the enclosing id scope, the [PageContext#keyOwner()] and the key,
+  /// never on a sibling index. A generated id anywhere in that enclosing scope is reported as
+  /// `generated-scope-id`, because that counter does change when siblings move:
   /// `key-<hex key>` without an owner and `<owner>-key-<hex key>` with one. The key's hexadecimal
   /// UTF-16 units contain no `-`, so the slug splits back at its last `-key-` and distinct keys or
   /// owner slugs never share a scope.
@@ -227,15 +241,15 @@ final class ViewExpansion {
   }
 
   /// Expands `element`. `forcedId` (already registered) is used for companions, not bound.
-  private ViewNode.Tag tag(TagElement element, @Nullable String forcedId, PageContext context) {
+  private ExpandedNode.Tag tag(TagElement element, @Nullable String forcedId, PageContext context) {
     var attrs = new LinkedHashMap<>(element.attributes());
     var source = element.source() != null ? element.source() : context.origin();
     var location =
-        new ViewLocation(context.componentPath(), element.tag().tagName(), attrs.get("id"), source);
+        new NodeLocation(context.componentPath(), element.tag().tagName(), attrs.get("id"), source);
     var domId = forcedId;
     var refs = element.boundRefs();
     if (domId == null && !refs.isEmpty()) {
-      domId = state.bind(refs, context.viewScope(), location);
+      domId = state.bind(refs, context.idScope(), location);
     }
     if (domId != null) {
       attrs.put("id", domId);
@@ -268,19 +282,19 @@ final class ViewExpansion {
       attrs.put("class", PageValidator.isNonBlank(existing) ? existing + " " + joined : joined);
     }
 
-    ViewNode.Tag companion = null;
+    ExpandedNode.Tag companion = null;
     var tooltip = element.interestTooltip();
     if (tooltip != null) {
       var tooltipId = domId + "--tooltip";
       attrs.put("interestfor", tooltipId);
       state.registerDomId(tooltipId, location);
-      context.contributeBehavior(TooltipBehavior.INSTANCE);
+      context.contributeScript(TooltipScript.INSTANCE);
       companion = tag(tooltip, tooltipId, context);
     }
 
     var references = element.idReferences();
     var owner = keyOwner(refs);
-    return new ViewNode.Tag(
+    return new ExpandedNode.Tag(
         element.tag(),
         location,
         attrs,
@@ -304,14 +318,14 @@ final class ViewExpansion {
   }
 
   /// Adds declarations derived from identity: anchor names and view-transition keys.
-  private StyleRefinement identityStyles(
-      TagElement element, @Nullable String domId, ViewLocation location) {
+  private Declarations identityStyles(
+      TagElement element, @Nullable String domId, NodeLocation location) {
     var anchor = element.anchorTarget();
     var transition = element.transitionKey();
     if (!element.isAnchor() && anchor == null && transition == null) {
       return element.style();
     }
-    var style = new StyleRefinement().mergeFrom(element.style());
+    var style = new Declarations().mergeFrom(element.style());
     if (domId != null && element.isAnchor()) {
       style.anchorName(anchorIdent(domId));
     }

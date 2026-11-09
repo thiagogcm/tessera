@@ -64,7 +64,7 @@ page.css();    // the stylesheet text
 page.assets(); // empty under inline output
 ```
 
-`Compiler.compile(document, tokens, OutputMode.external("/assets"))` links a content-hashed stylesheet instead and lists it, followed by any client behavior modules, in `assets()`. Publish every `Asset` at its `path()`. The base must be an absolute path such as `/assets`; `OutputMode.external("assets")` throws `IllegalArgumentException`.
+`Compiler.compile(document, tokens, OutputMode.external("/assets"))` links a content-hashed stylesheet instead and lists it, followed by any page scripts, in `assets()`. A script is published at `/assets/scripts/<sanitized id>-<hash>.js`. Publish every `Asset` at its `path()`. The base must be an absolute path such as `/assets`; `OutputMode.external("assets")` throws `IllegalArgumentException`.
 
 | Route         | Public document URL | Generated file     |
 | ------------- | ------------------- | ------------------ |
@@ -82,14 +82,14 @@ Use `Component` for composition without adding a scope:
 Component notice = context -> div().child(p().text("Build completed"));
 ```
 
-`render(context)` returns any `IntoElement`, so a component may return an element, a fragment, or another component without calling `.intoElement()`.
+`expand(context)` returns any `IntoElement`, so a component may return an element, a fragment, or another component without calling `.intoElement()`.
 
-Use `View` for a reusable component with an identity namespace and isolated CSS. The runnable example includes this component:
+Use `Scope` for a reusable component with an identity namespace and isolated CSS. The runnable example includes this component:
 
 ```java
-public record MetricCard(String id, String title, String value) implements View {
+public record MetricCard(String id, String title, String value) implements Scope {
   @Override
-  public String viewId() {
+  public String scopeId() {
     return id;
   }
 
@@ -103,19 +103,19 @@ public record MetricCard(String id, String title, String value) implements View 
   }
 
   @Override
-  public IntoElement render(RenderContext context) {
+  public IntoElement expand(DocumentContext context) {
     return div().children(h2().text(title), p().text(value));
   }
 }
 ```
 
-Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the view's namespace before calling its render method. Repeated instances need distinct instance IDs within the same enclosing scope. Omitting `viewId()` (it defaults to `null`) lets the compiler assign deterministic IDs.
+Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the scope's id namespace before calling `expand`. Repeated instances need distinct instance ids within the same enclosing scope. Omitting `scopeId()` (it defaults to `null`) lets the compiler assign `<scopeName>-<n>` in encounter order. That is fine for a scope with no keyed content. Every keyed expansion inside a generated scope reports `generated-scope-id`: a keyed sibling, a keyed expand result, a component that returns keyed content, a deferred keyed child, and the case where only a parent scope omitted `scopeId()`.
 
-`viewType()` names the view in `data-view` and its `@scope` block; it defaults to the kebab-cased class name (`MetricCard` gives `metric-card`). Anonymous classes and lambdas have no stable class name, so the compiler reports `unstable-view-type` for them unless they override `viewType()`.
+`scopeName()` names the scope in `data-scope` and its `@scope` block; it defaults to the kebab-cased class name (`MetricCard` gives `metric-card`). Anonymous classes and lambdas have no stable class name, so the compiler reports `unstable-scope-name` for them unless they override `scopeName()`.
 
-The compiler marks the view's root element with `data-view` and `data-view-id`, which scope its styles. A view whose `render(context)` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
+The compiler marks the scope's root element with `data-scope` and `data-scope-id`, which scope its styles. A scope whose `expand(context)` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
 
-Both callbacks receive an explicit `RenderContext` for that turn. Do not retain it for later async work. Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
+Both callbacks receive an explicit `DocumentContext` for that turn. Do not retain it for later async work. Keep expand callbacks free of shared mutable application state: site compilation expands different pages concurrently.
 
 A component that finds a wiring mistake reports it instead of throwing, so it is collected with the compiler's own diagnostics and located at the component:
 
@@ -125,7 +125,7 @@ context.report("duplicate-hero-image", "Only one hero image per page", "Remove .
 
 ## Use the built-in components
 
-The components in `dev.nthings.tessera.components` share one shape. Each is a final class created by a static factory that takes its required arguments, usually `X.of(...)`; options are fluent setters; and it is placed with `.child(...)` like any element. Named factories exist only where the required arguments genuinely differ, such as `Grid.autoFit(minWidth, ...)` versus `Grid.columns(count, ...)` and `CodeBlock.of(source)` versus `CodeBlock.ofLines(...)`. Their render callbacks are internal, so autocomplete shows only authoring options.
+The components in `dev.nthings.tessera.components` share one shape. Each is a final class created by a static factory that takes its required arguments, usually `X.of(...)`; options are fluent setters; and it is placed with `.child(...)` like any element. Named factories exist only where the required arguments genuinely differ, such as `Grid.autoFit(minWidth, ...)` versus `Grid.columns(count, ...)` and `CodeBlock.of(source)` versus `CodeBlock.ofLines(...)`. Their expand callbacks are internal, so autocomplete shows only authoring options.
 
 ```java
 var modal = Modal.of("Publish release?").id("publish").bodyText("Ship it to every region.");
@@ -139,7 +139,9 @@ main().children(
 
 Initial state is a separate method or toggle, never a positional boolean: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)` beside `item(...)`, `Select.selectedOption(value, label)` beside `option(...)`, and `Forms.checkedSwitchField(label, name)` beside `switchField(...)`. For a condition known only at run time, branch inside the chain with `onlyIf(condition, x -> x.checked())`; `ifPresent(value, (x, v) -> ...)` does the same for a nullable value. Boolean attributes are set with `boolAttr("open")`. Optional parts are fluent options too, never nullable arguments: `DocPager.of().previous(link).next(link)`, `Dropdown.Item.link(href, label).shortcut("G F")` added with `dropdown.item(...)`, and `SearchPalette.Item.of(title, href).description(text).badge(text)`.
 
-A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead; a button opens no scope of its own, so `ElementRef.scoped("save")` on a button inside a view with id `toolbar` emits `toolbar--save`. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
+A scoped component takes an optional `id(String)` that names the instance in the enclosing id scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<scopeName>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids or the scope contains keyed content. Buttons bind their own element with `id(ElementRef)` instead; a button opens no scope of its own, so `ElementRef.scoped("save")` on a button inside a scope with id `toolbar` emits `toolbar--save`. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
+
+`ContentTabs.of(label).tab(key, label, content)` takes an author key, not the tab's position. The key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`. A blank key throws `IllegalArgumentException`. A repeated key reports `duplicate-tab`. HTML has no tab widget, so the component contributes the `tessera-tabs` page script, which switches panels by `aria-controls`.
 
 The vocabulary is shared: `Tone` for semantic color, `Size` (`SM`, `MD`, `LG`) for buttons and badges, and `Link(href, label)` for `Breadcrumbs`, `NavTabs` and `DocPager`. A `label` is an accessible name, a `title` a visible heading, a `description` muted secondary text, and `actions(...)` footer actions. `Forms` (styled controls such as `Forms.email(name)`, wrapped by `Field.of(label, control)`) and `Formatting` (inline `mark`, `kbd`, `code`, ...) are plain functions that return elements.
 
@@ -152,18 +154,26 @@ Elements.ul().child(
     Elements.fragment().children(li().text("One"), li().text("Two")));
 ```
 
-`HtmlTag` covers the built-in vocabulary, including `video`, `audio`, `iframe`, `canvas`, `template`, `slot`, `picture`, `source`, and `track`. `Elements.custom("my-widget")` emits an autonomous custom element. Custom element names must be lowercase and contain a hyphen; follow the HTML standard's other naming rules yourself, since Tessera does not check them. Pair the element with a `ClientBehavior` so the browser upgrades it.
+`HtmlTag` covers the built-in vocabulary, including `video`, `audio`, `iframe`, `canvas`, `template`, `slot`, `picture`, `source`, and `track`. `Elements.custom("my-widget")` emits an autonomous custom element. Custom element names must be lowercase and contain a hyphen; follow the HTML standard's other naming rules yourself, since Tessera does not check them. Pair the element with a `PageScript` so the browser upgrades it.
 
-## Contribute a client behavior
+## Contribute a page script
 
-A behavior is an ES module with a stable id. Components contribute it through the render context:
+A page script is an ES module with a stable id. Components contribute it through the document context:
 
 ```java
-var behavior = new ClientBehavior("my-widget", moduleSource);
-context.contributeBehavior(behavior);
+var script = new PageScript("my-widget", moduleSource);
+context.contributeScript(script);
 ```
 
-The compiler emits each behavior once per page. `OutputMode.inline()` inlines a `<script type="module">`. `OutputMode.external("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and site compilation merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `ContentTabs` use this path for their bundled modules.
+The compiler emits each script once per page. `OutputMode.inline()` inlines a `<script type="module">`. `OutputMode.external("/assets")` publishes `/assets/scripts/<sanitized id>-<hash>.js`, records it in `CompiledPage.assets()`, and site compilation merges it into `CompiledSite.files()` so `SiteWriter` writes it. Scripts keep browser code out of the component tree and avoid a component-to-site dependency.
+
+Three scripts ship with the library, and each one stays because HTML does not do that job:
+
+- `ContentTabs` contributes `tessera-tabs`. HTML has no roving-tab widget, so the script switches the panels.
+- `SearchPalette` contributes its search module. Filtering a list of links is not HTML.
+- `TooltipScript` is the Firefox polyfill for `interestfor` hint popovers. It listens for `pointerover`. Chromium uses the native invoker.
+
+There is no action or entity runtime. A page that contributes no script receives none.
 
 ## Lay out a row or column
 
@@ -196,17 +206,17 @@ var body = Elements.main().children(trigger, dialog);
 
 | Factory | DOM id |
 | --- | --- |
-| `ElementRef.scoped("save")` | `save` prefixed by the binding's view scope: `toolbar--save` inside a view with id `toolbar` |
+| `ElementRef.scoped("save")` | `save` prefixed by the binding's id scope: `toolbar--save` inside a scope with id `toolbar` |
 | `ElementRef.page("installation")` | `installation` exactly, wherever it is bound; use it for public fragments such as `/guide/#installation` |
-| `ElementRef.anonymous()` or `element.ref()` | Assigned by the compiler as `<tag>-<n>` within the view scope |
+| `ElementRef.anonymous()` or `element.ref()` | Assigned by the compiler as `<tag>-<n>` within the id scope |
 
 The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`, and so is `removeAttr` for them. Higher-level components such as `Modal` expose their own trigger helpers to manage these references.
 
-For document navigation, the example uses `Section.of(id, title)`. It registers heading metadata and binds the section to a page-level id, and `TableOfContents.of(title)` may appear before the sections it lists. `DocLayout.of(sections...)` places them beside a sticky table of contents. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
+For document navigation, the example uses `Section.of(id, title)`. It registers heading metadata and binds the section to a page-level id, and `TableOfContents.of(title)` may appear before the sections it lists. `DocLayout.of(sections...)` places them beside a sticky table of contents. Custom components call `context.registerHeading(target, title, level)` inside `expand` and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
 
 ## Key list items that move
 
-Generated ids are numbered in document order, so inserting an item at the top of a list renumbers the ids of every item below it, and a link or bookmark to one of them lands somewhere else after the next build. A scoped ref repeated in each item needs a scope per item. When a list's items are inserted or reordered between builds and carry ids or links, give each item a stable key with `.key(...)`, which works on any element, component or view:
+Generated ids are numbered in encounter order, so inserting an item at the top of a list renumbers the ids of every item below it, and a link or bookmark to one of them lands somewhere else after the next build. A scoped ref repeated in each item needs a scope per item. When a list's items are inserted or reordered between builds and carry ids or links, give each item a stable key with `.key(...)`, which works on any element, component or scope:
 
 ```java
 var list = Elements.ul();
@@ -222,7 +232,7 @@ for (var post : posts) {
 
 Ids bound inside keyed content are scoped by its key, so each post's `title` id stays the same when posts are added, removed or reordered, and when other content, keyed or not, is added or removed elsewhere on the page. The content is emitted in place, with no wrapper. Keys are compared exactly and only among the children of one parent: two siblings with the same key report `duplicate-key`. A blank key throws `IllegalArgumentException`. Lists that never change order, or whose items carry no ids or links, do not need keys.
 
-The key's scope is the enclosing view plus the nearest enclosing element bound to a named ref (`ElementRef.scoped` or `ElementRef.page`), never a position. Two keyed lists in one view without such an element therefore share a namespace: if both use the same key and their items bind the same scoped ids, the page reports `duplicate-id`. Give each list's parent its own id to keep them apart:
+The key slug is the enclosing id scope plus the nearest enclosing element bound to a named ref (`ElementRef.scoped` or `ElementRef.page`). The slug has no sibling index. A generated enclosing scope id still does: if any enclosing scope omitted `scopeId()`, keyed content reports `generated-scope-id`, because that counter changes when a sibling scope is inserted. Set `scopeId()` on each enclosing scope before keying content inside it. Two keyed lists in one scope without a named owner element share a namespace: if both use the same key and their items bind the same scoped ids, the page reports `duplicate-id`. Give each list's parent its own id to keep them apart:
 
 ```java
 Elements.main().children(
@@ -244,7 +254,7 @@ var close = IconButton.of("Close", Elements.span().text("×"))
 
 `IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(label, content...)` keeps `label` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
 
-`Button.interestTooltip(...)` adds a hint popover on hover or focus. Native interest invokers drive it where available; a bundled `TooltipBehavior` mirrors hover and focus handling in Firefox, which does not ship the API yet. `Modal.of(...).opened()` renders a dialog visible in the non-modal `open` state.
+`Button.interestTooltip(...)` adds a hint popover on hover or focus. Native interest invokers drive it where available; a bundled `TooltipScript` mirrors hover and focus handling in Firefox, which does not ship the API yet. `Modal.of(...).opened()` renders a dialog visible in the non-modal `open` state.
 
 ## Open a component case
 
@@ -271,7 +281,7 @@ Route and asset definitions use their logical paths, such as `/guides/café`. Li
 
 ## Read compilation diagnostics
 
-Every `Compiler` method throws `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `Diagnostic` has a `rule` code, a `message`, a `fix`, and a `Location`. The location is flat: `route` (null for a standalone page), `page` title (route and page are both null for a file conflict that belongs to no page), enclosing `components`, element `tag`, nullable `domId`, and nullable `source`. `Diagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's render or style callback, or by a late or document-end callback, propagates unchanged, with a suppressed `CompilationException` naming the component path.
+Every `Compiler` method throws `CompilationException` with a `diagnostics()` list when authoring errors prevent compilation. Each `Diagnostic` has a `rule` code, a `message`, a `fix`, and a `Location`. The location is flat: `route` (null for a standalone page), `page` title (route and page are both null for a file conflict that belongs to no page), enclosing `components`, element `tag`, nullable `domId`, and nullable `source`. `Diagnostic.format()` presents a diagnostic as the exception prints it. An exception thrown by a component's expand or style callback, or by a late or document-end callback, propagates unchanged, with a suppressed `CompilationException` naming the component path.
 
 ```java
 try {
@@ -297,7 +307,7 @@ Independent image, identity, reference, URL syntax, and markup errors are collec
 
 A native dialog's dismissal is set with `closedBy(ClosedBy.ANY)`, `CLOSE_REQUEST`, or `NONE`. Native dialog commands (`show-modal`, `close`, `request-close`) require a `<dialog>` target. Popover commands (`toggle-popover`, `show-popover`, `hide-popover`) require a target with a `popover` attribute, following the [HTML command rules](https://html.spec.whatwg.org/multipage/form-elements.html#attr-button-command). Custom commands continue to use any existing target.
 
-Duplicate bindings are reported as ambiguous; target-dependent command checks are skipped for ambiguous targets. Malformed URLs produce an `invalid-url` diagnostic alongside other page errors. The compiler reports authoring errors without emitting HTML. Exceptions thrown by application render callbacks still propagate normally, and trusted raw HTML remains outside validation.
+Duplicate bindings are reported as ambiguous; target-dependent command checks are skipped for ambiguous targets. Malformed URLs produce an `invalid-url` diagnostic alongside other page errors. The compiler reports authoring errors without emitting HTML. Exceptions thrown by application expand callbacks still propagate normally, and trusted raw HTML remains outside validation.
 
 ## Customize the design system
 
@@ -354,7 +364,7 @@ div()
     .transition(Transition.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
 ```
 
-Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). `Shadow.drop(...)` and `Shadow.inset(...)` build `box-shadow` layers, and `offsetX(...)` shifts one sideways. Names are small validated handles: `Container`, `Keyframes`, `Anchor`, `Counter`, and `CustomProperty` for a local custom property. Every style method is on `Styled`, which elements and `StyleRefinement` implement; a component that owns an element, such as `Image`, styles it through `element(...)`.
+Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). `Shadow.drop(...)` and `Shadow.inset(...)` build `box-shadow` layers, and `offsetX(...)` shifts one sideways. Names are small validated handles: `Container`, `Keyframes`, `Anchor`, `Counter`, and `CustomProperty` for a local custom property. Every style method is on `Styled`, which elements and `Declarations` implement; a component that owns an element, such as `Image`, styles it through `element(...)`.
 
 The last call wins. Writing a property again replaces it, and writing a shorthand removes the longhands it covers: `p(...)` replaces an earlier `pt(...)`/`pb(...)`/`ps(...)`/`pe(...)`, `border(...)` replaces earlier side borders and `borderColor(...)`, and `gap(...)` replaces `rowGap(...)`/`colGap(...)`. A longhand written after its shorthand refines it, so `p(Tokens.SPACE_4).pt(CssLength.zero())` keeps both.
 
@@ -399,12 +409,12 @@ Size queries are `atLeast(length)` and `below(length)`; scroll-state queries are
 var pulse = Keyframes.named("pulse").start(s -> s.opacity(1)).at(50, s -> s.opacity(0.5)).end(s -> s.opacity(1));
 div().animation(Animation.of(pulse, CssDuration.ms(800), Easing.ease()));
 
-div().animation(Animation.reveal(Keyframes.FADE_UP));                 // scrubbed by the view timeline
+div().animation(Animation.enterViewport(Keyframes.FADE_UP));                 // scrubbed by the view timeline
 chip.animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60));
 bar.animation(Animation.scrollProgress(grow));                        // follows the page scroll
 ```
 
-`Animation.exit(...)` follows the element out of view, and `along(TimelineAxis.INLINE)` switches a scroll-driven animation to the inline axis. The presets `FADE_IN`, `FADE_UP`, `SCALE_IN`, `SLIDE_INLINE` and `FADE_OUT` animate `opacity` and `transform`.
+`Animation.leaveViewport(...)` follows the element out of view, and `along(TimelineAxis.INLINE)` switches a scroll-driven animation to the inline axis. The presets `FADE_IN`, `FADE_UP`, `SCALE_IN`, `SLIDE_INLINE` and `FADE_OUT` animate `opacity` and `transform`.
 
 ## Declare roles and states
 
@@ -462,7 +472,7 @@ var search = SearchPalette.of()
 Elements.main().children(search.triggerButton(), Elements.deferred(search, 10));
 ```
 
-The palette contributes one client behavior per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed asset through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `Compiler.compile(...)` output. Pages without palettes receive no search script.
+The palette contributes one page script per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed file under `/scripts/` through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `Compiler.compile(...)` output. Pages without palettes receive no search script. Filtering is not HTML, so the script stays.
 
 The module registers a customized native `<dialog is="tessera-search">` element. The browser upgrades each instance and owns modal opening, focus trapping, and light dismissal. Escape requests native dialog dismissal through `requestClose()`. Component lifecycle callbacks install event listeners with an `AbortSignal` and release them on disconnection. CSS `:has()` hides empty result groups; JavaScript handles filtering and result selection.
 
@@ -482,12 +492,12 @@ import dev.nthings.tessera.css.*
 
 val notice = Component { _ -> div().child(p().text("Build completed")) }
 
-data class MetricCard(val title: String, val value: String) : View {
+data class MetricCard(val title: String, val value: String) : Scope {
     override fun configureScope(scope: ScopeStyle) {
         scope.root { it.p(Tokens.SPACE_5).rounded(Tokens.RADIUS_XL) }
     }
 
-    override fun render(context: RenderContext): IntoElement =
+    override fun expand(context: DocumentContext): IntoElement =
         div().children(h2().text(title), p().text(value))
 }
 
@@ -499,7 +509,7 @@ fun main() {
 
 - `import dev.nthings.tessera.core.Elements.*` brings in the element factories. A `fun main()` in the same package wins over the star-imported `main()`, so call the `<main>` factory as `Elements.main()`, as above.
 - Numeric factories take `Double`: write `CssLength.rem(1.0)`, `CssDuration.ms(150.0)` and `opacity(0.5)`; an `Int` literal does not convert. `CssLength`'s `plus`, `minus` and `times` also work as `+`, `-` and `*`.
-- `Component` is a single-method interface, so `Component { context -> ... }` creates one. Implement `View` with a class or a `data class`, overriding `render` and, as needed, `configureScope`, `viewId` and `viewType`.
+- `Component` is a single-method interface, so `Component { context -> ... }` creates one. Implement `Scope` with a class or a `data class`, overriding `expand` and, as needed, `configureScope`, `scopeId` and `scopeName`.
 - Records read as properties: `diagnostic.rule`, `page.html`, `site.pages`.
 - Sealed types with public variants (`Element`, `TagName`, `Condition`, `PageTree.Node`) are exhaustive in `when` without an `else` branch.
 - Immutable values such as `Theme`, `Keyframes`, `Animation`, `Transition` and `CssLength` carry `@CheckReturnValue`. Build with `-Xreturn-value-checker=check` to get a warning when a derived value such as `theme.with(...)` is discarded.

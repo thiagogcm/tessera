@@ -8,9 +8,9 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.support.CssBlocks;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ class ConditionalStylingTest {
   @DisplayName("states nest as & rules in State order, whatever the call order")
   void statesFollowEnumOrder() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .opacity(1)
             .on(State.ACTIVE, s -> s.opacity(0.8))
             .on(State.HOVER, s -> s.opacity(0.9))
@@ -40,7 +40,7 @@ class ConditionalStylingTest {
   @DisplayName("conditions nest, and media rules follow states")
   void conditionsNest() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .on(Media.MOTION_SAFE, m -> m.on(State.FOCUS_VISIBLE, s -> s.opacity(0.5)))
             .on(State.DISABLED, s -> s.opacity(0.4));
 
@@ -80,18 +80,18 @@ class ConditionalStylingTest {
   @DisplayName("containers combine types and validate them")
   void containerTypes() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .container(Container.unnamed(Container.Type.SCROLL_STATE, Container.Type.INLINE_SIZE));
 
     assertThat(style.toCssBlockBody()).isEqualTo("container-type:inline-size scroll-state");
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Container.unnamed(Container.Type.SIZE, Container.Type.INLINE_SIZE));
     assertThat(
-            StyleRefinement.prelude(
+            Declarations.prelude(
                 Container.named("bar", Container.Type.SCROLL_STATE).stuck(Container.Edge.TOP)))
         .isEqualTo("@container bar scroll-state(stuck: top)");
     assertThat(
-            StyleRefinement.prelude(
+            Declarations.prelude(
                 Container.unnamed(Container.Type.INLINE_SIZE).below(CssLength.rem(36))))
         .isEqualTo("@container (inline-size < 36rem)");
   }
@@ -124,7 +124,7 @@ class ConditionalStylingTest {
     var page =
         renderMain(
             section()
-                .animation(Animation.reveal(Keyframes.FADE_UP))
+                .animation(Animation.enterViewport(Keyframes.FADE_UP))
                 .child(p().text("Revealed on scroll")));
 
     var rule = page.ruleOf(page.element("section"), "i-");
@@ -157,7 +157,7 @@ class ConditionalStylingTest {
   }
 
   @Test
-  @DisplayName("keyframes used only in a view scope are registered")
+  @DisplayName("keyframes used only in an id scope are registered")
   void scopeAnimationsRegisterKeyframes() {
     var pulse =
         Keyframes.named("pulse")
@@ -175,11 +175,11 @@ class ConditionalStylingTest {
   @DisplayName("animations and keyframes validate their input")
   void animationValidation() {
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> Animation.reveal(Keyframes.named("empty")));
+        .isThrownBy(() -> Animation.enterViewport(Keyframes.named("empty")));
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Keyframes.named("x").at(120, s -> s.opacity(1)));
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> Animation.reveal(Keyframes.FADE_IN).staggerBySiblingIndex(-1));
+        .isThrownBy(() -> Animation.enterViewport(Keyframes.FADE_IN).staggerBySiblingIndex(-1));
     assertThatIllegalStateException()
         .isThrownBy(
             () ->
@@ -187,14 +187,14 @@ class ConditionalStylingTest {
                     .along(TimelineAxis.INLINE));
   }
 
-  private record PulseView(Keyframes pulse) implements View {
+  private record PulseView(Keyframes pulse) implements Scope {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope.root(s -> s.animation(Animation.of(pulse, CssDuration.ms(800), Easing.ease())));
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return div().text("pulsing");
     }
   }

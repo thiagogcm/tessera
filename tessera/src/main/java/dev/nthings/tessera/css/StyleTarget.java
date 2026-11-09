@@ -9,5 +9,5 @@ interface StyleTarget<SELF extends StyleTarget<SELF>> {
   SELF self();
 
   /// The declarations this target's style methods write to.
-  StyleRefinement style();
+  Declarations style();
 }

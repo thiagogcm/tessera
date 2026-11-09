@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 class CardGridTest {
 
   @Test
-  @DisplayName("scopes each card's view id under the grid's id, assigning one when absent")
+  @DisplayName("scopes each card's scope id under the grid's id, assigning one when absent")
   void scopesCardViewIdsUnderGridId() {
     var grid =
         CardGrid.of(
@@ -21,8 +21,8 @@ class CardGridTest {
             .id("feature-cards")
             .gap(CssLength.rem(1.25));
 
-    assertThat(renderMain(grid).elements("[data-view-id^=feature-cards--]"))
-        .extracting(card -> card.attr("data-view-id"))
+    assertThat(renderMain(grid).elements("[data-scope-id^=feature-cards--]"))
+        .extracting(card -> card.attr("data-scope-id"))
         .containsExactly("feature-cards--architecture", "feature-cards--card-1");
   }
 }

@@ -1,18 +1,18 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CustomProperty;
+import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
-import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.function.Function;
 /// - The caption's id is `<instance id>--caption`.
 ///
 /// Without an [#id(String)], the compiler numbers instances `data-table-<n>`.
-public final class DataTable<T> extends BuiltinView<DataTable<T>> {
+public final class DataTable<T> extends BuiltinScope<DataTable<T>> {
 
   /// The scroll region; the stacked layout queries its width.
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
@@ -120,7 +120,7 @@ public final class DataTable<T> extends BuiltinView<DataTable<T>> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "data-table";
   }
 
@@ -178,7 +178,7 @@ public final class DataTable<T> extends BuiltinView<DataTable<T>> {
             ":scope tr > :nth-child(" + (i + 1) + ")",
             s ->
                 s.textAlign(align.textAlign())
-                    .onlyIf(align.tabularNums(), StyleRefinement::tabularNums));
+                    .onlyIf(align.tabularNums(), Declarations::tabularNums));
       }
     }
 
@@ -223,7 +223,7 @@ public final class DataTable<T> extends BuiltinView<DataTable<T>> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var captionRef = ElementRef.scoped("caption");
 
     var headerRow = Elements.tr();

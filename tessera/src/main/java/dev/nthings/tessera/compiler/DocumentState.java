@@ -1,12 +1,12 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.ClientBehavior;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.PageScript;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -22,34 +22,34 @@ final class DocumentState {
   private final List<Contribution<Element>> headElements = new ArrayList<>();
   private final List<Contribution<DocumentHeading>> headings = new ArrayList<>();
   private final Map<ElementRef, Boolean> headingTargets = new IdentityHashMap<>();
-  private final Map<String, ClientBehavior> behaviors = new LinkedHashMap<>();
-  private final Map<DocumentKey<?>, Contribution<Function<RenderContext, ? extends IntoElement>>>
+  private final Map<String, PageScript> behaviors = new LinkedHashMap<>();
+  private final Map<DocumentKey<?>, Contribution<Function<DocumentContext, ? extends IntoElement>>>
       documentEndSections = new LinkedHashMap<>();
 
   /// Content placed at a page-level position, with the component context that placed it.
-  record Contribution<T>(T content, ViewLocation placedBy) {}
+  record Contribution<T>(T content, NodeLocation placedBy) {}
 
   <T> T getOrCreate(DocumentKey<T> key) {
     return key.getOrCreate(values);
   }
 
-  void contributeHead(Element element, ViewLocation placedBy) {
+  void contributeHead(Element element, NodeLocation placedBy) {
     headElements.add(new Contribution<>(element, placedBy));
   }
 
   void atDocumentEnd(
       DocumentKey<?> owner,
-      Function<RenderContext, ? extends IntoElement> section,
-      ViewLocation placedBy) {
+      Function<DocumentContext, ? extends IntoElement> section,
+      NodeLocation placedBy) {
     documentEndSections.putIfAbsent(owner, new Contribution<>(section, placedBy));
   }
 
-  /// Registers `behavior` once per page; a later behavior with the same id is ignored.
-  void contributeBehavior(ClientBehavior behavior) {
-    behaviors.putIfAbsent(behavior.id(), behavior);
+  /// Registers `script` once per page; a later script with the same id is ignored.
+  void contributeScript(PageScript script) {
+    behaviors.putIfAbsent(script.id(), script);
   }
 
-  List<ClientBehavior> behaviors() {
+  List<PageScript> scripts() {
     return List.copyOf(behaviors.values());
   }
 
@@ -59,7 +59,7 @@ final class DocumentState {
   }
 
   /// Registers `heading` for its target. A second heading for the same target is ignored.
-  void registerHeading(DocumentHeading heading, ViewLocation placedBy) {
+  void registerHeading(DocumentHeading heading, NodeLocation placedBy) {
     if (headingTargets.putIfAbsent(heading.target(), Boolean.TRUE) == null) {
       headings.add(new Contribution<>(heading, placedBy));
     }
@@ -75,7 +75,7 @@ final class DocumentState {
   }
 
   /// End-of-page sections, in registration order. Only the first section per owner key is kept.
-  List<Contribution<Function<RenderContext, ? extends IntoElement>>> documentEndSections() {
+  List<Contribution<Function<DocumentContext, ? extends IntoElement>>> documentEndSections() {
     return List.copyOf(documentEndSections.values());
   }
 }

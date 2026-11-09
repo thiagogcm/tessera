@@ -73,18 +73,18 @@ final class NavigationPage {
     return Demo.of("content-tabs", "Content tabs")
         .summary(
             "In-page tab panels follow the ARIA tabs pattern with roving tabindex and arrow-key "
-                + "navigation; a bundled client behavior switches the server-rendered panels.")
+                + "navigation. HTML has no tab widget, so a page script switches the panels.")
         .features("role=tablist", "roving tabindex", "Arrow keys")
         .example(
             ContentTabs.of("Pipeline stages")
                 .id("demo-tabs")
-                .tab("Java", p().text("Components are plain Java records and builders."))
-                .tab("HTML", p().text("Output is semantic, validated HTML."))
-                .tab("CSS", p().text("Styles compile into one layered stylesheet.")))
+                .tab("java", "Java", p().text("Components are plain Java records and builders."))
+                .tab("html", "HTML", p().text("Output is semantic, validated HTML."))
+                .tab("css", "CSS", p().text("Styles compile into one layered stylesheet.")))
         .code(
             "ContentTabs.of(\"Pipeline stages\")",
-            "    .tab(\"Java\", p().text(\"…\"))",
-            "    .tab(\"HTML\", p().text(\"…\"));");
+            "    .tab(\"java\", \"Java\", p().text(\"…\"))",
+            "    .tab(\"html\", \"HTML\", p().text(\"…\"));");
   }
 
   private static Demo accordion() {

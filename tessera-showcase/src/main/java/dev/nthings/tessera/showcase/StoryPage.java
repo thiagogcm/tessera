@@ -4,10 +4,10 @@ import static dev.nthings.tessera.core.Elements.h1;
 import static dev.nthings.tessera.core.Elements.main;
 
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 
@@ -17,7 +17,7 @@ record StoryPage(
     implements Component {
 
   @Override
-  public Element render(RenderContext context) {
+  public Element expand(DocumentContext context) {
     context.contributeHead(Elements.el(HtmlTag.STYLE).text(appearanceStyle()));
     return main()
         .px(CssLength.rem(1))

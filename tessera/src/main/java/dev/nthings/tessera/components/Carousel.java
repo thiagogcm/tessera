@@ -4,9 +4,9 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
@@ -41,7 +41,7 @@ import java.util.List;
 /// scrollable track.
 ///
 /// Without an [#id(String)], the compiler numbers instances `carousel-<n>`.
-public final class Carousel extends BuiltinView<Carousel> {
+public final class Carousel extends BuiltinScope<Carousel> {
 
   private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
 
@@ -86,7 +86,7 @@ public final class Carousel extends BuiltinView<Carousel> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "carousel";
   }
 
@@ -216,7 +216,7 @@ public final class Carousel extends BuiltinView<Carousel> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var track = div().role(Role.REGION).ariaLabel(label).tabIndex(0);
     for (var slide : slides) {
       track.child(

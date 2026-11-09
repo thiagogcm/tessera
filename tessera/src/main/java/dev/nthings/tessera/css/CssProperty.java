@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 
-/// The CSS properties [StyleRefinement] can declare. Declarations are emitted in constant order,
+/// The CSS properties [Declarations] can declare. Declarations are emitted in constant order,
 /// and every shorthand precedes its longhands, so a longhand written after its shorthand wins in
 /// the cascade. Writing a shorthand removes its longhands ([#longhands()]), so the last call wins
 /// either way.

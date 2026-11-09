@@ -1,6 +1,6 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.ClientBehavior;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
@@ -20,7 +20,7 @@ final class PreparedPage {
   private final Map<String, Location> outgoingLinks;
   private final Map<TransitionKey, Location> transitionLocations;
   private final List<PageHeading> headings;
-  private final List<ClientBehavior> behaviors;
+  private final List<PageScript> behaviors;
 
   PreparedPage(
       PageDocument document,
@@ -31,7 +31,7 @@ final class PreparedPage {
       Map<TransitionKey, Location> transitionLocations,
       List<ResolvedNode> headNodes,
       List<PageHeading> headings,
-      List<ClientBehavior> behaviors) {
+      List<PageScript> behaviors) {
     this.document = document;
     // Taken over as is: the compilation that produced it is finished and discarded.
     this.styles = styles;
@@ -76,8 +76,8 @@ final class PreparedPage {
     return headings;
   }
 
-  /// Client behaviors registered on this page, in contribution order.
-  List<ClientBehavior> behaviors() {
+  /// Page scripts registered on this page, in contribution order.
+  List<PageScript> scripts() {
     return behaviors;
   }
 

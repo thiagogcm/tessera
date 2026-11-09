@@ -12,12 +12,12 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
-import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.ClosedBy;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Animatable;
@@ -48,10 +48,10 @@ import org.jspecify.annotations.Nullable;
 ///
 /// The dialog and input ids are prefixed with its [#id(String)], as in `<id>--dialog`. Without an
 /// id, the compiler numbers instances `search-palette-<n>`.
-public final class SearchPalette extends BuiltinView<SearchPalette> {
+public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
-  private static final ClientBehavior SEARCH_BEHAVIOR =
-      ClientBehavior.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
+  private static final PageScript SEARCH_SCRIPT =
+      PageScript.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
 
   private static final String SEARCH_ICON_SVG =
       "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
@@ -192,13 +192,13 @@ public final class SearchPalette extends BuiltinView<SearchPalette> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "search-palette";
   }
 
   @Override
-  IntoElement render(RenderContext context) {
-    context.contributeBehavior(SEARCH_BEHAVIOR);
+  IntoElement expand(DocumentContext context) {
+    context.contributeScript(SEARCH_SCRIPT);
 
     var headerEl =
         Elements.search()

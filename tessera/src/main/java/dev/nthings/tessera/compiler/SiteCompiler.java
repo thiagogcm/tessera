@@ -3,8 +3,8 @@ package dev.nthings.tessera.compiler;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
-import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.SourceProvenance;
 import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayList;
@@ -70,9 +70,9 @@ final class SiteCompiler {
       prepared.contributeStylesTo(sharedStyles);
     }
     var css = sharedStyles.render(site.theme());
-    var behaviors = new LinkedHashSet<ClientBehavior>();
+    var behaviors = new LinkedHashSet<PageScript>();
     for (var prepared : preparedPages) {
-      behaviors.addAll(prepared.behaviors());
+      behaviors.addAll(prepared.scripts());
     }
     // One stylesheet and one file per distinct module, hashed and encoded once for every page.
     var resources = new HtmlWriter.Resources(css, site.outputMode(), behaviors);
@@ -87,10 +87,10 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
-    var painted = parallelMap(preparedPages, page -> PageCompiler.paint(page, resources));
+    var emitted = parallelMap(preparedPages, page -> PageCompiler.emit(page, resources));
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
-      pages.put(routes.get(i).path(), painted.get(i));
+      pages.put(routes.get(i).path(), emitted.get(i));
     }
     if (baseUrl != null) {
       files.put(

@@ -14,12 +14,12 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClosedBy;
 import dev.nthings.tessera.core.Command;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -29,8 +29,8 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.Map;
 
 /// Exercises scoped ids, invokers, interest tooltips, custom commands, container queries and
-/// portals in one view. [CompilerTest] asserts each feature separately.
-record WorkspacePanelView(String workspaceSlug) implements View {
+/// portals in one scope. [CompilerTest] asserts each feature separately.
+record WorkspacePanelView(String workspaceSlug) implements Scope {
 
   private static final Container METRIC_CARD =
       Container.named("metric-card", Container.Type.INLINE_SIZE);
@@ -44,7 +44,7 @@ record WorkspacePanelView(String workspaceSlug) implements View {
   }
 
   @Override
-  public String viewId() {
+  public String scopeId() {
     return "workspace-" + workspaceSlug;
   }
 
@@ -54,7 +54,7 @@ record WorkspacePanelView(String workspaceSlug) implements View {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  public Element expand(DocumentContext context) {
     var confirmRef = ElementRef.scoped("confirm-archive");
     var confirmModal =
         dialog()

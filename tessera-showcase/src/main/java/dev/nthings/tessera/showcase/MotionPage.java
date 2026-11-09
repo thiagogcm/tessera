@@ -51,13 +51,14 @@ final class MotionPage {
         .example(
             Grid.autoFit(
                     CssLength.rem(12),
-                    Demo.tile("Fade in").animation(Animation.reveal(Keyframes.FADE_IN)),
-                    Demo.tile("Fade up").animation(Animation.reveal(Keyframes.FADE_UP)),
-                    Demo.tile("Scale in").animation(Animation.reveal(Keyframes.SCALE_IN)),
-                    Demo.tile("Slide in").animation(Animation.reveal(Keyframes.SLIDE_INLINE)))
+                    Demo.tile("Fade in").animation(Animation.enterViewport(Keyframes.FADE_IN)),
+                    Demo.tile("Fade up").animation(Animation.enterViewport(Keyframes.FADE_UP)),
+                    Demo.tile("Scale in").animation(Animation.enterViewport(Keyframes.SCALE_IN)),
+                    Demo.tile("Slide in")
+                        .animation(Animation.enterViewport(Keyframes.SLIDE_INLINE)))
                 .gap(CssLength.rem(1)))
         .code(
-            "div().animation(Animation.reveal(Keyframes.FADE_UP));",
+            "div().animation(Animation.enterViewport(Keyframes.FADE_UP));",
             "ScrollProgressBar.of(); // Animation.scrollProgress(...)");
   }
 
@@ -143,7 +144,7 @@ final class MotionPage {
   }
 
   private static Demo viewTransitions() {
-    return Demo.of("view-transitions", "View transitions")
+    return Demo.of("view-transitions", "Scope transitions")
         .summary(
             "Navigating between pages cross-fades the document while the brand link and the docs "
                 + "banner morph into place. Links are prerendered on hover through speculation "

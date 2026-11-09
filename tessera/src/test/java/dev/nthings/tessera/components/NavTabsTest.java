@@ -21,7 +21,7 @@ class NavTabsTest {
                 .id("main-tabs")
                 .active("/components"));
 
-    assertThat(page.elements("[data-view-id=main-tabs] a[aria-current=page]"))
+    assertThat(page.elements("[data-scope-id=main-tabs] a[aria-current=page]"))
         .extracting(e -> e.attr("href"))
         .containsExactly("/components");
   }

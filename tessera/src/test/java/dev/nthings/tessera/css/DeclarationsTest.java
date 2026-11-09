@@ -5,13 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("StyleRefinement")
-class StyleRefinementTest {
+@DisplayName("Declarations")
+class DeclarationsTest {
 
   @Test
   @DisplayName("writing a property again replaces its value")
   void lastWriteReplaces() {
-    var style = new StyleRefinement().bg(Tokens.SURFACE_CARD).bg(Tokens.SURFACE_SUBTLE);
+    var style = new Declarations().bg(Tokens.SURFACE_CARD).bg(Tokens.SURFACE_SUBTLE);
 
     assertThat(style.toCssBlockBody()).isEqualTo("background:var(--surface-subtle)");
   }
@@ -20,7 +20,7 @@ class StyleRefinementTest {
   @DisplayName("a shorthand written after its longhands removes them")
   void shorthandClearsEarlierLonghands() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .pt(CssLength.rem(2))
             .pe(CssLength.rem(3))
             .rowGap(CssLength.rem(1))
@@ -39,7 +39,7 @@ class StyleRefinementTest {
   @DisplayName("a longhand written after its shorthand is kept and emitted after it")
   void longhandAfterShorthandWins() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .px(CssLength.rem(1))
             .py(CssLength.rem(1))
             .pb(CssLength.zero())
@@ -57,8 +57,8 @@ class StyleRefinementTest {
   @Test
   @DisplayName("merging replays the other refinement's writes, so its shorthands win")
   void mergeReplaysWrites() {
-    var base = new StyleRefinement().mt(CssLength.rem(2)).textColor(Tokens.TEXT_PRIMARY);
-    var override = new StyleRefinement().my(CssLength.zero());
+    var base = new Declarations().mt(CssLength.rem(2)).textColor(Tokens.TEXT_PRIMARY);
+    var override = new Declarations().my(CssLength.zero());
 
     base.mergeFrom(override);
 
@@ -70,7 +70,7 @@ class StyleRefinementTest {
   void presetsApply() {
     StyleBlock card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_LG).textWrap(TextWrap.PRETTY);
 
-    var style = new StyleRefinement().styles(card).objectFit(ObjectFit.COVER);
+    var style = new Declarations().styles(card).objectFit(ObjectFit.COVER);
 
     assertThat(style.toCssBlockBody())
         .isEqualTo(
@@ -82,7 +82,7 @@ class StyleRefinementTest {
   @DisplayName("keyword properties take their enum")
   void keywordEnums() {
     var style =
-        new StyleRefinement()
+        new Declarations()
             .cursor(Cursor.POINTER)
             .appearance(Appearance.NONE)
             .resize(Resize.VERTICAL)

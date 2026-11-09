@@ -4,24 +4,24 @@ import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 
-import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.css.Theme;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Client behaviors")
-class ClientBehaviorTest {
+@DisplayName("Page scripts")
+class PageScriptTest {
 
-  private static final ClientBehavior BEHAVIOR =
-      new ClientBehavior(
+  private static final PageScript BEHAVIOR =
+      new PageScript(
           "test-widget", "customElements.define('test-widget', class extends HTMLElement {});");
 
-  private static PageDocument page(ClientBehavior... behaviors) {
+  private static PageDocument page(PageScript... behaviors) {
     Component component =
         context -> {
           for (var behavior : behaviors) {
-            context.contributeBehavior(behavior);
+            context.contributeScript(behavior);
           }
           return custom("test-widget");
         };
@@ -29,7 +29,7 @@ class ClientBehaviorTest {
   }
 
   @Test
-  @DisplayName("an inline behavior is emitted once per page")
+  @DisplayName("an inline script is emitted once per page")
   void inlineBehaviorIsEmittedOnce() {
     var page = Compiler.compile(page(BEHAVIOR, BEHAVIOR));
 
@@ -38,13 +38,13 @@ class ClientBehaviorTest {
   }
 
   @Test
-  @DisplayName("an external behavior becomes an asset referenced by the page")
+  @DisplayName("an external script becomes an asset referenced by the page")
   void externalBehaviorBecomesAsset() {
     var page = Compiler.compile(page(BEHAVIOR), Theme.defaults(), OutputMode.external("/assets"));
 
     var asset = page.assets().getLast();
     assertThat(page.assets()).hasSize(2);
-    assertThat(asset.path()).startsWith("/assets/behaviors/test-widget-").endsWith(".js");
+    assertThat(asset.path()).startsWith("/assets/scripts/test-widget-").endsWith(".js");
     assertThat(asset.textContent()).isEqualTo(BEHAVIOR.module());
     assertThat(page.html()).contains("src=\"" + asset.path() + "\"");
   }

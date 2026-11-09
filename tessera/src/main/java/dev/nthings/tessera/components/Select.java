@@ -5,9 +5,9 @@ import static dev.nthings.tessera.core.Elements.label;
 import static dev.nthings.tessera.core.Elements.selectedcontent;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Appearance;
 import dev.nthings.tessera.css.Border;
@@ -25,7 +25,7 @@ import java.util.List;
 /// [#of(String)], add options, and wrap it with [Field#of(String, Select)] to label it.
 ///
 /// Without an [#id(String)], the compiler numbers instances `custom-select-<n>`.
-public final class Select extends BuiltinView<Select> {
+public final class Select extends BuiltinScope<Select> {
 
   /// One option for [Select#optgroup(String, List)]: the submitted `value`, the visible
   /// `label`, and whether it starts selected. Create one with [#of(String, String)] or
@@ -114,12 +114,12 @@ public final class Select extends BuiltinView<Select> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "custom-select";
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     return select;
   }
 

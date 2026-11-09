@@ -9,8 +9,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +27,7 @@ class SourceProvenanceTest {
 
   record Panel(String text) implements Component {
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return div().child(p().text(text));
     }
   }
@@ -55,7 +55,7 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("a user component's elements point into its own render method")
+  @DisplayName("a user component's elements point into its own expand method")
   void userComponentPointsIntoRender() {
     var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(new Panel("hi"))));
 
@@ -69,7 +69,7 @@ class SourceProvenanceTest {
     var line = here() - 1;
 
     assertThat(page.element("button").attr("data-src")).isEqualTo(THIS_FILE + ":" + line);
-    assertThat(page.html()).doesNotContain("PageCompiler").doesNotContain("LayoutPass");
+    assertThat(page.html()).doesNotContain("PageCompiler").doesNotContain("DocumentPass");
   }
 
   @Test

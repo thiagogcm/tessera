@@ -9,43 +9,43 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /// Expanded content before linking. Late slots, fragments and tooltip companions exist only
-/// here; [ReferenceLinker] resolves them, so validation and painting see [ResolvedNode]s alone.
+/// here; [ReferenceLinker] resolves them, so validation and HTML emit see [ResolvedNode]s alone.
 /// Text and raw HTML are already resolved.
-sealed interface ViewNode
-    permits ViewNode.Tag,
+sealed interface ExpandedNode
+    permits ExpandedNode.Tag,
         ResolvedText,
         ResolvedRaw,
-        ViewNode.Fragment,
-        ViewNode.Slot,
-        ViewNode.Empty {
+        ExpandedNode.Fragment,
+        ExpandedNode.Slot,
+        ExpandedNode.Empty {
 
   /// An expanded element; `companion` is emitted as its next sibling. Takes ownership of the
   /// maps and list it is given.
   record Tag(
       TagName tag,
-      ViewLocation location,
+      NodeLocation location,
       Map<String, String> attributes,
       Map<String, IdReference> references,
-      List<ViewNode> children,
+      List<ExpandedNode> children,
       @Nullable Tag companion)
-      implements ViewNode {
+      implements ExpandedNode {
     Tag withAttributes(Map<String, String> attributes) {
       return new Tag(tag, location, attributes, references, children, companion);
     }
   }
 
   /// Siblings emitted without a wrapper.
-  record Fragment(List<ViewNode> children) implements ViewNode {}
+  record Fragment(List<ExpandedNode> children) implements ExpandedNode {}
 
   /// Placeholder for a late element, filled after the main flow is expanded.
-  final class Slot implements ViewNode {
-    private @Nullable ViewNode content;
+  final class Slot implements ExpandedNode {
+    private @Nullable ExpandedNode content;
 
-    void fill(ViewNode content) {
+    void fill(ExpandedNode content) {
       this.content = content;
     }
 
-    ViewNode content() {
+    ExpandedNode content() {
       var filled = content;
       if (filled == null) {
         throw new IllegalStateException("Late element was linked before it was laid out");
@@ -54,7 +54,7 @@ sealed interface ViewNode
     }
   }
 
-  enum Empty implements ViewNode {
+  enum Empty implements ExpandedNode {
     INSTANCE
   }
 }

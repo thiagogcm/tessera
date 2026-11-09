@@ -11,7 +11,7 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
-/// A button opens no view scope of its own: it renders a single `<button>` styled with
+/// A button opens no id scope of its own: it renders a single `<button>` styled with
 /// element-level styles, so the refs it binds and targets resolve in the enclosing scope.
 abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     implements FluentBuilder<B> {
@@ -70,7 +70,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   }
 
   /// Binds `ref` to the `<button>` element, so other elements can reference it. The ref binds in
-  /// the enclosing view scope, so `ElementRef.scoped("save")` inside a view with id `toolbar`
+  /// the enclosing id scope, so `ElementRef.scoped("save")` inside an id scope with id `toolbar`
   /// emits `toolbar--save`. Binding several refs aliases them, as [TagElement#id(ElementRef)]
   /// does.
   public B id(ElementRef ref) {

@@ -27,4 +27,13 @@ public final class FragmentElement
   public List<Element> childrenList() {
     return Collections.unmodifiableList(children);
   }
+
+  /// A copy of this group whose children are also copies.
+  FragmentElement copy() {
+    var copy = new FragmentElement();
+    for (var child : children) {
+      copy.appendChild(TagElement.detach(child));
+    }
+    return copy;
+  }
 }

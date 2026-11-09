@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 /// Compiler-facing: the stylesheet of one page or site. The compiler registers each element's
-/// typed styles and each view scope, receiving the class names or scope keys to emit, and
+/// typed styles and each id scope, receiving the class names or scope keys to emit, and
 /// identical rules are deduplicated. [#render(Theme)] writes the layers in the order `reset, base,
 /// theme, components, utilities, interactive, container`.
 public final class StyleSheet {
@@ -18,7 +18,7 @@ public final class StyleSheet {
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
   private final Map<String, String> containerRules = new LinkedHashMap<>();
-  private final Map<String, String> viewScopeBodies = new LinkedHashMap<>();
+  private final Map<String, String> scopeBodies = new LinkedHashMap<>();
   private final Set<Keyframes> keyframes = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
 
@@ -30,7 +30,7 @@ public final class StyleSheet {
   /// declarations (`utilities` layer), an `i-` class for state, media and starting-style rules
   /// (`interactive` layer), and one `cq-` class per container query (`container` layer). The
   /// keyframes the style uses are registered too.
-  public List<String> registerElement(StyleRefinement style) {
+  public List<String> registerElement(Declarations style) {
     if (!style.hasConditionalStyles()) {
       return style.hasDeclarations() ? List.of(registerUtility(style)) : List.of();
     }
@@ -53,7 +53,7 @@ public final class StyleSheet {
         .containerRules()
         .forEach(
             (query, rule) -> {
-              var prelude = StyleRefinement.prelude(query);
+              var prelude = Declarations.prelude(query);
               var body = rule.toCssBody();
               var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, prelude);
               hash = Fnv1a64.updateChars(hash, body);
@@ -66,19 +66,19 @@ public final class StyleSheet {
   }
 
   /// Registers the plain declarations of `style` as a `u-` rule and returns its class.
-  private String registerUtility(StyleRefinement style) {
+  private String registerUtility(Declarations style) {
     var utilClass = "u-" + Fnv1a64.toBase36Hash(style.contentHash());
     utilityRules.computeIfAbsent(utilClass, k -> "." + k + "{" + style.toCssBlockBody() + "}");
     return utilClass;
   }
 
-  /// Compiler-facing: registers the styles of a view of `viewType`, which `configure` writes into
-  /// a fresh [ScopeStyle], and returns its `data-view` value, `<viewType>-<hash>`. Identical
+  /// Compiler-facing: registers the styles of a scope of `scopeName`, which `configure` writes into
+  /// a fresh [ScopeStyle], and returns its `data-scope` value, `<scopeName>-<hash>`. Identical
   /// scopes share one `@scope` block, and stylesheets from different pages merge without
-  /// conflicts. A view without scoped styles keeps the bare (sanitized) type as its scope
-  /// boundary. Throws IllegalArgumentException if `viewType` is empty.
-  public String registerViewScope(String viewType, ScopeBlock configure) {
-    var safeType = Fnv1a64.sanitizeIdentifier(viewType);
+  /// conflicts. A scope without scoped styles keeps the bare (sanitized) type as its scope
+  /// boundary. Throws IllegalArgumentException if `scopeName` is empty.
+  public String registerScope(String scopeName, ScopeBlock configure) {
+    var safeType = Fnv1a64.sanitizeIdentifier(scopeName);
     var scope = new ScopeStyle();
     configure.configure(scope);
     scope.collectKeyframes(keyframes);
@@ -88,7 +88,7 @@ public final class StyleSheet {
     }
     var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
     var key = safeType + "-" + Fnv1a64.toBase36Hash(hash);
-    viewScopeBodies.putIfAbsent(key, scopedCss);
+    scopeBodies.putIfAbsent(key, scopedCss);
     return key;
   }
 
@@ -105,7 +105,7 @@ public final class StyleSheet {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
     other.containerRules.forEach(containerRules::putIfAbsent);
-    other.viewScopeBodies.forEach(viewScopeBodies::putIfAbsent);
+    other.scopeBodies.forEach(scopeBodies::putIfAbsent);
     keyframes.addAll(other.keyframes);
     transitionClasses.addAll(other.transitionClasses);
   }
@@ -147,12 +147,12 @@ public final class StyleSheet {
     theme.declarations().forEach(declaration -> sb.append(declaration).append(';'));
     sb.append("}}\n");
 
-    if (!viewScopeBodies.isEmpty()) {
+    if (!scopeBodies.isEmpty()) {
       sb.append("@layer components{");
-      for (var entry : viewScopeBodies.entrySet()) {
-        sb.append("@scope ([data-view=\"")
+      for (var entry : scopeBodies.entrySet()) {
+        sb.append("@scope ([data-scope=\"")
             .append(entry.getKey())
-            .append("\"]) to (:scope [data-view] > *){")
+            .append("\"]) to (:scope [data-scope] > *){")
             .append(entry.getValue())
             .append('}');
       }

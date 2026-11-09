@@ -5,7 +5,7 @@ import java.util.List;
 /// Immutable output of one page: its HTML document, its stylesheet text, and the files the HTML
 /// refers to. `css` is always present, whether or not it is inlined. Under
 /// [OutputMode#inline()] `assets` is empty; under [OutputMode#external(String)] it holds the
-/// stylesheet first, then each client behavior module. Publish every asset at its path.
+/// stylesheet first, then each page script. Publish every asset at its path.
 public record CompiledPage(String html, String css, List<Asset> assets) {
 
   public CompiledPage {

@@ -27,7 +27,7 @@ class CardTest {
             .stretchedLink("/docs/compiler")
             .actions(button().text("Bookmark"));
 
-    var media = renderMain(card).element("[data-view-id=architecture]");
+    var media = renderMain(card).element("[data-scope-id=architecture]");
 
     assertThat(media.children())
         .extracting(e -> e.tagName())

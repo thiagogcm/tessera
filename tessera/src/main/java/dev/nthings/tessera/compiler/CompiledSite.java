@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 /// - `css`: the stylesheet every page shares. Under [OutputMode#inline()] each page embeds it;
 ///   under [OutputMode#external(String)] it is also one of the `files`.
 /// - `files`: each published URL path mapped to its file: registered assets, the shared
-///   stylesheet and client behavior modules (external output), `search-index.json`, and
+///   stylesheet and page scripts (external output), `search-index.json`, and
 ///   `sitemap.xml` when the site has a base URL.
 ///
 /// [SiteWriter] and [SitePreviewServer] publish pages and files together.

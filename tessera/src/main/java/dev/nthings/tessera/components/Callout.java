@@ -5,11 +5,11 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 /// replaces it.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-callout-<n>`.
-public final class Callout extends BuiltinView<Callout> implements ParentElement<Callout> {
+public final class Callout extends BuiltinScope<Callout> implements ParentElement<Callout> {
 
   /// Admonition kind, each with its own icon, [Tone] and default title.
   public enum Kind {
@@ -98,7 +98,7 @@ public final class Callout extends BuiltinView<Callout> implements ParentElement
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "tessera-callout";
   }
 
@@ -139,7 +139,7 @@ public final class Callout extends BuiltinView<Callout> implements ParentElement
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var displayTitle = customTitle != null ? customTitle : kind.defaultTitle;
     var header =
         div()

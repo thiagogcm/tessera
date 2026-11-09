@@ -3,9 +3,10 @@ package dev.nthings.tessera.core;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/// Typed state for one page, created on first use by [RenderContext#document(DocumentKey)]. Keys
-/// compare by identity, so declare them `static final`; a key created inside a render callback is a
-/// new slot on each call, so its state is never shared. `initial` runs once per page compilation.
+/// Typed state for one page, created on first use by [DocumentContext#document(DocumentKey)].
+/// Keys compare by identity, so declare them `static final`. A key created inside an expand
+/// callback is a new slot on each call, so its state is never shared. `initial` runs once
+/// per page compilation.
 ///
 /// ```java
 /// private static final DocumentKey<AtomicInteger> NOTES =

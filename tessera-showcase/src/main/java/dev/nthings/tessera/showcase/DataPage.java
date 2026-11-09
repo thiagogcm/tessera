@@ -70,7 +70,7 @@ final class DataPage {
                 .row("reset", "Box sizing and margins")
                 .row("base", "Document defaults and view transitions")
                 .row("theme", "Design tokens as custom properties")
-                .row("components", "@scope rules per view type")
+                .row("components", "@scope rules per scope name")
                 .row("utilities", "Content-hashed element styles")
                 .row("interactive", "Pseudo-class and motion states")
                 .row("container", "Container query overrides"))
@@ -86,7 +86,7 @@ final class DataPage {
         .features("counter-increment", "tabindex=\"0\" region", "white-space: pre")
         .example(
             CodeBlock.ofLines(
-                    "public IntoElement render(RenderContext context) {",
+                    "public IntoElement expand(DocumentContext context) {",
                     "-  return div().attr(\"id\", \"dialog\");",
                     "+  var dialog = ElementRef.scoped(\"dialog\");",
                     "+  return dialog().id(dialog).closedBy(ClosedBy.ANY);",

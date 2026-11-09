@@ -9,11 +9,11 @@ import static dev.nthings.tessera.core.Elements.span;
 import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Command;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
@@ -50,7 +50,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// The trigger, panel and command item ids are prefixed with its [#id(String)]. Without an id, the
 /// compiler numbers instances `dropdown-<n>`.
-public final class Dropdown extends BuiltinView<Dropdown> {
+public final class Dropdown extends BuiltinScope<Dropdown> {
 
   /// One link or command entry of a [Dropdown], added with [Dropdown#item(Item)]. The value is
   /// immutable: [#shortcut(String)] returns a new one.
@@ -142,7 +142,7 @@ public final class Dropdown extends BuiltinView<Dropdown> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "dropdown";
   }
 
@@ -254,7 +254,7 @@ public final class Dropdown extends BuiltinView<Dropdown> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var trigger =
         button()
             .id(ElementRef.scoped("trigger"))

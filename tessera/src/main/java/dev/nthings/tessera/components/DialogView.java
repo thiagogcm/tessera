@@ -22,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 /// description, a body and a close button. Each setter returns the same dialog, for chaining.
 ///
 /// @param <D> the concrete dialog type
-abstract class DialogView<D extends DialogView<D>> extends BuiltinView<D> {
+abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
   final String title;
   ElementRef dialog = ElementRef.scoped("dialog");

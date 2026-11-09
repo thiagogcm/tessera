@@ -4,8 +4,8 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 /// renders a `<span>`, or an `<a>` when given an [#href(String)].
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-badge-<n>`.
-public final class Badge extends BuiltinView<Badge> {
+public final class Badge extends BuiltinScope<Badge> {
 
   /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
   public enum Variant {
@@ -99,7 +99,7 @@ public final class Badge extends BuiltinView<Badge> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "tessera-badge";
   }
 
@@ -181,7 +181,7 @@ public final class Badge extends BuiltinView<Badge> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var cls =
         "badge badge--"
             + CssNames.of(tone)

@@ -1,7 +1,7 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Tone;
 import java.util.List;
 
@@ -40,7 +40,7 @@ public final class Button extends ButtonBase<Button> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var el = ButtonFace.element(this, false);
     if (content.isEmpty()) {
       el.text(label);

@@ -3,7 +3,7 @@ package dev.nthings.tessera.css;
 import com.google.errorprone.annotations.CheckReturnValue;
 
 /// A flex layout preset, applied with [Styled#layout(FlexLayout)]. The preset is copied into
-/// the element's [StyleRefinement], so a later declaration replaces only that property. Block and
+/// the element's [Declarations], so a later declaration replaces only that property. Block and
 /// inline layouts are separate choices.
 @CheckReturnValue
 public record FlexLayout(
@@ -30,7 +30,7 @@ public record FlexLayout(
   }
 
   /// Writes this layout's declarations into `style`; [Styled#layout(FlexLayout)] calls it.
-  void writeTo(StyleRefinement style) {
+  void writeTo(Declarations style) {
     style
         .put(CssProperty.DISPLAY, display)
         .put(CssProperty.FLEX_DIRECTION, direction)

@@ -4,7 +4,7 @@
 
 Add `dev.nthings:tessera-wasm` as a sibling Maven module providing a live browser backend for portable Tessera components. Compile application entry points and their reachable Java component code through GraalVM Web Image into WasmGC plus its required JavaScript launcher. Share component definitions, render/style callbacks, typed CSS and accessibility semantics with the JVM static backend rather than implementing a second widget library in JavaScript.
 
-This is a proposed design, not an implemented capability. Every verification checkbox below is pending. Completion requires executable evidence from the published browser application, not only JVM tests, successful AOT compilation or toolchain examples.
+This is a proposed design, not an implemented capability, and `tessera-wasm` is not on `main`. Every verification checkbox below is pending. Completion requires executable evidence from the published browser application, not only JVM tests, successful AOT compilation or toolchain examples. The static compiler on `main` is expand, link, validate, then emit.
 
 The module is independent of any agent, UI-description protocol or transport. It contains no A2UI, AG-UI or MCP types, schemas, catalogs, routing or function-dispatch rules. Applications can use it for ordinary forms, local interactive tools, dashboards and live regions inside static sites. Protocol renderers are downstream consumers, not prerequisites.
 
@@ -23,13 +23,13 @@ Breaking changes to core, components and compiler APIs are permitted. Replace su
 
 ## Architecture
 
-The [current architecture](architecture.md) remains the description of implemented behavior. The target architecture separates portable view expansion from output-specific lowering and persistent DOM state. `PreparedPage` stays an immutable static compilation result, not a live component store.
+The [current architecture](architecture.md) remains the description of implemented behavior. A browser turn runs the same expand, link and validate phases, then emits DOM from that linked tree. It is another writer, not a second layout engine, and it does not add `requestLayout`, prepaint or paint phases. `PreparedPage` stays an immutable static compilation result, not a live component store.
 
 ```mermaid
 flowchart TD
     StaticApp[Static application] --> Compiler[JVM page and site backend]
     BrowserApp[Browser application entry point] --> Wasm[tessera-wasm]
-    Compiler --> Shared[Portable Tessera components, views and CSS]
+    Compiler --> Shared[Portable Tessera components, scopes and CSS]
     Wasm --> Shared
     Wasm --> Interop[Internal Web Image host bridge]
     Interop --> DOM[Native DOM, events and browser services]
@@ -43,21 +43,21 @@ Solid arrows mean dependencies or host calls. Dashed arrows describe build and p
 
 | Layer | Contract |
 | --- | --- |
-| Portable `tessera` packages | Components, backend-neutral view snapshots, explicit render context, keys/references, typed properties/events, tokens/styles and resource descriptors. No Web Image or native DOM types in public signatures. |
-| JVM/static backend | Component expansion into linked static output, whole-document validation, HTML encoding, source diagnostics, site orchestration and publication. It must not initialize browser interop. |
+| Portable `tessera` packages | Components, the linked tree from expand, link and validate, explicit `DocumentContext`, keys and references, typed properties and events, tokens, styles and resource descriptors. No Web Image or native DOM types in public signatures. |
+| JVM/static backend | The same linked tree, emitted as HTML, plus whole-document validation, source diagnostics, site orchestration and publication. It must not initialize browser interop. |
 | `tessera-wasm` | Mounted roots, invalidation, scheduling, retained instances, DOM patching, event registration, cleanup and generic browser service adapters. Depends on portable Tessera, not the other way around. |
 | Internal Web Image bridge | `@JS`, `@JS.Coerce`, `JSObject`, launcher integration and conversions between typed Java contracts and native browser objects. These implementation details stay inside the module. |
 | Application | Browser entry point, state and event handlers, selected components, remote-service policy, mount configuration and application-specific resources. |
 
 Start with portable package boundaries inside the existing `tessera` artifact. Prove their AOT reachability and class-initialization closure. If the toolchain requires physical isolation before reachability pruning, split the portable artifact before adding browser features. Maven `optional` dependencies alone are not evidence of isolation.
 
-## Shared view and context contracts
+## Shared expansion and context
 
-Introduce a backend-neutral snapshot before the current [HTML-oriented resolved nodes](../tessera/src/main/java/dev/nthings/tessera/compiler/ResolvedNode.java). It represents elements, text and wrapper-free fragments, with sibling keys, attributes, typed native-property bindings, symbolic references, style definitions and event bindings. It contains no native node handles. Static lowering produces the existing linked output model; live lowering reconciles snapshots against mounted instances.
+The browser backend consumes the same linked tree the static backend emits as HTML: elements, text and wrapper-free fragments, with sibling keys, attributes, symbolic references and style definitions. Live bindings that HTML emit does not need, such as typed native properties and event handlers, belong on that tree. They are not a second snapshot and not a second layout engine. Static output emits HTML. Live output emits DOM and reconciles it against mounted instances.
 
-Rendering is repeatable: each turn produces a fresh snapshot from application state. Builder mutation constructs that snapshot; mutating a previously rendered builder does not update the DOM. Refactor components that mutate retained inputs while rendering, including [field reference wiring](../tessera/src/main/java/dev/nthings/tessera/components/Field.java), so repeated renders do not accumulate children, stale references or duplicate contributions.
+Each turn expands, links and validates a fresh tree from application state. Builder mutation constructs that tree; mutating a previously expanded builder does not update the DOM. [`TagElement.copy`](../tessera/src/main/java/dev/nthings/tessera/core/TagElement.java) already copies descendant elements, so [field](../tessera/src/main/java/dev/nthings/tessera/components/Field.java) and image wiring cannot touch the caller's children. A component that still mutates a retained input while expanding must not accumulate children, stale references or duplicate contributions across turns.
 
-Replace the [implicit compilation-only context](../tessera/src/main/java/dev/nthings/tessera/core/RenderContext.java) with an explicit context passed through expansion. It carries tokens, identity scope, resource/style registration and diagnostics for one render turn. Persistent mounted state, listeners and application data do not live in that context. Async completions request a new turn rather than retaining the old context.
+[`DocumentContext`](../tessera/src/main/java/dev/nthings/tessera/core/DocumentContext.java) is already the explicit context passed through expansion. A browser turn passes a fresh one. It carries the id scope, script and style registration, and diagnostics for that turn. Persistent mounted state, listeners and application data do not live in that context. Async completions request a new turn rather than retaining the old one. `DocumentContext` does not use `ScopedValue`. The only `ScopedValue` in the library is the JVM source-capture helper in `SourceProvenance`.
 
 Keep static document contributions, including head content, late references, headings and end sections, in the static backend. Shared components request semantic contributions through explicit contracts. A browser root resolves live references within its mounted scope and registers local resources; it does not rerun site generation or append document contributions on every update. Unsupported document-only contributions fail explicitly before mounting instead of disappearing silently.
 
@@ -82,7 +82,7 @@ Java event closures are callable only when compiled into the browser program. Th
 
 ### Reconciliation rules
 
-1. Expand and validate the candidate snapshot before changing the live tree. Reject duplicate sibling keys, invalid references and invalid semantic/property combinations without modifying the current view.
+1. Expand, link and validate the candidate tree before changing the live DOM. Reject duplicate sibling keys, invalid references and invalid semantic or property combinations without modifying the mounted tree.
 2. Match retained instances by parent scope, key and compatible element/component type. Unkeyed children use positional identity; require explicit keys for reorderable or stateful collections. Fragments retain an anchored DOM range so moving one moves all of its siblings together.
 3. Compute text, attribute, property, event and child-order changes. Publish required styles/resources before exposing new instances.
 4. Reuse compatible native nodes and move them without disposal. Replace incompatible instances; remove obsolete nodes and run their cleanup exactly once.
@@ -122,7 +122,7 @@ Disposal cancels queued work, removes listeners, releases Java/JavaScript callba
 
 ## Styles, assets and initialization
 
-Replace the single-module-string [client behavior contract](../tessera/src/main/java/dev/nthings/tessera/core/ClientBehavior.java) with a generic immutable resource graph. Describe entry points, binary/text files, content types, dependencies, load paths and integrity metadata. Keep bootstrap data separate from executable code. The static backend can publish a browser application without importing or invoking its interop classes.
+Replace the single-module-string [`PageScript`](../tessera/src/main/java/dev/nthings/tessera/core/PageScript.java) contract with a generic immutable resource graph. Describe entry points, binary and text files, content types, dependencies, load paths and integrity metadata. Keep bootstrap data separate from executable code. The static backend can publish a browser application without importing or invoking its interop classes. The three scripts on `main` stay page scripts: tabs, because HTML has no roving-tab widget; search filtering, because that is not HTML; and the interest tooltip, because it is a Firefox polyfill. Do not add an action or entity runtime to replace them.
 
 The application build compiles its selected Java entry point with Web Image and packages Wasm, required launcher, external bootstrap, CSS and referenced assets as one local distribution. Preserve tool-generated paths, or rewrite every affected graph edge consistently before hashing. A library JAR alone does not supply a closed-world image for arbitrary application callbacks. Debug artifacts and compiler intermediates are not public assets by default.
 
@@ -136,9 +136,8 @@ Web Image is the selected experimental target, not proof that the existing depen
 
 | Existing seam | Design action | Evidence required |
 | --- | --- | --- |
-| `RenderContext` uses `ScopedValue` | Use explicit turn context across shared expansion | Real compiled render/style callbacks enter separate turns without stale state |
 | `SourceTracking` initializes stack/class machinery even when tracking is off | Isolate JVM stack capture; portable diagnostics use explicit component/key paths and optional generated source metadata | Browser root initializes without reaching JVM stack/protection-domain services |
-| `View` default names use `ClassValue`; typed document keys use class metadata | Use stable explicit/generated definition keys where needed; verify remaining metadata operations | Deterministic keys and successful AOT/runtime tests, not inferred Java 25 support |
+| `Scope` default names use `ClassValue`; typed document keys use class metadata | Use stable explicit/generated definition keys where needed; verify remaining metadata operations | Deterministic keys and successful AOT/runtime tests, not inferred Java 25 support |
 | Stream gatherers, regex, CSS and encoding helpers | Audit exact reachable methods and libraries | Executed representative component/CSS fixtures in the browser |
 | Classpath-loaded behavior resources and component static fields | Build explicit resource manifests and separate JVM loaders | No runtime classpath fetch assumption or hidden initializer failure |
 | Site writer, preview server and virtual-thread orchestration | Keep outside browser entry-point reachability | Build analysis and final image inspection show no reachable JVM publication/server code |

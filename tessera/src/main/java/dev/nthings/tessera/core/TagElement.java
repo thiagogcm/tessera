@@ -1,9 +1,9 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
-import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.foundation.Decimals;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// HTML element node backed by a [TagName] and a [StyleRefinement]. Authors usually create one
+/// HTML element node backed by a [TagName] and a [Declarations]. Authors usually create one
 /// through the [Elements] factories.
 ///
 /// Besides the [Styled] methods and the child methods of [ParentElement], an element takes:
@@ -37,7 +37,7 @@ public final class TagElement
     implements Element, Styled<TagElement>, ParentElement<TagElement>, FluentBuilder<TagElement> {
 
   private final TagName tag;
-  private final StyleRefinement style = new StyleRefinement();
+  private final Declarations style = new Declarations();
   private final Map<String, String> attributes = new LinkedHashMap<>();
   private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   private final List<Element> children = new ArrayList<>();
@@ -58,19 +58,36 @@ public final class TagElement
     this.source = source;
   }
 
-  /// Copies this builder's configuration; child elements and reference identities are shared.
+  /// Copies this builder and every descendant element, so expansion can wire the copy without
+  /// writing the builder the caller still holds. [ElementRef] handles are the same objects: a ref
+  /// is an identity, not configuration. Component and scope instances nested in the tree are
+  /// shared.
   public TagElement copy() {
     var copy = new TagElement(tag, source);
     copy.style.mergeFrom(style);
     copy.attributes.putAll(attributes);
     copy.idReferences.putAll(idReferences);
-    copy.children.addAll(children);
+    for (var child : children) {
+      copy.children.add(detach(child));
+    }
     copy.refs.addAll(refs);
-    copy.interestTooltip = interestTooltip;
+    copy.interestTooltip = interestTooltip == null ? null : interestTooltip.copy();
     copy.anchorSelf = anchorSelf;
     copy.anchorTarget = anchorTarget;
     copy.transitionKey = transitionKey;
     return copy;
+  }
+
+  /// A copy of `element` when it owns descendant elements, otherwise `element` itself.
+  static Element detach(Element element) {
+    return switch (element) {
+      case TagElement tag -> tag.copy();
+      case FragmentElement fragment -> fragment.copy();
+      case KeyedElement keyed -> new KeyedElement(keyed.key(), detach(keyed.content()));
+      case DeferredElement deferred ->
+          new DeferredElement(detach(deferred.child()), deferred.priority());
+      default -> element;
+    };
   }
 
   @Override
@@ -89,7 +106,7 @@ public final class TagElement
   }
 
   @Override
-  public StyleRefinement style() {
+  public Declarations style() {
     return style;
   }
 

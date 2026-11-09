@@ -1,4 +1,4 @@
-/// Typed CSS authoring. Element builders and [StyleRefinement] implement [Styled], the one style
+/// Typed CSS authoring. Element builders and [Declarations] implement [Styled], the one style
 /// trait: its methods take typed [CssValue]s such as [CssLength], [CssColor], [Border] and
 /// [TrackList], built with each type's static factories. The last call wins, and writing a
 /// shorthand removes the longhands it covers. Style callbacks and reusable presets are
@@ -13,9 +13,9 @@
 ///
 /// Design tokens ([Tokens], [DesignToken]) are custom properties usable wherever a value of their
 /// category is accepted; an immutable [Theme] sets their values with type-checked
-/// `Theme.defaults().with(token, value)`. CSS limited to a view scope goes through [ScopeStyle] in
-/// `View#configureScope`. Value factories that take constrained input validate it eagerly, throwing
-/// IllegalArgumentException. [StyleSheet] is the compiler-facing stylesheet builder.
+/// `Theme.defaults().with(token, value)`. CSS limited to an id scope goes through [ScopeStyle] in
+/// `Scope#configureScope`. Value factories that take constrained input validate it eagerly and
+/// throw IllegalArgumentException. [StyleSheet] is the compiler-facing stylesheet builder.
 @NullMarked
 package dev.nthings.tessera.css;
 

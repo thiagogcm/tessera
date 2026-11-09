@@ -1,9 +1,9 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
@@ -19,7 +19,7 @@ import java.util.List;
 /// [#of(IntoElement...)] for steps with markup.
 ///
 /// Without an [#id(String)], the compiler numbers instances `step-list-<n>`.
-public final class StepList extends BuiltinView<StepList> {
+public final class StepList extends BuiltinScope<StepList> {
 
   private static final Counter STEP = Counter.named("step");
   private static final CustomProperty STEP_INDEX = CustomProperty.named("step-index");
@@ -47,7 +47,7 @@ public final class StepList extends BuiltinView<StepList> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "step-list";
   }
 
@@ -89,7 +89,7 @@ public final class StepList extends BuiltinView<StepList> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     return Elements.ol().children(ListItems.wrap(steps));
   }
 }

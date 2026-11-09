@@ -6,9 +6,9 @@ import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Section;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -92,7 +92,7 @@ final class Demo implements Component {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  public Element expand(DocumentContext context) {
     var stageItems = new ArrayList<IntoElement>(examples);
     var fresh = stage;
     if (fresh != null) {

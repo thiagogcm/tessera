@@ -6,8 +6,8 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ul;
 
 import dev.nthings.tessera.core.AriaCurrent;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -22,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 /// `aria-current="page"` and an underline that slides between links.
 ///
 /// Without an [#id(String)], the compiler numbers instances `nav-tabs-<n>`.
-public final class NavTabs extends BuiltinView<NavTabs> {
+public final class NavTabs extends BuiltinScope<NavTabs> {
 
   /// The active link's anchor; each bar's underline is positioned inside its own list.
   private static final Anchor ACTIVE = Anchor.named("tessera-active-nav");
@@ -54,7 +54,7 @@ public final class NavTabs extends BuiltinView<NavTabs> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "nav-tabs";
   }
 
@@ -94,7 +94,7 @@ public final class NavTabs extends BuiltinView<NavTabs> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var list = ul();
     for (var item : links) {
       var isActive = item.href().equals(active);

@@ -6,8 +6,8 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
 
 import dev.nthings.tessera.core.AriaCurrent;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -20,7 +20,7 @@ import java.util.List;
 /// Separators are decorative, so screen readers skip them.
 ///
 /// Without an [#id(String)], the compiler numbers instances `breadcrumbs-<n>`.
-public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
+public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
 
   private final List<Link> links;
   private String label = "Breadcrumb";
@@ -50,7 +50,7 @@ public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "breadcrumbs";
   }
 
@@ -85,7 +85,7 @@ public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var list = ol();
     for (var i = 0; i < links.size(); i++) {
       var isCurrent = i == links.size() - 1;

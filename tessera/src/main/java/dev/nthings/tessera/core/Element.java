@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Any node in a Tessera view tree. Authors build elements through [Elements] and get back
+/// Any node in a Tessera element tree. Authors build elements through [Elements] and get back
 /// [TagElement], [FragmentElement] or plain `Element`; the other variants are compiler-facing.
 public sealed interface Element extends IntoElement
     permits TagElement,
@@ -11,7 +11,7 @@ public sealed interface Element extends IntoElement
         LateElement,
         EmptyElement,
         ComponentElement,
-        ViewElement,
+        ScopeElement,
         KeyedElement {
 
   @Override

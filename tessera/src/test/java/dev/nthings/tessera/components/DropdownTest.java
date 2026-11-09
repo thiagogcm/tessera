@@ -22,7 +22,7 @@ class DropdownTest {
     var dropdown =
         Dropdown.of("Actions")
             .id("actions-menu")
-            .item(Dropdown.Item.link("/logs", "View Logs").shortcut("G L"))
+            .item(Dropdown.Item.link("/logs", "Scope Logs").shortcut("G L"))
             .item(Dropdown.Item.link("/status", "Status"))
             .separator()
             .item(
@@ -44,11 +44,11 @@ class DropdownTest {
   }
 
   @Test
-  @DisplayName("exposes its panel to invokers outside the view")
+  @DisplayName("exposes its panel to invokers outside the scope")
   void exposesItsPanelToInvokersOutsideTheView() {
     var reference = ElementRef.scoped("tools-panel");
     var dropdown =
-        Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "View Logs"));
+        Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "Scope Logs"));
     var outside =
         renderMain(
             dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));

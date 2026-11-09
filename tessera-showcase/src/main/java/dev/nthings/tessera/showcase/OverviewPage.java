@@ -62,25 +62,34 @@ final class OverviewPage {
         ContentTabs.of("Compiler phases")
             .id("pipeline")
             .tab(
-                "1. requestLayout",
+                "expand",
+                "1. Expand",
                 p().textWrap(TextWrap.PRETTY)
                     .text(
-                        "Expands Component and View trees under a ScopedValue render"
-                            + " context, binds ElementRefs to scoped DOM ids, and interns"
-                            + " every style into content-hashed utility classes."))
+                        "Expands Component and Scope trees with an explicit DocumentContext,"
+                            + " binds ElementRefs to scoped DOM ids, and interns every style"
+                            + " into content-hashed utility classes."))
             .tab(
-                "2. prepaint",
+                "link",
+                "2. Link",
                 p().textWrap(TextWrap.PRETTY)
                     .text(
-                        "Resolves late elements (tables of contents, endnotes), links id"
-                            + " references, and rejects inaccessible markup, dangling"
-                            + " invokers, duplicate ids and broken #fragment links."))
+                        "Resolves late elements (tables of contents, endnotes), fragments and"
+                            + " id references such as for, commandfor and aria-*."))
             .tab(
-                "3. paint",
+                "validate",
+                "3. Validate",
                 p().textWrap(TextWrap.PRETTY)
                     .text(
-                        "Streams OWASP-encoded HTML and a single deduplicated stylesheet"
-                            + " ordered by cascade layer, shared by every page of the site."));
+                        "Rejects inaccessible markup, dangling invokers, duplicate ids and"
+                            + " broken #fragment links before any HTML is written."))
+            .tab(
+                "emit",
+                "4. Emit",
+                p().textWrap(TextWrap.PRETTY)
+                    .text(
+                        "Writes OWASP-encoded HTML and one deduplicated stylesheet ordered by"
+                            + " cascade layer, shared by every page of the site."));
 
     var guarantees =
         DescriptionList.of()

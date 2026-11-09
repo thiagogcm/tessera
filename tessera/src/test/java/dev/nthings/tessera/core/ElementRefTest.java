@@ -25,21 +25,21 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ElementRefTest {
 
   /// Wraps content in a nested scope for tests.
-  record Panel(String id, Element content) implements View {
+  record Panel(String id, Element content) implements Scope {
 
     @Override
-    public String viewId() {
+    public String scopeId() {
       return id;
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return div().child(content);
     }
   }
 
   @Test
-  @DisplayName("resolves to its bind-site scope from an invoker in another view")
+  @DisplayName("resolves to its bind-site scope from an invoker in another scope")
   void resolvesToBindSiteScopeFromInvokerInAnotherView() {
     var target = ElementRef.scoped("confirm");
 
@@ -100,8 +100,8 @@ class ElementRefTest {
   }
 
   @Test
-  @DisplayName("a page ref keeps its literal id inside a view")
-  void pageRefIgnoresViewScope() {
+  @DisplayName("a page ref keeps its literal id inside an id scope")
+  void pageRefIgnoresIdScope() {
     var section = ElementRef.page("installation");
 
     var page =

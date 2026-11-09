@@ -33,20 +33,20 @@ class ElementSurfaceTest {
         .withMessageContaining("interactive-label");
   }
 
-  record Rows() implements View {
+  record Rows() implements Scope {
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return fragment().children(li().text("One"), li().text("Two"));
     }
   }
 
   @Test
-  @DisplayName("a view rooted in a fragment is hosted by one div carrying its data-view")
+  @DisplayName("a scope rooted in a fragment is hosted by one div carrying its data-scope")
   void fragmentRootedViewGetsOneHost() {
     var page = renderMain(ul().child(new Rows()));
 
-    assertThat(page.elements("ul > div[data-view=rows]")).hasSize(1);
-    assertThat(page.elements("ul > div[data-view=rows] > li")).hasSize(2);
+    assertThat(page.elements("ul > div[data-scope=rows]")).hasSize(1);
+    assertThat(page.elements("ul > div[data-scope=rows] > li")).hasSize(2);
   }
 
   @Test

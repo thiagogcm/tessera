@@ -13,11 +13,11 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
+import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.State;
-import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
@@ -119,7 +119,7 @@ public final class Forms {
   }
 
   /// Labelled switch row, off on load: the visible `label` names the switch. The switch's id is
-  /// `switch-<name>` in the enclosing view scope, so two switches with the same name in one view
+  /// `switch-<name>` in the enclosing id scope, so two switches with the same name in one id
   /// scope report `duplicate-id`.
   public static TagElement switchField(String label, String name) {
     return switchRow(label, name, switchInput(name));
@@ -161,7 +161,7 @@ public final class Forms {
         .fontSize(Tokens.FONT_SIZE_SM);
   }
 
-  static StyleRefinement controlFocusRing(StyleRefinement s) {
+  static Declarations controlFocusRing(Declarations s) {
     return s.outline(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY))
         .outlineOffset(CssLength.px(1));
   }

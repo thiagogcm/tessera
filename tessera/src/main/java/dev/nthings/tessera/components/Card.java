@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
@@ -33,7 +33,7 @@ import org.jspecify.annotations.Nullable;
 ///   [#checked()] starts a radio or checkbox card checked, in any call order.
 ///
 /// Without an [#id(String)], the compiler numbers instances `card-<n>`.
-public final class Card extends BuiltinView<Card> {
+public final class Card extends BuiltinScope<Card> {
 
   /// How a card responds to interaction; a card without one has only its own content.
   private sealed interface Interaction {}
@@ -145,7 +145,7 @@ public final class Card extends BuiltinView<Card> {
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "card";
   }
 
@@ -231,7 +231,7 @@ public final class Card extends BuiltinView<Card> {
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var current = interaction;
     var root =
         current instanceof Choice choice

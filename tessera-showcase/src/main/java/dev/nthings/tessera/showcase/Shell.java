@@ -19,9 +19,9 @@ import dev.nthings.tessera.components.SimpleTable;
 import dev.nthings.tessera.components.StickyHeader;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -39,7 +39,7 @@ record Shell(Page page) implements Component {
       CssLength.fluid(CssLength.rem(1), CssLength.cqi(3), CssLength.rem(2));
 
   @Override
-  public Element render(RenderContext context) {
+  public Element expand(DocumentContext context) {
     var pages = ShowcaseSite.pages();
     var inspector =
         Drawer.of("Compiler & Cascade Inspector")
@@ -50,7 +50,7 @@ record Shell(Page page) implements Component {
                     .term(
                         "Cascade",
                         "@layer reset, base, theme, components, utilities, interactive, container")
-                    .term("Isolation", "@scope ([data-view]) to (:scope [data-view] > *)")
+                    .term("Isolation", "@scope ([data-scope]) to (:scope [data-scope] > *)")
                     .term("Top layer", "<dialog>, [popover], @starting-style")
                     .term(
                         "JavaScript",
@@ -58,9 +58,10 @@ record Shell(Page page) implements Component {
                 SimpleTable.of()
                     .caption("Compiler phases")
                     .headers("Phase", "Responsibility")
-                    .row("1. requestLayout", "Expand views, bind ElementRefs, intern styles")
-                    .row("2. prepaint", "Link id references, verify accessibility and links")
-                    .row("3. paint", "Stream encoded HTML and one shared stylesheet"));
+                    .row("1. Expand", "Expand components, bind ElementRefs, intern styles")
+                    .row("2. Link", "Resolve late content, fragments and id references")
+                    .row("3. Validate", "Check accessibility, links, duplicates and invokers")
+                    .row("4. Emit", "Write encoded HTML and one shared stylesheet"));
 
     var search =
         SearchPalette.of()

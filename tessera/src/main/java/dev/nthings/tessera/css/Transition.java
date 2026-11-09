@@ -74,7 +74,7 @@ public record Transition(
   }
 
   /// Writes the transition declarations to `style`; [Styled#transition(Transition)] calls it.
-  void writeTo(StyleRefinement style) {
+  void writeTo(Declarations style) {
     style
         .put(CssProperty.TRANSITION_PROPERTY, properties)
         .put(CssProperty.TRANSITION_DURATION, duration)

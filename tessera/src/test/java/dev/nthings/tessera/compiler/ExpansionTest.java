@@ -17,13 +17,13 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.KeyedElement;
-import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.support.RenderedPage;
 import java.util.List;
 import java.util.stream.Stream;
@@ -33,36 +33,36 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-@DisplayName("View expansion")
-class ViewExpansionTest {
+@DisplayName("Scope expansion")
+class ExpansionTest {
 
-  private record Box(String name, Element content) implements View {
+  private record Box(String name, Element content) implements Scope {
     @Override
-    public String viewId() {
+    public String scopeId() {
       return name;
     }
 
     @Override
-    public String viewType() {
+    public String scopeName() {
       return "box";
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       return div().child(content);
     }
   }
 
   private record Exploding() implements Component {
     @Override
-    public Element render(RenderContext context) {
+    public Element expand(DocumentContext context) {
       throw new IllegalStateException("Broken render");
     }
   }
 
   @Test
-  @DisplayName("numbers generated ids within each view, so one view never renumbers another")
-  void numbersGeneratedIdsWithinEachView() {
+  @DisplayName("numbers generated ids within each scope, so one scope never renumbers another")
+  void numbersGeneratedIdsWithinEachScope() {
     var single =
         RenderedPage.render(
             main()
@@ -80,14 +80,14 @@ class ViewExpansionTest {
                                 p().id(ElementRef.anonymous()), p().id(ElementRef.anonymous()))),
                     new Box("second", p().id(ElementRef.anonymous()))));
 
-    var second = single.element("[data-view-id=second] p").id();
+    var second = single.element("[data-scope-id=second] p").id();
     assertThat(second).endsWith("-p-1");
-    assertThat(grown.element("[data-view-id=second] p").id()).isEqualTo(second);
+    assertThat(grown.element("[data-scope-id=second] p").id()).isEqualTo(second);
   }
 
   @Test
-  @DisplayName("a failing render callback keeps its exception and names its component")
-  void aFailingRenderCallbackKeepsItsExceptionAndNamesItsComponent() {
+  @DisplayName("a failing expand callback keeps its exception and names its component")
+  void aFailingExpandCallbackKeepsItsExceptionAndNamesItsComponent() {
     var failure =
         catchThrowable(
             () ->
@@ -105,7 +105,7 @@ class ViewExpansionTest {
                         "[callback-failure]",
                         "page \"Broken\"",
                         "box[outer] > Exploding",
-                        "Render callback failed: Broken render"));
+                        "Expand callback failed: Broken render"));
   }
 
   @Test
@@ -138,13 +138,13 @@ class ViewExpansionTest {
   /// A component that returns another component, with no `.intoElement()` in between.
   private record Wrapper(String text) implements Component {
     @Override
-    public IntoElement render(RenderContext context) {
+    public IntoElement expand(DocumentContext context) {
       return (Component) _ -> p().text(text);
     }
   }
 
   @Test
-  @DisplayName("a component may return another component from render")
+  @DisplayName("a component may return another component from expand")
   void componentMayReturnAComponent() {
     var page = RenderedPage.render(main().child(new Wrapper("nested")));
 
@@ -152,11 +152,11 @@ class ViewExpansionTest {
   }
 
   static Stream<Arguments> unstableViews() {
-    View lambda = _ -> p().text("lambda");
+    Scope lambda = _ -> p().text("lambda");
     var anonymous =
-        new View() {
+        new Scope() {
           @Override
-          public IntoElement render(RenderContext context) {
+          public IntoElement expand(DocumentContext context) {
             return p().text("anonymous");
           }
         };
@@ -165,8 +165,8 @@ class ViewExpansionTest {
 
   @ParameterizedTest
   @MethodSource("unstableViews")
-  @DisplayName("a view without a stable class name and the default viewType is reported")
-  void reportsUnstableViewType(View view) {
+  @DisplayName("a scope without a stable class name and the default scopeName is reported")
+  void reportsUnstableViewType(Scope view) {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -174,28 +174,28 @@ class ViewExpansionTest {
 
     assertThat(failure.diagnostics())
         .extracting(Diagnostic::rule)
-        .containsExactly("unstable-view-type");
+        .containsExactly("unstable-scope-name");
   }
 
   @Test
-  @DisplayName("an anonymous view that names its viewType compiles")
+  @DisplayName("an anonymous scope that names its scopeName compiles")
   void anonymousViewWithViewTypeCompiles() {
     var named =
-        new View() {
+        new Scope() {
           @Override
-          public String viewType() {
+          public String scopeName() {
             return "inline-note";
           }
 
           @Override
-          public IntoElement render(RenderContext context) {
+          public IntoElement expand(DocumentContext context) {
             return p().text("named");
           }
         };
 
     var page = RenderedPage.render(main().child(named));
 
-    assertThat(page.element("[data-view=inline-note]").text()).isEqualTo("named");
+    assertThat(page.element("[data-scope=inline-note]").text()).isEqualTo("named");
   }
 
   @Test
@@ -254,8 +254,7 @@ class ViewExpansionTest {
   }
 
   private static RenderedPage cards(List<String> names) {
-    return RenderedPage.render(
-        main().children(names.stream().map(ViewExpansionTest::card).toList()));
+    return RenderedPage.render(main().children(names.stream().map(ExpansionTest::card).toList()));
   }
 
   @Test
@@ -346,7 +345,7 @@ class ViewExpansionTest {
 
   /// A list of [#card]s whose parent is bound to the given refs, if any.
   private static Element list(List<String> names, ElementRef... parent) {
-    var list = Elements.section().children(names.stream().map(ViewExpansionTest::card).toList());
+    var list = Elements.section().children(names.stream().map(ExpansionTest::card).toList());
     for (var ref : parent) {
       list.id(ref);
     }
@@ -378,7 +377,7 @@ class ViewExpansionTest {
 
   @Test
   @DisplayName(
-      "keyed lists in one view that reuse a key collide, and naming their parents fixes it")
+      "keyed lists in one scope that reuse a key collide, and naming their parents fixes it")
   void keyedListsSharingKeysNeedNamedParents() {
     var failure =
         catchThrowableOfType(
@@ -417,7 +416,7 @@ class ViewExpansionTest {
   /// A component whose scoped ref and diagnostic show which scope and path it renders in.
   private record Note(String text) implements Component {
     @Override
-    public IntoElement render(RenderContext context) {
+    public IntoElement expand(DocumentContext context) {
       context.report("note-rendered", "Rendered " + text, "Nothing to fix.");
       return p().id(ElementRef.scoped("note")).text(text);
     }
@@ -453,5 +452,174 @@ class ViewExpansionTest {
     var id = alone.element("p").id();
     assertThat(id).endsWith("--note").doesNotContain("----");
     assertThat(behind.elements("p").last().id()).isEqualTo(id);
+  }
+
+  /// A scope that leaves `scopeId` unset, so the compiler numbers it.
+  private record Open(IntoElement content) implements Scope {
+    @Override
+    public Element expand(DocumentContext context) {
+      return div().child(content);
+    }
+  }
+
+  @Test
+  @DisplayName("keyed content inside a scope without scopeId reports generated-scope-id")
+  void keyedContentInsideAGeneratedScopeIsReported() {
+    var alone =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> Compiler.compile(new PageDocument("Keys", main().child(new Open(p().key("a"))))));
+
+    assertThat(alone.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("generated-scope-id");
+              assertThat(d.message()).contains("open-1");
+              assertThat(d.fix()).contains("scopeId()");
+            });
+
+    var behind =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                Compiler.compile(
+                    new PageDocument(
+                        "Keys",
+                        main().children(new Open(p().text("First")), new Open(p().key("a"))))));
+
+    assertThat(behind.diagnostics())
+        .singleElement()
+        .satisfies(d -> assertThat(d.message()).contains("open-2"));
+  }
+
+  @Test
+  @DisplayName("an explicit scopeId keeps keyed content inside that scope")
+  void explicitScopeIdAllowsKeyedContent() {
+    var page =
+        RenderedPage.render(
+            main().child(new Box("cards", p().id(ElementRef.scoped("body")).key("a"))));
+
+    assertThat(page.element("p").id()).startsWith("cards--");
+  }
+
+  @Test
+  @DisplayName("a generated parent id still numbers keyed content in an explicit child scope")
+  void generatedParentIdReachesKeyedContent() {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                Compiler.compile(
+                    new PageDocument(
+                        "Keys", main().child(new Open(new Box("inner", p().key("a")))))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("generated-scope-id");
+              assertThat(d.message()).contains("open-1--inner");
+            });
+  }
+
+  /// A scope whose expand result is the keyed element, with nothing wrapped around the key.
+  private record KeyedOpen() implements Scope {
+    @Override
+    public Element expand(DocumentContext context) {
+      return article().key("a");
+    }
+  }
+
+  /// A component whose expand result is keyed.
+  private record KeyedNote() implements Component {
+    @Override
+    public Element expand(DocumentContext context) {
+      return p().key("a");
+    }
+  }
+
+  @Test
+  @DisplayName("a generated scope whose expand result is keyed reports generated-scope-id")
+  void keyedExpandResultInsideAGeneratedScopeIsReported() {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> Compiler.compile(new PageDocument("Keys", main().child(new KeyedOpen()))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("generated-scope-id");
+              assertThat(d.message()).contains("keyed-open-1");
+            });
+  }
+
+  @Test
+  @DisplayName("a component that returns keyed content inside a generated scope is reported")
+  void componentReturningKeyedContentInsideAGeneratedScopeIsReported() {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                Compiler.compile(
+                    new PageDocument("Keys", main().child(new Open(new KeyedNote())))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("generated-scope-id");
+              assertThat(d.message()).contains("open-1");
+            });
+  }
+
+  @Test
+  @DisplayName("deferred keyed content inside a generated scope is reported")
+  void deferredKeyedContentInsideAGeneratedScopeIsReported() {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () ->
+                Compiler.compile(
+                    new PageDocument(
+                        "Keys", main().child(new Open(Elements.deferred(p().key("a")))))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("generated-scope-id");
+              assertThat(d.message()).contains("open-1");
+            });
+  }
+
+  @Test
+  @DisplayName("a generated scope id and the same explicit scopeId share one id counter")
+  void generatedAndExplicitScopeIdsShareOneCounter() {
+    var page =
+        RenderedPage.render(
+            main()
+                .children(
+                    new Open(p().id(ElementRef.anonymous())),
+                    new Box("open-1", p().id(ElementRef.anonymous()))));
+
+    assertThat(page.elements("p").eachAttr("id")).containsExactly("open-1--p-1", "open-1--p-2");
+  }
+
+  @Test
+  @DisplayName("a generated parent and an explicit scope with the same id share the nested counter")
+  void generatedParentAndExplicitScopeShareTheNestedCounter() {
+    var page =
+        RenderedPage.render(
+            main()
+                .children(
+                    new Open(new Box("inner", p().id(ElementRef.anonymous()))),
+                    new Box(
+                        "open-1", new Box("inner", p().id(ElementRef.anonymous())).intoElement())));
+
+    assertThat(page.elements("p").eachAttr("id"))
+        .containsExactly("open-1--inner--p-1", "open-1--inner--p-2");
   }
 }

@@ -2,7 +2,7 @@
 ///
 /// - One page: [Compiler#compile(PageDocument)] returns a [CompiledPage] with inline CSS. Pass
 ///   `Tokens` and [OutputMode#external(String)] to theme it and emit a content-hashed stylesheet
-///   and client behavior modules as [Asset]s; publish every asset at its path.
+///   and page scripts as [Asset]s; publish every asset at its path.
 /// - A site: describe routes and files with [SiteDefinition#builder()], compile them with
 ///   [Compiler#compile(SiteDefinition)], then write the [CompiledSite] with [SiteWriter] or serve
 ///   it locally with [SitePreviewServer]. Site compilation checks links, fragments and transition

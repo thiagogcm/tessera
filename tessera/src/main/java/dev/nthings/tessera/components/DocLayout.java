@@ -3,10 +3,10 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.aside;
 import static dev.nthings.tessera.core.Elements.div;
 
+import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssColor;
@@ -26,7 +26,7 @@ import java.util.List;
 /// the layout.
 ///
 /// Without an [#id(String)], the compiler numbers instances `doc-layout-<n>`.
-public final class DocLayout extends BuiltinView<DocLayout> implements ParentElement<DocLayout> {
+public final class DocLayout extends BuiltinScope<DocLayout> implements ParentElement<DocLayout> {
 
   private static final Container LAYOUT = Container.unnamed(Container.Type.INLINE_SIZE);
 
@@ -57,7 +57,7 @@ public final class DocLayout extends BuiltinView<DocLayout> implements ParentEle
   }
 
   @Override
-  String viewType() {
+  String scopeName() {
     return "doc-layout";
   }
 
@@ -127,7 +127,7 @@ public final class DocLayout extends BuiltinView<DocLayout> implements ParentEle
   }
 
   @Override
-  IntoElement render(RenderContext context) {
+  IntoElement expand(DocumentContext context) {
     var proseCol = div().attr("class", "doc-prose-col").flex().flexCol().gap(Tokens.SPACE_10);
     proseCol.children(sections);
     var sidebar = aside().attr("class", "doc-toc-rail").child(TableOfContents.of(tocTitle));

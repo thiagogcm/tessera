@@ -108,7 +108,7 @@ class ButtonTest {
   }
 
   @Test
-  @DisplayName("a button binds and targets refs in the enclosing view scope")
+  @DisplayName("a button binds and targets refs in the enclosing id scope")
   void refsResolveInTheCallersScope() {
     var save = ElementRef.scoped("save");
     var panel = ElementRef.scoped("panel");
@@ -124,9 +124,9 @@ class ButtonTest {
     assertThat(page.element("button:contains(Save)"))
         .hasAttribute("id", "toolbar--save")
         .hasAttribute("commandfor", "toolbar--panel")
-        .doesNotHaveAttribute("data-view");
+        .doesNotHaveAttribute("data-scope");
     assertThat(page.element("button.button--icon")).hasAttribute("id", "toolbar--refresh");
-    assertThat(page.css()).doesNotContain("data-view=\"button");
+    assertThat(page.css()).doesNotContain("data-scope=\"button");
   }
 
   @Test

@@ -1,7 +1,7 @@
 package dev.nthings.tessera.core;
 
-/// Anything placeable as a child: an [Element], a [Component], a [View], or a built-in component.
-/// Render callbacks return it too, so a component can return another component directly.
+/// Anything placeable as a child: an [Element], a [Component], a [Scope], or a built-in component.
+/// Expand callbacks return it too, so a component can return another component directly.
 @FunctionalInterface
 public interface IntoElement {
 

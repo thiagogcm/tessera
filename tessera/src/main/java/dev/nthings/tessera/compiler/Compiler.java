@@ -5,7 +5,7 @@ import java.util.List;
 
 /// Compiles pages and sites. Every method throws [CompilationException] when it finds authoring
 /// errors, before any HTML is produced; each [Diagnostic] carries a stable rule code such as
-/// `duplicate-id` or `image-alt`. Exceptions thrown by render callbacks propagate unchanged.
+/// `duplicate-id` or `image-alt`. Exceptions thrown by expand callbacks propagate unchanged.
 public final class Compiler {
   private Compiler() {}
 
@@ -14,7 +14,7 @@ public final class Compiler {
     return compile(document, Theme.defaults(), OutputMode.inline());
   }
 
-  /// Compiles `document` with `theme`'s token values, packaging CSS and client behaviors as
+  /// Compiles `document` with `theme`'s token values, packaging CSS and page scripts as
   /// `outputMode` specifies. Under [OutputMode#external(String)] the caller must publish every
   /// asset of the result at its path.
   public static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
@@ -26,10 +26,10 @@ public final class Compiler {
   /// Routes are first checked for duplicate paths (`duplicate-route`) and for registered or
   /// generated files that share a path with a route or another file (`file-path-collision`);
   /// these stop compilation before any page renders. Pages are then prepared concurrently on
-  /// virtual threads, so render callbacks must not change shared application state. Once every
+  /// virtual threads, so expand callbacks must not change shared application state. Once every
   /// page compiles, links, fragments and transition keys are checked across pages, generated
   /// stylesheet and module paths are checked for collisions, the shared stylesheet is merged, and
-  /// pages are painted concurrently.
+  /// pages are emitted concurrently.
   ///
   /// Throws [CompilationException] with the route and file diagnostics, else with the page
   /// diagnostics in route order, else with the cross-route diagnostics.

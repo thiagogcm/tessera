@@ -12,24 +12,11 @@ public sealed interface DesignToken
         DesignToken.FontFamily,
         DesignToken.Number {
 
+  /// The custom property name without its leading `--`, such as `space-4`.
   String name();
 
+  /// The token's default value, emitted as `--name: <value>` on `:root`.
   CssValue value();
-
-  /// Compiler-facing: the right-hand side of the custom property declaration.
-  default String cssDefinition() {
-    return value().toCss();
-  }
-
-  /// Compiler-facing: the declared custom property name, `--name`.
-  default String customPropertyName() {
-    return "--" + name();
-  }
-
-  /// Compiler-facing: the `var(--name)` reference that components emit.
-  default String varReference() {
-    return "var(--" + name() + ")";
-  }
 
   /// A color token. Use [Color#lightDark] for a value that follows the color scheme.
   record Color(String name, CssColor value) implements DesignToken, CssColor {
@@ -40,7 +27,7 @@ public sealed interface DesignToken
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return varReference();
+      return Tokens.varReference(this);
     }
 
     /// Same token with a new value, for theme overrides.
@@ -73,7 +60,7 @@ public sealed interface DesignToken
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return varReference();
+      return Tokens.varReference(this);
     }
 
     /// Same token with a new value, for theme overrides.
@@ -95,7 +82,7 @@ public sealed interface DesignToken
 
     @Override
     public String toCss() {
-      return varReference();
+      return Tokens.varReference(this);
     }
 
     /// Same token with a new value, for theme overrides.
@@ -104,7 +91,7 @@ public sealed interface DesignToken
     }
   }
 
-  /// A font family token, used with [TextStyled#fontFamily(DesignToken.FontFamily)] or as a
+  /// A font family token, used with [Styled#fontFamily(DesignToken.FontFamily)] or as a
   /// [FontStack] entry.
   record FontFamily(String name, FontStack value) implements DesignToken, FontStack.Entry {
     public FontFamily {
@@ -114,7 +101,7 @@ public sealed interface DesignToken
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return varReference();
+      return Tokens.varReference(this);
     }
 
     /// Same token with a new value, for theme overrides.
@@ -141,7 +128,7 @@ public sealed interface DesignToken
 
     @Override
     public String toCss() {
-      return varReference();
+      return Tokens.varReference(this);
     }
 
     /// Same token with a new value, for theme overrides.

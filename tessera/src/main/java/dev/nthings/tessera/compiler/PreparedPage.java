@@ -2,7 +2,7 @@ package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.Set;
 /// it to check links across pages and to merge stylesheets before painting.
 final class PreparedPage {
   private final PageDocument document;
-  private final StyleSheetCollector styles;
+  private final StyleSheet styles;
   private final List<ResolvedNode> bodyNodes;
   private final List<ResolvedNode> headNodes;
   private final Set<String> registeredDomIds;
@@ -24,7 +24,7 @@ final class PreparedPage {
 
   PreparedPage(
       PageDocument document,
-      StyleSheetCollector styles,
+      StyleSheet styles,
       List<ResolvedNode> bodyNodes,
       Set<String> registeredDomIds,
       Map<String, Location> outgoingLinks,
@@ -88,11 +88,11 @@ final class PreparedPage {
 
   /// This page's own CSS under `tokens`, without any shared site stylesheet.
   String stylesheet(Tokens tokens) {
-    return styles.toCssStylesheet(tokens);
+    return styles.render(tokens);
   }
 
   /// Copies this page's CSS into `target`, a site-level stylesheet collector.
-  void contributeStylesTo(StyleSheetCollector target) {
+  void contributeStylesTo(StyleSheet target) {
     target.mergeFrom(styles);
   }
 }

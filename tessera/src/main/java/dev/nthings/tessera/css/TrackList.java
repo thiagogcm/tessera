@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /// The tracks of `grid-template-columns` or `grid-template-rows`. Applied with
-/// [LayoutStyled#gridColumns(TrackList)] or [LayoutStyled#gridRows(TrackList)].
+/// [Styled#gridColumns(TrackList)] or [Styled#gridRows(TrackList)].
 public record TrackList(List<GridTrack> tracks) implements CssValue {
 
   public TrackList {
@@ -30,14 +30,14 @@ public record TrackList(List<GridTrack> tracks) implements CssValue {
   public static TrackList autoFit(CssLength minWidth) {
     var floor = CssLength.min(CssLength.pct(100), minWidth);
     return of(
-        new GridTrack.AutoRepeat(
-            GridTrack.AutoCount.AUTO_FIT,
+        new GridTracks.AutoRepeat(
+            GridTracks.AutoCount.AUTO_FIT,
             List.of(GridTrack.minmax(GridTrack.length(floor), GridTrack.fr(1)))));
   }
 
   /// `subgrid`: inherits the tracks of the parent grid.
   public static TrackList subgrid() {
-    return new TrackList(List.of(GridTrack.Keyword.SUBGRID));
+    return new TrackList(List.of(GridTracks.Keyword.SUBGRID));
   }
 
   @Override

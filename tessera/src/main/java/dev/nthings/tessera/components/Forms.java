@@ -18,14 +18,17 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Appearance;
 import dev.nthings.tessera.css.Background;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
+import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.StyleRefinement;
@@ -83,7 +86,7 @@ public final class Forms {
     return controlChrome(textarea().attr("name", name))
         .fieldSizingContent()
         .minBlockSize(CssLength.lh(minRows).plus(CssLength.rem(1)))
-        .resizeVertical()
+        .resize(Resize.VERTICAL)
         .focusVisible(Forms::controlFocusRing)
         .userInvalid(s -> s.borderColor(Tokens.STATUS_DANGER))
         .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
@@ -98,12 +101,12 @@ public final class Forms {
         .attr("name", name)
         .role(Role.SWITCH)
         .boolAttr("checked", checked)
-        .appearanceNone()
+        .appearance(Appearance.NONE)
         .inlineSize(CssLength.rem(2.5))
         .blockSize(CssLength.rem(1.5))
         .rounded(Tokens.RADIUS_FULL)
         .background(switchTrack(CssLength.zero(), Tokens.BORDER_SUBTLE))
-        .cursorPointer()
+        .cursor(Cursor.POINTER)
         .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .checked(s -> s.background(switchTrack(CssLength.pct(100), Tokens.ACCENT_PRIMARY)))
         .motionSafe(s -> s.motion(Motion.controlFeedback().properties(Animatable.BACKGROUND)));
@@ -145,7 +148,7 @@ public final class Forms {
                 .labelFor(sw.ref())
                 .typography(Roles.LABEL)
                 .textColor(Tokens.CONTROL_FG)
-                .cursorPointer()
+                .cursor(Cursor.POINTER)
                 .text(labelText))
         .child(sw);
   }
@@ -295,7 +298,7 @@ public final class Forms {
                       .absolute()
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
+                      .border(Border.hairline(Tokens.BORDER_SUBTLE))
                       .rounded(Tokens.RADIUS_MD)
                       .px(CssLength.rem(0.6))
                       .py(CssLength.rem(0.3))
@@ -373,15 +376,15 @@ public final class Forms {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> controlChrome(s.appearanceBaseSelect()).cursorPointer())
+          .root(s -> controlChrome(s.appearance(Appearance.BASE_SELECT)).cursor(Cursor.POINTER))
           .select(":scope:focus-visible", Forms::controlFocusRing)
           .select(
               ":scope::picker(select)",
               s ->
-                  s.appearanceBaseSelect()
+                  s.appearance(Appearance.BASE_SELECT)
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
+                      .border(Border.hairline(Tokens.BORDER_SUBTLE))
                       .rounded(Tokens.RADIUS_LG)
                       .p(Tokens.SPACE_1_5)
                       .shadow(
@@ -397,7 +400,7 @@ public final class Forms {
                       .py(Tokens.SPACE_2)
                       .rounded(Tokens.RADIUS_MD)
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .cursorPointer())
+                      .cursor(Cursor.POINTER))
           .select(":scope option:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
           .select(":scope option::checkmark", s -> s.textColor(Tokens.ACCENT_PRIMARY))
           .select(":scope::picker-icon", s -> s.textColor(Tokens.TEXT_MUTED));
@@ -410,7 +413,7 @@ public final class Forms {
         .px(Tokens.CONTROL_PADDING_INLINE)
         .py(Tokens.SPACE_2)
         .rounded(Tokens.RADIUS_LG)
-        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .border(Border.hairline(Tokens.BORDER_SUBTLE))
         .bg(Tokens.SURFACE_CARD)
         .textColor(Tokens.TEXT_PRIMARY)
         .fontSize(Tokens.FONT_SIZE_SM);

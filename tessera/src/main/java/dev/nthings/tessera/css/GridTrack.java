@@ -2,98 +2,52 @@ package dev.nthings.tessera.css;
 
 import java.util.List;
 
-/// One entry of a [TrackList].
+/// One entry of a [TrackList]. Build values with the static factories.
 public sealed interface GridTrack extends CssValue
-    permits GridTrack.Fr,
-        GridTrack.Size,
-        GridTrack.Keyword,
-        GridTrack.MinMax,
-        GridTrack.Repeat,
-        GridTrack.AutoRepeat {
-
-  /// A flexible track, `<n>fr`.
-  record Fr(double fraction) implements GridTrack {
-    @Override
-    public String toCss() {
-      return CssLength.formatNumber(fraction) + "fr";
-    }
-  }
-
-  record Size(CssLength length) implements GridTrack {
-    @Override
-    public String toCss() {
-      return length.toCss();
-    }
-  }
-
-  /// Intrinsic sizing keywords, or `subgrid` (inherits the parent's tracks).
-  enum Keyword implements GridTrack, CssKeyword {
-    AUTO,
-    MIN_CONTENT,
-    MAX_CONTENT,
-    SUBGRID
-  }
-
-  /// `minmax(min, max)`.
-  record MinMax(GridTrack min, GridTrack max) implements GridTrack {
-    @Override
-    public String toCss() {
-      return "minmax(" + min.toCss() + ", " + max.toCss() + ")";
-    }
-  }
-
-  /// `repeat(count, tracks)`.
-  record Repeat(int count, List<GridTrack> tracks) implements GridTrack {
-    public Repeat {
-      if (count < 1) {
-        throw new IllegalArgumentException("Repeat count must be positive: " + count);
-      }
-      tracks = List.copyOf(tracks);
-    }
-
-    @Override
-    public String toCss() {
-      return "repeat(" + count + ", " + TrackList.joined(tracks) + ")";
-    }
-  }
-
-  /// How many tracks an [AutoRepeat] creates.
-  enum AutoCount implements CssKeyword {
-    AUTO_FIT,
-    AUTO_FILL
-  }
-
-  /// `repeat(auto-fit | auto-fill, tracks)`.
-  record AutoRepeat(AutoCount count, List<GridTrack> tracks) implements GridTrack {
-    public AutoRepeat {
-      tracks = List.copyOf(tracks);
-    }
-
-    @Override
-    public String toCss() {
-      return "repeat(" + count.toCss() + ", " + TrackList.joined(tracks) + ")";
-    }
-  }
+    permits GridTracks.Fr,
+        GridTracks.Size,
+        GridTracks.Keyword,
+        GridTracks.MinMax,
+        GridTracks.Repeat,
+        GridTracks.AutoRepeat {
 
   /// `minmax(0, 1fr)`: an equal share that may shrink below its content.
   static GridTrack flexible() {
     return minmax(length(CssLength.zero()), fr(1));
   }
 
+  /// A flexible track, `<fraction>fr`.
   static GridTrack fr(double fraction) {
-    return new Fr(fraction);
+    return new GridTracks.Fr(fraction);
   }
 
+  /// A fixed track of `length`.
   static GridTrack length(CssLength length) {
-    return new Size(length);
+    return new GridTracks.Size(length);
   }
 
+  /// `auto`.
+  static GridTrack auto() {
+    return GridTracks.Keyword.AUTO;
+  }
+
+  /// `min-content`: the track's smallest content contribution.
+  static GridTrack minContent() {
+    return GridTracks.Keyword.MIN_CONTENT;
+  }
+
+  /// `max-content`: the track's largest content contribution.
+  static GridTrack maxContent() {
+    return GridTracks.Keyword.MAX_CONTENT;
+  }
+
+  /// `minmax(min, max)`.
   static GridTrack minmax(GridTrack min, GridTrack max) {
-    return new MinMax(min, max);
+    return new GridTracks.MinMax(min, max);
   }
 
   /// `repeat(<count>, <tracks>)`. Throws IllegalArgumentException if `count` is below 1.
   static GridTrack repeat(int count, GridTrack... tracks) {
-    return new Repeat(count, List.of(tracks));
+    return new GridTracks.Repeat(count, List.of(tracks));
   }
 }

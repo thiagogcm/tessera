@@ -24,6 +24,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.UnderlineStyle;
 
@@ -211,7 +212,7 @@ final class LayoutPage {
         .features(
             "text-decoration-style: wavy", "text-underline-offset", "<mark> <kbd> <ins> <del>")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Text can be "),
                     Formatting.highlight("highlighted", HighlightTone.ACCENT),

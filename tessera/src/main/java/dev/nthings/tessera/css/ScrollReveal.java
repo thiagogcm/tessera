@@ -1,9 +1,10 @@
 package dev.nthings.tessera.css;
 
-/// Reveal and exit presets that animate `opacity` and `transform`. The `InteractiveElement`
-/// methods apply them: `scrollReveal` and `scrollExit` tie the animation to scroll progress with
+/// Reveal and exit presets that animate `opacity` and `transform`. The element methods
+/// `scrollReveal` and `scrollExit` tie the animation to scroll progress with
 /// `animation-timeline: view()`, while `revealOnce` plays it for 0.5s the first time the element
-/// scrolls into view.
+/// scrolls into view. Each registers the preset's `@keyframes` rule and applies only under
+/// `prefers-reduced-motion: no-preference`.
 public enum ScrollReveal {
   FADE_IN("tessera-fade-in", "@keyframes tessera-fade-in{from{opacity:0}to{opacity:1}}"),
   FADE_UP(
@@ -27,21 +28,15 @@ public enum ScrollReveal {
     this.keyframeRule = keyframeRule;
   }
 
-  /// Compiler-facing: the name of the `@keyframes` rule that the declarations reference.
-  public String keyframeName() {
-    return keyframeName;
-  }
-
-  /// The `@keyframes` rule text. The `InteractiveElement` methods register it; the style methods
-  /// here do not.
-  public String keyframeRule() {
+  /// The `@keyframes` rule text, registered by the [Interactivity] methods that apply a preset.
+  String keyframeRule() {
     return keyframeRule;
   }
 
   /// Drives the preset by progress through the viewport on `axis`: the entry range, or the exit
   /// range when `exit` is set. Entry holds the start keyframe before the element arrives, and exit
   /// holds the end keyframe after it leaves. Does not register the `@keyframes` rule.
-  public StyleRefinement scrollDriven(StyleRefinement style, TimelineAxis axis, boolean exit) {
+  StyleRefinement scrollDriven(StyleRefinement style, TimelineAxis axis, boolean exit) {
     var phase = exit ? "exit" : "entry";
     return style
         .put(
@@ -54,7 +49,7 @@ public enum ScrollReveal {
   /// Plays the preset once, for 0.5s with `ease-out`, the first time any part of the element
   /// scrolls into view. It is time-based, so it does not follow the scroll position. Does not
   /// register the `@keyframes` rule.
-  public StyleRefinement revealOnce(StyleRefinement style) {
+  StyleRefinement revealOnce(StyleRefinement style) {
     return style
         .put(CssProperty.ANIMATION, keyframeName + " 0.5s ease-out both")
         .put(CssProperty.TIMELINE_TRIGGER, "--tessera-reveal view() cover 0% cover 100%")

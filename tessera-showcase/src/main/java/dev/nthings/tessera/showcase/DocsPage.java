@@ -9,7 +9,9 @@ import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.Lists.StepList;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +40,9 @@ final class DocsPage {
         Image.hero(Art.DOCS_BANNER, "Tessera documentation banner")
             .dimensions(1200, 480)
             .transitionKey(OverviewPage.DOCS_HERO)
-            .fullWidth()
+            .inlineSize(CssLength.pct(100))
             .rounded(CssLength.rem(0.75))
-            .borderSubtle(Tokens.BORDER_SUBTLE);
+            .border(Border.hairline(Tokens.BORDER_SUBTLE));
     var sections = new ArrayList<IntoElement>(demos);
     sections.add(Footnotes.section("Notes"));
     return div().flex().flexCol().gap(CssLength.rem(2)).children(hero, Page.docLayout(sections));
@@ -54,7 +56,7 @@ final class DocsPage {
                 + "the Docs card on the overview page through a cross-document view transition.")
         .features("fetchpriority", "<link rel=preload>", "view-transition-name", "@view-transition")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .text(
                     "Images must declare dimensions or an aspect-ratio — the compiler rejects "
                         + "images that would cause layout shift. One hero per page is enforced."))
@@ -71,7 +73,7 @@ final class DocsPage {
                 + "with :target-current.")
         .features("scroll-target-group: auto", ":target-current", "position: sticky", "<details>")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .text(
                     "Scroll this page and watch the highlighted entry follow along. The rail "
                         + "collapses like any <details> element."))
@@ -88,7 +90,7 @@ final class DocsPage {
                 + "or appended automatically.")
         .features("interestfor", "role=\"doc-noteref\"", "role=\"doc-endnotes\"", ":target")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Tessera targets the latest Chromium and Firefox"),
                     Footnotes.ref(

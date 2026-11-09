@@ -75,7 +75,7 @@ class FlexLayoutTest {
                         .flexGrow(1)
                         .flexShrink(1)
                         .minBlockSize(CssLength.px(0))
-                        .overflowYAuto()
+                        .overflowY(Overflow.AUTO)
                         .child(p().text("Tall content"))));
 
     var column = page.element("section");

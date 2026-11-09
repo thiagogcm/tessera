@@ -15,6 +15,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
+import dev.nthings.tessera.css.Overflow;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -176,7 +177,7 @@ public final class Catalog {
             + "document stays within the viewport.",
         List.of("overflow-x: auto", "min-inline-size: 0"),
         List.of(
-            "div().overflowXAuto().minInlineSize(CssLength.px(0))",
+            "div().overflowX(Overflow.AUTO).minInlineSize(CssLength.px(0))",
             "    .child(div().flex().minInlineSize(CssLength.rem(48))",
             "        .children(Button.of(\"Save\"), Button.of(\"Archive\")));"),
         List.of(variant("row", "Wide row", true, Catalog::overflowRow)));
@@ -253,10 +254,10 @@ public final class Catalog {
   private static IntoElement overflowRow() {
     return div()
         .attr("class", "story-overflow")
-        .overflowXAuto()
+        .overflowX(Overflow.AUTO)
         .minInlineSize(CssLength.px(0))
         .maxInlineSize(CssLength.pct(100))
-        .fullWidth()
+        .inlineSize(CssLength.pct(100))
         .child(
             div()
                 .layout(

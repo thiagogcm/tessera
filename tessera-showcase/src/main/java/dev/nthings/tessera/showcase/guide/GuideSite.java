@@ -21,6 +21,7 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
@@ -112,7 +113,7 @@ public final class GuideSite {
               s.p(Tokens.SPACE_5)
                   .rounded(Tokens.RADIUS_XL)
                   .bg(Tokens.SURFACE_CARD)
-                  .borderSubtle(Tokens.BORDER_SUBTLE));
+                  .border(Border.hairline(Tokens.BORDER_SUBTLE)));
     }
 
     @Override

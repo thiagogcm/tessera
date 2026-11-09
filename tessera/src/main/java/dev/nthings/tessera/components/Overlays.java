@@ -17,12 +17,14 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Translation;
@@ -91,7 +93,7 @@ public final class Overlays {
     }
 
     public Modal bodyText(String text) {
-      bodyNodes.add(p().textColor(Tokens.TEXT_MUTED).textPretty().text(text));
+      bodyNodes.add(p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(text));
       return this;
     }
 
@@ -155,7 +157,7 @@ public final class Overlays {
                       .rounded(Tokens.RADIUS_XL)
                       .bg(Tokens.SURFACE_CARD)
                       .textColor(Tokens.TEXT_PRIMARY)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
+                      .border(Border.hairline(Tokens.BORDER_SUBTLE))
                       .shadow(
                           Shadow.drop(
                               CssLength.px(24),
@@ -210,7 +212,11 @@ public final class Overlays {
               .flex()
               .flexCol()
               .gap(Tokens.SPACE_1)
-              .child(h2().id(titleRef).fontSize(Tokens.FONT_SIZE_XL).textBalance().text(title))
+              .child(
+                  h2().id(titleRef)
+                      .fontSize(Tokens.FONT_SIZE_XL)
+                      .textWrap(TextWrap.BALANCE)
+                      .text(title))
               .whenPresent(
                   description,
                   (h, desc) ->
@@ -327,7 +333,7 @@ public final class Overlays {
                     .p(Tokens.SPACE_6)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .shadow(
                         Shadow.drop(
                             CssLength.px(24),
@@ -339,7 +345,6 @@ public final class Overlays {
                 } else {
                   s.ms(CssLength.auto()).me(CssLength.px(0));
                 }
-                return s;
               })
           .select(
               ":scope::backdrop",
@@ -392,7 +397,7 @@ public final class Overlays {
               .justifyBetween()
               .gap(Tokens.SPACE_4)
               .py(Tokens.SPACE_2)
-              .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
+              .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
               .children(
                   div()
                       .flex()

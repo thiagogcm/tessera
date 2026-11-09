@@ -99,7 +99,7 @@ public record MetricCard(String id, String title, String value) implements View 
         .p(Tokens.SPACE_5)
         .rounded(Tokens.RADIUS_XL)
         .bg(Tokens.SURFACE_CARD)
-        .borderSubtle(Tokens.BORDER_SUBTLE));
+        .border(Border.hairline(Tokens.BORDER_SUBTLE)));
   }
 
   @Override
@@ -161,7 +161,7 @@ Elements.section().layout(stack).children(
 
 `inlineRow` and `inlineColumn` use `inline-flex`, so the container stays on the surrounding line. A layout sets `display`, `flex-direction`, `flex-wrap`, `align-items`, and `gap`; a later call that sets one of those, such as `gap(...)`, replaces that one declaration on the element. The shared `FlexLayout` value is unchanged. Lengths accept `CssLength` values, including `DesignToken.Length` tokens.
 
-A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowYAuto()`.
+A scrolling region inside a fixed-height column is a property of the inner panel: give the column a block size, and give the panel `flexGrow(1)`, `flexShrink(1)`, `minBlockSize(CssLength.px(0))`, and `overflowY(Overflow.AUTO)`.
 
 ## Link elements with identity references
 
@@ -283,7 +283,7 @@ var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | 0.25, 0.375, 0.5, 0.75 rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light/dark OKLCH colors |
 
-Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Length tokens are `CssLength` values and work in any length-valued authoring method. Color, duration, family, and number tokens expose `varReference()` instead.
+Density scales spacing tokens, including control padding. It does not scale the type scale, tracking, or motion durations. Each token is also a value of its category (`CssLength`, `CssColor`, `CssDuration`, `CssNumber`, or a `FontStack` entry), so it works in any method that takes that category and serializes as `var(--name)`.
 
 `Roles.LABEL` and `Tokens.CONTROL_FG` are what field labels and callout titles consume. Replacing `CONTROL_FONT_SIZE` or `CONTROL_FG` changes both. Replacing `FONT_SIZE_SM` changes the label size only while `CONTROL_FONT_SIZE` still points at it.
 
@@ -303,7 +303,18 @@ div()
     .motion(Motion.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
 ```
 
-Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties take enums (`TextAlign`, `WhiteSpace`, `Cursor`, `Resize`, ...), and identifiers such as container, anchor, and counter names are validated `CssIdent` values.
+Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). Identifiers such as container, anchor, and counter names are validated `CssIdent` values. Every style method is on `Styled`, which elements, components such as `Image`, and `StyleRefinement` implement.
+
+The last call wins. Writing a property again replaces it, and writing a shorthand removes the longhands it covers: `p(...)` replaces an earlier `pt(...)`/`pb(...)`/`ps(...)`/`pe(...)`, `border(...)` replaces earlier side borders and `borderColor(...)`, and `gap(...)` replaces `rowGap(...)`/`colGap(...)`. A longhand written after its shorthand refines it, so `p(Tokens.SPACE_4).pt(CssLength.zero())` keeps both.
+
+Share a style as a `Consumer<StyleRefinement>` and apply it with `apply(...)`. State callbacks (`hover`, `focusVisible`, ...) and `ScopeStyle` rules take the same type:
+
+```java
+Consumer<StyleRefinement> card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL).bg(Tokens.SURFACE_CARD);
+
+div().apply(card).hover(s -> s.bg(Tokens.SURFACE_SUBTLE));
+scope.select(":scope > article", card);
+```
 
 ## Declare roles and states
 

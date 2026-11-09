@@ -7,7 +7,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.SourceLocation;
-import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -18,7 +18,7 @@ import org.jspecify.annotations.Nullable;
 final class PageContext implements RenderContext {
 
   private final ViewScope viewScope;
-  private final StyleSheetCollector styles;
+  private final StyleSheet styles;
   private final DocumentState docState;
   private final CompilationState state;
   private final List<String> componentPath;
@@ -26,7 +26,7 @@ final class PageContext implements RenderContext {
 
   private PageContext(
       ViewScope viewScope,
-      StyleSheetCollector styles,
+      StyleSheet styles,
       DocumentState docState,
       CompilationState state,
       List<String> componentPath,
@@ -41,7 +41,7 @@ final class PageContext implements RenderContext {
 
   /// The root context of one page compilation.
   static PageContext forDocument(
-      StyleSheetCollector styles, DocumentState docState, CompilationState state) {
+      StyleSheet styles, DocumentState docState, CompilationState state) {
     return new PageContext(ViewScope.ROOT, styles, docState, state, List.of(), null);
   }
 
@@ -85,7 +85,7 @@ final class PageContext implements RenderContext {
     return viewScope;
   }
 
-  StyleSheetCollector styles() {
+  StyleSheet styles() {
     return styles;
   }
 

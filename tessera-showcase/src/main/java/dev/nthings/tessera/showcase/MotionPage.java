@@ -10,8 +10,10 @@ import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.ScrollReveal;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 
 /// Scroll-driven animation, scroll-state and size container queries, and view transitions.
@@ -109,7 +111,7 @@ final class MotionPage {
             div()
                 .containerInlineSize(RESIZABLE)
                 .resize(Resize.HORIZONTAL)
-                .overflowHidden()
+                .overflow(Overflow.HIDDEN)
                 .minInlineSize(CssLength.rem(14))
                 .maxInlineSize(CssLength.pct(100))
                 .inlineSize(CssLength.rem(22))
@@ -130,7 +132,7 @@ final class MotionPage {
         .features(
             "container-type: scroll-state", "scroll-state(stuck: top)", "scroll-state(snapped: x)")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .text(
                     "No scroll listeners: the browser evaluates the query as the sticky element "
                         + "becomes stuck."))
@@ -148,7 +150,7 @@ final class MotionPage {
             "view-transition-class",
             "<script type=speculationrules>")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Try it: open the "),
                     a("/").text("overview"),

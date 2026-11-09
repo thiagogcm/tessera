@@ -122,8 +122,8 @@ public final class Prose implements View, ParentElement<Prose> {
         .select(
             ":scope > hr",
             s ->
-                s.borderNone()
-                    .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
+                s.border(Border.none())
+                    .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
                     .my(CssLength.rem(2.25)));
   }
 }

@@ -160,15 +160,18 @@ class CssValueTest {
   @Test
   @DisplayName("token overrides keep their category and serialize their typed value")
   void tokenOverridesAreTyped() {
-    assertThat(Tokens.DENSITY.withValue(0.8).cssDefinition()).isEqualTo("0.8");
-    assertThat(Tokens.RADIUS_XL.withValue(CssLength.rem(1)).cssDefinition()).isEqualTo("1rem");
-    assertThat(Tokens.SPACE_4.cssDefinition()).isEqualTo("calc(1rem * var(--density))");
-    assertThat(Tokens.CONTROL_FAMILY.cssDefinition()).isEqualTo("var(--font-body)");
+    assertThat(Tokens.declaration(Tokens.DENSITY.withValue(0.8))).isEqualTo("--density:0.8");
+    assertThat(Tokens.declaration(Tokens.RADIUS_XL.withValue(CssLength.rem(1))))
+        .isEqualTo("--radius-xl:1rem");
+    assertThat(Tokens.declaration(Tokens.SPACE_4))
+        .isEqualTo("--space-4:calc(1rem * var(--density))");
+    assertThat(Tokens.declaration(Tokens.CONTROL_FAMILY))
+        .isEqualTo("--control-family:var(--font-body)");
     assertThat(
-            Tokens.CONTROL_FG
-                .withLightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150))
-                .cssDefinition())
-        .isEqualTo("light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))");
+            Tokens.declaration(
+                Tokens.CONTROL_FG.withLightDark(
+                    CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150))))
+        .isEqualTo("--control-fg:light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))");
   }
 
   @Test

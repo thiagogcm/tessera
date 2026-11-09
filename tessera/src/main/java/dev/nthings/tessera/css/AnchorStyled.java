@@ -1,7 +1,9 @@
 package dev.nthings.tessera.css;
 
-/// CSS anchor positioning: naming an anchor and placing an element against one.
-public interface AnchorStyled<SELF extends AnchorStyled<SELF>> extends StyleTarget<SELF> {
+/// CSS anchor positioning: naming an anchor and placing an element against one. Part of [Styled].
+///
+/// @param <SELF> concrete element or style builder type
+interface AnchorStyled<SELF extends AnchorStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Names this element as an anchor, emitting `anchor-name: --name`. Throws
   /// IllegalArgumentException unless `name` is a dashed identifier, such as one from

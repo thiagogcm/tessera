@@ -8,17 +8,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.Nullable;
 
-/// Sparse, cascade-mergeable declarations and custom properties, backed by an [EnumMap]
-/// (O(1) overrides) with deterministic ordinal-ordered hashing. Writing a property again replaces
-/// its value. Declarations are emitted in [CssProperty] order, with shorthands before longhands, so
-/// a longhand wins over its shorthand regardless of call order.
+/// A mutable set of declarations and custom properties, written through the [Styled] methods.
+/// Elements hold one for their base style, and state, selector and scope callbacks receive one to
+/// fill. The last call wins: writing a property again replaces its value, and writing a shorthand
+/// (such as [#p(CssLength)] or [#border(Border)]) removes the longhands it covers (such as
+/// [#pt(CssLength)] or [#borderBlockEnd(Border)]), so a longhand only wins when written after
+/// its shorthand.
 public final class StyleRefinement
     implements Styled<StyleRefinement>, FluentBuilder<StyleRefinement> {
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
+
+  /// Creates an empty refinement, for building a style outside an element.
+  public StyleRefinement() {}
 
   @Override
   public StyleRefinement self() {
@@ -30,8 +34,9 @@ public final class StyleRefinement
     return this;
   }
 
-  /// Package-private: declarations go through the typed [Styled] methods, never raw text.
+  /// Every declaration goes through here, so a shorthand removes the longhands it covers.
   StyleRefinement put(CssProperty property, String value) {
+    property.longhands().forEach(declarations::remove);
     declarations.put(property, value);
     return this;
   }
@@ -59,24 +64,29 @@ public final class StyleRefinement
     return this;
   }
 
-  /// Copies `other`'s declarations and custom properties into this one. `other` wins on conflicts.
+  /// Writes `other`'s declarations and custom properties into this one as if their style methods
+  /// were called here: `other` wins on conflicts, and its shorthands remove this one's longhands.
   public StyleRefinement mergeFrom(StyleRefinement other) {
-    declarations.putAll(other.declarations);
+    if (other == this) {
+      return this;
+    }
+    other.declarations.forEach(this::put);
     customProperties.putAll(other.customProperties);
     return this;
   }
 
-  public boolean isEmpty() {
+  /// Compiler-facing: whether an `aspect-ratio` is declared, which reserves an image's layout space
+  /// in place of `width` and `height` attributes.
+  public boolean hasAspectRatio() {
+    return declarations.containsKey(CssProperty.ASPECT_RATIO);
+  }
+
+  boolean isEmpty() {
     return declarations.isEmpty() && customProperties.isEmpty();
   }
 
-  /// The serialized value of `property`, or `null` if it is not set.
-  public @Nullable String get(CssProperty property) {
-    return declarations.get(property);
-  }
-
-  /// Compiler-facing: a content hash of the declarations, used to name the generated class.
-  public long contentHash() {
+  /// A content hash of the declarations, used to name the generated class.
+  long contentHash() {
     var hash = Fnv1a64.OFFSET_BASIS;
     for (var entry : declarations.entrySet()) {
       hash = Fnv1a64.updateInt(hash, entry.getKey().ordinal());
@@ -89,8 +99,8 @@ public final class StyleRefinement
     return hash;
   }
 
-  /// Compiler-facing: the declarations as a CSS block body, without braces.
-  public String toCssBlockBody() {
+  /// The declarations as a CSS block body, without braces.
+  String toCssBlockBody() {
     var sb = new StringBuilder();
     for (var entry : declarations.entrySet()) {
       if (!sb.isEmpty()) {

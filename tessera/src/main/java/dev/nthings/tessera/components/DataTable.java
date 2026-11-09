@@ -7,9 +7,11 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.TextAlign;
@@ -104,20 +106,19 @@ public record DataTable<T>(
     scope
         .root(
             s ->
-                s.overflowAuto()
+                s.overflow(Overflow.AUTO)
                     .maxInlineSize(CssLength.pct(100))
                     .containerInlineSize()
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD))
         .select(
             ":scope table",
             s -> {
-              s.fullWidth().borderSeparateZero().textAlign(TextAlign.START);
+              s.inlineSize(CssLength.pct(100)).borderSeparateZero().textAlign(TextAlign.START);
               for (var i = 0; i < columns.size(); i++) {
                 s.customProperty(labelProperty(i + 1), CssContent.text(columns.get(i).header()));
               }
-              return s;
             })
         .select(
             ":scope caption",
@@ -126,13 +127,16 @@ public record DataTable<T>(
                     .py(Tokens.SPACE_3_5)
                     .fontWeight(600)
                     .textAlign(TextAlign.START)
-                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
+                    .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
         .select(
             ":scope thead",
             s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(2).bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope th, :scope td",
-            s -> s.px(Tokens.SPACE_4).py(Tokens.SPACE_3).borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
+            s ->
+                s.px(Tokens.SPACE_4)
+                    .py(Tokens.SPACE_3)
+                    .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
         .select(
             ":scope tbody th",
             s ->
@@ -168,7 +172,7 @@ public record DataTable<T>(
                   ":scope tr",
                   s ->
                       s.m(Tokens.SPACE_3)
-                          .borderSubtle(Tokens.BORDER_SUBTLE)
+                          .border(Border.hairline(Tokens.BORDER_SUBTLE))
                           .rounded(Tokens.RADIUS_LG))
               .select(
                   ":scope tbody th",

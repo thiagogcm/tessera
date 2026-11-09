@@ -3,7 +3,7 @@ package dev.nthings.tessera.css;
 import java.util.List;
 
 /// A transition: the properties it animates, with a duration, an easing, and whether discrete
-/// values such as `display` transition too. Applied with [EffectStyled#motion(Motion)]. Spatial
+/// values such as `display` transition too. Applied with [Styled#motion(Motion)]. Spatial
 /// presets belong inside `motionSafe`; keep the visible end state outside it, so the control is
 /// in place even when no transition runs.
 public record Motion(
@@ -71,8 +71,8 @@ public record Motion(
     return new Motion(duration, easing, properties, true);
   }
 
-  /// Writes the transition declarations to `style`; [EffectStyled#motion(Motion)] calls it.
-  public StyleRefinement apply(StyleRefinement style) {
+  /// Writes the transition declarations to `style`; [Styled#motion(Motion)] calls it.
+  StyleRefinement apply(StyleRefinement style) {
     style
         .put(CssProperty.TRANSITION_PROPERTY, properties)
         .put(CssProperty.TRANSITION_DURATION, duration)

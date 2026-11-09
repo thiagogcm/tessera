@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
@@ -309,13 +310,19 @@ public final class Badge implements View, FluentBuilder<Badge> {
       scope
           .select(
               selector + cssName(Variant.TINTED),
-              s -> s.bg(tintFill).textColor(tone.onTint).borderSubtle(tintEdge))
+              s -> s.bg(tintFill).textColor(tone.onTint).border(Border.hairline(tintEdge)))
           .select(
               selector + cssName(Variant.OUTLINE),
-              s -> s.bg(CssColor.transparent()).textColor(tone.onTint).borderSubtle(outlineEdge))
+              s ->
+                  s.bg(CssColor.transparent())
+                      .textColor(tone.onTint)
+                      .border(Border.hairline(outlineEdge)))
           .select(
               selector + cssName(Variant.SOLID),
-              s -> s.bg(token).textColor(tone.onSolid).borderSubtle(CssColor.transparent()));
+              s ->
+                  s.bg(token)
+                      .textColor(tone.onSolid)
+                      .border(Border.hairline(CssColor.transparent())));
     }
 
     scope.select("a:scope:hover", s -> s.opacity(0.85));

@@ -2,7 +2,7 @@ package dev.nthings.tessera.css;
 
 import org.jspecify.annotations.Nullable;
 
-/// One `box-shadow` layer. Applied with [BoxStyled#shadow].
+/// One `box-shadow` layer. Applied with [Styled#shadow].
 public record Shadow(
     boolean inset,
     CssLength offsetX,

@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.button;
 
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
@@ -28,9 +29,9 @@ final class ButtonFace {
                     .justifyCenter()
                     .gap(Tokens.SPACE_2)
                     .typography(Roles.LABEL)
-                    .cursorPointer()
+                    .cursor(Cursor.POINTER)
                     .rounded(Tokens.RADIUS_MD)
-                    .borderSubtle(CssColor.transparent())
+                    .border(Border.hairline(CssColor.transparent()))
                     .textDecorationNone()
                     .whiteSpace(WhiteSpace.NOWRAP))
         .select(":scope:focus-visible", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
@@ -51,7 +52,14 @@ final class ButtonFace {
 
     for (var size : Button.Size.values()) {
       scope.select(
-          ":scope.button--" + css(size), s -> icon ? iconBox(s, size) : paddedBox(s, size));
+          ":scope.button--" + css(size),
+          s -> {
+            if (icon) {
+              iconBox(s, size);
+            } else {
+              paddedBox(s, size);
+            }
+          });
     }
 
     for (var tone : Button.Tone.values()) {
@@ -112,7 +120,10 @@ final class ButtonFace {
     return switch (variant) {
       case SOLID -> style.bg(tone.token()).textColor(tone.onSolid());
       case OUTLINE ->
-          style.bg(CssColor.transparent()).textColor(tone.token()).borderSubtle(tone.edge());
+          style
+              .bg(CssColor.transparent())
+              .textColor(tone.token())
+              .border(Border.hairline(tone.edge()));
       case GHOST -> style.bg(CssColor.transparent()).textColor(tone.token());
     };
   }

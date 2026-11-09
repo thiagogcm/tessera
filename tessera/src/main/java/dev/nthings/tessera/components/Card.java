@@ -11,9 +11,12 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.GridTrack;
+import dev.nthings.tessera.css.ObjectFit;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -76,7 +79,11 @@ public final class Card implements View, FluentBuilder<Card> {
 
   /// Sets the media to an `<img>` with `alt` text, in an `aspectRatio` box, cropped to cover.
   public Card mediaImg(String src, String alt, AspectRatio aspectRatio) {
-    this.media = Elements.img(src, alt).aspectRatio(aspectRatio).objectCover().fullWidth();
+    this.media =
+        Elements.img(src, alt)
+            .aspectRatio(aspectRatio)
+            .objectFit(ObjectFit.COVER)
+            .inlineSize(CssLength.pct(100));
     return this;
   }
 
@@ -117,7 +124,7 @@ public final class Card implements View, FluentBuilder<Card> {
 
   /// Adds a paragraph to the content region.
   public Card bodyText(String paragraph) {
-    this.contentItems.add(Elements.p().textPretty().text(paragraph));
+    this.contentItems.add(Elements.p().textWrap(TextWrap.PRETTY).text(paragraph));
     return this;
   }
 
@@ -188,7 +195,7 @@ public final class Card implements View, FluentBuilder<Card> {
         .select(
             ":scope:has(a.card-link) a.card-link::after",
             s -> s.content(CssContent.empty()).absolute().inset(CssLength.zero()))
-        .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.outlineNone())
+        .select(":scope:has(a.card-link) a.card-link:focus-visible", s -> s.outline(Border.none()))
         .select(":scope:has(a.card-link:focus-visible)", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
         .select(":scope:has(a.card-link:hover)", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
@@ -252,7 +259,7 @@ public final class Card implements View, FluentBuilder<Card> {
                     .attr("name", choice.name())
                     .attr("value", choice.value())
                     .boolAttr("checked", choice.checked());
-            yield Elements.label().cursorPointer().child(input);
+            yield Elements.label().cursor(Cursor.POINTER).child(input);
           }
           case Interaction.Content _, Interaction.StretchedLink _ -> Elements.article();
         };
@@ -273,7 +280,8 @@ public final class Card implements View, FluentBuilder<Card> {
                     .text(headingText);
             case Interaction.Content _, Interaction.Choice _ -> Elements.text(headingText);
           };
-      var heading = Elements.el(HtmlTag.heading(headingLevel)).textBalance().child(headingInner);
+      var heading =
+          Elements.el(HtmlTag.heading(headingLevel)).textWrap(TextWrap.BALANCE).child(headingInner);
       if (subtitleText != null) {
         root.child(
             Elements.hgroup()

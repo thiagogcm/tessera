@@ -5,7 +5,7 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.SourceProvenance;
-import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,11 +63,11 @@ final class SiteCompiler {
     SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
 
     // Merge route stylesheets in route order so output is deterministic.
-    var sharedCollector = new StyleSheetCollector();
+    var sharedStyles = new StyleSheet();
     for (var prepared : preparedPages) {
-      prepared.contributeStylesTo(sharedCollector);
+      prepared.contributeStylesTo(sharedStyles);
     }
-    var css = sharedCollector.toCssStylesheet(site.tokens());
+    var css = sharedStyles.render(site.tokens());
     var outputMode = site.outputMode();
     var linkedFiles = new LinkedHashMap<String, Asset>();
     for (var prepared : preparedPages) {

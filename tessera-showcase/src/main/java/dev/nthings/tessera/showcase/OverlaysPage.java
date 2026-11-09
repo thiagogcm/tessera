@@ -11,6 +11,7 @@ import dev.nthings.tessera.components.Overlays;
 import dev.nthings.tessera.components.Overlays.DrawerSide;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.TextWrap;
 
 /// Modal dialogs, drawers, popovers, interest tooltips, and the search palette.
 final class OverlaysPage {
@@ -81,7 +82,7 @@ final class OverlaysPage {
                 + "live filtering and keyboard selection inside a <search> landmark.")
         .features("<search>", "automatic ES module", "accesskey", "<dialog>")
         .example(
-            p().textPretty()
+            p().textWrap(TextWrap.PRETTY)
                 .children(
                     Formatting.inlineCode("Search"),
                     text(" in the header, or press "),

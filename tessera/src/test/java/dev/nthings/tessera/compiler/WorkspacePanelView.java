@@ -23,6 +23,7 @@ import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Map;
 
@@ -63,8 +64,8 @@ record WorkspacePanelView(String workspaceSlug) implements View {
             .rounded(CssLength.rem(0.75))
             .bg(Tokens.SURFACE_CARD)
             .children(
-                h2().textBalance().text("Archive workspace?"),
-                p().textPretty().text("This will move all metrics to cold storage."),
+                h2().textWrap(TextWrap.BALANCE).text("Archive workspace?"),
+                p().textWrap(TextWrap.PRETTY).text("This will move all metrics to cold storage."),
                 div()
                     .flex()
                     .gap(CssLength.rem(0.75))
@@ -109,7 +110,7 @@ record WorkspacePanelView(String workspaceSlug) implements View {
         .flexCol()
         .gap(CssLength.rem(1.5))
         .children(
-            h1().textBalance().text("Workspace: " + workspaceSlug),
+            h1().textWrap(TextWrap.BALANCE).text("Workspace: " + workspaceSlug),
             metricCard("P99 Latency", "14.2 ms"),
             div()
                 .flex()

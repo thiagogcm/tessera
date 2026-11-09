@@ -24,6 +24,7 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.GridTrack;
@@ -153,7 +154,7 @@ public final class Toc {
                       .gap(Tokens.SPACE_2)
                       .p(CssLength.px(0))
                       .bg(CssColor.transparent())
-                      .borderNone())
+                      .border(Border.none()))
           .select(
               ":scope .toc-summary",
               s ->
@@ -163,7 +164,7 @@ public final class Toc {
                       .py(CssLength.rem(0.35))
                       .px(Tokens.SPACE_1)
                       .listStyleNone()
-                      .cursorPointer()
+                      .cursor(Cursor.POINTER)
                       .textColor(Tokens.TEXT_MUTED)
                       .fontSize(Tokens.FONT_SIZE_XS)
                       .fontWeight(700))
@@ -186,7 +187,7 @@ public final class Toc {
               ":scope .toc-collapsible-wrapper",
               s ->
                   s.scrollTargetGroupAuto()
-                      .borderInlineStartSubtle(Tokens.BORDER_SUBTLE)
+                      .borderInlineStart(Border.hairline(Tokens.BORDER_SUBTLE))
                       .ps(Tokens.SPACE_1))
           .select(
               ":scope ol",
@@ -265,7 +266,7 @@ public final class Toc {
               s ->
                   s.gridRow(GridPlacement.at(1))
                       .bg(Tokens.SURFACE_CARD)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
+                      .border(Border.hairline(Tokens.BORDER_SUBTLE))
                       .rounded(Tokens.RADIUS_LG)
                       .p(Tokens.SPACE_3))
           .select(
@@ -315,7 +316,7 @@ public final class Toc {
                                   .sticky()
                                   .insetBlockStart(CssLength.rem(6.75))
                                   .bg(CssColor.transparent())
-                                  .borderNone()
+                                  .border(Border.none())
                                   .p(CssLength.px(0))));
     }
 

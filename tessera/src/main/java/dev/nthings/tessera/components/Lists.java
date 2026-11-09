@@ -109,8 +109,7 @@ public final class Lists {
               .grid()
               .gridColumns(
                   TrackList.of(
-                      GridTrack.minmax(
-                          GridTrack.length(CssLength.rem(8)), GridTrack.Keyword.MAX_CONTENT),
+                      GridTrack.minmax(GridTrack.length(CssLength.rem(8)), GridTrack.maxContent()),
                       GridTrack.fr(1)))
               .gap(Tokens.SPACE_3);
       for (var entry : terms) {

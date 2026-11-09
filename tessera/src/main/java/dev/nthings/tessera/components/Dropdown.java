@@ -14,9 +14,11 @@ import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.PositionArea;
@@ -88,7 +90,10 @@ public final class Dropdown implements View {
   }
 
   public Dropdown separator() {
-    items.add(hr().borderNone().borderBlockStartSubtle(Tokens.BORDER_SUBTLE).my(Tokens.SPACE_1));
+    items.add(
+        hr().border(Border.none())
+            .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
+            .my(Tokens.SPACE_1));
     return this;
   }
 
@@ -112,9 +117,9 @@ public final class Dropdown implements View {
                     .rounded(Tokens.RADIUS_LG)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .fontWeight(600)
-                    .cursorPointer())
+                    .cursor(Cursor.POINTER))
         .select(":scope > .dropdown-trigger:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
             ":scope > [popover]",
@@ -133,7 +138,7 @@ public final class Dropdown implements View {
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .shadow(
                         Shadow.drop(
                             CssLength.px(12),
@@ -148,16 +153,16 @@ public final class Dropdown implements View {
                     .itemsCenter()
                     .justifyBetween()
                     .gap(Tokens.SPACE_4)
-                    .fullWidth()
+                    .inlineSize(CssLength.pct(100))
                     .px(Tokens.SPACE_3)
                     .py(Tokens.SPACE_2)
                     .rounded(Tokens.RADIUS_MD)
                     .bg(CssColor.transparent())
                     .textColor(Tokens.TEXT_PRIMARY)
                     .fontSize(Tokens.FONT_SIZE_SM)
-                    .borderNone()
+                    .border(Border.none())
                     .textAlign(TextAlign.START)
-                    .cursorPointer()
+                    .cursor(Cursor.POINTER)
                     .textDecorationNone())
         .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(

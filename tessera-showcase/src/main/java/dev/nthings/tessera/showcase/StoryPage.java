@@ -33,7 +33,8 @@ record StoryPage(
     return "html:root{color-scheme:"
         + appearance.wire()
         + ";"
-        + Tokens.DENSITY.customPropertyName()
+        + "--"
+        + Tokens.DENSITY.name()
         + ":"
         + density.value()
         + "}";

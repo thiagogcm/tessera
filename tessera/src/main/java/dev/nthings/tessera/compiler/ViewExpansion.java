@@ -91,7 +91,7 @@ final class ViewExpansion {
               view.configureScope(style);
               return style;
             });
-        var type = child.styles().registerViewScope(view.viewType(), style.toCssBody());
+        var type = child.styles().registerViewScope(view.viewType(), style);
         yield scoped(expand(child, "Render", view::render), type, scopeId, child);
       }
       case TagElement tag -> tag(tag, null, context);
@@ -199,11 +199,11 @@ final class ViewExpansion {
       state.registerTransition(transition, location);
       var transitionClass = transition.transitionClass();
       if (transitionClass != null) {
-        context.styles().registerTransitionClass(transitionClass);
+        context.styles().registerTransitionClass(CssIdent.of(transitionClass));
       }
     }
 
-    var classes = context.styles().registerElementStyles(style, element.interactivity());
+    var classes = context.styles().registerElement(style, element.interactivity());
     if (!classes.isEmpty()) {
       var existing = attrs.get("class");
       var joined = String.join(" ", classes);

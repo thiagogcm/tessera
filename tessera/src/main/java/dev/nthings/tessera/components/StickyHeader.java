@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssFilter;
@@ -55,7 +56,7 @@ public final class StickyHeader implements View {
             ":scope > .sticky-surface",
             s ->
                 s.bg(Tokens.SURFACE_CARD)
-                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
+                    .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
                     .motion(
                         Motion.of(
                             CssDuration.ms(200),

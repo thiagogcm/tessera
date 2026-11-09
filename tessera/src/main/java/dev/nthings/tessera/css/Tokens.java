@@ -183,6 +183,16 @@ public final class Tokens {
     return Collections.unmodifiableCollection(entries.values());
   }
 
+  /// The `var(--name)` reference a token serializes to.
+  static String varReference(DesignToken token) {
+    return "var(--" + token.name() + ")";
+  }
+
+  /// The `--name:value` declaration that defines a token on `:root`.
+  static String declaration(DesignToken token) {
+    return "--" + token.name() + ":" + token.value().toCss();
+  }
+
   private static DesignToken.Length length(String name, double rem) {
     return new DesignToken.Length(name, CssLength.rem(rem));
   }

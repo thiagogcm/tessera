@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Highlight tones for [TextStyled#highlight(HighlightTone)]. A tone's background is
+/// Highlight tones for [Styled#highlight(HighlightTone)]. A tone's background is
 /// `color-mix(in oklch, var(--token) 24%, transparent)`, which follows the `light-dark()` theme.
 public enum HighlightTone {
   ACCENT(Tokens.ACCENT_PRIMARY),

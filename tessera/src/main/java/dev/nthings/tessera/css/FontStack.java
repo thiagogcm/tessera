@@ -5,14 +5,15 @@ import java.util.stream.Collectors;
 import org.owasp.encoder.Encode;
 
 /// A `font-family` list of named families, generic fallbacks, and font family tokens. Set it with
-/// [TextStyled#fontFamily(FontStack)], or give a [DesignToken.FontFamily] a stack with `withValue`.
+/// [Styled#fontFamily(FontStack)], or give a [DesignToken.FontFamily] a stack with `withValue`.
 public record FontStack(List<Entry> entries) implements CssValue {
 
-  /// One item of a [FontStack]: a [Named] family, a [Generic] family, or a font family token.
+  /// One item of a [FontStack]: a named family from [FontStack#named(String)], a [Generic] family,
+  /// or a font family token.
   public sealed interface Entry extends CssValue permits Named, Generic, DesignToken.FontFamily {}
 
   /// A family looked up by name; names that are not plain identifiers are quoted.
-  public record Named(String family) implements Entry {
+  record Named(String family) implements Entry {
     @Override
     public String toCss() {
       return family.matches("[A-Za-z_-][A-Za-z0-9_-]*")

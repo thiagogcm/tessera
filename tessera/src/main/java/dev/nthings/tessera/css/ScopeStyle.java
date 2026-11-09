@@ -3,7 +3,6 @@ package dev.nthings.tessera.css;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 /// The styles of one view scope: the `@scope` block around a
 /// [dev.nthings.tessera.core.View]'s root, in `@layer components`. Authors receive it in
@@ -16,31 +15,30 @@ public final class ScopeStyle {
   private final Map<String, ScopeStyle> atRuleBlocks = new LinkedHashMap<>();
 
   /// Styles the view's root element, `:scope`.
-  public ScopeStyle root(UnaryOperator<StyleRefinement> mutator) {
-    return select(":scope", mutator);
+  public ScopeStyle root(Consumer<StyleRefinement> styles) {
+    return select(":scope", styles);
   }
 
   /// Styles the elements matching `selector` inside the view scope. The selector is not validated;
   /// it is emitted as written. Calling again with the same selector extends the same rule.
-  public ScopeStyle select(String selector, UnaryOperator<StyleRefinement> mutator) {
-    var refinement = selectorRules.computeIfAbsent(selector, _ -> new StyleRefinement());
-    mutator.apply(refinement);
+  public ScopeStyle select(String selector, Consumer<StyleRefinement> styles) {
+    styles.accept(selectorRules.computeIfAbsent(selector, _ -> new StyleRefinement()));
     return this;
   }
 
-  /// Defines an open/active selector with its nested `@starting-style` entry transition.
+  /// Styles `selector` with `openStyles` and nests `startingStyles` in its `@starting-style`
+  /// block, the values an entry transition starts from.
   public ScopeStyle selectWithStartingStyle(
       String selector,
-      UnaryOperator<StyleRefinement> openMutator,
-      UnaryOperator<StyleRefinement> startingMutator) {
-    select(selector, openMutator);
-    var starting = startingStyleRules.computeIfAbsent(selector, _ -> new StyleRefinement());
-    startingMutator.apply(starting);
+      Consumer<StyleRefinement> openStyles,
+      Consumer<StyleRefinement> startingStyles) {
+    select(selector, openStyles);
+    startingStyles.accept(startingStyleRules.computeIfAbsent(selector, _ -> new StyleRefinement()));
     return this;
   }
 
   /// Styles written by `nestedBuilder` apply inside `@container (inline-size >= minInlineSize)`,
-  /// checked against the nearest ancestor container (see [LayoutStyled#containerInlineSize()]).
+  /// checked against the nearest ancestor container (see [Styled#containerInlineSize()]).
   /// Paired with [#containerMaxInlineSize], the two ranges do not overlap.
   public ScopeStyle containerMinInlineSize(
       CssLength minInlineSize, Consumer<ScopeStyle> nestedBuilder) {
@@ -92,8 +90,8 @@ public final class ScopeStyle {
     return this;
   }
 
-  /// Compiler-facing: the rule text for the view scope's `@scope` block, without the block.
-  public String toCssBody() {
+  /// The rule text for the view scope's `@scope` block, without the block.
+  String toCssBody() {
     var sb = new StringBuilder();
     for (var entry : selectorRules.entrySet()) {
       var selector = entry.getKey();

@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// Compiler-facing: collects the rules of one compilation and deduplicates them. Renders the
-/// stylesheet in the layer order `reset, base, theme, components, utilities, interactive,
-/// container`.
-public final class StyleSheetCollector {
+/// Compiler-facing: the stylesheet of one page or site. The compiler registers each element's
+/// typed styles and each view scope, receiving the class names or scope keys to emit, and
+/// identical rules are deduplicated. [#render(Tokens)] writes the layers in the order `reset, base,
+/// theme, components, utilities, interactive, container`.
+public final class StyleSheet {
 
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
@@ -21,10 +22,12 @@ public final class StyleSheetCollector {
   private final Set<String> keyframeRules = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
 
+  /// Creates an empty stylesheet.
+  public StyleSheet() {}
+
   /// Compiler-facing: registers an element's base, interactive and container rules, and returns
-  /// the class names that reference them.
-  public List<String> registerElementStyles(
-      StyleRefinement baseStyle, Interactivity interactivity) {
+  /// the class names that reference them, in emission order (empty for an unstyled element).
+  public List<String> registerElement(StyleRefinement baseStyle, Interactivity interactivity) {
     var classNames = new ArrayList<String>(3);
 
     keyframeRules.addAll(interactivity.keyframes());
@@ -66,12 +69,13 @@ public final class StyleSheetCollector {
     return classNames;
   }
 
-  /// Compiler-facing: registers the view scope for `viewType` and returns its `data-view` value,
-  /// `<viewType>-<hash>`. `scopedCss` is raw CSS, copied into the view scope without validation.
-  /// Identical bodies share one `@scope` block, and collectors from different pages merge without
-  /// conflicts. A view without scoped CSS keeps the bare type as its scope boundary.
-  public String registerViewScope(String viewType, String scopedCss) {
+  /// Compiler-facing: registers `scope`, the styles of a view of `viewType`, and returns its
+  /// `data-view` value, `<viewType>-<hash>`. Identical scopes share one `@scope` block, and
+  /// stylesheets from different pages merge without conflicts. A view without scoped styles keeps
+  /// the bare (sanitized) type as its scope boundary.
+  public String registerViewScope(String viewType, ScopeStyle scope) {
     var safeType = Fnv1a64.sanitizeIdentifier(viewType);
+    var scopedCss = scope.toCssBody();
     if (scopedCss.isBlank()) {
       return safeType;
     }
@@ -81,14 +85,14 @@ public final class StyleSheetCollector {
     return key;
   }
 
-  /// Compiler-facing: records a class whose view transition group uses the shared 0.35s timing.
-  public void registerTransitionClass(String transitionClass) {
-    transitionClasses.add(transitionClass);
+  /// Compiler-facing: records a view transition class whose group uses the shared 0.35s timing.
+  public void registerTransitionClass(CssIdent transitionClass) {
+    transitionClasses.add(transitionClass.toCss());
   }
 
-  /// Compiler-facing: merges another collector's rules into this one, in deterministic insertion
+  /// Compiler-facing: merges another stylesheet's rules into this one, keeping first-registration
   /// order.
-  public void mergeFrom(StyleSheetCollector other) {
+  public void mergeFrom(StyleSheet other) {
     other.utilityRules.forEach(utilityRules::putIfAbsent);
     other.interactiveRules.forEach(interactiveRules::putIfAbsent);
     other.containerRules.forEach(containerRules::putIfAbsent);
@@ -112,7 +116,7 @@ public final class StyleSheetCollector {
 
   /// Compiler-facing: renders the complete stylesheet, with `tokens` as the `:root` custom
   /// properties in `@layer theme`.
-  public String toCssStylesheet(Tokens tokens) {
+  public String render(Tokens tokens) {
     var sb = new StringBuilder(2048);
     sb.append("@layer reset, base, theme, components, utilities, interactive, container;\n");
 
@@ -145,7 +149,7 @@ public final class StyleSheetCollector {
     sb.append("@layer theme{");
     sb.append(":root{");
     for (var token : tokens.all()) {
-      sb.append(token.customPropertyName()).append(':').append(token.cssDefinition()).append(';');
+      sb.append(Tokens.declaration(token)).append(';');
     }
     sb.append("}}\n");
 

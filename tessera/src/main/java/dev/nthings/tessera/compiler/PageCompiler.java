@@ -1,7 +1,7 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
@@ -23,7 +23,7 @@ final class PageCompiler {
   /// `<head>` before the page's own head contributions, so a site can share it across pages.
   /// Throws [CompilationException] if the document has authoring errors.
   static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
-    var styles = new StyleSheetCollector();
+    var styles = new StyleSheet();
     var state = new CompilationState(document.title());
 
     var layout = LayoutPass.layout(document, siteHead, styles, state);

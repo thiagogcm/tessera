@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// A flex layout preset, applied with [LayoutStyled#layout(FlexLayout)]. The preset is copied into
+/// A flex layout preset, applied with [Styled#layout(FlexLayout)]. The preset is copied into
 /// the element's [StyleRefinement], so a later declaration replaces only that property. Block and
 /// inline layouts are separate choices.
 public record FlexLayout(
@@ -26,8 +26,8 @@ public record FlexLayout(
     return new FlexLayout(Display.INLINE_FLEX, Direction.COLUMN, gap, align, wrap);
   }
 
-  /// Writes this layout's declarations into `style`; [LayoutStyled#layout(FlexLayout)] calls it.
-  public StyleRefinement apply(StyleRefinement style) {
+  /// Writes this layout's declarations into `style`; [Styled#layout(FlexLayout)] calls it.
+  StyleRefinement apply(StyleRefinement style) {
     return style
         .put(CssProperty.DISPLAY, display)
         .put(CssProperty.FLEX_DIRECTION, direction)

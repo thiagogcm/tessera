@@ -8,9 +8,11 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
@@ -118,9 +120,9 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
             s ->
                 s.my(Tokens.SPACE_5)
                     .rounded(Tokens.RADIUS_LG)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .bg(Tokens.SURFACE_CARD)
-                    .overflowClip())
+                    .overflow(Overflow.CLIP))
         .select(
             ":scope > .code-header",
             s ->
@@ -130,7 +132,7 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
                     .px(Tokens.SPACE_4)
                     .py(CssLength.rem(0.45))
                     .bg(Tokens.SURFACE_SUBTLE)
-                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
+                    .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
                     .fontSize(Tokens.FONT_SIZE_XS)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
@@ -227,10 +229,10 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
         pre()
             .attr("class", "code-pre")
             .tabIndex(0)
-            .refine(
+            .apply(
                 s ->
                     s.fontFamily(Tokens.FONT_MONO)
-                        .overflowXAuto()
+                        .overflowX(Overflow.AUTO)
                         .counterReset(CssIdent.of("code-line")))
             .child(codeEl);
 

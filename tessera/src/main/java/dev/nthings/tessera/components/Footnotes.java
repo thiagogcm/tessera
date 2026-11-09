@@ -9,6 +9,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -92,7 +93,7 @@ public final class Footnotes {
                       tip.p(Tokens.SPACE_3)
                           .maxInlineSize(CssLength.rem(22))
                           .bg(Tokens.SURFACE_CARD)
-                          .borderSubtle(Tokens.BORDER_SUBTLE)
+                          .border(Border.hairline(Tokens.BORDER_SUBTLE))
                           .rounded(Tokens.RADIUS_LG)
                           .child(content))
               .text(label);
@@ -136,7 +137,7 @@ public final class Footnotes {
               s ->
                   s.mt(Tokens.SPACE_10)
                       .pt(Tokens.SPACE_5)
-                      .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
+                      .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
                       .fontSize(Tokens.FONT_SIZE_SM)
                       .textColor(Tokens.TEXT_MUTED))
           .select(":scope ol", s -> s.flex().flexCol().gap(Tokens.SPACE_2).ps(Tokens.SPACE_6))

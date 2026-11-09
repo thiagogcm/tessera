@@ -1,12 +1,13 @@
 package dev.nthings.tessera.css;
 
+import java.util.List;
 import java.util.Locale;
 
-/// CSS property keys, used with [StyleRefinement#get]. Declarations are emitted in constant order,
-/// and the `animation` shorthand depends on it: [#ANIMATION] must precede [#ANIMATION_DELAY],
-/// [#ANIMATION_TIMELINE] and [#ANIMATION_RANGE], so the shorthand does not reset scroll-driven
-/// timeline or range declarations.
-public enum CssProperty {
+/// The CSS properties [StyleRefinement] can declare. Declarations are emitted in constant order,
+/// and every shorthand precedes its longhands, so a longhand written after its shorthand wins in
+/// the cascade. Writing a shorthand removes its longhands ([#longhands()]), so the last call wins
+/// either way.
+enum CssProperty {
   CONTENT,
   DISPLAY,
   POSITION,
@@ -56,6 +57,8 @@ public enum CssProperty {
   PADDING_BLOCK,
   PADDING_BLOCK_START,
   PADDING_INLINE_START,
+  PADDING_BLOCK_END,
+  PADDING_INLINE_END,
   MARGIN_INLINE,
   MARGIN_BLOCK,
   MARGIN_BLOCK_START,
@@ -85,6 +88,7 @@ public enum CssProperty {
   BORDER_BLOCK_START,
   BORDER_BLOCK_END,
   BORDER_INLINE_START,
+  BORDER_INLINE_END,
   BORDER_COLLAPSE,
   BORDER_SPACING,
   BORDER_RADIUS,
@@ -99,9 +103,6 @@ public enum CssProperty {
   TRANSITION_DURATION,
   TRANSITION_TIMING_FUNCTION,
   TRANSITION_BEHAVIOR,
-  VIEW_TIMELINE,
-  SCROLL_TIMELINE,
-  TIMELINE_SCOPE,
   ANIMATION,
   ANIMATION_DELAY,
   ANIMATION_TIMELINE,
@@ -124,7 +125,32 @@ public enum CssProperty {
   private final String cssName = name().toLowerCase(Locale.ROOT).replace('_', '-');
 
   /// The kebab-case CSS property name, such as `padding-inline`.
-  public String cssName() {
+  String cssName() {
     return cssName;
+  }
+
+  /// The declarable properties this shorthand sets or resets; empty for a longhand. `border-color`
+  /// and the side borders overlap without either containing the other, so neither clears the other
+  /// and a side border keeps its own color.
+  List<CssProperty> longhands() {
+    return switch (this) {
+      case INSET ->
+          List.of(INSET_BLOCK_START, INSET_BLOCK_END, INSET_INLINE_START, INSET_INLINE_END);
+      case OVERFLOW -> List.of(OVERFLOW_X, OVERFLOW_Y);
+      case GAP -> List.of(ROW_GAP, COLUMN_GAP);
+      case PADDING_INLINE -> List.of(PADDING_INLINE_START, PADDING_INLINE_END);
+      case PADDING_BLOCK -> List.of(PADDING_BLOCK_START, PADDING_BLOCK_END);
+      case MARGIN_INLINE -> List.of(MARGIN_INLINE_START, MARGIN_INLINE_END);
+      case MARGIN_BLOCK -> List.of(MARGIN_BLOCK_START, MARGIN_BLOCK_END);
+      case BORDER ->
+          List.of(
+              BORDER_COLOR,
+              BORDER_BLOCK_START,
+              BORDER_BLOCK_END,
+              BORDER_INLINE_START,
+              BORDER_INLINE_END);
+      case ANIMATION -> List.of(ANIMATION_DELAY, ANIMATION_TIMELINE, ANIMATION_RANGE);
+      default -> List.of();
+    };
   }
 }

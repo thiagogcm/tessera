@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
 /// The `translate` property: a horizontal and a vertical offset. Applied with
-/// [EffectStyled#translate(Translation)].
+/// [Styled#translate(Translation)].
 public record Translation(CssLength x, CssLength y) implements CssValue {
 
   /// `<x> <y>`: a horizontal and a vertical offset.

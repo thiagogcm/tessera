@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
@@ -62,9 +63,9 @@ public final class SimpleTable implements Component {
   public Element render(RenderContext context) {
     var table =
         Elements.table()
-            .fullWidth()
+            .inlineSize(CssLength.pct(100))
             .maxInlineSize(CssLength.pct(100))
-            .borderSubtle(Tokens.BORDER_SUBTLE)
+            .border(Border.hairline(Tokens.BORDER_SUBTLE))
             .rounded(Tokens.RADIUS_LG);
 
     if (caption != null) {

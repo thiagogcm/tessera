@@ -25,7 +25,10 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Overflow;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 
@@ -118,7 +121,7 @@ record Shell(Page page) implements Component {
                                     inspector.triggerButton("inspector-btn", "Inspector"),
                                     inspector.asDeferred(20),
                                     search.asDeferred(30))),
-                    div().overflowXAuto().child(nav)));
+                    div().overflowX(Overflow.AUTO).child(nav)));
 
     var index = pages.indexOf(page);
     var pager =
@@ -142,12 +145,12 @@ record Shell(Page page) implements Component {
             .children(
                 h1().fontSize(
                         CssLength.fluid(CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.6)))
-                    .textBalance()
+                    .textWrap(TextWrap.BALANCE)
                     .text(page.title()),
                 p().textColor(Tokens.TEXT_MUTED)
                     .fontSize(CssLength.rem(1.125))
                     .maxInlineSize(CssLength.ch(75))
-                    .textPretty()
+                    .textWrap(TextWrap.PRETTY)
                     .text(page.summary()));
 
     return div()
@@ -169,7 +172,7 @@ record Shell(Page page) implements Component {
                 .mx(CssLength.auto())
                 .px(PAD_X)
                 .py(CssLength.rem(2))
-                .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
+                .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
                 .textColor(Tokens.TEXT_MUTED)
                 .fontSize(CssLength.rem(0.875))
                 .text(

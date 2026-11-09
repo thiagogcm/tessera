@@ -11,9 +11,13 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.foundation.Fnv1a64;
@@ -33,7 +37,7 @@ public final class Accordion implements View {
     public static Item ofText(String summaryTitle, String bodyText, boolean initiallyOpen) {
       return new Item(
           summaryTitle,
-          p().textColor(Tokens.TEXT_MUTED).textPretty().text(bodyText),
+          p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(bodyText),
           initiallyOpen);
     }
 
@@ -93,10 +97,10 @@ public final class Accordion implements View {
                     .flexCol()
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
-                    .overflowClip())
-        .select(":scope > details", s -> s.borderBlockEndSubtle(Tokens.BORDER_SUBTLE))
-        .select(":scope > details:last-child", s -> s.borderNone())
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                    .overflow(Overflow.CLIP))
+        .select(":scope > details", s -> s.borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
+        .select(":scope > details:last-child", s -> s.border(Border.none()))
         .select(
             ":scope > details > summary",
             s ->
@@ -107,7 +111,7 @@ public final class Accordion implements View {
                     .px(Tokens.SPACE_5)
                     .py(Tokens.SPACE_4)
                     .fontWeight(600)
-                    .cursorPointer()
+                    .cursor(Cursor.POINTER)
                     .listStyleNone())
         .select(":scope > details > summary:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
         .select(
@@ -126,7 +130,9 @@ public final class Accordion implements View {
                     .select(
                         ":scope > details::details-content",
                         s ->
-                            s.blockSize(CssLength.px(0)).overflowClip().motion(Motion.disclosure()))
+                            s.blockSize(CssLength.px(0))
+                                .overflow(Overflow.CLIP)
+                                .motion(Motion.disclosure()))
                     .select(
                         ":scope > details:open::details-content",
                         s -> s.blockSize(CssLength.auto())));

@@ -38,7 +38,7 @@ public record ScrollProgressBar(
             .fixed()
             .insetBlockStart(CssLength.px(0))
             .insetInlineStart(CssLength.px(0))
-            .fullWidth()
+            .inlineSize(CssLength.pct(100))
             .blockSize(thickness)
             .zIndex(50)
             .bg(barColor);

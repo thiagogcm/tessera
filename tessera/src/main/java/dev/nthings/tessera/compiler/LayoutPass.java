@@ -3,7 +3,7 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.compiler.DocumentState.Contribution;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.css.StyleSheetCollector;
+import dev.nthings.tessera.css.StyleSheet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ final class LayoutPass implements ViewExpansion.Placement {
   static Result layout(
       PageDocument document,
       List<? extends IntoElement> siteHead,
-      StyleSheetCollector styles,
+      StyleSheet styles,
       CompilationState state) {
     return new LayoutPass(state).document(document, siteHead, styles, state);
   }
@@ -49,7 +49,7 @@ final class LayoutPass implements ViewExpansion.Placement {
   private Result document(
       PageDocument document,
       List<? extends IntoElement> siteHead,
-      StyleSheetCollector styles,
+      StyleSheet styles,
       CompilationState state) {
     var contributions = new DocumentState();
     var root = PageContext.forDocument(styles, contributions, state);

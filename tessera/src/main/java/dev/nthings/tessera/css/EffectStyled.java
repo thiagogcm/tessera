@@ -1,7 +1,9 @@
 package dev.nthings.tessera.css;
 
-/// Motion, transforms, filters, cursors, animation, and view transitions.
-public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF> {
+/// Motion, transforms, filters, cursors, animation, and view transitions. Part of [Styled].
+///
+/// @param <SELF> concrete element or style builder type
+interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Sets `transition-property`, `transition-duration`, and `transition-timing-function` from
   /// `motion`, plus `transition-behavior: allow-discrete` when it allows discrete transitions. In
@@ -12,6 +14,7 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return self();
   }
 
+  /// `transform`.
   default SELF transform(Transform transform) {
     style().put(CssProperty.TRANSFORM, transform);
     return self();
@@ -23,18 +26,16 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return self();
   }
 
+  /// `backdrop-filter`, applied to what shows through a translucent background.
   default SELF backdropFilter(CssFilter filter) {
     style().put(CssProperty.BACKDROP_FILTER, filter);
     return self();
   }
 
+  /// `cursor`, the pointer shown over the element.
   default SELF cursor(Cursor cursor) {
     style().put(CssProperty.CURSOR, cursor);
     return self();
-  }
-
-  default SELF cursorPointer() {
-    return cursor(Cursor.POINTER);
   }
 
   /// Sets `view-transition-name`, which pairs this element across a view transition.
@@ -43,20 +44,15 @@ public interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarg
     return self();
   }
 
+  /// Sets `view-transition-class`, which groups transition names for shared styling.
   default SELF viewTransitionClass(CssIdent name) {
     style().put(CssProperty.VIEW_TRANSITION_CLASS, name);
     return self();
   }
 
-  /// Sets `view-timeline` to track this element's visibility in its scrollport along `axis`.
-  /// `name` must be a dashed identifier (`--name`); this method does not check it.
-  default SELF viewTimeline(CssIdent name, TimelineAxis axis) {
-    style().put(CssProperty.VIEW_TIMELINE, name.toCss() + " " + axis.toCss());
-    return self();
-  }
-
   /// Delays each element by `stepMilliseconds` per sibling position, so the first sibling has no
-  /// delay. Throws IllegalArgumentException if `stepMilliseconds` is negative.
+  /// delay. Write it after any animation it delays: an animation written later replaces the delay.
+  /// Throws IllegalArgumentException if `stepMilliseconds` is negative.
   default SELF animationStaggerBySiblingIndex(int stepMilliseconds) {
     if (stepMilliseconds < 0) {
       throw new IllegalArgumentException("stepMilliseconds must be >= 0");

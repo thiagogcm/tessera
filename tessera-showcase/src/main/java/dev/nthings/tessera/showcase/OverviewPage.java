@@ -18,6 +18,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,21 +66,21 @@ final class OverviewPage {
             List.of(
                 TabPanel.of(
                     "1. requestLayout",
-                    p().textPretty()
+                    p().textWrap(TextWrap.PRETTY)
                         .text(
                             "Expands Component and View trees under a ScopedValue render"
                                 + " context, binds ElementRefs to scoped DOM ids, and interns"
                                 + " every style into content-hashed utility classes.")),
                 TabPanel.of(
                     "2. prepaint",
-                    p().textPretty()
+                    p().textWrap(TextWrap.PRETTY)
                         .text(
                             "Resolves late elements (tables of contents, endnotes), links id"
                                 + " references, and rejects inaccessible markup, dangling"
                                 + " invokers, duplicate ids and broken #fragment links.")),
                 TabPanel.of(
                     "3. paint",
-                    p().textPretty()
+                    p().textWrap(TextWrap.PRETTY)
                         .text(
                             "Streams OWASP-encoded HTML and a single deduplicated stylesheet"
                                 + " ordered by cascade layer, shared by every page of the site."))));
@@ -114,7 +115,7 @@ final class OverviewPage {
                 CodeBlock.ofLines(
                         "var page = new PageDocument(\"Hello\",",
                         "    main().p(rem(2)).children(",
-                        "        h1().textBalance().text(\"Hello\"),",
+                        "        h1().textWrap(TextWrap.BALANCE).text(\"Hello\"),",
                         "        Callout.tip(\"Rendered without JavaScript\")));",
                         "",
                         "CompiledPage out = Compiler.compile(page); // html + css")

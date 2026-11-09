@@ -5,7 +5,6 @@ import dev.nthings.tessera.compiler.ResolvedNode.ResolvedTag;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.css.CssProperty;
 import dev.nthings.tessera.css.StyleRefinement;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -45,7 +44,7 @@ final class PageValidator {
           "Add role=\"presentation\" or aria-hidden=\"true\", or provide descriptive alt text.");
     }
     var hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
-    if (!hasWidthAndHeight && style.get(CssProperty.ASPECT_RATIO) == null) {
+    if (!hasWidthAndHeight && !style.hasAspectRatio()) {
       state.report(
           location,
           "image-dimensions",

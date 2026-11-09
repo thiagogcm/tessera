@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.foundation.Decimals;
 import java.util.List;
 import java.util.Map;
 
@@ -185,6 +185,6 @@ public interface Accessible<SELF extends Accessible<SELF>> {
   }
 
   private static String format(double value) {
-    return CssLength.formatNumber(value);
+    return Decimals.format(value);
   }
 }

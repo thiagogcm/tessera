@@ -8,6 +8,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.Motion;
@@ -100,7 +101,7 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                     .gap(Tokens.SPACE_4)
                     .mt(Tokens.SPACE_12)
                     .pt(Tokens.SPACE_6)
-                    .borderBlockStartSubtle(Tokens.BORDER_SUBTLE))
+                    .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE)))
         .containerMinInlineSize(
             CssLength.rem(36), c -> c.root(s -> s.gridColumns(TrackList.equal(2))))
         .select(
@@ -112,7 +113,7 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                     .px(Tokens.SPACE_5)
                     .py(Tokens.SPACE_4)
                     .rounded(Tokens.RADIUS_LG)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .bg(Tokens.SURFACE_CARD)
                     .textDecorationNone()
                     .textColor(Tokens.TEXT_PRIMARY)
@@ -121,7 +122,7 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                             .properties(Animatable.BORDER_COLOR, Animatable.BACKGROUND)))
         .select(
             ":scope > .pager-card:hover",
-            s -> s.borderSubtle(Tokens.ACCENT_PRIMARY).bg(Tokens.SURFACE_SUBTLE))
+            s -> s.border(Border.hairline(Tokens.ACCENT_PRIMARY)).bg(Tokens.SURFACE_SUBTLE))
         .select(":scope > .pager-card.pager-prev", s -> s.gridColumn(GridPlacement.at(1)))
         .select(
             ":scope > .pager-card.pager-next",

@@ -17,13 +17,16 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
@@ -178,8 +181,8 @@ public final class Tabs {
                       .flexCol()
                       .rounded(Tokens.RADIUS_XL)
                       .bg(Tokens.SURFACE_CARD)
-                      .borderSubtle(Tokens.BORDER_SUBTLE)
-                      .overflowClip())
+                      .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                      .overflow(Overflow.CLIP))
           .select(
               ":scope > .tab-bar",
               s ->
@@ -190,7 +193,7 @@ public final class Tabs {
                       .px(Tokens.SPACE_4)
                       .pt(Tokens.SPACE_2)
                       .relative()
-                      .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
+                      .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
                       .bg(Tokens.SURFACE_SUBTLE))
           .select(
               ":scope > .tab-bar > [role=\"tab\"]",
@@ -201,13 +204,13 @@ public final class Tabs {
                       .px(Tokens.SPACE_3_5)
                       .py(Tokens.SPACE_2_5)
                       .bg(CssColor.transparent())
-                      .borderNone()
+                      .border(Border.none())
                       .textColor(Tokens.TEXT_MUTED)
                       .fontFamilyInherit()
                       .fontSize(Tokens.FONT_SIZE_SM)
                       .fontWeight(500)
                       .whiteSpace(WhiteSpace.NOWRAP)
-                      .cursorPointer())
+                      .cursor(Cursor.POINTER))
           .select(
               ":scope > .tab-bar > [role=\"tab\"]:hover",
               s -> s.bg(Tokens.SURFACE_CARD).textColor(Tokens.TEXT_PRIMARY))

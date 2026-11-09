@@ -19,12 +19,14 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Overscroll;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.ScrollMarkerGroup;
 import dev.nthings.tessera.css.ScrollSnap;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.SnapAlign;
+import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Translation;
 import dev.nthings.tessera.foundation.Fnv1a64;
@@ -51,8 +53,8 @@ public final class Carousel implements View {
               .flexCol()
               .gap(Tokens.SPACE_2)
               .children(
-                  h3().fontSize(Tokens.FONT_SIZE_LG).textBalance().text(title),
-                  p().textColor(Tokens.TEXT_MUTED).textPretty().text(summary)));
+                  h3().fontSize(Tokens.FONT_SIZE_LG).textWrap(TextWrap.BALANCE).text(title),
+                  p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(summary)));
     }
 
     /// Creates a slide whose body is `content`. `title` and `summary` are not rendered.
@@ -103,7 +105,7 @@ public final class Carousel implements View {
                 s.anchorName(anchorIdent())
                     .flex()
                     .gap(Tokens.SPACE_4)
-                    .overflowXAuto()
+                    .overflowX(Overflow.AUTO)
                     .scrollSnapType(ScrollSnap.mandatory(ScrollSnap.Axis.X))
                     .scrollMarkerGroup(ScrollMarkerGroup.AFTER)
                     .overscrollBehaviorX(Overscroll.CONTAIN)
@@ -148,8 +150,8 @@ public final class Carousel implements View {
                     .blockSize(CssLength.rem(0.625))
                     .rounded(Tokens.RADIUS_FULL)
                     .bg(Tokens.BORDER_SUBTLE)
-                    .borderNone()
-                    .cursorPointer()
+                    .border(Border.none())
+                    .cursor(Cursor.POINTER)
                     .motion(
                         Motion.of(
                             CssDuration.ms(200),
@@ -172,7 +174,7 @@ public final class Carousel implements View {
                     .rounded(Tokens.RADIUS_FULL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .shadow(
                         Shadow.drop(
                             CssLength.px(4),
@@ -180,7 +182,7 @@ public final class Carousel implements View {
                             CssLength.px(-4),
                             CssColor.oklch(0, 0, 0, 0.2)))
                     .fontSize(Tokens.FONT_SIZE_LG)
-                    .cursorPointer()
+                    .cursor(Cursor.POINTER)
                     .zIndex(1))
         .select(
             ":scope::scroll-button(inline-start)",

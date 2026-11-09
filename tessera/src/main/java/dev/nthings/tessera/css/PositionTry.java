@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /// One `position-try-fallbacks` candidate: flips tried together on overflow. Applied with
-/// [AnchorStyled#positionTryFallbacks].
+/// [Styled#positionTryFallbacks].
 public record PositionTry(List<Flip> flips) implements CssValue {
 
   /// Axes an anchored element can flip across its anchor.

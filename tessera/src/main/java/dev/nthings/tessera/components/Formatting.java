@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.HighlightTone;
@@ -92,7 +93,7 @@ public final class Formatting {
   public static TagElement keybinding(String keys) {
     return Elements.kbd()
         .bg(Tokens.SURFACE_SUBTLE)
-        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .border(Border.hairline(Tokens.BORDER_SUBTLE))
         .px(CssLength.rem(0.4))
         .py(CssLength.rem(0.1))
         .rounded(Tokens.RADIUS_SM)

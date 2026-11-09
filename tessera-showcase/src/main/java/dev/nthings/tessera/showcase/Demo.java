@@ -11,6 +11,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayList;
@@ -74,7 +75,9 @@ final class Demo implements Component {
 
   /// Card styling shared by panels, popovers and tooltips.
   static TagElement surface(TagElement box, CssLength radius) {
-    return box.rounded(radius).bg(Tokens.SURFACE_CARD).borderSubtle(Tokens.BORDER_SUBTLE);
+    return box.rounded(radius)
+        .bg(Tokens.SURFACE_CARD)
+        .border(Border.hairline(Tokens.BORDER_SUBTLE));
   }
 
   static TagElement tile(String label) {
@@ -116,7 +119,7 @@ final class Demo implements Component {
             .p(CssLength.rem(1.25))
             .rounded(CssLength.rem(0.75))
             .bg(Tokens.SURFACE_CANVAS)
-            .borderSubtle(Tokens.BORDER_SUBTLE)
+            .border(Border.hairline(Tokens.BORDER_SUBTLE))
             .children(stageItems));
     if (!code.isEmpty()) {
       section.child(CodeBlock.ofLines(code).filename("Usage").language("java"));

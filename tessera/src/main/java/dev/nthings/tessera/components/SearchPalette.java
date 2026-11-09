@@ -22,12 +22,15 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
@@ -143,11 +146,11 @@ public final class SearchPalette implements View {
         .px(Tokens.SPACE_3)
         .py(CssLength.rem(0.4))
         .rounded(Tokens.RADIUS_LG)
-        .borderSubtle(Tokens.BORDER_SUBTLE)
+        .border(Border.hairline(Tokens.BORDER_SUBTLE))
         .bg(Tokens.SURFACE_CARD)
         .textColor(Tokens.TEXT_MUTED)
         .fontSize(Tokens.FONT_SIZE_SM)
-        .cursorPointer()
+        .cursor(Cursor.POINTER)
         .child(
             div()
                 .flex()
@@ -166,7 +169,7 @@ public final class SearchPalette implements View {
                         .py(CssLength.rem(0.1))
                         .rounded(Tokens.RADIUS_SM)
                         .bg(Tokens.SURFACE_SUBTLE)
-                        .borderSubtle(Tokens.BORDER_SUBTLE)
+                        .border(Border.hairline(Tokens.BORDER_SUBTLE))
                         .fontSize(Tokens.FONT_SIZE_XS)
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
@@ -177,7 +180,7 @@ public final class SearchPalette implements View {
                         .py(CssLength.rem(0.1))
                         .rounded(Tokens.RADIUS_SM)
                         .bg(Tokens.SURFACE_SUBTLE)
-                        .borderSubtle(Tokens.BORDER_SUBTLE)
+                        .border(Border.hairline(Tokens.BORDER_SUBTLE))
                         .fontSize(Tokens.FONT_SIZE_XS)
                         .fontWeight(600)
                         .textColor(Tokens.TEXT_PRIMARY)
@@ -308,14 +311,14 @@ public final class SearchPalette implements View {
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .shadow(
                         Shadow.drop(
                             CssLength.px(25),
                             CssLength.px(50),
                             CssLength.px(-12),
                             CssColor.oklch(0, 0, 0, 0.35)))
-                    .overflowHidden())
+                    .overflow(Overflow.HIDDEN))
         .select(
             ":scope::backdrop",
             s -> s.bg(CssColor.oklch(0, 0, 0, 0.5)).backdropFilter(CssFilter.blur(CssLength.px(4))))
@@ -364,7 +367,7 @@ public final class SearchPalette implements View {
                     .gap(Tokens.SPACE_3)
                     .px(Tokens.SPACE_4)
                     .py(Tokens.SPACE_3)
-                    .borderBlockEndSubtle(Tokens.BORDER_SUBTLE)
+                    .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
                     .textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-input",
@@ -373,23 +376,23 @@ public final class SearchPalette implements View {
                     .fontSize(Tokens.FONT_SIZE_MD)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .bg(CssColor.transparent())
-                    .borderNone()
-                    .outlineNone())
+                    .border(Border.none())
+                    .outline(Border.none()))
         .select(
             ":scope .palette-close",
             s ->
                 s.bg(Tokens.SURFACE_SUBTLE)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .rounded(Tokens.RADIUS_MD)
                     .px(CssLength.rem(0.4))
                     .py(CssLength.rem(0.2))
-                    .cursorPointer())
+                    .cursor(Cursor.POINTER))
         .select(
             ":scope .palette-esc-kbd",
             s -> s.fontSize(Tokens.FONT_SIZE_XS).fontWeight(600).textColor(Tokens.TEXT_MUTED))
         .select(
             ":scope .palette-results",
-            s -> s.maxBlockSize(CssLength.rem(24)).overflowYAuto().p(Tokens.SPACE_3))
+            s -> s.maxBlockSize(CssLength.rem(24)).overflowY(Overflow.AUTO).p(Tokens.SPACE_3))
         .select(":scope .palette-group", s -> s.m(CssLength.px(0)).p(CssLength.px(0)))
         .select(":scope .palette-group:not(:has(.palette-item:not([hidden])))", s -> s.hidden())
         .select(
@@ -411,10 +414,10 @@ public final class SearchPalette implements View {
                     .rounded(Tokens.RADIUS_LG)
                     .textColor(Tokens.TEXT_PRIMARY)
                     .textDecorationNone()
-                    .cursorPointer())
+                    .cursor(Cursor.POINTER))
         .select(
             ":scope .palette-item:hover, :scope .palette-item:focus-visible",
-            s -> s.bg(Tokens.SURFACE_SUBTLE).outlineNone())
+            s -> s.bg(Tokens.SURFACE_SUBTLE).outline(Border.none()))
         .select(":scope .palette-item-main", s -> s.flex().flexCol().gap(CssLength.rem(0.15)))
         .select(":scope .palette-item-title", s -> s.fontSize(Tokens.FONT_SIZE_SM).fontWeight(500))
         .select(
@@ -440,7 +443,7 @@ public final class SearchPalette implements View {
                     .gap(Tokens.SPACE_4)
                     .px(Tokens.SPACE_4)
                     .py(Tokens.SPACE_2)
-                    .borderBlockStartSubtle(Tokens.BORDER_SUBTLE)
+                    .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
                     .bg(Tokens.SURFACE_SUBTLE)
                     .textColor(Tokens.TEXT_MUTED)
                     .fontSize(Tokens.FONT_SIZE_XS))
@@ -453,7 +456,7 @@ public final class SearchPalette implements View {
                     .py(CssLength.rem(0.1))
                     .rounded(Tokens.RADIUS_SM)
                     .bg(Tokens.SURFACE_CARD)
-                    .borderSubtle(Tokens.BORDER_SUBTLE)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .textColor(Tokens.TEXT_PRIMARY))
         .select(":scope [hidden]", s -> s.hidden());
   }

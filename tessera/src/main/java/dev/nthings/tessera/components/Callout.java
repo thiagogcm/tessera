@@ -173,7 +173,7 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
                     .py(Tokens.SPACE_4)
                     .my(Tokens.SPACE_5)
                     .rounded(Tokens.RADIUS_LG)
-                    .borderNone())
+                    .border(Border.none()))
         .select(
             ":scope > .callout-header",
             s ->

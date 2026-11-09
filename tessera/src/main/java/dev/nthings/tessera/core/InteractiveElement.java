@@ -11,7 +11,7 @@ import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
-import java.util.function.UnaryOperator;
+import java.util.function.Consumer;
 
 /// Shared interactive, attribute, id-reference, container-query and scroll-animation capabilities
 /// of element builders. [TagElement] implements it.
@@ -112,47 +112,47 @@ public interface InteractiveElement<
     return attr("tabindex", Integer.toString(index));
   }
 
-  /// Applies `mutator`'s styles on hover, while the element is not disabled.
-  default SELF hover(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.HOVER, mutator);
+  /// Applies `styles` on hover, while the element is not disabled.
+  default SELF hover(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.HOVER, styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles under `:focus-visible`, for keyboard focus.
-  default SELF focusVisible(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.FOCUS_VISIBLE, mutator);
+  /// Applies `styles` under `:focus-visible`, for keyboard focus.
+  default SELF focusVisible(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.FOCUS_VISIBLE, styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles while the element is pressed, and not disabled.
-  default SELF active(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.ACTIVE, mutator);
+  /// Applies `styles` while the element is pressed, and not disabled.
+  default SELF active(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.ACTIVE, styles);
     return self();
   }
 
   /// Styles applied only under `prefers-reduced-motion: no-preference`.
-  default SELF motionSafe(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.MOTION_SAFE, mutator);
+  default SELF motionSafe(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.MOTION_SAFE, styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles while the element is `:checked`.
-  default SELF checked(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.CHECKED, mutator);
+  /// Applies `styles` while the element is `:checked`.
+  default SELF checked(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.CHECKED, styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles when the user has changed a control to an invalid value
+  /// Applies `styles` when the user has changed a control to an invalid value
   /// (`:user-invalid`).
-  default SELF userInvalid(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.USER_INVALID, mutator);
+  default SELF userInvalid(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.USER_INVALID, styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles when the user has changed a control to a valid value
+  /// Applies `styles` when the user has changed a control to a valid value
   /// (`:user-valid`).
-  default SELF userValid(UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.USER_VALID, mutator);
+  default SELF userValid(Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.USER_VALID, styles);
     return self();
   }
 
@@ -162,21 +162,20 @@ public interface InteractiveElement<
     return attr("data-group", Fnv1a64.sanitizeIdentifier(groupName));
   }
 
-  /// Applies `mutator`'s styles while an ancestor marked with [#group(String)] for `groupName` is
+  /// Applies `styles` while an ancestor marked with [#group(String)] for `groupName` is
   /// hovered. The ancestor is required. The name is sanitized as in [#group(String)], and an empty
   /// name throws IllegalArgumentException.
-  default SELF groupHover(String groupName, UnaryOperator<StyleRefinement> mutator) {
-    interactivity()
-        .on(InteractiveState.GROUP_HOVER, Fnv1a64.sanitizeIdentifier(groupName), mutator);
+  default SELF groupHover(String groupName, Consumer<StyleRefinement> styles) {
+    interactivity().on(InteractiveState.GROUP_HOVER, Fnv1a64.sanitizeIdentifier(groupName), styles);
     return self();
   }
 
-  /// Applies `mutator`'s styles when the nearest ancestor container named `containerName` is at
+  /// Applies `styles` when the nearest ancestor container named `containerName` is at
   /// least `minInlineSize` wide. Emits `@container <name> (inline-size >= <min>)`. The ancestor
   /// must be declared with `containerInlineSize(CssIdent)`.
   default SELF onContainer(
-      CssIdent containerName, CssLength minInlineSize, UnaryOperator<StyleRefinement> mutator) {
-    interactivity().onContainerMinWidth(containerName, minInlineSize, mutator);
+      CssIdent containerName, CssLength minInlineSize, Consumer<StyleRefinement> styles) {
+    interactivity().onContainerMinWidth(containerName, minInlineSize, styles);
     return self();
   }
 
@@ -189,7 +188,8 @@ public interface InteractiveElement<
   /// Plays `preset` as the element scrolls into view along `axis`, so scrolling back reverses it.
   /// Applies only under `prefers-reduced-motion: no-preference`.
   default SELF scrollReveal(ScrollReveal preset, TimelineAxis axis) {
-    return scrollDriven(preset, axis, false);
+    interactivity().scrollReveal(preset, axis);
+    return self();
   }
 
   /// Plays `preset` once, over 0.5s, the first time the element scrolls into view (CSS
@@ -197,8 +197,7 @@ public interface InteractiveElement<
   /// [#scrollReveal(ScrollReveal)], it is time-based and does not reverse. Applies only under
   /// `prefers-reduced-motion: no-preference`.
   default SELF revealOnce(ScrollReveal preset) {
-    interactivity().registerKeyframeRule(preset.keyframeRule());
-    interactivity().on(InteractiveState.MOTION_SAFE, preset::revealOnce);
+    interactivity().revealOnce(preset);
     return self();
   }
 
@@ -211,12 +210,7 @@ public interface InteractiveElement<
   /// Plays `preset` as the element scrolls out of view along `axis`, and keeps its end state.
   /// Applies only under `prefers-reduced-motion: no-preference`.
   default SELF scrollExit(ScrollReveal preset, TimelineAxis axis) {
-    return scrollDriven(preset, axis, true);
-  }
-
-  private SELF scrollDriven(ScrollReveal preset, TimelineAxis axis, boolean exit) {
-    interactivity().registerKeyframeRule(preset.keyframeRule());
-    interactivity().on(InteractiveState.MOTION_SAFE, s -> preset.scrollDriven(s, axis, exit));
+    interactivity().scrollExit(preset, axis);
     return self();
   }
 

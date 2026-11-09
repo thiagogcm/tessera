@@ -15,6 +15,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Shadow;
@@ -161,14 +162,15 @@ public final class ContentSection implements Component, ParentElement<ContentSec
             .scrollMarginBlockStart(CssLength.rem(7));
 
     switch (surface) {
-      case GHOST -> sectionEl.p(CssLength.px(0)).bg(CssColor.transparent()).borderNone();
-      case FLAT -> sectionEl.py(Tokens.SPACE_6).borderBlockEndSubtle(Tokens.BORDER_SUBTLE);
+      case GHOST -> sectionEl.p(CssLength.px(0)).bg(CssColor.transparent()).border(Border.none());
+      case FLAT ->
+          sectionEl.py(Tokens.SPACE_6).borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE));
       case CARD ->
           sectionEl
               .p(Tokens.SPACE_6)
               .rounded(Tokens.RADIUS_XL)
               .bg(Tokens.SURFACE_CARD)
-              .borderSubtle(Tokens.BORDER_SUBTLE)
+              .border(Border.hairline(Tokens.BORDER_SUBTLE))
               .shadow(
                   Shadow.drop(
                       CssLength.px(4),
@@ -180,7 +182,7 @@ public final class ContentSection implements Component, ParentElement<ContentSec
               .p(Tokens.SPACE_6)
               .rounded(Tokens.RADIUS_XL)
               .bg(CssColor.sameHue(Tokens.ACCENT_PRIMARY, 97, 0.03))
-              .borderSubtle(Tokens.ACCENT_PRIMARY);
+              .border(Border.hairline(Tokens.ACCENT_PRIMARY));
     }
 
     return sectionEl.child(headerEl).child(bodyContainer);

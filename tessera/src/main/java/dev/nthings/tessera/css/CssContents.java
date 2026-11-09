@@ -18,19 +18,15 @@ final class CssContents {
   }
 
   /// `counter(name)`.
-  record Counter(CssIdent name) implements CssContent {
+  record CounterValue(Counter name) implements CssContent {
     @Override
     public String toCss() {
       return "counter(" + name.toCss() + ")";
     }
   }
 
-  /// `var(--name)` of a custom property that holds a string; `name` must be dashed.
-  record Property(CssIdent name) implements CssContent {
-    Property {
-      name.requireCustom();
-    }
-
+  /// `var(--name)` of a custom property that holds a string.
+  record Property(CustomProperty name) implements CssContent {
     @Override
     public String toCss() {
       return name.varReference();

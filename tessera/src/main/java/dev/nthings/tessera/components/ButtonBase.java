@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,7 @@ import org.jspecify.annotations.Nullable;
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
 abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
 
-  Button.Tone tone;
+  Tone tone;
   Button.Variant variant;
   Button.Size size = Button.Size.MD;
   boolean submit;
@@ -23,13 +24,14 @@ abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
   @Nullable Command command;
   @Nullable UnaryOperator<TagElement> tooltip;
 
-  ButtonBase(Button.Tone tone, Button.Variant variant) {
+  ButtonBase(Tone tone, Button.Variant variant) {
     this.tone = tone;
     this.variant = variant;
   }
 
   /// Sets the semantic color; `ACCENT` for [Button] and `NEUTRAL` for [IconButton] by default.
-  public B tone(Button.Tone tone) {
+  /// It does not change the surface or behavior.
+  public B tone(Tone tone) {
     this.tone = tone;
     return self();
   }

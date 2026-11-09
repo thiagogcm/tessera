@@ -1,0 +1,35 @@
+package dev.nthings.tessera.css;
+
+/// An element state for [Styled#on(Condition, java.util.function.Consumer)], emitted as a nested
+/// `&:pseudo-class` rule. Rules are emitted in constant order, not call order, so when two states
+/// match at once the later constant wins: `ACTIVE` overrides `HOVER`, and `DISABLED` overrides
+/// every other state.
+public enum State implements Condition {
+  /// `:hover`, while the element is not disabled.
+  HOVER("&:hover:not(:disabled)"),
+  /// `:focus-visible`: keyboard focus, or focus the browser decides to show.
+  FOCUS_VISIBLE("&:focus-visible"),
+  /// `:active` (pressed), while the element is not disabled.
+  ACTIVE("&:active:not(:disabled)"),
+  /// `:checked`, for checkboxes, radios and options.
+  CHECKED("&:checked"),
+  /// `:open`, for an open `<details>`, `<dialog>` or `<select>` picker.
+  OPEN("&:open"),
+  /// `:user-invalid`: the user changed the control to an invalid value.
+  USER_INVALID("&:user-invalid"),
+  /// `:user-valid`: the user changed the control to a valid value.
+  USER_VALID("&:user-valid"),
+  /// `:disabled`.
+  DISABLED("&:disabled");
+
+  private final String prelude;
+
+  State(String prelude) {
+    this.prelude = prelude;
+  }
+
+  /// The prelude that opens the nested rule, such as `&:hover:not(:disabled)`.
+  String prelude() {
+    return prelude;
+  }
+}

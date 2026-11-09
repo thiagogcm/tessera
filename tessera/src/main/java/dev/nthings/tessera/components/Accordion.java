@@ -14,12 +14,13 @@ import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
@@ -122,17 +123,20 @@ public final class Accordion implements View {
         .select(
             ":scope > details > .accordion-body",
             s -> s.px(Tokens.SPACE_5).py(Tokens.SPACE_4).pt(Tokens.SPACE_1))
-        .motionSafe(
+        .on(
+            Media.MOTION_SAFE,
             m ->
                 m.select(
                         ":scope > details > summary .accordion-chevron",
-                        s -> s.motion(Motion.controlFeedback().properties(Animatable.TRANSFORM)))
+                        s ->
+                            s.transition(
+                                Transition.controlFeedback().properties(Animatable.TRANSFORM)))
                     .select(
                         ":scope > details::details-content",
                         s ->
                             s.blockSize(CssLength.px(0))
                                 .overflow(Overflow.CLIP)
-                                .motion(Motion.disclosure()))
+                                .transition(Transition.disclosure()))
                     .select(
                         ":scope > details:open::details-content",
                         s -> s.blockSize(CssLength.auto())));

@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 import org.owasp.encoder.Encode;
 
 /// A `font-family` list of named families, generic fallbacks, and font family tokens. Set it with
-/// [Styled#fontFamily(FontStack)], or give a [DesignToken.FontFamily] a stack with `withValue`.
+/// [Styled#fontFamily(FontStack)], or give a [DesignToken.FontFamily] a stack with [Theme#with].
 public record FontStack(List<Entry> entries) implements CssValue {
 
   /// One item of a [FontStack]: a named family from [FontStack#named(String)], a [Generic] family,

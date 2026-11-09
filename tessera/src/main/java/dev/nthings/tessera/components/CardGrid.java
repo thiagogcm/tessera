@@ -38,7 +38,7 @@ public record CardGrid(
                 s.subgridRows(4)
                     .rowGap(Tokens.SPACE_3)
                     // Layout containment (container-type) would break subgrid.
-                    .containerNormal());
+                    .containerNone());
   }
 
   @Override

@@ -9,6 +9,8 @@ import dev.nthings.tessera.compiler.OutputMode;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssNumber;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
@@ -20,12 +22,12 @@ class ThemeRolesTest {
   @Test
   @DisplayName("a role override restyles a field and a callout in both appearances")
   void roleOverrideRestylesFieldAndCallout() {
-    var tokens =
-        new Tokens()
-            .register(
-                Tokens.CONTROL_FG.withLightDark(
-                    CssColor.oklch(20, 0.03, 250), CssColor.oklch(95, 0.02, 250)))
-            .register(Tokens.CONTROL_FONT_SIZE.withValue(CssLength.rem(1.25)));
+    var theme =
+        Theme.defaults()
+            .with(
+                Tokens.CONTROL_FG,
+                CssColor.lightDark(CssColor.oklch(20, 0.03, 250), CssColor.oklch(95, 0.02, 250)))
+            .with(Tokens.CONTROL_FONT_SIZE, CssLength.rem(1.25));
     var page =
         RenderedPage.of(
             Compiler.compile(
@@ -35,7 +37,7 @@ class ThemeRolesTest {
                         .children(
                             Forms.field("Display name", Forms.text("name")),
                             Callout.note("Read this note"))),
-                tokens,
+                theme,
                 OutputMode.inline()));
 
     var fieldScope = page.scopeBody(page.element(".field-label"));
@@ -60,12 +62,12 @@ class ThemeRolesTest {
   @Test
   @DisplayName("compact density scales spacing and leaves the type scale alone")
   void compactDensityLeavesTypographyAlone() {
-    var tokens = new Tokens().register(Tokens.DENSITY.withValue(0.5));
+    var theme = Theme.defaults().with(Tokens.DENSITY, CssNumber.of(0.5));
     var page =
         RenderedPage.of(
             Compiler.compile(
                 new PageDocument("Density", main().child(Forms.field("Name", Forms.text("name")))),
-                tokens,
+                theme,
                 OutputMode.inline()));
 
     assertThat(page.css())

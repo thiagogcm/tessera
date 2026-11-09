@@ -1,6 +1,6 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import java.util.List;
 
 /// Compiles pages and sites. Every method throws [CompilationException] when it finds authoring
@@ -9,16 +9,16 @@ import java.util.List;
 public final class Compiler {
   private Compiler() {}
 
-  /// Compiles `document` with the default `Tokens` and [OutputMode#inline()].
+  /// Compiles `document` with [Theme#defaults()] and [OutputMode#inline()].
   public static CompiledPage compile(PageDocument document) {
-    return compile(document, new Tokens(), OutputMode.inline());
+    return compile(document, Theme.defaults(), OutputMode.inline());
   }
 
-  /// Compiles `document` with `tokens`, packaging CSS and client behaviors as `outputMode`
-  /// specifies. Under [OutputMode#external(String)] the caller must publish every asset of the
-  /// result at its path.
-  public static CompiledPage compile(PageDocument document, Tokens tokens, OutputMode outputMode) {
-    return PageCompiler.compile(document, tokens, outputMode);
+  /// Compiles `document` with `theme`'s token values, packaging CSS and client behaviors as
+  /// `outputMode` specifies. Under [OutputMode#external(String)] the caller must publish every
+  /// asset of the result at its path.
+  public static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
+    return PageCompiler.compile(document, theme, outputMode);
   }
 
   /// Compiles every route of `site` into one [CompiledSite].
@@ -37,8 +37,8 @@ public final class Compiler {
     return SiteCompiler.compile(site);
   }
 
-  /// Lays out and validates `document` and returns its element tree instead of HTML. Tokens do not
-  /// affect the tree, so there is no tokens overload.
+  /// Lays out and validates `document` and returns its element tree instead of HTML. The theme does
+  /// not affect the tree, so there is no theme overload.
   public static PageTree explain(PageDocument document) {
     return PageCompiler.prepare(document, List.of()).tree();
   }

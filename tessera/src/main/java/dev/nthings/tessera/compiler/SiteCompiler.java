@@ -67,7 +67,7 @@ final class SiteCompiler {
     for (var prepared : preparedPages) {
       prepared.contributeStylesTo(sharedStyles);
     }
-    var css = sharedStyles.render(site.tokens());
+    var css = sharedStyles.render(site.theme());
     var outputMode = site.outputMode();
     var linkedFiles = new LinkedHashMap<String, Asset>();
     for (var prepared : preparedPages) {

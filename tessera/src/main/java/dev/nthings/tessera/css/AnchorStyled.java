@@ -5,19 +5,15 @@ package dev.nthings.tessera.css;
 /// @param <SELF> concrete element or style builder type
 interface AnchorStyled<SELF extends AnchorStyled<SELF>> extends StyleTarget<SELF> {
 
-  /// Names this element as an anchor, emitting `anchor-name: --name`. Throws
-  /// IllegalArgumentException unless `name` is a dashed identifier, such as one from
-  /// [CssIdent#custom].
-  default SELF anchorName(CssIdent name) {
-    style().put(CssProperty.ANCHOR_NAME, name.requireCustom());
+  /// Names this element as `anchor`, emitting `anchor-name: --name`.
+  default SELF anchorName(Anchor anchor) {
+    style().put(CssProperty.ANCHOR_NAME, anchor);
     return self();
   }
 
-  /// Places this element against the anchor `name`, emitting `position-anchor: --name`. Throws
-  /// IllegalArgumentException unless `name` is a dashed identifier, such as one from
-  /// [CssIdent#custom].
-  default SELF positionAnchor(CssIdent name) {
-    style().put(CssProperty.POSITION_ANCHOR, name.requireCustom());
+  /// Places this element against `anchor`, emitting `position-anchor: --name`.
+  default SELF positionAnchor(Anchor anchor) {
+    style().put(CssProperty.POSITION_ANCHOR, anchor);
     return self();
   }
 

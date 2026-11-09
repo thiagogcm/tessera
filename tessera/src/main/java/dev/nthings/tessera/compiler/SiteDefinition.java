@@ -1,6 +1,6 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 /// content-hashed stylesheet across cross-document view transitions, and to
 /// [LinkSpeculation#PRERENDER].
 public record SiteDefinition(
-    Tokens tokens,
+    Theme theme,
     OutputMode outputMode,
     List<SiteRoute> routes,
     @Nullable String baseUrl,
@@ -64,7 +64,7 @@ public record SiteDefinition(
   /// [SiteDefinition] defaults.
   public static final class Builder {
 
-    private Tokens tokens = new Tokens();
+    private Theme theme = Theme.defaults();
     private OutputMode outputMode = OutputMode.external("/assets");
     private final List<SiteRoute> routes = new ArrayList<>();
     private @Nullable String baseUrl;
@@ -73,9 +73,9 @@ public record SiteDefinition(
 
     private Builder() {}
 
-    /// Sets the design tokens for every page. Defaults to `new Tokens()`.
-    public Builder tokens(Tokens siteTokens) {
-      this.tokens = siteTokens;
+    /// Sets the token values for every page. Defaults to [Theme#defaults()].
+    public Builder theme(Theme siteTheme) {
+      this.theme = siteTheme;
       return this;
     }
 
@@ -131,7 +131,7 @@ public record SiteDefinition(
     /// Builds the site. Throws IllegalArgumentException if no route was added, or if the base URL
     /// is empty or only `/`.
     public SiteDefinition build() {
-      return new SiteDefinition(tokens, outputMode, routes, baseUrl, linkSpeculation, assets);
+      return new SiteDefinition(theme, outputMode, routes, baseUrl, linkSpeculation, assets);
     }
   }
 }

@@ -8,9 +8,10 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CustomProperty;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
@@ -31,6 +32,9 @@ import java.util.function.Function;
 public record DataTable<T>(
     String id, String captionText, List<Column<T>> columns, List<T> rows, CssLength stackBreakpoint)
     implements View {
+
+  /// The scroll region; the stacked layout queries its width.
+  private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
 
   /// Horizontal alignment of a column's cells. `NUMERIC` aligns to the end with tabular figures.
   public enum CellAlign {
@@ -108,7 +112,7 @@ public record DataTable<T>(
             s ->
                 s.overflow(Overflow.AUTO)
                     .maxInlineSize(CssLength.pct(100))
-                    .containerInlineSize()
+                    .container(TABLE)
                     .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD))
@@ -159,8 +163,8 @@ public record DataTable<T>(
       }
     }
 
-    scope.containerMaxInlineSize(
-        stackBreakpoint,
+    scope.on(
+        TABLE.below(stackBreakpoint),
         c -> {
           c.select(
                   ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
@@ -228,7 +232,7 @@ public record DataTable<T>(
     return Elements.div().tabIndex(0).role(Role.REGION).ariaLabelledBy(caption).child(table);
   }
 
-  private static CssIdent labelProperty(int column) {
-    return CssIdent.custom("label-" + column);
+  private static CustomProperty labelProperty(int column) {
+    return CustomProperty.named("label-" + column);
   }
 }

@@ -47,8 +47,8 @@ class CssValueTest {
             CssLength.pct(20)
                 .plus(
                     CssLength.pct(60)
-                        .times(CssNumber.property(CssIdent.custom("step-index")))
-                        .dividedBy(CssNumber.property(CssIdent.custom("step-total")))),
+                        .times(CssNumber.property(CustomProperty.named("step-index")))
+                        .dividedBy(CssNumber.property(CustomProperty.named("step-total")))),
             "calc(20% + ((60% * var(--step-index)) / var(--step-total)))"),
         argumentSet("min", CssLength.min(CssLength.rem(22), CssLength.pct(82)), "min(22rem, 82%)"),
         argumentSet("line units", CssLength.lh(3).plus(CssLength.rem(1)), "calc(3lh + 1rem)"),
@@ -121,7 +121,7 @@ class CssValueTest {
             CssContent.withAlternative(
                 CssContent.empty(),
                 CssContent.text("Slide "),
-                CssContent.counter(CssIdent.of("item"))),
+                CssContent.counter(Counter.named("item"))),
             "\"\" / \"Slide \" counter(item)"),
         argumentSet(
             "position area",
@@ -147,8 +147,9 @@ class CssValueTest {
   @DisplayName("a motion lists its properties and keeps discrete transitions explicit")
   void motionDeclaresTransitionLonghands() {
     var style = new StyleRefinement();
-    style.motion(
-        Motion.of(CssDuration.ms(200), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE)
+    style.transition(
+        Transition.of(
+                CssDuration.ms(200), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE)
             .allowingDiscrete());
 
     assertThat(style.toCssBlockBody())
@@ -160,29 +161,57 @@ class CssValueTest {
   @Test
   @DisplayName("token overrides keep their category and serialize their typed value")
   void tokenOverridesAreTyped() {
-    assertThat(Tokens.declaration(Tokens.DENSITY.withValue(0.8))).isEqualTo("--density:0.8");
-    assertThat(Tokens.declaration(Tokens.RADIUS_XL.withValue(CssLength.rem(1))))
-        .isEqualTo("--radius-xl:1rem");
-    assertThat(Tokens.declaration(Tokens.SPACE_4))
-        .isEqualTo("--space-4:calc(1rem * var(--density))");
-    assertThat(Tokens.declaration(Tokens.CONTROL_FAMILY))
-        .isEqualTo("--control-family:var(--font-body)");
-    assertThat(
-            Tokens.declaration(
-                Tokens.CONTROL_FG.withLightDark(
-                    CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150))))
-        .isEqualTo("--control-fg:light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))");
+    var theme =
+        Theme.defaults()
+            .with(Tokens.DENSITY, CssNumber.of(0.8))
+            .with(Tokens.RADIUS_XL, CssLength.rem(1))
+            .with(
+                Tokens.CONTROL_FG,
+                CssColor.lightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)));
+    assertThat(theme.declarations())
+        .contains(
+            "--density:0.8",
+            "--radius-xl:1rem",
+            "--space-4:calc(1rem * var(--density))",
+            "--control-family:var(--font-body)",
+            "--control-fg:light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))");
+    assertThat(Theme.defaults().declarations()).contains("--density:1", "--radius-xl:0.75rem");
+  }
+
+  @Test
+  @DisplayName("themes add new tokens at the end and refuse a name of another category")
+  void themesAddTokensAndRefuseCategoryClashes() {
+    var brand = new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300));
+    var theme = Theme.defaults().with(brand, brand.defaultValue());
+    assertThat(theme.declarations()).last().isEqualTo("--brand:oklch(60% 0.2 300)");
+    assertThat(brand.toCss()).isEqualTo("var(--brand)");
+    var clash = new DesignToken.Length("brand", CssLength.rem(1));
+    assertThatIllegalArgumentException().isThrownBy(() -> theme.with(clash, CssLength.rem(2)));
+  }
+
+  @Test
+  @DisplayName("token names are validated, not sanitized")
+  void tokenNamesAreValidated() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> new DesignToken.Length("has space", CssLength.rem(1)));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> new DesignToken.Length("--dashed", CssLength.rem(1)));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> new DesignToken.Length("", CssLength.rem(1)));
   }
 
   @Test
   @DisplayName("identifiers reject text that is not a CSS identifier")
   void identifiersAreValidated() {
-    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("1st"));
-    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("has space"));
-    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("--dashed"));
-    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("None"));
-    assertThatIllegalArgumentException().isThrownBy(() -> CssIdent.of("inherit"));
-    assertThat(CssIdent.custom("anchor-x").toCss()).isEqualTo("--anchor-x");
+    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("1st"));
+    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("has space"));
+    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("--dashed"));
+    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("None"));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> Container.named("inherit", Container.Type.INLINE_SIZE));
+    assertThatIllegalArgumentException().isThrownBy(() -> Keyframes.named("default"));
+    assertThatIllegalArgumentException().isThrownBy(() -> Anchor.named("--x"));
+    assertThat(Anchor.named("anchor-x").toCss()).isEqualTo("--anchor-x");
   }
 
   @Test
@@ -196,11 +225,10 @@ class CssValueTest {
   }
 
   @Test
-  @DisplayName("anchor names must be dashed identifiers")
+  @DisplayName("anchor names serialize as dashed identifiers")
   void anchorNamesAreDashed() {
     var style = new StyleRefinement();
-    assertThatIllegalArgumentException().isThrownBy(() -> style.anchorName(CssIdent.of("plain")));
-    style.anchorName(CssIdent.custom("plain"));
+    style.anchorName(Anchor.named("plain"));
     assertThat(style.toCssBlockBody()).isEqualTo("anchor-name:--plain");
   }
 }

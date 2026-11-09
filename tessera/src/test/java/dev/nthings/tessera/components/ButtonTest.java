@@ -10,6 +10,7 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
+import dev.nthings.tessera.css.Tone;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -60,10 +61,7 @@ class ButtonTest {
             form()
                 .children(
                     Button.of("Cancel").variant(Button.Variant.SOLID),
-                    Button.of("Save")
-                        .submit()
-                        .tone(Button.Tone.DANGER)
-                        .variant(Button.Variant.OUTLINE)));
+                    Button.of("Save").submit().tone(Tone.DANGER).variant(Button.Variant.OUTLINE)));
 
     assertThat(page.element("form button.button--solid"))
         .hasAttribute("type", "button")

@@ -8,10 +8,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /// Compiler-facing: the stylesheet of one page or site. The compiler registers each element's
 /// typed styles and each view scope, receiving the class names or scope keys to emit, and
-/// identical rules are deduplicated. [#render(Tokens)] writes the layers in the order `reset, base,
+/// identical rules are deduplicated. [#render(Theme)] writes the layers in the order `reset, base,
 /// theme, components, utilities, interactive, container`.
 public final class StyleSheet {
 
@@ -25,48 +26,49 @@ public final class StyleSheet {
   /// Creates an empty stylesheet.
   public StyleSheet() {}
 
-  /// Compiler-facing: registers an element's base, interactive and container rules, and returns
-  /// the class names that reference them, in emission order (empty for an unstyled element).
-  public List<String> registerElement(StyleRefinement baseStyle, Interactivity interactivity) {
+  /// Compiler-facing: registers an element's style and returns the class names that reference
+  /// its rules, in emission order (empty for an unstyled element): a `u-` class for the plain
+  /// declarations (`utilities` layer), an `i-` class for state, media and starting-style rules
+  /// (`interactive` layer), and one `cq-` class per container query (`container` layer). The
+  /// keyframes the style uses are registered too.
+  public List<String> registerElement(StyleRefinement style) {
     var classNames = new ArrayList<String>(3);
+    registerKeyframes(style::collectKeyframes);
 
-    keyframeRules.addAll(interactivity.keyframes());
-
-    if (!baseStyle.isEmpty()) {
-      var utilClass = "u-" + Fnv1a64.toBase36Hash(baseStyle.contentHash());
-      utilityRules.computeIfAbsent(
-          utilClass, k -> "." + k + "{" + baseStyle.toCssBlockBody() + "}");
+    if (style.hasDeclarations()) {
+      var utilClass = "u-" + Fnv1a64.toBase36Hash(style.contentHash());
+      utilityRules.computeIfAbsent(utilClass, k -> "." + k + "{" + style.toCssBlockBody() + "}");
       classNames.add(utilClass);
     }
 
-    if (interactivity.hasInteractiveStyles()) {
-      var body = buildInteractiveBlock(interactivity);
+    if (style.hasNestedRules(false)) {
+      var body = style.nestedRules(false);
       var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, body);
       var interactiveClass = "i-" + Fnv1a64.toBase36Hash(hash);
       interactiveRules.computeIfAbsent(interactiveClass, k -> "." + k + "{" + body + "}");
       classNames.add(interactiveClass);
     }
 
-    for (var rule : interactivity.containerRules()) {
-      if (!rule.style().isEmpty()) {
-        var cqClass = "cq-" + Fnv1a64.toBase36Hash(rule.contentHash());
-        containerRules.computeIfAbsent(
-            cqClass,
-            k ->
-                "@container "
-                    + rule.containerName().toCss()
-                    + " "
-                    + rule.condition()
-                    + "{."
-                    + k
-                    + "{"
-                    + rule.style().toCssBlockBody()
-                    + "}}");
-        classNames.add(cqClass);
-      }
-    }
+    style
+        .containerRules()
+        .forEach(
+            (query, rule) -> {
+              var prelude = StyleRefinement.prelude(query);
+              var body = rule.toCssBody();
+              var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, prelude);
+              hash = Fnv1a64.updateChars(hash, body);
+              var cqClass = "cq-" + Fnv1a64.toBase36Hash(hash);
+              containerRules.computeIfAbsent(cqClass, k -> prelude + "{." + k + "{" + body + "}}");
+              classNames.add(cqClass);
+            });
 
     return classNames;
+  }
+
+  private void registerKeyframes(Consumer<Set<Keyframes>> source) {
+    var used = new LinkedHashSet<Keyframes>();
+    source.accept(used);
+    used.forEach(keyframes -> keyframeRules.add(keyframes.rule()));
   }
 
   /// Compiler-facing: registers `scope`, the styles of a view of `viewType`, and returns its
@@ -75,6 +77,7 @@ public final class StyleSheet {
   /// the bare (sanitized) type as its scope boundary.
   public String registerViewScope(String viewType, ScopeStyle scope) {
     var safeType = Fnv1a64.sanitizeIdentifier(viewType);
+    registerKeyframes(scope::collectKeyframes);
     var scopedCss = scope.toCssBody();
     if (scopedCss.isBlank()) {
       return safeType;
@@ -86,8 +89,9 @@ public final class StyleSheet {
   }
 
   /// Compiler-facing: records a view transition class whose group uses the shared 0.35s timing.
-  public void registerTransitionClass(CssIdent transitionClass) {
-    transitionClasses.add(transitionClass.toCss());
+  /// Throws IllegalArgumentException if `transitionClass` is not a CSS identifier.
+  public void registerTransitionClass(String transitionClass) {
+    transitionClasses.add(CssIdent.of(transitionClass).toCss());
   }
 
   /// Compiler-facing: merges another stylesheet's rules into this one, keeping first-registration
@@ -101,22 +105,9 @@ public final class StyleSheet {
     transitionClasses.addAll(other.transitionClasses);
   }
 
-  private static String buildInteractiveBlock(Interactivity interactivity) {
-    var sb = new StringBuilder();
-    interactivity
-        .states()
-        .forEach(
-            (rule, style) -> {
-              if (!style.isEmpty()) {
-                sb.append(rule.openRule()).append(style.toCssBlockBody()).append('}');
-              }
-            });
-    return sb.toString();
-  }
-
-  /// Compiler-facing: renders the complete stylesheet, with `tokens` as the `:root` custom
-  /// properties in `@layer theme`.
-  public String render(Tokens tokens) {
+  /// Compiler-facing: renders the complete stylesheet, with `theme`'s tokens as the `:root`
+  /// custom properties in `@layer theme`.
+  public String render(Theme theme) {
     var sb = new StringBuilder(2048);
     sb.append("@layer reset, base, theme, components, utilities, interactive, container;\n");
 
@@ -148,9 +139,7 @@ public final class StyleSheet {
 
     sb.append("@layer theme{");
     sb.append(":root{");
-    for (var token : tokens.all()) {
-      sb.append(Tokens.declaration(token)).append(';');
-    }
+    theme.declarations().forEach(declaration -> sb.append(declaration).append(';'));
     sb.append("}}\n");
 
     if (!viewScopeBodies.isEmpty()) {

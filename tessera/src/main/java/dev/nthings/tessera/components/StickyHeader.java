@@ -9,16 +9,16 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssFilter;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Easing;
-import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.foundation.Fnv1a64;
 
 /// Header that stays at the top of the viewport while the page scrolls. Once it is stuck, its
@@ -28,13 +28,13 @@ import dev.nthings.tessera.foundation.Fnv1a64;
 public final class StickyHeader implements View {
 
   private final String id;
-  private final CssIdent containerName;
+  private final Container container;
   private final Element content;
 
   /// Creates a sticky header with the given `id`, which is unique within its view scope.
   public StickyHeader(String id, IntoElement content) {
     this.id = Fnv1a64.sanitizeLocalId(id);
-    this.containerName = CssIdent.of("sticky-" + this.id);
+    this.container = Container.named("sticky-" + this.id, Container.Type.SCROLL_STATE);
     this.content = content.intoElement();
   }
 
@@ -46,26 +46,20 @@ public final class StickyHeader implements View {
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.sticky()
-                    .insetBlockStart(CssLength.px(0))
-                    .zIndex(30)
-                    .containerScrollState(containerName))
+        .root(s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(30).container(container))
         .select(
             ":scope > .sticky-surface",
             s ->
                 s.bg(Tokens.SURFACE_CARD)
                     .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .motion(
-                        Motion.of(
+                    .transition(
+                        Transition.of(
                             CssDuration.ms(200),
                             Easing.ease(),
                             Animatable.BACKGROUND_COLOR,
                             Animatable.BOX_SHADOW)))
-        .containerScrollState(
-            containerName,
-            "stuck: top",
+        .on(
+            container.stuck(Container.Edge.TOP),
             c ->
                 c.select(
                     ":scope > .sticky-surface",

@@ -11,10 +11,10 @@ import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.DesignToken;
-import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.WhiteSpace;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.Locale;
@@ -23,31 +23,6 @@ import org.jspecify.annotations.Nullable;
 /// Compact label such as a status or a count. Create one with `Badge.of` or a tone factory such as
 /// `Badge.success`. It renders a `<span>`, or an `<a>` when given an [#href(String)].
 public final class Badge implements View, FluentBuilder<Badge> {
-
-  /// Semantic color of a badge. `NEUTRAL` is the default.
-  public enum Tone {
-    NEUTRAL(Tokens.TEXT_MUTED, Tokens.SURFACE_CARD, Tokens.TEXT_MUTED),
-    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white(), Tokens.ACCENT_TEXT),
-    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white(), Tokens.STATUS_SUCCESS_TEXT),
-    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75), Tokens.STATUS_WARNING_TEXT),
-    DANGER(Tokens.STATUS_DANGER, CssColor.white(), Tokens.STATUS_DANGER_TEXT),
-    INFO(Tokens.STATUS_INFO, CssColor.white(), Tokens.STATUS_INFO_TEXT);
-
-    private final DesignToken.Color token;
-    private final CssColor onSolid;
-    private final DesignToken.Color onTint;
-
-    Tone(DesignToken.Color token, CssColor onSolid, DesignToken.Color onTint) {
-      this.token = token;
-      this.onSolid = onSolid;
-      this.onTint = onTint;
-    }
-
-    /// Compiler-facing: the semantic color token this tone paints.
-    public DesignToken.Color token() {
-      return token;
-    }
-  }
 
   /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
   public enum Variant {
@@ -266,8 +241,8 @@ public final class Badge implements View, FluentBuilder<Badge> {
                     .whiteSpace(WhiteSpace.NOWRAP)
                     .rounded(Tokens.RADIUS_MD)
                     .textDecorationNone()
-                    .motion(
-                        Motion.controlFeedback()
+                    .transition(
+                        Transition.controlFeedback()
                             .properties(
                                 Animatable.BACKGROUND_COLOR,
                                 Animatable.COLOR,
@@ -301,7 +276,7 @@ public final class Badge implements View, FluentBuilder<Badge> {
         .select(":scope > .badge-icon", s -> s.inlineFlex().itemsCenter().flexShrink(0));
 
     for (var tone : Tone.values()) {
-      var token = tone.token;
+      var token = tone.color();
       var neutral = tone == Tone.NEUTRAL;
       CssColor tintFill = neutral ? Tokens.SURFACE_SUBTLE : token.mixTransparent(14);
       CssColor tintEdge = neutral ? Tokens.BORDER_SUBTLE : token.mixTransparent(28);
@@ -310,22 +285,30 @@ public final class Badge implements View, FluentBuilder<Badge> {
       scope
           .select(
               selector + cssName(Variant.TINTED),
-              s -> s.bg(tintFill).textColor(tone.onTint).border(Border.hairline(tintEdge)))
+              s -> s.bg(tintFill).textColor(tone.textColor()).border(Border.hairline(tintEdge)))
           .select(
               selector + cssName(Variant.OUTLINE),
               s ->
                   s.bg(CssColor.transparent())
-                      .textColor(tone.onTint)
+                      .textColor(tone.textColor())
                       .border(Border.hairline(outlineEdge)))
           .select(
               selector + cssName(Variant.SOLID),
               s ->
                   s.bg(token)
-                      .textColor(tone.onSolid)
+                      .textColor(onSolid(tone))
                       .border(Border.hairline(CssColor.transparent())));
     }
 
     scope.select("a:scope:hover", s -> s.opacity(0.85));
+  }
+
+  private static CssColor onSolid(Tone tone) {
+    return switch (tone) {
+      case NEUTRAL -> Tokens.SURFACE_CARD;
+      case WARNING -> CssColor.oklch(15, 0.02, 75);
+      case ACCENT, INFO, SUCCESS, DANGER -> CssColor.white();
+    };
   }
 
   @Override

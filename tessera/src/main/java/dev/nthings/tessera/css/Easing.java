@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A timing function: a keyword or a cubic Bézier curve, used by [Motion]. Build values with the
-/// static factories.
+/// A timing function: a keyword or a cubic Bézier curve, used by [Transition] and [Animation].
+/// Build values with the static factories.
 public sealed interface Easing extends CssValue permits Easings.Preset, Easings.CubicBezier {
 
   /// `linear`.

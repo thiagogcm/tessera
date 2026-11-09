@@ -20,9 +20,10 @@ import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.View;
-import dev.nthings.tessera.css.CssIdent;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Map;
@@ -31,14 +32,14 @@ import java.util.Map;
 /// portals in one view. [CompilerTest] asserts each feature separately.
 record WorkspacePanelView(String workspaceSlug) implements View {
 
-  private static final CssIdent METRIC_CARD = CssIdent.of("metric-card");
+  private static final Container METRIC_CARD =
+      Container.named("metric-card", Container.Type.INLINE_SIZE);
 
   /// A container-query card: stacked by default, a row once its container is 320px wide.
   private static TagElement metricCard(String label, String value) {
     return section()
-        .containerInlineSize(METRIC_CARD)
-        .onContainer(
-            METRIC_CARD, CssLength.px(320), s -> s.flexRow().itemsCenter().justifyBetween())
+        .container(METRIC_CARD)
+        .on(METRIC_CARD.atLeast(CssLength.px(320)), s -> s.flexRow().itemsCenter().justifyBetween())
         .children(span().text(label), h2().text(value));
   }
 
@@ -87,8 +88,8 @@ record WorkspacePanelView(String workspaceSlug) implements View {
             .px(CssLength.rem(1))
             .py(CssLength.rem(0.5))
             .bg(Tokens.ACCENT_PRIMARY)
-            .hover(s -> s.opacity(0.9))
-            .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+            .on(State.HOVER, s -> s.opacity(0.9))
+            .on(State.FOCUS_VISIBLE, s -> s.focusRing(Tokens.ACCENT_PRIMARY))
             .text("Archive Workspace");
 
     var customActionTarget =

@@ -2,7 +2,7 @@ package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.StyleSheet;
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import java.util.List;
 
 /// The page phases: [#prepare] lays out and validates, [#paint] emits HTML. [Compiler] runs both
@@ -10,9 +10,9 @@ import java.util.List;
 final class PageCompiler {
   private PageCompiler() {}
 
-  static CompiledPage compile(PageDocument document, Tokens tokens, OutputMode outputMode) {
+  static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
     var prepared = prepare(document, List.of());
-    var css = prepared.stylesheet(tokens);
+    var css = prepared.stylesheet(theme);
     return new CompiledPage(
         paint(prepared, css, outputMode),
         css,

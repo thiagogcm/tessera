@@ -7,19 +7,21 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.css.Animation;
 import dev.nthings.tessera.css.Border;
-import dev.nthings.tessera.css.CssIdent;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Resize;
-import dev.nthings.tessera.css.ScrollReveal;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 
 /// Scroll-driven animation, scroll-state and size container queries, and view transitions.
 final class MotionPage {
 
-  private static final CssIdent RESIZABLE = CssIdent.of("resizable");
+  private static final Container RESIZABLE =
+      Container.named("resizable", Container.Type.INLINE_SIZE);
 
   private MotionPage() {}
 
@@ -50,13 +52,13 @@ final class MotionPage {
             Grid.autoFit(
                 CssLength.rem(12),
                 CssLength.rem(1),
-                Demo.tile("Fade in").scrollReveal(ScrollReveal.FADE_IN),
-                Demo.tile("Fade up").scrollReveal(ScrollReveal.FADE_UP),
-                Demo.tile("Scale in").scrollReveal(ScrollReveal.SCALE_IN),
-                Demo.tile("Slide in").scrollReveal(ScrollReveal.SLIDE_INLINE)))
+                Demo.tile("Fade in").animation(Animation.reveal(Keyframes.FADE_IN)),
+                Demo.tile("Fade up").animation(Animation.reveal(Keyframes.FADE_UP)),
+                Demo.tile("Scale in").animation(Animation.reveal(Keyframes.SCALE_IN)),
+                Demo.tile("Slide in").animation(Animation.reveal(Keyframes.SLIDE_INLINE))))
         .code(
-            "div().scrollReveal(ScrollReveal.FADE_UP);",
-            "new ScrollProgressBar(\"reading-progress\");");
+            "div().animation(Animation.reveal(Keyframes.FADE_UP));",
+            "new ScrollProgressBar(\"reading-progress\"); // Animation.scrollProgress(...)");
   }
 
   private static Demo revealOnce() {
@@ -70,10 +72,10 @@ final class MotionPage {
             Grid.autoFit(
                 CssLength.rem(12),
                 CssLength.rem(1),
-                Demo.tile("Fade up").revealOnce(ScrollReveal.FADE_UP),
-                Demo.tile("Scale in").revealOnce(ScrollReveal.SCALE_IN),
-                Demo.tile("Slide in").revealOnce(ScrollReveal.SLIDE_INLINE)))
-        .code("div().revealOnce(ScrollReveal.SCALE_IN);");
+                Demo.tile("Fade up").animation(Animation.revealOnce(Keyframes.FADE_UP)),
+                Demo.tile("Scale in").animation(Animation.revealOnce(Keyframes.SCALE_IN)),
+                Demo.tile("Slide in").animation(Animation.revealOnce(Keyframes.SLIDE_INLINE))))
+        .code("div().animation(Animation.revealOnce(Keyframes.SCALE_IN));");
   }
 
   private static Demo stagger() {
@@ -81,15 +83,14 @@ final class MotionPage {
     for (var i = 1; i <= 8; i++) {
       row.child(
           Demo.surface(span().px(CssLength.rem(0.75)).py(CssLength.rem(0.375)), CssLength.px(999))
-              .revealOnce(ScrollReveal.FADE_UP)
-              .staggerBySiblingIndex(60)
+              .animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60))
               .text("Item " + i));
     }
     return Demo.of("stagger", "Staggered entry")
         .summary("Siblings delay their animation by their own index — no per-item classes.")
         .features("sibling-index()", "animation-delay: calc()")
         .example(row)
-        .code("chip.revealOnce(ScrollReveal.FADE_UP).staggerBySiblingIndex(60);");
+        .code("chip.animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60));");
   }
 
   private static Demo containerQueries() {
@@ -97,8 +98,9 @@ final class MotionPage {
         Demo.surface(
                 div().flex().flexCol().gap(CssLength.rem(0.5)).p(CssLength.rem(1)),
                 CssLength.rem(0.75))
-            .onContainer(
-                RESIZABLE, CssLength.rem(28), s -> s.flexRow().itemsCenter().justifyBetween())
+            .on(
+                RESIZABLE.atLeast(CssLength.rem(28)),
+                s -> s.flexRow().itemsCenter().justifyBetween())
             .children(
                 span().fontWeight(700).text("Responsive to its container"),
                 span().textColor(Tokens.TEXT_MUTED).text("Stacked when narrow, a row when wide."));
@@ -109,7 +111,7 @@ final class MotionPage {
         .features("container-type: inline-size", "@container (inline-size >= 28rem)", "resize")
         .example(
             div()
-                .containerInlineSize(RESIZABLE)
+                .container(RESIZABLE)
                 .resize(Resize.HORIZONTAL)
                 .overflow(Overflow.HIDDEN)
                 .minInlineSize(CssLength.rem(14))
@@ -120,8 +122,9 @@ final class MotionPage {
                 .rounded(CssLength.rem(0.75))
                 .child(card))
         .code(
-            "div().containerInlineSize(CssIdent.of(\"resizable\")).child(",
-            "    card.onContainer(\"resizable\", rem(28), s -> s.flexRow()));");
+            "var resizable = Container.named(\"resizable\", Container.Type.INLINE_SIZE);",
+            "div().container(resizable).child(",
+            "    card.on(resizable.atLeast(rem(28)), s -> s.flexRow()));");
   }
 
   private static Demo scrollState() {

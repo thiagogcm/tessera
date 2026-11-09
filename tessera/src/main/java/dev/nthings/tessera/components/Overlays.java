@@ -21,12 +21,14 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
@@ -169,39 +171,44 @@ public final class Overlays {
               s ->
                   s.bg(CssColor.oklch(0, 0, 0, 0.45))
                       .backdropFilter(CssFilter.blur(CssLength.px(4))))
-          .motionSafe(
+          .on(
+              Media.MOTION_SAFE,
               m ->
                   m.select(
                           ":scope",
                           s ->
                               s.opacity(0)
                                   .transform(Transform.scale(0.95))
-                                  .motion(Motion.overlayEntry()))
-                      .selectWithStartingStyle(
+                                  .transition(Transition.overlayEntry()))
+                      .select(
                           ":scope:open",
-                          s -> s.opacity(1).transform(Transform.scale(1)),
-                          start -> start.opacity(0).transform(Transform.scale(0.95)))
+                          s ->
+                              s.opacity(1)
+                                  .transform(Transform.scale(1))
+                                  .startingStyle(
+                                      start -> start.opacity(0).transform(Transform.scale(0.95))))
                       .select(
                           ":scope::backdrop",
                           s ->
                               s.bg(CssColor.oklch(0, 0, 0, 0))
                                   .backdropFilter(CssFilter.blur(CssLength.px(0)))
-                                  .motion(
-                                      Motion.overlayEntry()
+                                  .transition(
+                                      Transition.overlayEntry()
                                           .properties(
                                               Animatable.BACKGROUND,
                                               Animatable.BACKDROP_FILTER,
                                               Animatable.DISPLAY,
                                               Animatable.OVERLAY)))
-                      .selectWithStartingStyle(
+                      .select(
                           ":scope:open::backdrop",
                           s ->
                               s.bg(CssColor.oklch(0, 0, 0, 0.45))
-                                  .backdropFilter(CssFilter.blur(CssLength.px(4))),
-                          start ->
-                              start
-                                  .bg(CssColor.oklch(0, 0, 0, 0))
-                                  .backdropFilter(CssFilter.blur(CssLength.px(0)))));
+                                  .backdropFilter(CssFilter.blur(CssLength.px(4)))
+                                  .startingStyle(
+                                      start ->
+                                          start
+                                              .bg(CssColor.oklch(0, 0, 0, 0))
+                                              .backdropFilter(CssFilter.blur(CssLength.px(0))))));
     }
 
     @Override
@@ -351,32 +358,37 @@ public final class Overlays {
               s ->
                   s.bg(CssColor.oklch(0, 0, 0, 0.45))
                       .backdropFilter(CssFilter.blur(CssLength.px(3))))
-          .motionSafe(
+          .on(
+              Media.MOTION_SAFE,
               m ->
                   m.select(
                           ":scope",
                           s ->
                               s.opacity(0)
                                   .translate(offscreenTranslate)
-                                  .motion(Motion.overlayEntry()))
-                      .selectWithStartingStyle(
+                                  .transition(Transition.overlayEntry()))
+                      .select(
                           ":scope:open",
-                          s -> s.opacity(1).translate(Translation.none()),
-                          start -> start.opacity(0).translate(offscreenTranslate))
+                          s ->
+                              s.opacity(1)
+                                  .translate(Translation.none())
+                                  .startingStyle(
+                                      start -> start.opacity(0).translate(offscreenTranslate)))
                       .select(
                           ":scope::backdrop",
                           s ->
                               s.bg(CssColor.oklch(0, 0, 0, 0))
-                                  .motion(
-                                      Motion.overlayEntry()
+                                  .transition(
+                                      Transition.overlayEntry()
                                           .properties(
                                               Animatable.BACKGROUND,
                                               Animatable.DISPLAY,
                                               Animatable.OVERLAY)))
-                      .selectWithStartingStyle(
+                      .select(
                           ":scope:open::backdrop",
-                          s -> s.bg(CssColor.oklch(0, 0, 0, 0.45)),
-                          start -> start.bg(CssColor.oklch(0, 0, 0, 0))));
+                          s ->
+                              s.bg(CssColor.oklch(0, 0, 0, 0.45))
+                                  .startingStyle(start -> start.bg(CssColor.oklch(0, 0, 0, 0)))));
     }
 
     @Override
@@ -385,7 +397,7 @@ public final class Overlays {
       var closeBtn =
           Button.of(closeLabel)
               .id(ElementRef.scoped("close"))
-              .tone(Button.Tone.NEUTRAL)
+              .tone(Tone.NEUTRAL)
               .variant(Button.Variant.OUTLINE)
               .size(Button.Size.SM)
               .command(dialog, BuiltinCommand.CLOSE);
@@ -428,7 +440,7 @@ public final class Overlays {
   private static Button showModalTrigger(ElementRef dialog, String buttonId, String label) {
     return Button.of(label)
         .id(ElementRef.scoped(buttonId))
-        .tone(Button.Tone.NEUTRAL)
+        .tone(Tone.NEUTRAL)
         .variant(Button.Variant.OUTLINE)
         .command(dialog, BuiltinCommand.SHOW_MODAL);
   }

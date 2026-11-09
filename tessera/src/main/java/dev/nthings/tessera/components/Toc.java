@@ -21,6 +21,7 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
@@ -28,12 +29,12 @@ import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.GridTrack;
-import dev.nthings.tessera.css.HighlightTone;
-import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.css.Transition;
 import java.util.Arrays;
 import java.util.List;
 
@@ -171,13 +172,15 @@ public final class Toc {
           .select(":scope .toc-summary:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
           .select(
               ":scope .toc-chevron",
-              s -> s.motion(Motion.of(CssDuration.ms(200), Easing.ease(), Animatable.TRANSFORM)))
+              s ->
+                  s.transition(
+                      Transition.of(CssDuration.ms(200), Easing.ease(), Animatable.TRANSFORM)))
           .select(":scope details:open .toc-chevron", s -> s.transform(Transform.rotate(90)))
           .select(
               ":scope details::details-content",
               s ->
-                  s.motion(
-                      Motion.of(
+                  s.transition(
+                      Transition.of(
                               CssDuration.ms(300),
                               Easing.ease(),
                               Animatable.BLOCK_SIZE,
@@ -202,8 +205,8 @@ public final class Toc {
                       .fontSize(Tokens.FONT_SIZE_SM)
                       .rounded(Tokens.RADIUS_SM)
                       .textDecorationNone()
-                      .motion(
-                          Motion.controlFeedback()
+                      .transition(
+                          Transition.controlFeedback()
                               .properties(Animatable.COLOR, Animatable.BACKGROUND)))
           .select(
               ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
@@ -214,7 +217,7 @@ public final class Toc {
                   s.textColor(Tokens.ACCENT_TEXT)
                       .fontWeight(600)
                       .borderInlineStart(Border.solid(CssLength.px(3), Tokens.ACCENT_PRIMARY))
-                      .bg(HighlightTone.ACCENT.background()));
+                      .bg(Tone.ACCENT.color().mixTransparent(24)));
     }
 
     @Override
@@ -249,6 +252,8 @@ public final class Toc {
   /// [Toc#docLayout(String, String, IntoElement...)].
   public record DocLayout(String tocId, String tocHeading, List<Element> sections) implements View {
 
+    private static final Container LAYOUT = Container.unnamed(Container.Type.INLINE_SIZE);
+
     @Override
     public String viewId() {
       return tocId + "-layout";
@@ -257,7 +262,7 @@ public final class Toc {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(s -> s.flex().flexCol().gap(Tokens.SPACE_8).containerInlineSize())
+          .root(s -> s.flex().flexCol().gap(Tokens.SPACE_8).container(LAYOUT))
           .select(
               ":scope > .doc-grid",
               s -> s.grid().gridColumns(TrackList.of(GridTrack.flexible())).gap(Tokens.SPACE_6))
@@ -288,8 +293,8 @@ public final class Toc {
                       .fontSize(Tokens.FONT_SIZE_MD)
                       .textColor(Tokens.TEXT_PRIMARY)
                       .lineHeight(1.75))
-          .containerMinInlineSize(
-              CssLength.rem(48),
+          .on(
+              LAYOUT.atLeast(CssLength.rem(48)),
               c ->
                   c.select(
                           ":scope > .doc-grid",

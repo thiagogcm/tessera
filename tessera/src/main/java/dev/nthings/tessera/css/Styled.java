@@ -15,16 +15,17 @@ import java.util.function.Consumer;
 ///   `subgridRows`, `gap`/`rowGap`/`colGap`.
 /// - Position and size: `relative`, `absolute`, `fixed`, `sticky`, `inset*`, `zIndex`,
 ///   `inlineSize`/`blockSize` and their `min`/`max` forms, `aspectRatio`, [#objectFit(ObjectFit)],
-///   [#overflow(Overflow)] (and `overflowX`/`overflowY`), container types (`containerInlineSize`,
-///   `containerScrollState`, `containerNormal`).
+///   [#overflow(Overflow)] (and `overflowX`/`overflowY`), [#container(Container)] and
+///   `containerNone`.
 /// - Box: padding `p`/`px`/`py`/`pt`/`pb`/`ps`/`pe`, margin `m`/`mx`/`my`/`mt`/`mb`/`ms`/`me`,
 ///   `bg`/`background`, [#border(Border)] and its sides (`borderBlockStart`, `borderBlockEnd`,
 ///   `borderInlineStart`, `borderInlineEnd`), `borderColor`, `rounded`, `shadow`, `outline`,
 ///   `focusRing`, `opacity`, `accentColor`, [#appearance(Appearance)], [#resize(Resize)].
 /// - Text: `textColor`, `fontSize`, `fontFamily`, `fontWeight`, `lineHeight`, `typography`,
 ///   `textAlign`, [#textWrap(TextWrap)], `whiteSpace`, `underline`, `strikethrough`, `highlight`.
-/// - Effects: `motion`, `transform`, `translate`, `backdropFilter`, [#cursor(Cursor)], view
-///   transitions, animation delay and scroll progress.
+/// - Effects: [#transition(Transition)], [#animation(Animation)], `transform`, `translate`,
+///   `backdropFilter`, [#cursor(Cursor)].
+/// - Conditions: [#on(Condition, Consumer)] for states, media features and container queries.
 /// - Scrolling and anchoring: snapping, scroll margins and markers, `anchorName`,
 ///   `positionAnchor`, `positionArea`, `positionTryFallbacks`.
 ///
@@ -45,6 +46,20 @@ public interface Styled<SELF extends Styled<SELF>>
   /// elements, [ScopeStyle#select(String, Consumer)] rules, and state callbacks.
   default SELF apply(Consumer<StyleRefinement> preset) {
     preset.accept(style());
+    return self();
+  }
+
+  /// Runs `styles` on declarations that apply only while `condition` holds: a [State] such as
+  /// [State#HOVER] (a nested `&:hover:not(:disabled)` rule), a [Media] feature such as
+  /// [Media#MOTION_SAFE], or a [ContainerQuery] from a [Container]. Calling again with an equal
+  /// condition extends the same rules, and `styles` may call `on` again to nest conditions.
+  ///
+  /// On an element, state and media rules sit in the `interactive` cascade layer and container
+  /// queries in the later `container` layer, so both override the element's base style. Inside a
+  /// [ScopeStyle] rule they nest in that rule. States are emitted in [State] order whatever the
+  /// call order, so `ACTIVE` beats `HOVER`.
+  default SELF on(Condition condition, Consumer<StyleRefinement> styles) {
+    styles.accept(style().nested(condition));
     return self();
   }
 

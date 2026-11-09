@@ -7,6 +7,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Tone;
 
 /// Icon-only `<button>` created with [#of(String, IntoElement)]. The name you pass is its only
 /// accessible name, because the icon is decorative and hidden from assistive technology, so pass
@@ -18,7 +19,7 @@ public final class IconButton extends ButtonBase<IconButton> implements View {
   private final IntoElement icon;
 
   private IconButton(String name, IntoElement icon) {
-    super(Button.Tone.NEUTRAL, Button.Variant.GHOST);
+    super(Tone.NEUTRAL, Button.Variant.GHOST);
     this.name = name;
     this.icon = icon;
   }

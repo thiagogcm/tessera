@@ -1,5 +1,7 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.css.Tone;
+
 /// Shorthand for the pill shape of [Badge]: each factory is the matching `Badge` factory followed
 /// by [Badge#pill()]. [#of(String)] is [Badge#pill(String)].
 public final class Pill {
@@ -34,7 +36,7 @@ public final class Pill {
     return Badge.info(text).pill();
   }
 
-  public static Badge dot(String text, Badge.Tone tone) {
+  public static Badge dot(String text, Tone tone) {
     return Badge.dot(text, tone).pill();
   }
 }

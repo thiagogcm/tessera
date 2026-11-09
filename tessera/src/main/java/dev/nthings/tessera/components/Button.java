@@ -4,58 +4,15 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
-import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import java.util.List;
 
 /// Native `<button>`, `type="button"` unless [Button#submit()] is called. Use an anchor for
 /// navigation.
 public final class Button extends ButtonBase<Button> implements View {
-
-  /// Semantic color: `NEUTRAL`, `ACCENT` (the default), `SUCCESS`, `WARNING`, or `DANGER`. It does
-  /// not change the surface or behavior.
-  public enum Tone {
-    NEUTRAL(Tokens.TEXT_PRIMARY, Tokens.SURFACE_CARD, Tokens.BORDER_SUBTLE, Tokens.SURFACE_SUBTLE),
-    ACCENT(Tokens.ACCENT_PRIMARY, CssColor.white()),
-    SUCCESS(Tokens.STATUS_SUCCESS, CssColor.white()),
-    WARNING(Tokens.STATUS_WARNING, CssColor.oklch(15, 0.02, 75)),
-    DANGER(Tokens.STATUS_DANGER, CssColor.white());
-
-    private final DesignToken.Color token;
-    private final CssColor onSolid;
-    private final DesignToken.Color edge;
-    private final CssColor wash;
-
-    Tone(DesignToken.Color token, CssColor onSolid) {
-      this(token, onSolid, token, token.mixTransparent(12));
-    }
-
-    Tone(DesignToken.Color token, CssColor onSolid, DesignToken.Color edge, CssColor wash) {
-      this.token = token;
-      this.onSolid = onSolid;
-      this.edge = edge;
-      this.wash = wash;
-    }
-
-    DesignToken.Color token() {
-      return token;
-    }
-
-    CssColor onSolid() {
-      return onSolid;
-    }
-
-    DesignToken.Color edge() {
-      return edge;
-    }
-
-    /// Hover background for outline and ghost buttons.
-    CssColor wash() {
-      return wash;
-    }
-  }
 
   /// Surface: `SOLID` (filled with the tone, the default), `OUTLINE` (transparent with a tone
   /// border), or `GHOST` (transparent with tone text).

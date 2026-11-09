@@ -10,7 +10,7 @@ import static dev.nthings.tessera.support.RenderedPage.render;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.support.CssBlocks;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +30,7 @@ class CompilerTest {
     @BeforeAll
     static void compileView() {
       var document = new PageDocument("en", "Tessera Workspace", new WorkspacePanelView("core"));
-      page = RenderedPage.of(Compiler.compile(document, new Tokens(), OutputMode.inline()));
+      page = RenderedPage.of(Compiler.compile(document, Theme.defaults(), OutputMode.inline()));
     }
 
     @Test
@@ -171,7 +171,7 @@ class CompilerTest {
       var document = new PageDocument("External CSS", main().p(CssLength.rem(2)).text("Hello"));
       page =
           RenderedPage.of(
-              Compiler.compile(document, new Tokens(), OutputMode.external("/static/assets/")));
+              Compiler.compile(document, Theme.defaults(), OutputMode.external("/static/assets/")));
     }
 
     @Test

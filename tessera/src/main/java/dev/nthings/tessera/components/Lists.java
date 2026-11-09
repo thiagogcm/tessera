@@ -7,11 +7,12 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssNumber;
+import dev.nthings.tessera.css.CustomProperty;
 import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -125,8 +126,9 @@ public final class Lists {
   /// steps progress. `id` identifies the list within its view scope.
   public record StepList(String id, List<Element> steps) implements View {
 
-    private static final CssIdent STEP_INDEX = CssIdent.custom("step-index");
-    private static final CssIdent STEP_TOTAL = CssIdent.custom("step-total");
+    private static final Counter STEP = Counter.named("step");
+    private static final CustomProperty STEP_INDEX = CustomProperty.named("step-index");
+    private static final CustomProperty STEP_TOTAL = CustomProperty.named("step-total");
 
     /// Creates a step list from plain text steps.
     public static StepList ofStrings(String id, String... steps) {
@@ -146,26 +148,20 @@ public final class Lists {
     @Override
     public void configureScope(ScopeStyle scope) {
       scope
-          .root(
-              s ->
-                  s.listStyleNone()
-                      .flex()
-                      .flexCol()
-                      .gap(Tokens.SPACE_3)
-                      .counterReset(CssIdent.of("step")))
+          .root(s -> s.listStyleNone().flex().flexCol().gap(Tokens.SPACE_3).counterReset(STEP))
           .select(
               ":scope > li",
               s ->
                   s.customProperty(STEP_INDEX, CssNumber.siblingIndex())
                       .customProperty(STEP_TOTAL, CssNumber.siblingCount())
-                      .counterIncrement(CssIdent.of("step"))
+                      .counterIncrement(STEP)
                       .flex()
                       .itemsBaseline()
                       .gap(Tokens.SPACE_3))
           .select(
               ":scope > li::before",
               s ->
-                  s.content(CssContent.counter(CssIdent.of("step")))
+                  s.content(CssContent.counter(STEP))
                       .inlineFlex()
                       .itemsCenter()
                       .justifyCenter()

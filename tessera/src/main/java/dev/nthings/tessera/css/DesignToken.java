@@ -1,11 +1,17 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.foundation.Fnv1a64;
-
-/// A CSS custom property registered with [Tokens]. Each category takes only values of its CSS
-/// type, so a length cannot replace a color. Pass the name without its leading `--`: characters
-/// outside `[A-Za-z0-9_-]` become `-`, and an empty name throws IllegalArgumentException.
-public sealed interface DesignToken
+/// A theme-wide CSS custom property with a default value of type `V`. A token is itself a value of
+/// its category, serializing as `var(--name)`, so `bg(Tokens.SURFACE_CARD)` works wherever a
+/// color does. [Theme#with(DesignToken, CssValue)] overrides it with a value of the same category,
+/// so a length cannot replace a color. [Tokens] holds the built-in tokens; create your own with a
+/// category's constructor, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`,
+/// and add it to a theme with `Theme.with`.
+///
+/// Pass the name without its leading `--`. Every constructor throws IllegalArgumentException for
+/// an empty name, a name starting with `-`, or one with characters outside `[A-Za-z0-9_-]`.
+///
+/// @param <V> the value category, such as [CssColor]
+public sealed interface DesignToken<V extends CssValue>
     permits DesignToken.Color,
         DesignToken.Length,
         DesignToken.Duration,
@@ -15,130 +21,75 @@ public sealed interface DesignToken
   /// The custom property name without its leading `--`, such as `space-4`.
   String name();
 
-  /// The token's default value, emitted as `--name: <value>` on `:root`.
-  CssValue value();
+  /// The value [Theme#defaults()] gives the token.
+  V defaultValue();
 
-  /// A color token. Use [Color#lightDark] for a value that follows the color scheme.
-  record Color(String name, CssColor value) implements DesignToken, CssColor {
+  /// A color token. Use `CssColor.lightDark(light, dark)` for a value that follows the color
+  /// scheme, or another color token to alias it.
+  record Color(String name, CssColor defaultValue) implements DesignToken<CssColor>, CssColor {
     public Color {
-      name = Fnv1a64.sanitizeIdentifier(name);
+      TokenNames.require(name);
     }
 
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return Tokens.varReference(this);
-    }
-
-    /// Same token with a new value, for theme overrides.
-    public Color withValue(CssColor replacement) {
-      return new Color(name, replacement);
-    }
-
-    /// A color token whose value is `light-dark(light, dark)`.
-    public static Color lightDark(String name, CssColor light, CssColor dark) {
-      return new Color(name, CssColor.lightDark(light, dark));
-    }
-
-    /// Same token with light and dark values, for theme overrides.
-    public Color withLightDark(CssColor light, CssColor dark) {
-      return withValue(CssColor.lightDark(light, dark));
-    }
-
-    /// A token whose value is `var(--source)`, so overriding `source` also changes this token.
-    public static Color alias(String name, Color source) {
-      return new Color(name, source);
+      return TokenNames.varReference(name);
     }
   }
 
   /// A length token. Spacing tokens in [Tokens] multiply by `--density`; other lengths do not.
-  record Length(String name, CssLength value) implements DesignToken, CssLength {
+  record Length(String name, CssLength defaultValue) implements DesignToken<CssLength>, CssLength {
     public Length {
-      name = Fnv1a64.sanitizeIdentifier(name);
+      TokenNames.require(name);
     }
 
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return Tokens.varReference(this);
-    }
-
-    /// Same token with a new value, for theme overrides.
-    public Length withValue(CssLength replacement) {
-      return new Length(name, replacement);
-    }
-
-    /// A token whose value is `var(--source)`, so overriding `source` also changes this token.
-    public static Length alias(String name, Length source) {
-      return new Length(name, source);
+      return TokenNames.varReference(name);
     }
   }
 
-  /// Time token used by [Motion].
-  record Duration(String name, CssDuration value) implements DesignToken, CssDuration {
+  /// A time token, used by [Transition]s.
+  record Duration(String name, CssDuration defaultValue)
+      implements DesignToken<CssDuration>, CssDuration {
     public Duration {
-      name = Fnv1a64.sanitizeIdentifier(name);
+      TokenNames.require(name);
     }
 
+    /// `var(--name)`.
     @Override
     public String toCss() {
-      return Tokens.varReference(this);
-    }
-
-    /// Same token with a new value, for theme overrides.
-    public Duration withValue(CssDuration replacement) {
-      return new Duration(name, replacement);
+      return TokenNames.varReference(name);
     }
   }
 
   /// A font family token, used with [Styled#fontFamily(DesignToken.FontFamily)] or as a
   /// [FontStack] entry.
-  record FontFamily(String name, FontStack value) implements DesignToken, FontStack.Entry {
+  record FontFamily(String name, FontStack defaultValue)
+      implements DesignToken<FontStack>, FontStack.Entry {
     public FontFamily {
-      name = Fnv1a64.sanitizeIdentifier(name);
+      TokenNames.require(name);
     }
 
     /// `var(--name)`.
     @Override
     public String toCss() {
-      return Tokens.varReference(this);
-    }
-
-    /// Same token with a new value, for theme overrides.
-    public FontFamily withValue(FontStack replacement) {
-      return new FontFamily(name, replacement);
-    }
-
-    /// A token whose value is `var(--source)`, so overriding `source` also changes this token.
-    public static FontFamily alias(String name, FontFamily source) {
-      return new FontFamily(name, FontStack.of(source));
+      return TokenNames.varReference(name);
     }
   }
 
-  /// Unitless number, such as line height or density.
-  record Number(String name, CssNumber value) implements DesignToken, CssNumber {
+  /// A unitless number token, such as a line height or the density multiplier.
+  record Number(String name, CssNumber defaultValue) implements DesignToken<CssNumber>, CssNumber {
     public Number {
-      name = Fnv1a64.sanitizeIdentifier(name);
+      TokenNames.require(name);
     }
 
-    /// A number token holding `value`, referenced as `var(--name)`.
-    public static Number of(String name, double value) {
-      return new Number(name, CssNumber.of(value));
-    }
-
+    /// `var(--name)`.
     @Override
     public String toCss() {
-      return Tokens.varReference(this);
-    }
-
-    /// Same token with a new value, for theme overrides.
-    public Number withValue(double replacement) {
-      return new Number(name, CssNumber.of(replacement));
-    }
-
-    /// A token whose value is `var(--source)`, so overriding `source` also changes this token.
-    public static Number alias(String name, Number source) {
-      return new Number(name, source);
+      return TokenNames.varReference(name);
     }
   }
 }

@@ -6,8 +6,8 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +20,7 @@ class FormattingTest {
 
   static Stream<Arguments> inlineFormats() {
     return Stream.of(
-        argumentSet("highlight", Formatting.highlight("text", HighlightTone.ACCENT), "mark"),
+        argumentSet("highlight", Formatting.highlight("text", Tone.ACCENT), "mark"),
         argumentSet(
             "underline",
             Formatting.underline("text", UnderlineStyle.WAVY, Tokens.STATUS_DANGER),

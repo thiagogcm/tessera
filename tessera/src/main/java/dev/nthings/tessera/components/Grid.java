@@ -6,7 +6,8 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.css.CssIdent;
+import dev.nthings.tessera.css.Container;
+import dev.nthings.tessera.css.ContainerQuery;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.TrackList;
@@ -19,8 +20,9 @@ import java.util.List;
 public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, List<Element> items)
     implements Component {
 
-  private static final CssIdent GRID_CONTAINER = CssIdent.of("tessera-grid");
-  private static final CssLength MULTI_COL_MIN_WIDTH = CssLength.rem(36);
+  private static final Container GRID_CONTAINER =
+      Container.named("tessera-grid", Container.Type.INLINE_SIZE);
+  private static final ContainerQuery MULTI_COLUMN = GRID_CONTAINER.atLeast(CssLength.rem(36));
 
   /// Creates a grid with as many columns as fit, each at least `minColumnWidth` wide. A grid
   /// narrower than `minColumnWidth` gets one full-width column.
@@ -55,26 +57,24 @@ public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, L
   /// Wraps `content` in a cell spanning `colSpan` columns and `rowSpan` rows. Spans apply only
   /// when the enclosing grid is 36rem or wider; otherwise the cell takes one column and row.
   public static TagElement cell(int colSpan, int rowSpan, IntoElement content) {
-    return Elements.div()
-        .onContainer(GRID_CONTAINER, MULTI_COL_MIN_WIDTH, s -> s.colSpan(colSpan).rowSpan(rowSpan))
-        .child(content);
+    return Elements.div().on(MULTI_COLUMN, s -> s.colSpan(colSpan).rowSpan(rowSpan)).child(content);
   }
 
   @Override
   public Element render(RenderContext context) {
     if (!collapseOnNarrow) {
       return Elements.div()
-          .containerInlineSize(GRID_CONTAINER)
+          .container(GRID_CONTAINER)
           .child(Elements.div().grid().gridColumns(columns).gap(gap).children(items));
     }
     return Elements.div()
-        .containerInlineSize(GRID_CONTAINER)
+        .container(GRID_CONTAINER)
         .child(
             Elements.div()
                 .grid()
                 .gridColumns(TrackList.of(GridTrack.flexible()))
                 .gap(gap)
-                .onContainer(GRID_CONTAINER, MULTI_COL_MIN_WIDTH, s -> s.gridColumns(columns))
+                .on(MULTI_COLUMN, s -> s.gridColumns(columns))
                 .children(items));
   }
 }

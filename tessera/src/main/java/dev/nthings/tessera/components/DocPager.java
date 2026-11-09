@@ -9,13 +9,14 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridPlacement;
-import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
 
@@ -102,8 +103,9 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                     .mt(Tokens.SPACE_12)
                     .pt(Tokens.SPACE_6)
                     .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE)))
-        .containerMinInlineSize(
-            CssLength.rem(36), c -> c.root(s -> s.gridColumns(TrackList.equal(2))))
+        .on(
+            Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(36)),
+            c -> c.root(s -> s.gridColumns(TrackList.equal(2))))
         .select(
             ":scope > .pager-card",
             s ->
@@ -117,8 +119,8 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                     .bg(Tokens.SURFACE_CARD)
                     .textDecorationNone()
                     .textColor(Tokens.TEXT_PRIMARY)
-                    .motion(
-                        Motion.controlFeedback()
+                    .transition(
+                        Transition.controlFeedback()
                             .properties(Animatable.BORDER_COLOR, Animatable.BACKGROUND)))
         .select(
             ":scope > .pager-card:hover",

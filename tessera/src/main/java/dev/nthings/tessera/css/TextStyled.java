@@ -95,10 +95,11 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
     return self();
   }
 
-  /// Sets a highlight background from `tone`, with `padding-inline: var(--space-1)` and
+  /// Sets a highlight background, the tone's color mixed 24% over transparent (so it follows the
+  /// light or dark scheme), with `padding-inline: var(--space-1)` and
   /// `border-radius: var(--radius-sm)`.
-  default SELF highlight(HighlightTone tone) {
-    style().put(CssProperty.BACKGROUND, tone.background());
+  default SELF highlight(Tone tone) {
+    style().put(CssProperty.BACKGROUND, tone.color().mixTransparent(24));
     style().put(CssProperty.PADDING_INLINE, Tokens.SPACE_1);
     style().put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
     return self();

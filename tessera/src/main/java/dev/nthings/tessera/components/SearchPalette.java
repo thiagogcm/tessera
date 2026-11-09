@@ -29,12 +29,13 @@ import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -322,7 +323,8 @@ public final class SearchPalette implements View {
         .select(
             ":scope::backdrop",
             s -> s.bg(CssColor.oklch(0, 0, 0, 0.5)).backdropFilter(CssFilter.blur(CssLength.px(4))))
-        .motionSafe(
+        .on(
+            Media.MOTION_SAFE,
             m ->
                 m.select(
                         ":scope",
@@ -331,8 +333,8 @@ public final class SearchPalette implements View {
                                 .transform(
                                     Transform.translateY(CssLength.px(-12))
                                         .then(Transform.scale(0.98)))
-                                .motion(
-                                    Motion.of(
+                                .transition(
+                                    Transition.of(
                                             CssDuration.ms(200),
                                             Easing.cubicBezier(0.16, 1, 0.3, 1),
                                             Animatable.OPACITY,
@@ -347,18 +349,19 @@ public final class SearchPalette implements View {
                                 .transform(
                                     Transform.translateY(CssLength.zero())
                                         .then(Transform.scale(1))))
-                    .selectWithStartingStyle(
+                    .select(
                         ":scope:open",
                         s ->
                             s.opacity(1)
                                 .transform(
-                                    Transform.translateY(CssLength.zero())
-                                        .then(Transform.scale(1))),
-                        s ->
-                            s.opacity(0)
-                                .transform(
-                                    Transform.translateY(CssLength.px(-12))
-                                        .then(Transform.scale(0.98)))))
+                                    Transform.translateY(CssLength.zero()).then(Transform.scale(1)))
+                                .startingStyle(
+                                    start ->
+                                        start
+                                            .opacity(0)
+                                            .transform(
+                                                Transform.translateY(CssLength.px(-12))
+                                                    .then(Transform.scale(0.98))))))
         .select(
             ":scope .palette-header",
             s ->

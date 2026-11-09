@@ -9,16 +9,18 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
+import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssDuration;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Overscroll;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -28,6 +30,7 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.SnapAlign;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
@@ -38,7 +41,10 @@ import java.util.List;
 /// next buttons and slide markers; other browsers keep the scrollable track.
 public final class Carousel implements View {
 
-  private static final CssIdent ITEM_COUNTER = CssIdent.of("carousel-item");
+  private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
+
+  /// Each slide is a scroll-state container, so its card can react while it is snapped.
+  private static final Container ITEM = Container.unnamed(Container.Type.SCROLL_STATE);
 
   /// One slide. `title` and `summary` are rendered only for slides made with [#ofText]; a slide
   /// made with [#of] renders just its content.
@@ -119,7 +125,7 @@ public final class Carousel implements View {
                     .inlineSize(CssLength.min(CssLength.rem(22), CssLength.pct(82)))
                     .scrollSnapAlign(SnapAlign.CENTER)
                     .counterIncrement(ITEM_COUNTER)
-                    .containerScrollState())
+                    .container(ITEM))
         .select(
             ":scope > .carousel-item > .carousel-card",
             s ->
@@ -128,8 +134,8 @@ public final class Carousel implements View {
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
                     .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
-                    .motion(
-                        Motion.of(
+                    .transition(
+                        Transition.of(
                             CssDuration.ms(250),
                             Easing.ease(),
                             Animatable.BORDER_COLOR,
@@ -152,8 +158,8 @@ public final class Carousel implements View {
                     .bg(Tokens.BORDER_SUBTLE)
                     .border(Border.none())
                     .cursor(Cursor.POINTER)
-                    .motion(
-                        Motion.of(
+                    .transition(
+                        Transition.of(
                             CssDuration.ms(200),
                             Easing.ease(),
                             Animatable.INLINE_SIZE,
@@ -197,11 +203,12 @@ public final class Carousel implements View {
                     .insetInlineEnd(
                         CssLength.anchor(CssLength.AnchorSide.RIGHT).plus(CssLength.rem(0.5))))
         .select(":scope::scroll-button(*):disabled", s -> s.opacity(0.35).cursor(Cursor.DEFAULT))
-        .motionSafe(
+        .on(
+            Media.MOTION_SAFE,
             m ->
                 m.select(":scope", s -> s.scrollBehaviorSmooth())
-                    .containerScrollState(
-                        "snapped: x",
+                    .on(
+                        ITEM.snapped(Container.Axis.X),
                         c ->
                             c.select(
                                 ":scope > .carousel-item > .carousel-card",
@@ -215,8 +222,8 @@ public final class Carousel implements View {
                                                 CssColor.oklch(0, 0, 0, 0.14))))));
   }
 
-  private CssIdent anchorIdent() {
-    return CssIdent.custom("carousel-" + id);
+  private Anchor anchorIdent() {
+    return Anchor.named("carousel-" + id);
   }
 
   @Override

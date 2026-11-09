@@ -15,125 +15,110 @@ import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Admonition rendered as an `<aside role="note">` with a tone-colored icon, a title, and a tinted
-/// background. Create one with a tone factory such as [#note(String)]. The title defaults to the
-/// English name of the tone; [#title(String)] replaces it.
+/// Admonition rendered as an `<aside role="note">` with a colored icon, a title, and a tinted
+/// background. Create one with a kind factory such as [#note(String)]. The title defaults to the
+/// English name of the [Kind]; [#title(String)] replaces it.
 public final class Callout implements View, FluentBuilder<Callout>, ParentElement<Callout> {
 
-  /// Admonition kind, each with its own icon, color, and default title.
-  public enum Tone {
+  /// Admonition kind, each with its own icon, [Tone] and default title.
+  public enum Kind {
     NOTE(
         "Note",
-        Tokens.STATUS_INFO,
+        Tone.INFO,
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\"/><line x1=\"8\" y1=\"8\" x2=\"8\" y2=\"12\"/><line x1=\"8\" y1=\"4.5\" x2=\"8\" y2=\"5\"/></svg>"),
     TIP(
         "Tip",
-        Tokens.STATUS_SUCCESS,
+        Tone.SUCCESS,
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 1.8 1.1 3.4 2.5 4.1v1.9h4v-1.9c1.4-.7 2.5-2.3 2.5-4.1A4.5 4.5 0 0 0 8 1.5z\"/><line x1=\"6\" y1=\"14.5\" x2=\"10\" y2=\"14.5\"/></svg>"),
     IMPORTANT(
         "Important",
-        Tokens.ACCENT_PRIMARY,
+        Tone.ACCENT,
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 2h10l-2 5 2 5H3z\"/><line x1=\"3\" y1=\"2\" x2=\"3\" y2=\"15\"/></svg>"),
     WARNING(
         "Warning",
-        Tokens.STATUS_WARNING,
+        Tone.WARNING,
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 1.5l6.5 12H1.5L8 1.5z\"/><line x1=\"8\" y1=\"6\" x2=\"8\" y2=\"9.5\"/><line x1=\"8\" y1=\"11.5\" x2=\"8\" y2=\"12\"/></svg>"),
     CAUTION(
         "Caution",
-        Tokens.STATUS_DANGER,
+        Tone.DANGER,
         "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polygon points=\"5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5\"/><line x1=\"8\" y1=\"5\" x2=\"8\" y2=\"9\"/><line x1=\"8\" y1=\"11\" x2=\"8\" y2=\"11.5\"/></svg>");
 
     private final String defaultTitle;
-    private final DesignToken.Color token;
+    private final Tone tone;
     private final String iconSvg;
 
-    Tone(String defaultTitle, DesignToken.Color token, String iconSvg) {
+    Kind(String defaultTitle, Tone tone, String iconSvg) {
       this.defaultTitle = defaultTitle;
-      this.token = token;
+      this.tone = tone;
       this.iconSvg = iconSvg;
-    }
-
-    /// Compiler-facing: the title shown when no custom title is set.
-    public String defaultTitle() {
-      return defaultTitle;
-    }
-
-    /// Compiler-facing: the color that tints the icon, the border, and the background.
-    public DesignToken.Color token() {
-      return token;
-    }
-
-    /// Compiler-facing: the inline SVG markup of the tone's icon.
-    public String iconSvg() {
-      return iconSvg;
     }
   }
 
-  private final Tone tone;
+  private final Kind kind;
   private @Nullable String customTitle;
   private final List<Element> children = new ArrayList<>();
 
-  private Callout(Tone tone) {
-    this.tone = tone;
+  private Callout(Kind kind) {
+    this.kind = kind;
   }
 
   public static Callout note(String text) {
-    return of(Tone.NOTE, text);
+    return of(Kind.NOTE, text);
   }
 
   public static Callout note(IntoElement... elements) {
-    return of(Tone.NOTE, elements);
+    return of(Kind.NOTE, elements);
   }
 
   public static Callout tip(String text) {
-    return of(Tone.TIP, text);
+    return of(Kind.TIP, text);
   }
 
   public static Callout tip(IntoElement... elements) {
-    return of(Tone.TIP, elements);
+    return of(Kind.TIP, elements);
   }
 
   public static Callout important(String text) {
-    return of(Tone.IMPORTANT, text);
+    return of(Kind.IMPORTANT, text);
   }
 
   public static Callout important(IntoElement... elements) {
-    return of(Tone.IMPORTANT, elements);
+    return of(Kind.IMPORTANT, elements);
   }
 
   public static Callout warning(String text) {
-    return of(Tone.WARNING, text);
+    return of(Kind.WARNING, text);
   }
 
   public static Callout warning(IntoElement... elements) {
-    return of(Tone.WARNING, elements);
+    return of(Kind.WARNING, elements);
   }
 
   public static Callout caution(String text) {
-    return of(Tone.CAUTION, text);
+    return of(Kind.CAUTION, text);
   }
 
   public static Callout caution(IntoElement... elements) {
-    return of(Tone.CAUTION, elements);
+    return of(Kind.CAUTION, elements);
   }
 
-  /// Creates a callout of `tone` whose body is one paragraph of `text`.
-  public static Callout of(Tone tone, String text) {
-    return new Callout(tone).child(Elements.p().text(text));
+  /// Creates a callout of `kind` whose body is one paragraph of `text`.
+  public static Callout of(Kind kind, String text) {
+    return new Callout(kind).child(Elements.p().text(text));
   }
 
-  /// Creates a callout of `tone` whose body is `elements`.
-  public static Callout of(Tone tone, IntoElement... elements) {
-    return new Callout(tone).children(elements);
+  /// Creates a callout of `kind` whose body is `elements`.
+  public static Callout of(Kind kind, IntoElement... elements) {
+    return new Callout(kind).children(elements);
   }
 
   @Override
@@ -141,7 +126,7 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
     return this;
   }
 
-  /// Sets the header title, replacing the tone's default title.
+  /// Sets the header title, replacing the kind's default title.
   public Callout title(String title) {
     this.customTitle = title;
     return this;
@@ -152,8 +137,9 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
     children.add(child);
   }
 
-  public Tone tone() {
-    return tone;
+  /// The admonition kind.
+  public Kind kind() {
+    return kind;
   }
 
   @Override
@@ -199,26 +185,26 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
 
   @Override
   public Element render(RenderContext context) {
-    var displayTitle = customTitle != null ? customTitle : tone.defaultTitle();
+    var displayTitle = customTitle != null ? customTitle : kind.defaultTitle;
     var header =
         div()
             .attr("class", "callout-header")
             .children(
                 span()
                     .attr("class", "callout-icon")
-                    .textColor(tone.token())
-                    .child(rawHtml(tone.iconSvg())),
+                    .textColor(kind.tone.color())
+                    .child(rawHtml(kind.iconSvg)),
                 span().attr("class", "callout-title").text(displayTitle));
 
     var content = div().attr("class", "callout-content").children(children);
 
-    var tint = tone.token().mix(CssColor.Space.OKLAB, 14, Tokens.SURFACE_CARD);
+    var tint = kind.tone.color().mix(CssColor.Space.OKLAB, 14, Tokens.SURFACE_CARD);
 
     return aside()
         .role(Role.NOTE)
-        .attr("class", "callout callout--" + tone.name().toLowerCase(Locale.ROOT))
+        .attr("class", "callout callout--" + kind.name().toLowerCase(Locale.ROOT))
         .bg(tint)
-        .borderInlineStart(Border.solid(CssLength.px(4), tone.token()))
+        .borderInlineStart(Border.solid(CssLength.px(4), kind.tone.color()))
         .children(header, content);
   }
 }

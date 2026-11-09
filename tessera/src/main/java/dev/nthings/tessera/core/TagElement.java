@@ -1,7 +1,6 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Interactivity;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleRefinement;
@@ -14,8 +13,8 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity]. Authors usually
-/// create one through the [Elements] factories.
+/// HTML element node backed by a [TagName] and a [StyleRefinement]. Authors usually create one
+/// through the [Elements] factories.
 ///
 /// Give the element an id with [#id(ElementRef)]. Features that need the element's own id
 /// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
@@ -29,7 +28,6 @@ public final class TagElement
 
   private final TagName tag;
   private final StyleRefinement style = new StyleRefinement();
-  private final Interactivity interactivity = new Interactivity();
   private final Map<String, String> attributes = new LinkedHashMap<>();
   private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   private final List<Element> children = new ArrayList<>();
@@ -54,7 +52,6 @@ public final class TagElement
   public TagElement copy() {
     var copy = new TagElement(tag, source);
     copy.style.mergeFrom(style);
-    copy.interactivity.mergeFrom(interactivity);
     copy.attributes.putAll(attributes);
     copy.idReferences.putAll(idReferences);
     copy.children.addAll(children);
@@ -84,11 +81,6 @@ public final class TagElement
   @Override
   public StyleRefinement style() {
     return style;
-  }
-
-  @Override
-  public Interactivity interactivity() {
-    return interactivity;
   }
 
   @Override

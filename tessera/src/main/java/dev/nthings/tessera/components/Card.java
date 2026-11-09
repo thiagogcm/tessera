@@ -8,8 +8,8 @@ import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.GridPlacement;
@@ -174,14 +174,14 @@ public final class Card implements View, FluentBuilder<Card> {
 
   /// Container name for the card's width. [CardGrid] resets it, since layout containment makes
   /// `subgrid` compute to `none`.
-  static final CssIdent CONTAINER = CssIdent.of("tessera-card");
+  static final Container CONTAINER = Container.named("tessera-card", Container.Type.INLINE_SIZE);
 
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
-                s.containerInlineSize(CONTAINER)
+                s.container(CONTAINER)
                     .flex()
                     .flexCol()
                     .gap(Tokens.SPACE_3)
@@ -229,9 +229,8 @@ public final class Card implements View, FluentBuilder<Card> {
                     .rowGap(Tokens.SPACE_3)
                     .itemsStart())
         .select(MEDIA_CARD + " > *", s -> s.gridColumn(GridPlacement.between(1, -1)))
-        .containerMinInlineSize(
-            CONTAINER,
-            CssLength.rem(28),
+        .on(
+            CONTAINER.atLeast(CssLength.rem(28)),
             c ->
                 c.select(
                         MEDIA_CARD + " > :is(img, picture, .media)",

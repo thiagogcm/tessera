@@ -6,7 +6,7 @@ import java.util.List;
 /// with [Styled#content(CssContent)]. Build values with the static factories.
 public sealed interface CssContent extends CssValue
     permits CssContents.Text,
-        CssContents.Counter,
+        CssContents.CounterValue,
         CssContents.Property,
         CssContents.Sequence,
         CssContents.Alternative {
@@ -21,13 +21,13 @@ public sealed interface CssContent extends CssValue
     return text("");
   }
 
-  /// `counter(name)`.
-  static CssContent counter(CssIdent name) {
-    return new CssContents.Counter(name);
+  /// `counter(name)`, the counter's current value.
+  static CssContent counter(Counter counter) {
+    return new CssContents.CounterValue(counter);
   }
 
-  /// `var(--name)`. Throws IllegalArgumentException unless `customProperty` is dashed.
-  static CssContent property(CssIdent customProperty) {
+  /// `var(--name)` of a string-valued custom property.
+  static CssContent property(CustomProperty customProperty) {
     return new CssContents.Property(customProperty);
   }
 

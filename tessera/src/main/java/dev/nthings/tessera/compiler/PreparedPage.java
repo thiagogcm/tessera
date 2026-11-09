@@ -3,7 +3,7 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheet;
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -86,9 +86,9 @@ final class PreparedPage {
     return PageTree.of(headNodes, bodyNodes);
   }
 
-  /// This page's own CSS under `tokens`, without any shared site stylesheet.
-  String stylesheet(Tokens tokens) {
-    return styles.render(tokens);
+  /// This page's own CSS under `theme`, without any shared site stylesheet.
+  String stylesheet(Theme theme) {
+    return styles.render(theme);
   }
 
   /// Copies this page's CSS into `target`, a site-level stylesheet collector.

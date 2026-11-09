@@ -16,19 +16,20 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssDuration;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.WhiteSpace;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
@@ -77,14 +78,14 @@ public final class Tabs {
 
     private final String id;
     private final String ariaLabel;
-    private final CssIdent anchorIdent;
+    private final Anchor anchorIdent;
     private final String activeHref;
     private final List<NavItem> items;
 
     public NavTabs(String id, String ariaLabel, String activeHref, List<NavItem> items) {
       this.id = Fnv1a64.sanitizeLocalId(id);
       this.ariaLabel = ariaLabel;
-      this.anchorIdent = CssIdent.custom("active-nav-" + this.id);
+      this.anchorIdent = Anchor.named("active-nav-" + this.id);
       this.activeHref = activeHref;
       this.items = List.copyOf(items);
     }
@@ -154,7 +155,7 @@ public final class Tabs {
 
     private final String id;
     private final String ariaLabel;
-    private final CssIdent anchorIdent;
+    private final Anchor anchorIdent;
     private final List<TabPanel> panels;
 
     public ContentTabs(String id, String ariaLabel, List<TabPanel> panels) {
@@ -163,7 +164,7 @@ public final class Tabs {
       }
       this.id = Fnv1a64.sanitizeLocalId(id);
       this.ariaLabel = ariaLabel;
-      this.anchorIdent = CssIdent.custom("active-tab-" + this.id);
+      this.anchorIdent = Anchor.named("active-tab-" + this.id);
       this.panels = List.copyOf(panels);
     }
 
@@ -260,7 +261,7 @@ public final class Tabs {
 
   /// Anchor-positioned underline sliding to the tab carrying `anchorIdent`.
   private static ScopeStyle anchorUnderline(
-      ScopeStyle scope, String barSelector, CssIdent anchorIdent) {
+      ScopeStyle scope, String barSelector, Anchor anchorIdent) {
     return scope
         .select(
             barSelector,
@@ -274,11 +275,13 @@ public final class Tabs {
                     .insetInlineEnd(CssLength.anchor(CssLength.AnchorSide.RIGHT))
                     .blockSize(CssLength.px(2))
                     .bg(Tokens.ACCENT_PRIMARY))
-        .motionSafe(
+        .on(
+            Media.MOTION_SAFE,
             m ->
                 m.select(
                     barSelector,
                     s ->
-                        s.motion(Motion.of(CssDuration.ms(200), Easing.ease(), Animatable.INSET))));
+                        s.transition(
+                            Transition.of(CssDuration.ms(200), Easing.ease(), Animatable.INSET))));
   }
 }

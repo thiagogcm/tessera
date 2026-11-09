@@ -1,9 +1,9 @@
 package dev.nthings.tessera.core;
 
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 /// Identity shared by counterpart elements on different routes for cross-document view
@@ -17,22 +17,40 @@ import org.jspecify.annotations.Nullable;
 /// [InteractiveElement#transitionKey(TransitionKey)].
 public record TransitionKey(String name, @Nullable String transitionClass) {
 
-  private static final Set<String> RESERVED = Set.of("root", "auto", "match-element");
+  private static final Set<String> RESERVED =
+      Set.of(
+          "root",
+          "auto",
+          "match-element",
+          "none",
+          "default",
+          "initial",
+          "inherit",
+          "unset",
+          "revert",
+          "revert-layer");
+
+  private static final Pattern IDENT = Pattern.compile("-?[A-Za-z_][A-Za-z0-9_-]*");
 
   /// Sanitizes `name` and `transitionClass`: characters outside `[A-Za-z0-9_-]` become `-`. Throws
   /// IllegalArgumentException for an empty name, for `root`, `auto` or `match-element` in any case,
   /// for a name starting with a digit or `--`, and for CSS-wide keywords, `none` and `default`.
   public TransitionKey {
-    name = Fnv1a64.sanitizeIdentifier(name);
-    // Reserved names are case-insensitive; CssIdent rejects `none` and CSS-wide keywords.
+    name = requireName(Fnv1a64.sanitizeIdentifier(name));
+    if (transitionClass != null) {
+      transitionClass = requireName(Fnv1a64.sanitizeIdentifier(transitionClass));
+    }
+  }
+
+  /// Reserved names are case-insensitive.
+  private static String requireName(String name) {
     if (RESERVED.contains(name.toLowerCase(Locale.ROOT))) {
       throw new IllegalArgumentException("TransitionKey name is reserved: " + name);
     }
-    CssIdent.of(name);
-    if (transitionClass != null) {
-      transitionClass = Fnv1a64.sanitizeIdentifier(transitionClass);
-      CssIdent.of(transitionClass);
+    if (name.startsWith("--") || !IDENT.matcher(name).matches()) {
+      throw new IllegalArgumentException("Not a CSS identifier: '" + name + "'");
     }
+    return name;
   }
 
   /// Creates a key without a transition class.

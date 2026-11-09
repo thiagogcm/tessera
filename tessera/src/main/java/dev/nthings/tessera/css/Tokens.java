@@ -1,14 +1,11 @@
 package dev.nthings.tessera.css;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
-/// The design tokens emitted as custom properties on `:root` in `@layer theme`. `new Tokens()`
-/// registers every default; [#register] adds a token or replaces the one with the same name. Pass
-/// the registry to `Compiler.compile` or to `SiteDefinition.Builder#tokens`. Spacing tokens
-/// scale with the density token.
+/// The built-in design tokens. Components and authoring code reference them as values (each is
+/// `var(--name)`), and [Theme] sets their values: `Theme.defaults().with(Tokens.DENSITY,
+/// CssNumber.of(0.9))`. Spacing tokens scale with [#DENSITY]; the `CONTROL_*` tokens follow the
+/// body tokens until a theme overrides them.
 public final class Tokens {
 
   public static final DesignToken.FontFamily FONT_BODY =
@@ -28,11 +25,10 @@ public final class Tokens {
   public static final DesignToken.Length FONT_SIZE_LG = length("font-size-lg", 1.125);
   public static final DesignToken.Length FONT_SIZE_XL = length("font-size-xl", 1.25);
   public static final DesignToken.Length FONT_SIZE_2XL = length("font-size-2xl", 1.5);
-  public static final DesignToken.Number LINE_HEIGHT_BODY =
-      DesignToken.Number.of("line-height-body", 1.5);
+  public static final DesignToken.Number LINE_HEIGHT_BODY = number("line-height-body", 1.5);
   public static final DesignToken.Length TRACKING_NORMAL =
       new DesignToken.Length("tracking-normal", CssLength.zero());
-  public static final DesignToken.Number DENSITY = DesignToken.Number.of("density", 1);
+  public static final DesignToken.Number DENSITY = number("density", 1);
   public static final DesignToken.Length CONTROL_PADDING_INLINE =
       space("control-padding-inline", 0.875);
   public static final DesignToken.Length SPACE_0_5 = space("space-0-5", 0.125);
@@ -56,13 +52,13 @@ public final class Tokens {
       new DesignToken.Length("radius-full", CssLength.px(9999));
 
   public static final DesignToken.FontFamily CONTROL_FAMILY =
-      DesignToken.FontFamily.alias("control-family", FONT_BODY);
+      new DesignToken.FontFamily("control-family", FontStack.of(FONT_BODY));
   public static final DesignToken.Length CONTROL_FONT_SIZE =
-      DesignToken.Length.alias("control-font-size", FONT_SIZE_SM);
+      new DesignToken.Length("control-font-size", FONT_SIZE_SM);
   public static final DesignToken.Number CONTROL_LINE_HEIGHT =
-      DesignToken.Number.alias("control-line-height", LINE_HEIGHT_BODY);
+      new DesignToken.Number("control-line-height", LINE_HEIGHT_BODY);
   public static final DesignToken.Length CONTROL_TRACKING =
-      DesignToken.Length.alias("control-tracking", TRACKING_NORMAL);
+      new DesignToken.Length("control-tracking", TRACKING_NORMAL);
   public static final DesignToken.Duration CONTROL_FEEDBACK_DURATION =
       new DesignToken.Duration("control-feedback-duration", CssDuration.ms(150));
   public static final DesignToken.Duration OVERLAY_DURATION =
@@ -105,14 +101,11 @@ public final class Tokens {
   public static final DesignToken.Color STATUS_INFO_TEXT =
       tintText("status-info-text", STATUS_INFO, 38, 0.14, 84, 0.12);
   public static final DesignToken.Color CONTROL_FG =
-      DesignToken.Color.alias("control-fg", TEXT_PRIMARY);
+      new DesignToken.Color("control-fg", TEXT_PRIMARY);
 
-  private final Map<String, DesignToken> entries = new LinkedHashMap<>();
-
-  /// Creates a registry holding every default token.
-  public Tokens() {
-    for (var token :
-        new DesignToken[] {
+  /// Every built-in token, in the order [Theme#defaults()] emits them.
+  static final List<DesignToken<?>> ALL =
+      List.of(
           FONT_BODY,
           FONT_MONO,
           FONT_SIZE_XS,
@@ -149,48 +142,29 @@ public final class Tokens {
           CONTROL_TRACKING,
           CONTROL_FEEDBACK_DURATION,
           OVERLAY_DURATION,
-          DISCLOSURE_DURATION
-        }) {
-      register(token);
-    }
-    register(SURFACE_CANVAS);
-    register(SURFACE_CARD);
-    register(SURFACE_SUBTLE);
-    register(TEXT_PRIMARY);
-    register(TEXT_MUTED);
-    register(ACCENT_PRIMARY);
-    register(ACCENT_TEXT);
-    register(BORDER_SUBTLE);
-    register(STATUS_SUCCESS);
-    register(STATUS_SUCCESS_TEXT);
-    register(STATUS_WARNING);
-    register(STATUS_WARNING_TEXT);
-    register(STATUS_DANGER);
-    register(STATUS_DANGER_TEXT);
-    register(STATUS_INFO);
-    register(STATUS_INFO_TEXT);
-    register(CONTROL_FG);
-  }
+          DISCLOSURE_DURATION,
+          SURFACE_CANVAS,
+          SURFACE_CARD,
+          SURFACE_SUBTLE,
+          TEXT_PRIMARY,
+          TEXT_MUTED,
+          ACCENT_PRIMARY,
+          ACCENT_TEXT,
+          BORDER_SUBTLE,
+          STATUS_SUCCESS,
+          STATUS_SUCCESS_TEXT,
+          STATUS_WARNING,
+          STATUS_WARNING_TEXT,
+          STATUS_DANGER,
+          STATUS_DANGER_TEXT,
+          STATUS_INFO,
+          STATUS_INFO_TEXT,
+          CONTROL_FG);
 
-  /// Adds `token`, or replaces the token with the same name in place. Returns this registry.
-  public Tokens register(DesignToken token) {
-    entries.put(token.name(), token);
-    return this;
-  }
+  private Tokens() {}
 
-  /// Every registered token, in registration order. The view is read-only.
-  public Collection<DesignToken> all() {
-    return Collections.unmodifiableCollection(entries.values());
-  }
-
-  /// The `var(--name)` reference a token serializes to.
-  static String varReference(DesignToken token) {
-    return "var(--" + token.name() + ")";
-  }
-
-  /// The `--name:value` declaration that defines a token on `:root`.
-  static String declaration(DesignToken token) {
-    return "--" + token.name() + ":" + token.value().toCss();
+  private static DesignToken.Number number(String name, double value) {
+    return new DesignToken.Number(name, CssNumber.of(value));
   }
 
   private static DesignToken.Length length(String name, double rem) {
@@ -210,10 +184,11 @@ public final class Tokens {
       double lightChroma,
       double darkLightness,
       double darkChroma) {
-    return DesignToken.Color.lightDark(
+    return new DesignToken.Color(
         name,
-        CssColor.sameHue(source, lightLightness, lightChroma),
-        CssColor.sameHue(source, darkLightness, darkChroma));
+        CssColor.lightDark(
+            CssColor.sameHue(source, lightLightness, lightChroma),
+            CssColor.sameHue(source, darkLightness, darkChroma)));
   }
 
   private static DesignToken.Color adaptive(
@@ -224,9 +199,10 @@ public final class Tokens {
       double darkLightness,
       double darkChroma,
       double darkHue) {
-    return DesignToken.Color.lightDark(
+    return new DesignToken.Color(
         name,
-        CssColor.oklch(lightLightness, lightChroma, lightHue),
-        CssColor.oklch(darkLightness, darkChroma, darkHue));
+        CssColor.lightDark(
+            CssColor.oklch(lightLightness, lightChroma, lightHue),
+            CssColor.oklch(darkLightness, darkChroma, darkHue)));
   }
 }

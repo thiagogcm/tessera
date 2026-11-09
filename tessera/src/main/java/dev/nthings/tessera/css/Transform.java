@@ -6,16 +6,31 @@ import java.util.List;
 /// A `transform` function or a sequence of them, applied with [Styled#transform(Transform)].
 /// Build values with the static factories and [#then(Transform)].
 public sealed interface Transform extends CssValue
-    permits Transforms.Scale, Transforms.Rotate, Transforms.TranslateY, Transforms.Chain {
+    permits Transforms.Scale,
+        Transforms.ScaleX,
+        Transforms.Rotate,
+        Transforms.TranslateX,
+        Transforms.TranslateY,
+        Transforms.Chain {
 
   /// `scale(factor)`.
   static Transform scale(double factor) {
     return new Transforms.Scale(factor);
   }
 
+  /// `scaleX(factor)`, scaling the horizontal axis only.
+  static Transform scaleX(double factor) {
+    return new Transforms.ScaleX(factor);
+  }
+
   /// `rotate(<degrees>deg)`.
   static Transform rotate(double degrees) {
     return new Transforms.Rotate(degrees);
+  }
+
+  /// `translateX(distance)`, along the horizontal axis whatever the writing mode.
+  static Transform translateX(CssLength distance) {
+    return new Transforms.TranslateX(distance);
   }
 
   /// `translateY(distance)`.

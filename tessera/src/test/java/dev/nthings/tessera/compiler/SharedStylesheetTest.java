@@ -8,7 +8,7 @@ import static dev.nthings.tessera.support.SiteFixtures.stylesheetPath;
 
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -31,8 +31,8 @@ class SharedStylesheetTest {
   }
 
   @Nested
-  @DisplayName("site tokens")
-  class SiteTokens {
+  @DisplayName("site theme tokens")
+  class SiteTheme {
 
     private static CompiledSite site;
 
@@ -42,7 +42,7 @@ class SharedStylesheetTest {
       site =
           Compiler.compile(
               SiteDefinition.builder()
-                  .tokens(new Tokens().register(brand))
+                  .theme(Theme.defaults().with(brand, brand.defaultValue()))
                   .route(new SiteRoute("/", new PageDocument("Home", main().child(p().text("x")))))
                   .build());
     }

@@ -6,7 +6,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Theme;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class ClientBehaviorTest {
   @Test
   @DisplayName("an external behavior becomes an asset referenced by the page")
   void externalBehaviorBecomesAsset() {
-    var page = Compiler.compile(page(BEHAVIOR), new Tokens(), OutputMode.external("/assets"));
+    var page = Compiler.compile(page(BEHAVIOR), Theme.defaults(), OutputMode.external("/assets"));
 
     var asset = page.assets().getLast();
     assertThat(page.assets()).hasSize(2);

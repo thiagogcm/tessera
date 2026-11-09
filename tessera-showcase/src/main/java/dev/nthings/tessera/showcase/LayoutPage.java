@@ -23,9 +23,9 @@ import dev.nthings.tessera.components.Prose;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 
 /// Grids, cards, prose, lists, callouts, and inline formatting.
@@ -215,7 +215,7 @@ final class LayoutPage {
             p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Text can be "),
-                    Formatting.highlight("highlighted", HighlightTone.ACCENT),
+                    Formatting.highlight("highlighted", Tone.ACCENT),
                     text(", "),
                     Formatting.underline(
                         "underlined with a wavy line", UnderlineStyle.WAVY, Tokens.STATUS_WARNING),
@@ -231,7 +231,7 @@ final class LayoutPage {
                     Formatting.keybinding("Ctrl+K"),
                     text(".")))
         .code(
-            "Formatting.highlight(\"highlighted\", HighlightTone.ACCENT);",
+            "Formatting.highlight(\"highlighted\", Tone.ACCENT);",
             "Formatting.underline(\"wavy\", UnderlineStyle.WAVY, Tokens.STATUS_WARNING);",
             "Formatting.keybinding(\"Ctrl+K\");");
   }

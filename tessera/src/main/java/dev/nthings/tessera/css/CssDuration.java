@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A CSS time: milliseconds written inline, or a design token. Used by [Motion]. Build values with
-/// [#ms(double)].
+/// A CSS time: milliseconds written inline, or a design token. Used by [Transition] and
+/// [Animation]. Build values with [#ms(double)].
 public sealed interface CssDuration extends CssValue
     permits CssDurations.Millis, DesignToken.Duration {
 

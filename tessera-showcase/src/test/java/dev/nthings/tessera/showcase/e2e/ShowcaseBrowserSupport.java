@@ -26,7 +26,9 @@ import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssNumber;
 import dev.nthings.tessera.css.FontStack;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.showcase.Catalog;
 import dev.nthings.tessera.showcase.ShowcaseSite;
@@ -86,13 +88,13 @@ abstract class ShowcaseBrowserSupport {
     var themed =
         SiteDefinition.builder()
             .outputMode(OutputMode.inline())
-            .tokens(
-                new Tokens()
-                    .register(Tokens.DENSITY.withValue(0.5))
-                    .register(Tokens.FONT_BODY.withValue(FontStack.of(FontStack.Generic.MONOSPACE)))
-                    .register(Tokens.FONT_SIZE_MD.withValue(CssLength.px(20)))
-                    .register(Tokens.RADIUS_XL.withValue(CssLength.px(18)))
-                    .register(Tokens.RADIUS_LG.withValue(CssLength.px(12))))
+            .theme(
+                Theme.defaults()
+                    .with(Tokens.DENSITY, CssNumber.of(0.5))
+                    .with(Tokens.FONT_BODY, FontStack.of(FontStack.Generic.MONOSPACE))
+                    .with(Tokens.FONT_SIZE_MD, CssLength.px(20))
+                    .with(Tokens.RADIUS_XL, CssLength.px(18))
+                    .with(Tokens.RADIUS_LG, CssLength.px(12)))
             .route(
                 new SiteRoute(
                     "/",

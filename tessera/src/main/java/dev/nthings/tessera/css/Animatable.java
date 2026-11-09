@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// Properties a [Motion] can transition.
+/// Properties a [Transition] can animate.
 public enum Animatable implements CssKeyword {
   BACKGROUND,
   BACKGROUND_COLOR,

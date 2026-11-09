@@ -16,7 +16,7 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.core.ViewElement;
-import dev.nthings.tessera.css.CssIdent;
+import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.foundation.Fnv1a64;
@@ -199,11 +199,11 @@ final class ViewExpansion {
       state.registerTransition(transition, location);
       var transitionClass = transition.transitionClass();
       if (transitionClass != null) {
-        context.styles().registerTransitionClass(CssIdent.of(transitionClass));
+        context.styles().registerTransitionClass(transitionClass);
       }
     }
 
-    var classes = context.styles().registerElement(style, element.interactivity());
+    var classes = context.styles().registerElement(style);
     if (!classes.isEmpty()) {
       var existing = attrs.get("class");
       var joined = String.join(" ", classes);
@@ -250,16 +250,12 @@ final class ViewExpansion {
       }
     }
     if (transition != null) {
-      style.viewTransitionName(CssIdent.of(transition.name()));
-      var transitionClass = transition.transitionClass();
-      if (transitionClass != null) {
-        style.viewTransitionClass(CssIdent.of(transitionClass));
-      }
+      style.viewTransition(transition.name(), transition.transitionClass());
     }
     return style;
   }
 
-  private static CssIdent anchorIdent(String domId) {
-    return CssIdent.custom("anchor-" + domId);
+  private static Anchor anchorIdent(String domId) {
+    return Anchor.named("anchor-" + domId);
   }
 }

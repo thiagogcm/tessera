@@ -10,9 +10,8 @@ public sealed interface CssNumber extends CssValue
     return new CssNumbers.Literal(value);
   }
 
-  /// `var(--name)` of a number-valued custom property. Throws IllegalArgumentException unless
-  /// `customProperty` is dashed.
-  static CssNumber property(CssIdent customProperty) {
+  /// `var(--name)` of a number-valued custom property.
+  static CssNumber property(CustomProperty customProperty) {
     return new CssNumbers.Reference(customProperty);
   }
 

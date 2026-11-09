@@ -24,8 +24,10 @@ import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.CssNumber;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
 import java.nio.file.Path;
 
@@ -34,14 +36,14 @@ public final class GuideSite {
   private GuideSite() {}
 
   public static SiteDefinition createDefinition() {
-    var tokens =
-        new Tokens()
-            .register(Tokens.ACCENT_PRIMARY.withValue(CssColor.oklch(55, 0.18, 150)))
-            .register(Tokens.DENSITY.withValue(0.9))
-            .register(Tokens.RADIUS_XL.withValue(CssLength.rem(1)));
+    var theme =
+        Theme.defaults()
+            .with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150))
+            .with(Tokens.DENSITY, CssNumber.of(0.9))
+            .with(Tokens.RADIUS_XL, CssLength.rem(1));
 
     return SiteDefinition.builder()
-        .tokens(tokens)
+        .theme(theme)
         .asset(
             Asset.text(
                 "/assets/logo.svg",

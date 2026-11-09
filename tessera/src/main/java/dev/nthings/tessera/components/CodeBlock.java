@@ -9,8 +9,8 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssContent;
-import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -28,6 +28,8 @@ import org.jspecify.annotations.Nullable;
 /// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
 /// Line numbers are display-only and are not part of the copied text.
 public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
+
+  private static final Counter LINE_COUNTER = Counter.named("code-line");
 
   private final List<String> lines = new ArrayList<>();
   private final Set<Integer> highlightedLines = new LinkedHashSet<>();
@@ -151,13 +153,13 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
             ":scope > .code-pre > .code-lines > .code-line",
             s ->
                 s.block()
-                    .counterIncrement(CssIdent.of("code-line"))
+                    .counterIncrement(LINE_COUNTER)
                     .whiteSpace(WhiteSpace.PRE)
                     .px(Tokens.SPACE_4))
         .select(
             ":scope > .code-pre > .code-lines > .code-line::before",
             s ->
-                s.content(CssContent.counter(CssIdent.of("code-line")))
+                s.content(CssContent.counter(LINE_COUNTER))
                     .inlineFlex()
                     .justifyEnd()
                     .inlineSize(CssLength.rem(2))
@@ -233,7 +235,7 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
                 s ->
                     s.fontFamily(Tokens.FONT_MONO)
                         .overflowX(Overflow.AUTO)
-                        .counterReset(CssIdent.of("code-line")))
+                        .counterReset(LINE_COUNTER))
             .child(codeEl);
 
     return wrapper.child(preEl);

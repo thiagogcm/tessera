@@ -16,11 +16,7 @@ final class CssNumbers {
   }
 
   /// `var(--name)` of a custom property that holds a number.
-  record Reference(CssIdent property) implements CssNumber {
-    Reference {
-      property.requireCustom();
-    }
-
+  record Reference(CustomProperty property) implements CssNumber {
     @Override
     public String toCss() {
       return property.varReference();

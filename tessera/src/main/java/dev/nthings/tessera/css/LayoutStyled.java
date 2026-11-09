@@ -133,13 +133,13 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
   }
 
   /// `counter-reset: <counter>`, starting the counter at 0 on this element.
-  default SELF counterReset(CssIdent counter) {
+  default SELF counterReset(Counter counter) {
     style().put(CssProperty.COUNTER_RESET, counter);
     return self();
   }
 
   /// `counter-increment: <counter>`, adding 1 to the counter on this element.
-  default SELF counterIncrement(CssIdent counter) {
+  default SELF counterIncrement(Counter counter) {
     style().put(CssProperty.COUNTER_INCREMENT, counter);
     return self();
   }
@@ -346,36 +346,23 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
     return self();
   }
 
-  /// Sets `container-type: inline-size`, so descendants can query this element's inline size.
-  default SELF containerInlineSize() {
-    style().put(CssProperty.CONTAINER_TYPE, "inline-size");
+  /// Makes this element `container`: sets `container-type` to its types and, for a named
+  /// container, `container-name`. Descendants then match the container's queries, such as
+  /// `on(container.atLeast(rem(36)), ...)`. Containment changes layout (an inline-size container
+  /// does not size to its content), so declare it only where queries need it.
+  default SELF container(Container container) {
+    var name = container.ident();
+    if (name != null) {
+      style().put(CssProperty.CONTAINER_NAME, name);
+    }
+    style().put(CssProperty.CONTAINER_TYPE, container.typeList());
     return self();
   }
 
-  /// Sets `container-name` to `name` and `container-type: inline-size`, for `@container <name>`
-  /// queries. Container calls share `container-type`, so the last one on an element wins.
-  default SELF containerInlineSize(CssIdent name) {
-    style().put(CssProperty.CONTAINER_NAME, name);
-    return containerInlineSize();
-  }
-
-  /// Resets `container-type`, so descendants don't query this element.
-  default SELF containerNormal() {
+  /// `container-type: normal`: this element stops being a size or scroll-state container, so
+  /// descendants' queries look past it. Use it to undo a container a component declares.
+  default SELF containerNone() {
     style().put(CssProperty.CONTAINER_TYPE, "normal");
     return self();
-  }
-
-  /// Sets `container-type: scroll-state`, so unnamed `@container scroll-state(...)` rules match
-  /// this element. Container calls share `container-type`, so the last one on an element wins.
-  default SELF containerScrollState() {
-    style().put(CssProperty.CONTAINER_TYPE, "scroll-state");
-    return self();
-  }
-
-  /// Sets `container-name` to `name` and `container-type: scroll-state`, for
-  /// `@container <name> scroll-state(...)` rules.
-  default SELF containerScrollState(CssIdent name) {
-    style().put(CssProperty.CONTAINER_NAME, name);
-    return containerScrollState();
   }
 }

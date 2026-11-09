@@ -19,7 +19,7 @@ flowchart LR
     subgraph Authoring["Java 25 authoring"]
         Components["Component and View<br/>Reusable components"]
         References["ElementRef and Command<br/>Symbolic identities and invokers"]
-        Styles["ScopeStyle and Tokens<br/>Scoped CSS and design tokens"]
+        Styles["ScopeStyle, Tokens and Theme<br/>Scoped CSS and design tokens"]
     end
 
     subgraph Compiler["Compiler"]

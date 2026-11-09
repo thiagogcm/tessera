@@ -6,9 +6,9 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
-import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 
 /// Inline text formatting. Each method returns an element with a semantic tag (`mark`, `u`, `s`,
@@ -20,15 +20,15 @@ public final class Formatting {
 
   /// Highlights `text` with the warning tone.
   public static TagElement highlight(String text) {
-    return highlight(text, HighlightTone.WARNING);
+    return highlight(text, Tone.WARNING);
   }
 
-  public static TagElement highlight(String text, HighlightTone tone) {
+  public static TagElement highlight(String text, Tone tone) {
     return highlight(Elements.text(text), tone);
   }
 
   /// Highlights `content`, which may contain markup.
-  public static TagElement highlight(IntoElement content, HighlightTone tone) {
+  public static TagElement highlight(IntoElement content, Tone tone) {
     return Elements.mark().highlight(tone).textColor(Tokens.TEXT_PRIMARY).child(content);
   }
 
@@ -64,17 +64,14 @@ public final class Formatting {
 
   /// Marks removed text: a danger strikethrough on a danger highlight.
   public static TagElement deleted(String text) {
-    return Elements.del()
-        .strikethrough(Tokens.STATUS_DANGER)
-        .highlight(HighlightTone.DANGER)
-        .text(text);
+    return Elements.del().strikethrough(Tokens.STATUS_DANGER).highlight(Tone.DANGER).text(text);
   }
 
   /// Marks added text: a success underline on a success highlight.
   public static TagElement inserted(String text) {
     return Elements.ins()
         .underline(UnderlineStyle.SOLID, Tokens.STATUS_SUCCESS)
-        .highlight(HighlightTone.SUCCESS)
+        .highlight(Tone.SUCCESS)
         .text(text);
   }
 

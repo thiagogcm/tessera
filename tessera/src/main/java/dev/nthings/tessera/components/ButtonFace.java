@@ -7,10 +7,13 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.DesignToken;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.WhiteSpace;
 import java.util.Locale;
 
@@ -62,7 +65,7 @@ final class ButtonFace {
           });
     }
 
-    for (var tone : Button.Tone.values()) {
+    for (var tone : Tone.values()) {
       for (var variant : Button.Variant.values()) {
         var selector = ":scope.button--" + css(tone) + ".button--" + css(variant);
         scope
@@ -71,7 +74,9 @@ final class ButtonFace {
       }
     }
 
-    scope.motionSafe(m -> m.select(":scope", s -> s.motion(Motion.controlFeedback())));
+    scope.on(
+        Media.MOTION_SAFE,
+        m -> m.select(":scope", s -> s.transition(Transition.controlFeedback())));
   }
 
   private static StyleRefinement iconBox(StyleRefinement style, Button.Size size) {
@@ -115,24 +120,37 @@ final class ButtonFace {
     return icon ? classes + " button--icon" : classes;
   }
 
-  private static StyleRefinement paint(
-      StyleRefinement style, Button.Tone tone, Button.Variant variant) {
+  private static StyleRefinement paint(StyleRefinement style, Tone tone, Button.Variant variant) {
+    var ink = ink(tone);
     return switch (variant) {
-      case SOLID -> style.bg(tone.token()).textColor(tone.onSolid());
+      case SOLID -> style.bg(ink).textColor(onSolid(tone));
       case OUTLINE ->
           style
               .bg(CssColor.transparent())
-              .textColor(tone.token())
-              .border(Border.hairline(tone.edge()));
-      case GHOST -> style.bg(CssColor.transparent()).textColor(tone.token());
+              .textColor(ink)
+              .border(Border.hairline(tone == Tone.NEUTRAL ? Tokens.BORDER_SUBTLE : ink));
+      case GHOST -> style.bg(CssColor.transparent()).textColor(ink);
     };
   }
 
-  private static StyleRefinement hover(
-      StyleRefinement style, Button.Tone tone, Button.Variant variant) {
+  private static StyleRefinement hover(StyleRefinement style, Tone tone, Button.Variant variant) {
     return switch (variant) {
       case SOLID -> style.opacity(0.92);
-      case OUTLINE, GHOST -> style.bg(tone.wash());
+      case OUTLINE, GHOST ->
+          style.bg(tone == Tone.NEUTRAL ? Tokens.SURFACE_SUBTLE : ink(tone).mixTransparent(12));
+    };
+  }
+
+  /// The tone's fill and text color; neutral buttons use primary text rather than muted.
+  private static DesignToken.Color ink(Tone tone) {
+    return tone == Tone.NEUTRAL ? Tokens.TEXT_PRIMARY : tone.color();
+  }
+
+  private static CssColor onSolid(Tone tone) {
+    return switch (tone) {
+      case NEUTRAL -> Tokens.SURFACE_CARD;
+      case WARNING -> CssColor.oklch(15, 0.02, 75);
+      case ACCENT, INFO, SUCCESS, DANGER -> CssColor.white();
     };
   }
 

@@ -20,13 +20,14 @@ import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
@@ -168,15 +169,16 @@ public final class Dropdown implements View {
         .select(
             ":scope .dropdown-hint",
             s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_XS).ms(CssLength.auto()))
-        .motionSafe(
+        .on(
+            Media.MOTION_SAFE,
             m ->
                 m.select(
                         ":scope > [popover]",
                         s ->
                             s.opacity(0)
                                 .translate(Translation.y(CssLength.rem(-0.25)))
-                                .motion(
-                                    Motion.of(
+                                .transition(
+                                    Transition.of(
                                             CssDuration.ms(150),
                                             Easing.easeOut(),
                                             Animatable.OPACITY,
@@ -184,10 +186,16 @@ public final class Dropdown implements View {
                                             Animatable.DISPLAY,
                                             Animatable.OVERLAY)
                                         .allowingDiscrete()))
-                    .selectWithStartingStyle(
+                    .select(
                         ":scope > [popover]:popover-open",
-                        s -> s.opacity(1).translate(Translation.none()),
-                        start -> start.opacity(0).translate(Translation.y(CssLength.rem(-0.25)))));
+                        s ->
+                            s.opacity(1)
+                                .translate(Translation.none())
+                                .startingStyle(
+                                    start ->
+                                        start
+                                            .opacity(0)
+                                            .translate(Translation.y(CssLength.rem(-0.25))))));
   }
 
   /// Returns the ref bound to the popover panel, for use as a command target outside the menu.

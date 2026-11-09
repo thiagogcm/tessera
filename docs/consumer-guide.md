@@ -255,20 +255,25 @@ Duplicate bindings are reported as ambiguous; target-dependent command checks ar
 
 ## Customize the design system
 
-Components reference shared CSS custom properties. Replace a token by registering a new value for it. `withValue` and `withLightDark` keep the token's name and category and take a value of that category, so a length cannot replace a color:
+Components reference shared CSS custom properties, the `DesignToken` constants in `Tokens`. A `Theme` holds their values: it is immutable, so start from `Theme.defaults()` and override tokens with `with(token, value)`, which returns a new theme. `DesignToken<V>` is typed by category, so `with` only accepts a value of the token's category and a length cannot replace a color:
 
 ```java
-var tokens = new Tokens()
-    .register(Tokens.FONT_BODY.withValue(FontStack.of(FontStack.named("Georgia"), FontStack.Generic.SERIF)))
-    .register(Tokens.DENSITY.withValue(0.8))
-    .register(Tokens.RADIUS_XL.withValue(CssLength.rem(1)))
-    .register(Tokens.CONTROL_FG.withLightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)))
-    .register(Tokens.CONTROL_FONT_SIZE.withValue(CssLength.rem(1)));
+var theme = Theme.defaults()
+    .with(Tokens.FONT_BODY, FontStack.of(FontStack.named("Georgia"), FontStack.Generic.SERIF))
+    .with(Tokens.DENSITY, CssNumber.of(0.8))
+    .with(Tokens.RADIUS_XL, CssLength.rem(1))
+    .with(Tokens.CONTROL_FG, CssColor.lightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)))
+    .with(Tokens.CONTROL_FONT_SIZE, CssLength.rem(1));
 
-var site = SiteDefinition.builder().tokens(tokens).routes(routes).build();
+var site = SiteDefinition.builder().theme(theme).routes(routes).build();
+var page = Compiler.compile(document, theme, OutputMode.inline());
 ```
 
-`Typography` sets family, size, weight, line height, and tracking together. `Roles.LABEL` is the control label. `Tokens.CONTROL_FG` is the control text color, defined as `var(--text-primary)` until a theme replaces `--control-fg`. `Motion.controlFeedback()`, `Motion.overlayEntry()`, and `Motion.disclosure()` set duration, easing, and the transitioned properties. Apply a preset that moves an element inside `motionSafe`, and leave its visible end state outside that query.
+Your own tokens are records of a category, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`; `theme.with(brand, value)` adds a token the theme does not have yet. Token names are validated (`[A-Za-z0-9_-]`, no leading `-`) and an invalid name throws instead of being rewritten. A token is a value of its category, so another token can be a token's value: `with(Tokens.CONTROL_FG, Tokens.ACCENT_TEXT)` makes it follow the accent.
+
+`Typography` sets family, size, weight, line height, and tracking together. `Roles.LABEL` is the control label. `Tokens.CONTROL_FG` is the control text color, defined as `var(--text-primary)` until a theme replaces `--control-fg`. `Transition.controlFeedback()`, `Transition.overlayEntry()`, and `Transition.disclosure()` set duration, easing, and the transitioned properties. Apply a transition that moves an element inside `on(Media.MOTION_SAFE, ...)`, and leave its visible end state outside that query.
+
+`Tone` (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`) is the one semantic color vocabulary: `Button.tone(...)`, `Badge.tone(...)` and `highlight(...)` take it, and each component decides how a tone paints. `Callout.Kind` (note, tip, important, warning, caution) picks a callout's icon, title and tone.
 
 | Family | Public tokens | Defaults |
 | --- | --- | --- |
@@ -289,7 +294,7 @@ Density scales spacing tokens, including control padding. It does not scale the 
 
 ## Write styles with typed values
 
-Style methods take values of the type their property accepts; no style method takes raw declaration text. `ScopeStyle` selectors and container conditions are trusted strings emitted as written.
+Style methods take values of the type their property accepts; no style method takes raw declaration text. `ScopeStyle.select(...)` selectors are the one raw string: they are emitted as written.
 
 ```java
 div()
@@ -300,21 +305,60 @@ div()
     .shadow(Shadow.drop(CssLength.px(12), CssLength.px(32), CssLength.px(-4), CssColor.oklch(0, 0, 0, 0.18)))
     .gridColumns(TrackList.autoFit(CssLength.rem(16)))
     .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
-    .motion(Motion.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
+    .transition(Transition.of(CssDuration.ms(150), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE));
 ```
 
-Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). Identifiers such as container, anchor, and counter names are validated `CssIdent` values. Every style method is on `Styled`, which elements, components such as `Image`, and `StyleRefinement` implement.
+Lengths, colors, durations, and numbers also accept design tokens, so a theme override reaches them. `CssLength` supports `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, and `anchor(...)`; `CssColor` supports `mix`, `mixTransparent`, `sameHue`, `lightDark`, and `contrast`. Keyword properties with several useful values take one enum (`overflow(Overflow.AUTO)`, `textWrap(TextWrap.BALANCE)`, `cursor(Cursor.POINTER)`, `appearance(Appearance.NONE)`, `resize(Resize.VERTICAL)`, ...); a property with a single useful value has a named toggle (`listStyleNone()`, `tabularNums()`). Names are small validated handles: `Container`, `Keyframes`, `Anchor`, `Counter`, and `CustomProperty` for a local custom property. Every style method is on `Styled`, which elements, components such as `Image`, and `StyleRefinement` implement.
 
 The last call wins. Writing a property again replaces it, and writing a shorthand removes the longhands it covers: `p(...)` replaces an earlier `pt(...)`/`pb(...)`/`ps(...)`/`pe(...)`, `border(...)` replaces earlier side borders and `borderColor(...)`, and `gap(...)` replaces `rowGap(...)`/`colGap(...)`. A longhand written after its shorthand refines it, so `p(Tokens.SPACE_4).pt(CssLength.zero())` keeps both.
 
-Share a style as a `Consumer<StyleRefinement>` and apply it with `apply(...)`. State callbacks (`hover`, `focusVisible`, ...) and `ScopeStyle` rules take the same type:
+Share a style as a `Consumer<StyleRefinement>` and apply it with `apply(...)`. Conditional styles and `ScopeStyle` rules take the same type:
 
 ```java
 Consumer<StyleRefinement> card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL).bg(Tokens.SURFACE_CARD);
 
-div().apply(card).hover(s -> s.bg(Tokens.SURFACE_SUBTLE));
+div().apply(card).on(State.HOVER, s -> s.bg(Tokens.SURFACE_SUBTLE));
 scope.select(":scope > article", card);
 ```
+
+### Conditional styles
+
+`on(condition, styles)` applies `styles` only while the condition holds. A `Condition` is a `State` (`HOVER` and `ACTIVE`, which skip disabled elements, `FOCUS_VISIBLE`, `CHECKED`, `OPEN`, `USER_INVALID`, `USER_VALID`, `DISABLED`), a `Media` feature (`MOTION_SAFE`, no reduced-motion preference), or a container query. States are emitted in that order whatever the call order, so `ACTIVE` beats `HOVER` and `DISABLED` beats both. Conditions nest: `on(Media.MOTION_SAFE, m -> m.on(State.HOVER, ...))`.
+
+On an element, state and media rules go to the `interactive` cascade layer and container queries to the `container` layer, both above the element's base styles. Inside a `ScopeStyle` rule they nest in that rule (`&:hover`, `@media`, `@container`), so a scope can style its links' hover state with `select(":scope a", s -> s.on(State.HOVER, ...))`. `ScopeStyle.on(query, rules)` wraps whole rules in a media feature or container query. `startingStyle(...)` writes the `@starting-style` values an entry transition starts from:
+
+```java
+scope.select(":scope:open", s -> s.opacity(1).startingStyle(start -> start.opacity(0)));
+```
+
+A `Container` is declared once and queried by handle. A named container is matched by name; an unnamed one is the nearest ancestor container of the right type:
+
+```java
+var cards = Container.named("cards", Container.Type.INLINE_SIZE);
+div().container(cards).child(
+    article().on(cards.atLeast(CssLength.rem(30)), s -> s.flexRow()));
+
+var header = Container.named("site-header", Container.Type.SCROLL_STATE);
+scope.root(s -> s.sticky().container(header))
+    .on(header.stuck(Container.Edge.TOP), c -> c.root(s -> s.shadow(...)));
+```
+
+Size queries are `atLeast(length)` and `below(length)`; scroll-state queries are `stuck(edge)` and `snapped(axis)`. `containerNone()` undoes a container a component declares.
+
+### Animations
+
+`Keyframes` are typed values, and an `Animation` plays them. Applying an animation registers its keyframes in the stylesheet and wraps it in `prefers-reduced-motion: no-preference`:
+
+```java
+var pulse = Keyframes.named("pulse").from(s -> s.opacity(1)).at(50, s -> s.opacity(0.5)).to(s -> s.opacity(1));
+div().animation(Animation.of(pulse, CssDuration.ms(800), Easing.ease()));
+
+div().animation(Animation.reveal(Keyframes.FADE_UP));                 // scrubbed by the view timeline
+chip.animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60));
+bar.animation(Animation.scrollProgress(grow));                        // follows the page scroll
+```
+
+`Animation.exit(...)` follows the element out of view, and `along(TimelineAxis.INLINE)` switches a scroll-driven animation to the inline axis. The presets `FADE_IN`, `FADE_UP`, `SCALE_IN`, `SLIDE_INLINE` and `FADE_OUT` animate `opacity` and `transform`.
 
 ## Declare roles and states
 

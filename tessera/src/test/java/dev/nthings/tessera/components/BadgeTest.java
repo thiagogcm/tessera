@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.css.Tone;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ class BadgeTest {
     "INFO, badge--info"
   })
   @DisplayName("tone selects its modifier class")
-  void toneSelectsModifierClass(Badge.Tone tone, String modifier) {
+  void toneSelectsModifierClass(Tone tone, String modifier) {
     assertThat(render(Badge.of("Tone").tone(tone))).hasClasses(modifier);
   }
 
@@ -68,7 +69,7 @@ class BadgeTest {
   @Test
   @DisplayName("a dot adds a decorative indicator beside the label")
   void dotAddsDecorativeIndicator() {
-    var badge = render(Badge.dot("Online", Badge.Tone.SUCCESS));
+    var badge = render(Badge.dot("Online", Tone.SUCCESS));
 
     assertThat(badge).hasClasses("badge--success");
     assertThat(badge.selectFirst(".badge-dot")).hasAttribute("aria-hidden", "true");

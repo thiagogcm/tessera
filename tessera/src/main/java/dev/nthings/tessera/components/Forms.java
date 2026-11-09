@@ -25,15 +25,17 @@ import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.DesignToken;
-import dev.nthings.tessera.css.Motion;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -51,12 +53,13 @@ public final class Forms {
   /// it.
   public static TagElement inputControl(String name, String type) {
     return controlChrome(input(type).attr("name", name))
-        .focusVisible(Forms::controlFocusRing)
-        .userInvalid(
+        .on(State.FOCUS_VISIBLE, Forms::controlFocusRing)
+        .on(
+            State.USER_INVALID,
             s ->
                 s.borderColor(Tokens.STATUS_DANGER)
                     .bg(CssColor.sameHue(Tokens.STATUS_DANGER, 97, 0.03)))
-        .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
+        .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
   public static TagElement text(String name) {
@@ -87,9 +90,9 @@ public final class Forms {
         .fieldSizingContent()
         .minBlockSize(CssLength.lh(minRows).plus(CssLength.rem(1)))
         .resize(Resize.VERTICAL)
-        .focusVisible(Forms::controlFocusRing)
-        .userInvalid(s -> s.borderColor(Tokens.STATUS_DANGER))
-        .userValid(s -> s.borderColor(Tokens.STATUS_SUCCESS));
+        .on(State.FOCUS_VISIBLE, Forms::controlFocusRing)
+        .on(State.USER_INVALID, s -> s.borderColor(Tokens.STATUS_DANGER))
+        .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
   /// On/off switch named `name`: a checkbox with `role="switch"`, drawn as a track and a thumb.
@@ -107,9 +110,13 @@ public final class Forms {
         .rounded(Tokens.RADIUS_FULL)
         .background(switchTrack(CssLength.zero(), Tokens.BORDER_SUBTLE))
         .cursor(Cursor.POINTER)
-        .focusVisible(s -> s.focusRing(Tokens.ACCENT_PRIMARY))
-        .checked(s -> s.background(switchTrack(CssLength.pct(100), Tokens.ACCENT_PRIMARY)))
-        .motionSafe(s -> s.motion(Motion.controlFeedback().properties(Animatable.BACKGROUND)));
+        .on(State.FOCUS_VISIBLE, s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+        .on(
+            State.CHECKED,
+            s -> s.background(switchTrack(CssLength.pct(100), Tokens.ACCENT_PRIMARY)))
+        .on(
+            Media.MOTION_SAFE,
+            s -> s.transition(Transition.controlFeedback().properties(Animatable.BACKGROUND)));
   }
 
   private static Background switchTrack(CssLength thumbX, DesignToken.Color trackColor) {

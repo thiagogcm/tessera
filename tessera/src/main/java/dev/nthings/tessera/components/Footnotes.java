@@ -11,9 +11,9 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,7 +144,7 @@ public final class Footnotes {
           .select(
               ":scope li:target",
               s ->
-                  s.highlight(HighlightTone.ACCENT)
+                  s.highlight(Tone.ACCENT)
                       .px(Tokens.SPACE_2)
                       .py(Tokens.SPACE_1)
                       .textColor(Tokens.TEXT_PRIMARY));

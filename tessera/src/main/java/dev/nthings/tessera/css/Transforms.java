@@ -17,11 +17,27 @@ final class Transforms {
     }
   }
 
+  /// `scaleX(factor)`.
+  record ScaleX(double factor) implements Transform {
+    @Override
+    public String toCss() {
+      return "scaleX(" + Decimals.format(factor) + ")";
+    }
+  }
+
   /// `rotate(<degrees>deg)`.
   record Rotate(double degrees) implements Transform {
     @Override
     public String toCss() {
       return "rotate(" + Decimals.format(degrees) + "deg)";
+    }
+  }
+
+  /// `translateX(distance)`.
+  record TranslateX(CssLength distance) implements Transform {
+    @Override
+    public String toCss() {
+      return "translateX(" + distance.toCss() + ")";
     }
   }
 

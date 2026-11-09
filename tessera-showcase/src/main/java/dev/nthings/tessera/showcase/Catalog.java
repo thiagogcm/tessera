@@ -16,6 +16,7 @@ import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.Overflow;
+import dev.nthings.tessera.css.Tone;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -111,7 +112,7 @@ public final class Catalog {
         List.of("type=\"button\"", "disabled", "aria-busy", ":focus-visible"),
         List.of(
             "Button.of(\"Save\");",
-            "Button.of(\"Delete\").tone(Button.Tone.DANGER).disabled();",
+            "Button.of(\"Delete\").tone(Tone.DANGER).disabled();",
             "Button.of(\"Publishing\").busy();",
             "Button.of(\"Edit\").size(Button.Size.SM);",
             "IconButton.of(\"Refresh\", span().text(\"↻\"));"),
@@ -193,7 +194,7 @@ public final class Catalog {
   }
 
   private static IntoElement disabled() {
-    return Button.of("Delete").tone(Button.Tone.DANGER).disabled();
+    return Button.of("Delete").tone(Tone.DANGER).disabled();
   }
 
   private static IntoElement busy() {

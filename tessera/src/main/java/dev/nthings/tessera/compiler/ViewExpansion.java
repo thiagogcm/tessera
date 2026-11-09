@@ -10,6 +10,7 @@ import dev.nthings.tessera.core.EmptyElement;
 import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.LateElement;
 import dev.nthings.tessera.core.RawHtmlElement;
 import dev.nthings.tessera.core.RenderContext;
@@ -21,9 +22,11 @@ import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -61,6 +64,7 @@ final class ViewExpansion {
         var child = context.withComponent(name, source);
         yield expand(child, "Render", component::render);
       }
+      case KeyedElement keyed -> keyed(keyed, keyedContext(keyed, keyPrefix(context), context));
       case ViewElement(var view, var source) -> {
         var id = view.viewId();
         var scoped =
@@ -157,16 +161,72 @@ final class ViewExpansion {
     }
   }
 
-  /// Lays out `children` in order, dropping the ones that emit nothing.
+  /// Lays out `children` in order, dropping the ones that emit nothing. Keyed children share one
+  /// scope prefix, created at the first of them, and report a key an earlier sibling uses.
   private List<ViewNode> children(List<Element> children, PageContext context) {
     var result = new ArrayList<ViewNode>(children.size());
+    String prefix = null;
+    Set<String> keys = Set.of();
     for (var child : children) {
-      var node = expand(child, context);
+      ViewNode node;
+      if (child instanceof KeyedElement keyed) {
+        if (prefix == null) {
+          prefix = keyPrefix(context);
+          keys = new HashSet<>();
+        }
+        var keyedContext = keyedContext(keyed, prefix, context);
+        if (!keys.add(keyed.key())) {
+          state.report(
+              keyedContext.location(),
+              "duplicate-key",
+              "Duplicate sibling key '" + keyed.key() + "'",
+              "Give each child of this parent a distinct key.");
+        }
+        node = keyed(keyed, keyedContext);
+      } else {
+        node = expand(child, context);
+      }
       if (node != ViewNode.Empty.INSTANCE) {
         result.add(node);
       }
     }
     return result;
+  }
+
+  /// The scope prefix of one list of keyed siblings in `context`'s view scope; each sibling's key
+  /// completes it. Lists are numbered within the view scope, like generated ids.
+  private String keyPrefix(PageContext context) {
+    return state.nextId("key", context.viewScope()) + "-";
+  }
+
+  /// Expands keyed content in the context [#keyedContext] made for it.
+  private ViewNode keyed(KeyedElement keyed, PageContext child) {
+    if (keyed.content() instanceof ComponentElement component) {
+      return expand(child, "Render", component.component()::render);
+    }
+    return expand(keyed.content(), child);
+  }
+
+  /// The context of keyed content: the view scope `prefix` followed by its encoded key, and a
+  /// component path entry naming the key. A keyed component takes the key on its own entry
+  /// instead of gaining another.
+  private static PageContext keyedContext(KeyedElement keyed, String prefix, PageContext context) {
+    var scoped = context.withViewScope(prefix + encodeKey(keyed.key()));
+    var label = "[key=" + keyed.key() + "]";
+    if (keyed.content() instanceof ComponentElement component) {
+      return scoped.withComponent(component.name() + label, component.source());
+    }
+    return scoped.withComponent(label, null);
+  }
+
+  /// The key as hexadecimal UTF-16 units, so distinct keys always give distinct scopes.
+  private static String encodeKey(String key) {
+    var encoded = new StringBuilder(key.length() * 4);
+    for (var index = 0; index < key.length(); index++) {
+      var hex = Integer.toHexString(key.charAt(index));
+      encoded.append("0000", 0, 4 - hex.length()).append(hex);
+    }
+    return encoded.toString();
   }
 
   /// Expands `element`. `forcedId` (already registered) is used for companions, not bound.

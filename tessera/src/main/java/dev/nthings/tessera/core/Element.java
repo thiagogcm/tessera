@@ -11,7 +11,8 @@ public sealed interface Element extends IntoElement
         LateElement,
         EmptyElement,
         ComponentElement,
-        ViewElement {
+        ViewElement,
+        KeyedElement {
 
   @Override
   default Element intoElement() {

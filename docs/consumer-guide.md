@@ -202,6 +202,24 @@ The reference is an identity token; another `ElementRef.scoped("help")` is a dif
 
 For document navigation, the example uses `Section.of(id, title)`. It registers heading metadata and binds the section to a page-level id, and `TableOfContents.of(title)` may appear before the sections it lists. `DocLayout.of(sections...)` places them beside a sticky table of contents. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
 
+## Key list items that move
+
+Generated ids are numbered in document order, so inserting an item at the top of a list renumbers the ids of every item below it, and a link or bookmark to one of them lands somewhere else after the next build. A scoped ref repeated in each item needs a scope per item. When a list's items are inserted or reordered between builds and carry ids or links, give each item a stable key with `.key(...)`, which works on any element, component or view:
+
+```java
+var list = Elements.ul();
+for (var post : posts) {
+  var title = ElementRef.scoped("title");
+  list.child(
+      Elements.li()
+          .ariaLabelledBy(title)
+          .children(Elements.h2().id(title).text(post.title()), Elements.a(post.url()).text("Read"))
+          .key(post.slug()));
+}
+```
+
+Ids bound inside keyed content are scoped by its key, so each post's `title` id stays the same when posts are added, removed or reordered. The content is emitted in place, with no wrapper. Keys are compared exactly and only among the children of one parent: two siblings with the same key report `duplicate-key`, while the same key under different parents is fine. A blank key throws `IllegalArgumentException`. Lists that never change order, or whose items carry no ids or links, do not need keys.
+
 ## Add a button
 
 `Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(target, command)` runs a `Command` on the element bound to `target`, including one emitted later in the document: `Modal.dialogRef()`, `Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. A `BuiltinCommand` such as `SHOW_MODAL` or `TOGGLE_POPOVER` is checked against its target; `Command.custom("cart", "add", Map.of("data-sku", sku))` emits `command="--cart-add"` plus the payload attributes for the application's own script, and accepts any target. Plain elements take the same `command(target, command)`. Navigation stays on anchors.

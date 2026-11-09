@@ -22,9 +22,8 @@ final class PageCompiler {
   /// Throws [CompilationException] if the document has authoring errors.
   static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheet();
-    var state = new CompilationState(document.title());
-
-    var layout = DocumentPass.layout(document, siteHead, styles, state);
+    var layout = DocumentPass.layout(document, siteHead, styles);
+    var state = layout.compilation();
     var bodyNodes = layout.bodyNodes();
     var headNodes = layout.headNodes();
 

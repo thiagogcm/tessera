@@ -23,11 +23,9 @@ import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -35,9 +33,9 @@ import org.jspecify.annotations.Nullable;
 /// Expands authoring elements into [ExpandedNode]s for one page.
 ///
 /// Collects styles and delegates placement. Identities, transitions and diagnostics go to the
-/// [CompilationState]; [DocumentPass] orders the document and [ReferenceLinker] links it.
+/// [ExpansionState]; [DocumentPass] orders the document and [ReferenceLinker] links it.
 final class Expansion {
-  private final CompilationState state;
+  private final ExpansionState state;
   private final Placement placement;
 
   interface Placement {
@@ -46,7 +44,7 @@ final class Expansion {
     ExpandedNode late(Supplier<ExpandedNode> content);
   }
 
-  Expansion(CompilationState state, Placement placement) {
+  Expansion(ExpansionState state, Placement placement) {
     this.state = state;
     this.placement = placement;
   }
@@ -63,7 +61,7 @@ final class Expansion {
           new ExpandedNode.Fragment(children(fragment.childrenList(), context));
       case ComponentElement(var component, var name, var source) -> {
         var child = context.withComponent(name, source);
-        yield expand(child, "Expand", component::expand);
+        yield new ExpandedNode.Boundary(expand(child, "Expand", component::expand));
       }
       case KeyedElement keyed -> keyed(keyed, context);
       case ScopeElement(var scope, var source) -> {
@@ -100,7 +98,8 @@ final class Expansion {
                               scope.configureScope(block);
                               return block;
                             }));
-        yield scoped(expand(child, "Expand", scope::expand), type, scopeId, child);
+        yield new ExpandedNode.Boundary(
+            scoped(expand(child, "Expand", scope::expand), type, scopeId, child));
       }
       case TagElement tag -> tag(tag, null, context);
     };
@@ -126,8 +125,15 @@ final class Expansion {
     }
   }
 
-  /// Adds the scope attributes to its root element, or wraps a root that is not one.
+  /// Adds the scope attributes to its root element through component and key boundaries, or
+  /// wraps a root that is not one.
   private ExpandedNode scoped(ExpandedNode node, String type, String scopeId, PageContext context) {
+    if (node instanceof ExpandedNode.Boundary(var content)) {
+      return new ExpandedNode.Boundary(scoped(content, type, scopeId, context));
+    }
+    if (node instanceof ExpandedNode.Keyed(var key, var location, var content)) {
+      return new ExpandedNode.Keyed(key, location, scoped(content, type, scopeId, context));
+    }
     var scope = new LinkedHashMap<String, String>();
     if (node instanceof ExpandedNode.Tag tag) {
       scope.putAll(tag.attributes());
@@ -164,25 +170,12 @@ final class Expansion {
     }
   }
 
-  /// Lays out `children` in order, dropping the ones that emit nothing, and reports a key an
-  /// earlier keyed sibling uses.
+  /// Lays out `children` in order, dropping the ones that emit nothing. Linking checks sibling
+  /// keys once late content has expanded.
   private List<ExpandedNode> children(List<Element> children, PageContext context) {
     var result = new ArrayList<ExpandedNode>(children.size());
-    Set<String> keys = new HashSet<>();
     for (var child : children) {
-      ExpandedNode node;
-      if (child instanceof KeyedElement keyed) {
-        if (!keys.add(keyed.key())) {
-          state.report(
-              keyedContext(keyed, context).location(),
-              "duplicate-key",
-              "Duplicate sibling key '" + keyed.key() + "'",
-              "Give each child of this parent a distinct key.");
-        }
-        node = keyed(keyed, context);
-      } else {
-        node = expand(child, context);
-      }
+      var node = expand(child, context);
       if (node != ExpandedNode.Empty.INSTANCE) {
         result.add(node);
       }
@@ -204,10 +197,11 @@ final class Expansion {
           "Set scopeId() on each enclosing scope. A generated id is numbered in encounter"
               + " order, so moving a sibling scope renames every keyed id inside it.");
     }
-    if (keyed.content() instanceof ComponentElement component) {
-      return expand(child, "Expand", component.component()::expand);
-    }
-    return expand(keyed.content(), child);
+    var content =
+        keyed.content() instanceof ComponentElement component
+            ? expand(child, "Expand", component.component()::expand)
+            : expand(keyed.content(), child);
+    return new ExpandedNode.Keyed(keyed.key(), child.location(), content);
   }
 
   /// The context of keyed content and a component path entry naming the key. A keyed component

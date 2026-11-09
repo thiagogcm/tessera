@@ -20,7 +20,7 @@ final class PageContext implements DocumentContext {
   private final IdScope idScope;
   private final StyleSheet styles;
   private final DocumentState docState;
-  private final CompilationState state;
+  private final ExpansionState state;
   private final List<String> componentPath;
   private final @Nullable SourceLocation origin;
   private final @Nullable String keyOwner;
@@ -29,7 +29,7 @@ final class PageContext implements DocumentContext {
       IdScope idScope,
       StyleSheet styles,
       DocumentState docState,
-      CompilationState state,
+      ExpansionState state,
       List<String> componentPath,
       @Nullable SourceLocation origin,
       @Nullable String keyOwner) {
@@ -43,8 +43,7 @@ final class PageContext implements DocumentContext {
   }
 
   /// The root context of one page compilation.
-  static PageContext forDocument(
-      StyleSheet styles, DocumentState docState, CompilationState state) {
+  static PageContext forDocument(StyleSheet styles, DocumentState docState, ExpansionState state) {
     return new PageContext(IdScope.ROOT, styles, docState, state, List.of(), null, null);
   }
 

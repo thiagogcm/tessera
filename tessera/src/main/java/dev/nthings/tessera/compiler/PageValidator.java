@@ -21,10 +21,7 @@ final class PageValidator {
 
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   static void validateImage(
-      Map<String, String> attrs,
-      Declarations style,
-      CompilationState state,
-      NodeLocation location) {
+      Map<String, String> attrs, Declarations style, ExpansionState state, NodeLocation location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       state.report(

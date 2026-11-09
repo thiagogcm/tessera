@@ -18,7 +18,7 @@ final class DocumentPass implements Expansion.Placement {
   private final PriorityQueue<Deferred> deferred = new PriorityQueue<>();
   private long sequence;
 
-  private DocumentPass(CompilationState state) {
+  private DocumentPass(ExpansionState state) {
     expansion = new Expansion(state, this);
   }
 
@@ -36,13 +36,12 @@ final class DocumentPass implements Expansion.Placement {
       List<ResolvedNode> bodyNodes,
       List<ResolvedNode> headNodes,
       List<PageHeading> headings,
-      DocumentState contributions) {}
+      DocumentState contributions,
+      CompilationState compilation) {}
 
   static Result layout(
-      PageDocument document,
-      List<? extends IntoElement> siteHead,
-      StyleSheet styles,
-      CompilationState state) {
+      PageDocument document, List<? extends IntoElement> siteHead, StyleSheet styles) {
+    var state = new ExpansionState(document.title());
     return new DocumentPass(state).document(document, siteHead, styles, state);
   }
 
@@ -50,7 +49,7 @@ final class DocumentPass implements Expansion.Placement {
       PageDocument document,
       List<? extends IntoElement> siteHead,
       StyleSheet styles,
-      CompilationState state) {
+      ExpansionState state) {
     var contributions = new DocumentState();
     var root = PageContext.forDocument(styles, contributions, state);
     siteHead.forEach(root::contributeHead);
@@ -69,20 +68,22 @@ final class DocumentPass implements Expansion.Placement {
       heads.add(expand(root, head, "Head", _ -> head.content()));
     }
 
-    var bodyNodes = new ArrayList<ResolvedNode>();
-    ReferenceLinker.link(body, state, bodyNodes);
+    var bodies = new ArrayList<ExpandedNode>();
+    bodies.add(body);
     for (Deferred next; (next = deferred.poll()) != null; ) {
-      ReferenceLinker.link(next.node(), state, bodyNodes);
+      bodies.add(next.node());
     }
-    var headNodes = new ArrayList<ResolvedNode>(heads.size());
-    heads.forEach(head -> ReferenceLinker.link(head, state, headNodes));
-    PageValidator.index(bodyNodes, state);
-    PageValidator.index(headNodes, state);
-    return new Result(bodyNodes, headNodes, headings(contributions, state), contributions);
+    var bodyNodes = ReferenceLinker.link(bodies, state);
+    var headNodes = ReferenceLinker.link(heads, state);
+    var headings = headings(contributions, state);
+    var compilation = new CompilationState(document.title(), state);
+    PageValidator.index(bodyNodes, compilation);
+    PageValidator.index(headNodes, compilation);
+    return new Result(bodyNodes, headNodes, headings, contributions, compilation);
   }
 
   /// Resolves each registered heading's target; an unbound target is reported.
-  private static List<PageHeading> headings(DocumentState contributions, CompilationState state) {
+  private static List<PageHeading> headings(DocumentState contributions, ExpansionState state) {
     var headings = new ArrayList<PageHeading>();
     for (var contribution : contributions.headingContributions()) {
       var heading = contribution.content();

@@ -1,7 +1,5 @@
 package dev.nthings.tessera.css;
 
-import java.util.function.Consumer;
-
 /// Fluent, typed styling shared by element builders and [StyleRefinement]. Each method writes one
 /// declaration (or a small fixed group) and returns the receiver; it takes the value category its
 /// property accepts ([CssLength], [CssColor], [Border], ...), so a color cannot be passed where a
@@ -25,7 +23,8 @@ import java.util.function.Consumer;
 ///   `textAlign`, [#textWrap(TextWrap)], `whiteSpace`, `underline`, `strikethrough`, `highlight`.
 /// - Effects: [#transition(Transition)], [#animation(Animation)], `transform`, `translate`,
 ///   `backdropFilter`, [#cursor(Cursor)].
-/// - Conditions: [#on(Condition, Consumer)] for states, media features and container queries.
+/// - Conditions: [#on(Condition, StyleBlock)] for states, media features and container queries.
+/// - Presets: [#styles(StyleBlock)] runs a shared [StyleBlock] on this target.
 /// - Scrolling and anchoring: snapping, scroll margins and markers, `anchorName`,
 ///   `positionAnchor`, `positionArea`, `positionTryFallbacks`.
 ///
@@ -42,10 +41,10 @@ public interface Styled<SELF extends Styled<SELF>>
         ScrollStyled<SELF>,
         AnchorStyled<SELF> {
 
-  /// Runs `preset` on this target's declarations, so one style function can be shared by
-  /// elements, [ScopeStyle#select(String, Consumer)] rules, and state callbacks.
-  default SELF apply(Consumer<StyleRefinement> preset) {
-    preset.accept(style());
+  /// Runs `preset` on this target's declarations, so one [StyleBlock] can be shared by elements,
+  /// [ScopeStyle#select(String, StyleBlock)] rules, and state callbacks.
+  default SELF styles(StyleBlock preset) {
+    preset.configure(style());
     return self();
   }
 
@@ -58,8 +57,8 @@ public interface Styled<SELF extends Styled<SELF>>
   /// queries in the later `container` layer, so both override the element's base style. Inside a
   /// [ScopeStyle] rule they nest in that rule. States are emitted in [State] order whatever the
   /// call order, so `ACTIVE` beats `HOVER`.
-  default SELF on(Condition condition, Consumer<StyleRefinement> styles) {
-    styles.accept(style().nested(condition));
+  default SELF on(Condition condition, StyleBlock styles) {
+    styles.configure(style().nested(condition));
     return self();
   }
 

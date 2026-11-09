@@ -1,5 +1,6 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
@@ -13,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 /// container only sets `container-type`, and its queries match the nearest ancestor container of
 /// the right type. Size queries ([#atLeast], [#below]) need a [Type#INLINE_SIZE] or [Type#SIZE]
 /// container; scroll-state queries ([#stuck], [#snapped]) need [Type#SCROLL_STATE].
+@CheckReturnValue
 public final class Container {
 
   /// A `container-type` value.

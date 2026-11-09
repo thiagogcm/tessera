@@ -93,13 +93,13 @@ public final class ShowcaseSite {
     }
 
     var tracking = sources || explain != null;
-    var definition = SourceTracking.with(tracking, ShowcaseSite::createDefinition);
+    var definition = SourceTracking.enabledIf(tracking, ShowcaseSite::createDefinition);
     if (explain != null) {
       System.out.print(explain(definition, explain));
       return;
     }
 
-    var compiled = SourceTracking.with(tracking, () -> Compiler.compile(definition));
+    var compiled = SourceTracking.enabledIf(tracking, () -> Compiler.compile(definition));
     SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "

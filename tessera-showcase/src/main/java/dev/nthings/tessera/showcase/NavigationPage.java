@@ -97,16 +97,13 @@ final class NavigationPage {
             Accordion.of()
                 .id("demo-faq")
                 .exclusive()
-                .item("Does it need JavaScript?", "No. Disclosure is native HTML.", true)
-                .item("Can several items be open?", "Leave out exclusive() for that.", false)
-                .item(
-                    "Is hidden text searchable?",
-                    "Yes, find-in-page opens the matching item.",
-                    false))
+                .openItem("Does it need JavaScript?", "No. Disclosure is native HTML.")
+                .item("Can several items be open?", "Leave out exclusive() for that.")
+                .item("Is hidden text searchable?", "Yes, find-in-page opens the matching item."))
         .code(
             "Accordion.of().exclusive()",
-            "    .item(\"Does it need JavaScript?\", \"No.\", true)",
-            "    .item(\"Can several items be open?\", \"Leave out exclusive().\", false);");
+            "    .openItem(\"Does it need JavaScript?\", \"No.\")",
+            "    .item(\"Can several items be open?\", \"Leave out exclusive().\");");
   }
 
   private static Demo carousel() {

@@ -227,7 +227,7 @@ public final class CodeBlock extends BuiltinView<CodeBlock> {
         pre()
             .attr("class", "code-pre")
             .tabIndex(0)
-            .apply(
+            .styles(
                 s ->
                     s.fontFamily(Tokens.FONT_MONO)
                         .overflowX(Overflow.AUTO)

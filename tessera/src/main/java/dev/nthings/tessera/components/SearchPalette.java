@@ -215,7 +215,7 @@ public final class SearchPalette extends BuiltinView<SearchPalette> {
                     div()
                         .attr("class", "palette-item-main")
                         .child(span().attr("class", "palette-item-title").text(item.title()))
-                        .whenPresent(
+                        .ifPresent(
                             item.description(),
                             (main, description) ->
                                 main.child(

@@ -14,13 +14,13 @@ public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
   SELF self();
 
   /// Applies `then` when `condition` holds, and returns this builder unchanged otherwise.
-  default SELF when(boolean condition, Function<SELF, SELF> then) {
+  default SELF onlyIf(boolean condition, Function<SELF, SELF> then) {
     return condition ? then.apply(self()) : self();
   }
 
   /// Applies `then` with `value` when `value` is non-null, and returns this builder unchanged
   /// otherwise.
-  default <T> SELF whenPresent(@Nullable T value, BiFunction<SELF, T, SELF> then) {
+  default <T> SELF ifPresent(@Nullable T value, BiFunction<SELF, T, SELF> then) {
     return value != null ? then.apply(self(), value) : self();
   }
 }

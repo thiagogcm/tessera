@@ -12,11 +12,10 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Tone;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Modal] and [Drawer]: a titled modal `<dialog>` with an optional
@@ -96,7 +95,7 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinView<D> {
   }
 
   /// Styles for the `::backdrop` behind the open dialog: dimmed, and blurred by `blur`.
-  static Consumer<StyleRefinement> backdrop(CssLength blur) {
+  static StyleBlock backdrop(CssLength blur) {
     return s -> s.bg(CssColor.oklch(0, 0, 0, 0.45)).backdropFilter(CssFilter.blur(blur));
   }
 }

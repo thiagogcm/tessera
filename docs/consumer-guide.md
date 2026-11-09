@@ -131,11 +131,13 @@ The components in `dev.nthings.tessera.components` share one shape. Each is a fi
 var modal = Modal.of("Publish release?").id("publish").bodyText("Ship it to every region.");
 main().children(
     Section.of("install", "Installation").description("Two steps.").child(p().text("Run it.")),
-    Card.of("Team plan").description("Five seats").radio("plan", "team", true),
+    Card.of("Team plan").description("Five seats").radio("plan", "team").checked(),
     Badge.of("Live").tone(Tone.SUCCESS).pill().dot(),
     modal.triggerButton("Publish"),
     Elements.deferred(modal, 10));
 ```
+
+Initial state is a separate method or toggle, never a positional boolean: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)` beside `item(...)`, `Select.selectedOption(value, label)` beside `option(...)`, and `Forms.checkedSwitchField(label, name)` beside `switchField(...)`. For a condition known only at run time, branch inside the chain with `onlyIf(condition, x -> x.checked())`; `ifPresent(value, (x, v) -> ...)` does the same for a nullable value. Boolean attributes are set with `boolAttr("open")`.
 
 A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead; a button opens no scope of its own, so `ElementRef.scoped("save")` on a button inside a view with id `toolbar` emits `toolbar--save`. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
 
@@ -348,12 +350,12 @@ Lengths, colors, durations, and numbers also accept design tokens, so a theme ov
 
 The last call wins. Writing a property again replaces it, and writing a shorthand removes the longhands it covers: `p(...)` replaces an earlier `pt(...)`/`pb(...)`/`ps(...)`/`pe(...)`, `border(...)` replaces earlier side borders and `borderColor(...)`, and `gap(...)` replaces `rowGap(...)`/`colGap(...)`. A longhand written after its shorthand refines it, so `p(Tokens.SPACE_4).pt(CssLength.zero())` keeps both.
 
-Share a style as a `Consumer<StyleRefinement>` and apply it with `apply(...)`. Conditional styles and `ScopeStyle` rules take the same type:
+Share a style as a `StyleBlock` and apply it with `styles(...)`. Conditional styles, `ScopeStyle` rules, `startingStyle(...)` and keyframe steps take the same type:
 
 ```java
-Consumer<StyleRefinement> card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL).bg(Tokens.SURFACE_CARD);
+StyleBlock card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL).bg(Tokens.SURFACE_CARD);
 
-div().apply(card).on(State.HOVER, s -> s.bg(Tokens.SURFACE_SUBTLE));
+div().styles(card).on(State.HOVER, s -> s.bg(Tokens.SURFACE_SUBTLE));
 scope.select(":scope > article", card);
 ```
 
@@ -386,7 +388,7 @@ Size queries are `atLeast(length)` and `below(length)`; scroll-state queries are
 `Keyframes` are typed values, and an `Animation` plays them. Applying an animation registers its keyframes in the stylesheet and wraps it in `prefers-reduced-motion: no-preference`:
 
 ```java
-var pulse = Keyframes.named("pulse").from(s -> s.opacity(1)).at(50, s -> s.opacity(0.5)).to(s -> s.opacity(1));
+var pulse = Keyframes.named("pulse").start(s -> s.opacity(1)).at(50, s -> s.opacity(0.5)).end(s -> s.opacity(1));
 div().animation(Animation.of(pulse, CssDuration.ms(800), Easing.ease()));
 
 div().animation(Animation.reveal(Keyframes.FADE_UP));                 // scrubbed by the view timeline
@@ -451,6 +453,93 @@ The module registers a customized native `<dialog is="tessera-search">` element.
 Typing filters the rendered links by group, title, and description. Matching is case- and accent-insensitive and accepts multiple words. Empty results show a message; clearing the query restores the directory. Arrow keys move focus through matching links. Enter on the input opens the first result, and Enter on a focused link uses native navigation. Selecting a result requests native dialog dismissal before the link navigates. Escape dismisses the dialog.
 
 The runtime reads the palette's rendered links. The generated `search-index.json` is a separate artifact for other consumers. Add the routes and sections you want to expose with `.item(...)`, or initialize a palette from routes using `SiteNavigation.searchPalette(site)`.
+
+## Use from Kotlin
+
+Tessera is a Java API, and Kotlin calls it directly. Use Kotlin 2.3.20 or newer: earlier compilers ignore the package-level `@NullMarked` in a library jar ([KT-83467](https://youtrack.jetbrains.com/issue/KT-83467)), so every Tessera type would be a platform type instead of non-null.
+
+```kotlin
+import dev.nthings.tessera.compiler.*
+import dev.nthings.tessera.core.*
+import dev.nthings.tessera.core.Elements.*
+import dev.nthings.tessera.css.*
+
+val notice = Component { _ -> div().child(p().text("Build completed")) }
+
+data class MetricCard(val title: String, val value: String) : View {
+    override fun configureScope(scope: ScopeStyle) {
+        scope.root { it.p(Tokens.SPACE_5).rounded(Tokens.RADIUS_XL) }
+    }
+
+    override fun render(context: RenderContext): IntoElement =
+        div().children(h2().text(title), p().text(value))
+}
+
+fun main() {
+    val page = Compiler.compile(PageDocument("Home", Elements.main().children(notice, MetricCard("Builds", "42"))))
+    println(page.html)
+}
+```
+
+- `import dev.nthings.tessera.core.Elements.*` brings in the element factories. A `fun main()` in the same package wins over the star-imported `main()`, so call the `<main>` factory as `Elements.main()`, as above.
+- Numeric factories take `Double`: write `CssLength.rem(1.0)`, `CssDuration.ms(150.0)` and `opacity(0.5)`; an `Int` literal does not convert. `CssLength`'s `plus`, `minus` and `times` also work as `+`, `-` and `*`.
+- `Component` is a single-method interface, so `Component { context -> ... }` creates one. Implement `View` with a class or a `data class`, overriding `render` and, as needed, `configureScope`, `viewId` and `viewType`.
+- Records read as properties: `diagnostic.rule`, `page.html`, `site.pages`.
+- Sealed types with public variants (`Element`, `TagName`, `Condition`, `PageTree.Node`) are exhaustive in `when` without an `else` branch.
+- Immutable values such as `Theme`, `Keyframes`, `Animation`, `Transition` and `CssLength` carry `@CheckReturnValue`. Build with `-Xreturn-value-checker=check` to get a warning when a derived value such as `theme.with(...)` is discarded.
+- No member is named `apply`, `also`, `let`, `run`, `use` or `to`, or after a Kotlin keyword, so the standard library's scope functions keep their meaning: `div().apply { child(span()) }` adds the span to the `div`.
+
+### Receiver lambdas
+
+Style callbacks (`StyleBlock`) and scope query groups (`ScopeBlock`) carry the `dev.nthings.tessera.foundation.KotlinReceiver` marker. Register it with Kotlin's `sam-with-receiver` compiler plugin and the object being configured becomes the lambda's receiver, so `div().on(State.HOVER) { it.bg(Tokens.SURFACE_SUBTLE) }` can be written `div().on(State.HOVER) { bg(Tokens.SURFACE_SUBTLE) }`, and a shared preset is `val card = StyleBlock { p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL) }`. The plugin applies to every `StyleBlock` and `ScopeBlock` lambda in the module, which then has a receiver and no `it`; without the plugin, write the `it.` form shown above.
+
+With Gradle:
+
+```kotlin
+plugins {
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.sam.with.receiver") version "2.4.21"
+}
+
+samWithReceiver {
+    annotation("dev.nthings.tessera.foundation.KotlinReceiver")
+}
+```
+
+With Maven, in the `kotlin-maven-plugin` configuration:
+
+```xml
+<plugin>
+    <groupId>org.jetbrains.kotlin</groupId>
+    <artifactId>kotlin-maven-plugin</artifactId>
+    <version>${kotlin.version}</version>
+    <configuration>
+        <compilerPlugins>
+            <plugin>sam-with-receiver</plugin>
+        </compilerPlugins>
+        <pluginOptions>
+            <option>sam-with-receiver:annotation=dev.nthings.tessera.foundation.KotlinReceiver</option>
+        </pluginOptions>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-sam-with-receiver</artifactId>
+            <version>${kotlin.version}</version>
+        </dependency>
+    </dependencies>
+</plugin>
+```
+
+With the plugin, scope rules, conditions, starting styles and keyframes read as nested blocks:
+
+```kotlin
+scope.root { p(Tokens.SPACE_5) }
+    .select(":scope h2") { textColor(Tokens.TEXT_MUTED) }
+    .on(Media.MOTION_SAFE) { root { transition(Transition.controlFeedback()) } }
+
+val pulse = Keyframes.named("pulse").start { opacity(1.0) }.at(50.0) { opacity(0.5) }.end { opacity(1.0) }
+```
 
 ## Verify and deploy
 

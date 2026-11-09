@@ -1,11 +1,12 @@
 /// Typed CSS authoring. Element builders and [StyleRefinement] implement [Styled], the one style
 /// trait: its methods take typed [CssValue]s such as [CssLength], [CssColor], [Border] and
 /// [TrackList], built with each type's static factories. The last call wins, and writing a
-/// shorthand removes the longhands it covers. Reusable presets are `Consumer<StyleRefinement>`
-/// functions applied with [Styled#apply].
+/// shorthand removes the longhands it covers. Style callbacks and reusable presets are
+/// [StyleBlock]s, applied to any target with [Styled#styles(StyleBlock)]; [ScopeBlock] groups
+/// scope rules.
 ///
-/// Conditional styles go through [Styled#on(Condition, java.util.function.Consumer)] with a
-/// [State], a [Media] feature or a [ContainerQuery] from a [Container] handle. Motion is a
+/// Conditional styles go through [Styled#on(Condition, StyleBlock)] with a [State], a [Media]
+/// feature or a [ContainerQuery] from a [Container] handle. Motion is a
 /// [Transition] or an [Animation] of typed [Keyframes]; animations apply only without a
 /// reduced-motion preference and register their keyframes themselves. [Tone] is the shared
 /// semantic color.

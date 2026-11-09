@@ -31,8 +31,8 @@ final class ButtonFace {
         button()
             .attr("class", classes(model, icon))
             .attr("type", model.submit ? "submit" : "button")
-            .boolAttr("disabled", model.disabled)
-            .apply(style -> face(style, model, icon));
+            .onlyIf(model.disabled, b -> b.boolAttr("disabled"))
+            .styles(style -> face(style, model, icon));
     if (model.busy) {
       el.ariaBusy(true);
     }

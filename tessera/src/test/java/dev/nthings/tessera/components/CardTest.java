@@ -51,16 +51,23 @@ class CardTest {
   @Test
   @DisplayName("choice cards are <label>s wrapping their own radio or checkbox input")
   void choiceCardIsLabelWrappingItsInput() {
-    var card = Card.of("Pro Tier").bodyText("Isolated workers.").radio("plan", "pro", true);
+    var card = Card.of("Pro Tier").bodyText("Isolated workers.").radio("plan", "pro").checked();
 
     var choice = renderMain(card).element("main > *");
 
     assertThat(choice).hasTagName("label");
     assertThat(choice.selectFirst("> input[type=radio][name=plan][checked]")).isNotNull();
 
-    var checkbox =
-        renderMain(Card.of("Alerts").checkbox("extras", "alerts", false)).element("label");
+    var checkbox = renderMain(Card.of("Alerts").checkbox("extras", "alerts")).element("label");
     assertThat(checkbox.selectFirst("> input[type=checkbox][name=extras]:not([checked])"))
         .isNotNull();
+  }
+
+  @Test
+  @DisplayName("checked() applies whether it comes before or after the choice")
+  void checkedIsOrderIndependent() {
+    var card = Card.of("Alerts").checked().checkbox("extras", "alerts");
+
+    assertThat(renderMain(card).element("label > input[type=checkbox][checked]")).isNotNull();
   }
 }

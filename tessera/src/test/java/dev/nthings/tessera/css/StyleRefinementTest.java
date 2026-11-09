@@ -2,7 +2,6 @@ package dev.nthings.tessera.css;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.function.Consumer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -67,12 +66,11 @@ class StyleRefinementTest {
   }
 
   @Test
-  @DisplayName("a preset applies through apply and keeps the chain")
+  @DisplayName("a preset applies through styles and keeps the chain")
   void presetsApply() {
-    Consumer<StyleRefinement> card =
-        s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_LG).textWrap(TextWrap.PRETTY);
+    StyleBlock card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_LG).textWrap(TextWrap.PRETTY);
 
-    var style = new StyleRefinement().apply(card).objectFit(ObjectFit.COVER);
+    var style = new StyleRefinement().styles(card).objectFit(ObjectFit.COVER);
 
     assertThat(style.toCssBlockBody())
         .isEqualTo(

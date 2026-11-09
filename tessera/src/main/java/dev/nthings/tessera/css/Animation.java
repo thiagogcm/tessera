@@ -1,5 +1,6 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
@@ -15,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 /// - [#exit]: follows the element's progress out of the viewport, and keeps the end state.
 /// - [#revealOnce]: plays once, over 0.5s, the first time the element scrolls into view.
 /// - [#scrollProgress]: follows the scroll position of the whole page.
+@CheckReturnValue
 public final class Animation {
 
   private enum Timeline {
@@ -114,7 +116,7 @@ public final class Animation {
   }
 
   /// Writes the animation declarations to `style`, without the reduced-motion guard.
-  void apply(StyleRefinement style) {
+  void writeTo(StyleRefinement style) {
     var name = keyframes.name();
     switch (timeline) {
       case TIME -> {

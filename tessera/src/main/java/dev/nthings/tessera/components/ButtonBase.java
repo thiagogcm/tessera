@@ -79,7 +79,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   }
 
   /// Sets the native `disabled` attribute, so the button cannot be activated or focused. Use
-  /// `when(condition, B::disabled)` to disable it conditionally.
+  /// `onlyIf(condition, B::disabled)` to disable it conditionally.
   public B disabled() {
     this.disabled = true;
     return self();

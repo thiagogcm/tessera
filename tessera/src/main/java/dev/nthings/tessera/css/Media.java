@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
-/// A media feature for [Styled#on(Condition, java.util.function.Consumer)] and
-/// [ScopeStyle#on(Condition.Query, java.util.function.Consumer)], emitted as an `@media` rule.
+/// A media feature for [Styled#on(Condition, StyleBlock)] and
+/// [ScopeStyle#on(Condition.Query, ScopeBlock)], emitted as an `@media` rule.
 public enum Media implements Condition.Query {
   /// `prefers-reduced-motion: no-preference`: the user has not asked for less motion. Put movement
   /// here and keep the visible end state outside, so the element is in place without the motion.

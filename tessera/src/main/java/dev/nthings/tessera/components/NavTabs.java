@@ -100,9 +100,9 @@ public final class NavTabs extends BuiltinView<NavTabs> {
       var isActive = item.href().equals(active);
       var link =
           a(item.href())
-              .when(isActive, el -> el.ariaCurrent(Accessible.Current.PAGE))
+              .onlyIf(isActive, el -> el.ariaCurrent(Accessible.Current.PAGE))
               .text(item.label());
-      var liEl = li().when(isActive, el -> el.attr("class", "active")).child(link);
+      var liEl = li().onlyIf(isActive, el -> el.attr("class", "active")).child(link);
       list.child(liEl);
     }
     return nav().ariaLabel(label).child(list);

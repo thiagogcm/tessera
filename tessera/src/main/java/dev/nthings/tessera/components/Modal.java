@@ -144,7 +144,7 @@ public final class Modal extends DialogView<Modal> {
             .flexCol()
             .gap(Tokens.SPACE_1)
             .child(heading(titleRef).fontSize(Tokens.FONT_SIZE_XL).textWrap(TextWrap.BALANCE))
-            .whenPresent(
+            .ifPresent(
                 description,
                 (h, desc) ->
                     h.child(
@@ -159,7 +159,7 @@ public final class Modal extends DialogView<Modal> {
     footerEl.child(closeButton());
 
     return dialogShell(titleRef)
-        .boolAttr("open", opened)
+        .onlyIf(opened, el -> el.boolAttr("open"))
         .child(div().flex().flexCol().gap(Tokens.SPACE_5).children(headerEl, contentEl, footerEl));
   }
 }

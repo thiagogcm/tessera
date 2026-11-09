@@ -69,13 +69,13 @@ final class FormsPage {
             Field.of(
                     "Deployment target",
                     Select.of("target")
-                        .option("cloud-run", "Cloud Run", true)
+                        .selectedOption("cloud-run", "Cloud Run")
                         .option("gke", "Kubernetes Engine")
                         .option("edge", "Edge worker"))
                 .hint("Where the compiled site is deployed."))
         .code(
             "Field.of(\"Deployment target\", Select.of(\"target\")",
-            "    .option(\"cloud-run\", \"Cloud Run\", true)",
+            "    .selectedOption(\"cloud-run\", \"Cloud Run\")",
             "    .option(\"gke\", \"Kubernetes Engine\"));");
   }
 }

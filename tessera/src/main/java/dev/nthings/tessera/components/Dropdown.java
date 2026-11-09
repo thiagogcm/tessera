@@ -62,7 +62,7 @@ public final class Dropdown extends BuiltinView<Dropdown> {
         a(href)
             .attr("class", "dropdown-item")
             .child(span().text(label))
-            .whenPresent(
+            .ifPresent(
                 shortcutHint,
                 (el, hint) ->
                     el.child(span().attr("class", "dropdown-hint").ariaHidden(true).text(hint)));

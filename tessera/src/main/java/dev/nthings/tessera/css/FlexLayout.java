@@ -1,8 +1,11 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
+
 /// A flex layout preset, applied with [Styled#layout(FlexLayout)]. The preset is copied into
 /// the element's [StyleRefinement], so a later declaration replaces only that property. Block and
 /// inline layouts are separate choices.
+@CheckReturnValue
 public record FlexLayout(
     Display display, Direction direction, CssLength gap, Align align, Wrap wrap) {
 
@@ -27,8 +30,8 @@ public record FlexLayout(
   }
 
   /// Writes this layout's declarations into `style`; [Styled#layout(FlexLayout)] calls it.
-  StyleRefinement apply(StyleRefinement style) {
-    return style
+  void writeTo(StyleRefinement style) {
+    style
         .put(CssProperty.DISPLAY, display)
         .put(CssProperty.FLEX_DIRECTION, direction)
         .put(CssProperty.FLEX_WRAP, wrap)

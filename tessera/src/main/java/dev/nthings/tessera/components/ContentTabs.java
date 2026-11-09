@@ -150,7 +150,7 @@ public final class ContentTabs extends BuiltinView<ContentTabs> {
               .role(Role.TABPANEL)
               .ariaLabelledBy(tabRef)
               .tabIndex(0)
-              .boolAttr("hidden", i != 0)
+              .onlyIf(i != 0, el -> el.boolAttr("hidden"))
               .child(panels.get(i).content()));
     }
     return root;

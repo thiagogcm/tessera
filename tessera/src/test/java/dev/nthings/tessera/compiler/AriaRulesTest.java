@@ -234,7 +234,7 @@ class AriaRulesTest {
   void genericAttributeMethodsRefuseAria() {
     assertThatIllegalArgumentException().isThrownBy(() -> div().attr("role", "note"));
     assertThatIllegalArgumentException().isThrownBy(() -> div().attr("aria-label", "x"));
-    assertThatIllegalArgumentException().isThrownBy(() -> div().boolAttr("aria-hidden", true));
+    assertThatIllegalArgumentException().isThrownBy(() -> div().boolAttr("aria-hidden"));
     assertThat(div().role(Role.NOTE).attributes()).containsEntry("role", "note");
     assertThat(div().ariaCurrent(Accessible.Current.PAGE).attributes())
         .containsEntry("aria-current", "page");

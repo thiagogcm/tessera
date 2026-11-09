@@ -57,16 +57,35 @@ public final class Accordion extends BuiltinView<Accordion> {
     return this;
   }
 
-  /// Adds an item titled `title` whose body is `text` in a muted paragraph, open on load when
-  /// `open` is true.
-  public Accordion item(String title, String text, boolean open) {
-    return item(title, p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(text), open);
+  /// Adds a closed item titled `title` whose body is `text` in a muted paragraph.
+  public Accordion item(String title, String text) {
+    return add(title, mutedParagraph(text), false);
   }
 
-  /// Adds an item titled `title` whose body is `content`, open on load when `open` is true.
-  public Accordion item(String title, IntoElement content, boolean open) {
+  /// Adds a closed item titled `title` whose body is `content`.
+  public Accordion item(String title, IntoElement content) {
+    return add(title, content, false);
+  }
+
+  /// Adds an item that is open on load, titled `title`, whose body is `text` in a muted paragraph.
+  /// In an [#exclusive()] accordion, open at most one item.
+  public Accordion openItem(String title, String text) {
+    return add(title, mutedParagraph(text), true);
+  }
+
+  /// Adds an item that is open on load, titled `title`, whose body is `content`. In an
+  /// [#exclusive()] accordion, open at most one item.
+  public Accordion openItem(String title, IntoElement content) {
+    return add(title, content, true);
+  }
+
+  private Accordion add(String title, IntoElement content, boolean open) {
     items.add(new Item(title, content.intoElement(), open));
     return this;
+  }
+
+  private static IntoElement mutedParagraph(String text) {
+    return p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(text);
   }
 
   @Override
@@ -139,8 +158,8 @@ public final class Accordion extends BuiltinView<Accordion> {
     for (var item : items) {
       var detailsEl =
           details()
-              .whenPresent(group, (d, name) -> d.attr("name", name))
-              .boolAttr("open", item.open())
+              .ifPresent(group, (d, name) -> d.attr("name", name))
+              .onlyIf(item.open(), d -> d.boolAttr("open"))
               .children(
                   summary()
                       .children(

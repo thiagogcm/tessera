@@ -141,7 +141,7 @@ public final class Drawer extends DialogView<Drawer> {
                     .flexCol()
                     .gap(Tokens.SPACE_0_5)
                     .child(heading(titleRef).fontSize(Tokens.FONT_SIZE_LG))
-                    .whenPresent(
+                    .ifPresent(
                         description,
                         (d, sub) ->
                             d.child(

@@ -137,7 +137,7 @@ record Shell(Page page) implements Component {
             .flex()
             .flexCol()
             .gap(CssLength.rem(0.5))
-            .when(
+            .onlyIf(
                 index > 0,
                 s ->
                     s.child(

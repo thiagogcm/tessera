@@ -10,7 +10,7 @@ interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF
   /// A transition that moves an element belongs inside `on(Media.MOTION_SAFE, ...)`, with its
   /// visible end state kept outside that block.
   default SELF transition(Transition transition) {
-    transition.apply(style());
+    transition.writeTo(style());
     return self();
   }
 

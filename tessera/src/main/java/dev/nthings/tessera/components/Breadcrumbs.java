@@ -93,7 +93,7 @@ public final class Breadcrumbs extends BuiltinView<Breadcrumbs> {
       list.child(
           li().child(
                   a(link.href())
-                      .when(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
+                      .onlyIf(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
                       .text(link.label())));
     }
     return nav().ariaLabel(label).child(list);

@@ -1,11 +1,13 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.List;
 
 /// A transition: the properties it animates, with a duration, an easing, and whether discrete
 /// values such as `display` transition too. Applied with [Styled#transition(Transition)]. A
 /// transition that moves an element belongs inside `on(Media.MOTION_SAFE, ...)`; keep the visible
 /// end state outside it, so the control is in place even when no transition runs.
+@CheckReturnValue
 public record Transition(
     CssDuration duration, Easing easing, List<Animatable> properties, boolean allowDiscrete) {
 
@@ -72,7 +74,7 @@ public record Transition(
   }
 
   /// Writes the transition declarations to `style`; [Styled#transition(Transition)] calls it.
-  StyleRefinement apply(StyleRefinement style) {
+  void writeTo(StyleRefinement style) {
     style
         .put(CssProperty.TRANSITION_PROPERTY, properties)
         .put(CssProperty.TRANSITION_DURATION, duration)
@@ -80,6 +82,5 @@ public record Transition(
     if (allowDiscrete) {
       style.put(CssProperty.TRANSITION_BEHAVIOR, "allow-discrete");
     }
-    return style;
   }
 }

@@ -1,8 +1,11 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
+
 /// A CSS color: OKLCH and sRGB literals, keywords, derived colors (`color-mix`, relative
 /// `oklch(from ...)`, `light-dark`, `contrast-color`), and design tokens. Build values with the
 /// static factories and the derivation methods.
+@CheckReturnValue
 public sealed interface CssColor extends CssValue
     permits CssColors.Oklch,
         CssColors.Srgb,

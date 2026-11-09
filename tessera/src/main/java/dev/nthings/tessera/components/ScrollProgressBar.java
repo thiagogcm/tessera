@@ -19,8 +19,8 @@ public final class ScrollProgressBar extends BuiltinComponent {
 
   private static final Keyframes PROGRESS =
       Keyframes.named("tessera-scroll-progress")
-          .from(s -> s.transform(Transform.scaleX(0)))
-          .to(s -> s.transform(Transform.scaleX(1)));
+          .start(s -> s.transform(Transform.scaleX(0)))
+          .end(s -> s.transform(Transform.scaleX(1)));
 
   private DesignToken.Color color = Tokens.ACCENT_PRIMARY;
   private CssLength thickness = CssLength.rem(0.25);

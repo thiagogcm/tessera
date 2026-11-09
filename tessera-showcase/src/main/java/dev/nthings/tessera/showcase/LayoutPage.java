@@ -93,11 +93,12 @@ final class LayoutPage {
                     Card.of("Team plan")
                         .description("Choice card (radio)")
                         .bodyText("Selection is styled with :has(> input:checked).")
-                        .radio("plan", "team", true),
+                        .radio("plan", "team")
+                        .checked(),
                     Card.of("Organization plan")
                         .description("Choice card (radio)")
                         .bodyText("Only one plan can be selected.")
-                        .radio("plan", "org", false))
+                        .radio("plan", "org"))
                 .id("card-variants")
                 .gap(CssLength.rem(1)),
             Card.of("Media card")
@@ -107,7 +108,7 @@ final class LayoutPage {
                     "This card switches to media-beside-content once its container is wide enough."))
         .code(
             "Card.of(\"Stretched link\").stretchedLink(\"/data\");",
-            "Card.of(\"Team plan\").radio(\"plan\", \"team\", true);",
+            "Card.of(\"Team plan\").radio(\"plan\", \"team\").checked();",
             "Card.of(\"Media card\").media(Image.of(src, alt).dimensions(600, 240));");
   }
 

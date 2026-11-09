@@ -1,8 +1,11 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
+
 /// A CSS length: a dimension (`px`, `rem`, ...), `0`, `auto`, `clamp()` from [#fluid], `min()` or
 /// `max()`, `calc()` from [#plus], [#minus], [#times], and [#dividedBy], `anchor()` from [#anchor],
 /// or a length token ([DesignToken.Length]). Build values with the static factories.
+@CheckReturnValue
 public sealed interface CssLength extends CssValue
     permits CssLengths.Dimension,
         CssLengths.Keyword,

@@ -27,8 +27,31 @@ import java.util.List;
 /// Without an [#id(String)], the compiler numbers instances `custom-select-<n>`.
 public final class Select extends BuiltinView<Select> {
 
-  /// One option: the submitted `value`, the visible `label`, and whether it starts selected.
-  public record Option(String value, String label, boolean selected) {}
+  /// One option for [Select#optgroup(String, List)]: the submitted `value`, the visible
+  /// `label`, and whether it starts selected. Create one with [#of(String, String)] or
+  /// [#selected(String, String)].
+  public static final class Option {
+
+    private final String value;
+    private final String label;
+    private final boolean selected;
+
+    private Option(String value, String label, boolean selected) {
+      this.value = value;
+      this.label = label;
+      this.selected = selected;
+    }
+
+    /// An option submitting `value` and showing `label`.
+    public static Option of(String value, String label) {
+      return new Option(value, label, false);
+    }
+
+    /// An option submitting `value` and showing `label`, selected on load.
+    public static Option selected(String value, String label) {
+      return new Option(value, label, true);
+    }
+  }
 
   private final TagElement select;
 
@@ -55,13 +78,13 @@ public final class Select extends BuiltinView<Select> {
 
   /// Adds an option submitting `value` and showing `label`.
   public Select option(String value, String label) {
-    return option(value, label, false);
+    select.child(optionElement(Option.of(value, label)));
+    return this;
   }
 
-  /// Adds an option submitting `value` and showing `label`, selected on load when `selected` is
-  /// true.
-  public Select option(String value, String label, boolean selected) {
-    select.child(optionElement(new Option(value, label, selected)));
+  /// Adds an option submitting `value` and showing `label`, selected on load.
+  public Select selectedOption(String value, String label) {
+    select.child(optionElement(Option.selected(value, label)));
     return this;
   }
 
@@ -137,6 +160,7 @@ public final class Select extends BuiltinView<Select> {
   }
 
   private static TagElement optionElement(Option option) {
-    return Elements.option(option.value(), option.label()).boolAttr("selected", option.selected());
+    return Elements.option(option.value, option.label)
+        .onlyIf(option.selected, el -> el.boolAttr("selected"));
   }
 }

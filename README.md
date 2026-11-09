@@ -12,7 +12,7 @@ Tessera is an advanced server-side UI framework built exclusively for **modern J
 
 The supported browser contract is deliberately bleeding-edge: the latest stable Chromium and Firefox, with no fallback matrix and no legacy polyfills. Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components contribute deduplicated ES modules as client behaviors; `SearchPalette` and `ContentTabs` use that path for live filtering, keyboard navigation, and ARIA tabs. Pages that use no behavior receive no script.
 
-Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search.
+Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search. The API is Java-first and also reads naturally from Kotlin 2.3.20+; see [Use from Kotlin](docs/consumer-guide.md#use-from-kotlin).
 
 ```mermaid
 flowchart LR
@@ -83,7 +83,7 @@ In Tessera, DOM ids come only from `ElementRef` tokens: `ElementRef.scoped(name)
 Tessera enforces an unyielding quality policy:
 
 - Forked `javac` with `-Xlint:all -Xdoclint:all/protected,-missing -Werror`.
-- Error Prone combined with Uber's NullAway in `@NullMarked` JSpecify mode.
+- Error Prone combined with Uber's NullAway in `@NullMarked` JSpecify mode, plus `CheckReturnValue` for the `@CheckReturnValue` immutable value types (`Theme`, `Keyframes`, `Animation`, `Transition`, `CssLength`, ...).
 - Checkstyle 14.4.0 enforcing Markdown docs (`///`) and banning legacy `/** */`.
 - SpotBugs 4.10.5 running at `effort=Max` and `threshold=Low`.
 - Spotless with google-java-format.

@@ -17,8 +17,8 @@ class AccordionTest {
             Accordion.of()
                 .id("faq")
                 .exclusive()
-                .item("Question 1", "Answer 1", true)
-                .item("Question 2", "Answer 2", false));
+                .openItem("Question 1", "Answer 1")
+                .item("Question 2", "Answer 2"));
 
     assertThat(page.elements("details[name=faq]")).hasSize(2);
     assertThat(page.elements("details[name=faq][open]")).hasSize(1);
@@ -29,9 +29,9 @@ class AccordionTest {
   void exclusiveAccordionsWithoutIdsGetDistinctGroups() {
     var page =
         renderMain(
-            Accordion.of().exclusive().item("A", "a", false),
-            Accordion.of().exclusive().item("B", "b", false),
-            Accordion.of().item("C", "c", false));
+            Accordion.of().exclusive().item("A", "a"),
+            Accordion.of().exclusive().item("B", "b"),
+            Accordion.of().item("C", "c"));
 
     assertThat(page.elements("details"))
         .extracting(d -> d.attr("name"))

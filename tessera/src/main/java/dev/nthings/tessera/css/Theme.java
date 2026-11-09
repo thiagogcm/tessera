@@ -1,5 +1,6 @@
 package dev.nthings.tessera.css;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 ///     .with(Tokens.DENSITY, CssNumber.of(0.9))
 ///     .with(Tokens.RADIUS_XL, CssLength.rem(1));
 /// ```
+@CheckReturnValue
 public final class Theme {
 
   private record Entry(DesignToken<?> token, CssValue value) {}

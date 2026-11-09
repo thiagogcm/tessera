@@ -7,7 +7,7 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Applies the font family, size, weight, line height, and tracking of `typography`.
   default SELF typography(Typography typography) {
-    typography.apply(style());
+    typography.writeTo(style());
     return self();
   }
 

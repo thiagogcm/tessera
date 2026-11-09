@@ -161,9 +161,9 @@ class ConditionalStylingTest {
   void scopeAnimationsRegisterKeyframes() {
     var pulse =
         Keyframes.named("pulse")
-            .from(s -> s.opacity(1))
+            .start(s -> s.opacity(1))
             .at(50, s -> s.opacity(0.5))
-            .to(s -> s.opacity(1));
+            .end(s -> s.opacity(1));
     var page = renderMain(new PulseView(pulse));
 
     assertThat(page.css())

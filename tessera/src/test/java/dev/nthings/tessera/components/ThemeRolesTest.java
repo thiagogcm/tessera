@@ -83,8 +83,7 @@ class ThemeRolesTest {
   @DisplayName("overlay travel and control feedback stay inside the reduced-motion query")
   void motionTravelStaysInsideTheReducedMotionQuery() {
     var page =
-        renderMain(
-            Forms.switchField("Lights", "lights", false), Modal.of("Confirm").bodyText("Deploy"));
+        renderMain(Forms.switchField("Lights", "lights"), Modal.of("Confirm").bodyText("Deploy"));
 
     var dialog = page.element("dialog");
     var scope = page.scopeBody(dialog);

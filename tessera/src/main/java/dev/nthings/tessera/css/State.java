@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-/// An element state for [Styled#on(Condition, java.util.function.Consumer)], emitted as a nested
+/// An element state for [Styled#on(Condition, StyleBlock)], emitted as a nested
 /// `&:pseudo-class` rule. Every state adds the specificity of one pseudo-class: the not-disabled
 /// guard of `HOVER` and `ACTIVE` is wrapped in `:where()`, which adds none. Rules are emitted in
 /// constant order, not call order, so when two states match at once the later constant wins:

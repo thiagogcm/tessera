@@ -20,15 +20,12 @@ public interface InteractiveElement<
     return self();
   }
 
-  /// Sets a boolean attribute: present with an empty value when `enabled`, removed otherwise.
-  /// Refuses `id`, `role` and `aria-*` as [#attr(String, String)] does.
-  default SELF boolAttr(String name, boolean enabled) {
+  /// Sets a boolean attribute such as `disabled` or `open`: present with an empty value. Use
+  /// `onlyIf(condition, el -> el.boolAttr(name))` to set it conditionally. Refuses `id`, `role` and
+  /// `aria-*` as [#attr(String, String)] does.
+  default SELF boolAttr(String name) {
     Attributes.requireGeneric(name);
-    if (enabled) {
-      attributes().put(name, "");
-    } else {
-      attributes().remove(name);
-    }
+    attributes().put(name, "");
     return self();
   }
 

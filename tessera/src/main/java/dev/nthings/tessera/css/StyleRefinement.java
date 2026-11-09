@@ -10,13 +10,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /// A mutable set of declarations and custom properties, written through the [Styled] methods,
-/// plus the conditional styles written with [#on(Condition, Consumer)] and
-/// [#startingStyle(Consumer)]. Elements hold one for their style, and state, selector and scope
+/// plus the conditional styles written with [#on(Condition, StyleBlock)] and
+/// [#startingStyle(StyleBlock)]. Elements hold one for their style, and state, selector and scope
 /// callbacks receive one to fill. The last call wins: writing a property again replaces its value,
 /// and writing a shorthand (such as [#p(CssLength)] or [#border(Border)]) removes the longhands it
 /// covers (such as [#pt(CssLength)] or [#borderBlockEnd(Border)]), so a longhand only wins when
@@ -82,13 +81,13 @@ public final class StyleRefinement
   /// Runs `styles` on the values an entry transition starts from, emitted as a nested
   /// `@starting-style` block: when the element first renders or leaves `display: none`, it starts
   /// from these values and transitions to its normal style. Calling again extends the same block.
-  public StyleRefinement startingStyle(Consumer<StyleRefinement> styles) {
+  public StyleRefinement startingStyle(StyleBlock styles) {
     var start = startingStyle;
     if (start == null) {
       start = new StyleRefinement();
       startingStyle = start;
     }
-    styles.accept(start);
+    styles.configure(start);
     return this;
   }
 
@@ -138,7 +137,7 @@ public final class StyleRefinement
   /// Records `animation`'s keyframes for registration and writes it under [Media#MOTION_SAFE].
   StyleRefinement animate(Animation animation) {
     keyframes().add(animation.keyframes());
-    animation.apply(nested(Media.MOTION_SAFE));
+    animation.writeTo(nested(Media.MOTION_SAFE));
     return this;
   }
 

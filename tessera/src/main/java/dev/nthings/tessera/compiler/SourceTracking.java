@@ -46,13 +46,13 @@ public final class SourceTracking {
 
   /// Runs `work` with tracking on; elements it builds or compiles carry their call sites.
   public static <R> R enabled(Supplier<R> work) {
-    return with(true, work);
+    return SourceProvenance.with(SourceTracking::capture, work);
   }
 
-  /// Runs `work` with tracking on or off, e.g. from a command-line flag.
-  public static <R> R with(boolean tracking, Supplier<R> work) {
-    SourceCapture capture = tracking ? SourceTracking::capture : SourceCapture.NONE;
-    return SourceProvenance.with(capture, work);
+  /// Runs `work` with tracking on when `condition` holds, e.g. a command-line flag, and with
+  /// tracking off otherwise.
+  public static <R> R enabledIf(boolean condition, Supplier<R> work) {
+    return condition ? enabled(work) : SourceProvenance.with(SourceCapture.NONE, work);
   }
 
   private static @Nullable SourceLocation capture() {

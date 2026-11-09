@@ -165,11 +165,11 @@ public final class Catalog {
             + "appearance: none and a :checked state.",
         List.of("role=\"switch\"", "appearance: none", ":checked"),
         List.of(
-            "Forms.switchField(\"Weekly digest\", \"notify_digest\", false);",
-            "Forms.switchField(\"Weekly digest\", \"notify_digest\", true);"),
+            "Forms.switchField(\"Weekly digest\", \"notify_digest\");",
+            "Forms.checkedSwitchField(\"Weekly digest\", \"notify_digest\");"),
         List.of(
-            variant("off", "Off", true, () -> digest(false)),
-            variant("on", "On", false, () -> digest(true))));
+            variant("off", "Off", true, Catalog::digestOff),
+            variant("on", "On", false, Catalog::digestOn)));
   }
 
   private static Story overflow() {
@@ -252,8 +252,12 @@ public final class Catalog {
                 .text("Click outside or press Escape to close."));
   }
 
-  private static IntoElement digest(boolean checked) {
-    return Forms.switchField("Weekly digest", "notify_digest", checked);
+  private static IntoElement digestOff() {
+    return Forms.switchField("Weekly digest", "notify_digest");
+  }
+
+  private static IntoElement digestOn() {
+    return Forms.checkedSwitchField("Weekly digest", "notify_digest");
   }
 
   private static IntoElement overflowRow() {

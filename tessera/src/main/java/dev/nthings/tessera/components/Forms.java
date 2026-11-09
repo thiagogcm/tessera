@@ -24,8 +24,9 @@ import dev.nthings.tessera.css.Transition;
 
 /// Form control functions: styled text-like inputs, a textarea and a switch, returned as plain
 /// elements you can refine further. The controls are bare: wrap one with
-/// [Field#of(String, TagElement)] to add a visible label, hint and error text. [#switchField] is a
-/// labelled switch and needs no wrapper; [Select] is the customizable select. Validation styling
+/// [Field#of(String, TagElement)] to add a visible label, hint and error text.
+/// [#switchField(String, String)] and [#checkedSwitchField(String, String)] are labelled switches
+/// and need no wrapper; [Select] is the customizable select. Validation styling
 /// follows the browser's `:user-invalid` and `:user-valid` states.
 public final class Forms {
 
@@ -86,12 +87,12 @@ public final class Forms {
   /// a thumb.
   ///
   /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
-  /// background layer that slides when checked. Use [#switchField] to add a label.
-  public static TagElement switchInput(String name, boolean checked) {
+  /// background layer that slides when checked. It starts off; add `boolAttr("checked")` to start
+  /// it on. Use [#switchField(String, String)] to add a label.
+  public static TagElement switchInput(String name) {
     return Elements.input("checkbox")
         .attr("name", name)
         .role(Role.SWITCH)
-        .boolAttr("checked", checked)
         .appearance(Appearance.NONE)
         .inlineSize(CssLength.rem(2.5))
         .blockSize(CssLength.rem(1.5))
@@ -117,11 +118,21 @@ public final class Forms {
         trackColor);
   }
 
-  /// Labelled switch row: the visible `label` names the switch. The switch's id is
+  /// Labelled switch row, off on load: the visible `label` names the switch. The switch's id is
   /// `switch-<name>` in the enclosing view scope, so two switches with the same name in one view
   /// scope report `duplicate-id`.
-  public static TagElement switchField(String label, String name, boolean checked) {
-    var sw = switchInput(name, checked).id(ElementRef.scoped("switch-" + name));
+  public static TagElement switchField(String label, String name) {
+    return switchRow(label, name, switchInput(name));
+  }
+
+  /// Labelled switch row that is on (checked) on load; otherwise the same as
+  /// [#switchField(String, String)].
+  public static TagElement checkedSwitchField(String label, String name) {
+    return switchRow(label, name, switchInput(name).boolAttr("checked"));
+  }
+
+  private static TagElement switchRow(String label, String name, TagElement input) {
+    var sw = input.id(ElementRef.scoped("switch-" + name));
     return div()
         .flex()
         .itemsCenter()

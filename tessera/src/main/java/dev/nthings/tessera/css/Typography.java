@@ -11,8 +11,8 @@ public record Typography(
     DesignToken.Length tracking) {
 
   /// Writes the five declarations to `style`; [Styled#typography(Typography)] calls it.
-  StyleRefinement apply(StyleRefinement style) {
-    return style
+  void writeTo(StyleRefinement style) {
+    style
         .put(CssProperty.FONT_FAMILY, family)
         .put(CssProperty.FONT_SIZE, size)
         .put(CssProperty.FONT_WEIGHT, Integer.toString(weight))

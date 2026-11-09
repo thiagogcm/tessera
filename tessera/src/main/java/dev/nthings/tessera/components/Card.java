@@ -30,6 +30,7 @@ import org.jspecify.annotations.Nullable;
 /// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
 ///   buttons, and form controls in the card stay clickable.
 /// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins.
+///   [#checked()] starts a radio or checkbox card checked, in any call order.
 ///
 /// Without an [#id(String)], the compiler numbers instances `card-<n>`.
 public final class Card extends BuiltinView<Card> {
@@ -39,8 +40,7 @@ public final class Card extends BuiltinView<Card> {
 
   private record StretchedLink(String href) implements Interaction {}
 
-  private record Choice(String name, String value, boolean multiSelect, boolean checked)
-      implements Interaction {}
+  private record Choice(String name, String value, boolean multiSelect) implements Interaction {}
 
   private final String title;
   private @Nullable Element media;
@@ -49,6 +49,7 @@ public final class Card extends BuiltinView<Card> {
   private final List<Element> body = new ArrayList<>();
   private final List<Element> actions = new ArrayList<>();
   private @Nullable Interaction interaction;
+  private boolean checked;
 
   private Card(String title) {
     this.title = title;
@@ -122,17 +123,24 @@ public final class Card extends BuiltinView<Card> {
     return this;
   }
 
-  /// Makes the card a radio choice: a `<label>` around a radio input named `name` with `value`,
-  /// checked on load when `checked` is true. Cards sharing a `name` form one group.
-  public Card radio(String name, String value, boolean checked) {
-    this.interaction = new Choice(name, value, false, checked);
+  /// Makes the card a radio choice: a `<label>` around a radio input named `name` with `value`.
+  /// Cards sharing a `name` form one group; mark the one selected on load with [#checked()].
+  public Card radio(String name, String value) {
+    this.interaction = new Choice(name, value, false);
     return this;
   }
 
   /// Makes the card a checkbox choice: a `<label>` around a checkbox input named `name` with
-  /// `value`, checked on load when `checked` is true.
-  public Card checkbox(String name, String value, boolean checked) {
-    this.interaction = new Choice(name, value, true, checked);
+  /// `value`. Add [#checked()] to check it on load.
+  public Card checkbox(String name, String value) {
+    this.interaction = new Choice(name, value, true);
+    return this;
+  }
+
+  /// Checks the card's radio or checkbox input on load. It has no effect on a card that is not a
+  /// [#radio(String, String)] or [#checkbox(String, String)] choice.
+  public Card checked() {
+    this.checked = true;
     return this;
   }
 
@@ -233,7 +241,7 @@ public final class Card extends BuiltinView<Card> {
                     Elements.input(choice.multiSelect() ? "checkbox" : "radio")
                         .attr("name", choice.name())
                         .attr("value", choice.value())
-                        .boolAttr("checked", choice.checked()))
+                        .onlyIf(checked, input -> input.boolAttr("checked")))
             : Elements.article();
 
     // Region 1: media, never wrapped for img/picture.

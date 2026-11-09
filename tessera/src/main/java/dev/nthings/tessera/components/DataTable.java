@@ -178,7 +178,7 @@ public final class DataTable<T> extends BuiltinView<DataTable<T>> {
             ":scope tr > :nth-child(" + (i + 1) + ")",
             s ->
                 s.textAlign(align.textAlign())
-                    .when(align.tabularNums(), StyleRefinement::tabularNums));
+                    .onlyIf(align.tabularNums(), StyleRefinement::tabularNums));
       }
     }
 

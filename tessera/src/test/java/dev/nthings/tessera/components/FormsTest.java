@@ -4,6 +4,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.support.RenderedPage;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,20 +21,31 @@ class FormsTest {
     @DisplayName("is a role=switch checkbox reflecting its checked state")
     void reflectsCheckedState() {
       var page =
-          renderMain(Forms.switchInput("enable_notifications", true).ariaLabel("Notifications"));
+          renderMain(
+              Forms.switchInput("enable_notifications")
+                  .boolAttr("checked")
+                  .ariaLabel("Notifications"));
 
       assertThat(page.element("input[role=switch][name=enable_notifications]"))
           .hasAttribute("checked");
     }
 
     @Test
-    @DisplayName("a switch field is unchecked when asked to be, and labelled for its switch")
+    @DisplayName("a switch field starts unchecked and is labelled for its switch")
     void switchFieldIsLabelledForItsSwitch() {
-      var page = renderMain(Forms.switchField("Receive updates", "updates", false));
+      var page = renderMain(Forms.switchField("Receive updates", "updates"));
 
       var rowSwitch = page.element("input[role=switch][name=updates]");
       assertThat(rowSwitch).doesNotHaveAttribute("checked");
       assertThat(page.element("label")).hasAttribute("for", rowSwitch.id());
+    }
+
+    @Test
+    @DisplayName("a checked switch field starts checked")
+    void checkedSwitchFieldStartsChecked() {
+      var page = renderMain(Forms.checkedSwitchField("Receive updates", "updates"));
+
+      assertThat(page.element("input[role=switch][name=updates]")).hasAttribute("checked");
     }
   }
 
@@ -78,7 +90,7 @@ class FormsTest {
     @Test
     @DisplayName("a select field keeps its options and links its hint on every render")
     void selectFieldRendersRepeatedly() {
-      var select = Select.of("size").option("small", "Small").option("large", "Large", true);
+      var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
       var field = Field.of("Size", select).hint("Choose a size");
 
       for (var turn = 0; turn < 2; turn++) {
@@ -104,7 +116,7 @@ class FormsTest {
           renderMain(
               Select.of("theme_mode")
                   .option("light", "Light Mode")
-                  .option("dark", "Dark Mode", true)
+                  .selectedOption("dark", "Dark Mode")
                   .option("system", "System Default"));
     }
 
@@ -124,6 +136,23 @@ class FormsTest {
       assertThat(page.elements("select[name=theme_mode] option[selected]"))
           .extracting(o -> o.attr("value"))
           .containsExactly("dark");
+    }
+
+    @Test
+    @DisplayName("marks the selected option of an optgroup")
+    void marksSelectedGroupOption() {
+      var grouped =
+          renderMain(
+              Select.of("region")
+                  .optgroup(
+                      "Europe",
+                      List.of(
+                          Select.Option.of("fra", "Frankfurt"),
+                          Select.Option.selected("ams", "Amsterdam"))));
+
+      assertThat(grouped.elements("optgroup[label=Europe] option[selected]"))
+          .extracting(o -> o.attr("value"))
+          .containsExactly("ams");
     }
 
     @Test

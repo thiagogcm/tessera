@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /// Compiler-facing: the stylesheet of one page or site. The compiler registers each element's
 /// typed styles and each view scope, receiving the class names or scope keys to emit, and
@@ -78,10 +77,10 @@ public final class StyleSheet {
   /// scopes share one `@scope` block, and stylesheets from different pages merge without
   /// conflicts. A view without scoped styles keeps the bare (sanitized) type as its scope
   /// boundary. Throws IllegalArgumentException if `viewType` is empty.
-  public String registerViewScope(String viewType, Consumer<ScopeStyle> configure) {
+  public String registerViewScope(String viewType, ScopeBlock configure) {
     var safeType = Fnv1a64.sanitizeIdentifier(viewType);
     var scope = new ScopeStyle();
-    configure.accept(scope);
+    configure.configure(scope);
     scope.collectKeyframes(keyframes);
     var scopedCss = scope.toCssBody();
     if (scopedCss.isBlank()) {

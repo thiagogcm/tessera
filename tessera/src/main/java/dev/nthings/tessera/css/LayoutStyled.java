@@ -8,7 +8,7 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
   /// Sets `display`, `flex-direction`, `flex-wrap`, `align-items` and `gap` from `layout`. A later
   /// call that sets one of those (e.g. [#gap(CssLength)]) replaces only that declaration.
   default SELF layout(FlexLayout layout) {
-    layout.apply(style());
+    layout.writeTo(style());
     return self();
   }
 

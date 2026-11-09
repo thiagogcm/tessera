@@ -19,6 +19,12 @@
             <artifactId>jspecify</artifactId>
         </dependency>
 
+        <!-- @CheckReturnValue on immutable value types, visible to consumers' tooling -->
+        <dependency>
+            <groupId>com.google.errorprone</groupId>
+            <artifactId>error_prone_annotations</artifactId>
+        </dependency>
+
         <!-- Zero-allocation context-sensitive HTML/CSS/URI streaming encoder -->
         <dependency>
             <groupId>org.owasp.encoder</groupId>

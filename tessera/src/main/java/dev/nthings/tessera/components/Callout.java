@@ -10,8 +10,8 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -27,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 /// Admonition rendered as an `<aside role="note">` with a tone-colored icon, a title, and a tinted
 /// background. Create one with a tone factory such as [#note(String)]. The title defaults to the
 /// English name of the tone; [#title(String)] replaces it.
-public final class Callout implements RenderView, FluentBuilder<Callout>, ParentElement<Callout> {
+public final class Callout implements View, FluentBuilder<Callout>, ParentElement<Callout> {
 
   /// Admonition kind, each with its own icon, color, and default title.
   public enum Tone {

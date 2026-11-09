@@ -11,7 +11,7 @@ final class PageCompiler {
   private PageCompiler() {}
 
   static CompiledPage compile(PageDocument document, Tokens tokens, OutputMode outputMode) {
-    var prepared = prepare(document, tokens, List.of());
+    var prepared = prepare(document, List.of());
     var css = prepared.stylesheet(tokens);
     return new CompiledPage(
         paint(prepared, css, outputMode),
@@ -19,15 +19,14 @@ final class PageCompiler {
         HtmlWriter.assets(css, outputMode, prepared.behaviors()));
   }
 
-  /// Lays out and validates `document` under `tokens` without emitting HTML. `siteHead` goes in
+  /// Lays out and validates `document` without emitting HTML. `siteHead` goes in
   /// `<head>` before the page's own head contributions, so a site can share it across pages.
   /// Throws [CompilationException] if the document has authoring errors.
-  static PreparedPage prepare(
-      PageDocument document, Tokens tokens, List<? extends IntoElement> siteHead) {
+  static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheetCollector();
     var state = new CompilationState(document.title());
 
-    var layout = LayoutPass.layout(document, tokens, siteHead, styles, state);
+    var layout = LayoutPass.layout(document, siteHead, styles, state);
     var bodyNodes = layout.bodyNodes();
     var headNodes = layout.headNodes();
 
@@ -50,7 +49,7 @@ final class PageCompiler {
         state.outgoingLinks,
         state.transitionLocations,
         headNodes,
-        layout.contributions().headings(),
+        layout.headings(),
         layout.contributions().behaviors());
   }
 

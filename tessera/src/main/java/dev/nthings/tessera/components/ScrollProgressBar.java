@@ -1,9 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
@@ -17,7 +18,7 @@ import dev.nthings.tessera.css.Tokens;
 /// [TimelineAxis].
 public record ScrollProgressBar(
     String id, DesignToken.Color barColor, CssLength thickness, TimelineAxis axis)
-    implements RenderOnce {
+    implements Component {
 
   private static final String PROGRESS_KEYFRAME =
       "@keyframes tessera-scroll-progress{from{transform:scaleX(0)}to{transform:scaleX(1)}}";
@@ -32,7 +33,7 @@ public record ScrollProgressBar(
   public Element render(RenderContext context) {
     var el =
         Elements.div()
-            .id(id)
+            .id(ElementRef.scoped(id))
             .ariaHidden(true)
             .fixed()
             .insetBlockStart(CssLength.px(0))

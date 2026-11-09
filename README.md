@@ -17,8 +17,8 @@ Start with the [consumer guide](docs/consumer-guide.md), including the runnable 
 ```mermaid
 flowchart LR
     subgraph Authoring["Java 25 authoring"]
-        Components["RenderOnce and RenderView<br/>Reusable components"]
-        References["ElementRef and IdReference<br/>Symbolic identities"]
+        Components["Component and View<br/>Reusable components"]
+        References["ElementRef and Command<br/>Symbolic identities and invokers"]
         Styles["ScopeStyle and Tokens<br/>Scoped CSS and design tokens"]
     end
 
@@ -61,7 +61,7 @@ The contract is the latest stable Chromium and Firefox, tested on every build. F
 
 ### 2. JDK 25 Idiomatic Language Features
 
-- **Explicit `RenderContext`**: Render and document callbacks receive their turn's tokens, identity scope and contribution capabilities directly.
+- **Explicit `RenderContext`**: Render and document callbacks receive their turn's contribution capabilities (head content, behaviors, headings, per-page state, diagnostics) directly.
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
 - **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `InteractiveElement<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
@@ -71,10 +71,10 @@ The contract is the latest stable Chromium and Firefox, tested on every build. F
 
 ### 3. Linker-Style Element Identity
 
-In Tessera, DOM elements are identified by `ElementRef` tokens. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) are strongly-typed `IdReference` handles. During compilation, the **Linker** statically resolves and verifies every reference:
+In Tessera, DOM ids come only from `ElementRef` tokens: `ElementRef.scoped(name)` for ids namespaced by the enclosing view, `ElementRef.page(name)` for stable public fragments, and anonymous refs for compiler-assigned ids. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) take the same refs. During compilation, the **Linker** statically resolves and verifies every reference:
 
 - Unbound references trigger compile-time errors.
-- Duplicate bindings and duplicate DOM IDs are reported before HTML is emitted.
+- Duplicate bindings, duplicate DOM IDs, and conflicting names on one element are reported before HTML is emitted.
 - Invoker command targets are checked for existence in the compiled document.
 - Accessibility contracts (roles, landmarks, heading order, label targets, focus) are checked on the linked tree.
 
@@ -156,10 +156,10 @@ just format
 
 ## Code Examples
 
-### 1. Defining a Scoped Component (`RenderView`)
+### 1. Defining a Scoped Component (`View`)
 
 ```java
-public record MetricCard(String title, String value, Badge badge) implements RenderView {
+public record MetricCard(String title, String value, Badge badge) implements View {
   @Override
   public void configureScope(ScopeStyle scope) {
     scope
@@ -169,11 +169,10 @@ public record MetricCard(String title, String value, Badge badge) implements Ren
   }
 
   @Override
-  public Element render(RenderContext context) {
+  public IntoElement render(RenderContext context) {
     return div()
         .child(div().children(span().text(title), badge))
-        .child(div().attr("class", "metric-value").text(value))
-        .intoElement();
+        .child(div().attr("class", "metric-value").text(value));
   }
 }
 ```

@@ -67,7 +67,7 @@ final class OverviewPage {
                     "1. requestLayout",
                     p().textPretty()
                         .text(
-                            "Expands RenderOnce and RenderView trees under a ScopedValue render"
+                            "Expands Component and View trees under a ScopedValue render"
                                 + " context, binds ElementRefs to scoped DOM ids, and interns"
                                 + " every style into content-hashed utility classes.")),
                 TabPanel.of(

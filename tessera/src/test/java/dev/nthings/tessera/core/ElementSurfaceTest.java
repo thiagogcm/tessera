@@ -33,7 +33,7 @@ class ElementSurfaceTest {
         .withMessageContaining("interactive-label");
   }
 
-  record Rows() implements RenderView {
+  record Rows() implements View {
     @Override
     public Element render(RenderContext context) {
       return fragment().children(li().text("One"), li().text("Two"));

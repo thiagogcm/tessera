@@ -17,11 +17,10 @@ import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.Toc;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
@@ -100,10 +99,10 @@ public final class GuideSite {
   }
 
   /// Scoped component with a stable id, styled through shared tokens.
-  public record MetricCard(String id, String title, String value) implements RenderView {
+  public record MetricCard(String id, String title, String value) implements View {
     @Override
-    public ElementId entityId() {
-      return ElementId.of(id);
+    public String viewId() {
+      return id;
     }
 
     @Override
@@ -117,7 +116,7 @@ public final class GuideSite {
     }
 
     @Override
-    public Element render(RenderContext context) {
+    public IntoElement render(RenderContext context) {
       return div().children(h2().text(title), p().text(value));
     }
   }

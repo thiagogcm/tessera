@@ -53,8 +53,7 @@ public final class ShowcaseSite {
   static String explain(SiteDefinition definition, String path) {
     var route =
         definition.route(path).orElseThrow(() -> new IllegalArgumentException("No route " + path));
-    return SourceTracking.enabled(() -> Compiler.explain(route.document(), definition.tokens()))
-        .toText();
+    return SourceTracking.enabled(() -> Compiler.explain(route.document())).toText();
   }
 
   public static void main(String[] args) throws InterruptedException {

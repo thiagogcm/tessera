@@ -138,7 +138,7 @@ Web Image is the selected experimental target, not proof that the existing depen
 | --- | --- | --- |
 | `RenderContext` uses `ScopedValue` | Use explicit turn context across shared expansion | Real compiled render/style callbacks enter separate turns without stale state |
 | `SourceTracking` initializes stack/class machinery even when tracking is off | Isolate JVM stack capture; portable diagnostics use explicit component/key paths and optional generated source metadata | Browser root initializes without reaching JVM stack/protection-domain services |
-| `RenderView` default names use `ClassValue`; typed document keys use class metadata | Use stable explicit/generated definition keys where needed; verify remaining metadata operations | Deterministic keys and successful AOT/runtime tests, not inferred Java 25 support |
+| `View` default names use `ClassValue`; typed document keys use class metadata | Use stable explicit/generated definition keys where needed; verify remaining metadata operations | Deterministic keys and successful AOT/runtime tests, not inferred Java 25 support |
 | Stream gatherers, regex, CSS and encoding helpers | Audit exact reachable methods and libraries | Executed representative component/CSS fixtures in the browser |
 | Classpath-loaded behavior resources and component static fields | Build explicit resource manifests and separate JVM loaders | No runtime classpath fetch assumption or hidden initializer failure |
 | Site writer, preview server and virtual-thread orchestration | Keep outside browser entry-point reachability | Build analysis and final image inspection show no reachable JVM publication/server code |

@@ -3,7 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -12,7 +12,7 @@ import java.util.List;
 
 /// Native `<button>`, `type="button"` unless [Button#submit()] is called. Use an anchor for
 /// navigation.
-public final class Button extends ButtonBase<Button> implements RenderView {
+public final class Button extends ButtonBase<Button> implements View {
 
   /// Semantic color: `NEUTRAL`, `ACCENT` (the default), `SUCCESS`, `WARNING`, or `DANGER`. It does
   /// not change the surface or behavior.

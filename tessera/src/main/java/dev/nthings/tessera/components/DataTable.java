@@ -1,13 +1,12 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
@@ -29,7 +28,7 @@ import java.util.function.Function;
 /// - Ids it binds are prefixed `datatable-<id>`, for example `datatable-<id>--caption`.
 public record DataTable<T>(
     String id, String captionText, List<Column<T>> columns, List<T> rows, CssLength stackBreakpoint)
-    implements RenderView {
+    implements View {
 
   /// Horizontal alignment of a column's cells. `NUMERIC` aligns to the end with tabular figures.
   public enum CellAlign {
@@ -96,8 +95,8 @@ public record DataTable<T>(
   }
 
   @Override
-  public ElementId entityId() {
-    return ElementId.of("datatable-" + id);
+  public String viewId() {
+    return "datatable-" + id;
   }
 
   @Override
@@ -198,7 +197,7 @@ public record DataTable<T>(
 
   @Override
   public Element render(RenderContext context) {
-    var caption = ElementRef.named("caption");
+    var caption = ElementRef.scoped("caption");
 
     var headerRow = Elements.tr();
     for (var col : columns) {

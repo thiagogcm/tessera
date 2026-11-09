@@ -8,9 +8,9 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 
 import dev.nthings.tessera.components.Button;
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +25,7 @@ class SourceProvenanceTest {
     return new Throwable().getStackTrace()[1].getLineNumber();
   }
 
-  record Panel(String text) implements RenderOnce {
+  record Panel(String text) implements Component {
     @Override
     public Element render(RenderContext context) {
       return div().child(p().text(text));

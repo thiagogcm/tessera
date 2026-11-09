@@ -2,6 +2,7 @@ package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedRaw;
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
+import dev.nthings.tessera.core.ComponentElement;
 import dev.nthings.tessera.core.DeferredElement;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.EmptyElement;
@@ -11,13 +12,14 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.LateElement;
 import dev.nthings.tessera.core.RawHtmlElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnceElement;
-import dev.nthings.tessera.core.RenderViewElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
+import dev.nthings.tessera.core.View;
+import dev.nthings.tessera.core.ViewElement;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.StyleRefinement;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,7 +47,7 @@ final class ViewExpansion {
     this.placement = placement;
   }
 
-  ViewNode expand(Element element, RenderContext context) {
+  ViewNode expand(Element element, PageContext context) {
     return switch (element) {
       case EmptyElement _ -> ViewNode.Empty.INSTANCE;
       case TextElement(var content) -> new ResolvedText(content);
@@ -55,22 +57,32 @@ final class ViewExpansion {
       case LateElement(var content) -> placement.late(() -> expand(context, "Late", content));
       case FragmentElement fragment ->
           new ViewNode.Fragment(children(fragment.childrenList(), context));
-      case RenderOnceElement(var component, var source) -> {
-        var child =
-            context.withComponent(
-                component.getClass().isSynthetic()
-                    ? "RenderOnce"
-                    : component.getClass().getSimpleName(),
-                source);
+      case ComponentElement(var component, var source) -> {
+        var type = component.getClass();
+        var name =
+            type.isSynthetic() || type.isAnonymousClass() ? "Component" : type.getSimpleName();
+        var child = context.withComponent(name, source);
         yield expand(child, "Render", component::render);
       }
-      case RenderViewElement(var view, var source) -> {
-        var id = view.entityId();
+      case ViewElement(var view, var source) -> {
+        var id = view.viewId();
         var scoped =
             context.withViewScope(
-                id != null ? id : state.nextId(view.viewType(), context.viewScope()));
+                id != null
+                    ? Fnv1a64.sanitizeLocalId(id)
+                    : state.nextId(view.viewType(), context.viewScope()));
         var scopeId = scoped.viewScope().domId();
         var child = scoped.withComponent(view.viewType() + "[" + scopeId + "]", source);
+        if (hasUnstableViewType(view)) {
+          state.report(
+              child.location(),
+              "unstable-view-type",
+              "View "
+                  + view.getClass().getName()
+                  + " is an anonymous class or lambda, so its default viewType() changes between"
+                  + " builds",
+              "Implement the view as a named class or record, or override viewType().");
+        }
         var style = new ScopeStyle();
         callback(
             child,
@@ -88,12 +100,26 @@ final class ViewExpansion {
 
   /// Expands an authoring callback's result; a failure names its component.
   ViewNode expand(
-      RenderContext context, String phase, Function<RenderContext, ? extends IntoElement> content) {
+      PageContext context, String phase, Function<RenderContext, ? extends IntoElement> content) {
     return expand(callback(context, phase, () -> content.apply(context).intoElement()), context);
   }
 
+  /// Whether `view` keeps the class-name default of [View#viewType()] on a class without a stable
+  /// name: an anonymous class, or a lambda or other hidden class.
+  private static boolean hasUnstableViewType(View view) {
+    var type = view.getClass();
+    if (!type.isAnonymousClass() && !type.isHidden() && !type.isSynthetic()) {
+      return false;
+    }
+    try {
+      return type.getMethod("viewType").getDeclaringClass() == View.class;
+    } catch (NoSuchMethodException impossible) {
+      return false;
+    }
+  }
+
   /// Adds the view's scope attributes to its root element, or wraps a root that is not one.
-  private ViewNode scoped(ViewNode node, String type, String scopeId, RenderContext context) {
+  private ViewNode scoped(ViewNode node, String type, String scopeId, PageContext context) {
     var scope = new LinkedHashMap<String, String>();
     if (node instanceof ViewNode.Tag tag) {
       scope.putAll(tag.attributes());
@@ -114,7 +140,7 @@ final class ViewExpansion {
 
   /// Runs an authoring callback; a failure keeps its type and gains the component path as a
   /// suppressed diagnostic.
-  private <T> T callback(RenderContext context, String phase, Supplier<T> work) {
+  private <T> T callback(PageContext context, String phase, Supplier<T> work) {
     try {
       return work.get();
     } catch (RuntimeException failure) {
@@ -125,15 +151,13 @@ final class ViewExpansion {
                       "callback-failure",
                       phase + " callback failed: " + failure.getMessage(),
                       "Correct the callback before compiling again.",
-                      state.location(
-                          new ViewLocation(
-                              context.componentPath(), "", null, context.origin()))))));
+                      state.location(context.location())))));
       throw failure;
     }
   }
 
   /// Lays out `children` in order, dropping the ones that emit nothing.
-  private List<ViewNode> children(List<Element> children, RenderContext context) {
+  private List<ViewNode> children(List<Element> children, PageContext context) {
     var result = new ArrayList<ViewNode>(children.size());
     for (var child : children) {
       var node = expand(child, context);
@@ -145,15 +169,15 @@ final class ViewExpansion {
   }
 
   /// Expands `element`. `forcedId` (already registered) is used for companions, not bound.
-  private ViewNode.Tag tag(TagElement element, @Nullable String forcedId, RenderContext context) {
+  private ViewNode.Tag tag(TagElement element, @Nullable String forcedId, PageContext context) {
     var attrs = new LinkedHashMap<>(element.attributes());
     var source = element.source() != null ? element.source() : context.origin();
     var location =
         new ViewLocation(context.componentPath(), element.tag().tagName(), attrs.get("id"), source);
     var domId = forcedId;
-    var ref = element.boundRef();
-    if (domId == null && ref != null) {
-      domId = state.bind(ref, context.viewScope(), location);
+    var refs = element.boundRefs();
+    if (domId == null && !refs.isEmpty()) {
+      domId = state.bind(refs, context.viewScope(), location);
     }
     if (domId != null) {
       attrs.put("id", domId);

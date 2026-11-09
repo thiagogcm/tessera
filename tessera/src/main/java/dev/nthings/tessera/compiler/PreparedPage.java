@@ -1,7 +1,6 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.ClientBehavior;
-import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheetCollector;
 import dev.nthings.tessera.css.Tokens;
@@ -20,7 +19,7 @@ final class PreparedPage {
   private final Set<String> registeredDomIds;
   private final Map<String, Location> outgoingLinks;
   private final Map<TransitionKey, Location> transitionLocations;
-  private final List<DocumentHeading> headings;
+  private final List<PageHeading> headings;
   private final List<ClientBehavior> behaviors;
 
   PreparedPage(
@@ -31,7 +30,7 @@ final class PreparedPage {
       Map<String, Location> outgoingLinks,
       Map<TransitionKey, Location> transitionLocations,
       List<ResolvedNode> headNodes,
-      List<DocumentHeading> headings,
+      List<PageHeading> headings,
       List<ClientBehavior> behaviors) {
     this.document = document;
     // Taken over as is: the compilation that produced it is finished and discarded.
@@ -73,7 +72,7 @@ final class PreparedPage {
   }
 
   /// Navigation headings registered while the page was built, in registration order.
-  List<DocumentHeading> headings() {
+  List<PageHeading> headings() {
     return headings;
   }
 

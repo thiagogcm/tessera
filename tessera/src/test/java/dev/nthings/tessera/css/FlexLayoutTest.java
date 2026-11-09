@@ -9,6 +9,7 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.render;
 
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.css.FlexLayout.Align;
 import dev.nthings.tessera.css.FlexLayout.Wrap;
 import dev.nthings.tessera.support.RenderedPage;
@@ -99,8 +100,12 @@ class FlexLayoutTest {
         render(
             main()
                 .children(
-                    section().id("tuned").layout(links).gap(CssLength.rem(2)).child(p().text("A")),
-                    nav().id("shared").layout(links).child(p().text("B"))));
+                    section()
+                        .id(ElementRef.scoped("tuned"))
+                        .layout(links)
+                        .gap(CssLength.rem(2))
+                        .child(p().text("A")),
+                    nav().id(ElementRef.scoped("shared")).layout(links).child(p().text("B"))));
 
     assertThat(page.ruleOf(page.elementById("tuned"), "u-"))
         .contains("gap:2rem")

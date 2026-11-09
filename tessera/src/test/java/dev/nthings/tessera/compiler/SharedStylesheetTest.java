@@ -6,7 +6,6 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 import static dev.nthings.tessera.support.SiteFixtures.stylesheetPath;
 
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Tokens;
@@ -40,20 +39,12 @@ class SharedStylesheetTest {
     @BeforeAll
     static void compileSiteWithBrandToken() {
       var brand = new DesignToken.Color("brand-hue", CssColor.oklch(60, 0.2, 300));
-      RenderOnce tokenProbe =
-          context -> p().text(context.tokens().all().contains(brand) ? "brand" : "default");
       site =
           Compiler.compile(
               SiteDefinition.builder()
                   .tokens(new Tokens().register(brand))
-                  .route(new SiteRoute("/", new PageDocument("Home", main().child(tokenProbe))))
+                  .route(new SiteRoute("/", new PageDocument("Home", main().child(p().text("x")))))
                   .build());
-    }
-
-    @Test
-    @DisplayName("are visible to rendering")
-    void areVisibleToRendering() {
-      assertThat(RenderedPage.of(site, "/").element("main p")).hasText("brand");
     }
 
     @Test

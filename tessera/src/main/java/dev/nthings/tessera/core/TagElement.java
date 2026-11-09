@@ -7,6 +7,7 @@ import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,10 @@ import org.jspecify.annotations.Nullable;
 /// HTML element node backed by a [TagName], [StyleRefinement], and [Interactivity]. Authors usually
 /// create one through the [Elements] factories.
 ///
-/// Features that need the element's own id ([#interestTooltip], [#anchorName()]) bind an anonymous
-/// [ElementRef] automatically. Call [#id(ElementRef)] or [#id(String)] before them, because binding
-/// a different ref afterwards throws IllegalStateException.
+/// Give the element an id with [#id(ElementRef)]. Features that need the element's own id
+/// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
+/// named ref bound before or after them gives the element its id, and every ref names the same
+/// element. Two named refs asking for different ids report `conflicting-element-id`.
 public final class TagElement
     implements Element,
         InteractiveElement<TagElement>,
@@ -31,7 +33,7 @@ public final class TagElement
   private final Map<String, String> attributes = new LinkedHashMap<>();
   private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   private final List<Element> children = new ArrayList<>();
-  private @Nullable ElementRef ref;
+  private final List<ElementRef> refs = new ArrayList<>(1);
   private @Nullable TagElement interestTooltip;
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
@@ -56,7 +58,7 @@ public final class TagElement
     copy.attributes.putAll(attributes);
     copy.idReferences.putAll(idReferences);
     copy.children.addAll(children);
-    copy.ref = ref;
+    copy.refs.addAll(refs);
     copy.interestTooltip = interestTooltip;
     copy.anchorSelf = anchorSelf;
     copy.anchorTarget = anchorTarget;
@@ -115,56 +117,40 @@ public final class TagElement
     children.add(child);
   }
 
-  /// Binds `elementRef` to this element; its DOM id is resolved on the page. Throws
-  /// IllegalStateException if this element already has a different ref. That includes an anonymous
-  /// ref bound by [#ref()], [#anchorName()], [#interestTooltip(UnaryOperator)], or by this element
-  /// being the target of `command` or `dispatchAction`. Call this first.
+  /// Binds `elementRef` to this element, so its DOM id is resolved on the page and other elements
+  /// can reference it. An element may carry several refs: they all resolve to one DOM id, taken
+  /// from the named ref ([ElementRef#scoped] or [ElementRef#page]) if there is one, otherwise
+  /// generated as `<tag>-<n>`. Two named refs asking for different ids report
+  /// `conflicting-element-id`. Binding the same ref twice on one element has no further effect.
   public TagElement id(ElementRef elementRef) {
-    if (ref != null && ref != elementRef) {
-      throw new IllegalStateException("Element already bound to " + ref);
+    for (var bound : refs) {
+      if (bound == elementRef) {
+        return this;
+      }
     }
-    this.ref = elementRef;
+    refs.add(elementRef);
     return this;
   }
 
-  /// Binds a new [ElementRef#named(String)] for `name`. Inside a view the DOM id gets the view's
-  /// prefix, so `id("foo")` in a view emits `<scope>--foo`, not `foo`. Link to it with an
-  /// [ElementRef] rather than a hand-written `#foo`. Calling this twice on one element throws
-  /// IllegalStateException, because each call makes a different ref.
-  public TagElement id(String name) {
-    return id(ElementRef.named(name));
-  }
-
-  /// Returns this element's ref, binding an anonymous one if none is set. Its DOM id is
-  /// `<tag>-<n>`, numbered per view scope.
+  /// Returns a ref to this element: the first one bound, or a new anonymous ref bound now. Pass it
+  /// to `command`, `labelFor`, `aria*` or `href` on other elements.
   public ElementRef ref() {
-    if (ref == null) {
-      ref = ElementRef.anonymous();
+    if (refs.isEmpty()) {
+      refs.add(ElementRef.anonymous());
     }
-    return ref;
+    return refs.getFirst();
   }
 
-  /// Compiler-facing: the ref bound to this element, or `null` if none is bound.
-  public @Nullable ElementRef boundRef() {
-    return ref;
-  }
-
-  /// Binds `target`'s ref (anonymously if unset), then behaves as
-  /// [InteractiveElement#command(ElementRef, BuiltinCommand)].
-  public TagElement command(TagElement target, BuiltinCommand command) {
-    return command(target.ref(), command);
-  }
-
-  /// Binds `target`'s ref (anonymously if unset), then behaves as
-  /// [InteractiveElement#dispatchAction(ElementRef, Action)].
-  public TagElement dispatchAction(TagElement target, Action action) {
-    return dispatchAction(target.ref(), action);
+  /// Compiler-facing: the refs bound to this element, in binding order.
+  public List<ElementRef> boundRefs() {
+    return Collections.unmodifiableList(refs);
   }
 
   /// Adds a hint tooltip that this element's `interestfor` points at, shown on hover or focus. The
   /// tooltip is emitted right after this element and positioned above it, with flip fallbacks.
   /// `tooltipBuilder` receives the default tooltip, a `<span>` with `popover="hint"` and
-  /// `role="tooltip"`, and returns the one to emit. Binds this element's ref.
+  /// `role="tooltip"`, and returns the one to emit. Its DOM id is this element's id followed by
+  /// `--tooltip`. Binds an anonymous ref when this element has none.
   public TagElement interestTooltip(UnaryOperator<TagElement> tooltipBuilder) {
     ref();
     var base =
@@ -185,7 +171,7 @@ public final class TagElement
   }
 
   /// Declares an anchor named after this element's DOM id, so [#anchoredTo] elements can position
-  /// against it. Binds this element's ref.
+  /// against it. Binds an anonymous ref when this element has none.
   public TagElement anchorName() {
     ref();
     this.anchorSelf = true;

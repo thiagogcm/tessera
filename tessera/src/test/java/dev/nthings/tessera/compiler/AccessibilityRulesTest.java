@@ -19,14 +19,13 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.View;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -57,10 +56,10 @@ class AccessibilityRulesTest {
             "aspect-ratio"));
   }
 
-  record Panel(String id, Element content) implements RenderView {
+  record Panel(String id, Element content) implements View {
     @Override
-    public ElementId entityId() {
-      return ElementId.of(id);
+    public String viewId() {
+      return id;
     }
 
     @Override
@@ -73,7 +72,7 @@ class AccessibilityRulesTest {
   @DisplayName(
       "reports independent errors with their lexical component paths, including late and deferred content")
   void reportsIndependentErrorsWithLexicalComponentPaths() {
-    var missing = ElementRef.named("confirmation");
+    var missing = ElementRef.scoped("confirmation");
     var document =
         new PageDocument(
             "Settings",
@@ -89,11 +88,13 @@ class AccessibilityRulesTest {
                                     late(
                                         _ ->
                                             button()
-                                                .id("save")
+                                                .id(ElementRef.scoped("save"))
                                                 .command(missing, BuiltinCommand.SHOW_MODAL)
                                                 .text("Save")),
-                                    a("#details%ZZ").id("details").text("Details"),
-                                    deferred(button().id("cancel"), 10))))));
+                                    a("#details%ZZ")
+                                        .id(ElementRef.scoped("details"))
+                                        .text("Details"),
+                                    deferred(button().id(ElementRef.scoped("cancel")), 10))))));
 
     var failure =
         catchThrowableOfType(CompilationException.class, () -> Compiler.compile(document));
@@ -134,20 +135,20 @@ class AccessibilityRulesTest {
         .contains("Settings", "settings--actions--save", "Fix:", ".id(ref)");
   }
 
-  record DocumentExtras() implements RenderView {
+  record DocumentExtras() implements View {
     private static final DocumentKey<Object> ACTIONS =
         DocumentKey.of("extra-actions", Object.class, Object::new);
 
     @Override
-    public ElementId entityId() {
-      return ElementId.of("extras");
+    public String viewId() {
+      return "extras";
     }
 
     @Override
     public Element render(RenderContext context) {
       context.contributeHead(
           el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
-      context.atDocumentEnd(ACTIONS, _ -> button().id("subscribe"));
+      context.atDocumentEnd(ACTIONS, _ -> button().id(ElementRef.scoped("subscribe")));
       return div();
     }
   }
@@ -178,7 +179,7 @@ class AccessibilityRulesTest {
   @DisplayName(
       "an unresolved label reports its binding error without an additional missing-label error")
   void unresolvedLabelDoesNotProduceSecondaryLabelError() {
-    var label = ElementRef.named("save-label");
+    var label = ElementRef.scoped("save-label");
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -194,7 +195,7 @@ class AccessibilityRulesTest {
   @DisplayName(
       "rejects native commands aimed at an ordinary element and accepts compatible targets")
   void checksNativeCommandTargets(BuiltinCommand command) {
-    var target = div().id("target");
+    var target = div().id(ElementRef.scoped("target"));
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -202,7 +203,9 @@ class AccessibilityRulesTest {
                 Compiler.compile(
                     new PageDocument(
                         "Commands",
-                        main().children(button().command(target, command).text("Run"), target))));
+                        main()
+                            .children(
+                                button().command(target.ref(), command).text("Run"), target))));
 
     assertThat(failure.diagnostics())
         .singleElement()
@@ -214,9 +217,10 @@ class AccessibilityRulesTest {
 
     var compatible =
         switch (command) {
-          case SHOW_MODAL, CLOSE, REQUEST_CLOSE -> dialog().id("target").ariaLabel("Target");
+          case SHOW_MODAL, CLOSE, REQUEST_CLOSE ->
+              dialog().id(ElementRef.scoped("target")).ariaLabel("Target");
           case SHOW_POPOVER, HIDE_POPOVER, TOGGLE_POPOVER ->
-              div().id("target").popover(PopoverMode.AUTO);
+              div().id(ElementRef.scoped("target")).popover(PopoverMode.AUTO);
         };
     assertThatCode(
             () ->
@@ -225,7 +229,7 @@ class AccessibilityRulesTest {
                         "Commands",
                         main()
                             .children(
-                                button().command(compatible, command).text("Run"),
+                                button().command(compatible.ref(), command).text("Run"),
                                 deferred(compatible, 10)))))
         .doesNotThrowAnyException();
   }
@@ -261,7 +265,9 @@ class AccessibilityRulesTest {
     var document =
         new PageDocument(
             "Links",
-            main().attr("id", "café+intro").child(a("#caf%C3%A9%2Bintro").text("Introduction")));
+            main()
+                .id(ElementRef.page("café+intro"))
+                .child(a("#caf%C3%A9%2Bintro").text("Introduction")));
 
     assertThatCode(() -> Compiler.compile(document)).doesNotThrowAnyException();
   }

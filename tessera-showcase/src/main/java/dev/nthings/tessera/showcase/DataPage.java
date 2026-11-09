@@ -86,10 +86,10 @@ final class DataPage {
         .features("counter-increment", "tabindex=\"0\" region", "white-space: pre")
         .example(
             CodeBlock.ofLines(
-                    "public Element render(RenderContext context) {",
+                    "public IntoElement render(RenderContext context) {",
                     "-  return div().attr(\"id\", \"dialog\");",
-                    "+  var dialog = ElementRef.named(\"dialog\");",
-                    "+  return dialog().id(dialog).dialogClosedByAny();",
+                    "+  var dialog = ElementRef.scoped(\"dialog\");",
+                    "+  return dialog().id(dialog).closedBy(ClosedBy.ANY);",
                     "}")
                 .filename("Modal.java")
                 .language("java")

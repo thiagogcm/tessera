@@ -1,21 +1,20 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.HighlightTone;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /// Numbered footnotes. Each [#ref(String, String)] shows its note as a hover or focus preview
 /// and links to an endnote, and each endnote links back to its reference. References are
@@ -24,12 +23,11 @@ import java.util.Map;
 /// "Footnote 1" are fixed English text.
 public final class Footnotes {
 
-  /// Numbered footnote registered on the page; ids are fixed at the reference site.
-  public record Entry(
-      int number, String slug, String refDomId, String noteDomId, Element content) {}
+  /// Numbered footnote registered on the page: the reference marker and the endnote it links to.
+  private record Entry(int number, ElementRef reference, ElementRef note, Element content) {}
 
   private static final class Registry {
-    private final Map<String, Entry> entries = new LinkedHashMap<>();
+    private final List<Entry> entries = new ArrayList<>();
     private boolean sectionPlaced;
   }
 
@@ -38,21 +36,11 @@ public final class Footnotes {
 
   private Footnotes() {}
 
-  private static Entry register(RenderContext ctx, String rawId, Element content) {
+  private static Entry register(RenderContext ctx, ElementRef reference, Element content) {
     var registry = ctx.document(REGISTRY);
-    var local = ElementId.of(rawId);
-    var slug = local.slug();
-    var key = ctx.viewScope().extend(local).domId();
-    var entry =
-        new Entry(
-            registry.entries.size() + 1,
-            slug,
-            ctx.viewScope().extend(ElementId.of("fnref-" + slug)).domId(),
-            "fn-" + key,
-            content);
-    if (registry.entries.putIfAbsent(key, entry) != null) {
-      throw new IllegalArgumentException("Duplicate footnote id '" + key + "' on the same page");
-    }
+    var number = registry.entries.size() + 1;
+    var entry = new Entry(number, reference, ElementRef.scoped("fn-" + number), content);
+    registry.entries.add(entry);
     // Without an explicit section on the page, endnotes are appended after all content.
     ctx.atDocumentEnd(
         REGISTRY,
@@ -61,8 +49,7 @@ public final class Footnotes {
   }
 
   /// Creates a reference whose note is the plain text `noteText`. `id` names the footnote and
-  /// must be unique within its view scope; a duplicate throws IllegalArgumentException during
-  /// render.
+  /// must be unique within its view scope; a duplicate reports `duplicate-id`.
   public static FootnoteRef ref(String id, String noteText) {
     return new FootnoteRef(id, Elements.text(noteText));
   }
@@ -87,15 +74,15 @@ public final class Footnotes {
   }
 
   /// Inline footnote marker. Create it with [Footnotes#ref(String, String)].
-  public record FootnoteRef(String id, Element content) implements RenderOnce {
+  public record FootnoteRef(String id, Element content) implements Component {
 
     @Override
     public Element render(RenderContext context) {
-      var entry = register(context, id, content);
+      var entry = register(context, ElementRef.scoped("fnref-" + id), content);
       var label = "[" + entry.number() + "]";
       var triggerLink =
-          Elements.a("#" + entry.noteDomId())
-              .id("fnlink-" + entry.slug())
+          Elements.a(entry.note())
+              .id(ElementRef.scoped("fnlink-" + id))
               .role(Role.DOC_NOTEREF)
               .ariaLabel("Footnote " + entry.number())
               .textColor(Tokens.ACCENT_PRIMARY)
@@ -110,13 +97,13 @@ public final class Footnotes {
                           .child(content))
               .text(label);
 
-      return Elements.sup().id("fnref-" + entry.slug()).child(triggerLink);
+      return Elements.sup().id(entry.reference()).child(triggerLink);
     }
   }
 
   /// Endnotes list at this position. The list is filled after layout, so it covers every
   /// reference on the page.
-  public record FootnotesSection(String heading) implements RenderOnce {
+  public record FootnotesSection(String heading) implements Component {
 
     @Override
     public Element render(RenderContext context) {
@@ -126,11 +113,11 @@ public final class Footnotes {
           _ ->
               registry.entries.isEmpty()
                   ? Elements.empty()
-                  : new EndnotesView(heading, List.copyOf(registry.entries.values())));
+                  : new EndnotesView(heading, List.copyOf(registry.entries)));
     }
   }
 
-  private record EndnotesView(String heading, List<Entry> entries) implements RenderView {
+  private record EndnotesView(String heading, List<Entry> entries) implements View {
 
     @Override
     public String viewType() {
@@ -138,8 +125,8 @@ public final class Footnotes {
     }
 
     @Override
-    public ElementId entityId() {
-      return ElementId.of("footnotes");
+    public String viewId() {
+      return "footnotes";
     }
 
     @Override
@@ -167,7 +154,7 @@ public final class Footnotes {
       var ol = Elements.ol().tabularNums();
       for (var entry : entries) {
         var backlink =
-            Elements.a("#" + entry.refDomId())
+            Elements.a(entry.reference())
                 .role(Role.DOC_BACKLINK)
                 .ariaLabel("Back to reference " + entry.number())
                 .textColor(Tokens.ACCENT_PRIMARY)
@@ -176,7 +163,7 @@ public final class Footnotes {
 
         var li =
             Elements.li()
-                .attr("id", entry.noteDomId())
+                .id(entry.note())
                 .role(Role.DOC_FOOTNOTE)
                 .children(entry.content(), Elements.text(" "), backlink);
         ol.child(li);

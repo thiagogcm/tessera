@@ -1,7 +1,7 @@
 package dev.nthings.tessera.core;
 
-/// Any value that can be added as a child: an [Element], or a component such as [RenderOnce] or
-/// [RenderView].
+/// Anything placeable as a child: an [Element], a [Component], a [View], or a built-in component.
+/// Render callbacks return it too, so a component can return another component directly.
 @FunctionalInterface
 public interface IntoElement {
 

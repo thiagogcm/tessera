@@ -1,13 +1,12 @@
 package dev.nthings.tessera.core;
 
-import java.util.Locale;
+import java.util.Map;
 
-/// Native Invoker Command for the `command` attribute, set with [InteractiveElement#command].
+/// Native Invoker Command, set with [InteractiveElement#command(ElementRef, Command)].
 /// `SHOW_MODAL`, `CLOSE` and `REQUEST_CLOSE` need a `<dialog>` target, and the popover commands
 /// need a target with a `popover` attribute; otherwise the compiler reports
-/// `incompatible-command-target`. An unbound target reports `unbound-reference`, and a literal
-/// `commandfor` (set with `attr`) that names no element reports `missing-command-target`.
-public enum BuiltinCommand {
+/// `incompatible-command-target`. An unbound target reports `unbound-reference`.
+public enum BuiltinCommand implements Command, WireToken {
   SHOW_MODAL,
   CLOSE,
   REQUEST_CLOSE,
@@ -15,10 +14,15 @@ public enum BuiltinCommand {
   SHOW_POPOVER,
   HIDE_POPOVER;
 
-  private final String wireValue = name().toLowerCase(Locale.ROOT).replace('_', '-');
-
-  /// Returns the attribute value, such as `show-modal`.
+  /// The attribute value, such as `show-modal`.
+  @Override
   public String wireValue() {
-    return wireValue;
+    return WireToken.super.wireValue();
+  }
+
+  /// Always empty: built-in commands carry no payload.
+  @Override
+  public Map<String, String> payload() {
+    return Map.of();
   }
 }

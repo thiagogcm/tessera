@@ -1,5 +1,6 @@
 package dev.nthings.tessera.core;
 
+import java.util.Map;
 import java.util.function.Supplier;
 
 /// Typed state for one page, created on first use by [RenderContext#document(DocumentKey)]. Keys
@@ -35,12 +36,10 @@ public final class DocumentKey<T> {
     return name;
   }
 
-  T cast(Object value) {
-    return type.cast(value);
-  }
-
-  T create() {
-    return initial.get();
+  /// Compiler-facing: this key's state in `values`, created with the initial supplier on first
+  /// use.
+  public T getOrCreate(Map<DocumentKey<?>, Object> values) {
+    return type.cast(values.computeIfAbsent(this, _ -> initial.get()));
   }
 
   @Override

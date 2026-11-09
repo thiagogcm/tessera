@@ -8,12 +8,11 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
@@ -27,6 +26,7 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Translation;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -34,15 +34,15 @@ import org.jspecify.annotations.Nullable;
 /// Menu of links, command buttons, and custom items, opened from a trigger button. The panel opens
 /// below the trigger, flips to another side when it does not fit, and closes on Escape or on an
 /// outside click. Create one with [#create(String, String)].
-public final class Dropdown implements RenderView {
-  private ElementRef panel = ElementRef.named("panel");
+public final class Dropdown implements View {
+  private ElementRef panel = ElementRef.scoped("panel");
 
-  private final ElementId id;
+  private final String id;
   private final String triggerLabel;
   private final List<Element> items = new ArrayList<>();
 
   private Dropdown(String id, String triggerLabel) {
-    this.id = ElementId.of(id);
+    this.id = Fnv1a64.sanitizeLocalId(id);
     this.triggerLabel = triggerLabel;
   }
 
@@ -73,7 +73,7 @@ public final class Dropdown implements RenderView {
       String buttonId, ElementRef target, BuiltinCommand command, String label) {
     var btn =
         button()
-            .id(buttonId)
+            .id(ElementRef.scoped(buttonId))
             .attr("class", "dropdown-item")
             .command(target, command)
             .child(span().text(label));
@@ -93,7 +93,7 @@ public final class Dropdown implements RenderView {
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 
@@ -201,7 +201,7 @@ public final class Dropdown implements RenderView {
   public Element render(RenderContext context) {
     var trigger =
         button()
-            .id("trigger")
+            .id(ElementRef.scoped("trigger"))
             .attr("class", "dropdown-trigger")
             .command(panel, BuiltinCommand.TOGGLE_POPOVER)
             .children(

@@ -20,10 +20,10 @@ import dev.nthings.tessera.components.StickyHeader;
 import dev.nthings.tessera.components.Tabs;
 import dev.nthings.tessera.components.Tabs.NavItem;
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
@@ -31,7 +31,7 @@ import dev.nthings.tessera.css.WhiteSpace;
 
 /// Chrome shared by every route: header, search, quick actions, inspector, heading,
 /// pager and footer.
-record Shell(Page page) implements RenderOnce {
+record Shell(Page page) implements Component {
 
   static final CssLength MAX_WIDTH = CssLength.rem(76);
   static final CssLength PAD_X =

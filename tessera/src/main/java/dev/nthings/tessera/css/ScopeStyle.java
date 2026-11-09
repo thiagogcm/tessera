@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 /// The styles of one view scope: the `@scope` block around a
-/// [dev.nthings.tessera.core.RenderView]'s root, in `@layer components`. Authors receive it in
-/// [dev.nthings.tessera.core.RenderView#configureScope(ScopeStyle)] and fill it; they do not
+/// [dev.nthings.tessera.core.View]'s root, in `@layer components`. Authors receive it in
+/// [dev.nthings.tessera.core.View#configureScope(ScopeStyle)] and fill it; they do not
 /// construct it. Selectors stop at nested views, so the outer view's rules don't reach inside them.
 public final class ScopeStyle {
 

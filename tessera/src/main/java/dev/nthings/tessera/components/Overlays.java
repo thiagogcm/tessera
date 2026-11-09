@@ -9,14 +9,13 @@ import static dev.nthings.tessera.core.Elements.header;
 import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.core.BuiltinCommand;
-import dev.nthings.tessera.core.DeferredElement;
+import dev.nthings.tessera.core.ClosedBy;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssFilter;
@@ -27,6 +26,7 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Translation;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -47,25 +47,25 @@ public final class Overlays {
 
   /// Creates a centered modal with the given `id` and title.
   public static Modal modal(String id, String title) {
-    return new Modal(ElementId.of(id), title);
+    return new Modal(id, title);
   }
 
   /// Creates a drawer on the inline-end edge with the given `id` and title.
   public static Drawer drawer(String id, String title) {
-    return new Drawer(ElementId.of(id), title, DrawerSide.INLINE_END);
+    return new Drawer(id, title, DrawerSide.INLINE_END);
   }
 
   /// Creates a drawer on `side` with the given `id` and title.
   public static Drawer drawer(String id, String title, DrawerSide side) {
-    return new Drawer(ElementId.of(id), title, side);
+    return new Drawer(id, title, side);
   }
 
   /// Centered modal dialog with a title, optional description, body, footer actions and a close
   /// button. Create one with [Overlays#modal(String, String)].
-  public static final class Modal implements RenderView {
+  public static final class Modal implements View {
 
-    private final ElementId id;
-    private ElementRef dialog = ElementRef.named("dialog");
+    private final String id;
+    private ElementRef dialog = ElementRef.scoped("dialog");
     private final String title;
     private @Nullable String description;
     private final List<Element> bodyNodes = new ArrayList<>();
@@ -73,8 +73,8 @@ public final class Overlays {
     private String closeLabel = "Close";
     private boolean opened;
 
-    public Modal(ElementId id, String title) {
-      this.id = id;
+    public Modal(String id, String title) {
+      this.id = Fnv1a64.sanitizeLocalId(id);
       this.title = title;
     }
 
@@ -134,12 +134,12 @@ public final class Overlays {
 
     /// Hoists this modal to the end of `<body>`. Lower priority values come first among
     /// deferred elements.
-    public DeferredElement asDeferred(int priority) {
+    public Element asDeferred(int priority) {
       return deferred(this, priority);
     }
 
     @Override
-    public ElementId entityId() {
+    public String viewId() {
       return id;
     }
 
@@ -204,7 +204,7 @@ public final class Overlays {
 
     @Override
     public Element render(RenderContext context) {
-      var titleRef = ElementRef.named("title");
+      var titleRef = ElementRef.scoped("title");
       var headerEl =
           header()
               .flex()
@@ -223,7 +223,9 @@ public final class Overlays {
       contentEl.children(bodyNodes);
 
       var closeBtn =
-          Button.of(closeLabel).id(ElementRef.named("close")).command(dialog, BuiltinCommand.CLOSE);
+          Button.of(closeLabel)
+              .id(ElementRef.scoped("close"))
+              .command(dialog, BuiltinCommand.CLOSE);
 
       var footerEl =
           footer().flex().itemsCenter().justifyEnd().gap(Tokens.SPACE_3).pt(Tokens.SPACE_2);
@@ -233,7 +235,7 @@ public final class Overlays {
       return Elements.dialog()
           .id(dialog)
           .ariaLabelledBy(titleRef)
-          .dialogClosedByAny()
+          .closedBy(ClosedBy.ANY)
           .boolAttr("open", opened)
           .child(
               div().flex().flexCol().gap(Tokens.SPACE_5).children(headerEl, contentEl, footerEl));
@@ -242,18 +244,18 @@ public final class Overlays {
 
   /// Sheet that slides in from the edge set by its [DrawerSide]. Create one with
   /// [Overlays#drawer(String, String)]; its close button sits in the header.
-  public static final class Drawer implements RenderView {
+  public static final class Drawer implements View {
 
-    private final ElementId id;
-    private ElementRef dialog = ElementRef.named("dialog");
+    private final String id;
+    private ElementRef dialog = ElementRef.scoped("dialog");
     private final String title;
     private final DrawerSide side;
     private @Nullable String subtitle;
     private final List<Element> bodyNodes = new ArrayList<>();
     private String closeLabel = "Close";
 
-    public Drawer(ElementId id, String title, DrawerSide side) {
-      this.id = id;
+    public Drawer(String id, String title, DrawerSide side) {
+      this.id = Fnv1a64.sanitizeLocalId(id);
       this.title = title;
       this.side = side;
     }
@@ -296,12 +298,12 @@ public final class Overlays {
 
     /// Hoists this drawer to the end of `<body>`. Lower priority values come first among
     /// deferred elements.
-    public DeferredElement asDeferred(int priority) {
+    public Element asDeferred(int priority) {
       return deferred(this, priority);
     }
 
     @Override
-    public ElementId entityId() {
+    public String viewId() {
       return id;
     }
 
@@ -374,10 +376,10 @@ public final class Overlays {
 
     @Override
     public Element render(RenderContext context) {
-      var titleRef = ElementRef.named("title");
+      var titleRef = ElementRef.scoped("title");
       var closeBtn =
           Button.of(closeLabel)
-              .id(ElementRef.named("close"))
+              .id(ElementRef.scoped("close"))
               .tone(Button.Tone.NEUTRAL)
               .variant(Button.Variant.OUTLINE)
               .size(Button.Size.SM)
@@ -412,7 +414,7 @@ public final class Overlays {
       return Elements.dialog()
           .id(dialog)
           .ariaLabelledBy(titleRef)
-          .dialogClosedByAny()
+          .closedBy(ClosedBy.ANY)
           .child(
               div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));
     }
@@ -420,7 +422,7 @@ public final class Overlays {
 
   private static Button showModalTrigger(ElementRef dialog, String buttonId, String label) {
     return Button.of(label)
-        .id(ElementRef.named(buttonId))
+        .id(ElementRef.scoped(buttonId))
         .tone(Button.Tone.NEUTRAL)
         .variant(Button.Variant.OUTLINE)
         .command(dialog, BuiltinCommand.SHOW_MODAL);

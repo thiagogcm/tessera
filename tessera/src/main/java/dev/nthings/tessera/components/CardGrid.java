@@ -1,11 +1,10 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -15,7 +14,7 @@ import java.util.List;
 /// header, content, and footer regions, so their footers line up.
 public record CardGrid(
     String id, CssLength minCardWidth, CssLength gap, List<? extends IntoElement> cards)
-    implements RenderView {
+    implements View {
 
   /// Creates a grid with `id` as its instance id. It fits as many columns as are at least
   /// `minCardWidth` wide, and `gap` sets the row and column gap.
@@ -25,8 +24,8 @@ public record CardGrid(
   }
 
   @Override
-  public ElementId entityId() {
-    return ElementId.of(id);
+  public String viewId() {
+    return id;
   }
 
   @Override

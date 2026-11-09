@@ -3,15 +3,15 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.div;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,27 +19,27 @@ import java.util.List;
 /// limits the line length to 75ch unless [#maxMeasure(CssLength)] changes it. Create one with
 /// [#of(IntoElement...)], or with [#create(String)] when a second container shares its view
 /// scope. Paragraphs with a class attribute keep their own styling.
-public final class Prose implements RenderView, ParentElement<Prose> {
+public final class Prose implements View, ParentElement<Prose> {
 
-  private final ElementId id;
+  private final String id;
   private final List<Element> children = new ArrayList<>();
   private CssLength maxMeasure = CssLength.ch(75);
 
-  private Prose(ElementId id) {
-    this.id = id;
+  private Prose(String id) {
+    this.id = Fnv1a64.sanitizeLocalId(id);
   }
 
   /// Creates a prose container with the id `prose` containing `elements`. Two containers with
   /// that id in one view scope share ids; use [#create(String)] for the second.
   public static Prose of(IntoElement... elements) {
-    var prose = new Prose(ElementId.of("prose"));
+    var prose = new Prose("prose");
     prose.children(elements);
     return prose;
   }
 
   /// Creates an empty prose container with the given `id`, unique within its view scope.
   public static Prose create(String id) {
-    return new Prose(ElementId.of(id));
+    return new Prose(id);
   }
 
   @Override
@@ -59,7 +59,7 @@ public final class Prose implements RenderView, ParentElement<Prose> {
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 

@@ -41,8 +41,8 @@ record Page(
         .intoElement();
   }
 
-  /// Fragment link to a demo section, scoped inside the doc layout view.
+  /// Fragment link to a demo section, by its page-level id.
   String sectionHref(Demo demo) {
-    return path + "#" + Toc.DocLayout.sectionDomId(TOC_ID, demo.id());
+    return path + "#" + demo.id();
   }
 }

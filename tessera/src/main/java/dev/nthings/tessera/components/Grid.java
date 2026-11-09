@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
@@ -17,7 +17,7 @@ import java.util.List;
 /// while it is narrower than 36rem. Wrap an item in [#cell] to span columns or rows; spans apply
 /// only when the grid is 36rem or wider.
 public record Grid(TrackList columns, CssLength gap, boolean collapseOnNarrow, List<Element> items)
-    implements RenderOnce {
+    implements Component {
 
   private static final CssIdent GRID_CONTAINER = CssIdent.of("tessera-grid");
   private static final CssLength MULTI_COL_MIN_WIDTH = CssLength.rem(36);

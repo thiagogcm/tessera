@@ -4,10 +4,9 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.header;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
@@ -19,26 +18,27 @@ import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.foundation.Fnv1a64;
 
 /// Header that stays at the top of the viewport while the page scrolls. Once it is stuck, its
 /// surface turns translucent, blurs what is behind it and casts a shadow. Browsers without
 /// scroll-state support still keep the header at the top, with the plain surface. The content
 /// is placed inside a `<header>` element.
-public final class StickyHeader implements RenderView {
+public final class StickyHeader implements View {
 
-  private final ElementId id;
+  private final String id;
   private final CssIdent containerName;
   private final Element content;
 
   /// Creates a sticky header with the given `id`, which is unique within its view scope.
   public StickyHeader(String id, IntoElement content) {
-    this.id = ElementId.of(id);
-    this.containerName = CssIdent.of("sticky-" + this.id.slug());
+    this.id = Fnv1a64.sanitizeLocalId(id);
+    this.containerName = CssIdent.of("sticky-" + this.id);
     this.content = content.intoElement();
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 

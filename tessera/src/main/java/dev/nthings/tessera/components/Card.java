@@ -1,12 +1,11 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssContent;
@@ -31,7 +30,7 @@ import org.jspecify.annotations.Nullable;
 /// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
 ///   buttons, and form controls in the card stay clickable.
 /// - Only one of `stretchedLink`, `choiceRadio`, and `choiceCheckbox` applies; the last call wins.
-public final class Card implements RenderView, FluentBuilder<Card> {
+public final class Card implements View, FluentBuilder<Card> {
 
   /// How a card responds to interaction. Set it with `stretchedLink`, `choiceRadio`, or
   /// `choiceCheckbox`; a card without one has only its own content.
@@ -160,8 +159,8 @@ public final class Card implements RenderView, FluentBuilder<Card> {
   }
 
   @Override
-  public ElementId entityId() {
-    return ElementId.of("card-" + id);
+  public String viewId() {
+    return "card-" + id;
   }
 
   private static final String MEDIA_CARD = ":scope:has(> img, > picture, > .media)";

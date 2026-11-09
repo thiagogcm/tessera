@@ -11,12 +11,11 @@ import static dev.nthings.tessera.core.Elements.ul;
 import dev.nthings.tessera.core.Accessible;
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
@@ -28,6 +27,7 @@ import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
 
 /// Tab bars for site navigation ([#navTabs]) and for switching between panels of content
@@ -53,7 +53,7 @@ public final class Tabs {
   /// `ariaLabel` names the `<nav>`.
   public static NavTabs navTabs(
       String id, String ariaLabel, String activeHref, List<NavItem> items) {
-    return new NavTabs(ElementId.of(id), ariaLabel, activeHref, items);
+    return new NavTabs(id, ariaLabel, activeHref, items);
   }
 
   /// Creates in-page tabs whose tab list is named "Content tabs". Prefer
@@ -65,29 +65,29 @@ public final class Tabs {
   /// Creates in-page tabs whose tab list is named `ariaLabel`. The first panel starts selected.
   /// Throws IllegalArgumentException if `panels` is empty.
   public static ContentTabs contentTabs(String id, String ariaLabel, List<TabPanel> panels) {
-    return new ContentTabs(ElementId.of(id), ariaLabel, panels);
+    return new ContentTabs(id, ariaLabel, panels);
   }
 
   /// Navigation bar of links, created with [Tabs#navTabs]. The active link is marked with
   /// `aria-current="page"`.
-  public static final class NavTabs implements RenderView {
+  public static final class NavTabs implements View {
 
-    private final ElementId id;
+    private final String id;
     private final String ariaLabel;
     private final CssIdent anchorIdent;
     private final String activeHref;
     private final List<NavItem> items;
 
-    public NavTabs(ElementId id, String ariaLabel, String activeHref, List<NavItem> items) {
-      this.id = id;
+    public NavTabs(String id, String ariaLabel, String activeHref, List<NavItem> items) {
+      this.id = Fnv1a64.sanitizeLocalId(id);
       this.ariaLabel = ariaLabel;
-      this.anchorIdent = CssIdent.custom("active-nav-" + id.slug());
+      this.anchorIdent = CssIdent.custom("active-nav-" + this.id);
       this.activeHref = activeHref;
       this.items = List.copyOf(items);
     }
 
     @Override
-    public ElementId entityId() {
+    public String viewId() {
       return id;
     }
 
@@ -144,28 +144,28 @@ public final class Tabs {
   /// panels
   /// are in the page; the tab behavior shows the selected one, and arrow, Home and End keys move
   /// between tabs. Until the behavior loads, the tab bar is hidden and every panel is visible.
-  public static final class ContentTabs implements RenderView {
+  public static final class ContentTabs implements View {
 
     private static final ClientBehavior TABS_BEHAVIOR =
         ClientBehavior.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
 
-    private final ElementId id;
+    private final String id;
     private final String ariaLabel;
     private final CssIdent anchorIdent;
     private final List<TabPanel> panels;
 
-    public ContentTabs(ElementId id, String ariaLabel, List<TabPanel> panels) {
+    public ContentTabs(String id, String ariaLabel, List<TabPanel> panels) {
       if (panels.isEmpty()) {
         throw new IllegalArgumentException("ContentTabs requires at least 1 TabPanel");
       }
-      this.id = id;
+      this.id = Fnv1a64.sanitizeLocalId(id);
       this.ariaLabel = ariaLabel;
-      this.anchorIdent = CssIdent.custom("active-tab-" + id.slug());
+      this.anchorIdent = CssIdent.custom("active-tab-" + this.id);
       this.panels = List.copyOf(panels);
     }
 
     @Override
-    public ElementId entityId() {
+    public String viewId() {
       return id;
     }
 
@@ -232,8 +232,8 @@ public final class Tabs {
       var root = custom("tessera-tabs").child(tabBar);
 
       for (var i = 0; i < panels.size(); i++) {
-        var tabRef = ElementRef.named("tab-" + i);
-        var panelRef = ElementRef.named("panel-" + i);
+        var tabRef = ElementRef.scoped("tab-" + i);
+        var panelRef = ElementRef.scoped("panel-" + i);
         tabBar.child(
             button()
                 .id(tabRef)

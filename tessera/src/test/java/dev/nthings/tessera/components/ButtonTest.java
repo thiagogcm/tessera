@@ -20,7 +20,7 @@ class ButtonTest {
   @DisplayName("commands open a deferred dialog or popover, and a disabled button cannot")
   void commandsOpenDeferredTargets() {
     var dialog = Overlays.modal("confirm", "Confirm");
-    var hint = ElementRef.named("hint");
+    var hint = ElementRef.scoped("hint");
     var page =
         renderMain(
             Button.of("Review").command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL),

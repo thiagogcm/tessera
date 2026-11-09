@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// Element that emits no markup. Obtain it from [Elements#empty()].
+/// Compiler-facing: element that emits no markup, returned by [Elements#empty()].
 public enum EmptyElement implements Element {
   INSTANCE
 }

@@ -10,6 +10,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfTy
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +35,8 @@ class SiteLinkValidationTest {
             new SiteRoute(
                 "/guides/start", new PageDocument("Start", main().child(a(href).text("Read")))),
             new SiteRoute(
-                "/guides/café", new PageDocument("Café", main().attr("id", "café+intro"))));
+                "/guides/café",
+                new PageDocument("Café", main().id(ElementRef.page("café+intro")))));
 
     assertThatCode(() -> Compiler.compile(site)).doesNotThrowAnyException();
   }
@@ -50,7 +52,7 @@ class SiteLinkValidationTest {
                     new PageDocument(
                         "Start",
                         main()
-                            .attr("id", "details")
+                            .id(ElementRef.page("details"))
                             .children(
                                 a("?q=a+b#details").text("Filter"),
                                 a("./../assets/manual%20v1.pdf?download=1").text("Download")))))
@@ -88,7 +90,9 @@ class SiteLinkValidationTest {
                     main()
                         .children(
                             a("/does-not-exist").px(CssLength.rem(1)).text("Broken link"),
-                            a("/docs#missing-section").id("jump").text("Jump to section")))),
+                            a("/docs#missing-section")
+                                .id(ElementRef.scoped("jump"))
+                                .text("Jump to section")))),
             new SiteRoute(
                 "/docs",
                 new PageDocument("Docs", main().transitionKey(TransitionKey.of("docs-title")))));
@@ -117,7 +121,8 @@ class SiteLinkValidationTest {
                     "Settings",
                     main()
                         .children(
-                            a("/docs%ZZ").id("docs").text("Documentation"), button().id("save")))));
+                            a("/docs%ZZ").id(ElementRef.scoped("docs")).text("Documentation"),
+                            button().id(ElementRef.scoped("save"))))));
 
     var failure = catchThrowableOfType(CompilationException.class, () -> Compiler.compile(site));
 
@@ -144,7 +149,9 @@ class SiteLinkValidationTest {
                 new PageDocument(
                     "Home", main().child(a("/docs#missing-section").text("Jump to section")))),
             new SiteRoute(
-                "/docs", new PageDocument("Docs", main().id("intro").text("Introduction"))));
+                "/docs",
+                new PageDocument(
+                    "Docs", main().id(ElementRef.scoped("intro")).text("Introduction"))));
 
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> Compiler.compile(site))

@@ -11,44 +11,26 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Action;
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.ClosedBy;
+import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.Map;
 
-/// Exercises scoped ids, invokers, interest tooltips, custom actions, container queries and
+/// Exercises scoped ids, invokers, interest tooltips, custom commands, container queries and
 /// portals in one view. [CompilerTest] asserts each feature separately.
-record WorkspacePanelView(String workspaceSlug) implements RenderView {
+record WorkspacePanelView(String workspaceSlug) implements View {
 
   private static final CssIdent METRIC_CARD = CssIdent.of("metric-card");
-
-  record ArchiveProjectAction(String projectId) implements Action {
-
-    @Override
-    public String namespace() {
-      return "workspace";
-    }
-
-    @Override
-    public String name() {
-      return "archive";
-    }
-
-    @Override
-    public Map<String, String> payloadAttributes() {
-      return Map.of("data-project-id", projectId);
-    }
-  }
 
   /// A container-query card: stacked by default, a row once its container is 320px wide.
   private static TagElement metricCard(String label, String value) {
@@ -60,8 +42,8 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
   }
 
   @Override
-  public ElementId entityId() {
-    return ElementId.of("workspace-" + workspaceSlug);
+  public String viewId() {
+    return "workspace-" + workspaceSlug;
   }
 
   @Override
@@ -71,12 +53,12 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
 
   @Override
   public Element render(RenderContext context) {
-    var confirmRef = ElementRef.named("confirm-archive");
+    var confirmRef = ElementRef.scoped("confirm-archive");
     var confirmModal =
         dialog()
             .id(confirmRef)
             .ariaLabel("Archive workspace")
-            .dialogClosedByAny()
+            .closedBy(ClosedBy.ANY)
             .p(CssLength.rem(1.5))
             .rounded(CssLength.rem(0.75))
             .bg(Tokens.SURFACE_CARD)
@@ -88,14 +70,14 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
                     .gap(CssLength.rem(0.75))
                     .children(
                         button()
-                            .id("cancel-archive")
+                            .id(ElementRef.scoped("cancel-archive"))
                             .command(confirmRef, BuiltinCommand.REQUEST_CLOSE)
                             .text("Cancel")));
 
     var openModalTrigger =
         button()
-            .id("open-archive-btn")
-            .command(confirmModal, BuiltinCommand.SHOW_MODAL)
+            .id(ElementRef.scoped("open-archive-btn"))
+            .command(confirmModal.ref(), BuiltinCommand.SHOW_MODAL)
             .interestTooltip(
                 tip ->
                     tip.p(CssLength.rem(0.5))
@@ -109,12 +91,17 @@ record WorkspacePanelView(String workspaceSlug) implements RenderView {
             .text("Archive Workspace");
 
     var customActionTarget =
-        div().id("archive-controller").popover(PopoverMode.AUTO).text("Archive controller ready");
+        div()
+            .id(ElementRef.scoped("archive-controller"))
+            .popover(PopoverMode.AUTO)
+            .text("Archive controller ready");
 
     var dispatchCustomBtn =
         button()
-            .id("dispatch-custom-btn")
-            .dispatchAction(customActionTarget, new ArchiveProjectAction(workspaceSlug))
+            .id(ElementRef.scoped("dispatch-custom-btn"))
+            .command(
+                customActionTarget.ref(),
+                Command.custom("workspace", "archive", Map.of("data-project-id", workspaceSlug)))
             .text("Quick Archive");
 
     return main()

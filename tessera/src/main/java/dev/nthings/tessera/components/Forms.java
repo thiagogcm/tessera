@@ -14,9 +14,9 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Background;
 import dev.nthings.tessera.css.Border;
@@ -133,7 +133,7 @@ public final class Forms {
   /// enclosing view scope, so two switches with the same name in one view scope report
   /// `duplicate-id`.
   public static TagElement switchField(String labelText, String name, boolean checked) {
-    var sw = switchInput(name, checked).id("switch-" + name);
+    var sw = switchInput(name, checked).id(ElementRef.scoped("switch-" + name));
     return div()
         .flex()
         .itemsCenter()
@@ -160,7 +160,7 @@ public final class Forms {
   /// control, error text shown while the control is `:user-invalid`, and an optional
   /// [#anchorTooltip(String)] tooltip. Create one with [Forms#field(String, TagElement)] or
   /// [Forms#field(String, SelectControl)].
-  public static final class Field implements RenderView {
+  public static final class Field implements View {
 
     private final String labelText;
     private final TagElement control;
@@ -182,7 +182,7 @@ public final class Forms {
 
     /// Sets the DOM id of the control, replacing the compiler-assigned one.
     public Field id(String name) {
-      control.id(name);
+      control.id(ElementRef.scoped(name));
       return this;
     }
 
@@ -224,7 +224,7 @@ public final class Forms {
       container.child(labelEl);
 
       if (hintText != null) {
-        var hint = ElementRef.named("hint");
+        var hint = ElementRef.scoped("hint");
         container.child(span().id(hint).attr("class", "field-hint").text(hintText));
         control.ariaDescribedBy(hint);
       }
@@ -237,7 +237,7 @@ public final class Forms {
 
       // Follows the control so adjacent-sibling selectors can style it.
       if (errorText != null) {
-        var error = ElementRef.named("error");
+        var error = ElementRef.scoped("error");
         control.ariaErrorMessage(error);
         var errEl =
             div()
@@ -312,7 +312,7 @@ public final class Forms {
   /// Select whose open list the library styles where the browser supports customizable
   /// selects; other browsers show their native list. Create one with
   /// [Forms#selectControl(String)].
-  public static final class SelectControl implements RenderView {
+  public static final class SelectControl implements View {
 
     public record OptionItem(String value, String label, boolean selected) {}
 
@@ -335,7 +335,7 @@ public final class Forms {
     }
 
     public SelectControl id(String id) {
-      select.id(id);
+      select.id(ElementRef.scoped(id));
       return this;
     }
 

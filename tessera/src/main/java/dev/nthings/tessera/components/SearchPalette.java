@@ -13,15 +13,14 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClientBehavior;
-import dev.nthings.tessera.core.DeferredElement;
+import dev.nthings.tessera.core.ClosedBy;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssDuration;
@@ -33,6 +32,7 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,7 +43,7 @@ import org.jspecify.annotations.Nullable;
 /// one with [#create(String)], place [#triggerButton()] where users open it, and place the
 /// palette itself, usually with [#asDeferred(int)]. The palette's script is contributed once per
 /// document, shared by every palette on the page.
-public final class SearchPalette implements RenderView {
+public final class SearchPalette implements View {
 
   private static final ClientBehavior SEARCH_BEHAVIOR =
       ClientBehavior.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
@@ -62,24 +62,24 @@ public final class SearchPalette implements RenderView {
       @Nullable String description,
       @Nullable String badge) {}
 
-  private final ElementId id;
-  private final ElementRef dialog = ElementRef.named("dialog");
+  private final String id;
+  private final ElementRef dialog = ElementRef.scoped("dialog");
   private String placeholder = "Search documentation, routes, and sections...";
   private String triggerLabel = "Search docs...";
   private final Map<String, List<SearchItem>> groupedItems = new LinkedHashMap<>();
 
-  private SearchPalette(ElementId id) {
-    this.id = id;
+  private SearchPalette(String id) {
+    this.id = Fnv1a64.sanitizeLocalId(id);
   }
 
   /// Creates a palette with `id`, which also names the default trigger button.
   public static SearchPalette create(String id) {
-    return new SearchPalette(ElementId.of(id));
+    return new SearchPalette(id);
   }
 
   /// Creates a palette with `id` and the search field's `placeholder`.
   public static SearchPalette create(String id, String placeholder) {
-    return new SearchPalette(ElementId.of(id)).placeholder(placeholder);
+    return new SearchPalette(id).placeholder(placeholder);
   }
 
   /// Sets the search field's placeholder text.
@@ -132,7 +132,7 @@ public final class SearchPalette implements RenderView {
   /// that works. Returns a plain [TagElement].
   public TagElement triggerButton(String buttonId, String label) {
     return button()
-        .id(buttonId)
+        .id(ElementRef.scoped(buttonId))
         .command(dialog, BuiltinCommand.SHOW_MODAL)
         .ariaKeyShortcuts("Alt+K")
         .attr("accesskey", "k")
@@ -187,17 +187,17 @@ public final class SearchPalette implements RenderView {
   /// Creates the trigger button with the default id, derived from this palette's id, and the
   /// trigger label.
   public TagElement triggerButton() {
-    return triggerButton(id.slug() + "-trigger", triggerLabel);
+    return triggerButton(id + "-trigger", triggerLabel);
   }
 
   /// Hoists the palette to the end of `<body>`. Lower priority values come first among deferred
   /// elements.
-  public DeferredElement asDeferred(int priority) {
+  public Element asDeferred(int priority) {
     return deferred(this, priority);
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 
@@ -211,7 +211,7 @@ public final class SearchPalette implements RenderView {
             .child(rawHtml(SEARCH_ICON_SVG))
             .child(
                 input("search")
-                    .id("input")
+                    .id(ElementRef.scoped("input"))
                     .attr("class", "palette-input")
                     .attr("placeholder", placeholder)
                     .attr("autocomplete", "off")
@@ -288,7 +288,7 @@ public final class SearchPalette implements RenderView {
     return Elements.dialog()
         .id(dialog)
         .attr("is", "tessera-search")
-        .dialogClosedByAny()
+        .closedBy(ClosedBy.ANY)
         .ariaLabel("Quick open command palette")
         .child(headerEl)
         .child(resultsContainer)

@@ -8,6 +8,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.RenderedPage.render;
 
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.support.CssBlocks;
@@ -78,8 +79,8 @@ class CompilerTest {
     }
 
     @Test
-    @DisplayName("dispatches a custom Action as a namespaced command with payload attributes")
-    void dispatchesCustomActionWithPayload() {
+    @DisplayName("runs a custom command as a namespaced command with payload attributes")
+    void runsCustomCommandWithPayload() {
       assertThat(page.elementById("workspace-core--dispatch-custom-btn"))
           .hasAttribute("commandfor", "workspace-core--archive-controller")
           .hasAttribute("command", "--workspace-archive")
@@ -143,12 +144,13 @@ class CompilerTest {
                 .children(
                     deferred(
                         div()
-                            .id("toast-high-1")
+                            .id(ElementRef.scoped("toast-high-1"))
                             .text("High 1")
-                            .child(deferred(div().id("nested").text("Nested"), 20)),
+                            .child(
+                                deferred(div().id(ElementRef.scoped("nested")).text("Nested"), 20)),
                         20),
-                    deferred(div().id("modal-low").text("Low"), 5),
-                    deferred(div().id("toast-high-2").text("High 2"), 20)));
+                    deferred(div().id(ElementRef.scoped("modal-low")).text("Low"), 5),
+                    deferred(div().id(ElementRef.scoped("toast-high-2")).text("High 2"), 20)));
 
     var bodyChildren = page.dom().body().children();
 

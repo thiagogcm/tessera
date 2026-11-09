@@ -9,10 +9,11 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -26,7 +27,7 @@ import org.jspecify.annotations.Nullable;
 /// Titled `<section>` whose heading is registered as a document heading, listed by
 /// `Toc.fromContext` and the site search index. Use `Toc.section` for plain documentation sections;
 /// use this type for a surface, a lead paragraph, or a badge.
-public final class ContentSection implements RenderOnce, ParentElement<ContentSection> {
+public final class ContentSection implements Component, ParentElement<ContentSection> {
 
   /// Visual surface of a [ContentSection].
   public enum SurfaceKind {
@@ -60,8 +61,8 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     this.title = title;
   }
 
-  /// Creates a section at heading level 2 with the `GHOST` surface. `id` names it in the enclosing
-  /// view scope.
+  /// Creates a section at heading level 2 with the `GHOST` surface. `id` is the section's
+  /// page-level DOM id ([ElementRef#page(String)]), so other pages can link to it as a fragment.
   public static ContentSection create(String id, String title) {
     return new ContentSection(id, title);
   }
@@ -118,9 +119,10 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
 
   @Override
   public Element render(RenderContext context) {
-    var entry = context.registerHeading(rawId, title, level);
+    var target = ElementRef.page(rawId);
+    context.registerHeading(target, title, level);
 
-    var heading = sectionHeading(level, entry.targetDomId(), title);
+    var heading = sectionHeading(level, title);
 
     var headerEl =
         header().attr("class", "section-header").flex().flexCol().gap(CssLength.rem(0.35));
@@ -150,7 +152,7 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
 
     var sectionEl =
         section()
-            .attr("id", entry.targetDomId())
+            .id(target)
             .attr("data-surface", surface.wireValue())
             .attr("class", "content-section-node")
             .flex()
@@ -191,8 +193,8 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
     return level;
   }
 
-  /// `<h2>` to `<h4>` heading; id is `<sectionDomId>--heading`.
-  static TagElement sectionHeading(int level, String sectionDomId, String title) {
+  /// `<h2>` to `<h4>` heading; the enclosing section carries the id.
+  static TagElement sectionHeading(int level, String title) {
     var heading =
         switch (level) {
           case 2 -> h2();
@@ -200,7 +202,6 @@ public final class ContentSection implements RenderOnce, ParentElement<ContentSe
           default -> h4();
         };
     return heading
-        .attr("id", sectionDomId + "--heading")
         .fontSize(
             level == 2
                 ? Tokens.FONT_SIZE_2XL

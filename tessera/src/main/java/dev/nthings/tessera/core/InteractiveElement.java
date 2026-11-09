@@ -23,17 +23,18 @@ public interface InteractiveElement<
 
   Interactivity interactivity();
 
-  /// Sets an arbitrary attribute. Roles and `aria-*` have typed methods ([Accessible]) and are
-  /// refused here.
+  /// Sets an arbitrary attribute. `id` ([TagElement#id(ElementRef)]), `role` and `aria-*`
+  /// ([Accessible]) have typed methods and are refused here with IllegalArgumentException.
   default SELF attr(String name, String value) {
-    requireNotAria(name);
+    Attributes.requireGeneric(name);
     attributes().put(name, value);
     return self();
   }
 
   /// Sets a boolean attribute: present with an empty value when `enabled`, removed otherwise.
+  /// Refuses `id`, `role` and `aria-*` as [#attr(String, String)] does.
   default SELF boolAttr(String name, boolean enabled) {
-    requireNotAria(name);
+    Attributes.requireGeneric(name);
     if (enabled) {
       attributes().put(name, "");
     } else {
@@ -43,13 +44,13 @@ public interface InteractiveElement<
   }
 
   /// Sets `attribute` to the DOM ids of `targets` once they are bound on the page. Throws
-  /// IllegalArgumentException if no target is given.
+  /// IllegalArgumentException if no target is given, or for `id`, `role` and `aria-*`.
   default SELF idRef(String attribute, ElementRef... targets) {
     return idRef(attribute, new IdReference("", List.of(targets)));
   }
 
   private SELF idRef(String attribute, IdReference reference) {
-    requireNotAria(attribute);
+    Attributes.requireGeneric(attribute);
     // Reserve the slot so resolved ids keep declaration order.
     attributes().putIfAbsent(attribute, "");
     idReferences().put(attribute, reference);
@@ -71,19 +72,15 @@ public interface InteractiveElement<
     return idRef("href", new IdReference("#", List.of(target)));
   }
 
-  /// Sets `commandfor` and `command`, so activating this element runs `command` on `target`.
-  /// `show-modal`, `close` and `request-close` need a `<dialog>` target, and `toggle-popover`,
-  /// `show-popover` and `hide-popover` need a target with a `popover` attribute. Otherwise the
-  /// compiler reports `incompatible-command-target`. See [BuiltinCommand].
-  default SELF command(ElementRef target, BuiltinCommand command) {
-    return idRef("commandfor", target).attr("command", command.wireValue());
-  }
-
-  /// Sets the custom `--namespace-name` Invoker Command for `action`, plus its payload attributes.
-  /// Custom commands are not checked against the target.
-  default SELF dispatchAction(ElementRef target, Action action) {
-    idRef("commandfor", target).attr("command", action.toCustomCommand());
-    action.payloadAttributes().forEach(this::attr);
+  /// Sets `commandfor` and `command`, so activating this element runs `command` on the element
+  /// bound to `target`, plus any payload attributes of a custom command. `show-modal`, `close` and
+  /// `request-close` need a `<dialog>` target, and `toggle-popover`, `show-popover` and
+  /// `hide-popover` need a target with a `popover` attribute; otherwise the compiler reports
+  /// `incompatible-command-target`. Custom commands accept any target. Use `element.ref()` to
+  /// target an element you hold.
+  default SELF command(ElementRef target, Command command) {
+    idRef("commandfor", target).attr("command", command.wireValue());
+    command.payload().forEach(this::attr);
     return self();
   }
 
@@ -92,19 +89,9 @@ public interface InteractiveElement<
     return attr("popover", mode.wireValue());
   }
 
-  /// Sets `closedby="any"`: clicking outside, Escape and close requests all close the dialog.
-  default SELF dialogClosedByAny() {
-    return attr("closedby", "any");
-  }
-
-  /// Sets `closedby="closerequest"`: only Escape and close requests close the dialog.
-  default SELF dialogClosedByCloseRequest() {
-    return attr("closedby", "closerequest");
-  }
-
-  /// Sets `closedby="none"`: only script or a command closes the dialog.
-  default SELF dialogClosedByNone() {
-    return attr("closedby", "none");
+  /// Sets `closedby` on a `<dialog>`, choosing which user actions close it. See [ClosedBy].
+  default SELF closedBy(ClosedBy closedBy) {
+    return attr("closedby", closedBy.wireValue());
   }
 
   default SELF dimensions(int width, int height) {
@@ -184,14 +171,6 @@ public interface InteractiveElement<
     return self();
   }
 
-  /// Applies `mutator`'s styles while `:has(relativeSelector)` matches this element, for example
-  /// `"> img"`. The selector is inserted verbatim and not validated, so pass only trusted relative
-  /// selectors.
-  default SELF whenHas(String relativeSelector, UnaryOperator<StyleRefinement> mutator) {
-    interactivity().on(InteractiveState.HAS, relativeSelector, mutator);
-    return self();
-  }
-
   /// Applies `mutator`'s styles when the nearest ancestor container named `containerName` is at
   /// least `minInlineSize` wide. Emits `@container <name> (inline-size >= <min>)`. The ancestor
   /// must be declared with `containerInlineSize(CssIdent)`.
@@ -249,14 +228,5 @@ public interface InteractiveElement<
     interactivity()
         .on(InteractiveState.MOTION_SAFE, s -> s.animationStaggerBySiblingIndex(stepMilliseconds));
     return self();
-  }
-
-  private static void requireNotAria(String attribute) {
-    if (attribute.equals("role") || attribute.startsWith("aria-")) {
-      throw new IllegalArgumentException(
-          "Use the typed Accessible method (role(Role), aria...(...)) instead of the attribute '"
-              + attribute
-              + "'");
-    }
   }
 }

@@ -3,8 +3,9 @@ package dev.nthings.tessera.compiler;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
+import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.RenderOnce;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -52,10 +53,11 @@ class SiteArtifactsTest {
 
     @Test
     void indexesHeadingsFromCustomComponents() {
-      RenderOnce custom =
+      Component custom =
           context -> {
-            var heading = context.registerHeading("custom", "Custom section", 2);
-            return Elements.h2().attr("id", heading.targetDomId()).text(heading.title());
+            var target = ElementRef.scoped("custom");
+            context.registerHeading(target, "Custom section", 2);
+            return Elements.h2().id(target).text("Custom section");
           };
       var compiled =
           Compiler.compile(

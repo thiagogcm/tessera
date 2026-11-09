@@ -3,14 +3,13 @@ package dev.nthings.tessera.core;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /// WAI-ARIA roles an element can declare. The compiler checks each declared role against its
 /// requirements: accessible name, owned descendants, required states and supported `aria-*`.
-public enum Role {
+public enum Role implements WireToken {
   // Landmarks
   BANNER(Naming.OPTIONAL),
   COMPLEMENTARY(Naming.OPTIONAL),
@@ -118,7 +117,6 @@ public enum Role {
             .toList();
   }
 
-  private final String wireValue = name().toLowerCase(Locale.ROOT).replace('_', '-');
   private final Naming naming;
   private final boolean namedFromContent;
 
@@ -129,10 +127,6 @@ public enum Role {
   Role(Naming naming, boolean namedFromContent) {
     this.naming = naming;
     this.namedFromContent = namedFromContent;
-  }
-
-  public String wireValue() {
-    return wireValue;
   }
 
   public Naming naming() {
@@ -261,7 +255,7 @@ public enum Role {
   /// Role for a `role` attribute value, or `null` if not modeled.
   public static @Nullable Role fromWireValue(String value) {
     for (var role : values()) {
-      if (role.wireValue.equals(value)) {
+      if (role.wireValue().equals(value)) {
         return role;
       }
     }

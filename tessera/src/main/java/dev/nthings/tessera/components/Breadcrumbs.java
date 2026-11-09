@@ -7,19 +7,19 @@ import static dev.nthings.tessera.core.Elements.ol;
 
 import dev.nthings.tessera.core.Accessible;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
 
 /// Breadcrumb trail, first crumb to last, rendered as a `<nav>` around an ordered list. The last
 /// crumb gets `aria-current="page"`, and every crumb stays a link. Separators are decorative, so
 /// screen readers skip them.
-public final class Breadcrumbs implements RenderView {
+public final class Breadcrumbs implements View {
 
   /// One breadcrumb: the link target `href` and the visible `label`.
   public record Crumb(String href, String label) {
@@ -28,7 +28,7 @@ public final class Breadcrumbs implements RenderView {
     }
   }
 
-  private final ElementId id;
+  private final String id;
   private final List<Crumb> crumbs;
   private String label = "Breadcrumb";
 
@@ -36,7 +36,7 @@ public final class Breadcrumbs implements RenderView {
     if (crumbs.isEmpty()) {
       throw new IllegalArgumentException("Breadcrumbs requires at least 1 Crumb");
     }
-    this.id = ElementId.of(id);
+    this.id = Fnv1a64.sanitizeLocalId(id);
     this.crumbs = crumbs;
   }
 
@@ -54,7 +54,7 @@ public final class Breadcrumbs implements RenderView {
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 

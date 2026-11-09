@@ -41,7 +41,7 @@ class DropdownTest {
   @Test
   @DisplayName("exposes its panel to invokers outside the view")
   void exposesItsPanelToInvokersOutsideTheView() {
-    var reference = ElementRef.named("tools-panel");
+    var reference = ElementRef.scoped("tools-panel");
     var dropdown =
         Dropdown.create("tools", "Tools").panelRef(reference).linkItem("/logs", "View Logs", "G L");
     var outside =

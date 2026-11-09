@@ -23,6 +23,7 @@ import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FontStack;
@@ -122,7 +123,9 @@ abstract class ShowcaseBrowserSupport {
                         "Café guide",
                         Elements.main()
                             .child(
-                                Elements.h1().attr("id", "café+intro").text("Café introduction")))))
+                                Elements.h1()
+                                    .id(ElementRef.page("café+intro"))
+                                    .text("Café introduction")))))
             .build();
     SiteWriter.writeToDirectory(Compiler.compile(linked), publishedSite.resolve("urls"));
     var firstSearch =
@@ -145,10 +148,10 @@ abstract class ShowcaseBrowserSupport {
                             .children(
                                 firstSearch.triggerButton("first-trigger", "Find articles"),
                                 secondSearch.triggerButton("second-trigger", "Find guides"),
-                                Elements.h2().id("cafe").text("Café guide"),
-                                Elements.h2().id("tea").text("Tea notes"),
-                                Elements.h2().id("layout").text("Layout guide"),
-                                Elements.h2().id("forms").text("Forms guide"),
+                                Elements.h2().id(ElementRef.page("cafe")).text("Café guide"),
+                                Elements.h2().id(ElementRef.page("tea")).text("Tea notes"),
+                                Elements.h2().id(ElementRef.page("layout")).text("Layout guide"),
+                                Elements.h2().id(ElementRef.page("forms")).text("Forms guide"),
                                 firstSearch.asDeferred(10),
                                 secondSearch.asDeferred(20)))))
             .build();
@@ -368,7 +371,7 @@ abstract class ShowcaseBrowserSupport {
     page.getByRole(AriaRole.NAVIGATION, new Page.GetByRoleOptions().setName("On this page"))
         .getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName("Switch").setExact(true))
         .click();
-    assertThat(page).hasURL(baseUrl + "/forms/#toc-layout--switches");
+    assertThat(page).hasURL(baseUrl + "/forms/#switches");
     assertThat(
             page.getByRole(
                 AriaRole.HEADING, new Page.GetByRoleOptions().setName("Switch").setExact(true)))
@@ -396,7 +399,7 @@ abstract class ShowcaseBrowserSupport {
     query.press("ArrowDown");
     assertThat(result).isFocused();
     result.press("Enter");
-    assertThat(page).hasURL(baseUrl + "/overlays/#toc-layout--modal");
+    assertThat(page).hasURL(baseUrl + "/overlays/#modal");
     assertThat(
             page.getByRole(
                 AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Open modal").setExact(true)))
@@ -418,7 +421,7 @@ abstract class ShowcaseBrowserSupport {
     query.fill("auto growing textarea");
     assertThat(dialog.locator("a.palette-item:visible")).hasCount(1);
     query.press("Enter");
-    assertThat(page).hasURL(baseUrl + "/forms/#toc-layout--textarea");
+    assertThat(page).hasURL(baseUrl + "/forms/#textarea");
   }
 
   @Test

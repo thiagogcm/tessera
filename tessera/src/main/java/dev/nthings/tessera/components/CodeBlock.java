@@ -7,7 +7,7 @@ import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
 import dev.nthings.tessera.css.CssLength;
@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 /// Source listing in a keyboard-focusable `<pre>`, one `<span class="code-line">` per line. It can
 /// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
 /// Line numbers are display-only and are not part of the copied text.
-public final class CodeBlock implements RenderView, FluentBuilder<CodeBlock> {
+public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
 
   private final List<String> lines = new ArrayList<>();
   private final Set<Integer> highlightedLines = new LinkedHashSet<>();

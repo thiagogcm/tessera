@@ -5,9 +5,8 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -22,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 /// Compact label such as a status or a count. Create one with `Badge.of` or a tone factory such as
 /// `Badge.success`. It renders a `<span>`, or an `<a>` when given an [#href(String)].
-public final class Badge implements RenderView, FluentBuilder<Badge> {
+public final class Badge implements View, FluentBuilder<Badge> {
 
   /// Semantic color of a badge. `NEUTRAL` is the default.
   public enum Tone {
@@ -71,7 +70,7 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
   private boolean dot = false;
   private @Nullable String iconSvg;
   private @Nullable String href;
-  private @Nullable ElementId entityId;
+  private @Nullable String viewId;
 
   private Badge(String text) {
     this.text = text;
@@ -122,18 +121,13 @@ public final class Badge implements RenderView, FluentBuilder<Badge> {
   }
 
   @Override
-  public @Nullable ElementId entityId() {
-    return entityId;
+  public @Nullable String viewId() {
+    return viewId;
   }
 
   /// Sets the instance id in the enclosing view scope. The badge emits no DOM ids of its own.
   public Badge id(String id) {
-    this.entityId = ElementId.of(id);
-    return this;
-  }
-
-  public Badge id(ElementId id) {
-    this.entityId = id;
+    this.viewId = id;
     return this;
   }
 

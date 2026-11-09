@@ -3,9 +3,10 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -43,7 +44,7 @@ class FootnotesTest {
     void linkToTheirNoteAndAnchorPreviewTooltip() {
       var link = page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]");
 
-      assertThat(link).hasAttribute("href", "#fn-fn-1");
+      assertThat(link).hasAttribute("href", "#footnotes--fn-1");
       assertThat(link).hasAttribute("interestfor", link.nextElementSibling().id());
     }
 
@@ -55,13 +56,13 @@ class FootnotesTest {
       assertThat(endnotes).hasAttribute("role", "doc-endnotes");
       assertThat(endnotes.select("ol > li[role=doc-footnote]"))
           .extracting(e -> e.id())
-          .containsExactly("fn-fn-1", "fn-fn-2");
+          .containsExactly("footnotes--fn-1", "footnotes--fn-2");
     }
 
     @Test
     @DisplayName("are linked back from their note")
     void areLinkedBackFromTheirNote() {
-      var firstNote = page.elementById("fn-fn-1");
+      var firstNote = page.elementById("footnotes--fn-1");
 
       assertThat(firstNote.selectFirst("a[role=doc-backlink]")).hasAttribute("href", "#fnref-fn-1");
     }
@@ -84,8 +85,8 @@ class FootnotesTest {
   @Test
   @DisplayName("reusing a footnote id on one page is rejected")
   void rejectsDuplicateFootnoteIds() {
-    assertThatIllegalArgumentException()
+    assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> renderMain(Footnotes.ref("n", "One"), Footnotes.ref("n", "Two")))
-        .withMessageContaining("Duplicate footnote id");
+        .withMessageContaining("duplicate-id");
   }
 }

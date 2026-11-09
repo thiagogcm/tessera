@@ -1,12 +1,12 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IdReference;
 import dev.nthings.tessera.core.InteractiveElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Interactivity;
@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 ///   `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
-public final class Image implements RenderOnce, InteractiveElement<Image> {
+public final class Image implements Component, InteractiveElement<Image> {
 
   private static final class HeroSlot {
     private @Nullable String src;

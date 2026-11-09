@@ -83,17 +83,11 @@ final class ButtonFace {
     if (model.busy) {
       el.ariaBusy(true);
     }
-    var domRef = model.domRef;
-    if (domRef != null) {
-      el.id(domRef);
-    }
+    model.domRefs.forEach(el::id);
     var target = model.commandTarget;
     var command = model.command;
-    var action = model.action;
     if (target != null && command != null) {
       el.command(target, command);
-    } else if (target != null && action != null) {
-      el.dispatchAction(target, action);
     }
     var tooltip = model.tooltip;
     if (tooltip != null) {

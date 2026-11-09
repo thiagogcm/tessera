@@ -37,13 +37,9 @@ public final class Compiler {
     return SiteCompiler.compile(site);
   }
 
-  /// Compiles `document` under the default `Tokens` and returns its element tree instead of HTML.
+  /// Lays out and validates `document` and returns its element tree instead of HTML. Tokens do not
+  /// affect the tree, so there is no tokens overload.
   public static PageTree explain(PageDocument document) {
-    return explain(document, new Tokens());
-  }
-
-  /// Compiles `document` under `tokens` and returns its element tree instead of HTML.
-  public static PageTree explain(PageDocument document, Tokens tokens) {
-    return PageCompiler.prepare(document, tokens, List.of()).tree();
+    return PageCompiler.prepare(document, List.of()).tree();
   }
 }

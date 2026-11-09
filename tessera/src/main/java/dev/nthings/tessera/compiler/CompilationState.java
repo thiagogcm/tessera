@@ -1,10 +1,9 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.compiler.ResolvedNode.ResolvedTag;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.core.ViewScope;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -58,22 +57,68 @@ final class CompilationState {
     }
   }
 
-  /// Binds `ref` in `scope` and registers its DOM id. A second binding reports and keeps the
-  /// first.
-  String bind(ElementRef ref, ViewScope scope, ViewLocation location) {
-    var existing = references.get(ref);
-    if (existing != null) {
-      ambiguousDomIds.add(existing);
-      report(
-          location,
-          "duplicate-reference-binding",
-          ref + " is bound to more than one element on the same page",
-          "Bind this ElementRef once; use a separate reference for the other element.");
-      return existing;
+  /// Binds every ref of one element in `scope` to a single DOM id and registers it. The id comes
+  /// from the first named ref, or is generated from the tag; a named ref asking for another id
+  /// reports `conflicting-element-id`. A ref already bound on this page reports
+  /// `duplicate-reference-binding`, and the element keeps that earlier id.
+  String bind(List<ElementRef> refs, ViewScope scope, ViewLocation location) {
+    String earlier = null;
+    for (var ref : refs) {
+      var existing = references.get(ref);
+      if (existing != null) {
+        ambiguousDomIds.add(existing);
+        report(
+            location,
+            "duplicate-reference-binding",
+            ref + " is bound to more than one element on the same page",
+            "Bind this ElementRef once; use a separate reference for the other element.");
+        if (earlier == null) {
+          earlier = existing;
+        }
+      }
     }
-    var local = ref.localId();
-    var domId = scope.extend(local != null ? local : nextId(location.tagName(), scope)).domId();
-    references.put(ref, domId);
+    if (earlier != null) {
+      for (var ref : refs) {
+        references.putIfAbsent(ref, earlier);
+      }
+      return earlier;
+    }
+    String domId = null;
+    ElementRef named = null;
+    for (var ref : refs) {
+      var name = ref.name();
+      if (name == null) {
+        continue;
+      }
+      var candidate = ref.pageLevel() ? name : scope.qualify(name);
+      if (domId == null) {
+        named = ref;
+        domId = candidate;
+      } else if (!candidate.equals(domId)) {
+        report(
+            location.withDomId(domId),
+            "conflicting-element-id",
+            "<"
+                + location.tagName()
+                + "> is bound to "
+                + named
+                + " and "
+                + ref
+                + ", which ask for different ids ('"
+                + domId
+                + "' and '"
+                + candidate
+                + "')",
+            "Bind one named ElementRef per element and pass that ref around; extra handles can"
+                + " use element.ref() or ElementRef.anonymous().");
+      }
+    }
+    if (domId == null) {
+      domId = scope.qualify(nextId(location.tagName(), scope));
+    }
+    for (var ref : refs) {
+      references.put(ref, domId);
+    }
     registerDomId(domId, location.withDomId(domId));
     return domId;
   }
@@ -94,9 +139,9 @@ final class CompilationState {
     return id;
   }
 
-  /// `<prefix>-<n>`, numbered within `scope` so other scopes never shift it.
-  ElementId nextId(String prefix, ViewScope scope) {
-    return ElementId.of(
+  /// The local id `<prefix>-<n>`, numbered within `scope` so other scopes never shift it.
+  String nextId(String prefix, ViewScope scope) {
+    return Fnv1a64.sanitizeLocalId(
         prefix + "-" + counters.merge(new IdCounter(scope, prefix), 1, Integer::sum));
   }
 

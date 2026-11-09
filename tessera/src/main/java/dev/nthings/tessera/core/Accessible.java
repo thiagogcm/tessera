@@ -16,12 +16,12 @@ public interface Accessible<SELF extends Accessible<SELF>> {
 
   /// Returns the live attribute map of the element that will be emitted. A wrapper builder must
   /// return the map of the element it delegates to, not a copy, so typed methods take effect.
-  /// Entries are emitted as written, except that a bound [ElementRef] replaces `id` and generated
-  /// style classes are appended to `class`. A literal `id` is not scoped to its view scope.
+  /// Entries are emitted as written, except that the id comes from bound [ElementRef]s and
+  /// generated style classes are appended to `class`.
   Map<String, String> attributes();
 
-  /// Attributes whose values are DOM ids of [ElementRef] targets, resolved by the compiler. Returns
-  /// the live map, under the same delegation rule as [#attributes()].
+  /// Compiler-facing: attributes whose values are DOM ids of [ElementRef] targets, resolved by the
+  /// compiler. Returns the live map, under the same delegation rule as [#attributes()].
   Map<String, IdReference> idReferences();
 
   /// Value of `aria-current`, marking the item that is current within a set.

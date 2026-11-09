@@ -4,7 +4,8 @@ import java.util.function.Function;
 
 /// Static factories for element trees, usually imported statically. Most [HtmlTag] values have a
 /// factory returning a mutable [TagElement]; tags without one, such as `time`, are built with
-/// [#el(TagName)]. Also [#fragment()], [#text], [#custom], [#rawHtml], [#deferred] and [#late].
+/// [#el(TagName)]. Also [#fragment()], and [#text], [#custom], [#rawHtml], [#empty], [#deferred]
+/// and [#late], which return a plain [Element].
 public final class Elements {
 
   private Elements() {}
@@ -130,13 +131,15 @@ public final class Elements {
     return new TagElement(HtmlTag.BUTTON).attr("type", "button");
   }
 
-  /// Creates a `<button type="submit">`.
-  public static TagElement submitButton() {
-    return new TagElement(HtmlTag.BUTTON).attr("type", "submit");
-  }
-
+  /// Creates a link to the URL `href`.
   public static TagElement a(String href) {
     return new TagElement(HtmlTag.A).attr("href", href);
+  }
+
+  /// Creates a same-page link to the element bound to `target`: `href="#<target dom id>"`. An
+  /// unbound target reports `unbound-reference`.
+  public static TagElement a(ElementRef target) {
+    return new TagElement(HtmlTag.A).href(target);
   }
 
   public static TagElement dialog() {
@@ -352,7 +355,7 @@ public final class Elements {
   }
 
   /// Creates a text node. Its content is HTML-escaped.
-  public static TextElement text(String content) {
+  public static Element text(String content) {
     return new TextElement(content);
   }
 
@@ -360,32 +363,33 @@ public final class Elements {
   /// parsing or validation. Ids, links and ARIA inside it are not checked by `duplicate-id`,
   /// `missing-fragment`, site link validation or the accessibility rules, so never pass
   /// user-controlled text.
-  public static RawHtmlElement rawHtml(String trustedHtml) {
+  public static Element rawHtml(String trustedHtml) {
     return new RawHtmlElement(trustedHtml);
   }
 
   /// Returns an element that emits no markup.
-  public static EmptyElement empty() {
+  public static Element empty() {
     return EmptyElement.INSTANCE;
   }
 
   /// Moves `child` to the end of `<body>` at priority 0, for content that cannot sit in its
   /// parent's content model, such as a dialog or popover inside a parent that does not allow it.
   /// The child keeps its view scope and DOM ids.
-  public static DeferredElement deferred(IntoElement child) {
+  public static Element deferred(IntoElement child) {
     return new DeferredElement(child.intoElement(), 0);
   }
 
   /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
   /// equal priorities keep placement order. The child keeps its view scope and DOM ids.
-  public static DeferredElement deferred(IntoElement child, int priority) {
+  public static Element deferred(IntoElement child, int priority) {
     return new DeferredElement(child.intoElement(), priority);
   }
 
-  /// Creates an element resolved after the rest of the page is laid out, in the context where it
-  /// appears. Use it to read what other elements register, such as [RenderContext#headings()].
-  /// See [LateElement].
-  public static LateElement late(Function<RenderContext, ? extends IntoElement> content) {
+  /// Creates an element resolved after the rest of the page body is expanded, in the context where
+  /// it appears. Use it to read what other elements register, such as [RenderContext#headings()].
+  /// Late elements resolve first in, first out, before document-end sections and head
+  /// contributions.
+  public static Element late(Function<RenderContext, ? extends IntoElement> content) {
     return new LateElement(content);
   }
 

@@ -1,13 +1,12 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssIdent;
@@ -41,7 +40,7 @@ public final class Lists {
   }
 
   /// Unordered list of items.
-  public record BulletList(List<Element> items) implements RenderOnce {
+  public record BulletList(List<Element> items) implements Component {
 
     /// Creates a list from plain text items.
     public static BulletList ofStrings(String... items) {
@@ -62,7 +61,7 @@ public final class Lists {
   }
 
   /// Ordered list of items.
-  public record NumberedList(List<Element> items) implements RenderOnce {
+  public record NumberedList(List<Element> items) implements Component {
 
     /// Creates a list from plain text items.
     public static NumberedList ofStrings(String... items) {
@@ -96,7 +95,7 @@ public final class Lists {
   }
 
   /// Description list: each term is a `<dt>` and each description a `<dd>`.
-  public record DescriptionList(List<Term> terms) implements RenderOnce {
+  public record DescriptionList(List<Term> terms) implements Component {
 
     /// Creates a description list from `terms`.
     public static DescriptionList of(Term... terms) {
@@ -125,7 +124,7 @@ public final class Lists {
 
   /// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the
   /// steps progress. `id` identifies the list within its view scope.
-  public record StepList(String id, List<Element> steps) implements RenderView {
+  public record StepList(String id, List<Element> steps) implements View {
 
     private static final CssIdent STEP_INDEX = CssIdent.custom("step-index");
     private static final CssIdent STEP_TOTAL = CssIdent.custom("step-total");
@@ -141,8 +140,8 @@ public final class Lists {
     }
 
     @Override
-    public ElementId entityId() {
-      return ElementId.of("steps-" + id);
+    public String viewId() {
+      return "steps-" + id;
     }
 
     @Override

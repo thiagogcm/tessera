@@ -1,10 +1,11 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Action;
-import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.foundation.FluentBuilder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
@@ -17,10 +18,9 @@ abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
   boolean submit;
   boolean disabled;
   boolean busy;
-  @Nullable ElementRef domRef;
+  final List<ElementRef> domRefs = new ArrayList<>(1);
   @Nullable ElementRef commandTarget;
-  @Nullable BuiltinCommand command;
-  @Nullable Action action;
+  @Nullable Command command;
   @Nullable UnaryOperator<TagElement> tooltip;
 
   ButtonBase(Button.Tone tone, Button.Variant variant) {
@@ -54,29 +54,20 @@ abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
     return self();
   }
 
-  /// Runs a built-in command on the element bound to `target`, replacing any earlier `command` or
-  /// `dispatchAction` call. Dialog commands need a `<dialog>` target and popover commands need an
-  /// element with a `popover` attribute, or the page fails with `incompatible-command-target`. A
-  /// target that is never bound fails with `unbound-reference`.
-  public B command(ElementRef target, BuiltinCommand command) {
+  /// Runs `command` on the element bound to `target`, replacing any earlier command. Dialog
+  /// commands need a `<dialog>` target and popover commands need an element with a `popover`
+  /// attribute, or the page fails with `incompatible-command-target`; custom commands accept any
+  /// target. A target that is never bound fails with `unbound-reference`.
+  public B command(ElementRef target, Command command) {
     this.commandTarget = target;
     this.command = command;
-    this.action = null;
     return self();
   }
 
-  /// Dispatches `action` to the element bound to `target` as a custom invoker command, replacing
-  /// any earlier `command` or `dispatchAction` call.
-  public B dispatchAction(ElementRef target, Action action) {
-    this.commandTarget = target;
-    this.command = null;
-    this.action = action;
-    return self();
-  }
-
-  /// Binds this button's DOM id to `ref`, so other elements can reference it.
+  /// Binds `ref` to this button, so other elements can reference it. Binding several refs aliases
+  /// them, as [TagElement#id(ElementRef)] does.
   public B id(ElementRef ref) {
-    this.domRef = ref;
+    domRefs.add(ref);
     return self();
   }
 

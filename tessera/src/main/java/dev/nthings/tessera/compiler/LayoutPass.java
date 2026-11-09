@@ -1,11 +1,9 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.DocumentState;
-import dev.nthings.tessera.core.DocumentState.Contribution;
+import dev.nthings.tessera.compiler.DocumentState.Contribution;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.css.StyleSheetCollector;
-import dev.nthings.tessera.css.Tokens;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,26 +31,28 @@ final class LayoutPass implements ViewExpansion.Placement {
     }
   }
 
+  /// `headings` are the registered headings whose targets are bound, with their DOM ids.
   record Result(
-      List<ResolvedNode> bodyNodes, List<ResolvedNode> headNodes, DocumentState contributions) {}
+      List<ResolvedNode> bodyNodes,
+      List<ResolvedNode> headNodes,
+      List<PageHeading> headings,
+      DocumentState contributions) {}
 
   static Result layout(
       PageDocument document,
-      Tokens tokens,
       List<? extends IntoElement> siteHead,
       StyleSheetCollector styles,
       CompilationState state) {
-    return new LayoutPass(state).document(document, tokens, siteHead, styles, state);
+    return new LayoutPass(state).document(document, siteHead, styles, state);
   }
 
   private Result document(
       PageDocument document,
-      Tokens tokens,
       List<? extends IntoElement> siteHead,
       StyleSheetCollector styles,
       CompilationState state) {
     var contributions = new DocumentState();
-    var root = RenderContext.forDocument(styles, tokens, contributions);
+    var root = PageContext.forDocument(styles, contributions, state);
     siteHead.forEach(root::contributeHead);
     var body = expansion.expand(document.bodyRoot().intoElement(), root);
     resolveLate();
@@ -78,16 +78,31 @@ final class LayoutPass implements ViewExpansion.Placement {
     heads.forEach(head -> ReferenceLinker.link(head, state, headNodes));
     PageValidator.index(bodyNodes, state);
     PageValidator.index(headNodes, state);
-    return new Result(bodyNodes, headNodes, contributions);
+    return new Result(bodyNodes, headNodes, headings(contributions, state), contributions);
+  }
+
+  /// Resolves each registered heading's target; an unbound target is reported.
+  private static List<PageHeading> headings(DocumentState contributions, CompilationState state) {
+    var headings = new ArrayList<PageHeading>();
+    for (var contribution : contributions.headingContributions()) {
+      var heading = contribution.content();
+      var domId =
+          state.boundId(
+              heading.target(), "Heading \"" + heading.title() + "\"", contribution.placedBy());
+      if (domId != null) {
+        headings.add(new PageHeading(domId, heading.title(), heading.level()));
+      }
+    }
+    return headings;
   }
 
   /// Expands a contribution in its registering component context, then its late elements.
   private ViewNode expand(
-      RenderContext root,
+      PageContext root,
       Contribution<?> contribution,
       String phase,
       Function<RenderContext, ? extends IntoElement> content) {
-    var context = root.withComponentPath(contribution.componentPath(), contribution.origin());
+    var context = root.withPlacement(contribution.placedBy());
     var node = expansion.expand(context, phase, content);
     resolveLate();
     return node;

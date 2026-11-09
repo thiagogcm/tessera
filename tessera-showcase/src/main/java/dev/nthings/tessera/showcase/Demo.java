@@ -6,10 +6,10 @@ import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.ContentSection;
 import dev.nthings.tessera.components.ContentSection.SurfaceKind;
 import dev.nthings.tessera.components.Formatting;
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// One showcase section: description, platform features, live example and its Java source.
-final class Demo implements RenderOnce {
+final class Demo implements Component {
 
   private final String id;
   private final String title;

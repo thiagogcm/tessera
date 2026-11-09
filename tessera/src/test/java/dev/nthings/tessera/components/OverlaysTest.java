@@ -16,12 +16,12 @@ class OverlaysTest {
   void modalsAndDrawersLightDismiss() {
     var modal =
         Overlays.modal("confirm-deploy", "Confirm Deployment")
-            .dialogRef(ElementRef.named("confirmation"))
+            .dialogRef(ElementRef.scoped("confirmation"))
             .description("Production rollout")
             .bodyText("Deploy to all 4 regions?");
     var drawer =
         Overlays.drawer("inspector", "Live Inspector")
-            .dialogRef(ElementRef.named("details"))
+            .dialogRef(ElementRef.scoped("details"))
             .subtitle("Cascade state")
             .body(p().text("7 cascade layers active."));
     var preview =

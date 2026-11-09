@@ -10,13 +10,15 @@ Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples)
 
 ## Core abstractions
 
-- `IntoElement` is the authoring conversion contract. The sealed `Element` hierarchy allows exhaustive compiler dispatch.
-- `RenderOnce.render(context)` expands without adding a scope. `RenderView.render(context)` establishes an identity namespace and optional CSS scope before expansion. `configureScope(scope)` declares the scoped CSS.
+- `IntoElement` is the authoring conversion contract: anything placeable. The sealed `Element` hierarchy allows exhaustive compiler dispatch. `Elements` factories return `TagElement`, `FragmentElement` or plain `Element`; the leaf and wrapper records (`TextElement`, `DeferredElement`, `ComponentElement`, ...) are public only because the compiler pattern-matches them, and are documented as compiler-facing.
+- `Component.render(context)` expands without adding a scope. `View.render(context)` establishes an identity namespace and optional CSS scope before expansion; `viewId()` names the instance and `configureScope(scope)` declares the scoped CSS. Both return `IntoElement`, so a component may return another component. A `View` that is an anonymous class or lambda and keeps the class-name `viewType()` is reported as `unstable-view-type`.
 - `FragmentElement` groups sibling elements without emitting a wrapper, preserving direct-child content models.
 - `TagName` is the sealed element-name family: the built-in `HtmlTag` enum or an author-defined `CustomElement`.
-- `ElementRef` is an identity token, `ElementId` a local identifier, and `IdReference` an attribute reference resolved after expansion.
+- `ElementRef` is the only authoring identity: `scoped(name)` (prefixed by the view scope), `page(name)` (literal, page-unique) or anonymous. An element may carry several refs that alias one DOM id; `IdReference` is the compiler-facing record of an attribute that names refs. View scopes are a compiler concept (`ViewScope`, package-private).
+- `Command` is sealed: `BuiltinCommand` constants, checked against their targets, or `Command.custom(namespace, name, payload)`.
 - `ClientBehavior` is a deduplicated ES module contribution. It emits inline for standalone pages or as a content-hashed asset when output publishes external files.
 - `Styled`, `InteractiveElement`, `ParentElement`, and `FluentBuilder` share authoring operations without unchecked self casts.
+- `RenderContext` is an author-facing interface: `document(key)`, `contributeHead`, `atDocumentEnd`, `contributeBehavior`, `registerHeading`, `headings()` and `report(rule, message, fix)`. The compiler implements it (`PageContext`, package-private), which also carries the view scope, component path and stylesheet collector.
 - `Styled` composes six traits by concern: `LayoutStyled`, `BoxStyled`, `TextStyled`, `EffectStyled`, `ScrollStyled`, and `AnchorStyled`. Every style method takes a typed value of the category its property accepts, so a color cannot be passed where a length belongs.
 - `CssValue` is the sealed family of those values: `CssLength` (dimensions, `calc`, `min`/`max`, `anchor()`), `CssColor` (OKLCH, `color-mix`, `light-dark`, relative colors), `CssNumber`, `CssDuration`, `Easing`, `Border`, `Shadow`, `Background`, `TrackList`, `GridPlacement`, `Transform`, `AspectRatio`, `CssIdent`, and enums for keyword sets (`CssKeyword`). `StyleRefinement` accepts declarations only from the `css` package, so no declaration is built from raw text.
 - `Accessible` writes the element's `Role` and typed `aria-*` states. The generic `attr`, `boolAttr`, and `idRef` methods refuse `role` and `aria-*`.
@@ -36,31 +38,32 @@ classDiagram
     class Element {
         <<interface>>
     }
-    class RenderOnce {
+    class Component {
         <<interface>>
-        +render(RenderContext) Element
+        +render(RenderContext) IntoElement
     }
-    class RenderView {
+    class View {
         <<interface>>
-        +render(RenderContext) Element
+        +render(RenderContext) IntoElement
+        +viewId() String
         +configureScope(ScopeStyle) void
     }
     class TagElement
-    class RenderOnceElement {
+    class ComponentElement {
         <<record>>
     }
-    class RenderViewElement {
+    class ViewElement {
         <<record>>
     }
 
     IntoElement <|-- Element
-    IntoElement <|-- RenderOnce
-    IntoElement <|-- RenderView
+    IntoElement <|-- Component
+    IntoElement <|-- View
     Element <|.. TagElement
-    Element <|.. RenderOnceElement
-    Element <|.. RenderViewElement
-    RenderOnceElement --> RenderOnce : wraps
-    RenderViewElement --> RenderView : wraps
+    Element <|.. ComponentElement
+    Element <|.. ViewElement
+    ComponentElement --> Component : wraps
+    ViewElement --> View : wraps
 ```
 
 ## Dependency graph
@@ -82,7 +85,7 @@ flowchart TB
 | --- | --- | --- |
 | `foundation` | None | Fluent composition and deterministic identifiers/hashing |
 | `css` | `foundation` | CSS values, tokens, authoring traits, collection and serialization |
-| `core` | `foundation`, `css` | Elements, component contracts, identities, lexical context, document contributions |
+| `core` | `foundation`, `css` | Elements, component contracts, identities, commands, the render context contract |
 | `compiler` | `foundation`, `css`, `core` | Page and site compilation, output, diagnostics, routes, artifacts, filesystem and preview adapters |
 | `components` | `foundation`, `css`, `core` | Reusable authored UI |
 | `navigation` | `components`, `compiler` | Route-derived search palette and pager composition |
@@ -111,11 +114,11 @@ block
 | Task | Entry points and contracts |
 | --- | --- |
 | Author HTML | `Elements`, `TagElement`, `TagName` (`HtmlTag`, `CustomElement`), `FragmentElement`, `IntoElement`, sealed `Element` variants |
-| Build components | `RenderOnce`, `RenderView`, `ParentElement`, `InteractiveElement`, `Styled` |
+| Build components | `Component`, `View`, `ParentElement`, `InteractiveElement`, `Styled`, `RenderContext.report(...)` |
 | Add client behavior | `ClientBehavior`, `RenderContext.contributeBehavior(...)`, `CompiledPage.assets()` |
 | Author styles | `Styled` and its six traits, the `CssValue` family (`CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, ...), `StyleRefinement`, `FlexLayout`, `Typography`, `Motion`, `ScopeStyle`, `Interactivity`, `Tokens`, sealed `DesignToken` |
 | Declare accessibility semantics | `Accessible`, `Role` (name, children, state, and `aria-*` requirements) |
-| Bind identities and interactions | `ElementRef`, `ElementId`, `IdReference`, `BuiltinCommand`, `Action`, `TransitionKey` |
+| Bind identities and interactions | `ElementRef` (`scoped`, `page`, `anonymous`), `TagElement.id(ElementRef)`, `Command` (`BuiltinCommand`, `Command.custom`), `ClosedBy`, `TransitionKey` |
 | Trace elements to source | `SourceTracking`, `SourceLocation`, `Compiler.explain(...)`, `PageTree` |
 | Contribute document content | The callback's `RenderContext`: `document(key)`, `contributeHead(...)`, `atDocumentEnd(...)`, `registerHeading(...)` |
 | Compile a page | `PageDocument`, `Compiler.compile(...)`, `CompiledPage`, `OutputMode`, `Asset` |
@@ -148,9 +151,9 @@ flowchart TD
     Writer --> Output
 ```
 
-`PageCompiler` (package-private) coordinates passes. `CompilationState` belongs to one preparation: the page's DOM ids and the references bound to them, generated-id counters, transitions, outgoing links and diagnostics. `ViewExpansion` keeps only deferred priorities and late slots. Neither escapes preparation.
+`PageCompiler` (package-private) coordinates passes. `CompilationState` belongs to one preparation: the page's DOM ids and the references bound to them, generated-id counters, transitions, outgoing links and diagnostics. Binding resolves all refs of one element to one DOM id: the first named ref decides it (scoped refs are qualified by the view scope, page refs are literal), anonymous refs alias it, and a second named ref asking for another id reports `conflicting-element-id`. `ViewExpansion` keeps only deferred priorities and late slots. Neither escapes preparation.
 
-`LayoutPass` orders the document and `ViewExpansion` expands components into `ViewNode`s. Generated ids are numbered within each identity scope, so content added in one view never renumbers another. A failing render, style, late or document-end callback propagates unchanged, with a suppressed `CompilationException` naming the component path. `LayoutPass` creates an explicit document context. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
+`LayoutPass` orders the document and `ViewExpansion` expands components into `ViewNode`s. Generated ids are numbered within each identity scope, so content added in one view never renumbers another. A failing render, style, late or document-end callback propagates unchanged, with a suppressed `CompilationException` naming the component path. `LayoutPass` creates the root `PageContext` for the document. Derived child contexts share that document's state and styles without changing their parent's scope or component path. Deferred elements expand in their lexical scope and are emitted later in priority/sequence order. Late and document-end callbacks receive their explicit contribution context. End sections may register more end sections; head contributions may add more head contributions. Existing iterative processing and ordering are preserved.
 
 `ReferenceLinker` turns `ViewNode`s into `ResolvedNode`s after identity allocation: it substitutes late slots, splices fragments, places each tooltip companion after its invoker and resolves references. Linking only builds the tree; `PageValidator.index` then records elements by id and labelled control ids for the checks that look them up. `PageValidator` checks images, readable interactive labels, same-page fragments, invoker target existence, and compatibility of built-in commands with dialog and popover targets. `AccessibilityRules` checks the linked body tree (see below). It collects `href`, `src`, and `poster` URLs from both body and head nodes. Image checks run during layout while authored style information is available; tree checks run after linking.
 
@@ -164,13 +167,13 @@ Field rendering copies the retained control's authoring configuration before wir
 
 ## Document metadata and component state
 
-`DocumentState` owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations and a `headings()` snapshot; components and the site layer never receive this mutable state. Overlay and dropdown factories accept caller-owned element references, allowing independent invokers to target their content.
+`DocumentState` (compiler, package-private) owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations and a `headings()` snapshot; components and the site layer never receive this mutable state. `DocumentKey.getOrCreate(values)` is the one compiler-facing hook that lets the compiler hold per-page component state without seeing its type. Overlay and dropdown factories accept caller-owned element references, allowing independent invokers to target their content.
 
-`DocumentHeading(targetDomId, title, level)` is component-independent metadata. `registerHeading(localId, title, level)` resolves the local ID in the current view scope and records it. The component emits the referenced element. Registration does not automatically index every HTML heading.
+`DocumentHeading(target, title, level)` is component-independent metadata whose `target` is an `ElementRef`. `registerHeading(target, title, level)` records it; the component binds `target` on the heading element. After linking, the compiler resolves each target to its DOM id for the search index and reports a target that was never bound as `unbound-reference`. Registration does not automatically index every HTML heading.
 
-`ContentSection` and `Toc.DocSection` register headings while rendering. `Toc.fromContext` consumes them through a late element, so it may precede sections. Explicit TOCs accept `List<DocumentHeading>`. Section components retain supported levels 2 through 4; general metadata supports HTML heading levels 1 through 6. Headings retain registration order and scoped target IDs.
+`ContentSection` and `Toc.DocSection` register headings while rendering and bind their sections to page-level refs, so `/page/#section-id` links do not depend on the layout a section sits in. `Toc.fromContext` consumes headings through a late element, so it may precede sections, and links each item with `href(target)`. Explicit TOCs accept `List<DocumentHeading>`. Section components retain supported levels 2 through 4; general metadata supports HTML heading levels 1 through 6. Headings retain registration order.
 
-Search generation reads `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `Toc`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
+Search generation reads the resolved headings from `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `Toc`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
 
 ## Accessibility rules
 
@@ -205,7 +208,7 @@ Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark 
 
 `Location` is flat: optional route, page title, enclosing components, element tag, optional DOM ID and source. Internally, layout records a page-independent `ViewLocation` (components, tag, DOM ID, source) on each node; `CompilationState` adds the page title when it reports, and site compilation adds the route. `Diagnostic.format()` presents it; a component-level location omits the element, and a site-level file location has neither route nor page.
 
-`RenderContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head or end-section content with that path, allowing layout to expand it with its originating component context. These authoring types have no dependency on `compiler`.
+`PageContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head, end-section or heading content with the `ViewLocation` that placed it, allowing layout to expand it with its originating component context. `RenderContext.report(...)` records a component diagnostic at the current component path and origin.
 
 Layout attaches diagnostic locations to resolved tags and retains them when expanding late or deferred content. Linking preserves the location when replacing symbolic attributes. `PreparedPage` snapshots the first location of each outgoing URL and each transition key so site validation can report errors without exposing the intermediate tree.
 

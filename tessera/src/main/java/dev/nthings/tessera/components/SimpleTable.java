@@ -1,10 +1,10 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 /// Simple data table with an optional caption and a header row. Create one with [#create()],
 /// then add headers and rows. Header cells get `scope="col"`. The table does not check that
 /// each row has as many cells as there are headers.
-public final class SimpleTable implements RenderOnce {
+public final class SimpleTable implements Component {
 
   private @Nullable String caption;
   private final List<String> headers = new ArrayList<>();

@@ -48,7 +48,7 @@ class AriaRulesTest {
   }
 
   static Stream<Arguments> violations() {
-    var target = ElementRef.named("target");
+    var target = ElementRef.scoped("target");
     return Stream.of(
         argumentSet(
             "a region without a name",
@@ -160,7 +160,7 @@ class AriaRulesTest {
   @Test
   @DisplayName("declared roles that meet their requirements compile")
   void acceptsSatisfiedRoles() {
-    var control = ElementRef.named("control");
+    var control = ElementRef.scoped("control");
     compiles(
         main()
             .children(

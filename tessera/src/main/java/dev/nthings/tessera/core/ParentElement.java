@@ -1,14 +1,11 @@
 package dev.nthings.tessera.core;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Gatherers;
 import java.util.stream.Stream;
 
-/// Child-accumulation contract: single children, text, varargs, collections and JDK 25
-/// [Gatherers] pipelines. Adding a child to a void element (`input`, `img`, `br`, `hr`, `meta`,
-/// `link`, `source`, `track`) throws IllegalStateException.
+/// Child-accumulation contract: single children, text, varargs, collections and streams. Adding a
+/// child to a void element (`input`, `img`, `br`, `hr`, `meta`, `link`, `source`, `track`) throws
+/// IllegalStateException.
 ///
 /// @param <SELF> concrete element type
 public interface ParentElement<SELF extends ParentElement<SELF>> {
@@ -49,18 +46,6 @@ public interface ParentElement<SELF extends ParentElement<SELF>> {
   /// Adds each child from `stream` in order. The stream is consumed.
   default SELF children(Stream<? extends IntoElement> stream) {
     stream.forEach(c -> appendChild(c.intoElement()));
-    return self();
-  }
-
-  /// Adds one child per window of `windowSize` consecutive items. `rowRenderer` receives each
-  /// window, a list of up to `windowSize` items whose last window may be shorter, and its element
-  /// is appended. Throws IllegalArgumentException if `windowSize` is less than 1.
-  default <T> SELF childrenWindowed(
-      List<T> items, int windowSize, Function<List<T>, ? extends IntoElement> rowRenderer) {
-    items.stream()
-        .gather(Gatherers.windowFixed(windowSize))
-        .map(rowRenderer)
-        .forEach(row -> appendChild(row.intoElement()));
     return self();
   }
 }

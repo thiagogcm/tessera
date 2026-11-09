@@ -10,7 +10,7 @@ import static dev.nthings.tessera.support.SiteFixtures.homeWithLogoAndGuide;
 import static dev.nthings.tessera.support.SiteFixtures.logo;
 import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 
-import dev.nthings.tessera.core.RenderOnce;
+import dev.nthings.tessera.core.Component;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,7 +83,7 @@ class SiteAssetsTest {
   @Test
   @DisplayName("two routes at one path are reported before any page renders")
   void rejectsDuplicateRoutesBeforeRendering() {
-    RenderOnce failing =
+    Component failing =
         context -> {
           throw new AssertionError("rendered");
         };

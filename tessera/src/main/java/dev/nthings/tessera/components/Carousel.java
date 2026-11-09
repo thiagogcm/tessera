@@ -5,11 +5,10 @@ import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -28,13 +27,14 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.SnapAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Translation;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 
 /// Horizontal carousel of slides that snap into place as the user scrolls. It needs no script. The
 /// track is a focusable region named by the `ariaLabel`. Chromium also shows native previous and
 /// next buttons and slide markers; other browsers keep the scrollable track.
-public final class Carousel implements RenderView {
+public final class Carousel implements View {
 
   private static final CssIdent ITEM_COUNTER = CssIdent.of("carousel-item");
 
@@ -61,12 +61,12 @@ public final class Carousel implements RenderView {
     }
   }
 
-  private final ElementId id;
+  private final String id;
   private final String ariaLabel;
   private final List<Slide> slides = new ArrayList<>();
 
   private Carousel(String id, String ariaLabel) {
-    this.id = ElementId.of(id);
+    this.id = Fnv1a64.sanitizeLocalId(id);
     this.ariaLabel = ariaLabel;
   }
 
@@ -91,7 +91,7 @@ public final class Carousel implements RenderView {
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 
@@ -214,7 +214,7 @@ public final class Carousel implements RenderView {
   }
 
   private CssIdent anchorIdent() {
-    return CssIdent.custom("carousel-" + id.slug());
+    return CssIdent.custom("carousel-" + id);
   }
 
   @Override

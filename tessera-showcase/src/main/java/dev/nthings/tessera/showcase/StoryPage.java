@@ -3,18 +3,18 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.h1;
 import static dev.nthings.tessera.core.Elements.main;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 
 /// Document for one case, appearance and density; the factory runs during render.
 record StoryPage(
     Story story, Story.Variant variant, Catalog.Appearance appearance, Catalog.Density density)
-    implements RenderOnce {
+    implements Component {
 
   @Override
   public Element render(RenderContext context) {

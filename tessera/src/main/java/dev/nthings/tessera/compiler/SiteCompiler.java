@@ -153,8 +153,7 @@ final class SiteCompiler {
             site.routes(),
             route -> {
               try {
-                return new Prepared(
-                    PageCompiler.prepare(route.document(), site.tokens(), siteHead));
+                return new Prepared(PageCompiler.prepare(route.document(), siteHead));
               } catch (CompilationException failure) {
                 return new Failed(
                     failure.diagnostics().stream().map(d -> d.atRoute(route.path())).toList());

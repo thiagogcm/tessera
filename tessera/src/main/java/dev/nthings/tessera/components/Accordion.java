@@ -7,16 +7,16 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderView;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Motion;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +24,7 @@ import java.util.List;
 /// page" can reach closed items. Create one with [#exclusive(String)], where opening an item
 /// closes the others, or [#multiOpen(String)]. The open and close animation is skipped under
 /// reduced motion.
-public final class Accordion implements RenderView {
+public final class Accordion implements View {
 
   /// One section: the `summaryTitle` shown in its summary, its `content`, and whether it starts
   /// open.
@@ -43,14 +43,14 @@ public final class Accordion implements RenderView {
     }
   }
 
-  private final ElementId id;
+  private final String id;
   private final String groupName;
   private final boolean exclusive;
   private final List<Item> items = new ArrayList<>();
 
   private Accordion(String id, boolean exclusive) {
-    this.id = ElementId.of(id);
-    this.groupName = this.id.slug();
+    this.id = Fnv1a64.sanitizeLocalId(id);
+    this.groupName = this.id;
     this.exclusive = exclusive;
   }
 
@@ -80,7 +80,7 @@ public final class Accordion implements RenderView {
   }
 
   @Override
-  public ElementId entityId() {
+  public String viewId() {
     return id;
   }
 

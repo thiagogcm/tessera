@@ -45,7 +45,7 @@ final class SiteArtifacts {
           sb.append(", ");
         }
         sb.append("{\"id\": \"")
-            .append(escapeJson(heading.targetDomId()))
+            .append(escapeJson(heading.domId()))
             .append("\", \"title\": \"")
             .append(escapeJson(heading.title()))
             .append("\", \"level\": ")

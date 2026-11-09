@@ -73,6 +73,21 @@ public final class Fnv1a64 {
     return sb.toString();
   }
 
+  /// Compiler-facing: sanitizes `raw` as [#sanitizeIdentifier(String)] does, then collapses runs of
+  /// `-` to one, so the result never contains `--`, the separator of view-scoped DOM ids. Throws
+  /// IllegalArgumentException if `raw` is empty.
+  public static String sanitizeLocalId(String raw) {
+    var sanitized = sanitizeIdentifier(raw);
+    var sb = new StringBuilder(sanitized.length());
+    for (int i = 0, len = sanitized.length(); i < len; i++) {
+      var c = sanitized.charAt(i);
+      if (c != '-' || sb.isEmpty() || sb.charAt(sb.length() - 1) != '-') {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
+
   /// Converts a camel-case or Pascal-case name to kebab-case, so `MetricCard` gives `metric-card`.
   /// Other characters become `-`, and an empty name gives `view`.
   public static String toKebabCase(String camelOrPascal) {

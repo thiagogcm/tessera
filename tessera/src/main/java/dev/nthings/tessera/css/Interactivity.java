@@ -11,9 +11,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 
-/// Interactive state rules for one element: pseudo-classes, group hover, `:has()`, and
-/// container-width rules. Authors set them through the `InteractiveElement` methods (`hover`,
-/// `motionSafe`, `whenHas`, `onContainer`, ...) rather than by calling this class.
+/// Interactive state rules for one element: pseudo-classes, group hover, and container-width
+/// rules. Authors set them through the `InteractiveElement` methods (`hover`, `motionSafe`,
+/// `onContainer`, ...) rather than by calling this class.
 public final class Interactivity {
 
   /// A rule whose `style` applies while the `containerName` container is at least
@@ -62,7 +62,7 @@ public final class Interactivity {
   }
 
   /// Applies `mutator` to the declarations for `state` and `argument`: the group name for
-  /// `GROUP_HOVER`, the selector for `HAS`, and empty for the other states.
+  /// `GROUP_HOVER`, and empty for the other states.
   public void on(InteractiveState state, String argument, UnaryOperator<StyleRefinement> mutator) {
     mutator.apply(
         states.computeIfAbsent(new StateRule(state, argument), _ -> new StyleRefinement()));

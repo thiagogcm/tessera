@@ -8,6 +8,7 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.core.DocumentHeading;
+import dev.nthings.tessera.core.ElementRef;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,15 +24,17 @@ class TocTest {
     @Test
     @DisplayName("links each item to its target with its heading level")
     void linksEachItemToItsTargetWithItsLevel() {
+      var intro = ElementRef.page("intro");
+      var sub = ElementRef.scoped("sub");
       var toc =
           Toc.of(
               "doc-toc",
               "On This Page",
               List.of(
-                  DocumentHeading.h2("intro", "Introduction"),
-                  DocumentHeading.h3("sub", "Details")));
+                  new DocumentHeading(intro, "Introduction", 2),
+                  new DocumentHeading(sub, "Details", 3)));
 
-      var page = renderMain(div().attr("id", "intro"), div().attr("id", "sub"), toc);
+      var page = renderMain(div().id(intro), div().id(sub), toc);
 
       assertThat(page.elements("nav[aria-label=On This Page] details ol > li > a"))
           .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
@@ -39,15 +42,17 @@ class TocTest {
     }
 
     @Test
-    @DisplayName("rejects dangling fragment ids during prepaint")
-    void rejectsDanglingFragmentIds() {
+    @DisplayName("rejects a heading whose target is never bound")
+    void rejectsUnboundTargets() {
       var brokenToc =
           Toc.of(
-              "broken-toc", "Contents", List.of(DocumentHeading.h2("missing-section", "Missing")));
+              "broken-toc",
+              "Contents",
+              List.of(new DocumentHeading(ElementRef.page("missing-section"), "Missing", 2)));
 
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(brokenToc))
-          .withMessageContaining("references a non-existent fragment ID");
+          .withMessageContaining("unbound-reference");
     }
   }
 
@@ -82,24 +87,22 @@ class TocTest {
   }
 
   @Test
-  @DisplayName("a doc layout lists its sections in the rail, linked by their scoped ids")
-  void listsSectionsInRailLinkedByScopedIds() {
+  @DisplayName("a doc layout lists its sections in the rail, linked by their page-level ids")
+  void listsSectionsInRailLinkedByPageIds() {
     var layout =
         Toc.docLayout(
             "my-doc",
             "Table of Contents",
             ContentSection.ghost("getting-started", "Getting Started"),
             ContentSection.highlight("telemetry", "Telemetry").level(3));
-    var first = Toc.DocLayout.sectionDomId("my-doc", "getting-started");
-    var second = Toc.DocLayout.sectionDomId("my-doc", "telemetry");
 
     var page = renderMain(layout);
 
     assertThat(page.elements(".doc-toc-rail nav a"))
         .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
-        .containsExactly("#" + first + "@2", "#" + second + "@3");
+        .containsExactly("#getting-started@2", "#telemetry@3");
     assertThat(page.elements(".doc-prose-col > section"))
         .extracting(e -> e.id())
-        .containsExactly(first, second);
+        .containsExactly("getting-started", "telemetry");
   }
 }

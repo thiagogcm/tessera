@@ -76,19 +76,21 @@ Use `route.documentUri()` when you need the canonical public URL for a route. Pr
 
 ## Compose reusable components
 
-Use `RenderOnce` for composition without adding a scope:
+Use `Component` for composition without adding a scope:
 
 ```java
-RenderOnce notice = context -> div().child(p().text("Build completed"));
+Component notice = context -> div().child(p().text("Build completed"));
 ```
 
-Use `RenderView` for a reusable component with an identity namespace and isolated CSS. The runnable example includes this component:
+`render(context)` returns any `IntoElement`, so a component may return an element, a fragment, or another component without calling `.intoElement()`.
+
+Use `View` for a reusable component with an identity namespace and isolated CSS. The runnable example includes this component:
 
 ```java
-public record MetricCard(String id, String title, String value) implements RenderView {
+public record MetricCard(String id, String title, String value) implements View {
   @Override
-  public ElementId entityId() {
-    return ElementId.of(id);
+  public String viewId() {
+    return id;
   }
 
   @Override
@@ -101,17 +103,25 @@ public record MetricCard(String id, String title, String value) implements Rende
   }
 
   @Override
-  public Element render(RenderContext context) {
+  public IntoElement render(RenderContext context) {
     return div().children(h2().text(title), p().text(value));
   }
 }
 ```
 
-Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the view's namespace before calling its render method. Repeated instances need distinct instance IDs within the same enclosing scope. Omitting `entityId()` lets the compiler assign deterministic IDs.
+Pass it to `.child(...)` or `.children(...)` like any other component. The compiler establishes the view's namespace before calling its render method. Repeated instances need distinct instance IDs within the same enclosing scope. Omitting `viewId()` (it defaults to `null`) lets the compiler assign deterministic IDs.
+
+`viewType()` names the view in `data-view` and its `@scope` block; it defaults to the kebab-cased class name (`MetricCard` gives `metric-card`). Anonymous classes and lambdas have no stable class name, so the compiler reports `unstable-view-type` for them unless they override `viewType()`.
 
 The compiler marks the view's root element with `data-view` and `data-view-id`, which scope its styles. A view whose `render(context)` returns a fragment or text has no single root to mark, so the compiler wraps it in a `<div>`. Return one element when the parent's content model matters.
 
 Both callbacks receive an explicit `RenderContext` for that turn. Do not retain it for later async work. Keep render callbacks free of shared mutable application state: site compilation expands different pages concurrently.
+
+A component that finds a wiring mistake reports it instead of throwing, so it is collected with the compiler's own diagnostics and located at the component:
+
+```java
+context.report("duplicate-hero-image", "Only one hero image per page", "Remove .hero() from one image.");
+```
 
 ## Group siblings and name custom elements
 
@@ -155,22 +165,28 @@ A scrolling region inside a fixed-height column is a property of the inner panel
 
 ## Link elements with identity references
 
-Bind an `ElementRef` where an element is emitted and use the same reference at its invoker. The compiler resolves both under the binding's view scope:
+An `ElementRef` is the only way to give an element an id. Bind it where the element is emitted with `.id(ref)` and use the same reference at its invoker, label, or link. The compiler resolves both:
 
 ```java
-var target = ElementRef.named("help");
+var target = ElementRef.scoped("help");
 var trigger = button().command(target, BuiltinCommand.SHOW_MODAL).text("Help");
 var dialog = Elements.dialog().id(target).ariaLabel("Help").text("Contact support");
 var body = Elements.main().children(trigger, dialog);
 ```
 
-The reference is an identity token; another `ElementRef.named("help")` is a different token. An unbound reference fails compilation. Higher-level components such as `Overlays.modal(...)` expose their own trigger helpers to manage these references.
+| Factory | DOM id |
+| --- | --- |
+| `ElementRef.scoped("save")` | `save` prefixed by the binding's view scope: `toolbar--save` inside a view with id `toolbar` |
+| `ElementRef.page("installation")` | `installation` exactly, wherever it is bound; use it for public fragments such as `/guide/#installation` |
+| `ElementRef.anonymous()` or `element.ref()` | Assigned by the compiler as `<tag>-<n>` within the view scope |
 
-For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, emits a target ID, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components can call `context.registerHeading(localId, title, level)` inside their render callback and emit the returned `targetDomId` themselves.
+The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`. Higher-level components such as `Overlays.modal(...)` expose their own trigger helpers to manage these references.
+
+For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, binds the section to a page-level id, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
 
 ## Add a button
 
-`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(...)` targets a dialog or popover, including one emitted later in the document: `Overlays.Modal.dialogRef()`, `Overlays.Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. Navigation stays on anchors.
+`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(target, command)` runs a `Command` on the element bound to `target`, including one emitted later in the document: `Overlays.Modal.dialogRef()`, `Overlays.Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. A `BuiltinCommand` such as `SHOW_MODAL` or `TOGGLE_POPOVER` is checked against its target; `Command.custom("cart", "add", Map.of("data-sku", sku))` emits `command="--cart-add"` plus the payload attributes for the application's own script, and accepts any target. Plain elements take the same `command(target, command)`. Navigation stays on anchors.
 
 ```java
 var confirm = Overlays.modal("confirm", "Confirm");
@@ -233,7 +249,7 @@ Compilation failed with 1 error:
 
 Independent image, identity, reference, URL syntax, and markup errors are collected before a page fails. Late and deferred elements retain their enclosing component path. Site compilation first checks paths: two routes with one path report `duplicate-route`, and a registered file at the path of a route, another file, or a generated file (`/search-index.json`, `/sitemap.xml`) reports `file-path-collision`. These stop compilation before any page renders. It then collects page errors in route declaration order; once all pages prepare successfully, it collects cross-route link and transition-key errors together, along with any generated stylesheet or module path that collides with a route or file. Cross-route diagnostics identify the first use of each outgoing URL on a page. Head and end-section contributions retain the component path from their registration, including when they expand further components.
 
-Native dialog commands (`show-modal`, `close`, `request-close`) require a `<dialog>` target. Popover commands (`toggle-popover`, `show-popover`, `hide-popover`) require a target with a `popover` attribute, following the [HTML command rules](https://html.spec.whatwg.org/multipage/form-elements.html#attr-button-command). Custom commands continue to use any existing target.
+A native dialog's dismissal is set with `closedBy(ClosedBy.ANY)`, `CLOSE_REQUEST`, or `NONE`. Native dialog commands (`show-modal`, `close`, `request-close`) require a `<dialog>` target. Popover commands (`toggle-popover`, `show-popover`, `hide-popover`) require a target with a `popover` attribute, following the [HTML command rules](https://html.spec.whatwg.org/multipage/form-elements.html#attr-button-command). Custom commands continue to use any existing target.
 
 Duplicate bindings are reported as ambiguous; target-dependent command checks are skipped for ambiguous targets. Malformed URLs produce an `invalid-url` diagnostic alongside other page errors. The compiler reports authoring errors without emitting HTML. Exceptions thrown by application render callbacks still propagate normally, and trusted raw HTML remains outside validation.
 
@@ -273,7 +289,7 @@ Density scales spacing tokens, including control padding. It does not scale the 
 
 ## Write styles with typed values
 
-Style methods take values of the type their property accepts; no style method takes raw declaration text. `ScopeStyle` selectors and container conditions, and `whenHas(...)`, are trusted strings emitted as written.
+Style methods take values of the type their property accepts; no style method takes raw declaration text. `ScopeStyle` selectors and container conditions are trusted strings emitted as written.
 
 ```java
 div()

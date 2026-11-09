@@ -11,15 +11,14 @@ import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementId;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.RenderOnce;
-import dev.nthings.tessera.core.RenderView;
-import dev.nthings.tessera.core.ViewScope;
+import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -53,11 +52,11 @@ public final class Toc {
   private Toc() {}
 
   /// Section whose heading is registered with the page, so [Toc#fromContext(String, String)]
-  /// lists it. `level` is
-  /// the heading level, from 2 to 4. Throws IllegalArgumentException if `level` is outside that
-  /// range.
+  /// lists it. `id` is the section's page-level DOM id ([ElementRef#page(String)]), so
+  /// `/guide/#installation` links to it from anywhere. `level` is the heading level, from 2 to 4.
+  /// Throws IllegalArgumentException if `level` is outside that range.
   public record DocSection(String id, String title, int level, List<Element> body)
-      implements RenderOnce {
+      implements Component {
 
     public DocSection {
       ContentSection.checkHeadingLevel(level);
@@ -65,12 +64,13 @@ public final class Toc {
 
     @Override
     public Element render(RenderContext context) {
-      var entry = context.registerHeading(id, title, level);
-      var heading = ContentSection.sectionHeading(level, entry.targetDomId(), title);
+      var target = ElementRef.page(id);
+      context.registerHeading(target, title, level);
+      var heading = ContentSection.sectionHeading(level, title);
 
       var sectionEl =
           Elements.section()
-              .attr("id", entry.targetDomId())
+              .id(target)
               .scrollMarginBlockStart(CssLength.rem(7))
               .flex()
               .flexCol()
@@ -81,8 +81,8 @@ public final class Toc {
     }
   }
 
-  /// Creates a level-2 section. `id` is local to the enclosing view scope and names the heading
-  /// that [#fromContext] links to.
+  /// Creates a level-2 section. `id` is the section's page-level DOM id, which [#fromContext]
+  /// links to; two sections with one id on a page report `duplicate-id`.
   public static DocSection section(String id, String title, IntoElement... children) {
     return createSection(id, title, 2, children);
   }
@@ -101,19 +101,19 @@ public final class Toc {
   /// [ContentSection] headings. It is resolved after layout, so it may precede the sections.
   /// `heading` titles the `<nav>`.
   public static Element fromContext(String id, String heading) {
-    return Elements.late(
-        context -> new TableOfContents(ElementId.of(id), heading, context.headings()));
+    return Elements.late(context -> new TableOfContents(id, heading, context.headings()));
   }
 
   /// Creates a table of contents with the given headings, in order, instead of the headings
   /// registered on the page.
   public static TableOfContents of(String id, String heading, List<DocumentHeading> explicitItems) {
-    return new TableOfContents(ElementId.of(id), heading, explicitItems);
+    return new TableOfContents(id, heading, explicitItems);
   }
 
   /// Creates a two-column layout: `sections` on the left, and on the right a sticky table of
   /// contents listing every heading on the page. In a container narrower than 48rem, the table
-  /// of contents stacks above the sections. `tocId` names the layout and its table of contents.
+  /// of contents stacks above the sections. `tocId` names the layout and its table of contents. The
+  /// sections keep their page-level ids, so links to them do not depend on the layout.
   public static DocLayout docLayout(String tocId, String tocHeading, IntoElement... sections) {
     return new DocLayout(tocId, tocHeading, elements(sections));
   }
@@ -125,20 +125,21 @@ public final class Toc {
   /// Collapsible `<nav>` of links to headings, with the link for the section in view
   /// highlighted. Create one with [Toc#fromContext(String, String)] or
   /// [Toc#of(String, String, List)].
-  public static final class TableOfContents implements RenderView {
+  public static final class TableOfContents implements View {
 
-    private final ElementId id;
+    private final String id;
     private final String heading;
     private final List<DocumentHeading> items;
 
-    public TableOfContents(ElementId id, String heading, List<DocumentHeading> items) {
+    /// Creates a table of contents `id` titled `heading` that links to `items` in order.
+    public TableOfContents(String id, String heading, List<DocumentHeading> items) {
       this.id = id;
       this.heading = heading;
       this.items = List.copyOf(items);
     }
 
     @Override
-    public ElementId entityId() {
+    public String viewId() {
       return id;
     }
 
@@ -221,7 +222,7 @@ public final class Toc {
       for (var item : items) {
         list.child(
             li().child(
-                    a("#" + item.targetDomId())
+                    a(item.target())
                         .attr("data-level", Integer.toString(item.level()))
                         .text(item.title())));
       }
@@ -245,22 +246,11 @@ public final class Toc {
 
   /// Two-column layout of prose sections and a sticky table of contents. Create one with
   /// [Toc#docLayout(String, String, IntoElement...)].
-  public record DocLayout(String tocId, String tocHeading, List<Element> sections)
-      implements RenderView {
+  public record DocLayout(String tocId, String tocHeading, List<Element> sections) implements View {
 
     @Override
-    public ElementId entityId() {
-      return layoutId(tocId);
-    }
-
-    /// DOM id of section `sectionId` in a `docLayout(tocId, ...)` placed at the top level of the
-    /// page. Use it in a URL fragment to link to the section from another page.
-    public static String sectionDomId(String tocId, String sectionId) {
-      return ViewScope.ROOT.extend(layoutId(tocId)).extend(ElementId.of(sectionId)).domId();
-    }
-
-    private static ElementId layoutId(String tocId) {
-      return ElementId.of(tocId + "-layout");
+    public String viewId() {
+      return tocId + "-layout";
     }
 
     @Override

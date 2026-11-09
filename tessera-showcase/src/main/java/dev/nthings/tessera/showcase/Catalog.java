@@ -147,7 +147,7 @@ public final class Catalog {
             + "ElementRef, so the id link is checked at compile time.",
         List.of("popover=\"auto\"", "command=\"toggle-popover\"", "ElementRef"),
         List.of(
-            "var panel = ElementRef.named(\"panel\");",
+            "var panel = ElementRef.scoped(\"panel\");",
             "Button.of(\"Toggle popover\").command(panel, BuiltinCommand.TOGGLE_POPOVER);",
             "div().id(panel).popover(PopoverMode.AUTO).text(\"…\");"),
         List.of(variant("toggle", "Toggle", true, Catalog::togglePopover)));
@@ -233,7 +233,7 @@ public final class Catalog {
   }
 
   private static IntoElement togglePopover() {
-    var panel = ElementRef.named("panel");
+    var panel = ElementRef.scoped("panel");
     return div()
         .layout(
             FlexLayout.column(

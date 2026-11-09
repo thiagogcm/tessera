@@ -15,8 +15,6 @@ public enum InteractiveState {
   USER_VALID,
   /// Argument: sanitized `data-group` name of the hovered ancestor.
   GROUP_HOVER,
-  /// Argument: relative selector inside `:has(...)`.
-  HAS,
   /// `@media (prefers-reduced-motion: no-preference)` around the nested rule, not a pseudo-class.
   MOTION_SAFE;
 
@@ -30,7 +28,6 @@ public enum InteractiveState {
       case USER_INVALID -> "&:user-invalid{";
       case USER_VALID -> "&:user-valid{";
       case GROUP_HOVER -> "[data-group=\"" + argument + "\"]:hover &{";
-      case HAS -> "&:has(" + argument + "){";
       case MOTION_SAFE -> "@media (prefers-reduced-motion: no-preference){";
     };
   }

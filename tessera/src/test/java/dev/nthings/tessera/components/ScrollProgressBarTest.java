@@ -15,7 +15,7 @@ class ScrollProgressBarTest {
 
   @BeforeAll
   static void renderBar() {
-    page = renderMain(new ScrollProgressBar("top-progress"));
+    page = renderMain(ScrollProgressBar.of());
   }
 
   @Test
@@ -30,6 +30,6 @@ class ScrollProgressBarTest {
   @Test
   @DisplayName("is hidden from assistive technology")
   void isHiddenFromAssistiveTechnology() {
-    assertThat(page.elementById("top-progress")).hasAttribute("aria-hidden", "true");
+    assertThat(page.element("main > div")).hasAttribute("aria-hidden", "true");
   }
 }

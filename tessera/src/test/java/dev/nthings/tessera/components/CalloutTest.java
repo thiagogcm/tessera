@@ -16,14 +16,26 @@ class CalloutTest {
 
   static Stream<Arguments> calloutsByTone() {
     return Stream.of(
-        argumentSet("note", Callout.note("Important note about JDK 25."), "note", "Note"),
-        argumentSet("tip", Callout.tip("Enable bleeding-edge CSS features."), "tip", "Tip"),
-        argumentSet("important", Callout.important("Read this first."), "important", "Important"),
         argumentSet(
-            "warning", Callout.warning("Do not use preview language flags."), "warning", "Warning"),
+            "note", Callout.of(Callout.Kind.NOTE, "Important note about JDK 25."), "note", "Note"),
+        argumentSet(
+            "tip",
+            Callout.of(Callout.Kind.TIP, "Enable bleeding-edge CSS features."),
+            "tip",
+            "Tip"),
+        argumentSet(
+            "important",
+            Callout.of(Callout.Kind.IMPORTANT, "Read this first."),
+            "important",
+            "Important"),
+        argumentSet(
+            "warning",
+            Callout.of(Callout.Kind.WARNING, "Do not use preview language flags."),
+            "warning",
+            "Warning"),
         argumentSet(
             "caution",
-            Callout.caution("Destructive operations require confirmation."),
+            Callout.of(Callout.Kind.CAUTION, "Destructive operations require confirmation."),
             "caution",
             "Caution"));
   }
@@ -43,7 +55,7 @@ class CalloutTest {
   void customTitleReplacesDefault() {
     var aside =
         renderMain(
-                Callout.caution("Destructive operations require confirmation.")
+                Callout.of(Callout.Kind.CAUTION, "Destructive operations require confirmation.")
                     .title("Hazard Ahead"))
             .element("aside[role=note]");
 

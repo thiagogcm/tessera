@@ -6,10 +6,10 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -17,6 +17,7 @@ import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
@@ -24,73 +25,62 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /// Stack of collapsible sections on native `<details>` and `<summary>` elements, so "Find in
-/// page" can reach closed items. Create one with [#exclusive(String)], where opening an item
-/// closes the others, or [#multiOpen(String)]. The open and close animation is skipped under
-/// reduced motion.
-public final class Accordion implements View {
+/// page" can reach closed items. Create one with [#of()]; by default any number of items can be
+/// open, and [#exclusive()] makes opening one close the others. The open and close animation is
+/// skipped under reduced motion.
+public final class Accordion extends BuiltinView {
 
-  /// One section: the `summaryTitle` shown in its summary, its `content`, and whether it starts
-  /// open.
-  public record Item(String summaryTitle, Element content, boolean initiallyOpen) {
-    /// Creates an item whose body is `bodyText` in a muted paragraph.
-    public static Item ofText(String summaryTitle, String bodyText, boolean initiallyOpen) {
-      return new Item(
-          summaryTitle,
-          p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(bodyText),
-          initiallyOpen);
-    }
+  private static final DocumentKey<AtomicInteger> GROUPS =
+      DocumentKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
 
-    /// Creates an item whose body is `content`.
-    public static Item of(String summaryTitle, IntoElement content, boolean initiallyOpen) {
-      return new Item(summaryTitle, content.intoElement(), initiallyOpen);
-    }
-  }
+  private record Item(String title, Element content, boolean open) {}
 
-  private final String id;
-  private final String groupName;
-  private final boolean exclusive;
+  private boolean exclusive;
   private final List<Item> items = new ArrayList<>();
 
-  private Accordion(String id, boolean exclusive) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
-    this.groupName = this.id;
-    this.exclusive = exclusive;
+  private Accordion() {}
+
+  /// Creates an empty accordion in which any number of items can be open.
+  public static Accordion of() {
+    return new Accordion();
   }
 
-  /// Creates an accordion where opening one item closes the others. Its `name` group is the slug of
-  /// `id`, so give each accordion on a page a distinct id. Throws IllegalArgumentException if `id`
-  /// is empty.
-  public static Accordion exclusive(String id) {
-    return new Accordion(id, true);
-  }
-
-  /// Creates an accordion where any number of items can be open at once. Throws
-  /// IllegalArgumentException if `id` is empty.
-  public static Accordion multiOpen(String id) {
-    return new Accordion(id, false);
-  }
-
-  /// Adds an item whose body is `bodyText` in a muted paragraph.
-  public Accordion item(String summaryTitle, String bodyText, boolean initiallyOpen) {
-    items.add(Item.ofText(summaryTitle, bodyText, initiallyOpen));
+  /// Names this instance in the enclosing view scope; ids bound inside are prefixed with it. An
+  /// exclusive accordion also uses it as its `<details name>` group. Without it, the compiler
+  /// assigns `accordion-<n>` and the group gets a page-unique name.
+  public Accordion id(String id) {
+    this.id = id;
     return this;
   }
 
-  /// Adds an item whose body is `content`.
-  public Accordion item(String summaryTitle, IntoElement content, boolean initiallyOpen) {
-    items.add(Item.of(summaryTitle, content, initiallyOpen));
+  /// Makes opening one item close the others, through a shared `<details name>` group.
+  public Accordion exclusive() {
+    this.exclusive = true;
+    return this;
+  }
+
+  /// Adds an item titled `title` whose body is `text` in a muted paragraph, open on load when
+  /// `open` is true.
+  public Accordion item(String title, String text, boolean open) {
+    return item(title, p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(text), open);
+  }
+
+  /// Adds an item titled `title` whose body is `content`, open on load when `open` is true.
+  public Accordion item(String title, IntoElement content, boolean open) {
+    items.add(new Item(title, content.intoElement(), open));
     return this;
   }
 
   @Override
-  public String viewId() {
-    return id;
+  String viewType() {
+    return "accordion";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -113,8 +103,8 @@ public final class Accordion implements View {
                     .py(Tokens.SPACE_4)
                     .fontWeight(600)
                     .cursor(Cursor.POINTER)
-                    .listStyleNone())
-        .select(":scope > details > summary:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
+                    .listStyleNone()
+                    .on(State.HOVER, h -> h.bg(Tokens.SURFACE_SUBTLE)))
         .select(
             ":scope > details > summary .accordion-chevron", s -> s.textColor(Tokens.TEXT_MUTED))
         .select(
@@ -143,21 +133,29 @@ public final class Accordion implements View {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var root = div();
+    var group = exclusive ? groupName(context) : null;
     for (var item : items) {
       var detailsEl =
           details()
-              .when(exclusive, d -> d.attr("name", groupName))
-              .boolAttr("open", item.initiallyOpen())
+              .whenPresent(group, (d, name) -> d.attr("name", name))
+              .boolAttr("open", item.open())
               .children(
                   summary()
                       .children(
-                          span().text(item.summaryTitle()),
+                          span().text(item.title()),
                           span().attr("class", "accordion-chevron").ariaHidden(true).text("▾")),
                   div().attr("class", "accordion-body").child(item.content()));
       root.child(detailsEl);
     }
     return root;
+  }
+
+  private String groupName(RenderContext context) {
+    var explicit = id;
+    return explicit != null
+        ? Fnv1a64.sanitizeLocalId(explicit)
+        : "accordion-" + context.document(GROUPS).incrementAndGet();
   }
 }

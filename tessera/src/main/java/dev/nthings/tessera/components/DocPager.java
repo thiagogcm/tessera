@@ -4,97 +4,62 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.css.Transition;
-import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
 
-/// Previous and next page cards in a `<nav>`. Each card shows "← Previous" or "Next →" above the
-/// page title; those labels are fixed English. The cards sit side by side when the nearest ancestor
-/// container, such as the one `Toc.docLayout` sets, is 36rem or wider. Otherwise they stack.
-public final class DocPager implements View, FluentBuilder<DocPager> {
+/// Previous and next page cards in a `<nav>`. Create one with [#of(Link, Link)]. Each card shows
+/// "← Previous" or "Next →" above the link label; those hints are fixed English. The cards sit
+/// side by side when the nearest ancestor container, such as the one [DocLayout] sets, is 36rem
+/// or wider. Otherwise they stack.
+public final class DocPager extends BuiltinView {
 
-  /// A page link: its `href` and the `title` shown in the card.
-  public record PageRef(String href, String title) {}
-
-  private @Nullable PageRef prev;
-  private @Nullable PageRef next;
+  private final @Nullable Link previous;
+  private final @Nullable Link next;
   private String label = "Documentation navigation";
 
-  private DocPager(@Nullable PageRef prev, @Nullable PageRef next) {
-    this.prev = prev;
+  private DocPager(@Nullable Link previous, @Nullable Link next) {
+    this.previous = previous;
     this.next = next;
   }
 
-  /// Creates a pager with an optional previous and next page. A null side is omitted.
-  public static DocPager of(@Nullable PageRef prev, @Nullable PageRef next) {
-    return new DocPager(prev, next);
+  /// Creates a pager linking to the `previous` and `next` pages; a `null` side is omitted.
+  public static DocPager of(@Nullable Link previous, @Nullable Link next) {
+    return new DocPager(previous, next);
   }
 
-  /// Creates a pager with only a previous page link.
-  public static DocPager prev(String href, String title) {
-    return new DocPager(new PageRef(href, title), null);
-  }
-
-  /// Creates a pager with only a next page link.
-  public static DocPager next(String href, String title) {
-    return new DocPager(null, new PageRef(href, title));
-  }
-
-  @Override
-  public DocPager self() {
+  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
+  /// `tessera-doc-pager-<n>`.
+  public DocPager id(String id) {
+    this.id = id;
     return this;
   }
 
-  /// Accessible name of the landmark; make it distinct when a page has several pagers. The default
-  /// is `Documentation navigation`.
+  /// Sets the accessible name of the landmark; make it distinct when a page has several pagers.
+  /// The default is `Documentation navigation`.
   public DocPager label(String label) {
     this.label = label;
     return this;
   }
 
-  /// Sets the previous page link, replacing any earlier one.
-  public DocPager prevPage(String href, String title) {
-    this.prev = new PageRef(href, title);
-    return this;
-  }
-
-  /// Sets the next page link, replacing any earlier one.
-  public DocPager nextPage(String href, String title) {
-    this.next = new PageRef(href, title);
-    return this;
-  }
-
-  /// Returns the previous page link set on this pager, or `null` if there is none. This reads the
-  /// link; it is not the [#prev(String, String)] factory.
-  public @Nullable PageRef prev() {
-    return prev;
-  }
-
-  /// Returns the next page link set on this pager, or `null` if there is none. This reads the
-  /// link; it is not the [#next(String, String)] factory.
-  public @Nullable PageRef next() {
-    return next;
-  }
-
   @Override
-  public String viewType() {
+  String viewType() {
     return "tessera-doc-pager";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -121,10 +86,12 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
                     .textColor(Tokens.TEXT_PRIMARY)
                     .transition(
                         Transition.controlFeedback()
-                            .properties(Animatable.BORDER_COLOR, Animatable.BACKGROUND)))
-        .select(
-            ":scope > .pager-card:hover",
-            s -> s.border(Border.hairline(Tokens.ACCENT_PRIMARY)).bg(Tokens.SURFACE_SUBTLE))
+                            .properties(Animatable.BORDER_COLOR, Animatable.BACKGROUND))
+                    .on(
+                        State.HOVER,
+                        h ->
+                            h.border(Border.hairline(Tokens.ACCENT_PRIMARY))
+                                .bg(Tokens.SURFACE_SUBTLE)))
         .select(":scope > .pager-card.pager-prev", s -> s.gridColumn(GridPlacement.at(1)))
         .select(
             ":scope > .pager-card.pager-next",
@@ -138,16 +105,16 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var navEl = nav().ariaLabel(label).attr("class", "doc-pager");
 
-    if (prev != null) {
+    if (previous != null) {
       var prevCard =
-          a(prev.href())
+          a(previous.href())
               .attr("class", "pager-card pager-prev")
               .children(
                   span().attr("class", "pager-hint").text("← Previous"),
-                  span().attr("class", "pager-title").text(prev.title()));
+                  span().attr("class", "pager-title").text(previous.label()));
       navEl.child(prevCard);
     }
 
@@ -157,7 +124,7 @@ public final class DocPager implements View, FluentBuilder<DocPager> {
               .attr("class", "pager-card pager-next")
               .children(
                   span().attr("class", "pager-hint").text("Next →"),
-                  span().attr("class", "pager-title").text(next.title()));
+                  span().attr("class", "pager-title").text(next.label()));
       navEl.child(nextCard);
     }
 

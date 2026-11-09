@@ -11,7 +11,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -25,9 +24,11 @@ import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
 /// Admonition rendered as an `<aside role="note">` with a colored icon, a title, and a tinted
-/// background. Create one with a kind factory such as [#note(String)]. The title defaults to the
-/// English name of the [Kind]; [#title(String)] replaces it.
-public final class Callout implements View, FluentBuilder<Callout>, ParentElement<Callout> {
+/// background. Create one with [#of(Kind, String)] or [#of(Kind, IntoElement...)], and add more
+/// content as children. The title defaults to the English name of the [Kind]; [#title(String)]
+/// replaces it.
+public final class Callout extends BuiltinView
+    implements FluentBuilder<Callout>, ParentElement<Callout> {
 
   /// Admonition kind, each with its own icon, [Tone] and default title.
   public enum Kind {
@@ -71,46 +72,6 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
     this.kind = kind;
   }
 
-  public static Callout note(String text) {
-    return of(Kind.NOTE, text);
-  }
-
-  public static Callout note(IntoElement... elements) {
-    return of(Kind.NOTE, elements);
-  }
-
-  public static Callout tip(String text) {
-    return of(Kind.TIP, text);
-  }
-
-  public static Callout tip(IntoElement... elements) {
-    return of(Kind.TIP, elements);
-  }
-
-  public static Callout important(String text) {
-    return of(Kind.IMPORTANT, text);
-  }
-
-  public static Callout important(IntoElement... elements) {
-    return of(Kind.IMPORTANT, elements);
-  }
-
-  public static Callout warning(String text) {
-    return of(Kind.WARNING, text);
-  }
-
-  public static Callout warning(IntoElement... elements) {
-    return of(Kind.WARNING, elements);
-  }
-
-  public static Callout caution(String text) {
-    return of(Kind.CAUTION, text);
-  }
-
-  public static Callout caution(IntoElement... elements) {
-    return of(Kind.CAUTION, elements);
-  }
-
   /// Creates a callout of `kind` whose body is one paragraph of `text`.
   public static Callout of(Kind kind, String text) {
     return new Callout(kind).child(Elements.p().text(text));
@@ -126,7 +87,14 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
     return this;
   }
 
-  /// Sets the header title, replacing the kind's default title.
+  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
+  /// it. Without it, the compiler assigns `tessera-callout-<n>`.
+  public Callout id(String id) {
+    this.id = id;
+    return this;
+  }
+
+  /// Sets the visible title, replacing the kind's default title.
   public Callout title(String title) {
     this.customTitle = title;
     return this;
@@ -137,18 +105,13 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
     children.add(child);
   }
 
-  /// The admonition kind.
-  public Kind kind() {
-    return kind;
-  }
-
   @Override
-  public String viewType() {
+  String viewType() {
     return "tessera-callout";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -184,7 +147,7 @@ public final class Callout implements View, FluentBuilder<Callout>, ParentElemen
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var displayTitle = customTitle != null ? customTitle : kind.defaultTitle;
     var header =
         div()

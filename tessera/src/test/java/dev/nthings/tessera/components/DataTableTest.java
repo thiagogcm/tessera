@@ -21,13 +21,13 @@ class DataTableTest {
   @BeforeAll
   static void renderTable() {
     var table =
-        new DataTable<>(
-            "services",
-            "Service telemetry",
-            List.of(
-                Column.rowHeader("Service", r -> text(r.service())),
-                Column.text("Region \"AZ\"", ServiceRow::region)),
-            List.of(new ServiceRow("auth-edge", "us-east-1"), new ServiceRow("ledger", "eu-1")));
+        DataTable.of(
+                "Service telemetry",
+                List.of(
+                    Column.rowHeader("Service", (ServiceRow r) -> text(r.service())),
+                    Column.text("Region \"AZ\"", ServiceRow::region)),
+                List.of(new ServiceRow("auth-edge", "us-east-1"), new ServiceRow("ledger", "eu-1")))
+            .id("services");
     page = renderMain(table);
   }
 
@@ -50,7 +50,8 @@ class DataTableTest {
   void isFocusableScrollRegionLabelledByCaption() {
     var region = page.element("div[role=region][tabindex=0]");
 
-    assertThat(region).hasAttribute("aria-labelledby", region.selectFirst("caption").id());
+    assertThat(region).hasAttribute("aria-labelledby", "services--caption");
+    assertThat(region.selectFirst("caption")).hasAttribute("id", "services--caption");
   }
 
   @Test

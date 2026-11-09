@@ -10,6 +10,7 @@ import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.StyleRefinement;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
@@ -36,8 +37,8 @@ final class ButtonFace {
                     .rounded(Tokens.RADIUS_MD)
                     .border(Border.hairline(CssColor.transparent()))
                     .textDecorationNone()
-                    .whiteSpace(WhiteSpace.NOWRAP))
-        .select(":scope:focus-visible", s -> s.focusRing(Tokens.ACCENT_PRIMARY))
+                    .whiteSpace(WhiteSpace.NOWRAP)
+                    .on(State.FOCUS_VISIBLE, f -> f.focusRing(Tokens.ACCENT_PRIMARY)))
         .select(":scope[aria-busy=true]", s -> s.cursor(Cursor.PROGRESS))
         .select(":scope:disabled", s -> s.opacity(0.55).cursor(Cursor.NOT_ALLOWED));
 
@@ -53,7 +54,7 @@ final class ButtonFace {
                   .flexShrink(0));
     }
 
-    for (var size : Button.Size.values()) {
+    for (var size : Size.values()) {
       scope.select(
           ":scope.button--" + css(size),
           s -> {
@@ -68,9 +69,8 @@ final class ButtonFace {
     for (var tone : Tone.values()) {
       for (var variant : Button.Variant.values()) {
         var selector = ":scope.button--" + css(tone) + ".button--" + css(variant);
-        scope
-            .select(selector, s -> paint(s, tone, variant))
-            .select(selector + ":hover:not(:disabled)", s -> hover(s, tone, variant));
+        scope.select(
+            selector, s -> paint(s, tone, variant).on(State.HOVER, h -> hover(h, tone, variant)));
       }
     }
 
@@ -79,12 +79,28 @@ final class ButtonFace {
         m -> m.select(":scope", s -> s.transition(Transition.controlFeedback())));
   }
 
-  private static StyleRefinement iconBox(StyleRefinement style, Button.Size size) {
-    return style.inlineSize(size.iconBox()).blockSize(size.iconBox()).p(CssLength.px(0));
+  /// Square box for icon buttons; the icon box grows with the size.
+  private static StyleRefinement iconBox(StyleRefinement style, Size size) {
+    var box =
+        switch (size) {
+          case SM -> Tokens.SPACE_8;
+          case MD -> Tokens.SPACE_10;
+          case LG -> Tokens.SPACE_12;
+        };
+    return style.inlineSize(box).blockSize(box).p(CssLength.px(0));
   }
 
-  private static StyleRefinement paddedBox(StyleRefinement style, Button.Size size) {
-    return style.fontSize(size.fontSize()).px(size.paddingInline()).py(size.paddingBlock());
+  /// Text buttons: padding follows density; type size does not.
+  private static StyleRefinement paddedBox(StyleRefinement style, Size size) {
+    return switch (size) {
+      case SM -> style.fontSize(Tokens.FONT_SIZE_XS).px(Tokens.SPACE_3).py(Tokens.SPACE_1);
+      case MD ->
+          style
+              .fontSize(Tokens.CONTROL_FONT_SIZE)
+              .px(Tokens.CONTROL_PADDING_INLINE)
+              .py(Tokens.SPACE_2);
+      case LG -> style.fontSize(Tokens.FONT_SIZE_MD).px(Tokens.SPACE_5).py(Tokens.SPACE_3);
+    };
   }
 
   static TagElement element(ButtonBase<?> model, boolean icon) {

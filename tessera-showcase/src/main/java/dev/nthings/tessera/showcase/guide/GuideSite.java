@@ -15,7 +15,8 @@ import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.SearchPalette;
-import dev.nthings.tessera.components.Toc;
+import dev.nthings.tessera.components.Section;
+import dev.nthings.tessera.components.TableOfContents;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
@@ -66,21 +67,18 @@ public final class GuideSite {
                     "Guide",
                     page(
                         "Guide",
-                        Toc.fromContext("contents", "On this page"),
-                        Toc.section(
-                            "installation",
-                            "Installation",
-                            p().text("Build with JDK 25 and Maven.")),
-                        Toc.section(
-                            "publishing",
-                            "Publishing",
-                            p().text("Upload the generated directory to a static host."))))))
+                        TableOfContents.of("On this page"),
+                        Section.of("installation", "Installation")
+                            .child(p().text("Build with JDK 25 and Maven.")),
+                        Section.of("publishing", "Publishing")
+                            .child(p().text("Upload the generated directory to a static host."))))))
         .build();
   }
 
   private static Element page(String title, IntoElement... body) {
     var search =
-        SearchPalette.create("guide-search")
+        SearchPalette.of()
+            .id("guide-search")
             .item("Pages", "Home", "/")
             .item("Guide", "Installation", "/guide/#installation")
             .item("Guide", "Publishing", "/guide/#publishing");
@@ -98,7 +96,7 @@ public final class GuideSite {
                     FlexLayout.column(
                         Tokens.SPACE_4, FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
                 .children(body),
-            search.asDeferred(10));
+            Elements.deferred(search, 10));
   }
 
   /// Scoped component with a stable id, styled through shared tokens.

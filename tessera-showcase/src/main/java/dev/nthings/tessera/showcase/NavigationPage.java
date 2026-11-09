@@ -4,13 +4,12 @@ import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.components.Accordion;
 import dev.nthings.tessera.components.Breadcrumbs;
-import dev.nthings.tessera.components.Breadcrumbs.Crumb;
 import dev.nthings.tessera.components.Carousel;
+import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Dropdown;
-import dev.nthings.tessera.components.Tabs;
-import dev.nthings.tessera.components.Tabs.NavItem;
-import dev.nthings.tessera.components.Tabs.TabPanel;
+import dev.nthings.tessera.components.Link;
+import dev.nthings.tessera.components.NavTabs;
 import java.util.List;
 
 /// Breadcrumbs, tabs, accordions, carousels, dropdown menus, and pagers.
@@ -43,13 +42,11 @@ final class NavigationPage {
         .features("content: \"/\" / \"\"", "aria-current=\"page\"")
         .example(
             Breadcrumbs.of(
-                    "demo-crumbs",
-                    Crumb.of("/", "Tessera"),
-                    Crumb.of("/navigation", "Navigation"),
-                    Crumb.of("/navigation#breadcrumbs", "Breadcrumbs"))
+                    new Link("/", "Tessera"),
+                    new Link("/navigation", "Navigation"),
+                    new Link("/navigation#breadcrumbs", "Breadcrumbs"))
                 .label("Breadcrumb example"))
-        .code(
-            "Breadcrumbs.of(\"crumbs\", Crumb.of(\"/\", \"Home\"), Crumb.of(\"/docs\", \"Docs\"));");
+        .code("Breadcrumbs.of(new Link(\"/\", \"Home\"), new Link(\"/docs\", \"Docs\"));");
   }
 
   private static Demo navTabs() {
@@ -59,17 +56,17 @@ final class NavigationPage {
                 + "underline is a single pseudo-element anchored to the current tab.")
         .features("anchor-name", "position-anchor", "anchor()", "aria-current")
         .example(
-            Tabs.navTabs(
-                "demo-nav",
-                "Section navigation",
-                "/navigation",
-                List.of(
-                    new NavItem("/layout", "Layout"),
-                    new NavItem("/navigation", "Navigation"),
-                    new NavItem("/overlays", "Overlays"))))
+            NavTabs.of(
+                    "Section navigation",
+                    List.of(
+                        new Link("/layout", "Layout"),
+                        new Link("/navigation", "Navigation"),
+                        new Link("/overlays", "Overlays")))
+                .active("/navigation"))
         .code(
-            "Tabs.navTabs(\"nav\", \"Section navigation\", activePath,",
-            "    List.of(new NavItem(\"/layout\", \"Layout\"), new NavItem(\"/navigation\", \"Navigation\")));");
+            "NavTabs.of(\"Section navigation\",",
+            "        List.of(new Link(\"/layout\", \"Layout\"), new Link(\"/navigation\", \"Navigation\")))",
+            "    .active(activePath);");
   }
 
   private static Demo contentTabs() {
@@ -79,17 +76,15 @@ final class NavigationPage {
                 + "navigation; a bundled client behavior switches the server-rendered panels.")
         .features("role=tablist", "roving tabindex", "Arrow keys")
         .example(
-            Tabs.contentTabs(
-                "demo-tabs",
-                "Pipeline stages",
-                List.of(
-                    TabPanel.of(
-                        "Java", p().text("Components are plain Java records and builders.")),
-                    TabPanel.of("HTML", p().text("Output is semantic, validated HTML.")),
-                    TabPanel.of("CSS", p().text("Styles compile into one layered stylesheet.")))))
+            ContentTabs.of("Pipeline stages")
+                .id("demo-tabs")
+                .tab("Java", p().text("Components are plain Java records and builders."))
+                .tab("HTML", p().text("Output is semantic, validated HTML."))
+                .tab("CSS", p().text("Styles compile into one layered stylesheet.")))
         .code(
-            "Tabs.contentTabs(\"tabs\", \"Pipeline stages\", List.of(",
-            "    TabPanel.of(\"Java\", p().text(\"…\")), TabPanel.of(\"HTML\", p().text(\"…\"))));");
+            "ContentTabs.of(\"Pipeline stages\")",
+            "    .tab(\"Java\", p().text(\"…\"))",
+            "    .tab(\"HTML\", p().text(\"…\"));");
   }
 
   private static Demo accordion() {
@@ -99,21 +94,23 @@ final class NavigationPage {
                 + "auto height, and collapsed text stays findable with Ctrl+F.")
         .features("<details name>", "::details-content", "interpolate-size", ":open")
         .example(
-            Accordion.exclusive("demo-faq")
+            Accordion.of()
+                .id("demo-faq")
+                .exclusive()
                 .item("Does it need JavaScript?", "No. Disclosure is native HTML.", true)
-                .item("Can several items be open?", "Use Accordion.multiOpen(id) for that.", false)
+                .item("Can several items be open?", "Leave out exclusive() for that.", false)
                 .item(
                     "Is hidden text searchable?",
                     "Yes, find-in-page opens the matching item.",
                     false))
         .code(
-            "Accordion.exclusive(\"faq\")",
+            "Accordion.of().exclusive()",
             "    .item(\"Does it need JavaScript?\", \"No.\", true)",
-            "    .item(\"Can several items be open?\", \"Use multiOpen.\", false);");
+            "    .item(\"Can several items be open?\", \"Leave out exclusive().\", false);");
   }
 
   private static Demo carousel() {
-    var carousel = Carousel.create("demo-carousel", "Platform highlights");
+    var carousel = Carousel.of("Platform highlights").id("demo-carousel");
     carousel
         .slide("Scroll snapping", "Slides snap to the center of the track.")
         .slide("Scroll markers", "The dots are ::scroll-marker pseudo-elements.")
@@ -132,7 +129,7 @@ final class NavigationPage {
             "scroll-state(snapped)")
         .example(carousel)
         .code(
-            "Carousel.create(\"highlights\", \"Platform highlights\")",
+            "Carousel.of(\"Platform highlights\")",
             "    .slide(\"Scroll snapping\", \"Slides snap to the center.\")",
             "    .slide(\"Scroll markers\", \"Dots are ::scroll-marker.\");");
   }
@@ -145,13 +142,14 @@ final class NavigationPage {
         .features(
             "popover", "command=\"toggle-popover\"", "position-area", "position-try-fallbacks")
         .example(
-            Dropdown.create("demo-menu", "Jump to")
+            Dropdown.of("Jump to")
+                .id("demo-menu")
                 .linkItem("/forms", "Forms", "G F")
                 .linkItem("/data", "Data & code", "G D")
                 .separator()
                 .linkItem("/", "Overview", null))
         .code(
-            "Dropdown.create(\"menu\", \"Jump to\")",
+            "Dropdown.of(\"Jump to\")",
             "    .linkItem(\"/forms\", \"Forms\", \"G F\")",
             "    .separator()",
             "    .commandItem(\"open\", drawer.dialogRef(), BuiltinCommand.SHOW_MODAL, \"Inspect\");");
@@ -162,11 +160,9 @@ final class NavigationPage {
         .summary("Previous/next links between documents; every page of this site ends with one.")
         .features("<nav aria-label>", "rel-style links")
         .example(
-            DocPager.of(
-                    new DocPager.PageRef("/layout", "Layout"),
-                    new DocPager.PageRef("/overlays", "Overlays"))
+            DocPager.of(new Link("/layout", "Layout"), new Link("/overlays", "Overlays"))
                 .label("Pager example"))
         .code(
-            "DocPager.of(new PageRef(\"/layout\", \"Layout\"), new PageRef(\"/overlays\", \"Overlays\"));");
+            "DocPager.of(new Link(\"/layout\", \"Layout\"), new Link(\"/overlays\", \"Overlays\"));");
   }
 }

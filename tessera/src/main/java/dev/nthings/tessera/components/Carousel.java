@@ -8,7 +8,6 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
@@ -36,75 +35,63 @@ import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Horizontal carousel of slides that snap into place as the user scrolls. It needs no script. The
-/// track is a focusable region named by the `ariaLabel`. Chromium also shows native previous and
-/// next buttons and slide markers; other browsers keep the scrollable track.
-public final class Carousel implements View {
+/// Horizontal carousel of slides that snap into place as the user scrolls. It needs no script.
+/// Create one with [#of(String)]; the track is a focusable region named by that label. Chromium
+/// also shows native previous and next buttons and slide markers; other browsers keep the
+/// scrollable track.
+public final class Carousel extends BuiltinView {
 
   private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
 
   /// Each slide is a scroll-state container, so its card can react while it is snapped.
   private static final Container ITEM = Container.unnamed(Container.Type.SCROLL_STATE);
 
-  /// One slide. `title` and `summary` are rendered only for slides made with [#ofText]; a slide
-  /// made with [#of] renders just its content.
-  public record Slide(String title, String summary, Element content) {
-    /// Creates a slide with an `h3` title and a muted summary paragraph.
-    public static Slide ofText(String title, String summary) {
-      return new Slide(
-          title,
-          summary,
-          div()
-              .flex()
-              .flexCol()
-              .gap(Tokens.SPACE_2)
-              .children(
-                  h3().fontSize(Tokens.FONT_SIZE_LG).textWrap(TextWrap.BALANCE).text(title),
-                  p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(summary)));
-    }
+  private final String label;
+  private final List<Element> slides = new ArrayList<>();
 
-    /// Creates a slide whose body is `content`. `title` and `summary` are not rendered.
-    public static Slide of(String title, String summary, IntoElement content) {
-      return new Slide(title, summary, content.intoElement());
-    }
+  private Carousel(String label) {
+    this.label = label;
   }
 
-  private final String id;
-  private final String ariaLabel;
-  private final List<Slide> slides = new ArrayList<>();
-
-  private Carousel(String id, String ariaLabel) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
-    this.ariaLabel = ariaLabel;
+  /// Creates an empty carousel whose track region is named `label`. Give carousels on one page
+  /// distinct labels or ids: the native scroll buttons are anchored by a name derived from them.
+  public static Carousel of(String label) {
+    return new Carousel(label);
   }
 
-  /// Creates a carousel with `id` as its instance id. `ariaLabel` names the track region. Throws
-  /// IllegalArgumentException if `id` is empty.
-  public static Carousel create(String id, String ariaLabel) {
-    return new Carousel(id, ariaLabel);
+  /// Names this instance in the enclosing view scope; ids bound in its slides are prefixed with
+  /// it. Without it, the compiler assigns `carousel-<n>`.
+  public Carousel id(String id) {
+    this.id = id;
+    return this;
   }
 
   /// Adds a slide with an `h3` title and a muted summary. The heading level does not follow the
   /// page outline.
   public Carousel slide(String title, String summary) {
-    slides.add(Slide.ofText(title, summary));
-    return this;
+    return slide(
+        div()
+            .flex()
+            .flexCol()
+            .gap(Tokens.SPACE_2)
+            .children(
+                h3().fontSize(Tokens.FONT_SIZE_LG).textWrap(TextWrap.BALANCE).text(title),
+                p().textColor(Tokens.TEXT_MUTED).textWrap(TextWrap.PRETTY).text(summary)));
   }
 
-  /// Adds a slide whose body is `content`. `title` and `summary` are not rendered, so include
-  /// them in `content` when they should appear.
-  public Carousel slide(String title, String summary, IntoElement content) {
-    slides.add(Slide.of(title, summary, content));
+  /// Adds a slide whose body is `content`.
+  public Carousel slide(IntoElement content) {
+    slides.add(content.intoElement());
     return this;
   }
 
   @Override
-  public String viewId() {
-    return id;
+  String viewType() {
+    return "carousel";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -222,18 +209,20 @@ public final class Carousel implements View {
                                                 CssColor.oklch(0, 0, 0, 0.14))))));
   }
 
+  /// Anchor for the native scroll buttons, unique per carousel on the page.
   private Anchor anchorIdent() {
-    return Anchor.named("carousel-" + id);
+    var instance = id;
+    return Anchor.named("carousel-" + Fnv1a64.sanitizeLocalId(instance != null ? instance : label));
   }
 
   @Override
-  public Element render(RenderContext context) {
-    var track = div().role(Role.REGION).ariaLabel(ariaLabel).tabIndex(0);
+  IntoElement render(RenderContext context) {
+    var track = div().role(Role.REGION).ariaLabel(label).tabIndex(0);
     for (var slide : slides) {
       track.child(
           div()
               .attr("class", "carousel-item")
-              .child(div().attr("class", "carousel-card").child(slide.content())));
+              .child(div().attr("class", "carousel-card").child(slide)));
     }
     return track;
   }

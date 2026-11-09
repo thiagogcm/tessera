@@ -6,40 +6,34 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 
 /// Container for long-form text. It spaces paragraphs, lists, headings, quotes and rules, and
 /// limits the line length to 75ch unless [#maxMeasure(CssLength)] changes it. Create one with
-/// [#of(IntoElement...)], or with [#create(String)] when a second container shares its view
-/// scope. Paragraphs with a class attribute keep their own styling.
-public final class Prose implements View, ParentElement<Prose> {
+/// [#of(IntoElement...)] and add more content as children. Paragraphs with a class attribute keep
+/// their own styling.
+public final class Prose extends BuiltinView implements ParentElement<Prose> {
 
-  private final String id;
   private final List<Element> children = new ArrayList<>();
   private CssLength maxMeasure = CssLength.ch(75);
 
-  private Prose(String id) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
+  private Prose() {}
+
+  /// Creates a prose container holding `content`.
+  public static Prose of(IntoElement... content) {
+    return new Prose().children(content);
   }
 
-  /// Creates a prose container with the id `prose` containing `elements`. Two containers with
-  /// that id in one view scope share ids; use [#create(String)] for the second.
-  public static Prose of(IntoElement... elements) {
-    var prose = new Prose("prose");
-    prose.children(elements);
-    return prose;
-  }
-
-  /// Creates an empty prose container with the given `id`, unique within its view scope.
-  public static Prose create(String id) {
-    return new Prose(id);
+  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
+  /// it. Without it, the compiler assigns `prose-container-<n>`.
+  public Prose id(String id) {
+    this.id = id;
+    return this;
   }
 
   @Override
@@ -59,24 +53,19 @@ public final class Prose implements View, ParentElement<Prose> {
   }
 
   @Override
-  public String viewId() {
-    return id;
-  }
-
-  @Override
-  public String viewType() {
+  String viewType() {
     return "prose-container";
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var container = div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10);
     container.children(children);
     return container;
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->

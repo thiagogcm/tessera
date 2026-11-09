@@ -7,12 +7,12 @@ import static dev.nthings.tessera.core.Elements.hr;
 import static dev.nthings.tessera.core.Elements.span;
 
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -25,34 +25,38 @@ import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Menu of links, command buttons, and custom items, opened from a trigger button. The panel opens
 /// below the trigger, flips to another side when it does not fit, and closes on Escape or on an
-/// outside click. Create one with [#create(String, String)].
-public final class Dropdown implements View {
+/// outside click. Create one with [#of(String)].
+public final class Dropdown extends BuiltinView {
+
+  private final String label;
+  private final List<Element> items = new ArrayList<>();
   private ElementRef panel = ElementRef.scoped("panel");
 
-  private final String id;
-  private final String triggerLabel;
-  private final List<Element> items = new ArrayList<>();
-
-  private Dropdown(String id, String triggerLabel) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
-    this.triggerLabel = triggerLabel;
+  private Dropdown(String label) {
+    this.label = label;
   }
 
-  /// Creates a menu whose trigger reads `triggerLabel`. `id` names the instance in the enclosing
-  /// view scope. Throws IllegalArgumentException if `id` is empty.
-  public static Dropdown create(String id, String triggerLabel) {
-    return new Dropdown(id, triggerLabel);
+  /// Creates an empty menu whose trigger button shows `label`, which also names it.
+  public static Dropdown of(String label) {
+    return new Dropdown(label);
+  }
+
+  /// Names this instance in the enclosing view scope; the trigger, panel and command item ids are
+  /// prefixed with it. Without it, the compiler assigns `dropdown-<n>`.
+  public Dropdown id(String id) {
+    this.id = id;
+    return this;
   }
 
   /// Adds a link item. A non-null `shortcutHint` is shown at its end, hidden from assistive
@@ -72,8 +76,7 @@ public final class Dropdown implements View {
 
   /// Adds a button item that runs `command` on `target`, under the rules of [Button#command].
   /// `buttonId` is its DOM id within the menu; reusing an id fails with `duplicate-id`.
-  public Dropdown commandItem(
-      String buttonId, ElementRef target, BuiltinCommand command, String label) {
+  public Dropdown commandItem(String buttonId, ElementRef target, Command command, String label) {
     var btn =
         button()
             .id(ElementRef.scoped(buttonId))
@@ -90,6 +93,7 @@ public final class Dropdown implements View {
     return this;
   }
 
+  /// Adds a horizontal rule between items.
   public Dropdown separator() {
     items.add(
         hr().border(Border.none())
@@ -99,12 +103,12 @@ public final class Dropdown implements View {
   }
 
   @Override
-  public String viewId() {
-    return id;
+  String viewType() {
+    return "dropdown";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(s -> s.inlineFlex().relative())
         .select(
@@ -120,8 +124,8 @@ public final class Dropdown implements View {
                     .textColor(Tokens.TEXT_PRIMARY)
                     .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .fontWeight(600)
-                    .cursor(Cursor.POINTER))
-        .select(":scope > .dropdown-trigger:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
+                    .cursor(Cursor.POINTER)
+                    .on(State.HOVER, h -> h.bg(Tokens.SURFACE_SUBTLE)))
         .select(
             ":scope > [popover]",
             s ->
@@ -164,8 +168,8 @@ public final class Dropdown implements View {
                     .border(Border.none())
                     .textAlign(TextAlign.START)
                     .cursor(Cursor.POINTER)
-                    .textDecorationNone())
-        .select(":scope .dropdown-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
+                    .textDecorationNone()
+                    .on(State.HOVER, h -> h.bg(Tokens.SURFACE_SUBTLE)))
         .select(
             ":scope .dropdown-hint",
             s -> s.textColor(Tokens.TEXT_MUTED).fontSize(Tokens.FONT_SIZE_XS).ms(CssLength.auto()))
@@ -211,15 +215,14 @@ public final class Dropdown implements View {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var trigger =
         button()
             .id(ElementRef.scoped("trigger"))
             .attr("class", "dropdown-trigger")
             .command(panel, BuiltinCommand.TOGGLE_POPOVER)
             .children(
-                span().text(triggerLabel),
-                span().ariaHidden(true).textColor(Tokens.TEXT_MUTED).text("▾"));
+                span().text(label), span().ariaHidden(true).textColor(Tokens.TEXT_MUTED).text("▾"));
 
     var itemsWrapper = div().attr("class", "dropdown-panel-items");
     itemsWrapper.children(items);

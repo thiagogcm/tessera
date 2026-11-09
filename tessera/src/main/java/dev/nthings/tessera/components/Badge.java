@@ -4,9 +4,8 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -20,9 +19,10 @@ import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Compact label such as a status or a count. Create one with `Badge.of` or a tone factory such as
-/// `Badge.success`. It renders a `<span>`, or an `<a>` when given an [#href(String)].
-public final class Badge implements View, FluentBuilder<Badge> {
+/// Compact label such as a status or a count. Create one with [#of(String)]; it is a neutral,
+/// tinted, medium badge until [#tone(Tone)], [#variant(Variant)] or [#size(Size)] change it. It
+/// renders a `<span>`, or an `<a>` when given an [#href(String)].
+public final class Badge extends BuiltinView implements FluentBuilder<Badge> {
 
   /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
   public enum Variant {
@@ -31,64 +31,22 @@ public final class Badge implements View, FluentBuilder<Badge> {
     SOLID
   }
 
-  /// Size: `SM`, `MD` (the default), or `LG`.
-  public enum Size {
-    SM,
-    MD,
-    LG
-  }
-
   private final String text;
   private Tone tone = Tone.NEUTRAL;
   private Variant variant = Variant.TINTED;
   private Size size = Size.MD;
-  private boolean pill = false;
-  private boolean dot = false;
+  private boolean pill;
+  private boolean dot;
   private @Nullable String iconSvg;
   private @Nullable String href;
-  private @Nullable String viewId;
 
   private Badge(String text) {
     this.text = text;
   }
 
-  /// Creates a neutral tinted badge with `text`.
+  /// Creates a neutral, tinted, medium badge showing `text`.
   public static Badge of(String text) {
     return new Badge(text);
-  }
-
-  /// Creates a badge with fully rounded corners.
-  public static Badge pill(String text) {
-    return new Badge(text).pill();
-  }
-
-  public static Badge neutral(String text) {
-    return new Badge(text).tone(Tone.NEUTRAL);
-  }
-
-  public static Badge accent(String text) {
-    return new Badge(text).tone(Tone.ACCENT);
-  }
-
-  public static Badge success(String text) {
-    return new Badge(text).tone(Tone.SUCCESS);
-  }
-
-  public static Badge warning(String text) {
-    return new Badge(text).tone(Tone.WARNING);
-  }
-
-  public static Badge danger(String text) {
-    return new Badge(text).tone(Tone.DANGER);
-  }
-
-  public static Badge info(String text) {
-    return new Badge(text).tone(Tone.INFO);
-  }
-
-  /// Creates a tone-colored badge with a status dot.
-  public static Badge dot(String text, Tone tone) {
-    return new Badge(text).tone(tone).dot();
   }
 
   @Override
@@ -96,96 +54,41 @@ public final class Badge implements View, FluentBuilder<Badge> {
     return this;
   }
 
-  @Override
-  public @Nullable String viewId() {
-    return viewId;
-  }
-
-  /// Sets the instance id in the enclosing view scope. The badge emits no DOM ids of its own.
+  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
+  /// `tessera-badge-<n>`.
   public Badge id(String id) {
-    this.viewId = id;
+    this.id = id;
     return this;
   }
 
+  /// Sets the semantic color. The default is `NEUTRAL`.
   public Badge tone(Tone tone) {
     this.tone = tone;
     return this;
   }
 
-  public Badge neutral() {
-    return tone(Tone.NEUTRAL);
-  }
-
-  public Badge accent() {
-    return tone(Tone.ACCENT);
-  }
-
-  public Badge success() {
-    return tone(Tone.SUCCESS);
-  }
-
-  public Badge warning() {
-    return tone(Tone.WARNING);
-  }
-
-  public Badge danger() {
-    return tone(Tone.DANGER);
-  }
-
-  public Badge info() {
-    return tone(Tone.INFO);
-  }
-
+  /// Sets the fill style. The default is `TINTED`.
   public Badge variant(Variant variant) {
     this.variant = variant;
     return this;
   }
 
-  public Badge tinted() {
-    return variant(Variant.TINTED);
-  }
-
-  public Badge outline() {
-    return variant(Variant.OUTLINE);
-  }
-
-  public Badge solid() {
-    return variant(Variant.SOLID);
-  }
-
+  /// Sets the size. The default is `MD`.
   public Badge size(Size size) {
     this.size = size;
     return this;
   }
 
-  public Badge sm() {
-    return size(Size.SM);
-  }
-
-  public Badge md() {
-    return size(Size.MD);
-  }
-
-  public Badge lg() {
-    return size(Size.LG);
-  }
-
-  public Badge pill(boolean isPill) {
-    this.pill = isPill;
-    return this;
-  }
-
+  /// Gives the badge fully rounded ends.
   public Badge pill() {
-    return pill(true);
-  }
-
-  public Badge dot(boolean hasDot) {
-    this.dot = hasDot;
+    this.pill = true;
     return this;
   }
 
+  /// Adds a status dot in the tone's color before the text.
   public Badge dot() {
-    return dot(true);
+    this.dot = true;
+    return this;
   }
 
   /// Adds an icon from trusted SVG markup, inserted unescaped in an `aria-hidden` span. Never pass
@@ -201,33 +104,13 @@ public final class Badge implements View, FluentBuilder<Badge> {
     return this;
   }
 
-  public Tone tone() {
-    return tone;
-  }
-
-  public Variant variant() {
-    return variant;
-  }
-
-  public Size size() {
-    return size;
-  }
-
-  public boolean isPill() {
-    return pill;
-  }
-
-  public boolean hasDot() {
-    return dot;
-  }
-
   @Override
-  public String viewType() {
+  String viewType() {
     return "tessera-badge";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -312,7 +195,7 @@ public final class Badge implements View, FluentBuilder<Badge> {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var cls =
         "badge badge--"
             + cssName(tone)

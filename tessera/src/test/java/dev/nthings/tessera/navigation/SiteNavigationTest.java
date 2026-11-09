@@ -9,7 +9,6 @@ import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
-import dev.nthings.tessera.components.DocPager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,10 +25,11 @@ class SiteNavigationTest {
     @Test
     @DisplayName("links to the neighbouring routes, preferring route titles")
     void linksToNeighbouringRoutes() {
-      var pager = SiteNavigation.docPager(site, "/guide");
+      var links = renderMain(SiteNavigation.docPager(site, "/guide")).elements("nav a");
 
-      assertThat(pager.prev()).isEqualTo(new DocPager.PageRef("/", "Tessera Home"));
-      assertThat(pager.next()).isEqualTo(new DocPager.PageRef("/faq", "FAQ"));
+      assertThat(links)
+          .extracting(a -> a.attr("href") + " " + a.selectFirst(".pager-title").text())
+          .containsExactly("/ Tessera Home", "/faq FAQ");
     }
 
     @Test

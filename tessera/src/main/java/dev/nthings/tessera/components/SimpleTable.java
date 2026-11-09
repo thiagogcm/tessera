@@ -1,6 +1,5 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
@@ -13,23 +12,25 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Simple data table with an optional caption and a header row. Create one with [#create()],
-/// then add headers and rows. Header cells get `scope="col"`. The table does not check that
-/// each row has as many cells as there are headers.
-public final class SimpleTable implements Component {
+/// Simple data table with an optional caption and a header row. Create one with [#of()], then
+/// add headers and rows. Header cells get `scope="col"`. The table does not check that each row
+/// has as many cells as there are headers.
+public final class SimpleTable extends BuiltinComponent {
 
   private @Nullable String caption;
   private final List<String> headers = new ArrayList<>();
   private final List<List<Element>> rows = new ArrayList<>();
 
+  private SimpleTable() {}
+
   /// Creates an empty table.
-  public static SimpleTable create() {
+  public static SimpleTable of() {
     return new SimpleTable();
   }
 
-  /// Sets the caption shown above the table.
-  public SimpleTable caption(String captionText) {
-    this.caption = captionText;
+  /// Sets the caption shown above the table, which also names it.
+  public SimpleTable caption(String caption) {
+    this.caption = caption;
     return this;
   }
 
@@ -60,7 +61,7 @@ public final class SimpleTable implements Component {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var table =
         Elements.table()
             .inlineSize(CssLength.pct(100))

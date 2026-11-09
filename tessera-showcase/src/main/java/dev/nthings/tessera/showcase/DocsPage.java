@@ -4,9 +4,10 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 
+import dev.nthings.tessera.components.Footnote;
 import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Image;
-import dev.nthings.tessera.components.Lists.StepList;
+import dev.nthings.tessera.components.StepList;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.Border;
@@ -37,14 +38,15 @@ final class DocsPage {
 
   private static Element content(List<Demo> demos) {
     var hero =
-        Image.hero(Art.DOCS_BANNER, "Tessera documentation banner")
+        Image.of(Art.DOCS_BANNER, "Tessera documentation banner")
+            .hero()
             .dimensions(1200, 480)
             .transitionKey(OverviewPage.DOCS_HERO)
             .inlineSize(CssLength.pct(100))
             .rounded(CssLength.rem(0.75))
             .border(Border.hairline(Tokens.BORDER_SUBTLE));
     var sections = new ArrayList<IntoElement>(demos);
-    sections.add(Footnotes.section("Notes"));
+    sections.add(Footnotes.of().title("Notes"));
     return div().flex().flexCol().gap(CssLength.rem(2)).children(hero, Page.docLayout(sections));
   }
 
@@ -61,7 +63,7 @@ final class DocsPage {
                     "Images must declare dimensions or an aspect-ratio — the compiler rejects "
                         + "images that would cause layout shift. One hero per page is enforced."))
         .code(
-            "Image.hero(src, \"Docs banner\").dimensions(1200, 480)",
+            "Image.of(src, \"Docs banner\").hero().dimensions(1200, 480)",
             "    .transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\"));");
   }
 
@@ -78,8 +80,8 @@ final class DocsPage {
                     "Scroll this page and watch the highlighted entry follow along. The rail "
                         + "collapses like any <details> element."))
         .code(
-            "Toc.docLayout(\"toc\", \"On this page\",",
-            "    Toc.section(\"intro\", \"Introduction\", p().text(\"…\")), …);");
+            "DocLayout.of(",
+            "    Section.of(\"intro\", \"Introduction\").child(p().text(\"…\")), …);");
   }
 
   private static Demo footnotes() {
@@ -93,17 +95,18 @@ final class DocsPage {
             p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Tessera targets the latest Chromium and Firefox"),
-                    Footnotes.ref(
-                        "engine", "latest Chromium and Firefox; no polyfills are shipped."),
+                    Footnote.of("latest Chromium and Firefox; no polyfills are shipped.")
+                        .id("engine"),
                     text(" and provides script-free native controls"),
-                    Footnotes.ref(
-                        "zero-js",
-                        "Search includes its JavaScript module; speculation rules are declarative JSON."),
+                    Footnote.of(
+                            "Search includes its JavaScript module; speculation rules are"
+                                + " declarative JSON.")
+                        .id("zero-js"),
                     text(".")))
         .code(
             "p().children(text(\"Tessera targets the latest Chromium and Firefox\"),",
-            "    Footnotes.ref(\"engine\", \"latest Chromium and Firefox.\"));",
-            "Footnotes.section(\"Notes\"); // optional: placement of the list");
+            "    Footnote.of(\"latest Chromium and Firefox.\"));",
+            "Footnotes.of().title(\"Notes\"); // optional: placement of the list");
   }
 
   private static Demo steps() {
@@ -111,12 +114,8 @@ final class DocsPage {
         .summary("Numbered procedures whose markers deepen in tone as they progress.")
         .features("sibling-index()", "sibling-count()", "counter()")
         .example(
-            StepList.ofStrings(
-                "publish-steps",
-                "Run just verify",
-                "Run just site",
-                "Upload target/site to any static host"))
-        .code(
-            "StepList.ofStrings(\"publish\", \"Run just verify\", \"Run just site\", \"Upload\");");
+            StepList.of("Run just verify", "Run just site", "Upload target/site to any static host")
+                .id("publish-steps"))
+        .code("StepList.of(\"Run just verify\", \"Run just site\", \"Upload\");");
   }
 }

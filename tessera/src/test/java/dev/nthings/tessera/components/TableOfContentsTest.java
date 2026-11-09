@@ -14,8 +14,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Toc")
-class TocTest {
+@DisplayName("TableOfContents")
+class TableOfContentsTest {
 
   @Nested
   @DisplayName("explicit table of contents")
@@ -27,12 +27,11 @@ class TocTest {
       var intro = ElementRef.page("intro");
       var sub = ElementRef.scoped("sub");
       var toc =
-          Toc.of(
-              "doc-toc",
-              "On This Page",
-              List.of(
-                  new DocumentHeading(intro, "Introduction", 2),
-                  new DocumentHeading(sub, "Details", 3)));
+          TableOfContents.of("On This Page")
+              .headings(
+                  List.of(
+                      new DocumentHeading(intro, "Introduction", 2),
+                      new DocumentHeading(sub, "Details", 3)));
 
       var page = renderMain(div().id(intro), div().id(sub), toc);
 
@@ -45,10 +44,9 @@ class TocTest {
     @DisplayName("rejects a heading whose target is never bound")
     void rejectsUnboundTargets() {
       var brokenToc =
-          Toc.of(
-              "broken-toc",
-              "Contents",
-              List.of(new DocumentHeading(ElementRef.page("missing-section"), "Missing", 2)));
+          TableOfContents.of("Contents")
+              .headings(
+                  List.of(new DocumentHeading(ElementRef.page("missing-section"), "Missing", 2)));
 
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(brokenToc))
@@ -65,23 +63,20 @@ class TocTest {
     void placedBeforeItsSectionsListsThem() {
       var page =
           renderMain(
-              Toc.fromContext("toc", "On this page"),
-              Toc.section("intro", "Introduction", p().text("a")),
-              Toc.section("usage", "Usage", p().text("b")));
+              TableOfContents.of("On this page"),
+              Section.of("intro", "Introduction").child(p().text("a")),
+              Section.of("usage", "Usage").level(3).child(p().text("b")));
 
       assertThat(page.elements("nav.toc-container a"))
-          .extracting(a -> a.attr("href"))
-          .containsExactly("#intro", "#usage");
+          .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
+          .containsExactly("#intro@2", "#usage@3");
     }
 
     @Test
     @DisplayName("reusing a section id on one page is rejected")
     void rejectsDuplicateSectionIds() {
       assertThatExceptionOfType(CompilationException.class)
-          .isThrownBy(
-              () ->
-                  renderMain(
-                      Toc.section("intro", "Intro", p()), Toc.section("intro", "Again", p())))
+          .isThrownBy(() -> renderMain(Section.of("intro", "Intro"), Section.of("intro", "Again")))
           .withMessageContaining("duplicate-id");
     }
   }
@@ -90,17 +85,17 @@ class TocTest {
   @DisplayName("a doc layout lists its sections in the rail, linked by their page-level ids")
   void listsSectionsInRailLinkedByPageIds() {
     var layout =
-        Toc.docLayout(
-            "my-doc",
-            "Table of Contents",
-            ContentSection.ghost("getting-started", "Getting Started"),
-            ContentSection.highlight("telemetry", "Telemetry").level(3));
+        DocLayout.of(
+                Section.of("getting-started", "Getting Started"),
+                Section.of("telemetry", "Telemetry").surface(Section.Surface.HIGHLIGHT).level(3))
+            .tocTitle("Table of Contents");
 
     var page = renderMain(layout);
 
     assertThat(page.elements(".doc-toc-rail nav a"))
         .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
         .containsExactly("#getting-started@2", "#telemetry@3");
+    assertThat(page.element(".doc-toc-rail nav")).hasAttribute("aria-label", "Table of Contents");
     assertThat(page.elements(".doc-prose-col > section"))
         .extracting(e -> e.id())
         .containsExactly("getting-started", "telemetry");

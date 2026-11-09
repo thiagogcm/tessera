@@ -9,12 +9,11 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -25,13 +24,15 @@ import java.util.List;
 import java.util.Locale;
 import org.jspecify.annotations.Nullable;
 
-/// Titled `<section>` whose heading is registered as a document heading, listed by
-/// `Toc.fromContext` and the site search index. Use `Toc.section` for plain documentation sections;
-/// use this type for a surface, a lead paragraph, or a badge.
-public final class ContentSection implements Component, ParentElement<ContentSection> {
+/// Titled `<section>` whose heading is registered as a document heading, so [TableOfContents]
+/// and the site search index list it. Create one with [#of(String, String)] and add its content
+/// as children. Its `id` is a page-level DOM id ([ElementRef#page(String)]), so
+/// `/guide/#installation` links to it from any page; two sections with one id on a page report
+/// `duplicate-id`.
+public final class Section extends BuiltinComponent implements ParentElement<Section> {
 
-  /// Visual surface of a [ContentSection].
-  public enum SurfaceKind {
+  /// Visual surface of a [Section].
+  public enum Surface {
     /// Borderless, continuous flow. Default.
     GHOST,
     /// Flat surface with a bottom divider.
@@ -41,75 +42,65 @@ public final class ContentSection implements Component, ParentElement<ContentSec
     /// Accent-tinted surface for key announcements.
     HIGHLIGHT;
 
-    private final String value = name().toLowerCase(Locale.ROOT);
-
-    /// Compiler-facing: the `data-surface` attribute value for this surface.
-    public String wireValue() {
-      return value;
+    /// The `data-surface` attribute value for this surface.
+    String wireValue() {
+      return name().toLowerCase(Locale.ROOT);
     }
   }
 
-  private final String rawId;
+  private final String id;
   private final String title;
   private int level = 2;
-  private SurfaceKind surface = SurfaceKind.GHOST;
-  private @Nullable String leadText;
-  private @Nullable String badge;
+  private Surface surface = Surface.GHOST;
+  private @Nullable String description;
+  private @Nullable String eyebrow;
   private final List<Element> children = new ArrayList<>();
 
-  private ContentSection(String id, String title) {
-    this.rawId = id;
+  private Section(String id, String title) {
+    this.id = id;
     this.title = title;
   }
 
-  /// Creates a section at heading level 2 with the `GHOST` surface. `id` is the section's
-  /// page-level DOM id ([ElementRef#page(String)]), so other pages can link to it as a fragment.
-  public static ContentSection create(String id, String title) {
-    return new ContentSection(id, title);
+  /// Creates a level-2 section with the `GHOST` surface, page-level id `id` and visible heading
+  /// `title`. Throws IllegalArgumentException if `id` is empty or contains whitespace.
+  public static Section of(String id, String title) {
+    if (id.isEmpty() || id.chars().anyMatch(Character::isWhitespace)) {
+      throw new IllegalArgumentException(
+          "Section id must be non-empty and contain no whitespace: '" + id + "'");
+    }
+    return new Section(id, title);
   }
 
-  /// Creates a section with the `GHOST` surface.
-  public static ContentSection ghost(String id, String title) {
-    return new ContentSection(id, title).surface(SurfaceKind.GHOST);
-  }
-
-  /// Creates a section with the `CARD` surface.
-  public static ContentSection card(String id, String title) {
-    return new ContentSection(id, title).surface(SurfaceKind.CARD);
-  }
-
-  /// Creates a section with the `HIGHLIGHT` surface.
-  public static ContentSection highlight(String id, String title) {
-    return new ContentSection(id, title).surface(SurfaceKind.HIGHLIGHT);
-  }
-
-  /// Sets the heading level, 2 to 4 (default 2). Throws IllegalArgumentException outside that
-  /// range.
-  public ContentSection level(int headingLevel) {
-    this.level = checkHeadingLevel(headingLevel);
+  /// Sets the heading level, 2 to 4 (default 2). A table of contents indents level-3 entries under
+  /// the section before them. Throws IllegalArgumentException outside that range.
+  public Section level(int level) {
+    if (level < 2 || level > 4) {
+      throw new IllegalArgumentException("Section heading level must be 2 to 4: " + level);
+    }
+    this.level = level;
     return this;
   }
 
   /// Sets the surface. The default is `GHOST`.
-  public ContentSection surface(SurfaceKind kind) {
-    this.surface = kind;
+  public Section surface(Surface surface) {
+    this.surface = surface;
     return this;
   }
 
   /// Sets a larger muted paragraph shown under the heading.
-  public ContentSection leadText(String lead) {
-    this.leadText = lead;
+  public Section description(String description) {
+    this.description = description;
     return this;
   }
 
   /// Sets a small accent label shown above the heading.
-  public ContentSection badge(String badgeText) {
-    this.badge = badgeText;
+  public Section eyebrow(String eyebrow) {
+    this.eyebrow = eyebrow;
     return this;
   }
 
   @Override
-  public ContentSection self() {
+  public Section self() {
     return this;
   }
 
@@ -119,15 +110,27 @@ public final class ContentSection implements Component, ParentElement<ContentSec
   }
 
   @Override
-  public Element render(RenderContext context) {
-    var target = ElementRef.page(rawId);
+  IntoElement render(RenderContext context) {
+    var target = ElementRef.page(id);
     context.registerHeading(target, title, level);
 
-    var heading = sectionHeading(level, title);
+    var tag =
+        switch (level) {
+          case 2 -> h2();
+          case 3 -> h3();
+          default -> h4();
+        };
+    var heading =
+        tag.fontSize(
+                level == 2
+                    ? Tokens.FONT_SIZE_2XL
+                    : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
+            .fontWeight(level == 2 ? 700 : 600)
+            .text(title);
 
     var headerEl =
         header().attr("class", "section-header").flex().flexCol().gap(CssLength.rem(0.35));
-    if (badge != null) {
+    if (eyebrow != null) {
       headerEl.child(
           span()
               .attr("class", "section-badge")
@@ -135,17 +138,17 @@ public final class ContentSection implements Component, ParentElement<ContentSec
               .fontSize(Tokens.FONT_SIZE_XS)
               .fontWeight(700)
               .textColor(Tokens.ACCENT_PRIMARY)
-              .text(badge));
+              .text(eyebrow));
     }
     headerEl.child(heading);
-    if (leadText != null) {
+    if (description != null) {
       headerEl.child(
           p().attr("class", "section-lead")
               .fontSize(Tokens.FONT_SIZE_LG)
               .textColor(Tokens.TEXT_MUTED)
               .lineHeight(1.6)
               .m(CssLength.px(0))
-              .text(leadText));
+              .text(description));
     }
 
     var bodyContainer = div().attr("class", "section-body").flex().flexCol().gap(Tokens.SPACE_4);
@@ -186,29 +189,5 @@ public final class ContentSection implements Component, ParentElement<ContentSec
     }
 
     return sectionEl.child(headerEl).child(bodyContainer);
-  }
-
-  static int checkHeadingLevel(int level) {
-    if (level < 2 || level > 4) {
-      throw new IllegalArgumentException("Heading level must be between 2 and 4");
-    }
-    return level;
-  }
-
-  /// `<h2>` to `<h4>` heading; the enclosing section carries the id.
-  static TagElement sectionHeading(int level, String title) {
-    var heading =
-        switch (level) {
-          case 2 -> h2();
-          case 3 -> h3();
-          default -> h4();
-        };
-    return heading
-        .fontSize(
-            level == 2
-                ? Tokens.FONT_SIZE_2XL
-                : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
-        .fontWeight(level == 2 ? 700 : 600)
-        .text(title);
   }
 }

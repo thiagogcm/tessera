@@ -11,11 +11,11 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
-abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
+abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinView implements FluentBuilder<B> {
 
   Tone tone;
   Button.Variant variant;
-  Button.Size size = Button.Size.MD;
+  Size size = Size.MD;
   boolean submit;
   boolean disabled;
   boolean busy;
@@ -44,7 +44,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
   }
 
   /// Sets the control size. The default is `MD`.
-  public B size(Button.Size size) {
+  public B size(Size size) {
     this.size = size;
     return self();
   }
@@ -66,35 +66,30 @@ abstract class ButtonBase<B extends ButtonBase<B>> implements FluentBuilder<B> {
     return self();
   }
 
-  /// Binds `ref` to this button, so other elements can reference it. Binding several refs aliases
-  /// them, as [TagElement#id(ElementRef)] does.
+  /// Binds `ref` to the `<button>` element, so other elements can reference it. Binding several
+  /// refs aliases them, as [TagElement#id(ElementRef)] does. Buttons take a ref rather than an
+  /// instance id, since they bind no ids of their own.
   public B id(ElementRef ref) {
     domRefs.add(ref);
     return self();
   }
 
-  /// Sets the native `disabled` attribute, so the button cannot be activated or focused.
-  public B disabled(boolean disabled) {
-    this.disabled = disabled;
-    return self();
-  }
-
+  /// Sets the native `disabled` attribute, so the button cannot be activated or focused. Use
+  /// `when(condition, B::disabled)` to disable it conditionally.
   public B disabled() {
-    return disabled(true);
+    this.disabled = true;
+    return self();
   }
 
   /// Sets `aria-busy="true"` and a progress cursor. The button stays enabled and clickable, so
   /// the application must guard the action itself.
-  public B busy(boolean busy) {
-    this.busy = busy;
+  public B busy() {
+    this.busy = true;
     return self();
   }
 
-  public B busy() {
-    return busy(true);
-  }
-
-  /// Hint popover shown on hover or focus (`interestfor`).
+  /// Adds a hint popover shown while the button is hovered or focused (`interestfor`); `tooltip`
+  /// fills and styles the popover element.
   public B interestTooltip(UnaryOperator<TagElement> tooltip) {
     this.tooltip = tooltip;
     return self();

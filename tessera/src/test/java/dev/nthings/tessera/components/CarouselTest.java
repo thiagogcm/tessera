@@ -13,7 +13,7 @@ class CarouselTest {
   @Test
   @DisplayName("emits native ::scroll-button prev/next controls with alt text")
   void emitsNativeScrollButtonsWithAltText() {
-    var css = renderMain(Carousel.create("demo", "Demo").slide("One", "a", p().text("1"))).css();
+    var css = renderMain(Carousel.of("Demo").slide(p().text("1"))).css();
 
     assertThat(css)
         .contains("::scroll-button(inline-start){content:\"‹\" / \"Previous slide\"")

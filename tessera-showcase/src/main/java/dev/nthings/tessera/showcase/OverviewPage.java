@@ -7,13 +7,11 @@ import static dev.nthings.tessera.core.Elements.section;
 
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CodeBlock;
+import dev.nthings.tessera.components.ContentTabs;
+import dev.nthings.tessera.components.DescriptionList;
 import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.components.Image;
-import dev.nthings.tessera.components.Lists.DescriptionList;
-import dev.nthings.tessera.components.Lists.Term;
 import dev.nthings.tessera.components.SimpleTable;
-import dev.nthings.tessera.components.Tabs;
-import dev.nthings.tessera.components.Tabs.TabPanel;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TransitionKey;
@@ -45,10 +43,10 @@ final class OverviewPage {
     var cards = new ArrayList<IntoElement>();
     for (var target : pages.subList(1, pages.size())) {
       var card =
-          Card.create("area-" + target.navLabel().toLowerCase(java.util.Locale.ROOT))
-              .title(target.navLabel())
+          Card.of(target.navLabel())
+              .id("area-" + target.navLabel().toLowerCase(java.util.Locale.ROOT))
               .headingLevel(2)
-              .subtitle(target.demos().size() + " demos")
+              .description(target.demos().size() + " demos")
               .bodyText(target.summary())
               .stretchedLink(target.path());
       if (target.path().equals(DocsPage.PATH)) {
@@ -61,39 +59,38 @@ final class OverviewPage {
     }
 
     var pipeline =
-        Tabs.contentTabs(
-            "pipeline",
-            List.of(
-                TabPanel.of(
-                    "1. requestLayout",
-                    p().textWrap(TextWrap.PRETTY)
-                        .text(
-                            "Expands Component and View trees under a ScopedValue render"
-                                + " context, binds ElementRefs to scoped DOM ids, and interns"
-                                + " every style into content-hashed utility classes.")),
-                TabPanel.of(
-                    "2. prepaint",
-                    p().textWrap(TextWrap.PRETTY)
-                        .text(
-                            "Resolves late elements (tables of contents, endnotes), links id"
-                                + " references, and rejects inaccessible markup, dangling"
-                                + " invokers, duplicate ids and broken #fragment links.")),
-                TabPanel.of(
-                    "3. paint",
-                    p().textWrap(TextWrap.PRETTY)
-                        .text(
-                            "Streams OWASP-encoded HTML and a single deduplicated stylesheet"
-                                + " ordered by cascade layer, shared by every page of the site."))));
+        ContentTabs.of("Compiler phases")
+            .id("pipeline")
+            .tab(
+                "1. requestLayout",
+                p().textWrap(TextWrap.PRETTY)
+                    .text(
+                        "Expands Component and View trees under a ScopedValue render"
+                            + " context, binds ElementRefs to scoped DOM ids, and interns"
+                            + " every style into content-hashed utility classes."))
+            .tab(
+                "2. prepaint",
+                p().textWrap(TextWrap.PRETTY)
+                    .text(
+                        "Resolves late elements (tables of contents, endnotes), links id"
+                            + " references, and rejects inaccessible markup, dangling"
+                            + " invokers, duplicate ids and broken #fragment links."))
+            .tab(
+                "3. paint",
+                p().textWrap(TextWrap.PRETTY)
+                    .text(
+                        "Streams OWASP-encoded HTML and a single deduplicated stylesheet"
+                            + " ordered by cascade layer, shared by every page of the site."));
 
     var guarantees =
-        DescriptionList.of(
-            Term.of("Accessibility", "Labelled buttons and links, alt text, CLS-safe images"),
-            Term.of("Id integrity", "Every commandfor, for and aria-* reference resolves"),
-            Term.of("Links", "Same-page and cross-route #fragments exist"),
-            Term.of("Reproducible", "Deterministic ids and class names; byte-identical builds"));
+        DescriptionList.of()
+            .term("Accessibility", "Labelled buttons and links, alt text, CLS-safe images")
+            .term("Id integrity", "Every commandfor, for and aria-* reference resolves")
+            .term("Links", "Same-page and cross-route #fragments exist")
+            .term("Reproducible", "Deterministic ids and class names; byte-identical builds");
 
     var features =
-        SimpleTable.create()
+        SimpleTable.of()
             .caption("Platform features behind the components")
             .headers("Feature", "Used by")
             .row("@scope, @layer, @container", "Every component")
@@ -109,14 +106,14 @@ final class OverviewPage {
         .flexCol()
         .gap(CssLength.rem(2.5))
         .children(
-            Grid.autoFit(CssLength.rem(18), CssLength.rem(1.25), cards),
+            Grid.autoFit(CssLength.rem(18)).gap(CssLength.rem(1.25)).children(cards),
             block(
                 "How it compiles",
                 CodeBlock.ofLines(
                         "var page = new PageDocument(\"Hello\",",
                         "    main().p(rem(2)).children(",
                         "        h1().textWrap(TextWrap.BALANCE).text(\"Hello\"),",
-                        "        Callout.tip(\"Rendered without JavaScript\")));",
+                        "        Callout.of(Callout.Kind.TIP, \"Rendered without JavaScript\")));",
                         "",
                         "CompiledPage out = Compiler.compile(page); // html + css")
                     .filename("Hello.java")

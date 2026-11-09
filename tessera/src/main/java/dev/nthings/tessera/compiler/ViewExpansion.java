@@ -57,10 +57,7 @@ final class ViewExpansion {
       case LateElement(var content) -> placement.late(() -> expand(context, "Late", content));
       case FragmentElement fragment ->
           new ViewNode.Fragment(children(fragment.childrenList(), context));
-      case ComponentElement(var component, var source) -> {
-        var type = component.getClass();
-        var name =
-            type.isSynthetic() || type.isAnonymousClass() ? "Component" : type.getSimpleName();
+      case ComponentElement(var component, var name, var source) -> {
         var child = context.withComponent(name, source);
         yield expand(child, "Render", component::render);
       }

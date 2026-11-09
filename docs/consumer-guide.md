@@ -123,6 +123,24 @@ A component that finds a wiring mistake reports it instead of throwing, so it is
 context.report("duplicate-hero-image", "Only one hero image per page", "Remove .hero() from one image.");
 ```
 
+## Use the built-in components
+
+The components in `dev.nthings.tessera.components` share one shape. Each is a final class created by a static factory that takes its required arguments, usually `X.of(...)`; options are fluent setters; and it is placed with `.child(...)` like any element. Named factories exist only where the required arguments genuinely differ, such as `Grid.autoFit(minWidth, ...)` versus `Grid.columns(count, ...)` and `CodeBlock.of(source)` versus `CodeBlock.ofLines(...)`. Their render callbacks are internal, so autocomplete shows only authoring options.
+
+```java
+var modal = Modal.of("Publish release?").id("publish").bodyText("Ship it to every region.");
+main().children(
+    Section.of("install", "Installation").description("Two steps.").child(p().text("Run it.")),
+    Card.of("Team plan").description("Five seats").radio("plan", "team", true),
+    Badge.of("Live").tone(Tone.SUCCESS).pill().dot(),
+    modal.triggerButton("Publish"),
+    Elements.deferred(modal, 10));
+```
+
+A scoped component takes an optional `id(String)` that names the instance in the enclosing view scope; the DOM ids it binds are prefixed with it, so the modal above emits `publish--dialog`. Without one the compiler assigns `<view type>-<n>` per scope (`modal-1--dialog`), which is fine unless other code links to those ids. Buttons bind their own element with `id(ElementRef)` instead. A `Section` id is different: it is a page-level fragment, so `/guide/#install` links to it from any page.
+
+The vocabulary is shared: `Tone` for semantic color, `Size` (`SM`, `MD`, `LG`) for buttons and badges, and `Link(href, label)` for `Breadcrumbs`, `NavTabs` and `DocPager`. A `label` is an accessible name, a `title` a visible heading, a `description` muted secondary text, and `actions(...)` footer actions. `Forms` (styled controls such as `Forms.email(name)`, wrapped by `Field.of(label, control)`) and `Formatting` (inline `mark`, `kbd`, `code`, ...) are plain functions that return elements.
+
 ## Group siblings and name custom elements
 
 Use `Elements.fragment()` when a component owns several roots or when a wrapper would change the parent content model. The fragment emits no markup:
@@ -143,7 +161,7 @@ var behavior = new ClientBehavior("my-widget", moduleSource);
 context.contributeBehavior(behavior);
 ```
 
-The compiler emits each behavior once per page. `OutputMode.inline()` inlines a `<script type="module">`. `OutputMode.external("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and site compilation merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `Tabs.ContentTabs` use this path for their bundled modules.
+The compiler emits each behavior once per page. `OutputMode.inline()` inlines a `<script type="module">`. `OutputMode.external("/assets")` publishes a content-hashed module, records it in `CompiledPage.assets()`, and site compilation merges it into `CompiledSite.files()` so `SiteWriter` writes it. Behaviors keep browser code out of the component tree and avoid a component-to-site dependency. `SearchPalette` and `ContentTabs` use this path for their bundled modules.
 
 ## Lay out a row or column
 
@@ -180,25 +198,25 @@ var body = Elements.main().children(trigger, dialog);
 | `ElementRef.page("installation")` | `installation` exactly, wherever it is bound; use it for public fragments such as `/guide/#installation` |
 | `ElementRef.anonymous()` or `element.ref()` | Assigned by the compiler as `<tag>-<n>` within the view scope |
 
-The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`. Higher-level components such as `Overlays.modal(...)` expose their own trigger helpers to manage these references.
+The reference is an identity token; another `ElementRef.scoped("help")` is a different token. An unbound reference fails compilation with `unbound-reference`. `element.ref()` returns a ref to an element you hold, binding an anonymous one if it has none, so `button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL)` works too. Several refs may name one element: they all resolve to its single DOM id, taken from the named ref. Two named refs that ask for different ids on one element report `conflicting-element-id`. `attr("id", ...)` is refused, like `role` and `aria-*`. Higher-level components such as `Modal` expose their own trigger helpers to manage these references.
 
-For document navigation, the example uses `Toc.section(...)`. It registers heading metadata, binds the section to a page-level id, and allows `Toc.fromContext(...)` to appear before the sections it lists. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
+For document navigation, the example uses `Section.of(id, title)`. It registers heading metadata and binds the section to a page-level id, and `TableOfContents.of(title)` may appear before the sections it lists. `DocLayout.of(sections...)` places them beside a sticky table of contents. Custom components call `context.registerHeading(target, title, level)` inside their render callback and bind `target` on the heading element; a target that is never bound reports `unbound-reference`.
 
 ## Add a button
 
-`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(target, command)` runs a `Command` on the element bound to `target`, including one emitted later in the document: `Overlays.Modal.dialogRef()`, `Overlays.Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. A `BuiltinCommand` such as `SHOW_MODAL` or `TOGGLE_POPOVER` is checked against its target; `Command.custom("cart", "add", Map.of("data-sku", sku))` emits `command="--cart-add"` plus the payload attributes for the application's own script, and accepts any target. Plain elements take the same `command(target, command)`. Navigation stays on anchors.
+`Button` and `IconButton` emit a native `<button>`. Tone, surface, and size are separate from what the button does. An ordinary button is `type="button"`. `submit()` is `type="submit"`. `command(target, command)` runs a `Command` on the element bound to `target`, including one emitted later in the document: `Modal.dialogRef()`, `Drawer.dialogRef()` and `Dropdown.panelRef()` expose those targets. A `BuiltinCommand` such as `SHOW_MODAL` or `TOGGLE_POPOVER` is checked against its target; `Command.custom("cart", "add", Map.of("data-sku", sku))` emits `command="--cart-add"` plus the payload attributes for the application's own script, and accepts any target. Plain elements take the same `command(target, command)`. Navigation stays on anchors.
 
 ```java
-var confirm = Overlays.modal("confirm", "Confirm");
+var confirm = Modal.of("Confirm");
 var open = Button.of("Review").command(confirm.dialogRef(), BuiltinCommand.SHOW_MODAL);
 var save = Button.of("Save").submit().variant(Button.Variant.OUTLINE);
 var close = IconButton.of("Close", Elements.span().text("×"))
     .command(confirm.dialogRef(), BuiltinCommand.CLOSE);
 ```
 
-`IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(name, content)` keeps `name` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
+`IconButton` takes the accessible name beside the icon and marks the icon as decorative. `Button.of(label, content...)` keeps `label` as the accessible name when the visible content differs. `disabled()` and `busy()` combine freely. The name remains, and keyboard focus uses `:focus-visible` outside reduced-motion styling.
 
-`Button.interestTooltip(...)` adds a hint popover on hover or focus. Native interest invokers drive it where available; a bundled `TooltipBehavior` mirrors hover and focus handling in Firefox, which does not ship the API yet. `Overlays.modal(...).opened()` renders a dialog visible in the non-modal `open` state.
+`Button.interestTooltip(...)` adds a hint popover on hover or focus. Native interest invokers drive it where available; a bundled `TooltipBehavior` mirrors hover and focus handling in Firefox, which does not ship the API yet. `Modal.of(...).opened()` renders a dialog visible in the non-modal `open` state.
 
 ## Open a component case
 
@@ -393,18 +411,19 @@ builder.asset(Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
 builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
 ```
 
-Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Decorative images need the appropriate presentation or hidden semantics. The compiler reports missing alt text and missing dimensions/aspect ratios.
+Use `Image.of("/assets/logo.svg", "Site logo").dimensions(64, 64)` for an image with an accessible description and reserved layout space. Decorative images need the appropriate presentation or hidden semantics. The compiler reports missing alt text and missing dimensions/aspect ratios. `hero()` marks the page's main image: it loads eagerly with a `<head>` preload, and a second hero on one page reports `duplicate-hero-image`.
 
 ## Add static-site search
 
 Rendering a `SearchPalette` includes its search input, result links, and JavaScript module automatically:
 
 ```java
-var search = SearchPalette.create("search", "Search pages and sections...")
+var search = SearchPalette.of()
+    .placeholder("Search pages and sections...")
     .item("Guide", "Installation", "/guide/#installation")
     .item("Guide", "Publishing", "/guide/#publishing");
 
-Elements.main().children(search.triggerButton(), search.asDeferred(10));
+Elements.main().children(search.triggerButton(), Elements.deferred(search, 10));
 ```
 
 The palette contributes one client behavior per document, shared by all palettes on the page. Inline output embeds the module in `<script type="module">`; external output publishes a content-hashed asset through `CompiledPage.assets()` or `CompiledSite.files()`. There is no enable flag, separate asset registration, or search endpoint. This also works with standalone `Compiler.compile(...)` output. Pages without palettes receive no search script.

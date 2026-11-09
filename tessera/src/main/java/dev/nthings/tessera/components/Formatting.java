@@ -11,55 +11,42 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 
-/// Inline text formatting. Each method returns an element with a semantic tag (`mark`, `u`, `s`,
-/// `del`, `ins`, `code`, `kbd`) styled with the theme's colors. The results can be placed
-/// anywhere an inline element fits.
+/// Inline text formatting functions. Each returns an element with a semantic tag (`mark`, `u`,
+/// `s`, `del`, `ins`, `code`, `kbd`) styled with the theme's colors, to place anywhere an inline
+/// element fits. Methods that take a style come as a text and a markup overload.
 public final class Formatting {
 
   private Formatting() {}
 
-  /// Highlights `text` with the warning tone.
-  public static TagElement highlight(String text) {
-    return highlight(text, Tone.WARNING);
-  }
-
+  /// Highlights `text` with `tone`.
   public static TagElement highlight(String text, Tone tone) {
     return highlight(Elements.text(text), tone);
   }
 
-  /// Highlights `content`, which may contain markup.
+  /// Highlights `content`, which may contain markup, with `tone`.
   public static TagElement highlight(IntoElement content, Tone tone) {
     return Elements.mark().highlight(tone).textColor(Tokens.TEXT_PRIMARY).child(content);
   }
 
-  /// Underlines `text` with a solid accent line.
-  public static TagElement underline(String text) {
-    return underline(text, UnderlineStyle.SOLID, Tokens.ACCENT_PRIMARY);
+  /// Underlines `text` in `style` and `color`.
+  public static TagElement underline(String text, UnderlineStyle style, DesignToken.Color color) {
+    return underline(Elements.text(text), style, color);
   }
 
-  public static TagElement underline(String text, UnderlineStyle style) {
-    return underline(text, style, Tokens.ACCENT_PRIMARY);
-  }
-
+  /// Underlines `content`, which may contain markup, in `style` and `color`.
   public static TagElement underline(
-      String text, UnderlineStyle style, DesignToken.Color decorationColor) {
-    return underline(Elements.text(text), style, decorationColor);
+      IntoElement content, UnderlineStyle style, DesignToken.Color color) {
+    return Elements.u().underline(style, color).child(content);
   }
 
-  /// Underlines `content` in `style` and `decorationColor`. The content may contain markup.
-  public static TagElement underline(
-      IntoElement content, UnderlineStyle style, DesignToken.Color decorationColor) {
-    return Elements.u().underline(style, decorationColor).child(content);
+  /// Strikes through `text` with a line in `color`.
+  public static TagElement strikethrough(String text, DesignToken.Color color) {
+    return strikethrough(Elements.text(text), color);
   }
 
-  /// Strikes through `text` in a muted line color.
-  public static TagElement strikethrough(String text) {
-    return strikethrough(Elements.text(text), Tokens.TEXT_MUTED);
-  }
-
-  /// Strikes through `content` in `decorationColor`. The content may contain markup.
-  public static TagElement strikethrough(IntoElement content, DesignToken.Color decorationColor) {
-    return Elements.s().strikethrough(decorationColor).child(content);
+  /// Strikes through `content`, which may contain markup, with a line in `color`.
+  public static TagElement strikethrough(IntoElement content, DesignToken.Color color) {
+    return Elements.s().strikethrough(color).child(content);
   }
 
   /// Marks removed text: a danger strikethrough on a danger highlight.

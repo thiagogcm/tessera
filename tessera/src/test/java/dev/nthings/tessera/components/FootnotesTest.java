@@ -27,9 +27,9 @@ class FootnotesTest {
       page =
           renderMain(
               p().children(
-                      Footnotes.ref("fn-1", "First footnote."),
+                      Footnote.of("First footnote.").id("fn-1"),
                       text(" and "),
-                      Footnotes.ref("fn-2", "Second footnote.")));
+                      Footnote.of("Second footnote.").id("fn-2")));
     }
 
     @Test
@@ -73,20 +73,22 @@ class FootnotesTest {
   void explicitSectionBeforeReferencesListsThemOnce() {
     var page =
         renderMain(
-            Footnotes.section("Notes"),
-            p().child(Footnotes.ref("a", "First note")),
-            p().child(Footnotes.ref("b", "Second note")));
+            Footnotes.of().title("Notes"),
+            p().child(Footnote.of("First note")),
+            p().child(Footnote.of("Second note")));
 
     assertThat(page.elements("aside[role=doc-endnotes]")).hasSize(1);
     assertThat(page.elements("aside[role=doc-endnotes] li")).hasSize(2);
     assertThat(page.element("main > :first-child")).hasAttribute("role", "doc-endnotes");
+    assertThat(page.element("aside[role=doc-endnotes] h2")).hasText("Notes");
+    assertThat(page.elementById("fnref-2").selectFirst("a")).hasText("[2]");
   }
 
   @Test
   @DisplayName("reusing a footnote id on one page is rejected")
   void rejectsDuplicateFootnoteIds() {
     assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(() -> renderMain(Footnotes.ref("n", "One"), Footnotes.ref("n", "Two")))
+        .isThrownBy(() -> renderMain(Footnote.of("One").id("n"), Footnote.of("Two").id("n")))
         .withMessageContaining("duplicate-id");
   }
 }

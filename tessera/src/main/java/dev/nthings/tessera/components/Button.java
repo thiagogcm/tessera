@@ -1,18 +1,15 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.ScopeStyle;
-import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import java.util.List;
 
-/// Native `<button>`, `type="button"` unless [Button#submit()] is called. Use an anchor for
+/// Native `<button>`, `type="button"` unless [#submit()] is called. Create one with
+/// [#of(String, IntoElement...)]; it is an accent, solid, medium button by default. Use a link for
 /// navigation.
-public final class Button extends ButtonBase<Button> implements View {
+public final class Button extends ButtonBase<Button> {
 
   /// Surface: `SOLID` (filled with the tone, the default), `OUTLINE` (transparent with a tone
   /// border), or `GHOST` (transparent with tone text).
@@ -22,63 +19,20 @@ public final class Button extends ButtonBase<Button> implements View {
     GHOST
   }
 
-  /// Control size. Padding follows density; type size does not.
-  public enum Size {
-    SM(Tokens.FONT_SIZE_XS, Tokens.SPACE_3, Tokens.SPACE_1, Tokens.SPACE_8),
-    MD(Tokens.CONTROL_FONT_SIZE, Tokens.CONTROL_PADDING_INLINE, Tokens.SPACE_2, Tokens.SPACE_10),
-    LG(Tokens.FONT_SIZE_MD, Tokens.SPACE_5, Tokens.SPACE_3, Tokens.SPACE_12);
-
-    private final DesignToken.Length fontSize;
-    private final DesignToken.Length paddingInline;
-    private final DesignToken.Length paddingBlock;
-    private final DesignToken.Length iconBox;
-
-    Size(
-        DesignToken.Length fontSize,
-        DesignToken.Length paddingInline,
-        DesignToken.Length paddingBlock,
-        DesignToken.Length iconBox) {
-      this.fontSize = fontSize;
-      this.paddingInline = paddingInline;
-      this.paddingBlock = paddingBlock;
-      this.iconBox = iconBox;
-    }
-
-    DesignToken.Length fontSize() {
-      return fontSize;
-    }
-
-    DesignToken.Length paddingInline() {
-      return paddingInline;
-    }
-
-    DesignToken.Length paddingBlock() {
-      return paddingBlock;
-    }
-
-    DesignToken.Length iconBox() {
-      return iconBox;
-    }
-  }
-
-  private final String name;
+  private final String label;
   private final List<IntoElement> content;
 
-  private Button(String name, List<IntoElement> content) {
+  private Button(String label, List<IntoElement> content) {
     super(Tone.ACCENT, Variant.SOLID);
-    this.name = name;
+    this.label = label;
     this.content = content;
   }
 
-  /// Button whose visible text is its accessible name.
-  public static Button of(String label) {
-    return new Button(label, List.of());
-  }
-
-  /// Button with custom `content`. `accessibleName` is set as `aria-label`, so assistive technology
-  /// announces it instead of the content text. Keep it matching the visible words.
-  public static Button of(String accessibleName, IntoElement... content) {
-    return new Button(accessibleName, List.of(content));
+  /// Creates a button named `label`. Without `content`, `label` is its visible text. With
+  /// `content`, the button shows the content and `label` becomes its `aria-label`, which assistive
+  /// technology announces instead of the content text, so keep it matching the visible words.
+  public static Button of(String label, IntoElement... content) {
+    return new Button(label, List.of(content));
   }
 
   @Override
@@ -87,17 +41,22 @@ public final class Button extends ButtonBase<Button> implements View {
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  String viewType() {
+    return "button";
+  }
+
+  @Override
+  void configureScope(ScopeStyle scope) {
     ButtonFace.configure(scope, false);
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var el = ButtonFace.element(this, false);
     if (content.isEmpty()) {
-      el.text(name);
+      el.text(label);
     } else {
-      el.ariaLabel(name);
+      el.ariaLabel(label);
       content.forEach(el::child);
     }
     return el;

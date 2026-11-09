@@ -6,7 +6,6 @@ import static dev.nthings.tessera.core.Elements.header;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
@@ -19,34 +18,44 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
-import dev.nthings.tessera.foundation.Fnv1a64;
 
 /// Header that stays at the top of the viewport while the page scrolls. Once it is stuck, its
 /// surface turns translucent, blurs what is behind it and casts a shadow. Browsers without
-/// scroll-state support still keep the header at the top, with the plain surface. The content
-/// is placed inside a `<header>` element.
-public final class StickyHeader implements View {
+/// scroll-state support still keep the header at the top, with the plain surface. Create one with
+/// [#of(IntoElement)]; the content is placed inside a `<header>` element.
+public final class StickyHeader extends BuiltinView {
 
-  private final String id;
-  private final Container container;
+  /// Scroll-state container queried by the header's own surface.
+  private static final Container STUCK =
+      Container.named("tessera-sticky-header", Container.Type.SCROLL_STATE);
+
   private final Element content;
 
-  /// Creates a sticky header with the given `id`, which is unique within its view scope.
-  public StickyHeader(String id, IntoElement content) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
-    this.container = Container.named("sticky-" + this.id, Container.Type.SCROLL_STATE);
-    this.content = content.intoElement();
+  private StickyHeader(Element content) {
+    this.content = content;
+  }
+
+  /// Creates a sticky header around `content`.
+  public static StickyHeader of(IntoElement content) {
+    return new StickyHeader(content.intoElement());
+  }
+
+  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
+  /// it. Without it, the compiler assigns `sticky-header-<n>`.
+  public StickyHeader id(String id) {
+    this.id = id;
+    return this;
   }
 
   @Override
-  public String viewId() {
-    return id;
+  String viewType() {
+    return "sticky-header";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
-        .root(s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(30).container(container))
+        .root(s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(30).container(STUCK))
         .select(
             ":scope > .sticky-surface",
             s ->
@@ -59,7 +68,7 @@ public final class StickyHeader implements View {
                             Animatable.BACKGROUND_COLOR,
                             Animatable.BOX_SHADOW)))
         .on(
-            container.stuck(Container.Edge.TOP),
+            STUCK.stuck(Container.Edge.TOP),
             c ->
                 c.select(
                     ":scope > .sticky-surface",
@@ -75,7 +84,7 @@ public final class StickyHeader implements View {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     return div().child(header().attr("class", "sticky-surface").child(content));
   }
 }

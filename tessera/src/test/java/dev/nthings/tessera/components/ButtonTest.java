@@ -20,7 +20,7 @@ class ButtonTest {
   @Test
   @DisplayName("commands open a deferred dialog or popover, and a disabled button cannot")
   void commandsOpenDeferredTargets() {
-    var dialog = Overlays.modal("confirm", "Confirm");
+    var dialog = Modal.of("Confirm").id("confirm");
     var hint = ElementRef.scoped("hint");
     var page =
         renderMain(
@@ -32,7 +32,7 @@ class ButtonTest {
             Button.of("Peek")
                 .command(hint, BuiltinCommand.TOGGLE_POPOVER)
                 .variant(Button.Variant.GHOST),
-            dialog.asDeferred(1),
+            deferred(dialog, 1),
             deferred(div().id(hint).popover(PopoverMode.AUTO).text("Details"), 2));
 
     var dialogEl = page.element("dialog");
@@ -100,8 +100,7 @@ class ButtonTest {
     var media = scope.indexOf("@media (prefers-reduced-motion: no-preference)");
     assertThat(media).isPositive();
     assertThat(scope.substring(0, media))
-        .contains(":scope:focus-visible{")
-        .contains("outline:2px solid var(--accent-primary)")
+        .contains("&:focus-visible{outline:2px solid var(--accent-primary)")
         .doesNotContain("transition-duration:");
     assertThat(scope.substring(media))
         .contains("transition-duration:var(--control-feedback-duration)");

@@ -25,7 +25,7 @@ class FormattingTest {
             "underline",
             Formatting.underline("text", UnderlineStyle.WAVY, Tokens.STATUS_DANGER),
             "u"),
-        argumentSet("strikethrough", Formatting.strikethrough("text"), "s"),
+        argumentSet("strikethrough", Formatting.strikethrough("text", Tokens.TEXT_MUTED), "s"),
         argumentSet("deleted", Formatting.deleted("text"), "del"),
         argumentSet("inserted", Formatting.inserted("text"), "ins"),
         argumentSet("keybinding", Formatting.keybinding("Ctrl+K"), "kbd"));

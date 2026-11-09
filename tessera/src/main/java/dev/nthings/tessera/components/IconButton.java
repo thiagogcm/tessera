@@ -2,31 +2,29 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tone;
 
-/// Icon-only `<button>` created with [#of(String, IntoElement)]. The name you pass is its only
+/// Icon-only `<button>` created with [#of(String, IntoElement)]. The label you pass is its only
 /// accessible name, because the icon is decorative and hidden from assistive technology, so pass
-/// a non-blank name. It defaults to the neutral tone, ghost variant and medium size, and takes
+/// a non-blank label. It defaults to the neutral tone, ghost variant and medium size, and takes
 /// the same tone, variant, size, command and disabled settings as [Button].
-public final class IconButton extends ButtonBase<IconButton> implements View {
+public final class IconButton extends ButtonBase<IconButton> {
 
-  private final String name;
+  private final String label;
   private final IntoElement icon;
 
-  private IconButton(String name, IntoElement icon) {
+  private IconButton(String label, IntoElement icon) {
     super(Tone.NEUTRAL, Button.Variant.GHOST);
-    this.name = name;
+    this.label = label;
     this.icon = icon;
   }
 
-  /// Creates an icon button named `accessibleName` that shows `icon`.
-  public static IconButton of(String accessibleName, IntoElement icon) {
-    return new IconButton(accessibleName, icon);
+  /// Creates an icon button named `label` that shows `icon`.
+  public static IconButton of(String label, IntoElement icon) {
+    return new IconButton(label, icon);
   }
 
   @Override
@@ -35,14 +33,19 @@ public final class IconButton extends ButtonBase<IconButton> implements View {
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  String viewType() {
+    return "icon-button";
+  }
+
+  @Override
+  void configureScope(ScopeStyle scope) {
     ButtonFace.configure(scope, true);
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     return ButtonFace.element(this, true)
-        .ariaLabel(name)
+        .ariaLabel(label)
         .child(span().attr("class", "button-icon").ariaHidden(true).child(icon));
   }
 }

@@ -21,6 +21,7 @@ import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Card;
+import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.ElementRef;
@@ -102,8 +103,8 @@ abstract class ShowcaseBrowserSupport {
                         "Custom theme",
                         Elements.main()
                             .children(
-                                Card.create("custom").title("Themed card").bodyText("Body"),
-                                Forms.field("Custom field", Forms.text("custom"))))))
+                                Card.of("Themed card").bodyText("Body"),
+                                Field.of("Custom field", Forms.text("custom"))))))
             .build();
     SiteWriter.writeToDirectory(Compiler.compile(themed), publishedSite.resolve("theme"));
     var linked =
@@ -131,11 +132,13 @@ abstract class ShowcaseBrowserSupport {
             .build();
     SiteWriter.writeToDirectory(Compiler.compile(linked), publishedSite.resolve("urls"));
     var firstSearch =
-        SearchPalette.create("first-search")
+        SearchPalette.of()
+            .triggerLabel("Find articles")
             .item("Guides", "Café guide", "#cafe")
             .item("Guides", "Tea notes", "#tea");
     var secondSearch =
-        SearchPalette.create("second-search")
+        SearchPalette.of()
+            .triggerLabel("Find guides")
             .item("Guides", "Layout guide", "#layout")
             .item("Guides", "Forms guide", "#forms");
     var searchPage =
@@ -148,14 +151,14 @@ abstract class ShowcaseBrowserSupport {
                         "Search examples",
                         Elements.main()
                             .children(
-                                firstSearch.triggerButton("first-trigger", "Find articles"),
-                                secondSearch.triggerButton("second-trigger", "Find guides"),
+                                firstSearch.triggerButton(),
+                                secondSearch.triggerButton(),
                                 Elements.h2().id(ElementRef.page("cafe")).text("Café guide"),
                                 Elements.h2().id(ElementRef.page("tea")).text("Tea notes"),
                                 Elements.h2().id(ElementRef.page("layout")).text("Layout guide"),
                                 Elements.h2().id(ElementRef.page("forms")).text("Forms guide"),
-                                firstSearch.asDeferred(10),
-                                secondSearch.asDeferred(20)))))
+                                Elements.deferred(firstSearch, 10),
+                                Elements.deferred(secondSearch, 20)))))
             .build();
     SiteWriter.writeToDirectory(Compiler.compile(searchPage), publishedSite.resolve("search"));
     server =
@@ -353,7 +356,7 @@ abstract class ShowcaseBrowserSupport {
             "No. Disclosure is native HTML.", new Page.GetByTextOptions().setExact(true));
     var second =
         page.getByText(
-            "Use Accordion.multiOpen(id) for that.", new Page.GetByTextOptions().setExact(true));
+            "Leave out exclusive() for that.", new Page.GetByTextOptions().setExact(true));
     assertThat(first).isVisible();
     assertThat(second).isHidden();
     page.getByText("Can several items be open?", new Page.GetByTextOptions().setExact(true))

@@ -7,18 +7,16 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 
 import dev.nthings.tessera.components.Breadcrumbs;
-import dev.nthings.tessera.components.Breadcrumbs.Crumb;
+import dev.nthings.tessera.components.DescriptionList;
 import dev.nthings.tessera.components.DocPager;
+import dev.nthings.tessera.components.Drawer;
 import dev.nthings.tessera.components.Dropdown;
-import dev.nthings.tessera.components.Lists.DescriptionList;
-import dev.nthings.tessera.components.Lists.Term;
-import dev.nthings.tessera.components.Overlays;
+import dev.nthings.tessera.components.Link;
+import dev.nthings.tessera.components.NavTabs;
 import dev.nthings.tessera.components.ScrollProgressBar;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.SimpleTable;
 import dev.nthings.tessera.components.StickyHeader;
-import dev.nthings.tessera.components.Tabs;
-import dev.nthings.tessera.components.Tabs.NavItem;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
@@ -44,29 +42,34 @@ record Shell(Page page) implements Component {
   public Element render(RenderContext context) {
     var pages = ShowcaseSite.pages();
     var inspector =
-        Overlays.drawer("inspector", "Compiler & Cascade Inspector")
-            .subtitle("What every page compiles to")
+        Drawer.of("Compiler & Cascade Inspector")
+            .id("inspector")
+            .description("What every page compiles to")
             .body(
-                DescriptionList.of(
-                    Term.of(
+                DescriptionList.of()
+                    .term(
                         "Cascade",
-                        "@layer reset, base, theme, components, utilities, interactive, container"),
-                    Term.of("Isolation", "@scope ([data-view]) to (:scope [data-view] > *)"),
-                    Term.of("Top layer", "<dialog>, [popover], @starting-style"),
-                    Term.of(
+                        "@layer reset, base, theme, components, utilities, interactive, container")
+                    .term("Isolation", "@scope ([data-view]) to (:scope [data-view] > *)")
+                    .term("Top layer", "<dialog>, [popover], @starting-style")
+                    .term(
                         "JavaScript",
-                        "Search includes its module; native controls use HTML and CSS")),
-                SimpleTable.create()
+                        "Search includes its module; native controls use HTML and CSS"),
+                SimpleTable.of()
                     .caption("Compiler phases")
                     .headers("Phase", "Responsibility")
                     .row("1. requestLayout", "Expand views, bind ElementRefs, intern styles")
                     .row("2. prepaint", "Link id references, verify accessibility and links")
                     .row("3. paint", "Stream encoded HTML and one shared stylesheet"));
 
-    var search = SearchPalette.create("search", "Search components and pages...");
-    var quickActions = Dropdown.create("quick-actions", "Pages");
+    var search =
+        SearchPalette.of()
+            .id("search")
+            .placeholder("Search components and pages...")
+            .triggerLabel("Search");
+    var quickActions = Dropdown.of("Pages").id("quick-actions");
     for (var p : pages) {
-      search.item("Pages", p.navLabel(), p.path(), p.summary());
+      search.item("Pages", p.navLabel(), p.path(), p.summary(), null);
       quickActions.linkItem(p.path(), p.navLabel(), null);
       for (var demo : p.demos()) {
         search.item(p.navLabel(), demo.title(), p.sectionHref(demo));
@@ -78,56 +81,56 @@ record Shell(Page page) implements Component {
             "open-inspector", inspector.dialogRef(), BuiltinCommand.SHOW_MODAL, "Open inspector");
 
     var nav =
-        Tabs.navTabs(
-            "primary-nav",
-            "Primary navigation",
-            page.path(),
-            pages.stream().map(p -> new NavItem(p.path(), p.navLabel())).toList());
+        NavTabs.of(
+                "Primary navigation",
+                pages.stream().map(p -> new Link(p.path(), p.navLabel())).toList())
+            .id("primary-nav")
+            .active(page.path());
 
     var header =
-        new StickyHeader(
-            "site-header",
-            div()
-                .maxInlineSize(MAX_WIDTH)
-                .mx(CssLength.auto())
-                .px(PAD_X)
-                .py(CssLength.rem(0.5))
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(0.25))
-                .children(
-                    div()
-                        .flex()
-                        .flexWrap()
-                        .itemsCenter()
-                        .justifyBetween()
-                        .gap(CssLength.rem(0.75))
-                        .children(
-                            Elements.a("/")
-                                .textColor(Tokens.TEXT_PRIMARY)
-                                .textDecorationNone()
-                                .fontWeight(700)
-                                .fontSize(CssLength.rem(1.0625))
-                                .whiteSpace(WhiteSpace.NOWRAP)
-                                .transitionKey(TransitionKey.of("site-brand", "brand-morph"))
-                                .text("Tessera"),
-                            div()
-                                .flex()
-                                .itemsCenter()
-                                .gap(CssLength.rem(0.5))
-                                .children(
-                                    search.triggerButton("search-btn", "Search"),
-                                    quickActions,
-                                    inspector.triggerButton("inspector-btn", "Inspector"),
-                                    inspector.asDeferred(20),
-                                    search.asDeferred(30))),
-                    div().overflowX(Overflow.AUTO).child(nav)));
+        StickyHeader.of(
+                div()
+                    .maxInlineSize(MAX_WIDTH)
+                    .mx(CssLength.auto())
+                    .px(PAD_X)
+                    .py(CssLength.rem(0.5))
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(0.25))
+                    .children(
+                        div()
+                            .flex()
+                            .flexWrap()
+                            .itemsCenter()
+                            .justifyBetween()
+                            .gap(CssLength.rem(0.75))
+                            .children(
+                                Elements.a("/")
+                                    .textColor(Tokens.TEXT_PRIMARY)
+                                    .textDecorationNone()
+                                    .fontWeight(700)
+                                    .fontSize(CssLength.rem(1.0625))
+                                    .whiteSpace(WhiteSpace.NOWRAP)
+                                    .transitionKey(TransitionKey.of("site-brand", "brand-morph"))
+                                    .text("Tessera"),
+                                div()
+                                    .flex()
+                                    .itemsCenter()
+                                    .gap(CssLength.rem(0.5))
+                                    .children(
+                                        search.triggerButton(),
+                                        quickActions,
+                                        inspector.triggerButton("Inspector"),
+                                        Elements.deferred(inspector, 20),
+                                        Elements.deferred(search, 30))),
+                        div().overflowX(Overflow.AUTO).child(nav)))
+            .id("site-header");
 
     var index = pages.indexOf(page);
     var pager =
         DocPager.of(
-            index > 0 ? pageRef(pages.get(index - 1)) : null,
-            index < pages.size() - 1 ? pageRef(pages.get(index + 1)) : null);
+            index > 0 ? link(pages.get(index - 1)) : null,
+            index < pages.size() - 1 ? link(pages.get(index + 1)) : null);
 
     var heading =
         section()
@@ -139,9 +142,7 @@ record Shell(Page page) implements Component {
                 s ->
                     s.child(
                         Breadcrumbs.of(
-                            "crumbs",
-                            Crumb.of("/", "Tessera"),
-                            Crumb.of(page.path(), page.navLabel()))))
+                            new Link("/", "Tessera"), new Link(page.path(), page.navLabel()))))
             .children(
                 h1().fontSize(
                         CssLength.fluid(CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.6)))
@@ -156,7 +157,7 @@ record Shell(Page page) implements Component {
     return div()
         .overflowAnchorNone()
         .children(
-            new ScrollProgressBar("reading-progress"),
+            ScrollProgressBar.of(),
             header,
             Elements.main()
                 .maxInlineSize(MAX_WIDTH)
@@ -181,7 +182,7 @@ record Shell(Page page) implements Component {
                         + " CSS."));
   }
 
-  private static DocPager.PageRef pageRef(Page target) {
-    return new DocPager.PageRef(target.path(), target.navLabel());
+  private static Link link(Page target) {
+    return new Link(target.path(), target.navLabel());
   }
 }

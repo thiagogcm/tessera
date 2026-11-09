@@ -1,5 +1,6 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
@@ -17,13 +18,14 @@ class DropdownTest {
 
   @BeforeAll
   static void renderDropdownWithModal() {
-    var modal = Overlays.modal("confirm-deploy", "Confirm Deployment");
+    var modal = Modal.of("Confirm Deployment").id("confirm-deploy");
     var dropdown =
-        Dropdown.create("actions-menu", "Actions")
+        Dropdown.of("Actions")
+            .id("actions-menu")
             .linkItem("/logs", "View Logs", "G L")
             .separator()
             .commandItem("open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now");
-    page = renderMain(dropdown, modal.asDeferred(10));
+    page = renderMain(dropdown, deferred(modal, 10));
   }
 
   @Test
@@ -42,8 +44,7 @@ class DropdownTest {
   @DisplayName("exposes its panel to invokers outside the view")
   void exposesItsPanelToInvokersOutsideTheView() {
     var reference = ElementRef.scoped("tools-panel");
-    var dropdown =
-        Dropdown.create("tools", "Tools").panelRef(reference).linkItem("/logs", "View Logs", "G L");
+    var dropdown = Dropdown.of("Tools").panelRef(reference).linkItem("/logs", "View Logs", "G L");
     var outside =
         renderMain(
             dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));

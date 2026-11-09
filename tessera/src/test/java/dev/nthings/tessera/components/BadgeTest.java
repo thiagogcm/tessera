@@ -54,14 +54,20 @@ class BadgeTest {
   @ParameterizedTest
   @CsvSource({"SM, badge--sm", "MD, badge--md", "LG, badge--lg"})
   @DisplayName("size selects its modifier class")
-  void sizeSelectsModifierClass(Badge.Size size, String modifier) {
+  void sizeSelectsModifierClass(Size size, String modifier) {
     assertThat(render(Badge.of("Size").size(size))).hasClasses(modifier);
   }
 
   @Test
-  @DisplayName("fluent shortcuts combine tone, variant, size and pill styling")
-  void fluentShortcutsCombineModifiers() {
-    var badge = render(Badge.of("Critical").danger().solid().lg().pill());
+  @DisplayName("tone, variant, size and pill styling combine")
+  void optionsCombineModifiers() {
+    var badge =
+        render(
+            Badge.of("Critical")
+                .tone(Tone.DANGER)
+                .variant(Badge.Variant.SOLID)
+                .size(Size.LG)
+                .pill());
 
     assertThat(badge).hasClasses("badge--danger", "badge--solid", "badge--lg", "is-pill");
   }
@@ -69,7 +75,7 @@ class BadgeTest {
   @Test
   @DisplayName("a dot adds a decorative indicator beside the label")
   void dotAddsDecorativeIndicator() {
-    var badge = render(Badge.dot("Online", Tone.SUCCESS));
+    var badge = render(Badge.of("Online").tone(Tone.SUCCESS).dot());
 
     assertThat(badge).hasClasses("badge--success");
     assertThat(badge.selectFirst(".badge-dot")).hasAttribute("aria-hidden", "true");
@@ -79,7 +85,7 @@ class BadgeTest {
   @Test
   @DisplayName("an href turns the badge into an anchor")
   void hrefRendersAnchor() {
-    var link = renderMain(Badge.accent("Docs").href("/docs")).element("a.badge");
+    var link = renderMain(Badge.of("Docs").tone(Tone.ACCENT).href("/docs")).element("a.badge");
 
     assertThat(link).hasAttribute("href", "/docs").hasClasses("badge--accent").hasText("Docs");
   }

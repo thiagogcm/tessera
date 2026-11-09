@@ -35,8 +35,8 @@ class ThemeRolesTest {
                     "Theme",
                     main()
                         .children(
-                            Forms.field("Display name", Forms.text("name")),
-                            Callout.note("Read this note"))),
+                            Field.of("Display name", Forms.text("name")),
+                            Callout.of(Callout.Kind.NOTE, "Read this note"))),
                 theme,
                 OutputMode.inline()));
 
@@ -66,7 +66,7 @@ class ThemeRolesTest {
     var page =
         RenderedPage.of(
             Compiler.compile(
-                new PageDocument("Density", main().child(Forms.field("Name", Forms.text("name")))),
+                new PageDocument("Density", main().child(Field.of("Name", Forms.text("name")))),
                 theme,
                 OutputMode.inline()));
 
@@ -84,8 +84,7 @@ class ThemeRolesTest {
   void motionTravelStaysInsideTheReducedMotionQuery() {
     var page =
         renderMain(
-            Forms.switchField("Lights", "lights", false),
-            Overlays.modal("confirm", "Confirm").bodyText("Deploy"));
+            Forms.switchField("Lights", "lights", false), Modal.of("Confirm").bodyText("Deploy"));
 
     var dialog = page.element("dialog");
     var scope = page.scopeBody(dialog);

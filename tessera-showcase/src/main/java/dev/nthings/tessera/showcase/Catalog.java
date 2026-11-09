@@ -1,5 +1,6 @@
 package dev.nthings.tessera.showcase;
 
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.span;
 
@@ -8,7 +9,8 @@ import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.IconButton;
-import dev.nthings.tessera.components.Overlays;
+import dev.nthings.tessera.components.Modal;
+import dev.nthings.tessera.components.Size;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
@@ -114,7 +116,7 @@ public final class Catalog {
             "Button.of(\"Save\");",
             "Button.of(\"Delete\").tone(Tone.DANGER).disabled();",
             "Button.of(\"Publishing\").busy();",
-            "Button.of(\"Edit\").size(Button.Size.SM);",
+            "Button.of(\"Edit\").size(Size.SM);",
             "IconButton.of(\"Refresh\", span().text(\"↻\"));"),
         List.of(
             variant("primary", "Primary", true, Catalog::primary),
@@ -133,9 +135,9 @@ public final class Catalog {
         List.of(
             "command=\"show-modal\"", "<dialog closedby=\"any\">", "@starting-style", "::backdrop"),
         List.of(
-            "var modal = Overlays.modal(\"publish\", \"Publish release?\").closeLabel(\"Got it\");",
+            "var modal = Modal.of(\"Publish release?\").id(\"publish\").closeLabel(\"Got it\");",
             "Button.of(\"Open modal\").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL);",
-            "modal.asDeferred(10);"),
+            "Elements.deferred(modal, 10);"),
         List.of(
             variant("closed", "Closed", true, Catalog::closedModal),
             variant("open", "Open", false, Catalog::openModal)));
@@ -202,7 +204,7 @@ public final class Catalog {
   }
 
   private static IntoElement compact() {
-    return Button.of("Edit").size(Button.Size.SM);
+    return Button.of("Edit").size(Size.SM);
   }
 
   private static IntoElement icon() {
@@ -211,7 +213,8 @@ public final class Catalog {
 
   private static IntoElement closedModal() {
     var modal =
-        Overlays.modal("publish", "Publish release?")
+        Modal.of("Publish release?")
+            .id("publish")
             .description("A native <dialog> opened with command=\"show-modal\".")
             .bodyText(
                 "Press Escape or click the backdrop to dismiss — closedby=\"any\" handles both.")
@@ -220,11 +223,12 @@ public final class Catalog {
         .layout(FlexLayout.row(CssLength.rem(0.75), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
         .children(
             Button.of("Open modal").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL),
-            modal.asDeferred(10));
+            deferred(modal, 10));
   }
 
   private static IntoElement openModal() {
-    return Overlays.modal("publish", "Publish release?")
+    return Modal.of("Publish release?")
+        .id("publish")
         .description("Shown open, without a second trigger.")
         .bodyText(
             "This note is long enough to wrap onto several lines in a narrow window. The dialog "

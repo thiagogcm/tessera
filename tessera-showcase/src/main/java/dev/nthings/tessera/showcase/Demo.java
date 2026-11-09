@@ -3,9 +3,8 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.div;
 
 import dev.nthings.tessera.components.CodeBlock;
-import dev.nthings.tessera.components.ContentSection;
-import dev.nthings.tessera.components.ContentSection.SurfaceKind;
 import dev.nthings.tessera.components.Formatting;
+import dev.nthings.tessera.components.Section;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
@@ -29,7 +28,7 @@ final class Demo implements Component {
   private final List<Element> examples = new ArrayList<>();
   private @Nullable Supplier<List<IntoElement>> stage;
   private List<String> code = List.of();
-  private SurfaceKind surface = SurfaceKind.CARD;
+  private Section.Surface surface = Section.Surface.CARD;
 
   private Demo(String id, String title) {
     this.id = id;
@@ -68,7 +67,7 @@ final class Demo implements Component {
     return this;
   }
 
-  Demo surface(SurfaceKind kind) {
+  Demo surface(Section.Surface kind) {
     this.surface = kind;
     return this;
   }
@@ -99,7 +98,7 @@ final class Demo implements Component {
     if (fresh != null) {
       stageItems.addAll(fresh.get());
     }
-    var section = ContentSection.create(id, title).surface(surface).leadText(summary);
+    var section = Section.of(id, title).surface(surface).description(summary);
     if (!features.isEmpty()) {
       section.child(
           div()
@@ -122,7 +121,8 @@ final class Demo implements Component {
             .border(Border.hairline(Tokens.BORDER_SUBTLE))
             .children(stageItems));
     if (!code.isEmpty()) {
-      section.child(CodeBlock.ofLines(code).filename("Usage").language("java"));
+      section.child(
+          CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java"));
     }
     return section.intoElement();
   }

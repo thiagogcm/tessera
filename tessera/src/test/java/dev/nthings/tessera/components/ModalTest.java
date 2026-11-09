@@ -1,5 +1,6 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
@@ -8,43 +9,45 @@ import dev.nthings.tessera.core.ElementRef;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Overlays")
-class OverlaysTest {
+@DisplayName("Modal and Drawer")
+class ModalTest {
 
   @Test
   @DisplayName("modals and drawers are light-dismiss dialogs")
   void modalsAndDrawersLightDismiss() {
     var modal =
-        Overlays.modal("confirm-deploy", "Confirm Deployment")
+        Modal.of("Confirm Deployment")
+            .id("confirm-deploy")
             .dialogRef(ElementRef.scoped("confirmation"))
             .description("Production rollout")
             .bodyText("Deploy to all 4 regions?");
     var drawer =
-        Overlays.drawer("inspector", "Live Inspector")
+        Drawer.of("Live Inspector")
+            .id("inspector")
+            .side(Drawer.Side.INLINE_START)
             .dialogRef(ElementRef.scoped("details"))
-            .subtitle("Cascade state")
+            .description("Cascade state")
             .body(p().text("7 cascade layers active."));
-    var preview =
-        Overlays.modal("preview", "Preview")
-            .bodyText("Shown before the page is published.")
-            .opened();
+    var preview = Modal.of("Preview").bodyText("Shown before the page is published.").opened();
 
     var page =
         renderMain(
-            modal.triggerButton("trigger-modal", "Open Modal"),
-            drawer.triggerButton("trigger-drawer", "Open Drawer"),
-            modal.asDeferred(10),
-            drawer.asDeferred(20),
+            modal.triggerButton("Open Modal"),
+            drawer.triggerButton("Open Drawer"),
+            deferred(modal, 10),
+            deferred(drawer, 20),
             preview);
 
     assertThat(page.elements("dialog[closedby=any]"))
         .extracting(e -> e.id())
         .containsExactlyInAnyOrder(
-            "confirm-deploy--confirmation", "inspector--details", "preview--dialog");
-    assertThat(page.element("[id$='--trigger-modal']"))
+            "confirm-deploy--confirmation", "inspector--details", "modal-1--dialog");
+    assertThat(page.element("button:contains(Open Modal)"))
+        .hasAttribute("command", "show-modal")
         .hasAttribute("commandfor", "confirm-deploy--confirmation");
-    assertThat(page.element("[id$='--trigger-drawer']"))
+    assertThat(page.element("button:contains(Open Drawer)"))
         .hasAttribute("commandfor", "inspector--details");
+    assertThat(page.element("dialog[data-view^=drawer-start-] h2")).hasText("Live Inspector");
     assertThat(page.element("dialog[open]")).hasAttribute("open");
   }
 }

@@ -1,5 +1,6 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
@@ -21,9 +22,11 @@ class SearchPaletteTest {
     @BeforeAll
     static void renderPalette() {
       var palette =
-          SearchPalette.create("site-search")
+          SearchPalette.of()
+              .id("site-search")
+              .triggerLabel("Search")
               .item("Guides", "Getting Started", "/getting-started", "Introduction", "New");
-      page = renderMain(palette.triggerButton("open-search", "Search"), palette.asDeferred(50));
+      page = renderMain(palette.triggerButton(), deferred(palette, 50));
     }
 
     @Test
@@ -31,7 +34,9 @@ class SearchPaletteTest {
     void triggerOpensDialogAsModal() {
       var dialog = page.element("dialog[closedby=any]");
 
-      assertThat(page.elementById("open-search"))
+      assertThat(dialog).hasAttribute("id", "site-search--dialog");
+      assertThat(page.element("main > button"))
+          .hasText("Search AltK")
           .hasAttribute("commandfor", dialog.id())
           .hasAttribute("command", "show-modal");
     }
@@ -57,9 +62,9 @@ class SearchPaletteTest {
     static void renderPalette() {
       page =
           renderMain(
-              SearchPalette.create("cmd-palette")
-                  .item("Routes", "Telemetry", "/telemetry", "Real-time metrics")
-                  .item("Routes", "Typography", "/typography", "Font hierarchy")
+              SearchPalette.of()
+                  .item("Routes", "Telemetry", "/telemetry", "Real-time metrics", null)
+                  .item("Routes", "Typography", "/typography")
                   .item("Actions", "Toggle Dark Mode", "/theme", "Switch themes", "Action"));
     }
 

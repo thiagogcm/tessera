@@ -14,9 +14,7 @@ class ProseTest {
   @Test
   @DisplayName("applies a custom reading measure to its canvas")
   void appliesCustomMeasureToCanvas() {
-    var page =
-        renderMain(
-            Prose.create("prose-spec").maxMeasure(CssLength.ch(60)).children(p().text("Text")));
+    var page = renderMain(Prose.of(p().text("Text")).maxMeasure(CssLength.ch(60)));
 
     assertThat(page.elements(".prose-canvas > p")).isNotEmpty();
     assertThat(page.css()).contains("max-inline-size:60ch");

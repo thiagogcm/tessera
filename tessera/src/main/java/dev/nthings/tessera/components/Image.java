@@ -1,11 +1,10 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentKey;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IdReference;
 import dev.nthings.tessera.core.InteractiveElement;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TransitionKey;
@@ -13,17 +12,15 @@ import dev.nthings.tessera.css.StyleRefinement;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Image with an accessible description and reserved layout space.
+/// Image with an accessible description and reserved layout space. Create one with
+/// [#of(String, String)]; it loads lazily (`loading="lazy"`, `decoding="async"`) unless it is the
+/// page's [#hero()] image.
 ///
-/// - [#of(String, String)] loads lazily: `loading="lazy"` and `decoding="async"`.
-/// - [#hero(String, String)] is the page's main above-the-fold image: it loads eagerly with
-///   `fetchpriority="high"`, and its `<link rel="preload">` goes in `<head>`. A page allows one
-///   hero; a second throws IllegalStateException during render.
 /// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports
 ///   `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
-public final class Image implements Component, InteractiveElement<Image> {
+public final class Image extends BuiltinComponent implements InteractiveElement<Image> {
 
   private static final class HeroSlot {
     private @Nullable String src;
@@ -33,32 +30,31 @@ public final class Image implements Component, InteractiveElement<Image> {
       DocumentKey.of("hero-image", HeroSlot.class, HeroSlot::new);
 
   private final String src;
-  private final String alt;
-  private final boolean hero;
   private final TagElement img;
+  private boolean hero;
 
-  private Image(String src, String alt, boolean hero) {
+  private Image(String src, String alt) {
     if (src.isBlank()) {
       throw new IllegalArgumentException("Image src cannot be blank");
     }
     this.src = src;
-    this.alt = alt;
-    this.hero = hero;
     this.img = Elements.img(src, alt);
-    if (hero) {
-      img.attr("fetchpriority", "high");
-      img.attributes().remove("loading");
-    }
   }
 
-  /// Creates an image that loads lazily. Throws IllegalArgumentException if `src` is blank.
+  /// Creates an image of `src` described by `alt`. Throws IllegalArgumentException if `src` is
+  /// blank.
   public static Image of(String src, String alt) {
-    return new Image(src, alt, false);
+    return new Image(src, alt);
   }
 
-  /// Creates the page's hero image. Throws IllegalArgumentException if `src` is blank.
-  public static Image hero(String src, String alt) {
-    return new Image(src, alt, true);
+  /// Makes this the page's main above-the-fold image: it loads eagerly with
+  /// `fetchpriority="high"`, and a `<link rel="preload">` for it goes in `<head>`. A page allows
+  /// one hero; a second reports `duplicate-hero-image`.
+  public Image hero() {
+    this.hero = true;
+    img.attr("fetchpriority", "high");
+    img.attributes().remove("loading");
+    return this;
   }
 
   @Override
@@ -97,30 +93,21 @@ public final class Image implements Component, InteractiveElement<Image> {
     return InteractiveElement.super.dimensions(width, height);
   }
 
-  public String src() {
-    return src;
-  }
-
-  public String alt() {
-    return alt;
-  }
-
-  /// Whether this image was created with [#hero(String, String)].
-  public boolean isHero() {
-    return hero;
-  }
-
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     if (hero) {
       var slot = context.document(HERO);
-      if (slot.src != null) {
-        throw new IllegalStateException(
-            "Only one hero image allowed per page: already registered '"
-                + slot.src
-                + "', cannot register '"
+      var first = slot.src;
+      if (first != null) {
+        context.report(
+            "duplicate-hero-image",
+            "Only one hero image is allowed per page: '"
+                + first
+                + "' is already the hero, so '"
                 + src
-                + "'");
+                + "' cannot be",
+            "Call hero() on one image per page; load the others lazily.");
+        return img;
       }
       slot.src = src;
       context.contributeHead(

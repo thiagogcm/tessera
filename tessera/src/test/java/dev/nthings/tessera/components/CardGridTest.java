@@ -11,18 +11,18 @@ import org.junit.jupiter.api.Test;
 class CardGridTest {
 
   @Test
-  @DisplayName("scopes each card's view id under the grid's id")
+  @DisplayName("scopes each card's view id under the grid's id, assigning one when absent")
   void scopesCardViewIdsUnderGridId() {
     var grid =
         CardGrid.of(
-            "feature-cards",
-            CssLength.rem(18),
-            CssLength.rem(1.25),
-            Card.create("architecture").title("Multi-Phase Compiler"),
-            Card.create("tokens").title("Reactive Tokens"));
+                CssLength.rem(18),
+                Card.of("Multi-Phase Compiler").id("architecture"),
+                Card.of("Reactive Tokens"))
+            .id("feature-cards")
+            .gap(CssLength.rem(1.25));
 
-    assertThat(renderMain(grid).elements("[data-view-id^=feature-cards--card-]"))
+    assertThat(renderMain(grid).elements("[data-view-id^=feature-cards--]"))
         .extracting(card -> card.attr("data-view-id"))
-        .containsExactly("feature-cards--card-architecture", "feature-cards--card-tokens");
+        .containsExactly("feature-cards--architecture", "feature-cards--card-1");
   }
 }

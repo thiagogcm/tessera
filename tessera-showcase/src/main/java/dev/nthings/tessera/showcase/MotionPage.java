@@ -50,15 +50,15 @@ final class MotionPage {
         .features("animation-timeline: view()", "animation-range: entry", "scroll(root)")
         .example(
             Grid.autoFit(
-                CssLength.rem(12),
-                CssLength.rem(1),
-                Demo.tile("Fade in").animation(Animation.reveal(Keyframes.FADE_IN)),
-                Demo.tile("Fade up").animation(Animation.reveal(Keyframes.FADE_UP)),
-                Demo.tile("Scale in").animation(Animation.reveal(Keyframes.SCALE_IN)),
-                Demo.tile("Slide in").animation(Animation.reveal(Keyframes.SLIDE_INLINE))))
+                    CssLength.rem(12),
+                    Demo.tile("Fade in").animation(Animation.reveal(Keyframes.FADE_IN)),
+                    Demo.tile("Fade up").animation(Animation.reveal(Keyframes.FADE_UP)),
+                    Demo.tile("Scale in").animation(Animation.reveal(Keyframes.SCALE_IN)),
+                    Demo.tile("Slide in").animation(Animation.reveal(Keyframes.SLIDE_INLINE)))
+                .gap(CssLength.rem(1)))
         .code(
             "div().animation(Animation.reveal(Keyframes.FADE_UP));",
-            "new ScrollProgressBar(\"reading-progress\"); // Animation.scrollProgress(...)");
+            "ScrollProgressBar.of(); // Animation.scrollProgress(...)");
   }
 
   private static Demo revealOnce() {
@@ -70,11 +70,11 @@ final class MotionPage {
         .features("timeline-trigger: view() cover", "animation-trigger: play-once")
         .example(
             Grid.autoFit(
-                CssLength.rem(12),
-                CssLength.rem(1),
-                Demo.tile("Fade up").animation(Animation.revealOnce(Keyframes.FADE_UP)),
-                Demo.tile("Scale in").animation(Animation.revealOnce(Keyframes.SCALE_IN)),
-                Demo.tile("Slide in").animation(Animation.revealOnce(Keyframes.SLIDE_INLINE))))
+                    CssLength.rem(12),
+                    Demo.tile("Fade up").animation(Animation.revealOnce(Keyframes.FADE_UP)),
+                    Demo.tile("Scale in").animation(Animation.revealOnce(Keyframes.SCALE_IN)),
+                    Demo.tile("Slide in").animation(Animation.revealOnce(Keyframes.SLIDE_INLINE)))
+                .gap(CssLength.rem(1)))
         .code("div().animation(Animation.revealOnce(Keyframes.SCALE_IN));");
   }
 

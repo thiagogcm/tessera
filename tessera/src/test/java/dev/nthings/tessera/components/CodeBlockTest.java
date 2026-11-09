@@ -26,7 +26,7 @@ class CodeBlockTest {
                     "}")
                 .filename("Tessera.java")
                 .language("java")
-                .diffAutoDetect(true)
+                .diffAutoDetect()
                 .highlightLines(2, 3));
   }
 

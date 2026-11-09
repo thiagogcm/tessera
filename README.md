@@ -97,14 +97,16 @@ Tessera includes a comprehensive catalog of accessible, responsive components:
 
 | Category | Components | Highlights |
 | :-- | :-- | :-- |
-| **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnotes` | Subgrid alignment, typography scales, line numbering, and language tags. |
-| **Status & Badges** | `Badge`, `Pill` | OKLCH tinted, outline, and solid variants across 6 semantic tones, status dot indicators, anchor link support. |
-| **Navigation** | `Breadcrumbs`, `DocPager`, `StickyHeader`, `Toc` | Accessible breadcrumbs, pagination, sticky subgrid headers, and collapsible table of contents with integrated scrollspy. |
-| **Overlays & Popovers** | `Overlays` (`Modal`, `Drawer`), `Dropdown` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
-| **Forms & Input** | `Forms`, `SearchPalette` | Floating labels, native validation states, modal command palette with keyboard shortcuts. |
+| **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnote`, `Footnotes` | Subgrid alignment, typography scales, line numbering, and language tags. |
+| **Status** | `Badge` | OKLCH tinted, outline, and solid variants across 6 semantic tones, pill shape, status dot indicators, anchor link support. |
+| **Navigation** | `Breadcrumbs`, `NavTabs`, `DocPager`, `StickyHeader`, `TableOfContents`, `DocLayout` | Accessible breadcrumbs, link tabs, pagination, sticky headers, and a collapsible table of contents with integrated scrollspy. |
+| **Overlays & Popovers** | `Modal`, `Drawer`, `Dropdown` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
+| **Forms & Input** | `Forms`, `Field`, `Select`, `SearchPalette` | Labelled fields, native validation states, customizable selects, modal command palette with keyboard shortcuts. |
 | **Actions** | `Button`, `IconButton` | Native buttons with separate tone, surface, size, submit, invoker command, disabled, and busy states. |
 | **Data Presentation** | `SimpleTable`, `DataTable`, `Card`, `CardGrid` | Responsive tables, card grids with CSS subgrid alignment, hover elevation. |
-| **Layout & Containers** | `ContentSection`, `Grid`, `Image`, `Lists`, `Accordion`, `Tabs`, `Carousel` | Responsive columns, scroll reveals, lazy and high-priority LCP image loading, pure CSS accordions and carousels. |
+| **Layout & Containers** | `Section`, `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` | Responsive columns, scroll reveals, lazy and high-priority LCP image loading, pure CSS accordions and carousels. |
+
+Every component is created with a static factory such as `Modal.of(title)`, configured with fluent options, and takes an optional `id(String)` when its instance ids matter; see the [consumer guide](docs/consumer-guide.md#use-the-built-in-components).
 
 ---
 
@@ -177,28 +179,28 @@ public record MetricCard(String title, String value, Badge badge) implements Vie
 }
 ```
 
-### 2. Badges & Pills
+### 2. Badges
 
 ```java
-// Badges with semantic tones and variants
-Badge.success("Production").solid().dot();
-Badge.warning("Deprecated").outline();
-Badge.info("v0.1.0").pill();
+// Badges with semantic tones, variants and sizes
+Badge.of("Production").tone(Tone.SUCCESS).variant(Badge.Variant.SOLID).dot();
+Badge.of("Deprecated").tone(Tone.WARNING).variant(Badge.Variant.OUTLINE);
 
-// Ergonomic Pill factory
-Pill.accent("Latest Chromium + Firefox");
-Pill.neutral("JDK 25");
+// Pills are badges with fully rounded ends
+Badge.of("v0.1.0").tone(Tone.INFO).pill();
+Badge.of("JDK 25").size(Size.SM).pill();
 ```
 
 ### 3. Native Dialogs with Invoker Commands
 
 ```java
-var modal = Overlays.modal("confirm", "Confirm action")
+var modal = Modal.of("Confirm action")
+    .id("confirm")
     .bodyText("Are you sure you want to proceed?")
     .closeLabel("Cancel");
 
-// The trigger's commandfor is resolved by the Linker to the dialog's scoped id.
-main().children(modal.triggerButton("open-confirm", "Delete item"), modal.asDeferred(10));
+// The trigger's commandfor is resolved by the Linker to the dialog's scoped id, confirm--dialog.
+main().children(modal.triggerButton("Delete item"), Elements.deferred(modal, 10));
 ```
 
 ---

@@ -43,18 +43,18 @@ final class DataPage {
         .features(
             "@container (inline-size < 36rem)", "position: sticky", "tabular-nums", ":nth-child()")
         .example(
-            new DataTable<>(
-                "services",
-                "Service health by region",
-                List.of(
-                    Column.rowHeader("Service", (ServiceMetric r) -> text(r.service())),
-                    Column.text("Region", ServiceMetric::region),
-                    Column.numeric("P99 latency", ServiceMetric::latency),
-                    Column.numeric("Throughput", ServiceMetric::throughput),
-                    Column.numeric("Availability", ServiceMetric::availability)),
-                rows))
+            DataTable.of(
+                    "Service health by region",
+                    List.of(
+                        Column.rowHeader("Service", (ServiceMetric r) -> text(r.service())),
+                        Column.text("Region", ServiceMetric::region),
+                        Column.numeric("P99 latency", ServiceMetric::latency),
+                        Column.numeric("Throughput", ServiceMetric::throughput),
+                        Column.numeric("Availability", ServiceMetric::availability)),
+                    rows)
+                .id("services"))
         .code(
-            "new DataTable<>(\"services\", \"Service health by region\", List.of(",
+            "DataTable.of(\"Service health by region\", List.of(",
             "    Column.rowHeader(\"Service\", r -> text(r.service())),",
             "    Column.numeric(\"P99 latency\", ServiceMetric::latency)), rows);");
   }
@@ -64,7 +64,7 @@ final class DataPage {
         .summary("A captioned table for small reference data.")
         .features("<caption>", "border-collapse: separate")
         .example(
-            SimpleTable.create()
+            SimpleTable.of()
                 .caption("Cascade layers, lowest to highest priority")
                 .headers("Layer", "Contents")
                 .row("reset", "Box sizing and margins")
@@ -75,7 +75,7 @@ final class DataPage {
                 .row("interactive", "Pseudo-class and motion states")
                 .row("container", "Container query overrides"))
         .code(
-            "SimpleTable.create().caption(\"…\").headers(\"Layer\", \"Contents\").row(\"reset\", \"…\");");
+            "SimpleTable.of().caption(\"…\").headers(\"Layer\", \"Contents\").row(\"reset\", \"…\");");
   }
 
   private static Demo codeBlock() {
@@ -93,10 +93,10 @@ final class DataPage {
                     "}")
                 .filename("Modal.java")
                 .language("java")
-                .diffAutoDetect(true)
+                .diffAutoDetect()
                 .highlightLines(1))
         .code(
             "CodeBlock.ofLines(\"…\", \"-old\", \"+new\")",
-            "    .filename(\"Modal.java\").diffAutoDetect(true).highlightLines(1);");
+            "    .filename(\"Modal.java\").diffAutoDetect().highlightLines(1);");
   }
 }

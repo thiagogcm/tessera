@@ -1,7 +1,9 @@
 package dev.nthings.tessera.showcase;
 
+import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.components.Select;
 import dev.nthings.tessera.css.CssLength;
 
 /// Text fields with validation, auto-growing textareas, switches, and customizable selects.
@@ -32,20 +34,20 @@ final class FormsPage {
         .features(":user-invalid", ":user-valid", "aria-errormessage", "anchor-name")
         .example(
             Grid.autoFit(
-                CssLength.rem(16),
-                CssLength.rem(1),
-                Forms.field("Full name", Forms.text("fullName").attr("required", ""))
-                    .hint("As it appears on official documents.")
-                    .error("Full name is required.")
-                    .anchorTooltip("First and last name"),
-                Forms.field("Work email", Forms.email("email").attr("required", ""))
-                    .hint("We send build notifications here.")
-                    .error("Enter a valid email address, e.g. ada@example.com.")))
+                    CssLength.rem(16),
+                    Field.of("Full name", Forms.text("fullName").attr("required", ""))
+                        .hint("As it appears on official documents.")
+                        .error("Full name is required.")
+                        .tooltip("First and last name"),
+                    Field.of("Work email", Forms.email("email").attr("required", ""))
+                        .hint("We send build notifications here.")
+                        .error("Enter a valid email address, e.g. ada@example.com."))
+                .gap(CssLength.rem(1)))
         .code(
-            "Forms.field(\"Work email\", Forms.email(\"email\").attr(\"required\", \"\"))",
+            "Field.of(\"Work email\", Forms.email(\"email\").attr(\"required\", \"\"))",
             "    .hint(\"We send build notifications here.\")",
             "    .error(\"Enter a valid email address.\")",
-            "    .anchorTooltip(\"user@domain\");");
+            "    .tooltip(\"user@domain\");");
   }
 
   private static Demo textarea() {
@@ -53,8 +55,8 @@ final class FormsPage {
         .summary(
             "The textarea grows with its content from a two-line minimum; no script resizes it.")
         .features("field-sizing: content", "lh unit")
-        .example(Forms.field("Release notes", Forms.textareaControl("notes", 2)))
-        .code("Forms.field(\"Release notes\", Forms.textareaControl(\"notes\", 2));");
+        .example(Field.of("Release notes", Forms.textarea("notes", 2)))
+        .code("Field.of(\"Release notes\", Forms.textarea(\"notes\", 2));");
   }
 
   private static Demo select() {
@@ -64,15 +66,15 @@ final class FormsPage {
                 + "option via <selectedcontent>, and the picker is styled like any popover.")
         .features("appearance: base-select", "::picker(select)", "<selectedcontent>")
         .example(
-            Forms.field(
+            Field.of(
                     "Deployment target",
-                    Forms.selectControl("target")
+                    Select.of("target")
                         .option("cloud-run", "Cloud Run", true)
                         .option("gke", "Kubernetes Engine")
                         .option("edge", "Edge worker"))
                 .hint("Where the compiled site is deployed."))
         .code(
-            "Forms.field(\"Deployment target\", Forms.selectControl(\"target\")",
+            "Field.of(\"Deployment target\", Select.of(\"target\")",
             "    .option(\"cloud-run\", \"Cloud Run\", true)",
             "    .option(\"gke\", \"Kubernetes Engine\"));");
   }

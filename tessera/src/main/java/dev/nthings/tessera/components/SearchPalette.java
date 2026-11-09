@@ -2,7 +2,6 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
@@ -14,13 +13,12 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClientBehavior;
 import dev.nthings.tessera.core.ClosedBy;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -36,18 +34,17 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Transition;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Quick-open search dialog over the links you add with [#item(String, String, String)]. Create
-/// one with [#create(String)], place [#triggerButton()] where users open it, and place the
-/// palette itself, usually with [#asDeferred(int)]. The palette's script is contributed once per
-/// document, shared by every palette on the page.
-public final class SearchPalette implements View {
+/// Quick-open search dialog over the links you add with [#item]. Create one with [#of()], place
+/// its [#triggerButton()] where users open it, and place the palette itself, usually with
+/// `Elements.deferred`. The palette's script is contributed once per document, shared by every
+/// palette on the page.
+public final class SearchPalette extends BuiltinView {
 
   private static final ClientBehavior SEARCH_BEHAVIOR =
       ClientBehavior.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
@@ -58,32 +55,26 @@ public final class SearchPalette implements View {
           + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
           + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
-  /// Link in the palette. `description` and `badge` may be null.
-  public record SearchItem(
-      String group,
-      String title,
-      String href,
-      @Nullable String description,
-      @Nullable String badge) {}
+  private record Item(
+      String title, String href, @Nullable String description, @Nullable String badge) {}
 
-  private final String id;
   private final ElementRef dialog = ElementRef.scoped("dialog");
   private String placeholder = "Search documentation, routes, and sections...";
   private String triggerLabel = "Search docs...";
-  private final Map<String, List<SearchItem>> groupedItems = new LinkedHashMap<>();
+  private final Map<String, List<Item>> groupedItems = new LinkedHashMap<>();
 
-  private SearchPalette(String id) {
-    this.id = Fnv1a64.sanitizeLocalId(id);
+  private SearchPalette() {}
+
+  /// Creates an empty palette.
+  public static SearchPalette of() {
+    return new SearchPalette();
   }
 
-  /// Creates a palette with `id`, which also names the default trigger button.
-  public static SearchPalette create(String id) {
-    return new SearchPalette(id);
-  }
-
-  /// Creates a palette with `id` and the search field's `placeholder`.
-  public static SearchPalette create(String id, String placeholder) {
-    return new SearchPalette(id).placeholder(placeholder);
+  /// Names this instance in the enclosing view scope; the dialog and input ids are prefixed with
+  /// it, as in `<id>--dialog`. Without it, the compiler assigns `search-palette-<n>`.
+  public SearchPalette id(String id) {
+    this.id = id;
+    return this;
   }
 
   /// Sets the search field's placeholder text.
@@ -92,7 +83,7 @@ public final class SearchPalette implements View {
     return this;
   }
 
-  /// Sets the visible label of the default trigger button.
+  /// Sets the visible text of the [#triggerButton()]. The default is `Search docs...`.
   public SearchPalette triggerLabel(String label) {
     this.triggerLabel = label;
     return this;
@@ -104,13 +95,8 @@ public final class SearchPalette implements View {
     return item(group, title, href, null, null);
   }
 
-  /// Adds a link with a secondary `description` line.
-  public SearchPalette item(String group, String title, String href, @Nullable String description) {
-    return item(group, title, href, description, null);
-  }
-
-  /// Adds a link with a description and a badge. A badge replaces the arrow at the end of the
-  /// link. Either may be null.
+  /// Adds a link with a secondary `description` line and a `badge` shown at its end instead of
+  /// the arrow. Either may be null.
   public SearchPalette item(
       String group,
       String title,
@@ -119,24 +105,17 @@ public final class SearchPalette implements View {
       @Nullable String badge) {
     groupedItems
         .computeIfAbsent(group, _ -> new ArrayList<>())
-        .add(new SearchItem(group, title, href, description, badge));
+        .add(new Item(title, href, description, badge));
     return this;
   }
 
-  /// Adds `items` to `groupName`, creating the group if needed.
-  public SearchPalette group(String groupName, List<SearchItem> items) {
-    groupedItems.computeIfAbsent(groupName, _ -> new ArrayList<>()).addAll(items);
-    return this;
-  }
-
-  /// Creates a button that opens the palette with `command="show-modal"` and shows an Alt K
-  /// hint. `buttonId` is local to the enclosing view scope. The button's `accesskey` is `k`, but
-  /// the browser chooses the chord that activates it, which differs by browser and operating
-  /// system. The visible hint and `aria-keyshortcuts="Alt+K"` may therefore not match the chord
-  /// that works. Returns a plain [TagElement].
-  public TagElement triggerButton(String buttonId, String label) {
+  /// Creates a button that opens the palette with `command="show-modal"`, showing the trigger
+  /// label and an Alt K hint. The button's `accesskey` is `k`, but the browser chooses the chord
+  /// that activates it, which differs by browser and operating system. The visible hint and
+  /// `aria-keyshortcuts="Alt+K"` may therefore not match the chord that works. Returns a plain
+  /// [TagElement].
+  public TagElement triggerButton() {
     return button()
-        .id(ElementRef.scoped(buttonId))
         .command(dialog, BuiltinCommand.SHOW_MODAL)
         .ariaKeyShortcuts("Alt+K")
         .attr("accesskey", "k")
@@ -158,7 +137,7 @@ public final class SearchPalette implements View {
                 .itemsCenter()
                 .gap(Tokens.SPACE_2)
                 .child(rawHtml(SEARCH_ICON_SVG))
-                .child(span().text(label)))
+                .child(span().text(triggerLabel)))
         .child(
             div()
                 .flex()
@@ -188,25 +167,13 @@ public final class SearchPalette implements View {
                         .text("K")));
   }
 
-  /// Creates the trigger button with the default id, derived from this palette's id, and the
-  /// trigger label.
-  public TagElement triggerButton() {
-    return triggerButton(id + "-trigger", triggerLabel);
-  }
-
-  /// Hoists the palette to the end of `<body>`. Lower priority values come first among deferred
-  /// elements.
-  public Element asDeferred(int priority) {
-    return deferred(this, priority);
+  @Override
+  String viewType() {
+    return "search-palette";
   }
 
   @Override
-  public String viewId() {
-    return id;
-  }
-
-  @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     context.contributeBehavior(SEARCH_BEHAVIOR);
 
     var headerEl =
@@ -300,7 +267,7 @@ public final class SearchPalette implements View {
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -342,13 +309,6 @@ public final class SearchPalette implements View {
                                             Animatable.OVERLAY,
                                             Animatable.DISPLAY)
                                         .allowingDiscrete()))
-                    .select(
-                        ":scope:open",
-                        s ->
-                            s.opacity(1)
-                                .transform(
-                                    Transform.translateY(CssLength.zero())
-                                        .then(Transform.scale(1))))
                     .select(
                         ":scope:open",
                         s ->

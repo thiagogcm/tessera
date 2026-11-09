@@ -10,7 +10,7 @@ import dev.nthings.tessera.compiler.CompiledSite;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
-import dev.nthings.tessera.components.Toc;
+import dev.nthings.tessera.components.Section;
 import java.util.List;
 
 /// Route sets built fresh per call, so tests cannot affect each other.
@@ -55,7 +55,7 @@ public final class SiteFixtures {
     return List.of(
         new SiteRoute(
             "/",
-            new PageDocument("Home", main().child(Toc.section("features", "Features", p()))),
+            new PageDocument("Home", main().child(Section.of("features", "Features").child(p()))),
             "Tessera Home",
             "Static HTML/CSS compiler"),
         new SiteRoute(
@@ -64,8 +64,8 @@ public final class SiteFixtures {
                 "Guide",
                 main()
                     .children(
-                        Toc.section("quickstart", "Quick Start", p()),
-                        Toc.subsection("config", "Configuration", p()))),
+                        Section.of("quickstart", "Quick Start").child(p()),
+                        Section.of("config", "Configuration").level(3).child(p()))),
             "Getting Started"),
         new SiteRoute("/faq", new PageDocument("FAQ", main().child(p().text("Q&A")))));
   }

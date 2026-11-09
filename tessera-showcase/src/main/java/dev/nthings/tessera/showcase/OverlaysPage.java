@@ -1,14 +1,14 @@
 package dev.nthings.tessera.showcase;
 
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 
+import dev.nthings.tessera.components.BulletList;
 import dev.nthings.tessera.components.Button;
+import dev.nthings.tessera.components.Drawer;
 import dev.nthings.tessera.components.Formatting;
-import dev.nthings.tessera.components.Lists.BulletList;
-import dev.nthings.tessera.components.Overlays;
-import dev.nthings.tessera.components.Overlays.DrawerSide;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
@@ -34,12 +34,15 @@ final class OverlaysPage {
 
   private static Demo drawer() {
     var start =
-        Overlays.drawer("demo-drawer-start", "Filters", DrawerSide.INLINE_START)
-            .subtitle("Slides in from the start edge")
-            .body(BulletList.ofStrings("Status", "Owner", "Region"));
+        Drawer.of("Filters")
+            .id("demo-drawer-start")
+            .side(Drawer.Side.INLINE_START)
+            .description("Slides in from the start edge")
+            .body(BulletList.of("Status", "Owner", "Region"));
     var end =
-        Overlays.drawer("demo-drawer-end", "Details", DrawerSide.INLINE_END)
-            .subtitle("Slides in from the end edge")
+        Drawer.of("Details")
+            .id("demo-drawer-end")
+            .description("Slides in from the end edge")
             .body(p().text("Drawers are modal dialogs docked to an edge."));
     return Demo.of("drawer", "Drawer")
         .summary("Edge-docked dialogs that slide in with translate transitions and allow-discrete.")
@@ -53,10 +56,10 @@ final class OverlaysPage {
                         .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
                     Button.of("Open end drawer")
                         .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL)),
-            start.asDeferred(10),
-            end.asDeferred(10))
+            deferred(start, 10),
+            deferred(end, 10))
         .code(
-            "var drawer = Overlays.drawer(\"filters\", \"Filters\", DrawerSide.INLINE_START);",
+            "var drawer = Drawer.of(\"Filters\").side(Drawer.Side.INLINE_START);",
             "Button.of(\"Open drawer\").command(drawer.dialogRef(), BuiltinCommand.SHOW_MODAL);");
   }
 
@@ -89,8 +92,8 @@ final class OverlaysPage {
                     Formatting.keybinding("Alt+K"),
                     text(". Every page and demo on this site is indexed.")))
         .code(
-            "var search = SearchPalette.create(\"search\", \"Search…\")",
-            "    .item(\"Pages\", \"Forms\", \"/forms\", \"Inputs and validation\");",
-            "header.children(search.triggerButton(\"search-btn\", \"Search\"), search.asDeferred(30));");
+            "var search = SearchPalette.of().placeholder(\"Search…\").triggerLabel(\"Search\")",
+            "    .item(\"Pages\", \"Forms\", \"/forms\");",
+            "header.children(search.triggerButton(), Elements.deferred(search, 30));");
   }
 }

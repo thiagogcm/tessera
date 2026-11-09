@@ -95,6 +95,8 @@ flowchart TB
 
 The component catalog and the compiler are sibling consumers of the element/CSS model. Neither imports the other. Site compilation consumes page metadata without knowing which components produced it. Navigation integrates site models and UI.
 
+Built-in components are public final `IntoElement` classes. They extend one of two package-private bases: `BuiltinComponent` lowers itself to a `ComponentElement` around its package-private `render`, named by the component's simple class name for diagnostics; `BuiltinView` lowers itself through a private `View` adapter that delegates `viewType`, `viewId`, `configureScope` and `render`. The render protocol therefore stays off the public types, while each component keeps a stable explicit `data-view` name (`modal`, `tessera-badge`, `form-field`, ...). `BuiltinView` holds the optional instance id set by each component's `id(String)`; `null` lets the compiler number the instance per scope.
+
 Page and site compilation share one package so that the phase split between them (`PageCompiler.prepare`/`paint`, `PreparedPage`, `SiteCompiler`, validators, `HtmlWriter`) stays package-private. The public surface is `Compiler`, its inputs (`PageDocument`, `SiteDefinition`, `SiteRoute`, `Asset`, `OutputMode`, `LinkSpeculation`), its outputs (`CompiledPage`, `CompiledSite`, `PageTree`), its errors (`CompilationException`, `Diagnostic`, `Location`), the publishing adapters (`SiteWriter`, `SitePreviewServer`), and `SourceTracking`.
 
 The reactor builds two child modules under `tessera-parent`:
@@ -128,7 +130,7 @@ block
 | Read compilation errors | `CompilationException.diagnostics()`, `Diagnostic`, `Location` |
 | Write and preview | `SiteWriter.writeToDirectory(...)`, `SitePreviewServer.start(...)` |
 | Derive navigation | `navigation.SiteNavigation.searchPalette(...)`, `docPager(...)` |
-| Use supplied UI | Public factories and builders in `components` |
+| Use supplied UI | `components`: final classes with `X.of(...)` factories, fluent options and optional `id(String)`; shared `Tone`, `Size` and `Link` |
 
 `CompiledPage` contains HTML, CSS text, and the assets the HTML links: none under inline output; the stylesheet followed by client behavior modules under external output. Consumers publish every asset. `CompiledSite` contains each route's HTML in route order, the shared CSS text, every published file (registered assets, the stylesheet and modules, `search-index.json`, optional `sitemap.xml`), and readers for the generated artifacts. Output types are independent of the functions producing them.
 
@@ -169,13 +171,13 @@ Field rendering copies the retained control's authoring configuration before wir
 
 ## Document metadata and component state
 
-`DocumentState` (compiler, package-private) owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations and a `headings()` snapshot; components and the site layer never receive this mutable state. `DocumentKey.getOrCreate(values)` is the one compiler-facing hook that lets the compiler hold per-page component state without seeing its type. Overlay and dropdown factories accept caller-owned element references, allowing independent invokers to target their content.
+`DocumentState` (compiler, package-private) owns page-local component registries, ordered head contributions, end sections, and navigation headings. `RenderContext` exposes authoring operations and a `headings()` snapshot; components and the site layer never receive this mutable state. `DocumentKey.getOrCreate(values)` is the one compiler-facing hook that lets the compiler hold per-page component state without seeing its type. `Modal`, `Drawer` and `Dropdown` accept caller-owned element references, allowing independent invokers to target their content. `Image.hero()` keeps one hero per page through a document registry and reports a second as `duplicate-hero-image` with `RenderContext.report`.
 
 `DocumentHeading(target, title, level)` is component-independent metadata whose `target` is an `ElementRef`. `registerHeading(target, title, level)` records it; the component binds `target` on the heading element. After linking, the compiler resolves each target to its DOM id for the search index and reports a target that was never bound as `unbound-reference`. Registration does not automatically index every HTML heading.
 
-`ContentSection` and `Toc.DocSection` register headings while rendering and bind their sections to page-level refs, so `/page/#section-id` links do not depend on the layout a section sits in. `Toc.fromContext` consumes headings through a late element, so it may precede sections, and links each item with `href(target)`. Explicit TOCs accept `List<DocumentHeading>`. Section components retain supported levels 2 through 4; general metadata supports HTML heading levels 1 through 6. Headings retain registration order.
+`Section` registers its heading while rendering and binds the section to a page-level ref, so `/page/#section-id` links do not depend on the layout a section sits in. `TableOfContents` consumes headings through a late element, so it may precede sections, and links each item with `href(target)`; `headings(List<DocumentHeading>)` lists a fixed set instead. Section components retain supported levels 2 through 4; general metadata supports HTML heading levels 1 through 6. Headings retain registration order.
 
-Search generation reads the resolved headings from `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `Toc`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
+Search generation reads the resolved headings from `PreparedPage.headings()`. Custom components participate through `registerHeading` without importing or rendering `TableOfContents`. Other component registries remain local implementation details keyed by `DocumentKey<T>`.
 
 ## Accessibility rules
 
@@ -287,7 +289,7 @@ Site definitions require at least one route. Tasks use virtual threads; results 
 
 ## Verification and remaining limits
 
-Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, merged stylesheets, site links/assets, disk output, and preview HTTP responses. Search integration tests verify that output includes headings registered by a custom component without `Toc`. Tests exercise output rather than package shape or builder implementation details.
+Existing tests cover scoped identities, linking failures, late TOCs, deferred footnotes and overlays, image contributions, merged stylesheets, site links/assets, disk output, and preview HTTP responses. Search integration tests verify that output includes headings registered by a custom component without `TableOfContents`. Tests exercise output rather than package shape or builder implementation details.
 
 The showcase is also the browser acceptance suite. It compiles through the public `Compiler`, writes through `SiteWriter`, and serves the resulting directory with the JDK static HTTP server on an ephemeral port. Browser tests therefore cover published output, rather than substituting in-memory HTML for the generated site.
 

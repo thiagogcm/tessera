@@ -5,9 +5,8 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssContent;
@@ -26,8 +25,9 @@ import org.jspecify.annotations.Nullable;
 
 /// Source listing in a keyboard-focusable `<pre>`, one `<span class="code-line">` per line. It can
 /// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
-/// Line numbers are display-only and are not part of the copied text.
-public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
+/// Line numbers are display-only and are not part of the copied text. Create one with
+/// [#of(String)] for a source string or [#ofLines(String...)] for lines you already have.
+public final class CodeBlock extends BuiltinView implements FluentBuilder<CodeBlock> {
 
   private static final Counter LINE_COUNTER = Counter.named("code-line");
 
@@ -56,13 +56,15 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
     return new CodeBlock(Arrays.asList(lines));
   }
 
-  /// Creates a block with one line per element, as [#ofLines(String...)] does.
-  public static CodeBlock ofLines(List<String> lines) {
-    return new CodeBlock(lines);
-  }
-
   @Override
   public CodeBlock self() {
+    return this;
+  }
+
+  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
+  /// `tessera-code-block-<n>`.
+  public CodeBlock id(String id) {
+    this.id = id;
     return this;
   }
 
@@ -103,20 +105,20 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
     return this;
   }
 
-  /// When enabled, a line starting with `+` is marked added and one starting with `-` is marked
-  /// deleted. The marker stays in the text. Explicit line numbers still apply.
-  public CodeBlock diffAutoDetect(boolean enabled) {
-    this.diffAutoDetect = enabled;
+  /// Marks a line starting with `+` as added and one starting with `-` as deleted. The marker
+  /// stays in the text. Explicit line numbers still apply.
+  public CodeBlock diffAutoDetect() {
+    this.diffAutoDetect = true;
     return this;
   }
 
   @Override
-  public String viewType() {
+  String viewType() {
     return "tessera-code-block";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -181,7 +183,7 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var wrapper = div().attr("class", "code-block-wrapper");
     if (filename != null || language != null) {
       var header = div().attr("class", "code-header");
@@ -191,7 +193,7 @@ public final class CodeBlock implements View, FluentBuilder<CodeBlock> {
         header.child(span());
       }
       if (language != null) {
-        header.child(Pill.neutral(language).sm());
+        header.child(Badge.of(language).pill().size(Size.SM));
       }
       wrapper.child(header);
     }

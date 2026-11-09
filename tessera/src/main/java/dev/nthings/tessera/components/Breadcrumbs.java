@@ -6,60 +6,56 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
 
 import dev.nthings.tessera.core.Accessible;
-import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.List;
 
-/// Breadcrumb trail, first crumb to last, rendered as a `<nav>` around an ordered list. The last
-/// crumb gets `aria-current="page"`, and every crumb stays a link. Separators are decorative, so
-/// screen readers skip them.
-public final class Breadcrumbs implements View {
+/// Breadcrumb trail, first link to last, rendered as a `<nav>` around an ordered list. Create one
+/// with [#of(Link...)]. The last link gets `aria-current="page"`, and every crumb stays a link.
+/// Separators are decorative, so screen readers skip them.
+public final class Breadcrumbs extends BuiltinView {
 
-  /// One breadcrumb: the link target `href` and the visible `label`.
-  public record Crumb(String href, String label) {
-    public static Crumb of(String href, String label) {
-      return new Crumb(href, label);
-    }
-  }
-
-  private final String id;
-  private final List<Crumb> crumbs;
+  private final List<Link> links;
   private String label = "Breadcrumb";
 
-  private Breadcrumbs(String id, List<Crumb> crumbs) {
-    if (crumbs.isEmpty()) {
-      throw new IllegalArgumentException("Breadcrumbs requires at least 1 Crumb");
+  private Breadcrumbs(List<Link> links) {
+    if (links.isEmpty()) {
+      throw new IllegalArgumentException("Breadcrumbs requires at least 1 link");
     }
-    this.id = Fnv1a64.sanitizeLocalId(id);
-    this.crumbs = crumbs;
+    this.links = links;
   }
 
-  /// Creates a trail of `crumbs` with `id` as the instance id. Throws IllegalArgumentException if
-  /// no crumbs are given or `id` is empty.
-  public static Breadcrumbs of(String id, Crumb... crumbs) {
-    return new Breadcrumbs(id, List.of(crumbs));
+  /// Creates a trail of `links`, first to last. Throws IllegalArgumentException if none are given.
+  public static Breadcrumbs of(Link... links) {
+    return new Breadcrumbs(List.of(links));
   }
 
-  /// Accessible name of the landmark; make it distinct when a page has several trails. The default
-  /// is `Breadcrumb`.
+  /// Names this instance in the enclosing view scope. Without it, the compiler assigns
+  /// `breadcrumbs-<n>`.
+  public Breadcrumbs id(String id) {
+    this.id = id;
+    return this;
+  }
+
+  /// Sets the accessible name of the landmark; make it distinct when a page has several trails.
+  /// The default is `Breadcrumb`.
   public Breadcrumbs label(String label) {
     this.label = label;
     return this;
   }
 
   @Override
-  public String viewId() {
-    return id;
+  String viewType() {
+    return "breadcrumbs";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(s -> s.block())
         .select(
@@ -77,24 +73,28 @@ public final class Breadcrumbs implements View {
         .select(
             ":scope li + li::before",
             s -> s.content(CssContent.decorative("/")).textColor(Tokens.TEXT_MUTED))
-        .select(":scope a", s -> s.textColor(Tokens.TEXT_MUTED).textDecorationNone())
-        .select(":scope a:hover", s -> s.textColor(Tokens.TEXT_PRIMARY))
+        .select(
+            ":scope a",
+            s ->
+                s.textColor(Tokens.TEXT_MUTED)
+                    .textDecorationNone()
+                    .on(State.HOVER, h -> h.textColor(Tokens.TEXT_PRIMARY)))
         .select(
             ":scope a[aria-current=\"page\"]",
             s -> s.textColor(Tokens.TEXT_PRIMARY).fontWeight(600));
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
     var list = ol();
-    for (var i = 0; i < crumbs.size(); i++) {
-      var isCurrent = i == crumbs.size() - 1;
-      var crumb = crumbs.get(i);
-      var link =
-          a(crumb.href())
-              .when(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
-              .text(crumb.label());
-      list.child(li().child(link));
+    for (var i = 0; i < links.size(); i++) {
+      var isCurrent = i == links.size() - 1;
+      var link = links.get(i);
+      list.child(
+          li().child(
+                  a(link.href())
+                      .when(isCurrent, el -> el.ariaCurrent(Accessible.Current.PAGE))
+                      .text(link.label())));
     }
     return nav().ariaLabel(label).child(list);
   }

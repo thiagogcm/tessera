@@ -1,12 +1,10 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.core.View;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
@@ -20,18 +18,16 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 import java.util.function.Function;
 
-/// Table of `rows` described by `columns`, with `captionText` as its caption. The table sits in a
-/// focusable region named by the caption, which scrolls when the table is too wide. Create one with
-/// `new DataTable<>(id, captionText, columns, rows)`. `T` is the row model type.
+/// Table of `rows` described by `columns`, with a caption. Create one with
+/// [#of(String, List, List)]; `T` is the row model type. The table sits in a focusable region
+/// named by the caption, which scrolls when the table is too wide.
 ///
 /// - Column headers stay at the top and row headers stay at the left while the region scrolls.
-/// - Narrower than `stackBreakpoint` (default 36rem, measured on the region), each row becomes a
-///   stacked card: the header row is hidden, and each cell that is not a row header is prefixed
-///   with its column header.
-/// - Ids it binds are prefixed `datatable-<id>`, for example `datatable-<id>--caption`.
-public record DataTable<T>(
-    String id, String captionText, List<Column<T>> columns, List<T> rows, CssLength stackBreakpoint)
-    implements View {
+/// - Narrower than [#stackBelow(CssLength)] (default 36rem, measured on the region), each row
+///   becomes a stacked card: the header row is hidden, and each cell that is not a row header is
+///   prefixed with its column header.
+/// - The caption's id is `<instance id>--caption`.
+public final class DataTable<T> extends BuiltinView {
 
   /// The scroll region; the stacked layout queries its width.
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
@@ -51,13 +47,11 @@ public record DataTable<T>(
       this.tabularNums = tabularNums;
     }
 
-    /// Compiler-facing: the CSS text alignment for these cells.
-    public TextAlign textAlign() {
+    TextAlign textAlign() {
       return textAlign;
     }
 
-    /// Compiler-facing: whether these cells use tabular figures.
-    public boolean tabularNums() {
+    boolean tabularNums() {
       return tabularNums;
     }
   }
@@ -95,18 +89,43 @@ public record DataTable<T>(
     }
   }
 
-  /// Creates a table that stacks below the default 36rem breakpoint.
-  public DataTable(String id, String captionText, List<Column<T>> columns, List<T> rows) {
-    this(id, captionText, columns, rows, CssLength.rem(36));
+  private final String caption;
+  private final List<Column<T>> columns;
+  private final List<T> rows;
+  private CssLength stackBelow = CssLength.rem(36);
+
+  private DataTable(String caption, List<Column<T>> columns, List<T> rows) {
+    this.caption = caption;
+    this.columns = List.copyOf(columns);
+    this.rows = List.copyOf(rows);
+  }
+
+  /// Creates a table of `rows` described by `columns`, captioned `caption`. The caption is
+  /// visible and names the scroll region.
+  public static <T> DataTable<T> of(String caption, List<Column<T>> columns, List<T> rows) {
+    return new DataTable<>(caption, columns, rows);
+  }
+
+  /// Names this instance in the enclosing view scope; the caption's id is prefixed with it.
+  /// Without it, the compiler assigns `data-table-<n>`.
+  public DataTable<T> id(String id) {
+    this.id = id;
+    return this;
+  }
+
+  /// Sets the region width below which rows stack as cards. The default is 36rem.
+  public DataTable<T> stackBelow(CssLength width) {
+    this.stackBelow = width;
+    return this;
   }
 
   @Override
-  public String viewId() {
-    return "datatable-" + id;
+  String viewType() {
+    return "data-table";
   }
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -164,7 +183,7 @@ public record DataTable<T>(
     }
 
     scope.on(
-        TABLE.below(stackBreakpoint),
+        TABLE.below(stackBelow),
         c -> {
           c.select(
                   ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
@@ -204,8 +223,8 @@ public record DataTable<T>(
   }
 
   @Override
-  public Element render(RenderContext context) {
-    var caption = ElementRef.scoped("caption");
+  IntoElement render(RenderContext context) {
+    var captionRef = ElementRef.scoped("caption");
 
     var headerRow = Elements.tr();
     for (var col : columns) {
@@ -225,11 +244,11 @@ public record DataTable<T>(
     var table =
         Elements.table()
             .children(
-                Elements.caption().id(caption).text(captionText),
+                Elements.caption().id(captionRef).text(caption),
                 Elements.thead().child(headerRow),
                 tbody);
 
-    return Elements.div().tabIndex(0).role(Role.REGION).ariaLabelledBy(caption).child(table);
+    return Elements.div().tabIndex(0).role(Role.REGION).ariaLabelledBy(captionRef).child(table);
   }
 
   private static CustomProperty labelProperty(int column) {

@@ -5,8 +5,6 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.RenderContext;
-import dev.nthings.tessera.core.View;
-import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
@@ -14,8 +12,8 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.GridPlacement;
 import dev.nthings.tessera.css.GridTrack;
-import dev.nthings.tessera.css.ObjectFit;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
@@ -24,52 +22,41 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Card with four regions, in source order: media, header (title and subtitle), content, and
-/// footer (actions). It renders as an `<article>`, or as a `<label>` after `choiceRadio` or
-/// `choiceCheckbox`. Create one with [#create(String)].
+/// Card with four regions, in source order: media, header (title and description), body, and
+/// footer (actions). It renders as an `<article>`, or as a `<label>` after [#radio] or
+/// [#checkbox]. Create one with [#of(String)].
 ///
 /// - A card whose media is an image or a `media` region places the media beside the other regions
 ///   once the card is 28rem or wider.
 /// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
 ///   buttons, and form controls in the card stay clickable.
-/// - Only one of `stretchedLink`, `choiceRadio`, and `choiceCheckbox` applies; the last call wins.
-public final class Card implements View, FluentBuilder<Card> {
+/// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins.
+public final class Card extends BuiltinView implements FluentBuilder<Card> {
 
-  /// How a card responds to interaction. Set it with `stretchedLink`, `choiceRadio`, or
-  /// `choiceCheckbox`; a card without one has only its own content.
-  public sealed interface Interaction
-      permits Interaction.Content, Interaction.StretchedLink, Interaction.Choice {
+  /// How a card responds to interaction; a card without one has only its own content.
+  private sealed interface Interaction {}
 
-    /// No interaction: the card has only its own content.
-    enum Content implements Interaction {
-      INSTANCE
-    }
+  private record StretchedLink(String href) implements Interaction {}
 
-    /// The title links to `href`, covering the whole card.
-    record StretchedLink(String href) implements Interaction {}
+  private record Choice(String name, String value, boolean multiSelect, boolean checked)
+      implements Interaction {}
 
-    /// The card is a `<label>` around a radio or checkbox input, named `name` with `value`.
-    record Choice(String name, String value, boolean multiSelect, boolean checked)
-        implements Interaction {}
-  }
-
-  private final String id;
+  private final String title;
   private @Nullable Element media;
-  private String headingText = "";
-  private @Nullable String subtitleText;
+  private @Nullable String description;
   private int headingLevel = 3;
-  private final List<Element> contentItems = new ArrayList<>();
-  private final List<Element> footerActions = new ArrayList<>();
-  private Interaction interaction = Interaction.Content.INSTANCE;
+  private final List<Element> body = new ArrayList<>();
+  private final List<Element> actions = new ArrayList<>();
+  private @Nullable Interaction interaction;
 
-  private Card(String id) {
-    this.id = id;
+  private Card(String title) {
+    this.title = title;
   }
 
-  /// Creates a card. `id` names its instance in the enclosing view scope, as `card-<id>`, so
-  /// repeated cards need distinct ids.
-  public static Card create(String id) {
-    return new Card(id);
+  /// Creates a card whose heading shows `title`. An empty title renders no heading, so the
+  /// description and any stretched link are not rendered either.
+  public static Card of(String title) {
+    return new Card(title);
   }
 
   @Override
@@ -77,25 +64,22 @@ public final class Card implements View, FluentBuilder<Card> {
     return this;
   }
 
-  /// Sets the media to an `<img>` with `alt` text, in an `aspectRatio` box, cropped to cover.
-  public Card mediaImg(String src, String alt, AspectRatio aspectRatio) {
-    this.media =
-        Elements.img(src, alt)
-            .aspectRatio(aspectRatio)
-            .objectFit(ObjectFit.COVER)
-            .inlineSize(CssLength.pct(100));
+  /// Names this instance in the enclosing view scope; ids bound in its content are prefixed with
+  /// it. Without it, the compiler assigns `card-<n>`.
+  public Card id(String id) {
+    this.id = id;
     return this;
   }
 
-  /// Image media as a direct `<img>` child, never wrapped.
+  /// Sets the media to `image`, placed as a direct `<img>` child.
   public Card media(Image image) {
     this.media = image.intoElement();
     return this;
   }
 
-  /// Other media, wrapped in a `div.media` region.
-  public Card media(IntoElement mediaContent) {
-    this.media = Elements.div().attr("class", "media").child(mediaContent);
+  /// Sets the media to other content, wrapped in a `div.media` region.
+  public Card media(IntoElement content) {
+    this.media = Elements.div().attr("class", "media").child(content);
     return this;
   }
 
@@ -109,37 +93,30 @@ public final class Card implements View, FluentBuilder<Card> {
     return this;
   }
 
-  /// Sets the title, rendered as the card heading. An empty title renders no heading, so the
-  /// subtitle and any stretched link are not rendered either.
-  public Card title(String heading) {
-    this.headingText = heading;
-    return this;
-  }
-
   /// Sets muted text under the title. It is rendered only when the card has a title.
-  public Card subtitle(String subtitle) {
-    this.subtitleText = subtitle;
+  public Card description(String description) {
+    this.description = description;
     return this;
   }
 
-  /// Adds a paragraph to the content region.
+  /// Adds a paragraph to the body region.
   public Card bodyText(String paragraph) {
-    this.contentItems.add(Elements.p().textWrap(TextWrap.PRETTY).text(paragraph));
+    this.body.add(Elements.p().textWrap(TextWrap.PRETTY).text(paragraph));
     return this;
   }
 
-  /// Adds items to the content region, in order.
-  public Card content(IntoElement... items) {
-    for (var item : items) {
-      this.contentItems.add(item.intoElement());
+  /// Adds content to the body region, in order.
+  public Card body(IntoElement... content) {
+    for (var item : content) {
+      this.body.add(item.intoElement());
     }
     return this;
   }
 
   /// Adds links or buttons to the footer region, which is omitted when there are none.
-  public Card action(IntoElement... actions) {
+  public Card actions(IntoElement... actions) {
     for (var action : actions) {
-      this.footerActions.add(action.intoElement());
+      this.actions.add(action.intoElement());
     }
     return this;
   }
@@ -147,27 +124,27 @@ public final class Card implements View, FluentBuilder<Card> {
   /// Makes the title a link to `href` that covers the whole card. Without a title, no link is
   /// rendered.
   public Card stretchedLink(String href) {
-    this.interaction = new Interaction.StretchedLink(href);
+    this.interaction = new StretchedLink(href);
     return this;
   }
 
-  /// Makes the card a radio choice: a `<label>` around a radio input in the `groupName` group with
-  /// `value`, checked when `checked` is true.
-  public Card choiceRadio(String groupName, String value, boolean checked) {
-    this.interaction = new Interaction.Choice(groupName, value, false, checked);
+  /// Makes the card a radio choice: a `<label>` around a radio input named `name` with `value`,
+  /// checked on load when `checked` is true. Cards sharing a `name` form one group.
+  public Card radio(String name, String value, boolean checked) {
+    this.interaction = new Choice(name, value, false, checked);
     return this;
   }
 
   /// Makes the card a checkbox choice: a `<label>` around a checkbox input named `name` with
-  /// `value`, checked when `checked` is true.
-  public Card choiceCheckbox(String name, String value, boolean checked) {
-    this.interaction = new Interaction.Choice(name, value, true, checked);
+  /// `value`, checked on load when `checked` is true.
+  public Card checkbox(String name, String value, boolean checked) {
+    this.interaction = new Choice(name, value, true, checked);
     return this;
   }
 
   @Override
-  public String viewId() {
-    return "card-" + id;
+  String viewType() {
+    return "card";
   }
 
   private static final String MEDIA_CARD = ":scope:has(> img, > picture, > .media)";
@@ -177,7 +154,7 @@ public final class Card implements View, FluentBuilder<Card> {
   static final Container CONTAINER = Container.named("tessera-card", Container.Type.INLINE_SIZE);
 
   @Override
-  public void configureScope(ScopeStyle scope) {
+  void configureScope(ScopeStyle scope) {
     scope
         .root(
             s ->
@@ -190,8 +167,11 @@ public final class Card implements View, FluentBuilder<Card> {
                     .bg(Tokens.SURFACE_CARD)
                     .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
                     .relative())
-        .select(":scope a.card-link", s -> s.textDecorationNone())
-        .select(":scope a.card-link:hover", s -> s.textDecorationUnderline(CssLength.em(0.2)))
+        .select(
+            ":scope a.card-link",
+            s ->
+                s.textDecorationNone()
+                    .on(State.HOVER, h -> h.textDecorationUnderline(CssLength.em(0.2))))
         .select(
             ":scope:has(a.card-link) a.card-link::after",
             s -> s.content(CssContent.empty()).absolute().inset(CssLength.zero()))
@@ -249,39 +229,37 @@ public final class Card implements View, FluentBuilder<Card> {
   }
 
   @Override
-  public Element render(RenderContext context) {
+  IntoElement render(RenderContext context) {
+    var current = interaction;
     var root =
-        switch (interaction) {
-          case Interaction.Choice choice -> {
-            var input =
-                Elements.input(choice.multiSelect() ? "checkbox" : "radio")
-                    .attr("name", choice.name())
-                    .attr("value", choice.value())
-                    .boolAttr("checked", choice.checked());
-            yield Elements.label().cursor(Cursor.POINTER).child(input);
-          }
-          case Interaction.Content _, Interaction.StretchedLink _ -> Elements.article();
-        };
+        current instanceof Choice choice
+            ? Elements.label()
+                .cursor(Cursor.POINTER)
+                .child(
+                    Elements.input(choice.multiSelect() ? "checkbox" : "radio")
+                        .attr("name", choice.name())
+                        .attr("value", choice.value())
+                        .boolAttr("checked", choice.checked()))
+            : Elements.article();
 
     // Region 1: media, never wrapped for img/picture.
     if (media != null) {
       root.child(media);
     }
 
-    // Region 2: header; <hgroup> when there is a subtitle.
-    if (!headingText.isEmpty()) {
-      var headingInner =
-          switch (interaction) {
-            case Interaction.StretchedLink(var href) ->
-                Elements.a(href)
-                    .attr("class", "card-link")
-                    .textColor(Tokens.TEXT_PRIMARY)
-                    .text(headingText);
-            case Interaction.Content _, Interaction.Choice _ -> Elements.text(headingText);
-          };
+    // Region 2: header; <hgroup> when there is a description.
+    if (!title.isEmpty()) {
       var heading =
-          Elements.el(HtmlTag.heading(headingLevel)).textWrap(TextWrap.BALANCE).child(headingInner);
-      if (subtitleText != null) {
+          Elements.el(HtmlTag.heading(headingLevel))
+              .textWrap(TextWrap.BALANCE)
+              .child(
+                  current instanceof StretchedLink(var href)
+                      ? Elements.a(href)
+                          .attr("class", "card-link")
+                          .textColor(Tokens.TEXT_PRIMARY)
+                          .text(title)
+                      : Elements.text(title));
+      if (description != null) {
         root.child(
             Elements.hgroup()
                 .children(
@@ -289,23 +267,22 @@ public final class Card implements View, FluentBuilder<Card> {
                     Elements.p()
                         .textColor(Tokens.TEXT_MUTED)
                         .fontSize(Tokens.FONT_SIZE_SM)
-                        .text(subtitleText)));
+                        .text(description)));
       } else {
         root.child(heading);
       }
     }
 
-    // Region 3: content. Several items share one wrapper div so they occupy one grid row.
-    if (contentItems.size() == 1) {
-      root.child(contentItems.getFirst());
-    } else if (contentItems.size() > 1) {
-      root.child(Elements.div().flex().flexCol().gap(Tokens.SPACE_2).children(contentItems));
+    // Region 3: body. Several items share one wrapper div so they occupy one grid row.
+    if (body.size() == 1) {
+      root.child(body.getFirst());
+    } else if (body.size() > 1) {
+      root.child(Elements.div().flex().flexCol().gap(Tokens.SPACE_2).children(body));
     }
 
     // Region 4: footer for actions (links/buttons).
-    if (!footerActions.isEmpty()) {
-      root.child(
-          Elements.footer().flex().itemsCenter().gap(Tokens.SPACE_3).children(footerActions));
+    if (!actions.isEmpty()) {
+      root.child(Elements.footer().flex().itemsCenter().gap(Tokens.SPACE_3).children(actions));
     }
 
     return root;

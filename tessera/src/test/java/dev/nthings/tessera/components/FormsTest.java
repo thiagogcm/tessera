@@ -45,12 +45,17 @@ class FormsTest {
     @DisplayName("repeated renders follow the current hint and error without mutating the control")
     void repeatedRendersDoNotMutateTheControl() {
       var control = Forms.text("name");
-      var field = Forms.field("Name", control).id("name").anchorTooltip("Enter your name");
+      var described =
+          Field.of("Name", control)
+              .id("name")
+              .tooltip("Enter your name")
+              .hint("Full name")
+              .error("Name is required");
+      var plain = Field.of("Name", control).id("name");
 
       for (var turn = 0; turn < 4; turn++) {
         var enabled = turn % 2 == 0;
-        field.hint(enabled ? "Full name" : null).error(enabled ? "Name is required" : null);
-        var page = renderMain(field);
+        var page = renderMain(enabled ? described : plain);
 
         var input = page.element("input[name=name]");
         assertThat(page.element("label")).hasAttribute("for", input.id());
@@ -73,9 +78,8 @@ class FormsTest {
     @Test
     @DisplayName("a select field keeps its options and links its hint on every render")
     void selectFieldRendersRepeatedly() {
-      var select =
-          Forms.selectControl("size").option("small", "Small").option("large", "Large", true);
-      var field = Forms.field("Size", select).hint("Choose a size");
+      var select = Select.of("size").option("small", "Small").option("large", "Large", true);
+      var field = Field.of("Size", select).hint("Choose a size");
 
       for (var turn = 0; turn < 2; turn++) {
         var page = renderMain(field);
@@ -98,7 +102,7 @@ class FormsTest {
     static void renderSelect() {
       page =
           renderMain(
-              Forms.selectControl("theme_mode")
+              Select.of("theme_mode")
                   .option("light", "Light Mode")
                   .option("dark", "Dark Mode", true)
                   .option("system", "System Default"));
@@ -139,10 +143,10 @@ class FormsTest {
     static void renderField() {
       page =
           renderMain(
-              Forms.field("Username", Forms.text("username"))
+              Field.of("Username", Forms.text("username"))
                   .hint("3-20 characters.")
                   .error("Username is taken.")
-                  .anchorTooltip("Alphanumeric only"));
+                  .tooltip("Alphanumeric only"));
     }
 
     @Test
@@ -186,8 +190,8 @@ class FormsTest {
   void sameNamedFieldsDoNotCollide() {
     var page =
         renderMain(
-            Forms.field("Email", Forms.email("email")),
-            Forms.field("Newsletter email", Forms.email("email")));
+            Field.of("Email", Forms.email("email")),
+            Field.of("Newsletter email", Forms.email("email")));
 
     var labels = page.elements("label.field-label");
     assertThat(labels).hasSize(2);
@@ -200,7 +204,7 @@ class FormsTest {
   @Test
   @DisplayName("a textarea grows with its content via field-sizing")
   void textareaGrowsWithContent() {
-    var page = renderMain(Forms.textareaControl("m", 3));
+    var page = renderMain(Forms.textarea("m", 3));
 
     assertThat(page.css()).contains("field-sizing:content").contains("min-block-size:calc(3lh");
   }

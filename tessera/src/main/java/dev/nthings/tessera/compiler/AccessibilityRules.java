@@ -23,12 +23,12 @@ final class AccessibilityRules {
   private static final Set<Role> NAMED_LANDMARKS =
       Set.of(Role.NAVIGATION, Role.COMPLEMENTARY, Role.SEARCH, Role.FORM, Role.REGION);
 
-  private final CompilationState state;
+  private final PageValidator state;
   private final Map<Role, List<Landmark>> landmarks = new EnumMap<>(Role.class);
   private final List<Heading> headings = new ArrayList<>();
   private int mainLandmarks;
 
-  private AccessibilityRules(CompilationState state) {
+  private AccessibilityRules(PageValidator state) {
     this.state = state;
   }
 
@@ -37,7 +37,7 @@ final class AccessibilityRules {
   private record Heading(ResolvedTag tag, int level) {}
 
   /// Checks the page body; `<head>` content has no accessibility tree.
-  static void check(List<ResolvedNode> body, CompilationState state) {
+  static void check(List<ResolvedNode> body, PageValidator state) {
     var rules = new AccessibilityRules(state);
     for (var node : body) {
       rules.visit(node, new Context(false, false));

@@ -21,6 +21,7 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TextElement;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ import org.jspecify.annotations.Nullable;
 final class Expansion {
   private final ExpansionState state;
   private final Placement placement;
+  private final PageContext root;
 
   interface Placement {
     RuntimeException failureContext(Diagnostic diagnostic);
@@ -46,9 +48,31 @@ final class Expansion {
     ExpandedNode late(Supplier<ExpandedNode> content);
   }
 
-  Expansion(ExpansionState state, Placement placement) {
-    this.state = state;
+  Expansion(Placement placement, StyleSheet styles, DocumentState contributions) {
+    this.state = new ExpansionState();
     this.placement = placement;
+    this.root = PageContext.forDocument(styles, contributions, state);
+  }
+
+  ExpandedNode expand(IntoElement element) {
+    return expand(element.intoElement(), root);
+  }
+
+  ExpandedNode expand(
+      Location placedBy, String phase, Function<DocumentContext, ? extends IntoElement> content) {
+    return expand(root.withPlacement(placedBy), phase, content);
+  }
+
+  List<ResolvedNode> link(List<ExpandedNode> nodes) {
+    return ReferenceLinker.link(nodes, state);
+  }
+
+  @Nullable String boundId(ElementRef ref, String usage, Location location) {
+    return state.boundId(ref, usage, location);
+  }
+
+  CompilationState compilation(String pageTitle) {
+    return new CompilationState(pageTitle, state);
   }
 
   ExpandedNode expand(Element element, PageContext context) {

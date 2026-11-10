@@ -9,13 +9,89 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Declarations;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// Checks document contracts and collects outgoing URLs on the linked tree.
 final class PageValidator {
-  private PageValidator() {}
+  @FunctionalInterface
+  interface Reporter {
+    void report(Location location, String rule, String message, String suggestion);
+  }
+
+  final Set<String> registeredDomIds;
+  final Set<String> ambiguousDomIds;
+  final Map<String, ResolvedTag> elementsById = new HashMap<>();
+  final Set<String> labelledControlIds = new HashSet<>();
+  private final Reporter reporter;
+
+  private PageValidator(Set<String> ids, Set<String> ambiguousIds, Reporter reporter) {
+    this.registeredDomIds = ids;
+    this.ambiguousDomIds = ambiguousIds;
+    this.reporter = reporter;
+  }
+
+  void report(Location location, String rule, String message, String suggestion) {
+    reporter.report(location, rule, message, suggestion);
+  }
+
+  static Map<String, Location> validate(
+      List<ResolvedNode> body,
+      List<ResolvedNode> head,
+      Set<String> ids,
+      Set<String> ambiguousIds,
+      Reporter reporter) {
+    var state = new PageValidator(ids, ambiguousIds, reporter);
+    index(body, state);
+    index(head, state);
+    body.forEach(node -> validateNodeTree(node, state));
+    head.forEach(node -> validateNodeTree(node, state));
+    var links = new LinkedHashMap<String, Location>();
+    state.checkLinks(body, links);
+    state.checkLinks(head, links);
+    AccessibilityRules.check(body, state);
+    return Collections.unmodifiableMap(links);
+  }
+
+  private void checkLinks(List<ResolvedNode> nodes, Map<String, Location> links) {
+    for (var node : nodes) {
+      if (node instanceof ResolvedTag tag) {
+        for (var attribute : URL_ATTRIBUTES) {
+          var url = tag.attributes().get(attribute);
+          if (url == null || url.isBlank()) {
+            continue;
+          }
+          URI reference;
+          try {
+            reference = new URI(url);
+          } catch (URISyntaxException invalid) {
+            continue;
+          }
+          links.putIfAbsent(url, tag.location());
+          if (tag.tag() == HtmlTag.A
+              && attribute.equals("href")
+              && url.startsWith("#")
+              && url.length() > 1
+              && !registeredDomIds.contains(reference.getFragment())) {
+            report(
+                tag.location(),
+                "missing-fragment",
+                "Anchor link href=\""
+                    + url
+                    + "\" references a non-existent fragment ID in the document",
+                "Use the target element's ElementRef, or correct the fragment to match an existing ID.");
+          }
+        }
+        checkLinks(tag.children(), links);
+      }
+    }
+  }
 
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
@@ -54,7 +130,7 @@ final class PageValidator {
   }
 
   /// Indexes the linked elements checks look up: by id and labelled control ids.
-  static void index(List<ResolvedNode> nodes, CompilationState state) {
+  static void index(List<ResolvedNode> nodes, PageValidator state) {
     for (var node : nodes) {
       if (node instanceof ResolvedTag tag) {
         var id = tag.attributes().get("id");
@@ -70,7 +146,7 @@ final class PageValidator {
     }
   }
 
-  static void validateNodeTree(ResolvedNode node, CompilationState state) {
+  static void validateNodeTree(ResolvedNode node, PageValidator state) {
     switch (node) {
       case ResolvedText _, ResolvedRaw _ -> {}
       case ResolvedTag tag -> {
@@ -82,7 +158,7 @@ final class PageValidator {
     }
   }
 
-  private static void validateTagAccessibility(ResolvedTag tag, CompilationState state) {
+  private static void validateTagAccessibility(ResolvedTag tag, PageValidator state) {
     var attrs = tag.attributes();
     var registeredDomIds = state.registeredDomIds;
 
@@ -104,9 +180,8 @@ final class PageValidator {
       if (url == null || url.isBlank()) {
         continue;
       }
-      URI reference;
       try {
-        reference = new URI(url);
+        new URI(url);
       } catch (URISyntaxException invalid) {
         state.report(
             tag.location(),
@@ -118,23 +193,6 @@ final class PageValidator {
                 + "\" is not a valid URI: "
                 + invalid.getReason(),
             "Correct the URL syntax and percent-encode spaces and literal percent signs.");
-        continue;
-      }
-      state.outgoingLinks.putIfAbsent(url, state.location(tag.location()));
-      if (tag.tag() == HtmlTag.A
-          && urlAttribute.equals("href")
-          && url.startsWith("#")
-          && url.length() > 1) {
-        var fragment = reference.getFragment();
-        if (!registeredDomIds.contains(fragment)) {
-          state.report(
-              tag.location(),
-              "missing-fragment",
-              "Anchor link href=\""
-                  + url
-                  + "\" references a non-existent fragment ID in the document",
-              "Use the target element's ElementRef, or correct the fragment to match an existing ID.");
-        }
       }
     }
 
@@ -167,7 +225,7 @@ final class PageValidator {
   }
 
   private static void validateCommandTarget(
-      ResolvedTag source, ResolvedTag target, CompilationState state) {
+      ResolvedTag source, ResolvedTag target, PageValidator state) {
     var command = source.attributes().get("command");
     if (command == null) {
       return;

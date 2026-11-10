@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -17,13 +18,29 @@ import org.jspecify.annotations.Nullable;
 /// One page's identities, generated-id counters, transitions and expansion diagnostics.
 /// [Expansion], [PageContext] and [ReferenceLinker] share it until document linking is complete.
 final class ExpansionState {
-  final Set<String> registeredDomIds = new LinkedHashSet<>();
-  final Set<String> ambiguousDomIds = new HashSet<>();
-  final Map<TransitionKey, Location> transitionLocations = new LinkedHashMap<>();
-  final List<Diagnostic> diagnostics = new ArrayList<>();
+  private final Set<String> registeredDomIds = new LinkedHashSet<>();
+  private final Set<String> ambiguousDomIds = new HashSet<>();
+  private final Map<TransitionKey, Location> transitionLocations = new LinkedHashMap<>();
+  private final List<Diagnostic> diagnostics = new ArrayList<>();
   private final Map<ElementRef, String> references = new IdentityHashMap<>();
   private final Map<IdCounter, Integer> counters = new HashMap<>();
   private final Set<String> transitionNames = new HashSet<>();
+
+  Set<String> ids() {
+    return Collections.unmodifiableSet(registeredDomIds);
+  }
+
+  Set<String> ambiguousIds() {
+    return Collections.unmodifiableSet(ambiguousDomIds);
+  }
+
+  Map<TransitionKey, Location> transitions() {
+    return Collections.unmodifiableMap(transitionLocations);
+  }
+
+  List<Diagnostic> diagnostics() {
+    return Collections.unmodifiableList(diagnostics);
+  }
 
   /// Numbered per DOM id, keyed bit and prefix. [IdScope#generated] is not part of the key, so an
   /// encounter-numbered scope and an explicit `scopeId` with the same DOM id share one counter.

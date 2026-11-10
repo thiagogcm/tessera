@@ -3,7 +3,10 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /// The page phases: [#prepare] expands, links and validates, [#emit] writes HTML. [Compiler] runs
 /// both for one page; [SiteCompiler] validates every page before emitting any.
@@ -27,13 +30,9 @@ final class PageCompiler {
     var bodyNodes = layout.bodyNodes();
     var headNodes = layout.headNodes();
 
-    for (var node : bodyNodes) {
-      PageValidator.validateNodeTree(node, state);
-    }
-    for (var head : headNodes) {
-      PageValidator.validateNodeTree(head, state);
-    }
-    AccessibilityRules.check(bodyNodes, state);
+    var links =
+        PageValidator.validate(
+            bodyNodes, headNodes, state.registeredDomIds, state.ambiguousDomIds, state::report);
     if (!state.diagnostics.isEmpty()) {
       throw new CompilationException(state.diagnostics);
     }
@@ -43,7 +42,13 @@ final class PageCompiler {
         styles,
         bodyNodes,
         state.registeredDomIds,
-        state.outgoingLinks,
+        links.entrySet().stream()
+            .collect(
+                Collectors.toMap(
+                    Map.Entry::getKey,
+                    entry -> state.location(entry.getValue()),
+                    (first, _) -> first,
+                    LinkedHashMap::new)),
         state.transitionLocations,
         headNodes,
         layout.headings(),

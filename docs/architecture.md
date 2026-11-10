@@ -4,7 +4,7 @@ Tessera is a declarative Java 25 HTML/CSS compiler with a component library and 
 
 ## API evolution
 
-Tessera has no external consumers. Evolve APIs directly with breaking changes and zero compatibility shims. Update the implementation, showcase, tests, and documentation together; do not add deprecation wrappers or migration guides.
+Tessera has no external consumers. Evolve APIs directly with breaking changes and zero compatibility shims. Update the implementation, showcase, tests, and documentation together; do not add deprecation wrappers or migration guides. For the planned dual-backend architecture and execution phases, see the [architecture redesign proposal](architecture-redesign.md) and the [browser roadmap](roadmap.md).
 
 Documentation diagrams use [Mermaid](https://mermaid.js.org/syntax/all-examples). Select the diagram type that best expresses the structure, relationships, states, or interactions being documented. Exact mappings remain Markdown tables.
 

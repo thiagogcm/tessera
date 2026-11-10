@@ -65,7 +65,7 @@ The contract is the latest stable Chromium and Firefox, tested on every build. F
 - **Explicit `DocumentContext`**: Expand and document callbacks receive their turn's contribution capabilities (head content, page scripts, headings, per-page state, diagnostics) directly.
 - **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
 - **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
-- **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `FluentBuilder<SELF>`) utilize `SELF self()` overridden by leaf classes—yielding completely type-safe fluent chaining with **zero unchecked casts**.
+- **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `FluentBuilder<SELF>`) utilize `SELF self()` overridden by leaf classes, yielding completely type-safe fluent chaining with **zero unchecked casts**.
 - **Typed Style Values**: Style methods accept `CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, keyword enums, and other sealed values, so no declaration is built from raw text.
 - **Typed ARIA**: Roles are `Role` constants and each `aria-*` state has a typed method; the compiler checks every role's name, children, state, and attribute requirements.
 - **Source Provenance**: With tracking on, rendered elements carry `data-src="File.java:42"` and diagnostics name the Java line that built them.
@@ -225,7 +225,9 @@ treeView-beta
                 test/java/ ## Playwright browser suite
         docs/
             architecture.md ## Boundaries, APIs, and compilation contracts
+            architecture-redesign.md ## Dual-backend architecture proposal
             consumer-guide.md ## Authoring and publishing guide
+            roadmap.md ## Browser backend roadmap and verification gates
         justfile ## Build, test, browser setup, and demo commands
         .github/
             workflows/
@@ -242,9 +244,9 @@ For library-only verification, run `./mvnw -pl tessera verify`. For a focused br
 
 ## Documentation
 
-For a comprehensive deep-dive into Tessera's architecture, compiler phases, linker mechanics, and CSS layer design, see the [Canonical Architecture Specification](docs/architecture.md).
+For a comprehensive deep-dive into Tessera's architecture, compiler phases, linker mechanics, and CSS layer design, see the [Canonical Architecture Specification](docs/architecture.md) and the [Dual-Backend Architecture Proposal](docs/architecture-redesign.md).
 
-For application development, see the [consumer guide](docs/consumer-guide.md).
+For application development, see the [consumer guide](docs/consumer-guide.md) and the [browser roadmap](docs/roadmap.md).
 
 ---
 

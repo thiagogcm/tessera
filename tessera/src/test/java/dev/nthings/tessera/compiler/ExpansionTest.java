@@ -21,6 +21,7 @@ import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.Scope;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Scope expansion")
 class ExpansionTest {
@@ -621,5 +623,27 @@ class ExpansionTest {
 
     assertThat(page.elements("p").eachAttr("id"))
         .containsExactly("open-1--inner--p-1", "open-1--inner--p-2");
+  }
+
+  private record Children(FragmentElement children) implements Scope {
+    @Override
+    public IntoElement expand(DocumentContext context) {
+      return children;
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1, 2})
+  @DisplayName("fragment roots retain their scope wrapper regardless of child count")
+  void fragmentRootsRetainTheirScopeWrapper(int count) {
+    var children = fragment();
+    for (var index = 0; index < count; index++) {
+      children.child(p().text("Child " + index));
+    }
+    var page = RenderedPage.render(main().child(new Children(children)));
+    var wrapper = page.element("main > div[data-scope]");
+
+    assertThat(wrapper.children()).hasSize(count);
+    assertThat(wrapper.select("p[data-scope]")).isEmpty();
   }
 }

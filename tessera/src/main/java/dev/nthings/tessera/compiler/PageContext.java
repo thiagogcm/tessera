@@ -102,8 +102,13 @@ final class PageContext implements DocumentContext {
   }
 
   /// The current component, as a location without an element.
-  NodeLocation location() {
-    return new NodeLocation(componentPath, "", null, origin);
+  Location location() {
+    return location("", null, origin);
+  }
+
+  /// An element or component location at the current component path.
+  Location location(String tag, @Nullable String domId, @Nullable SourceLocation source) {
+    return new Location(state.pageTitle(), componentPath, tag, domId, source);
   }
 
   /// The local name of the nearest enclosing element in this id scope that is bound to a named
@@ -142,12 +147,13 @@ final class PageContext implements DocumentContext {
   PageContext withComponent(String component, @Nullable SourceLocation placedAt) {
     var path = new ArrayList<>(componentPath);
     path.add(component);
-    return withPlacement(new NodeLocation(path, "", null, placedAt != null ? placedAt : origin));
+    return withPlacement(
+        new Location(state.pageTitle(), path, "", null, placedAt != null ? placedAt : origin));
   }
 
   /// A context with the component path and origin of `placedBy`, keeping the id scope.
-  PageContext withPlacement(NodeLocation placedBy) {
+  PageContext withPlacement(Location placedBy) {
     return new PageContext(
-        idScope, styles, docState, state, placedBy.componentPath(), placedBy.source(), keyOwner);
+        idScope, styles, docState, state, placedBy.components(), placedBy.source(), keyOwner);
   }
 }

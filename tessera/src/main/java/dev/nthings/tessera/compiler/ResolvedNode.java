@@ -13,7 +13,7 @@ sealed interface ResolvedNode
   /// missing or ambiguous, so validators skip them.
   record ResolvedTag(
       TagName tag,
-      NodeLocation location,
+      Location location,
       Map<String, String> attributes,
       Set<String> unresolvedAttributes,
       List<ResolvedNode> children)

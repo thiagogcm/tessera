@@ -21,22 +21,15 @@ final class CompilationState {
   final Map<String, ResolvedTag> elementsById = new HashMap<>();
   final Set<String> labelledControlIds = new HashSet<>();
   final List<Diagnostic> diagnostics;
-  private final String pageTitle;
 
-  CompilationState(String pageTitle, ExpansionState expansion) {
-    this.pageTitle = pageTitle;
+  CompilationState(ExpansionState expansion) {
     registeredDomIds = Collections.unmodifiableSet(expansion.registeredDomIds);
     ambiguousDomIds = Collections.unmodifiableSet(expansion.ambiguousDomIds);
     transitionLocations = Collections.unmodifiableMap(expansion.transitionLocations);
     diagnostics = new ArrayList<>(expansion.diagnostics);
   }
 
-  Location location(NodeLocation node) {
-    return new Location(
-        null, pageTitle, node.componentPath(), node.tagName(), node.domId(), node.source());
-  }
-
-  void report(NodeLocation location, String rule, String message, String suggestion) {
-    diagnostics.add(new Diagnostic(rule, message, suggestion, location(location)));
+  void report(Location location, String rule, String message, String suggestion) {
+    diagnostics.add(new Diagnostic(rule, message, suggestion, location));
   }
 }

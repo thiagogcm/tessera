@@ -76,7 +76,7 @@ final class DocumentPass implements Expansion.Placement {
     var bodyNodes = ReferenceLinker.link(bodies, state);
     var headNodes = ReferenceLinker.link(heads, state);
     var headings = headings(contributions, state);
-    var compilation = new CompilationState(document.title(), state);
+    var compilation = new CompilationState(state);
     PageValidator.index(bodyNodes, compilation);
     PageValidator.index(headNodes, compilation);
     return new Result(bodyNodes, headNodes, headings, contributions, compilation);

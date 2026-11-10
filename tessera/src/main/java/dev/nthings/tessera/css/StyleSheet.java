@@ -110,11 +110,16 @@ public final class StyleSheet {
     transitionClasses.addAll(other.transitionClasses);
   }
 
+  private static final String LAYER_ORDER =
+      "@layer reset, base, theme, components, utilities, interactive, container;\n";
+
+  private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
+
   /// Compiler-facing: renders the complete stylesheet, with `theme`'s tokens as the `:root`
   /// custom properties in `@layer theme`.
   public String render(Theme theme) {
     var sb = new StringBuilder(2048);
-    sb.append("@layer reset, base, theme, components, utilities, interactive, container;\n");
+    sb.append(LAYER_ORDER);
 
     sb.append(
         "@layer reset{"
@@ -124,28 +129,21 @@ public final class StyleSheet {
             + "img,svg,video{max-inline-size:100%;block-size:auto}"
             + "}\n");
 
-    sb.append("@layer base{");
-    sb.append("@media (prefers-reduced-motion: no-preference){");
-    sb.append("@view-transition{navigation:auto}");
-    sb.append("::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}");
-    for (var cls : transitionClasses) {
-      sb.append("::view-transition-group(*.")
-          .append(cls)
-          .append("){animation-duration:0.35s;animation-timing-function:cubic-bezier(0.2,0,0,1)}");
-    }
-    sb.append("}");
-    sb.append(
-        "body{font-family:var(--font-body);font-size:var(--font-size-md);"
-            + "background:var(--surface-canvas);color:var(--text-primary);line-height:var(--line-height-body)}"
-            + "button,input,select,textarea{font-family:inherit}"
-            + "dialog{margin:auto;overscroll-behavior:contain}");
+    sb.append("@layer base{")
+        .append(MOTION_SAFE)
+        .append("@view-transition{navigation:auto}")
+        .append("::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}");
+    transitionClasses.forEach(cls -> sb.append(transitionGroupRule(cls)));
+    sb.append('}')
+        .append(
+            "body{font-family:var(--font-body);font-size:var(--font-size-md);"
+                + "background:var(--surface-canvas);color:var(--text-primary);line-height:var(--line-height-body)}"
+                + "button,input,select,textarea{font-family:inherit}"
+                + "dialog{margin:auto;overscroll-behavior:contain}");
     keyframes.forEach(rule -> sb.append(rule.rule()));
     sb.append("}\n");
 
-    sb.append("@layer theme{");
-    sb.append(":root{");
-    theme.declarations().forEach(declaration -> sb.append(declaration).append(';'));
-    sb.append("}}\n");
+    sb.append("@layer theme{:root{").append(tokenDeclarations(theme)).append("}}\n");
 
     if (!scopeBodies.isEmpty()) {
       sb.append("@layer components{");
@@ -175,5 +173,17 @@ public final class StyleSheet {
     sb.append("@layer ").append(layer).append('{');
     rules.forEach(sb::append);
     sb.append("}\n");
+  }
+
+  private static String transitionGroupRule(String transitionClass) {
+    return "::view-transition-group(*."
+        + transitionClass
+        + "){animation-duration:0.35s;animation-timing-function:cubic-bezier(0.2,0,0,1)}";
+  }
+
+  private static String tokenDeclarations(Theme theme) {
+    var sb = new StringBuilder();
+    theme.declarations().forEach(declaration -> sb.append(declaration).append(';'));
+    return sb.toString();
   }
 }

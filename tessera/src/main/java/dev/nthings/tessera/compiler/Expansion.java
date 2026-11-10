@@ -145,7 +145,7 @@ final class Expansion {
     }
     return new ExpandedNode.Tag(
         HtmlTag.DIV,
-        new NodeLocation(context.componentPath(), HtmlTag.DIV.tagName(), null, context.origin()),
+        context.location(HtmlTag.DIV.tagName(), null, context.origin()),
         scope,
         Map.of(),
         List.of(node),
@@ -165,7 +165,7 @@ final class Expansion {
                       "callback-failure",
                       phase + " callback failed: " + failure.getMessage(),
                       "Correct the callback before compiling again.",
-                      state.location(context.location())))));
+                      context.location()))));
       throw failure;
     }
   }
@@ -238,8 +238,7 @@ final class Expansion {
   private ExpandedNode.Tag tag(TagElement element, @Nullable String forcedId, PageContext context) {
     var attrs = new LinkedHashMap<>(element.attributes());
     var source = element.source() != null ? element.source() : context.origin();
-    var location =
-        new NodeLocation(context.componentPath(), element.tag().tagName(), attrs.get("id"), source);
+    var location = context.location(element.tag().tagName(), attrs.get("id"), source);
     var domId = forcedId;
     var refs = element.boundRefs();
     if (domId == null && !refs.isEmpty()) {
@@ -313,7 +312,7 @@ final class Expansion {
 
   /// Adds declarations derived from identity: anchor names and view-transition keys.
   private Declarations identityStyles(
-      TagElement element, @Nullable String domId, NodeLocation location) {
+      TagElement element, @Nullable String domId, Location location) {
     var anchor = element.anchorTarget();
     var transition = element.transitionKey();
     if (!element.isAnchor() && anchor == null && transition == null) {

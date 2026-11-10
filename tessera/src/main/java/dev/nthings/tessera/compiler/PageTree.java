@@ -127,7 +127,7 @@ public record PageTree(List<Node> head, List<Node> body) {
           converted.add(
               new Tag(
                   tag.tag().tagName(),
-                  location.componentPath(),
+                  location.components(),
                   location.source(),
                   tag.attributes(),
                   convert(tag.children())));

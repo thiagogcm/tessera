@@ -26,7 +26,7 @@ sealed interface ExpandedNode
   /// maps and list it is given.
   record Tag(
       TagName tag,
-      NodeLocation location,
+      Location location,
       Map<String, String> attributes,
       Map<String, IdReference> references,
       List<ExpandedNode> children,
@@ -46,7 +46,7 @@ sealed interface ExpandedNode
 
   /// A keyed child's identity, retained until linking can check its resolved siblings. The
   /// wrapper emits no HTML and keeps its content's own sibling namespace separate.
-  record Keyed(String key, NodeLocation location, ExpandedNode content) implements ExpandedNode {}
+  record Keyed(String key, Location location, ExpandedNode content) implements ExpandedNode {}
 
   /// Placeholder for a late element, filled after the main flow is expanded.
   final class Slot implements ExpandedNode {

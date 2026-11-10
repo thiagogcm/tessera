@@ -6,6 +6,7 @@
 
     <!-- Ignore internal representation exposure on immutable records and builder components -->
     <Match>
+        <Package name="~dev\.nthings\.tessera\..*"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 

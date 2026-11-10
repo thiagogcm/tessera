@@ -28,9 +28,24 @@ public record Location(
     components = List.copyOf(components);
   }
 
+  /// An element or component location on a page.
+  Location(
+      @Nullable String page,
+      List<String> components,
+      String tag,
+      @Nullable String domId,
+      @Nullable SourceLocation source) {
+    this(null, page, components, tag, domId, source);
+  }
+
   /// Location of a site-level problem that belongs to no page, such as a file path collision.
   static Location site(@Nullable String route, @Nullable String page) {
     return new Location(route, page, List.of(), "", null, null);
+  }
+
+  /// Returns this location with its DOM id set to `id`.
+  Location withDomId(String id) {
+    return new Location(route, page, components, tag, id, source);
   }
 
   Location atRoute(String path) {

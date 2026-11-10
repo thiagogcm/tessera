@@ -211,9 +211,9 @@ Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark 
 
 ## Compilation diagnostics
 
-`Location` is flat: optional route, page title, enclosing components, element tag, optional DOM ID and source. Internally, layout records a page-independent `NodeLocation` (components, tag, DOM ID, source) on each node; `ExpansionState` and `CompilationState` add the page title when they report, and site compilation adds the route. `Diagnostic.format()` presents it; a component-level location omits the element, and a site-level file location has neither route nor page.
+`Location` is flat: optional route, page title, enclosing components, element tag, optional DOM ID and source. Layout records the page's `Location` on each node; site compilation attaches the route. `Diagnostic.format()` presents it; a component-level location omits the element, and a site-level file location has neither route nor page.
 
-`PageContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head, end-section or heading content with the `NodeLocation` that placed it, allowing layout to expand it with its originating component context. `DocumentContext.report(...)` records a component diagnostic at the current component path and origin.
+`PageContext` carries a component path independently of the identity scope. `DocumentState.Contribution<T>` pairs registered head, end-section or heading content with the `Location` that placed it, allowing layout to expand it with its originating component context. `DocumentContext.report(...)` records a component diagnostic at the current component path and origin.
 
 Layout attaches diagnostic locations to resolved tags and retains them when expanding late or deferred content. Linking preserves the location when replacing symbolic attributes. `PreparedPage` snapshots the first location of each outgoing URL and each transition key so site validation can report errors without exposing the intermediate tree.
 

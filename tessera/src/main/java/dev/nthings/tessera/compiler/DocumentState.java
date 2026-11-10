@@ -27,20 +27,20 @@ final class DocumentState {
       documentEndSections = new LinkedHashMap<>();
 
   /// Content placed at a page-level position, with the component context that placed it.
-  record Contribution<T>(T content, NodeLocation placedBy) {}
+  record Contribution<T>(T content, Location placedBy) {}
 
   <T> T getOrCreate(DocumentKey<T> key) {
     return key.getOrCreate(values);
   }
 
-  void contributeHead(Element element, NodeLocation placedBy) {
+  void contributeHead(Element element, Location placedBy) {
     headElements.add(new Contribution<>(element, placedBy));
   }
 
   void atDocumentEnd(
       DocumentKey<?> owner,
       Function<DocumentContext, ? extends IntoElement> section,
-      NodeLocation placedBy) {
+      Location placedBy) {
     documentEndSections.putIfAbsent(owner, new Contribution<>(section, placedBy));
   }
 
@@ -59,7 +59,7 @@ final class DocumentState {
   }
 
   /// Registers `heading` for its target. A second heading for the same target is ignored.
-  void registerHeading(DocumentHeading heading, NodeLocation placedBy) {
+  void registerHeading(DocumentHeading heading, Location placedBy) {
     if (headingTargets.putIfAbsent(heading.target(), Boolean.TRUE) == null) {
       headings.add(new Contribution<>(heading, placedBy));
     }

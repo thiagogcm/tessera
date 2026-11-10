@@ -21,7 +21,7 @@ final class PageValidator {
 
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   static void validateImage(
-      Map<String, String> attrs, Declarations style, ExpansionState state, NodeLocation location) {
+      Map<String, String> attrs, Declarations style, ExpansionState state, Location location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       state.report(
@@ -120,7 +120,7 @@ final class PageValidator {
             "Correct the URL syntax and percent-encode spaces and literal percent signs.");
         continue;
       }
-      state.outgoingLinks.putIfAbsent(url, state.location(tag.location()));
+      state.outgoingLinks.putIfAbsent(url, tag.location());
       if (tag.tag() == HtmlTag.A
           && urlAttribute.equals("href")
           && url.startsWith("#")

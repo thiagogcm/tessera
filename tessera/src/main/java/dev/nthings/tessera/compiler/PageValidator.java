@@ -120,7 +120,7 @@ final class PageValidator {
             "Correct the URL syntax and percent-encode spaces and literal percent signs.");
         continue;
       }
-      state.outgoingLinks.putIfAbsent(url, tag.location());
+      state.outgoingLinks.putIfAbsent(url, state.location(tag.location()));
       if (tag.tag() == HtmlTag.A
           && urlAttribute.equals("href")
           && url.startsWith("#")

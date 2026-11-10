@@ -13,13 +13,15 @@ import java.util.function.Supplier;
 
 /// Orders one document's expansion (body, late elements, end sections, head), then links it.
 final class DocumentPass implements Expansion.Placement {
+  private final String pageTitle;
   private final Expansion expansion;
   private final ArrayDeque<Runnable> pending = new ArrayDeque<>();
   private final PriorityQueue<Deferred> deferred = new PriorityQueue<>();
   private long sequence;
 
-  private DocumentPass(ExpansionState state) {
-    expansion = new Expansion(state, this);
+  private DocumentPass(String pageTitle, ExpansionState state) {
+    this.pageTitle = pageTitle;
+    this.expansion = new Expansion(state, this);
   }
 
   private record Deferred(int priority, long sequence, ExpandedNode node)
@@ -41,8 +43,8 @@ final class DocumentPass implements Expansion.Placement {
 
   static Result layout(
       PageDocument document, List<? extends IntoElement> siteHead, StyleSheet styles) {
-    var state = new ExpansionState(document.title());
-    return new DocumentPass(state).document(document, siteHead, styles, state);
+    var state = new ExpansionState();
+    return new DocumentPass(document.title(), state).document(document, siteHead, styles, state);
   }
 
   private Result document(
@@ -52,7 +54,7 @@ final class DocumentPass implements Expansion.Placement {
       ExpansionState state) {
     var contributions = new DocumentState();
     var root = PageContext.forDocument(styles, contributions, state);
-    siteHead.forEach(root::contributeHead);
+    siteHead.forEach(head -> contributions.contributeHead(head.intoElement(), Location.ROOT));
     var body = expansion.expand(document.bodyRoot().intoElement(), root);
     resolveLate();
     // Re-read each turn: a section may register further sections.
@@ -76,7 +78,7 @@ final class DocumentPass implements Expansion.Placement {
     var bodyNodes = ReferenceLinker.link(bodies, state);
     var headNodes = ReferenceLinker.link(heads, state);
     var headings = headings(contributions, state);
-    var compilation = new CompilationState(state);
+    var compilation = new CompilationState(pageTitle, state);
     PageValidator.index(bodyNodes, compilation);
     PageValidator.index(headNodes, compilation);
     return new Result(bodyNodes, headNodes, headings, contributions, compilation);
@@ -107,6 +109,11 @@ final class DocumentPass implements Expansion.Placement {
     var node = expansion.expand(context, phase, content);
     resolveLate();
     return node;
+  }
+
+  @Override
+  public RuntimeException failureContext(Diagnostic diagnostic) {
+    return new CompilationException(List.of(diagnostic.atPage(pageTitle)));
   }
 
   @Override

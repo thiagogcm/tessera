@@ -9,19 +9,15 @@ record IdScope(String domId, boolean keyed, boolean generated) {
 
   static final IdScope ROOT = new IdScope("", false, false);
 
-  /// The scope nested inside this one under the sanitized local id `slug`.
-  IdScope extend(String slug) {
-    return new IdScope(qualify(slug), keyed, generated);
+  /// The scope nested inside this one under the sanitized local id `slug`. `generatedSlug` marks
+  /// `slug` as assigned by the compiler, which sets [#generated].
+  IdScope extend(String slug, boolean generatedSlug) {
+    return new IdScope(qualify(slug), keyed, generated || generatedSlug);
   }
 
   /// The scope of keyed content nested inside this one under the sanitized local id `slug`.
   IdScope extendKeyed(String slug) {
     return new IdScope(qualify(slug), true, generated);
-  }
-
-  /// This scope with [#generated] set, because its own id was assigned by the compiler.
-  IdScope asGenerated() {
-    return generated ? this : new IdScope(domId, keyed, true);
   }
 
   /// The DOM id of the sanitized local id `slug` in this scope.

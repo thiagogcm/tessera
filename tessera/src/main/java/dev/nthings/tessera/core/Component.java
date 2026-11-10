@@ -12,7 +12,6 @@ public interface Component extends IntoElement {
 
   @Override
   default Element intoElement() {
-    return new ComponentElement(
-        this, ClassNames.componentName(getClass()), SourceProvenance.capture());
+    return new ComponentElement(this, getClass(), SourceProvenance.capture());
   }
 }

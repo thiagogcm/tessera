@@ -24,19 +24,10 @@ final class ExpansionState {
   private final Map<ElementRef, String> references = new IdentityHashMap<>();
   private final Map<IdCounter, Integer> counters = new HashMap<>();
   private final Set<String> transitionNames = new HashSet<>();
-  private final String pageTitle;
 
   /// Numbered per DOM id, keyed bit and prefix. [IdScope#generated] is not part of the key, so an
   /// encounter-numbered scope and an explicit `scopeId` with the same DOM id share one counter.
   private record IdCounter(String domId, boolean keyed, String prefix) {}
-
-  ExpansionState(String pageTitle) {
-    this.pageTitle = pageTitle;
-  }
-
-  String pageTitle() {
-    return pageTitle;
-  }
 
   void report(Location location, String rule, String message, String suggestion) {
     diagnostics.add(new Diagnostic(rule, message, suggestion, location));

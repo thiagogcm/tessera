@@ -16,7 +16,6 @@ abstract class BuiltinComponent implements IntoElement {
 
   @Override
   public Element intoElement() {
-    return new ComponentElement(
-        this::expand, getClass().getSimpleName(), SourceProvenance.capture());
+    return new ComponentElement(this::expand, getClass(), SourceProvenance.capture());
   }
 }

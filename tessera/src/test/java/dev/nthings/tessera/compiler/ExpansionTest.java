@@ -16,6 +16,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.components.Select;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
@@ -645,5 +646,49 @@ class ExpansionTest {
 
     assertThat(wrapper.children()).hasSize(count);
     assertThat(wrapper.select("p[data-scope]")).isEmpty();
+  }
+
+  @Test
+  @DisplayName("repeated fields drop hints and errors without mutating the shared control")
+  void repeatedFieldsDropHintsAndErrorsWithoutMutatingTheSharedControl() {
+    var control = Forms.text("name");
+
+    for (var turn = 0; turn < 6; turn++) {
+      var enabled = turn % 2 == 0;
+      var field = Field.of("Name", control).id("name").tooltip("Enter your name");
+      if (enabled) {
+        field.hint("Full name").error("Name is required");
+      }
+      var page = RenderedPage.render(main().child(field));
+      var input = page.element("input");
+      assertThat(page.element("label").attr("for")).isEqualTo(input.id());
+      assertThat(page.elements(".field-hint")).hasSize(enabled ? 1 : 0);
+      assertThat(page.elements(".field-error")).hasSize(enabled ? 1 : 0);
+      assertThat(input.hasAttr("aria-describedby")).isEqualTo(enabled);
+      assertThat(input.hasAttr("aria-errormessage")).isEqualTo(enabled);
+      if (enabled) {
+        assertThat(page.elementById(input.attr("aria-describedby")).text()).isEqualTo("Full name");
+        assertThat(page.elementById(input.attr("aria-errormessage")).text())
+            .contains("Name is required");
+      }
+    }
+    assertThat(control.idReferences()).isEmpty();
+    assertThat(control.isAnchor()).isFalse();
+  }
+
+  @Test
+  @DisplayName("repeated select fields preserve options and link their descriptions")
+  void repeatedSelectFieldsPreserveOptionsAndLinkTheirDescriptions() {
+    var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
+    var field = Field.of("Size", select).hint("Choose a size");
+
+    for (var turn = 0; turn < 3; turn++) {
+      var page = RenderedPage.render(main().child(field));
+      assertThat(page.elements("option")).hasSize(2);
+      assertThat(page.element("option[selected]").attr("value")).isEqualTo("large");
+      assertThat(page.element("label").attr("for")).isEqualTo(page.element("select").attr("id"));
+      assertThat(page.elementById(page.element("select").attr("aria-describedby")).text())
+          .isEqualTo("Choose a size");
+    }
   }
 }

@@ -24,18 +24,20 @@ public record Location(
     @Nullable SourceLocation source)
     implements Serializable {
 
+  /// The top level of an expansion.
+  static final Location ROOT = new Location(null, null, List.of(), "", null, null);
+
   public Location {
     components = List.copyOf(components);
   }
 
-  /// An element or component location on a page.
+  /// An element or component location before a page or route is attached.
   Location(
-      @Nullable String page,
       List<String> components,
       String tag,
       @Nullable String domId,
       @Nullable SourceLocation source) {
-    this(null, page, components, tag, domId, source);
+    this(null, null, components, tag, domId, source);
   }
 
   /// Location of a site-level problem that belongs to no page, such as a file path collision.
@@ -46,6 +48,11 @@ public record Location(
   /// Returns this location with its DOM id set to `id`.
   Location withDomId(String id) {
     return new Location(route, page, components, tag, id, source);
+  }
+
+  /// Returns this location attached to page `title`.
+  Location atPage(String title) {
+    return new Location(route, title, components, tag, domId, source);
   }
 
   Location atRoute(String path) {

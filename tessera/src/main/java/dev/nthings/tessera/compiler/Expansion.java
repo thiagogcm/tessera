@@ -39,6 +39,8 @@ final class Expansion {
   private final Placement placement;
 
   interface Placement {
+    RuntimeException failureContext(Diagnostic diagnostic);
+
     ExpandedNode defer(Supplier<ExpandedNode> content, int priority);
 
     ExpandedNode late(Supplier<ExpandedNode> content);
@@ -59,20 +61,19 @@ final class Expansion {
       case LateElement(var content) -> placement.late(() -> expand(context, "Late", content));
       case FragmentElement fragment ->
           new ExpandedNode.Fragment(children(fragment.childrenList(), context));
-      case ComponentElement(var component, var name, var source) -> {
-        var child = context.withComponent(name, source);
-        yield new ExpandedNode.Boundary(expand(child, "Expand", component::expand));
+      case ComponentElement component -> {
+        var child = context.withComponent(component.name(), component.source());
+        yield new ExpandedNode.Boundary(expand(child, "Expand", component.component()::expand));
       }
       case KeyedElement keyed -> keyed(keyed, context);
       case ScopeElement(var scope, var source) -> {
         var explicit = scope.scopeId();
-        var generated = explicit == null;
         var scoped =
             context.withIdScope(
                 explicit != null
                     ? Fnv1a64.sanitizeLocalId(explicit)
                     : state.nextId(scope.scopeName(), context.idScope()),
-                generated);
+                explicit == null);
         var scopeId = scoped.idScope().domId();
         var child = scoped.withComponent(scope.scopeName() + "[" + scopeId + "]", source);
         if (hasUnstableScopeName(scope)) {
@@ -159,13 +160,12 @@ final class Expansion {
       return work.get();
     } catch (RuntimeException failure) {
       failure.addSuppressed(
-          new CompilationException(
-              List.of(
-                  new Diagnostic(
-                      "callback-failure",
-                      phase + " callback failed: " + failure.getMessage(),
-                      "Correct the callback before compiling again.",
-                      context.location()))));
+          placement.failureContext(
+              new Diagnostic(
+                  "callback-failure",
+                  phase + " callback failed: " + failure.getMessage(),
+                  "Correct the callback before compiling again.",
+                  context.location())));
       throw failure;
     }
   }

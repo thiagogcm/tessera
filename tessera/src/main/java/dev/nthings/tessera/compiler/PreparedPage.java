@@ -4,6 +4,8 @@ import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.view.Location;
+import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -14,8 +16,8 @@ import java.util.Set;
 final class PreparedPage {
   private final PageDocument document;
   private final StyleSheet styles;
-  private final List<ResolvedNode> bodyNodes;
-  private final List<ResolvedNode> headNodes;
+  private final List<ViewSnapshot.Node> bodyNodes;
+  private final List<ViewSnapshot.Node> headNodes;
   private final Set<String> registeredDomIds;
   private final Map<String, Location> outgoingLinks;
   private final Map<TransitionKey, Location> transitionLocations;
@@ -25,11 +27,11 @@ final class PreparedPage {
   PreparedPage(
       PageDocument document,
       StyleSheet styles,
-      List<ResolvedNode> bodyNodes,
+      List<ViewSnapshot.Node> bodyNodes,
       Set<String> registeredDomIds,
       Map<String, Location> outgoingLinks,
       Map<TransitionKey, Location> transitionLocations,
-      List<ResolvedNode> headNodes,
+      List<ViewSnapshot.Node> headNodes,
       List<PageHeading> headings,
       List<PageScript> behaviors) {
     this.document = document;
@@ -48,11 +50,11 @@ final class PreparedPage {
     return document;
   }
 
-  List<ResolvedNode> bodyNodes() {
+  List<ViewSnapshot.Node> bodyNodes() {
     return bodyNodes;
   }
 
-  List<ResolvedNode> headNodes() {
+  List<ViewSnapshot.Node> headNodes() {
     return headNodes;
   }
 

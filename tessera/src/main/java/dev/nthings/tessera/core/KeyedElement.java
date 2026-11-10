@@ -1,7 +1,8 @@
 package dev.nthings.tessera.core;
 
-/// Compiler-facing: content with a stable identity among its siblings, created by
-/// [IntoElement#key(String)]. Throws IllegalArgumentException if `key` is blank.
+/// Backend-facing: content with a stable identity among its siblings, created by
+/// [IntoElement#key(String)]. Shared expansion scopes the ids bound inside it by this key, and a
+/// live backend reconciles the child by it. Throws IllegalArgumentException if `key` is blank.
 public record KeyedElement(String key, Element content) implements Element {
 
   public KeyedElement {

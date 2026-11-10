@@ -1,6 +1,6 @@
 # Compiler internals
 
-The compiler separates preparation from emission so a site can validate every route and merge styles before producing HTML. Public inputs and outputs are described in [Sites](sites.md); [Architecture](architecture.md) defines package boundaries.
+The static compiler separates preparation from emission so a site can validate every route and merge styles before producing HTML. It uses the same expansion, linking, and validation layer as the [browser renderer](browser-internals.md). Public inputs and outputs are described in [Sites](sites.md); [Architecture](architecture.md) defines package boundaries.
 
 ## Prepare a page
 
@@ -10,9 +10,9 @@ The compiler separates preparation from emission so a site can validate every ro
 sequenceDiagram
     participant Page as PageCompiler
     participant Document as DocumentPass
-    participant Expand as Expansion
+    participant Expand as ViewExpansion
     participant Link as ReferenceLinker
-    participant Validate as PageValidator
+    participant Validate as ViewValidation
     participant Prepared as PreparedPage
 
     Page->>Document: Lay out document and contributions
@@ -32,25 +32,25 @@ sequenceDiagram
 
 | Owner | Responsibility |
 | --- | --- |
-| `DocumentPass` | Root context, deferred priorities, late slots, and processing document contributions |
-| `Expansion` | Expand components/scopes, require one element host per scope, allocate identities, collect styles and outline headings, and preserve origins |
-| `ExpansionState` | Reference bindings, DOM IDs, generated counters, transition identities, and preparation diagnostics |
+| `DocumentPass` | Static backend for deferred priorities, late slots, document contributions, and unsupported live features |
+| `ViewExpansion` | Expand components/scopes, require one element host per scope, allocate identities, collect styles and outline headings, and preserve origins |
+| `ViewState` | Shared reference bindings, DOM IDs, generated counters, transition identities, and expansion diagnostics |
 | `ReferenceLinker` | Resolve symbolic references and late slots, check sibling keys, splice transparent wrappers, and place tooltip companions |
-| `CompilationState` | Read-only identity/transition views, validation indexes, outgoing URLs, and accumulated diagnostics |
-| `PageValidator` / `AccessibilityRules` | Validate linked elements, commands, URLs, and accessibility semantics |
+| `CompilationState` | Read-only identity/transition views, outgoing URLs, and accumulated diagnostics |
+| `ViewValidation` / `AccessibilityRules` | Validate linked elements, commands, URLs, and accessibility semantics |
 | `PreparedPage` | Own the linked tree and stylesheet; snapshot IDs, headings, URLs, transitions, and scripts |
 
 ### Placement and linking
 
 Deferred content expands in its lexical scope and is emitted in priority/sequence order. Late callbacks resolve before document-end sections and head contributions. Contribution processing allows end sections to register more end sections and head contributions to register more head content.
 
-A scope root must be one element. Expansion walks component boundaries and keyed wrappers to that element and stamps `data-scope` and `data-scope-id`. Another scope, a fragment, text, raw HTML, late or deferred content, or nothing reports `scope-root`. Expansion does not insert a `div` or replace an inner scope's host.
+A scope root must be one element. `ViewExpansion` walks component boundaries and keyed wrappers to that element and stamps `data-scope` and `data-scope-id`. Another scope, a fragment, text, raw HTML, late or deferred content, or nothing reports `scope-root`. Expansion does not insert a `div` or replace an inner scope's host. `Scope.expand` still returns `IntoElement`; the host check is runtime validation.
 
-`ReferenceLinker` converts `ExpandedNode` values to `ResolvedNode` values. Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
+`ReferenceLinker` converts `ViewNode` values to `ViewSnapshot.Node` values. Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. A scope boundary links as an ordinary group whose definition is the stable `scopeName()`. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
 
 Heading metadata is read from the element during expansion and resolved by `DocumentPass` after linking. An unbound outline target reports `unbound-reference`.
 
-Only linked tags, text, and raw HTML reach validation, inspection, and emission. Their attributes and child lists are compiler-owned copies. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
+Linked tags, text, raw HTML, and transparent groups reach document validation, inspection, and emission. Groups retain keys and authoring definitions for browser reconciliation; static writers flatten their children. Effects and controlled/event-bearing elements are rejected by the document backend. Their attributes and child lists are compiler-owned copies. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
 
 ### Validation and preparation
 
@@ -96,11 +96,13 @@ CSS merges sequentially in route order. The coordinator checks generated stylesh
 
 `HtmlWriter` encodes the linked tree and document envelope using the selected output mode. Its `Resources` object hashes and encodes the final stylesheet once and each distinct page module once per compilation. Every page references those selected resources. Resource paths and returned asset collections follow the [output-mode contract](sites.md#choose-an-output-mode).
 
+Diagnostics and locations live in `view` so both backends use the same model. `CompilationException` reports static failures; `ViewException` reports invalid mounted candidates.
+
 `PreparedPage` is opaque to callers. Emission reads its prepared content without invoking application callbacks again. Trusted raw HTML bypasses parsing and encoding; typed text and attribute output use context-sensitive encoding.
 
 ## Preserve source and diagnostic context
 
-`Location` records optional route, page, component path, element tag, DOM ID, and source. Contribution records pair head, end-section, and heading content with the registering location. Expansion and linking carry that location through deferred and late content.
+`Location` records optional route, page, component path, element tag, DOM ID, and source. Contribution records pair head, end-section, and heading content with the registering location. ViewExpansion and linking carry that location through deferred and late content.
 
 `SourceProvenance` captures locations through the `SourceCapture` contract in `core`. The JVM implementation, `SourceTracking`, lives in `compiler` and uses stack walking. Code-source classification distinguishes platform/library frames from application frames, including applications using Tessera-like package names. Elements built during component expansion inherit the component placement origin.
 

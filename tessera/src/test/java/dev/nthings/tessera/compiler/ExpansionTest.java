@@ -31,6 +31,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.support.RenderedPage;
+import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -350,7 +351,8 @@ class ExpansionTest {
             d -> {
               assertThat(d.rule()).isEqualTo("duplicate-key");
               assertThat(d.message()).isEqualTo("Duplicate sibling key 'a'");
-              assertThat(d.fix()).isEqualTo("Give each child of this parent a distinct key.");
+              assertThat(d.fix())
+                  .isEqualTo("Give each child in this parent a distinct stable key.");
               assertThat(d.location().page()).isEqualTo("Keys");
               assertThat(d.location().components()).containsExactly("[key=a]");
             });

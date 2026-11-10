@@ -25,6 +25,7 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.support.RenderedPage;
+import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;

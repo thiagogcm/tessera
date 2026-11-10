@@ -3,7 +3,8 @@ package dev.nthings.tessera.core;
 import org.jspecify.annotations.Nullable;
 
 /// Compiler-facing: holds a [Component] until the compiler expands it. Created by
-/// [Component#intoElement()]. `type` is the authoring class, named in diagnostic locations.
+/// [Component#intoElement()]. `type` is the authoring class: diagnostic locations name it, and a
+/// live backend replaces the component's DOM when the type at a position changes.
 public record ComponentElement(Component component, Class<?> type, @Nullable SourceLocation source)
     implements Element {
 

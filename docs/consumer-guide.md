@@ -83,7 +83,7 @@ public record ItemList(String id) implements Scope {
 
 `scopeId()` identifies an instance within its enclosing scope. Give repeated instances distinct IDs. The default, `null`, assigns `<scopeName>-<n>` in encounter order. Use explicit IDs when links must stay stable or the scope contains [keyed items](#key-list-items-that-move).
 
-Keep expansion free of shared mutable application state: site compilation expands pages concurrently. The supplied `DocumentContext` belongs to the callback; do not retain it for asynchronous work.
+Keep expansion free of shared mutable application state: site compilation expands pages concurrently. The supplied `DocumentContext` belongs to the callback; do not retain it for asynchronous work. Browser roots receive the same context with [backend-specific capability limits](browser-rendering.md).
 
 ## Use the built-in components
 
@@ -288,4 +288,4 @@ context.contributeScript(new PageScript("my-widget", moduleSource));
 
 The first registration of an ID wins; each page emits that module once. Keep the source consistent for every use of an ID. [Output modes](sites.md#choose-an-output-mode) determine whether it is embedded or published as a file. [Browser support](browser-support.md#component-scripts) lists the modules supplied by built-in components.
 
-For complete application concerns, continue with [Styling](styling.md), [Sites](sites.md), or [Kotlin](kotlin.md).
+For complete application concerns, continue with [Styling](styling.md), [Sites](sites.md), [Kotlin](kotlin.md), or [Browser rendering](browser-rendering.md).

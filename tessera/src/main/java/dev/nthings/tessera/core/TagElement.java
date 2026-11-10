@@ -4,6 +4,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
+import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.foundation.Decimals;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
@@ -33,6 +35,12 @@ import org.jspecify.annotations.Nullable;
 /// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
 /// named ref bound before or after them gives the element its id, and every ref names the same
 /// element. Two named refs asking for different ids report `conflicting-element-id`.
+///
+/// Live backends add Java event handlers ([#onEvent(String, Consumer)]), controlled form properties
+/// ([#value(String)], [#checked(boolean)], [#selectedValues(List)]) and continuously changing
+/// styles ([#live(StyleBlock)]). Static compilation rejects handlers and controlled properties with
+/// `native-event-handlers` and `native-control-properties`, and compiles live styles as ordinary
+/// declarations.
 public final class TagElement
     implements Element, Styled<TagElement>, ParentElement<TagElement>, FluentBuilder<TagElement> {
 
@@ -42,6 +50,10 @@ public final class TagElement
   private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   private final List<Element> children = new ArrayList<>();
   private final List<ElementRef> refs = new ArrayList<>(1);
+  /// Allocated on the first handler: most elements bind none.
+  private Map<EventListener.Key, EventListener> events = Map.of();
+  private ControlProperties controlProperties = ControlProperties.UNCONTROLLED;
+  private @Nullable Declarations live;
   private @Nullable TagElement interestTooltip;
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
@@ -62,7 +74,8 @@ public final class TagElement
   /// Copies this builder and every descendant element, so expansion can wire the copy without
   /// writing the builder the caller still holds. [ElementRef] handles are the same objects: a ref
   /// is an identity, not configuration. Component and scope instances nested in the tree are
-  /// shared.
+  /// shared. Event handlers and controlled properties are copied; live styles are a new
+  /// declaration set.
   public TagElement copy() {
     var copy = new TagElement(tag, source);
     copy.style.mergeFrom(style);
@@ -72,6 +85,14 @@ public final class TagElement
       copy.children.add(detach(child));
     }
     copy.refs.addAll(refs);
+    if (!events.isEmpty()) {
+      copy.events = new LinkedHashMap<>(events);
+    }
+    copy.controlProperties = controlProperties;
+    var liveStyle = live;
+    if (liveStyle != null) {
+      copy.live = new Declarations().mergeFrom(liveStyle);
+    }
     copy.interestTooltip = interestTooltip == null ? null : interestTooltip.copy();
     copy.anchorSelf = anchorSelf;
     copy.anchorTarget = anchorTarget;
@@ -406,7 +427,7 @@ public final class TagElement
     return interestTooltip;
   }
 
-  /// Marks this element as a document-outline heading. The compiler collects `heading` when the
+  /// Marks this element as a document-outline heading. Expansion collects `heading` when the
   /// element is expanded. The first heading for a target is kept. Ordinary headings leave this
   /// unset, so dialog titles, footnote chrome, and other interface headings stay out of the
   /// outline. Heading components set it when the author opts in.
@@ -415,7 +436,7 @@ public final class TagElement
     return this;
   }
 
-  /// Compiler-facing: the outline heading carried by this element, or `null`.
+  /// The outline heading carried by this element, or `null`.
   public @Nullable DocumentHeading navigationHeading() {
     return navigationHeading;
   }
@@ -458,5 +479,88 @@ public final class TagElement
   /// Compiler-facing: the transition key, or `null` if none was set.
   public @Nullable TransitionKey transitionKey() {
     return transitionKey;
+  }
+
+  /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input`
+  /// or `keydown`) to this element in a live backend, bubble phase. A handler for the same type
+  /// and phase replaces the previous one. Re-rendering rebinds the current handler, so it may
+  /// capture the state of the render that created it. Static compilation reports
+  /// `native-event-handlers`. Throws IllegalArgumentException if `event` is blank.
+  public TagElement onEvent(String event, Consumer<BrowserEvent> handler) {
+    return onEvent(event, EventOptions.DEFAULT, handler);
+  }
+
+  /// Runs `handler` for `event` with native listener `options`: capture phase, passive, or once.
+  /// A handler for the same type and phase replaces the previous one. Throws
+  /// IllegalArgumentException if `event` is blank.
+  public TagElement onEvent(String event, EventOptions options, Consumer<BrowserEvent> handler) {
+    var listener = new EventListener(event, options, handler);
+    if (events.isEmpty()) {
+      events = new LinkedHashMap<>();
+    }
+    events.put(listener.key(), listener);
+    return this;
+  }
+
+  /// Backend-facing: the bound handlers, keyed by [EventListener#key()].
+  public Map<EventListener.Key, EventListener> events() {
+    return events.isEmpty() ? events : Collections.unmodifiableMap(events);
+  }
+
+  /// Writes styles that change continuously, such as an animated size or a progress width, through
+  /// `styles`. A live backend compiles them into one rule that reads each value from a custom
+  /// property on this element, so new values add no style rules; static compilation emits them as
+  /// ordinary declarations. Calling again extends the same live styles. Only plain declarations
+  /// are live: write state and media rules with `on(...)`.
+  public TagElement live(StyleBlock styles) {
+    var target = live;
+    if (target == null) {
+      target = new Declarations();
+      live = target;
+    }
+    styles.configure(target);
+    return this;
+  }
+
+  /// Backend-facing: the live styles, or `null` when [#live(StyleBlock)] was never called.
+  public @Nullable Declarations liveStyle() {
+    return live;
+  }
+
+  /// Controls the live `value` of an input, textarea or single select in a live backend: each
+  /// render writes it to the control unless the user is composing text with an input method. The
+  /// initial `value` attribute is unaffected. A host other than those (a file input, a multiple
+  /// select, any other element) reports `control-value`; static compilation reports
+  /// `native-control-properties`.
+  public TagElement value(String value) {
+    controlProperties = controlProperties.withValue(value);
+    return this;
+  }
+
+  /// Controls the live checked state of a checkbox or radio input in a live backend. Another host
+  /// reports `control-checked`; static compilation reports `native-control-properties`.
+  public TagElement checked(boolean checked) {
+    controlProperties = controlProperties.withChecked(checked);
+    return this;
+  }
+
+  /// Controls the selected options of a multiple select in a live backend; an empty list
+  /// deselects every option. Another host reports `control-selection`; static compilation reports
+  /// `native-control-properties`.
+  public TagElement selectedValues(List<String> values) {
+    controlProperties = controlProperties.withSelectedValues(values);
+    return this;
+  }
+
+  /// Stops controlling the live form properties, leaving the browser's current values and the
+  /// initial attributes as they are.
+  public TagElement uncontrolled() {
+    controlProperties = ControlProperties.UNCONTROLLED;
+    return this;
+  }
+
+  /// Backend-facing: the controlled form properties.
+  public ControlProperties controlProperties() {
+    return controlProperties;
   }
 }

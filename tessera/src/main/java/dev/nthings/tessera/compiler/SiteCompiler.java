@@ -7,6 +7,8 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.SourceProvenance;
 import dev.nthings.tessera.css.StyleSheet;
+import dev.nthings.tessera.view.Diagnostic;
+import dev.nthings.tessera.view.Location;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;

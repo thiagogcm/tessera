@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
@@ -99,6 +100,12 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     }
     other.declarations.forEach(this::put);
     customProperties.putAll(other.customProperties);
+    mergeConditionalFrom(other);
+    return this;
+  }
+
+  /// Writes `other`'s conditional styles, keyframes and starting style into this one.
+  private void mergeConditionalFrom(Declarations other) {
     var otherConditional = other.conditional;
     if (otherConditional != null) {
       otherConditional.forEach((condition, style) -> nested(condition).mergeFrom(style));
@@ -111,7 +118,6 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     if (otherStart != null) {
       startingStyle(start -> start.mergeFrom(otherStart));
     }
-    return this;
   }
 
   /// The refinement holding the styles for `condition`, created on first use.
@@ -172,6 +178,37 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
       put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
     }
     return this;
+  }
+
+  /// The `--tl-<property>` custom property each live declaration reads its value from.
+  /// Indexed by [CssProperty#ordinal()].
+  private static final CssIdent[] LIVE_NAMES = liveNames();
+
+  private static CssIdent[] liveNames() {
+    var properties = CssProperty.values();
+    var names = new CssIdent[properties.length];
+    for (var property : properties) {
+      names[property.ordinal()] = CssIdent.custom("tl-" + property.cssName());
+    }
+    return names;
+  }
+
+  /// Writes the live form of this style into `into` for a live backend: each plain declaration
+  /// reads its value from the custom property `--tl-<property>` on the element, so the rule stays
+  /// the same however the values change. `values` receives each of those properties with its
+  /// current value, plus this style's own custom properties, which are live values as they are;
+  /// `generated` receives the names of the `--tl-` properties. Conditional and starting styles are
+  /// written as they are.
+  void writeLiveShape(Declarations into, Map<String, String> values, Consumer<String> generated) {
+    declarations.forEach(
+        (property, value) -> {
+          var name = LIVE_NAMES[property.ordinal()];
+          into.put(property, name.varReference());
+          values.put(name.toCss(), value);
+          generated.accept(name.toCss());
+        });
+    values.putAll(customProperties);
+    into.mergeConditionalFrom(this);
   }
 
   /// Compiler-facing: whether an `aspect-ratio` is declared, which reserves an image's layout space

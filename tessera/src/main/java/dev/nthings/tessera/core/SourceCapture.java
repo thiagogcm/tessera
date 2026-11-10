@@ -3,7 +3,7 @@ package dev.nthings.tessera.core;
 import org.jspecify.annotations.Nullable;
 
 /// Compiler-facing: captures the authoring call site of an element. Supplied by
-/// `compiler.SourceTracking`.
+/// `compiler.SourceTracking` on the JVM; absent in live backends.
 @FunctionalInterface
 public interface SourceCapture {
 

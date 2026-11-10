@@ -9,7 +9,7 @@
 ///   keys across pages, shares one stylesheet, and adds `search-index.json` and, with a base URL,
 ///   `sitemap.xml`.
 /// - Errors: authoring errors are collected and thrown as one [CompilationException] listing every
-///   [Diagnostic] before any HTML is produced.
+///   diagnostic before any HTML is produced.
 /// - Debugging: [Compiler#explain(PageDocument)] returns the element tree as a [PageTree];
 ///   [SourceTracking] records the Java line that built each element.
 @NullMarked

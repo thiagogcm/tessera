@@ -46,6 +46,8 @@ final class ButtonFace {
     if (tooltip != null) {
       el.interestTooltip(tooltip);
     }
+    model.events.forEach(
+        listener -> el.onEvent(listener.type(), listener.options(), listener.handler()));
     return el;
   }
 

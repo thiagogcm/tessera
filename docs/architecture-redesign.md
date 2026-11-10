@@ -1,8 +1,8 @@
 # Browser rendering architecture proposal
 
-This proposal defines a Java-to-WebAssembly backend for mounting Tessera views into the browser DOM. Its APIs are design targets. The current reactor contains the JVM library and showcase; the browser module and commands are not available.
+This proposal defines a Java-to-WebAssembly backend for mounting Tessera views into the browser DOM. Its APIs are design targets beyond the [experimental backend](browser-rendering.md). That backend is available through the opt-in `wasm` profile; document-context separation, unified control lowering, and compiler-managed mounts remain proposed work.
 
-The design keeps static document authoring focused on HTML/CSS while allowing portable components, live controls, and compiler-managed browser assets. [Architecture](architecture.md) describes the implementation that exists. The [roadmap](roadmap.md) defines delivery order and acceptance evidence.
+The design keeps static document authoring focused on HTML/CSS while allowing portable components, live controls, and compiler-managed browser assets. [Architecture](architecture.md) and [browser internals](browser-internals.md) describe the implementation that exists. The [roadmap](roadmap.md) defines delivery order and acceptance evidence.
 
 ## Design goals
 
@@ -31,7 +31,6 @@ classDiagram
         +contributeHead(content) void
         +atDocumentEnd(owner, callback) void
         +contributeScript(script) void
-        +registerHeading(target, title, level) void
         +headings() List
     }
     class Component {
@@ -52,7 +51,7 @@ classDiagram
     DocumentComponent ..> DocumentContext : receives
 ```
 
-The diagram summarizes capabilities; the state operation remains generic as `state(ViewKey<T>)`. `Component`, `Scope`, and browser view callbacks receive `ViewContext`. `DocumentComponent` and document callbacks receive `DocumentContext`.
+The diagram summarizes capabilities; the state operation remains generic as `state(ViewKey<T>)`. `Component`, `Scope`, and browser view callbacks receive `ViewContext`. `DocumentComponent` and document callbacks receive `DocumentContext`. Outline headings are collected from elements that carry them; `headings()` reads that collection, and the context does not register headings.
 
 Move `deferred`, `late`, and `rawHtml` placement behind document-only APIs. Portable components should be unable to create document-only nodes, rather than discovering the mismatch during browser rendering.
 

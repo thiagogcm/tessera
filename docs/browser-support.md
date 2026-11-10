@@ -35,4 +35,4 @@ Custom components can [contribute their own scripts](consumer-guide.md#contribut
 
 CI installs the Chromium and Firefox builds bundled with the Playwright version pinned in [pom.xml](../pom.xml). These are the tested builds for that dependency version. Keeping Playwright current and checking stable-browser releases is part of maintaining the support contract; a green run does not establish compatibility with every installed browser version.
 
-The [browser rendering proposal](architecture-redesign.md) describes a future WebAssembly backend. The current Maven reactor contains the JVM library and showcase; it provides no runnable browser-Java backend.
+The opt-in `wasm` profile adds the experimental [Java browser backend](browser-rendering.md) and its acceptance showcase. Its packaged-image suite runs separately from the default JVM CI workflow. The [architecture proposal](architecture-redesign.md) describes the next capability and module boundaries.

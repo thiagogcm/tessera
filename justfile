@@ -27,6 +27,16 @@ build:
 compile:
     {{mvn}} -DskipTests clean test-compile
 
+# Compile the experimental browser demo with Oracle GraalVM and Binaryen.
+[group('build')]
+wasm:
+    {{mvn}} -Pwasm -pl tessera-wasm-showcase -am -DskipTests package
+
+# Build the actual Wasm image and exercise it in Chromium and Firefox.
+[group('test')]
+wasm-verify:
+    {{mvn}} -Pwasm -pl tessera-wasm-showcase -am verify
+
 # Compile the multi-page showcase static site into target/site.
 [group('build')]
 site output="target/site":
@@ -86,7 +96,7 @@ format-check:
 no-suppress-warnings:
     #!/usr/bin/env bash
     set -euo pipefail
-    if rg -n '@SuppressWarnings' tessera/src tessera-showcase/src; then
+    if rg -n '@SuppressWarnings' tessera/src tessera-showcase/src tessera-wasm/src tessera-wasm-showcase/src; then
         echo "ERROR: @SuppressWarnings is forbidden in tessera." >&2
         exit 1
     fi

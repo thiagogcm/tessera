@@ -2,7 +2,7 @@
 
 Deliver a Java-to-WebAssembly backend that mounts portable Tessera components into the browser DOM. The [architecture proposal](architecture-redesign.md) defines the target contracts; this roadmap defines implementation order and acceptance evidence.
 
-The current reactor provides the JVM library and showcase. Treat `tessera-wasm`, browser roots, bundle descriptors, and the commands needed to build them as planned work. Use the [current guides](../README.md#documentation) for supported application development.
+The opt-in `wasm` profile provides `tessera-wasm`, browser roots, and an image-building showcase. [Browser rendering](browser-rendering.md) covers setup and current capabilities. The phases below target the context split, unified widgets, and compiler-managed bundle descriptors beyond that experimental implementation.
 
 ## Acceptance approach
 
@@ -66,6 +66,6 @@ Verify the packaged application, including its dynamic behavior and resource lif
 
 Choose and pin a compatible GraalVM Web Image toolchain, JavaScript interoperability API, and Binaryen version when implementing the backend. Keep that toolchain outside the default JVM build.
 
-Add build and verification recipes only with runnable modules. They must assemble a self-contained browser host, serve it over HTTP, and exercise the packaged output in both engines. Record exact prerequisites beside those recipes so users can reproduce the distribution.
+Keep the existing browser build and verification recipes aligned with the new contracts. They must assemble a self-contained browser host, serve it over HTTP, and exercise packaged output in both engines. Record prerequisites in the [browser guide](browser-rendering.md#build-and-verify) so users can reproduce the distribution.
 
 Reference the [Web Image manual](https://www.graalvm.org/latest/reference-manual/web-image/) and its [JavaScript interoperability API](https://www.graalvm.org/latest/reference-manual/web-image/api-guide/) when selecting the toolchain.

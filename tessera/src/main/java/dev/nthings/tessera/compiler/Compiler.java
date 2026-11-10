@@ -4,7 +4,7 @@ import dev.nthings.tessera.css.Theme;
 import java.util.List;
 
 /// Compiles pages and sites. Every method throws [CompilationException] when it finds authoring
-/// errors, before any HTML is produced; each [Diagnostic] carries a stable rule code such as
+/// errors, before any HTML is produced; each reported error carries a stable rule code such as
 /// `duplicate-id` or `image-alt`. Exceptions thrown by expand callbacks propagate unchanged.
 public final class Compiler {
   private Compiler() {}

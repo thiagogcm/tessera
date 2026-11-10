@@ -1,10 +1,11 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.compiler.ResolvedNode.ResolvedRaw;
-import dev.nthings.tessera.compiler.ResolvedNode.ResolvedTag;
-import dev.nthings.tessera.compiler.ResolvedNode.ResolvedText;
 import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.view.ViewSnapshot;
+import dev.nthings.tessera.view.ViewSnapshot.Raw;
+import dev.nthings.tessera.view.ViewSnapshot.Tag;
+import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,25 +22,24 @@ final class HtmlWriter {
 
   private HtmlWriter() {}
 
-  /// The stylesheet and page scripts shared by the pages of one compilation, hashed and encoded
-  /// once: under external output each file is an [Asset] at a content-hashed path, which every
-  /// page emitted with these resources links.
+  /// The stylesheet and behavior modules shared by the pages of one compilation, hashed and
+  /// encoded once: under external output each file is an [Asset] at a content-hashed path, which
+  /// every page painted with these resources links.
   static final class Resources {
     private final String css;
     private final OutputMode outputMode;
     private final @Nullable Asset stylesheet;
     private final Map<PageScript, Asset> modules = new LinkedHashMap<>();
 
-    /// Resources for `css` and every module in `scripts`, in order; a repeated script is encoded
-    /// once.
-    Resources(String css, OutputMode outputMode, Iterable<PageScript> scripts) {
+    /// Resources for `css` and every module in `behaviors`, in order; a repeated behavior is
+    /// encoded once.
+    Resources(String css, OutputMode outputMode, Iterable<PageScript> behaviors) {
       this.css = css;
       this.outputMode = outputMode;
       if (outputMode instanceof ExternalOutput(var base)) {
         stylesheet = Asset.text(stylesheetPath(base, css), css);
-        for (var script : scripts) {
-          modules.computeIfAbsent(
-              script, candidate -> Asset.text(scriptPath(base, candidate), candidate.module()));
+        for (var behavior : behaviors) {
+          modules.computeIfAbsent(behavior, b -> Asset.text(scriptPath(base, b), b.module()));
         }
       } else {
         stylesheet = null;
@@ -59,20 +59,20 @@ final class HtmlWriter {
       return assets;
     }
 
-    /// The path of `script`'s module, which must be one these resources were built with.
-    private String moduleHref(PageScript script) {
-      return Objects.requireNonNull(modules.get(script), script.id()).path();
+    /// The path of `behavior`'s module, which must be one these resources were built with.
+    private String moduleHref(PageScript behavior) {
+      return Objects.requireNonNull(modules.get(behavior), behavior.id()).path();
     }
   }
 
-  /// Writes the document envelope and linked nodes. Under external output the stylesheet and
-  /// `scripts` are linked at the paths of `resources`' assets.
+  /// Paints the document envelope and linked nodes. Under external output the stylesheet and
+  /// `behaviors` are linked at the paths of `resources`' assets.
   static String emit(
       PageDocument doc,
-      List<ResolvedNode> bodyNodes,
-      List<ResolvedNode> headNodes,
+      List<ViewSnapshot.Node> bodyNodes,
+      List<ViewSnapshot.Node> headNodes,
       Resources resources,
-      List<PageScript> scripts) {
+      List<PageScript> behaviors) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
     out.append(Encode.forHtmlAttribute(doc.lang()));
@@ -93,9 +93,9 @@ final class HtmlWriter {
         out.append("<style>\n");
         out.append(resources.css);
         out.append("</style>\n");
-        for (var script : scripts) {
+        for (var behavior : behaviors) {
           out.append("<script type=\"module\">\n");
-          out.append(inlineModule(script.module()));
+          out.append(inlineModule(behavior.module()));
           out.append("\n</script>\n");
         }
       }
@@ -104,9 +104,9 @@ final class HtmlWriter {
         var stylesheet = Objects.requireNonNull(resources.stylesheet);
         out.append(Encode.forHtmlAttribute(stylesheet.path()));
         out.append("\">\n");
-        for (var script : scripts) {
+        for (var behavior : behaviors) {
           out.append("<script type=\"module\" src=\"");
-          out.append(Encode.forHtmlAttribute(resources.moduleHref(script)));
+          out.append(Encode.forHtmlAttribute(resources.moduleHref(behavior)));
           out.append("\"></script>\n");
         }
       }
@@ -124,9 +124,9 @@ final class HtmlWriter {
     return hashedPath(base, "styles", css, ".css");
   }
 
-  private static String scriptPath(String base, PageScript script) {
+  private static String scriptPath(String base, PageScript behavior) {
     return hashedPath(
-        base + "/scripts", Fnv1a64.sanitizeIdentifier(script.id()), script.module(), ".js");
+        base + "/scripts", Fnv1a64.sanitizeIdentifier(behavior.id()), behavior.module(), ".js");
   }
 
   /// `dir/name-<content hash>ext`, so changed files are never served stale from cache.
@@ -140,11 +140,13 @@ final class HtmlWriter {
     return SCRIPT_CLOSE.matcher(module).replaceAll(ignored -> "<\\/script");
   }
 
-  private static void writeNode(ResolvedNode node, StringBuilder out) {
+  private static void writeNode(ViewSnapshot.Node node, StringBuilder out) {
     switch (node) {
-      case ResolvedText(var content) -> out.append(Encode.forHtmlContent(content));
-      case ResolvedRaw(var trustedHtml) -> out.append(trustedHtml);
-      case ResolvedTag tag -> {
+      case ViewSnapshot.Group group -> group.children().forEach(child -> writeNode(child, out));
+      case ViewSnapshot.Effect _ -> throw new IllegalStateException("Effect in a document tree");
+      case Text(var content) -> out.append(Encode.forHtmlContent(content));
+      case Raw(var trustedHtml) -> out.append(trustedHtml);
+      case Tag tag -> {
         out.append('<').append(tag.tag().tagName());
         for (var attr : tag.attributes().entrySet()) {
           var value = attr.getValue();

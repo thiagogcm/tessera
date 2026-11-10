@@ -25,6 +25,7 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.support.RenderedPage;
+import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;

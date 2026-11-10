@@ -2,18 +2,83 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 
-/// Compiler-facing: the stylesheet of one page or site. The compiler registers each element's
-/// typed styles and each id scope, receiving the class names or scope keys to emit, and
-/// identical rules are deduplicated. [#render(Theme)] writes the layers in the order `reset, base,
-/// theme, components, utilities, interactive, container`.
+/// Compiler-facing: the stylesheet of one page, site or live render. The compiler registers each
+/// element's typed styles and each id scope, receiving the class names or scope keys to emit,
+/// and identical rules are deduplicated. [#render(Theme)] writes a document stylesheet with the
+/// layers in the order `reset, base, theme, components, utilities, interactive, container`.
+///
+/// A live backend that mounts views inside a host page uses the embedded output instead: it
+/// declares [#LAYER_ORDER] once, inserts [#embeddedBaseRules(Theme)] once per mounted root and
+/// each render's [#embeddedRules()], and marks the root's host element with [#ROOT_ATTRIBUTE] and
+/// [#THEME_ATTRIBUTE]. Embedded rules apply beneath that host rather than to `:root` and `body`,
+/// so mounting never restyles the rest of the page. Both outputs are written from the same
+/// registered rules and the same reset and base rules, which take the root they apply beneath.
 public final class StyleSheet {
+
+  /// Backend-facing: the attribute marking the host element of an embedded root; the embedded
+  /// reset and base rules apply beneath it.
+  public static final String ROOT_ATTRIBUTE = "data-tessera-root";
+
+  /// Backend-facing: the attribute selecting an embedded host's token values; its value is
+  /// [#themeKey(Theme)].
+  public static final String THEME_ATTRIBUTE = "data-tessera-theme";
+
+  /// Backend-facing: the cascade layer order statement. An embedder keeps it ahead of every
+  /// layered rule it inserts.
+  public static final String LAYER_ORDER =
+      "@layer reset, base, theme, components, utilities, interactive, container;";
+
+  private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
+
+  /// Backend-facing: one self-contained rule of the embedded output. Its `key` is short and
+  /// identifies the rule's text, so an embedder can keep the text it built for a key, compare
+  /// renders by key and build [#css()] only for rules it does not hold.
+  public static final class EmbeddedRule {
+    private final String key;
+    private final @Nullable String layer;
+    // The rule is prefix + body + suffix, joined only when its text is needed.
+    private final String prefix;
+    private final String body;
+    private final String suffix;
+
+    private EmbeddedRule(String key, @Nullable String layer, String rule) {
+      this(key, layer, "", rule, "");
+    }
+
+    private EmbeddedRule(
+        String key, @Nullable String layer, String prefix, String body, String suffix) {
+      this.key = key;
+      this.layer = layer;
+      this.prefix = prefix;
+      this.body = body;
+      this.suffix = suffix;
+    }
+
+    /// The short key identifying this rule's text: a class name for element rules, and a
+    /// selector, property name or the rule itself for the others.
+    public String key() {
+      return key;
+    }
+
+    /// The rule wrapped in its cascade layer; built on each call.
+    public String css() {
+      var rule = prefix + body + suffix;
+      return layer == null ? rule : "@layer " + layer + "{" + rule + "}";
+    }
+
+    private void appendRule(StringBuilder into) {
+      into.append(prefix).append(body).append(suffix);
+    }
+  }
 
   private final Map<String, String> utilityRules = new LinkedHashMap<>();
   private final Map<String, String> interactiveRules = new LinkedHashMap<>();
@@ -21,6 +86,7 @@ public final class StyleSheet {
   private final Map<String, String> scopeBodies = new LinkedHashMap<>();
   private final Set<Keyframes> keyframes = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
+  private final Set<String> liveProperties = new LinkedHashSet<>();
 
   /// Creates an empty stylesheet.
   public StyleSheet() {}
@@ -72,10 +138,10 @@ public final class StyleSheet {
     return utilClass;
   }
 
-  /// Compiler-facing: registers the styles of a scope of `scopeName`, which `configure` writes into
-  /// a fresh [ScopeStyle], and returns its `data-scope` value, `<scopeName>-<hash>`. Identical
+  /// Compiler-facing: registers the styles of a scope named `scopeName`, which `configure` writes
+  /// into a fresh [ScopeStyle], and returns its `data-scope` value, `<scopeName>-<hash>`. Identical
   /// scopes share one `@scope` block, and stylesheets from different pages merge without
-  /// conflicts. A scope without scoped styles keeps the bare (sanitized) type as its scope
+  /// conflicts. A scope without scoped styles keeps the bare (sanitized) name as its scope
   /// boundary. Throws IllegalArgumentException if `scopeName` is empty.
   public String registerScope(String scopeName, ScopeBlock configure) {
     var safeType = Fnv1a64.sanitizeIdentifier(scopeName);
@@ -99,6 +165,17 @@ public final class StyleSheet {
     transitionClasses.add(transitionClass);
   }
 
+  /// Backend-facing: writes into `into` the declarations a live backend registers for an
+  /// element's `live` styles. Each plain declaration of `live` reads its value from a
+  /// `--tl-<property>` custom property, so the written declarations, and the rule registered for
+  /// them, stay the same however the values change. `values` receives every custom property the
+  /// backend sets on the element, with its current value: the generated ones and `live`'s own
+  /// custom properties. Embedded output declares the generated properties non-inheriting, so
+  /// changing one restyles only its element.
+  public void registerLive(Declarations live, Map<String, String> values, Declarations into) {
+    live.writeLiveShape(into, values, liveProperties::add);
+  }
+
   /// Compiler-facing: merges another stylesheet's rules into this one, keeping first-registration
   /// order.
   public void mergeFrom(StyleSheet other) {
@@ -108,77 +185,169 @@ public final class StyleSheet {
     other.scopeBodies.forEach(scopeBodies::putIfAbsent);
     keyframes.addAll(other.keyframes);
     transitionClasses.addAll(other.transitionClasses);
+    liveProperties.addAll(other.liveProperties);
   }
-
-  private static final String LAYER_ORDER =
-      "@layer reset, base, theme, components, utilities, interactive, container;\n";
-
-  private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
 
   /// Compiler-facing: renders the complete stylesheet, with `theme`'s tokens as the `:root`
   /// custom properties in `@layer theme`.
   public String render(Theme theme) {
+    // The base layer opens with fixed rules; the others are emitted only when they have rules.
+    var base = new StringBuilder();
+    var layers = new LinkedHashMap<String, StringBuilder>();
+    for (var layer : List.of("components", "utilities", "interactive", "container")) {
+      layers.put(layer, new StringBuilder());
+    }
+    // A document declares no live properties, so it has no unlayered rules.
+    registeredRules(
+        rule -> {
+          var layer = rule.layer;
+          if (layer != null) {
+            rule.appendRule(
+                layer.equals("base") ? base : Objects.requireNonNull(layers.get(layer)));
+          }
+        });
+
     var sb = new StringBuilder(2048);
-    sb.append(LAYER_ORDER);
-
-    sb.append(
-        "@layer reset{"
-            + "*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}"
-            + ":root{interpolate-size:allow-keywords;color-scheme:light dark;"
-            + "scrollbar-gutter:stable}"
-            + "img,svg,video{max-inline-size:100%;block-size:auto}"
-            + "}\n");
-
+    sb.append(LAYER_ORDER).append('\n');
+    sb.append("@layer reset{").append(resetRules(null)).append("}\n");
     sb.append("@layer base{")
         .append(MOTION_SAFE)
         .append("@view-transition{navigation:auto}")
         .append("::view-transition-old(root),::view-transition-new(root){animation-duration:0.2s}");
     transitionClasses.forEach(cls -> sb.append(transitionGroupRule(cls)));
-    sb.append('}')
-        .append(
-            "body{font-family:var(--font-body);font-size:var(--font-size-md);"
-                + "background:var(--surface-canvas);color:var(--text-primary);line-height:var(--line-height-body)}"
-                + "button,input,select,textarea{font-family:inherit}"
-                + "dialog{margin:auto;overscroll-behavior:contain}");
-    keyframes.forEach(rule -> sb.append(rule.rule()));
-    sb.append("}\n");
-
+    sb.append('}').append(baseRules(null)).append(base).append("}\n");
     sb.append("@layer theme{:root{").append(tokenDeclarations(theme)).append("}}\n");
-
-    if (!scopeBodies.isEmpty()) {
-      sb.append("@layer components{");
-      for (var entry : scopeBodies.entrySet()) {
-        sb.append("@scope ([data-scope=\"")
-            .append(entry.getKey())
-            .append("\"]) to (:scope [data-scope] > *){")
-            .append(entry.getValue())
-            .append('}');
-      }
-      sb.append("}\n");
-    }
-
-    appendLayer(sb, "utilities", utilityRules.values());
-
-    appendLayer(sb, "interactive", interactiveRules.values());
-
-    appendLayer(sb, "container", containerRules.values());
-
+    layers.forEach(
+        (layer, rules) -> {
+          if (!rules.isEmpty()) {
+            sb.append("@layer ").append(layer).append('{').append(rules).append("}\n");
+          }
+        });
     return sb.toString();
   }
 
-  private static void appendLayer(StringBuilder sb, String layer, Collection<String> rules) {
-    if (rules.isEmpty()) {
-      return;
+  /// Backend-facing: the reset, base and theme rules of a root embedded in a host page rather
+  /// than of a whole document, one rule per entry. They depend only on `theme`, so an embedder
+  /// inserts them once per mounted root, after [#LAYER_ORDER] and alongside each render's
+  /// [#embeddedRules()]. They select [#ROOT_ATTRIBUTE] and [#THEME_ATTRIBUTE] hosts instead of
+  /// `:root` and `body`.
+  public static List<String> embeddedBaseRules(Theme theme) {
+    var host = "[" + ROOT_ATTRIBUTE + "]";
+    var declarations = tokenDeclarations(theme);
+    return List.of(
+        "@layer reset{" + resetRules(host) + "}",
+        "@layer base{" + baseRules(host) + "}",
+        "@layer theme{["
+            + THEME_ATTRIBUTE
+            + "=\""
+            + themeKey(declarations)
+            + "\"]{"
+            + declarations
+            + "}}");
+  }
+
+  /// Backend-facing: the rules registered here, for a root embedded with
+  /// [#embeddedBaseRules(Theme)]. Each entry is one self-contained rule wrapped in its layer, so
+  /// an embedder can insert, deduplicate and retain them individually across renders and roots.
+  /// Cross-document navigation transitions are omitted; live property registrations come as
+  /// `@property` rules.
+  public List<EmbeddedRule> embeddedRules() {
+    var rules = new ArrayList<EmbeddedRule>();
+    for (var cls : transitionClasses) {
+      rules.add(
+          new EmbeddedRule(
+              "::view-transition-group(*." + cls + ")",
+              "base",
+              MOTION_SAFE,
+              transitionGroupRule(cls),
+              "}"));
     }
-    sb.append("@layer ").append(layer).append('{');
-    rules.forEach(sb::append);
-    sb.append("}\n");
+    registeredRules(rules::add);
+    return rules;
+  }
+
+  /// Every rule registered here except transition timings, which each output places itself, in
+  /// emission order: keyframes, live property registrations (unlayered), then the component,
+  /// utility, interactive and container rules.
+  private void registeredRules(Consumer<EmbeddedRule> sink) {
+    keyframes.forEach(rule -> sink.accept(new EmbeddedRule(rule.rule(), "base", rule.rule())));
+    liveProperties.forEach(
+        name ->
+            sink.accept(
+                new EmbeddedRule(name, null, "@property ", name, "{syntax:\"*\";inherits:false}")));
+    scopeBodies.forEach(
+        (key, body) -> {
+          var selector = "[data-scope=\"" + key + "\"]";
+          sink.accept(
+              new EmbeddedRule(
+                  selector,
+                  "components",
+                  "@scope (" + selector + ") to (:scope [data-scope] > *){",
+                  body,
+                  "}"));
+        });
+    utilityRules.forEach((key, rule) -> sink.accept(new EmbeddedRule(key, "utilities", rule)));
+    interactiveRules.forEach(
+        (key, rule) -> sink.accept(new EmbeddedRule(key, "interactive", rule)));
+    containerRules.forEach((key, rule) -> sink.accept(new EmbeddedRule(key, "container", rule)));
+  }
+
+  /// The reset rules beneath `host`, an embedded root's selector, or of the whole document when
+  /// `host` is null.
+  private static String resetRules(@Nullable String host) {
+    var root =
+        host == null
+            ? ":root{interpolate-size:allow-keywords;color-scheme:light dark;"
+                + "scrollbar-gutter:stable}"
+            : host + "{interpolate-size:allow-keywords;color-scheme:light dark}";
+    var boxes =
+        within(host, "*")
+            + ","
+            + within(host, "*::before")
+            + ","
+            + within(host, "*::after")
+            + "{box-sizing:border-box;margin:0;padding:0}";
+    var media = within(host, "img,svg,video") + "{max-inline-size:100%;block-size:auto}";
+    // The rules set disjoint properties, so their order, kept from each output's history, does not
+    // affect the cascade.
+    return host == null ? boxes + root + media : root + boxes + media;
+  }
+
+  /// The base rules beneath `host`, an embedded root's selector, or of the whole document when
+  /// `host` is null.
+  private static String baseRules(@Nullable String host) {
+    return (host == null ? "body" : host)
+        + "{font-family:var(--font-body);font-size:var(--font-size-md);"
+        + "background:var(--surface-canvas);color:var(--text-primary);"
+        + "line-height:var(--line-height-body)}"
+        + within(host, "button,input,select,textarea")
+        + "{font-family:inherit}"
+        + within(host, "dialog")
+        + "{margin:auto;overscroll-behavior:contain}";
+  }
+
+  /// `selectors` as they apply beneath `host`, or as given for a whole document.
+  private static String within(@Nullable String host, String selectors) {
+    if (host == null) {
+      return selectors;
+    }
+    return host + " " + (selectors.indexOf(',') < 0 ? selectors : ":is(" + selectors + ")");
   }
 
   private static String transitionGroupRule(String transitionClass) {
     return "::view-transition-group(*."
         + transitionClass
         + "){animation-duration:0.35s;animation-timing-function:cubic-bezier(0.2,0,0,1)}";
+  }
+
+  /// Backend-facing: a content-addressed key of `theme`'s values, the [#THEME_ATTRIBUTE] value
+  /// of an embedded host. Equal themes have equal keys.
+  public static String themeKey(Theme theme) {
+    return themeKey(tokenDeclarations(theme));
+  }
+
+  private static String themeKey(String declarations) {
+    return "t-" + Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, declarations));
   }
 
   private static String tokenDeclarations(Theme theme) {

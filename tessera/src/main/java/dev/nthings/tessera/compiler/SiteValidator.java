@@ -1,6 +1,8 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.view.Diagnostic;
+import dev.nthings.tessera.view.Location;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

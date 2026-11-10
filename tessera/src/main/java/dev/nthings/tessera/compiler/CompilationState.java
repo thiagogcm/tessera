@@ -1,6 +1,9 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.view.Diagnostic;
+import dev.nthings.tessera.view.Location;
+import dev.nthings.tessera.view.ViewExpansion;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -8,29 +11,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/// The linked page's identities, transitions and diagnostics, annotated with its title.
-/// Expansion hands over its results before validation starts.
+/// What one page validates and publishes, once its expansion is linked: its DOM ids and
+/// transitions, outgoing links and diagnostics.
 final class CompilationState {
   final Set<String> registeredDomIds;
   final Set<String> ambiguousDomIds;
   final Map<TransitionKey, Location> transitionLocations;
+  final Map<String, Location> outgoingLinks = new LinkedHashMap<>();
   final List<Diagnostic> diagnostics = new ArrayList<>();
   private final String pageTitle;
 
-  CompilationState(String pageTitle, ExpansionState expansion) {
+  /// Starts from a linked expansion: its identities, transitions and diagnostics.
+  CompilationState(String pageTitle, ViewExpansion expansion) {
     this.pageTitle = pageTitle;
-    registeredDomIds = expansion.ids();
-    ambiguousDomIds = expansion.ambiguousIds();
+    this.registeredDomIds = Collections.unmodifiableSet(expansion.ids());
+    this.ambiguousDomIds = Collections.unmodifiableSet(expansion.ambiguousIds());
     var transitions = new LinkedHashMap<TransitionKey, Location>();
     expansion.transitions().forEach((key, location) -> transitions.put(key, location(location)));
-    transitionLocations = Collections.unmodifiableMap(transitions);
+    this.transitionLocations = Collections.unmodifiableMap(transitions);
     for (var diagnostic : expansion.diagnostics()) {
       diagnostics.add(diagnostic.atPage(pageTitle));
     }
   }
 
-  Location location(Location location) {
-    return location.atPage(pageTitle);
+  Location location(Location view) {
+    return view.atPage(pageTitle);
   }
 
   void report(Location location, String rule, String message, String suggestion) {

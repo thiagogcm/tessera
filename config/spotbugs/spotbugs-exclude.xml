@@ -6,7 +6,6 @@
 
     <!-- Ignore internal representation exposure on immutable records and builder components -->
     <Match>
-        <Package name="~dev\.nthings\.tessera\..*"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
@@ -18,7 +17,7 @@
 
     <!-- Preserve callback exception types after attaching component context. -->
     <Match>
-        <Class name="dev.nthings.tessera.compiler.Expansion"/>
+        <Class name="dev.nthings.tessera.view.ViewExpansion"/>
         <Method name="callback"/>
         <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION"/>
     </Match>

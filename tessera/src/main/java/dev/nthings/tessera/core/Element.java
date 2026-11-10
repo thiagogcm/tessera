@@ -10,9 +10,10 @@ public sealed interface Element extends IntoElement
         DeferredElement,
         LateElement,
         EmptyElement,
+        EffectElement,
+        KeyedElement,
         ComponentElement,
-        ScopeElement,
-        KeyedElement {
+        ScopeElement {
 
   @Override
   default Element intoElement() {

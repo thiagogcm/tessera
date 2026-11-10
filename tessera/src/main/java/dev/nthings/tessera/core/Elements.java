@@ -4,8 +4,8 @@ import java.util.function.Function;
 
 /// Static factories for element trees, usually imported statically. Most [HtmlTag] values have a
 /// factory returning a mutable [TagElement]; tags without one, such as `time`, are built with
-/// [#el(TagName)]. Also [#fragment()], and [#text], [#custom], [#rawHtml], [#empty], [#deferred]
-/// and [#late], which return a plain [Element].
+/// [#el(TagName)]. Also [#fragment()], and [#text], [#custom], [#rawHtml], [#empty], [#deferred],
+/// [#late] and [#effect], which return a plain [Element].
 public final class Elements {
 
   private Elements() {}
@@ -391,6 +391,19 @@ public final class Elements {
   /// contributions.
   public static Element late(Function<DocumentContext, ? extends IntoElement> content) {
     return new LateElement(content);
+  }
+
+  /// Places `effect` at this position of a live tree, keyed by `key` like
+  /// [IntoElement#key(String)]. A browser mount starts it after the first commit that contains it
+  /// and keeps it running while later renders place an effect with the same `key` here; a
+  /// different key disposes it and starts the new one, so the key names the effect's
+  /// dependencies. Removing it, or closing the root, disposes it. The effect emits no markup. The
+  /// key shares its parent's sibling namespace with keyed children, so it must differ from every
+  /// other effect and keyed sibling of that parent (`duplicate-key`). Static compilation reports
+  /// `native-effect`, since a document has no lifetime to bind it to. Throws
+  /// IllegalArgumentException if `key` is blank.
+  public static Element effect(String key, Effect effect) {
+    return new EffectElement(effect).key(key);
   }
 
   public static TagElement link() {

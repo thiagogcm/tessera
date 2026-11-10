@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tessera Web Image</title>
+  <script defer src="bootstrap.js"></script>
+</head>
+<body>
+  <!-- Each host declares the launcher of its compiled entry and the view that entry mounts. -->
+  <div id="broken" data-tessera-entry="tessera-demo.js"><p>Fallback content for a root that fails to render.</p></div>
+  <div id="app" data-tessera-entry="tessera-demo.js"><p>The Java browser application has not started.</p></div>
+  <div id="secondary" data-tessera-entry="tessera-demo.js"></div>
+  <div id="list" data-tessera-entry="tessera-demo.js"></div>
+  <div id="controls" data-tessera-entry="tessera-demo.js"></div>
+  <div id="schedule" data-tessera-entry="tessera-demo.js"></div>
+  <div id="schedule-control" data-tessera-entry="tessera-demo.js"></div>
+  <div id="lifetime" data-tessera-entry="tessera-demo.js"></div>
+  <div id="lifetime-control" data-tessera-entry="tessera-demo.js"></div>
+  <div id="events" data-tessera-entry="tessera-demo.js"></div>
+  <div id="services" data-tessera-entry="tessera-demo.js"></div>
+  <div id="collisions" data-tessera-entry="tessera-demo.js"></div>
+  <div id="second" data-tessera-entry="tessera-second.js" data-tessera-view="counter"><p>The second entry has not started.</p></div>
+  <p id="error" role="alert" hidden></p>
+</body>
+</html>

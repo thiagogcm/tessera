@@ -4,7 +4,7 @@ Tessera compiles Java components into HTML, CSS, and static assets. It provides 
 
 Use it to generate documentation, content sites, or HTML in a Java application. The compiler checks element references, local site links, and accessibility rules before returning output. Components use native browser controls and contribute JavaScript modules when they need filtering, tab selection, or tooltip support.
 
-Tessera requires **JDK 25** and targets current stable **Chromium and Firefox**. See [browser support](docs/browser-support.md) for the feature contract and its limits. Browser rendering from Java through WebAssembly is [planned work](docs/roadmap.md).
+Tessera requires **JDK 25** and targets current stable **Chromium and Firefox**. See [browser support](docs/browser-support.md) for the feature contract and its limits. The opt-in [experimental browser backend](docs/browser-rendering.md) runs Java views through WebAssembly.
 
 ## Try it
 
@@ -46,9 +46,10 @@ This Java 25 source file prints a complete HTML document with its stylesheet emb
 | Define routes, assets, navigation, search, and hosting | [Sites](docs/sites.md) |
 | Read compiler errors and trace elements to Java source | [Diagnostics](docs/diagnostics.md) |
 | Call the Java API from Kotlin | [Kotlin](docs/kotlin.md) |
+| Run Java views in the browser | [Browser rendering](docs/browser-rendering.md) |
 | Check browser requirements and script behavior | [Browser support](docs/browser-support.md) |
 | Build, test, and contribute | [Development](docs/development.md) |
-| Understand package boundaries and the compiler | [Architecture](docs/architecture.md) |
+| Understand package boundaries and rendering | [Architecture](docs/architecture.md), [compiler](docs/compiler.md), and [browser internals](docs/browser-internals.md) |
 | Review proposed browser rendering and acceptance gates | [Browser architecture proposal](docs/architecture-redesign.md) and [roadmap](docs/roadmap.md) |
 
 ## License

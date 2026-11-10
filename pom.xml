@@ -35,6 +35,16 @@
         <module>tessera-showcase</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>wasm</id>
+            <modules>
+                <module>tessera-wasm</module>
+                <module>tessera-wasm-showcase</module>
+            </modules>
+        </profile>
+    </profiles>
+
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <maven.compiler.source>25</maven.compiler.source>

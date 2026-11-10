@@ -3,13 +3,11 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
-import java.util.LinkedHashMap;
+import dev.nthings.tessera.view.ViewValidation;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-/// The page phases: [#prepare] expands, links and validates, [#emit] writes HTML. [Compiler] runs
-/// both for one page; [SiteCompiler] validates every page before emitting any.
+/// The page phases: [#prepare] lays out and validates, [#emit] writes HTML. [Compiler] runs both
+/// for one page; [SiteCompiler] validates every page before emitting any.
 final class PageCompiler {
   private PageCompiler() {}
 
@@ -31,8 +29,10 @@ final class PageCompiler {
     var headNodes = layout.headNodes();
 
     var links =
-        PageValidator.validate(
-            bodyNodes, headNodes, state.registeredDomIds, state.ambiguousDomIds, state::report);
+        ViewValidation.check(
+                bodyNodes, headNodes, state.registeredDomIds, state.ambiguousDomIds, state::report)
+            .checkDocument(bodyNodes, headNodes);
+    links.forEach((url, location) -> state.outgoingLinks.put(url, state.location(location)));
     if (!state.diagnostics.isEmpty()) {
       throw new CompilationException(state.diagnostics);
     }
@@ -42,13 +42,7 @@ final class PageCompiler {
         styles,
         bodyNodes,
         state.registeredDomIds,
-        links.entrySet().stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> state.location(entry.getValue()),
-                    (first, _) -> first,
-                    LinkedHashMap::new)),
+        state.outgoingLinks,
         state.transitionLocations,
         headNodes,
         layout.headings(),

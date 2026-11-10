@@ -1,12 +1,16 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.core.BrowserEvent;
 import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.EventListener;
+import dev.nthings.tessera.core.EventOptions;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
@@ -26,6 +30,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   @Nullable ElementRef commandTarget;
   @Nullable Command command;
   @Nullable UnaryOperator<TagElement> tooltip;
+  /// Replayed in order onto the button, whose own map keeps the last listener per key.
+  final List<EventListener> events = new ArrayList<>();
 
   ButtonBase(Tone tone, Button.Variant variant) {
     this.tone = tone;
@@ -67,6 +73,27 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     this.commandTarget = target;
     this.command = command;
     return self();
+  }
+
+  /// Runs `handler` synchronously when the browser dispatches `event` to the `<button>` in a live
+  /// backend, as [TagElement#onEvent(String, Consumer)] does. Static compilation reports
+  /// `native-event-handlers`.
+  public B onEvent(String event, Consumer<BrowserEvent> handler) {
+    return onEvent(event, EventOptions.DEFAULT, handler);
+  }
+
+  /// Runs `handler` for `event` with native listener `options`, as
+  /// [TagElement#onEvent(String, EventOptions, Consumer)] does.
+  public B onEvent(String event, EventOptions options, Consumer<BrowserEvent> handler) {
+    events.add(new EventListener(event, options, handler));
+    return self();
+  }
+
+  /// Runs `handler` synchronously when the button is clicked in a live backend, within the click's
+  /// user activation, so it may open a modal dialog. Static compilation reports
+  /// `native-event-handlers`.
+  public B onClick(Runnable handler) {
+    return onEvent("click", _ -> handler.run());
   }
 
   /// Binds `ref` to the `<button>` element, so other elements can reference it. The ref binds in

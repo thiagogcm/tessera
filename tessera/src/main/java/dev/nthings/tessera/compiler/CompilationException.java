@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.stream.Collectors;
 

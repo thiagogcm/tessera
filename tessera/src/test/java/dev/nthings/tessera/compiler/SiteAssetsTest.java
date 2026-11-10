@@ -11,6 +11,7 @@ import static dev.nthings.tessera.support.SiteFixtures.logo;
 import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
 
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

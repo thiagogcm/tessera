@@ -15,8 +15,20 @@ class ProseTest {
   @DisplayName("applies the custom measure as max-inline-size on the canvas")
   void appliesCustomMeasure() {
     var page = renderMain(Prose.of(p().text("Text")).maxMeasure(CssLength.ch(60)));
+    var canvas = page.element(".prose-canvas");
 
-    assertThat(page.elements(".prose-canvas > p")).isNotEmpty();
-    assertThat(page.css()).contains("max-inline-size:60ch");
+    assertThat(page.elements(".prose-canvas > p")).hasSize(1);
+    assertThat(page.element(".prose-canvas > p")).hasText("Text");
+    assertThat(page.scopeBody(canvas))
+        .contains("max-inline-size:60ch")
+        .doesNotContain("max-inline-size:75ch");
+  }
+
+  @Test
+  @DisplayName("defaults to a 75ch measure")
+  void defaultsTo75ch() {
+    var page = renderMain(Prose.of(p().text("Text")));
+
+    assertThat(page.scopeBody(page.element(".prose-canvas"))).contains("max-inline-size:75ch");
   }
 }

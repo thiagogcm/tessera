@@ -7,6 +7,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,9 +32,17 @@ class PageScriptTest {
   @Test
   @DisplayName("an inline script is emitted once per page")
   void emitsInlineScriptOnce() {
-    var page = Compiler.compile(page(BEHAVIOR, BEHAVIOR));
+    var duplicate =
+        new PageScript(
+            "test-widget", "customElements.define('other-widget', class extends HTMLElement {});");
+    var page = Compiler.compile(page(BEHAVIOR, duplicate));
+    var rendered = RenderedPage.of(page);
 
-    assertThat(page.html()).containsOnlyOnce("customElements.define");
+    var script = rendered.element("head > script[type=module]");
+    assertThat(rendered.elements("head > script[type=module]")).hasSize(1);
+    assertThat(script).doesNotHaveAttribute("src");
+    assertThat(script.data().strip()).isEqualTo(BEHAVIOR.module());
+    assertThat(rendered.html()).doesNotContain(duplicate.module());
     assertThat(page.assets()).isEmpty();
   }
 
@@ -41,11 +50,16 @@ class PageScriptTest {
   @DisplayName("an external script becomes an asset referenced by the page")
   void publishesExternalScriptAsset() {
     var page = Compiler.compile(page(BEHAVIOR), Theme.defaults(), OutputMode.external("/assets"));
+    var rendered = RenderedPage.of(page);
 
-    var asset = page.assets().getLast();
     assertThat(page.assets()).hasSize(2);
-    assertThat(asset.path()).startsWith("/assets/scripts/test-widget-").endsWith(".js");
-    assertThat(asset.textContent()).isEqualTo(BEHAVIOR.module());
-    assertThat(page.html()).contains("src=\"" + asset.path() + "\"");
+    assertThat(page.assets().getFirst().path()).startsWith("/assets/styles-").endsWith(".css");
+    var script = page.assets().getLast();
+    assertThat(script.path()).startsWith("/assets/scripts/test-widget-").endsWith(".js");
+    assertThat(script.contentType()).isEqualTo("text/javascript; charset=utf-8");
+    assertThat(script.textContent()).isEqualTo(BEHAVIOR.module());
+    assertThat(rendered.elements("head > script[type=module]")).hasSize(1);
+    assertThat(rendered.element("head > script[type=module]")).hasAttribute("src", script.path());
+    assertThat(rendered.elements("head > script:not([src])")).isEmpty();
   }
 }

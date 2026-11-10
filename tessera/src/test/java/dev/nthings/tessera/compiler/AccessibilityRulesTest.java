@@ -10,8 +10,6 @@ import static dev.nthings.tessera.core.Elements.img;
 import static dev.nthings.tessera.core.Elements.late;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatCode;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
@@ -26,6 +24,7 @@ import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.support.RenderedPage;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -43,17 +42,26 @@ class AccessibilityRulesTest {
         argumentSet(
             "button without text content",
             new PageDocument("Invalid Button", div().child(button())),
-            "must have text content"),
+            "interactive-label",
+            "Interactive <button> element must have text content or an aria-label / aria-labelledby / title attribute",
+            "Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.",
+            "button"),
         argumentSet(
             "decorative image without role=presentation",
             new PageDocument("Invalid Img", div().child(img("/deco.svg", "").dimensions(1, 1))),
-            "role=\"presentation\""),
+            "decorative-image",
+            "Decorative <img> with empty alt=\"\" must declare role=\"presentation\" or aria-hidden=\"true\"",
+            "Add role=\"presentation\" or aria-hidden=\"true\", or provide descriptive alt text.",
+            "img"),
         argumentSet(
             "image with neither dimensions nor aspect-ratio",
             new PageDocument(
                 "CLS Violation",
                 main().child(img("/banner.jpg", "Banner without width/height or aspect-ratio"))),
-            "aspect-ratio"));
+            "image-dimensions",
+            "<img> element with src=\"/banner.jpg\" must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio' to prevent Cumulative Layout Shift (CLS)",
+            "Set .dimensions(width, height) or a CSS aspect-ratio to reserve the image's layout space.",
+            "img"));
   }
 
   record Panel(String id, Element content) implements Scope {
@@ -185,7 +193,18 @@ class AccessibilityRulesTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(d -> assertThat(d.rule()).isEqualTo("unbound-reference"));
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("unbound-reference");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "<button aria-labelledby> references ElementRef.scoped(save-label), which is not bound to any element on this page");
+              assertThat(d.fix())
+                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+              assertThat(d.location().page()).isEqualTo("Editor");
+              assertThat(d.location().tag()).isEqualTo("button");
+              assertThat(d.location().domId()).isNull();
+            });
   }
 
   @ParameterizedTest
@@ -204,12 +223,30 @@ class AccessibilityRulesTest {
                             .children(
                                 button().command(target.ref(), command).text("Run"), target))));
 
+    var requirement =
+        switch (command.target()) {
+          case DIALOG -> "a <dialog> element";
+          case POPOVER -> "an element with a popover attribute";
+        };
     assertThat(failure.diagnostics())
         .singleElement()
         .satisfies(
             d -> {
               assertThat(d.rule()).isEqualTo("incompatible-command-target");
-              assertThat(d.message()).contains(command.wireValue(), "<div>", "target");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "Command \""
+                          + command.wireValue()
+                          + "\" targets <div> with ID \"target\" but requires "
+                          + requirement);
+              assertThat(d.fix())
+                  .isEqualTo(
+                      "Point this command at "
+                          + requirement
+                          + ", or choose a command compatible with the target.");
+              assertThat(d.location().page()).isEqualTo("Commands");
+              assertThat(d.location().tag()).isEqualTo("button");
+              assertThat(d.location().domId()).isNull();
             });
 
     var compatible =
@@ -219,53 +256,89 @@ class AccessibilityRulesTest {
           case SHOW_POPOVER, HIDE_POPOVER, TOGGLE_POPOVER ->
               div().id(ElementRef.scoped("target")).popover(PopoverMode.AUTO);
         };
-    assertThatCode(
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Commands",
-                        main()
-                            .children(
-                                button().command(compatible.ref(), command).text("Run"),
-                                deferred(compatible, 10)))))
-        .doesNotThrowAnyException();
+    var page =
+        RenderedPage.of(
+            new PageDocument(
+                "Commands",
+                main()
+                    .children(
+                        button().command(compatible.ref(), command).text("Run"),
+                        deferred(compatible, 10))));
+
+    assertThat(page.element("main > button"))
+        .hasAttribute("commandfor", "target")
+        .hasAttribute("command", command.wireValue())
+        .hasText("Run");
+    var renderedTarget = page.elementById("target");
+    switch (command.target()) {
+      case DIALOG ->
+          assertThat(renderedTarget).hasTagName("dialog").hasAttribute("aria-label", "Target");
+      case POPOVER -> assertThat(renderedTarget).hasTagName("div").hasAttribute("popover", "auto");
+    }
   }
 
   @ParameterizedTest
   @MethodSource("violations")
-  @DisplayName("rejects unlabeled buttons and underspecified images")
-  void rejectsInvalidMarkup(PageDocument document, String message) {
-    assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(() -> Compiler.compile(document))
-        .withMessageContaining(message);
+  @DisplayName("rejects invalid markup with its rule, remedy, and location")
+  void rejectsInvalidMarkup(
+      PageDocument document, String rule, String message, String fix, String tag) {
+    var failure =
+        catchThrowableOfType(CompilationException.class, () -> Compiler.compile(document));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo(rule);
+              assertThat(d.message()).isEqualTo(message);
+              assertThat(d.fix()).isEqualTo(fix);
+              assertThat(d.location().page()).isEqualTo(document.title());
+              assertThat(d.location().components()).isEmpty();
+              assertThat(d.location().tag()).isEqualTo(tag);
+              assertThat(d.location().domId()).isNull();
+            });
   }
 
   @Test
   @DisplayName("accepts decorative images and links labelled by aria-label")
   void acceptsDecorativeImagesAndLabels() {
-    var document =
-        new PageDocument(
-            "Valid A11y",
-            div()
-                .children(
-                    img("/deco.svg", "").role(Role.PRESENTATION).dimensions(100, 100),
-                    a("/home")
-                        .ariaLabel("Home page")
-                        .child(new TagElement(HtmlTag.SPAN).ariaHidden(true))));
+    var page =
+        RenderedPage.of(
+            new PageDocument(
+                "Valid A11y",
+                div()
+                    .children(
+                        img("/deco.svg", "").role(Role.PRESENTATION).dimensions(100, 100),
+                        a("/home")
+                            .ariaLabel("Home page")
+                            .child(new TagElement(HtmlTag.SPAN).ariaHidden(true)))));
 
-    assertThatCode(() -> Compiler.compile(document)).doesNotThrowAnyException();
+    assertThat(page.element("div > img"))
+        .hasAttribute("src", "/deco.svg")
+        .hasAttribute("alt", "")
+        .hasAttribute("role", "presentation")
+        .hasAttribute("width", "100")
+        .hasAttribute("height", "100");
+    assertThat(page.element("div > a"))
+        .hasAttribute("href", "/home")
+        .hasAttribute("aria-label", "Home page");
+    assertThat(page.element("div > a > span")).hasAttribute("aria-hidden", "true");
   }
 
   @Test
   @DisplayName("percent encoded fragment links resolve without treating plus as space")
   void resolvesEncodedFragmentLinks() {
-    var document =
-        new PageDocument(
-            "Links",
-            main()
-                .id(ElementRef.page("café+intro"))
-                .child(a("#caf%C3%A9%2Bintro").text("Introduction")));
+    var page =
+        RenderedPage.of(
+            new PageDocument(
+                "Links",
+                main()
+                    .id(ElementRef.page("café+intro"))
+                    .child(a("#caf%C3%A9%2Bintro").text("Introduction"))));
 
-    assertThatCode(() -> Compiler.compile(document)).doesNotThrowAnyException();
+    assertThat(page.elementById("café+intro")).hasTagName("main");
+    assertThat(page.element("main > a"))
+        .hasAttribute("href", "#caf%C3%A9%2Bintro")
+        .hasText("Introduction");
   }
 }

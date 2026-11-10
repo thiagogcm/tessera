@@ -71,9 +71,10 @@ class ConditionalStylingTest {
     assertThat(page.ruleOf(section, "u-")).isEqualTo("padding-inline:1rem;padding-block:1rem");
     assertThat(page.ruleOf(section, "i-")).isEqualTo("&:hover:not(:where(:disabled)){opacity:0.9}");
     var cqClass = CssBlocks.generatedClass(section.className(), "cq-");
-    assertThat(page.css())
-        .contains("@layer container{@container cards (inline-size >= 30rem){." + cqClass + "{")
-        .contains("container-name:cards;container-type:inline-size");
+    assertThat(CssBlocks.block(page.css(), "@layer container{"))
+        .isEqualTo("@container cards (inline-size >= 30rem){." + cqClass + "{flex-direction:row}}");
+    assertThat(page.ruleOf(page.element("main > div"), "u-"))
+        .isEqualTo("container-name:cards;container-type:inline-size");
   }
 
   @Test
@@ -150,10 +151,11 @@ class ConditionalStylingTest {
     var rule = page.ruleOf(page.element("main p"), "i-");
 
     assertThat(CssBlocks.block(rule, MOTION_OK))
-        .contains("animation:tessera-fade-up 0.5s ease-out both")
-        .contains("animation-delay:calc((sibling-index() - 1) * 60ms)")
-        .contains("timeline-trigger:--tessera-reveal view() cover 0% cover 100%")
-        .contains("animation-trigger:--tessera-reveal play-once");
+        .isEqualTo(
+            "animation:tessera-fade-up 0.5s ease-out both;"
+                + "animation-delay:calc((sibling-index() - 1) * 60ms);"
+                + "timeline-trigger:--tessera-reveal view() cover 0% cover 100%;"
+                + "animation-trigger:--tessera-reveal play-once");
   }
 
   @Test
@@ -167,8 +169,9 @@ class ConditionalStylingTest {
     var page = renderMain(new PulseView(pulse));
 
     assertThat(page.css())
-        .contains("@keyframes pulse{from{opacity:1}50%{opacity:0.5}to{opacity:1}}")
-        .contains(":scope{" + MOTION_OK + "animation:pulse 800ms ease}");
+        .containsOnlyOnce("@keyframes pulse{from{opacity:1}50%{opacity:0.5}to{opacity:1}}");
+    assertThat(page.scopeBody(page.element("div")))
+        .isEqualTo(":scope{" + MOTION_OK + "animation:pulse 800ms ease}}");
   }
 
   @Test

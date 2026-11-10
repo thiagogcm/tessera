@@ -21,7 +21,12 @@ class CardGridTest {
             .id("feature-cards")
             .gap(CssLength.rem(1.25));
 
-    assertThat(renderMain(grid).elements("[data-scope-id^=feature-cards--]"))
+    var gridEl = renderMain(grid).element("main > section");
+
+    assertThat(gridEl.children())
+        .extracting(card -> card.tagName())
+        .containsExactly("article", "article");
+    assertThat(gridEl.children())
         .extracting(card -> card.attr("data-scope-id"))
         .containsExactly("feature-cards--architecture", "feature-cards--card-1");
   }

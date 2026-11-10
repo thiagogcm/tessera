@@ -45,6 +45,7 @@ class SitePreviewServerTest {
 
     assertThat(logo.statusCode()).isEqualTo(200);
     assertThat(logo.headers().firstValue("Content-Type")).hasValue("image/svg+xml");
+    assertThat(logo.headers().firstValue("Cache-Control")).hasValue("no-store");
     assertThat(logo.body()).isEqualTo(LOGO_CONTENT);
   }
 
@@ -53,19 +54,32 @@ class SitePreviewServerTest {
   void servesStylesheetAsCss() throws Exception {
     var stylesheet = get(stylesheetPath(site));
 
+    assertThat(stylesheet.statusCode()).isEqualTo(200);
     assertThat(stylesheet.headers().firstValue("Content-Type")).hasValue("text/css; charset=utf-8");
+    assertThat(stylesheet.headers().firstValue("Cache-Control")).hasValue("no-store");
+    assertThat(stylesheet.body()).isEqualTo(site.css());
   }
 
   @Test
   @DisplayName("serves a route at its index.html path")
   void servesRouteIndexHtml() throws Exception {
-    assertThat(get("/guide/index.html").body()).isEqualTo(site.pages().get("/guide"));
+    var response = get("/guide/index.html");
+
+    assertThat(response.statusCode()).isEqualTo(200);
+    assertThat(response.headers().firstValue("Content-Type")).hasValue("text/html; charset=utf-8");
+    assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-store");
+    assertThat(response.body()).isEqualTo(site.pages().get("/guide"));
   }
 
   @Test
   @DisplayName("answers 404 for an unknown path")
   void returns404ForUnknownPath() throws Exception {
-    assertThat(get("/missing").statusCode()).isEqualTo(404);
+    var response = get("/missing");
+
+    assertThat(response.statusCode()).isEqualTo(404);
+    assertThat(response.headers().firstValue("Content-Type")).hasValue("text/plain; charset=utf-8");
+    assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-store");
+    assertThat(response.body()).isEqualTo("404 Not Found: /missing");
   }
 
   @Test
@@ -75,6 +89,7 @@ class SitePreviewServerTest {
 
     assertThat(response.statusCode()).isEqualTo(308);
     assertThat(response.headers().firstValue("Location")).hasValue("/guide/?q=a%2Bb");
+    assertThat(response.body()).isEmpty();
     assertThat(get("/guide/?q=a%2Bb").body()).isEqualTo(site.pages().get("/guide"));
   }
 }

@@ -31,11 +31,9 @@ class FlexLayoutTest {
     var column = page.element("section");
     assertThat(column.children()).extracting(child -> child.tagName()).containsExactly("p", "p");
     assertThat(page.ruleOf(column, "u-"))
-        .contains("display:flex")
-        .contains("flex-direction:column")
-        .contains("flex-wrap:nowrap")
-        .contains("align-items:stretch")
-        .contains("gap:0.75rem");
+        .isEqualTo(
+            "display:flex;flex-direction:column;flex-wrap:nowrap;"
+                + "align-items:stretch;gap:0.75rem");
   }
 
   @Test
@@ -56,10 +54,9 @@ class FlexLayoutTest {
         .extracting(child -> child.tagName())
         .containsExactly("span", "span", "span");
     assertThat(page.ruleOf(line.child(1), "u-"))
-        .contains("display:inline-flex")
-        .contains("flex-direction:row")
-        .contains("align-items:baseline")
-        .contains("gap:0.25rem");
+        .isEqualTo(
+            "display:inline-flex;flex-direction:row;flex-wrap:nowrap;"
+                + "align-items:baseline;gap:0.25rem");
   }
 
   @Test
@@ -81,15 +78,11 @@ class FlexLayoutTest {
     var column = page.element("section");
     var panel = page.element("section > div");
     assertThat(page.ruleOf(column, "u-"))
-        .contains("display:flex")
-        .contains("flex-direction:column")
-        .contains("block-size:8rem");
+        .isEqualTo(
+            "display:flex;flex-direction:column;flex-wrap:nowrap;"
+                + "align-items:stretch;gap:0.5rem;block-size:8rem");
     assertThat(page.ruleOf(panel, "u-"))
-        .contains("flex-grow:1")
-        .contains("flex-shrink:1")
-        .contains("min-block-size:0px")
-        .contains("overflow-y:auto")
-        .doesNotContain("flex-direction");
+        .isEqualTo("overflow-y:auto;flex-grow:1;flex-shrink:1;min-block-size:0px");
   }
 
   @Test
@@ -108,11 +101,10 @@ class FlexLayoutTest {
                     nav().id(ElementRef.scoped("shared")).layout(links).child(p().text("B"))));
 
     assertThat(page.ruleOf(page.elementById("tuned"), "u-"))
-        .contains("gap:2rem")
-        .contains("display:flex")
-        .contains("flex-wrap:wrap");
+        .isEqualTo("display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2rem");
     assertThat(page.ruleOf(page.elementById("shared"), "u-"))
-        .contains("gap:var(--space-4)")
-        .doesNotContain("gap:2rem");
+        .isEqualTo(
+            "display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;"
+                + "gap:var(--space-4)");
   }
 }

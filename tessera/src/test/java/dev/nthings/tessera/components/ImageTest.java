@@ -35,6 +35,7 @@ class ImageTest {
     @Test
     @DisplayName("the hero image is preloaded from head with high priority")
     void heroIsPreloaded() {
+      assertThat(page.elements("head > link[rel=preload]")).hasSize(1);
       assertThat(page.element("head > link[rel=preload][as=image]"))
           .hasAttribute("href", "/assets/hero-banner.webp")
           .hasAttribute("fetchpriority", "high");
@@ -44,6 +45,7 @@ class ImageTest {
     @DisplayName("the hero img is high priority and has no loading attribute")
     void heroHasHighPriority() {
       assertThat(page.element("img[src='/assets/hero-banner.webp']"))
+          .hasAttribute("alt", "Hero Banner")
           .hasAttribute("fetchpriority", "high")
           .doesNotHaveAttribute("loading");
     }
@@ -52,8 +54,11 @@ class ImageTest {
     @DisplayName("non-hero images load lazily and decode asynchronously")
     void secondaryImageLoadsLazily() {
       assertThat(page.element("img[src='/assets/thumbnail.webp']"))
+          .hasAttribute("alt", "Secondary Thumbnail")
           .hasAttribute("loading", "lazy")
           .hasAttribute("decoding", "async")
+          .hasAttribute("width", "400")
+          .hasAttribute("height", "300")
           .doesNotHaveAttribute("fetchpriority");
     }
   }
@@ -74,6 +79,13 @@ class ImageTest {
                     .satisfies(
                         d -> {
                           assertThat(d.rule()).isEqualTo("duplicate-hero-image");
+                          assertThat(d.message())
+                              .isEqualTo(
+                                  "Only one hero image is allowed per page: '/hero1.webp' is"
+                                      + " already the hero, so '/hero2.webp' cannot be");
+                          assertThat(d.fix())
+                              .isEqualTo(
+                                  "Call hero() on one image per page; load the others lazily.");
                           assertThat(d.location().components()).containsExactly("Image");
                         }));
   }
@@ -91,6 +103,7 @@ class ImageTest {
         .hasAttribute("aria-hidden", "true")
         .hasAttribute("loading", "eager")
         .hasAttribute("decoding", "async")
-        .hasAttribute("width", "640");
+        .hasAttribute("width", "640")
+        .hasAttribute("height", "8");
   }
 }

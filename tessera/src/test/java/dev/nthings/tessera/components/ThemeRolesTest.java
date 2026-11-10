@@ -92,6 +92,7 @@ class ThemeRolesTest {
     assertThat(scope.substring(0, media)).doesNotContain("transform:").doesNotContain("opacity:0");
     assertThat(scope.substring(media))
         .contains("transform:scale(0.95)")
+        .contains("transform:scale(1)")
         .contains("opacity:1")
         .contains("transition-duration:var(--overlay-duration)");
 
@@ -100,7 +101,9 @@ class ThemeRolesTest {
     var motion = interactive.indexOf("@media (prefers-reduced-motion: no-preference)");
     assertThat(focus).isNotNegative();
     assertThat(motion).isGreaterThan(focus);
-    assertThat(interactive.substring(0, motion)).contains("outline:");
+    assertThat(interactive.substring(0, motion))
+        .contains("outline:")
+        .doesNotContain("transition-duration:");
     assertThat(interactive.substring(motion))
         .contains("transition-duration:var(--control-feedback-duration)");
   }

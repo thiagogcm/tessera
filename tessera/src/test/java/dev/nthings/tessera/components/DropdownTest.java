@@ -37,9 +37,10 @@ class DropdownTest {
     var trigger = page.element("button.dropdown-trigger");
     var popover = trigger.nextElementSibling();
 
-    assertThat(popover).hasAttribute("popover", "auto");
+    assertThat(popover).hasAttribute("id", "actions-menu--panel").hasAttribute("popover", "auto");
     assertThat(trigger)
-        .hasAttribute("commandfor", popover.id())
+        .hasAttribute("id", "actions-menu--trigger")
+        .hasAttribute("commandfor", "actions-menu--panel")
         .hasAttribute("command", "toggle-popover");
   }
 
@@ -48,14 +49,18 @@ class DropdownTest {
   void panelRefExposesPanel() {
     var reference = ElementRef.scoped("tools-panel");
     var dropdown =
-        Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "Scope Logs"));
+        Dropdown.of("Tools")
+            .id("tools")
+            .panelRef(reference)
+            .item(Dropdown.Item.link("/logs", "Scope Logs"));
     var outside =
         renderMain(
             dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
     var panel = outside.element("button.dropdown-trigger").nextElementSibling();
 
+    assertThat(panel).hasAttribute("id", "tools--tools-panel").hasAttribute("popover", "auto");
     assertThat(outside.element("main > button.button"))
-        .hasAttribute("commandfor", panel.id())
+        .hasAttribute("commandfor", "tools--tools-panel")
         .hasAttribute("command", "toggle-popover");
   }
 

@@ -15,7 +15,12 @@ class SiteDefinitionTest {
   @DisplayName("finds a route by its normalized path")
   void findsRouteByNormalizedPath() {
     assertThat(site.route("guide/"))
-        .hasValueSatisfying(route -> assertThat(route.path()).isEqualTo("/guide"));
+        .hasValueSatisfying(
+            route -> {
+              assertThat(route.path()).isEqualTo("/guide");
+              assertThat(route.document().title()).isEqualTo("Guide");
+              assertThat(route.displayTitle()).isEqualTo("Getting Started");
+            });
   }
 
   @Test

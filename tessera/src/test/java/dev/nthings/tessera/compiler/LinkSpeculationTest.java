@@ -12,6 +12,11 @@ import org.junit.jupiter.api.Test;
 @DisplayName("LinkSpeculation")
 class LinkSpeculationTest {
 
+  private static final String PRERENDER_RULES =
+      "{\"prerender\":[{\"where\":{\"href_matches\":\"/*\"},\"eagerness\":\"moderate\"}]}";
+  private static final String PREFETCH_RULES =
+      "{\"prefetch\":[{\"where\":{\"href_matches\":\"/*\"},\"eagerness\":\"moderate\"}]}";
+
   private final List<SiteRoute> routes =
       List.of(
           new SiteRoute("/", new PageDocument("Home", main().child(a("/b").text("B")))),
@@ -24,9 +29,22 @@ class LinkSpeculationTest {
   @Test
   @DisplayName("site pages declare same-site speculation rules by default")
   void declaresSpeculationRules() {
-    var rules = home(SiteDefinition.of(routes)).element("head > script[type=speculationrules]");
+    var page = home(SiteDefinition.of(routes));
+    var rules = page.element("head > script[type=speculationrules]");
 
-    assertThat(rules.data()).contains("\"prerender\"").contains("\"eagerness\":\"moderate\"");
+    assertThat(page.elements("head > script[type=speculationrules]")).hasSize(1);
+    assertThat(rules.data()).isEqualTo(PRERENDER_RULES);
+    assertThat(page.html()).doesNotContain("\"prefetch\"");
+  }
+
+  @Test
+  @DisplayName("PREFETCH declares prefetch rules instead of prerender")
+  void prefetchDeclaresPrefetchRules() {
+    var site =
+        SiteDefinition.builder().routes(routes).linkSpeculation(LinkSpeculation.PREFETCH).build();
+    var rules = home(site).element("head > script[type=speculationrules]");
+
+    assertThat(rules.data()).isEqualTo(PREFETCH_RULES);
   }
 
   @Test
@@ -34,7 +52,9 @@ class LinkSpeculationTest {
   void noneOmitsSpeculationRules() {
     var site =
         SiteDefinition.builder().routes(routes).linkSpeculation(LinkSpeculation.NONE).build();
+    var page = home(site);
 
-    assertThat(home(site).html()).doesNotContain("speculationrules");
+    assertThat(page.elements("head > script[type=speculationrules]")).isEmpty();
+    assertThat(page.html()).doesNotContain("speculationrules");
   }
 }

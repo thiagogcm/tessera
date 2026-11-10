@@ -2,9 +2,9 @@ package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
+import static dev.nthings.tessera.support.SiteFixtures.LOGO_CONTENT;
 import static dev.nthings.tessera.support.SiteFixtures.LOGO_PATH;
 import static dev.nthings.tessera.support.SiteFixtures.homeWithLogoAndGuide;
 import static dev.nthings.tessera.support.SiteFixtures.logo;
@@ -23,15 +23,34 @@ class SiteAssetsTest {
   void rejectsUnregisteredImageAsset() {
     var site = SiteDefinition.of(homeWithLogoAndGuide());
 
-    assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(() -> Compiler.compile(site))
-        .withMessageContaining(LOGO_PATH);
+    var failure = catchThrowableOfType(CompilationException.class, () -> Compiler.compile(site));
+
+    assertThat(failure.diagnostics())
+        .extracting(
+            Diagnostic::rule,
+            d -> d.location().route(),
+            d -> d.location().page(),
+            d -> d.location().tag(),
+            Diagnostic::message)
+        .containsExactly(
+            tuple(
+                "missing-route-or-asset",
+                "/",
+                "Home",
+                "img",
+                "Route \"/\" references unregistered internal route or asset \""
+                    + LOGO_PATH
+                    + "\""));
   }
 
   @Test
-  @DisplayName("a registered asset is published among the site's files")
+  @DisplayName("a registered asset is published with its bytes and content type")
   void publishesRegisteredAsset() {
-    assertThat(Compiler.compile(siteWithLogo()).files()).containsKey(LOGO_PATH);
+    var files = Compiler.compile(siteWithLogo()).files();
+
+    assertThat(files).containsKey(LOGO_PATH);
+    assertThat(files.get(LOGO_PATH).contentType()).isEqualTo("image/svg+xml");
+    assertThat(files.get(LOGO_PATH).textContent()).isEqualTo(LOGO_CONTENT);
   }
 
   @Test
@@ -45,11 +64,17 @@ class SiteAssetsTest {
             .build();
 
     assertThat(diagnostics(site))
-        .extracting(Diagnostic::rule, Diagnostic::message)
+        .extracting(
+            Diagnostic::rule,
+            Diagnostic::message,
+            d -> d.location().route(),
+            d -> d.location().page())
         .containsExactly(
             tuple(
                 "file-path-collision",
-                "Generated file \"/search-index.json\" has the same path as another file"));
+                "Generated file \"/search-index.json\" has the same path as another file",
+                null,
+                null));
   }
 
   @Test
@@ -62,8 +87,17 @@ class SiteAssetsTest {
             .build();
 
     assertThat(diagnostics(site))
-        .extracting(Diagnostic::rule, d -> d.location().route(), d -> d.location().page())
-        .containsExactly(tuple("file-path-collision", "/guide", "Guide"));
+        .extracting(
+            Diagnostic::rule,
+            Diagnostic::message,
+            d -> d.location().route(),
+            d -> d.location().page())
+        .containsExactly(
+            tuple(
+                "file-path-collision",
+                "File \"/guide\" has the same path as a route",
+                "/guide",
+                "Guide"));
   }
 
   @Test
@@ -73,11 +107,17 @@ class SiteAssetsTest {
         SiteDefinition.builder().routes(homeWithLogoAndGuide()).asset(logo()).asset(logo()).build();
 
     assertThat(diagnostics(site))
-        .extracting(Diagnostic::rule, Diagnostic::message)
+        .extracting(
+            Diagnostic::rule,
+            Diagnostic::message,
+            d -> d.location().route(),
+            d -> d.location().page())
         .containsExactly(
             tuple(
                 "file-path-collision",
-                "File \"" + LOGO_PATH + "\" has the same path as another file"));
+                "File \"" + LOGO_PATH + "\" has the same path as another file",
+                null,
+                null));
   }
 
   @Test

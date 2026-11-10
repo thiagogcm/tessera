@@ -36,8 +36,8 @@ class TableOfContentsTest {
       var page = renderMain(div().id(intro), div().id(sub), toc);
 
       assertThat(page.elements("nav[aria-label=On This Page] details ol > li > a"))
-          .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
-          .containsExactly("#intro@2", "#sub@3");
+          .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())
+          .containsExactly("#intro@2:Introduction", "#sub@3:Details");
     }
 
     @Test
@@ -50,7 +50,20 @@ class TableOfContentsTest {
 
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(brokenToc))
-          .withMessageContaining("unbound-reference");
+          .satisfies(
+              failure ->
+                  assertThat(failure.diagnostics())
+                      .singleElement()
+                      .satisfies(
+                          d -> {
+                            assertThat(d.rule()).isEqualTo("unbound-reference");
+                            assertThat(d.message())
+                                .contains("missing-section")
+                                .contains("not bound");
+                            assertThat(d.fix()).contains("Bind this reference");
+                            assertThat(d.location().tag()).isEqualTo("a");
+                            assertThat(d.location().components()).contains("TableOfContents");
+                          }));
     }
   }
 
@@ -68,8 +81,8 @@ class TableOfContentsTest {
               Section.of("usage", "Usage").level(3).child(p().text("b")));
 
       assertThat(page.elements("nav.toc-container a"))
-          .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
-          .containsExactly("#intro@2", "#usage@3");
+          .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())
+          .containsExactly("#intro@2:Introduction", "#usage@3:Usage");
     }
 
     @Test
@@ -77,7 +90,16 @@ class TableOfContentsTest {
     void rejectsDuplicateIds() {
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(Section.of("intro", "Intro"), Section.of("intro", "Again")))
-          .withMessageContaining("duplicate-id");
+          .satisfies(
+              failure -> {
+                assertThat(failure.diagnostics())
+                    .extracting(d -> d.rule())
+                    .containsOnly("duplicate-id");
+                var diagnostic = failure.diagnostics().getFirst();
+                assertThat(diagnostic.message()).contains("Duplicate DOM id 'intro'");
+                assertThat(diagnostic.fix()).contains("distinct ID");
+                assertThat(diagnostic.location().components()).containsExactly("Section");
+              });
     }
   }
 
@@ -93,8 +115,8 @@ class TableOfContentsTest {
     var page = renderMain(layout);
 
     assertThat(page.elements(".doc-toc-rail nav a"))
-        .extracting(a -> a.attr("href") + "@" + a.attr("data-level"))
-        .containsExactly("#getting-started@2", "#telemetry@3");
+        .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())
+        .containsExactly("#getting-started@2:Getting Started", "#telemetry@3:Telemetry");
     assertThat(page.element(".doc-toc-rail nav")).hasAttribute("aria-label", "Table of Contents");
     assertThat(page.elements(".doc-prose-col > section"))
         .extracting(e -> e.id())

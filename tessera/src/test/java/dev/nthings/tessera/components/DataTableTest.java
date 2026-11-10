@@ -34,7 +34,9 @@ class DataTableTest {
   @Test
   @DisplayName("escapes headers reused as stacked-cell labels in CSS")
   void escapesStackedCellLabels() {
-    assertThat(page.css()).contains("--label-2:").doesNotContain("\"Region \"AZ\"\"");
+    assertThat(page.css())
+        .contains("--label-2:\"Region \\22 AZ\\22\"")
+        .doesNotContain("--label-2:\"Region \"AZ\"\"");
   }
 
   @Test

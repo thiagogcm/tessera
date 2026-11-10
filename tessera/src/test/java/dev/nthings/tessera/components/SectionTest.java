@@ -19,7 +19,8 @@ class SectionTest {
 
   static Stream<Arguments> sectionsBySurface() {
     return Stream.of(
-        argumentSet("ghost", Section.of("sec-ghost", "Ghost").description("Lead."), "ghost"),
+        argumentSet("ghost", Section.of("sec-ghost", "Ghost"), "ghost"),
+        argumentSet("flat", Section.of("sec-flat", "Flat").surface(Section.Surface.FLAT), "flat"),
         argumentSet("card", Section.of("sec-card", "Card").surface(Section.Surface.CARD), "card"),
         argumentSet(
             "highlight",
@@ -31,7 +32,9 @@ class SectionTest {
   @MethodSource("sectionsBySurface")
   @DisplayName("exposes its surface as data-surface")
   void exposesSurfaceAsDataSurface(Section section, String surface) {
-    assertThat(renderMain(section).element("main > section")).hasAttribute("data-surface", surface);
+    assertThat(renderMain(section).element("main > section"))
+        .hasTagName("section")
+        .hasAttribute("data-surface", surface);
   }
 
   @Test
@@ -43,29 +46,51 @@ class SectionTest {
             Prose.of(Section.of("install", "Install").child(p().text("Run it."))).id("docs"));
 
     assertThat(page.elementById("install")).hasTagName("section");
-    assertThat(page.element("nav[aria-label=Contents] a")).hasAttribute("href", "#install");
+    assertThat(page.element("nav[aria-label=Contents] a"))
+        .hasAttribute("href", "#install")
+        .hasAttribute("data-level", "2")
+        .hasText("Install");
   }
 
-  @Test
-  @DisplayName("rejects an id that contains whitespace")
-  void rejectsInvalidIds() {
-    assertThatIllegalArgumentException().isThrownBy(() -> Section.of("two words", "Bad"));
+  static Stream<Arguments> invalidIds() {
+    return Stream.of(argumentSet("whitespace", "two words"), argumentSet("empty", ""));
   }
 
-  @Test
+  @ParameterizedTest
+  @MethodSource("invalidIds")
+  @DisplayName("rejects an empty id or one containing whitespace")
+  void rejectsInvalidIds(String id) {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> Section.of(id, "Bad"))
+        .withMessageContaining("non-empty and contain no whitespace");
+  }
+
+  static Stream<Arguments> headingLevels() {
+    return Stream.of(
+        argumentSet("level 2", 2, "h2"),
+        argumentSet("level 3", 3, "h3"),
+        argumentSet("level 4", 4, "h4"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("headingLevels")
   @DisplayName("level() sets the heading tag")
-  void levelSetsHeadingTag() {
-    var section = renderMain(Section.of("sec-highlight", "Highlight").level(3));
+  void levelSetsHeadingTag(int level, String tag) {
+    var page = renderMain(Section.of("sec-level", "Highlight").level(level));
+    var section = page.elementById("sec-level");
 
-    var highlight = section.elementById("sec-highlight");
-    assertThat(highlight.select("h2")).isEmpty();
-    assertThat(highlight.select("h3")).hasSize(1);
+    assertThat(section.select("h2, h3, h4")).hasSize(1);
+    assertThat(section.select(tag)).hasSize(1);
+    assertThat(section.selectFirst(tag)).hasText("Highlight");
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 5})
   @DisplayName("level() rejects values outside 2..4")
   void rejectsOutOfRangeLevels(int level) {
-    assertThatIllegalArgumentException().isThrownBy(() -> Section.of("bad", "Bad").level(level));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> Section.of("bad", "Bad").level(level))
+        .withMessageContaining("must be 2 to 4")
+        .withMessageContaining(Integer.toString(level));
   }
 }

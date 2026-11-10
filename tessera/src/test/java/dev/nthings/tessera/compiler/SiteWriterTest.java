@@ -32,14 +32,15 @@ class SiteWriterTest {
   }
 
   @Test
-  @DisplayName("writes a route as a directory index")
-  void writesRouteIndex() {
-    assertThat(out.resolve("guide/index.html")).isRegularFile();
+  @DisplayName("writes each route to its directory index with its compiled HTML")
+  void writesRouteIndexes() {
+    assertThat(out.resolve("index.html")).hasContent(site.pages().get("/"));
+    assertThat(out.resolve("guide/index.html")).hasContent(site.pages().get("/guide"));
   }
 
   @Test
   @DisplayName("writes the shared stylesheet")
   void writesSharedStylesheet() {
-    assertThat(out.resolve(stylesheetPath(site).substring(1))).isRegularFile();
+    assertThat(out.resolve(stylesheetPath(site).substring(1))).hasContent(site.css());
   }
 }

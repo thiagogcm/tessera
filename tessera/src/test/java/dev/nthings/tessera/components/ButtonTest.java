@@ -35,22 +35,19 @@ class ButtonTest {
             deferred(dialog, 1),
             deferred(div().id(hint).popover(PopoverMode.AUTO).text("Details"), 2));
 
-    var dialogEl = page.element("dialog");
-    var popover = page.element("[popover]");
     assertThat(page.element("button.button--solid"))
         .hasAttribute("type", "button")
         .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", dialogEl.id())
+        .hasAttribute("commandfor", "confirm--dialog")
         .doesNotHaveAttribute("disabled");
     assertThat(page.element("button[disabled]"))
         .hasAttribute("disabled")
         .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", dialogEl.id())
-        .hasText("Review later");
+        .hasAttribute("commandfor", "confirm--dialog");
     assertThat(page.element("button.button--ghost"))
         .hasAttribute("command", "toggle-popover")
-        .hasAttribute("commandfor", popover.id());
-    assertThat(popover).hasText("Details");
+        .hasAttribute("commandfor", "hint");
+    assertThat(page.element("[popover]")).hasText("Details");
   }
 
   @Test

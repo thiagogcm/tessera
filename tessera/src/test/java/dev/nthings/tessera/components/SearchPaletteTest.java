@@ -13,25 +13,29 @@ import org.junit.jupiter.api.Test;
 @DisplayName("SearchPalette")
 class SearchPaletteTest {
 
+  private static RenderedPage page;
+
+  @BeforeAll
+  static void renderPalette() {
+    var palette =
+        SearchPalette.of()
+            .id("site-search")
+            .triggerLabel("Search")
+            .item(
+                "Routes",
+                SearchPalette.Item.of("Telemetry", "/telemetry").description("Real-time metrics"))
+            .item("Routes", "Typography", "/typography")
+            .item(
+                "Actions",
+                SearchPalette.Item.of("Toggle Dark Mode", "/theme")
+                    .description("Switch themes")
+                    .badge("Action"));
+    page = renderMain(palette.triggerButton(), deferred(palette, 50));
+  }
+
   @Nested
   @DisplayName("dialog")
   class Dialog {
-
-    private static RenderedPage page;
-
-    @BeforeAll
-    static void renderPalette() {
-      var palette =
-          SearchPalette.of()
-              .id("site-search")
-              .triggerLabel("Search")
-              .item(
-                  "Guides",
-                  SearchPalette.Item.of("Getting Started", "/getting-started")
-                      .description("Introduction")
-                      .badge("New"));
-      page = renderMain(palette.triggerButton(), deferred(palette, 50));
-    }
 
     @Test
     @DisplayName("the trigger opens the dialog with a show-modal command")
@@ -42,7 +46,13 @@ class SearchPaletteTest {
       assertThat(page.element("main > button"))
           .hasText("Search AltK")
           .hasAttribute("commandfor", dialog.id())
-          .hasAttribute("command", "show-modal");
+          .hasAttribute("command", "show-modal")
+          .hasAttribute("aria-keyshortcuts", "Alt+K")
+          .hasAttribute("accesskey", "k");
+      assertThat(dialog.selectFirst("input.palette-input"))
+          .hasAttribute("placeholder", "Search documentation, routes, and sections...")
+          .hasAttribute("aria-label", "Search query")
+          .hasAttribute("autofocus");
     }
 
     @Test
@@ -52,7 +62,9 @@ class SearchPaletteTest {
 
       assertThat(dialog.selectFirst(".palette-close"))
           .hasAttribute("commandfor", dialog.id())
-          .hasAttribute("command", "close");
+          .hasAttribute("command", "close")
+          .hasAttribute("aria-label", "Close search palette")
+          .hasText("Esc");
     }
   }
 
@@ -60,31 +72,15 @@ class SearchPaletteTest {
   @DisplayName("results")
   class Results {
 
-    private static RenderedPage page;
-
-    @BeforeAll
-    static void renderPalette() {
-      page =
-          renderMain(
-              SearchPalette.of()
-                  .item(
-                      "Routes",
-                      SearchPalette.Item.of("Telemetry", "/telemetry")
-                          .description("Real-time metrics"))
-                  .item("Routes", "Typography", "/typography")
-                  .item(
-                      "Actions",
-                      SearchPalette.Item.of("Toggle Dark Mode", "/theme")
-                          .description("Switch themes")
-                          .badge("Action")));
-    }
-
     @Test
     @DisplayName("groups link items into one block per group")
     void groupsItemsByGroup() {
       var groups = page.elements("dialog .palette-group");
 
       assertThat(groups).hasSize(2);
+      assertThat(groups)
+          .extracting(group -> group.selectFirst(".palette-group-title").text())
+          .containsExactly("Routes", "Actions");
       assertThat(groups.getFirst().select("a.palette-item"))
           .extracting(a -> a.attr("href"))
           .containsExactly("/telemetry", "/typography");
@@ -95,6 +91,9 @@ class SearchPaletteTest {
     void rendersDescriptionAndBadge() {
       var links = page.elements("a.palette-item");
 
+      assertThat(links)
+          .extracting(link -> link.selectFirst(".palette-item-title").text())
+          .containsExactly("Telemetry", "Typography", "Toggle Dark Mode");
       assertThat(links.get(0).select(".palette-item-desc").text()).isEqualTo("Real-time metrics");
       assertThat(links.get(0).select(".palette-item-arrow")).hasSize(1);
       assertThat(links.get(1).select(".palette-item-desc")).isEmpty();

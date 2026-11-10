@@ -16,7 +16,6 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
-import dev.nthings.tessera.components.Select;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
@@ -84,7 +83,7 @@ class ExpansionTest {
                     new Box("second", p().id(ElementRef.anonymous()))));
 
     var second = single.element("[data-scope-id=second] p").id();
-    assertThat(second).endsWith("-p-1");
+    assertThat(second).isEqualTo("second--p-1");
     assertThat(grown.element("[data-scope-id=second] p").id()).isEqualTo(second);
   }
 
@@ -176,8 +175,20 @@ class ExpansionTest {
             () -> Compiler.compile(new PageDocument("Unstable", main().child(view))));
 
     assertThat(failure.diagnostics())
-        .extracting(Diagnostic::rule)
-        .containsExactly("unstable-scope-name");
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("unstable-scope-name");
+              assertThat(d.message())
+                  .contains(
+                      "is an anonymous class or lambda, so its default scopeName() changes"
+                          + " between builds");
+              assertThat(d.fix())
+                  .isEqualTo(
+                      "Implement the scope as a named class or record, or override scopeName().");
+              assertThat(d.location().page()).isEqualTo("Unstable");
+              assertThat(d.location().components()).hasSize(1);
+            });
   }
 
   @Test
@@ -223,7 +234,10 @@ class ExpansionTest {
         .satisfies(
             d -> {
               assertThat(d.rule()).isEqualTo("hero-conflict");
+              assertThat(d.message()).isEqualTo("Two hero images");
               assertThat(d.fix()).isEqualTo("Keep one hero image.");
+              assertThat(d.location().page()).isEqualTo("Strict");
+              assertThat(d.location().tag()).isEmpty();
               assertThat(d.location().components()).containsExactly("box[outer]", "Component");
             });
   }
@@ -243,8 +257,19 @@ class ExpansionTest {
             () -> Compiler.compile(new PageDocument("Headings", main().child(heading))));
 
     assertThat(failure.diagnostics())
-        .extracting(Diagnostic::rule)
-        .containsExactly("unbound-reference");
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("unbound-reference");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "Heading \"Missing\" references ElementRef.page(missing), which is not"
+                          + " bound to any element on this page");
+              assertThat(d.fix())
+                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+              assertThat(d.location().page()).isEqualTo("Headings");
+              assertThat(d.location().components()).containsExactly("Component");
+            });
   }
 
   /// A list item whose heading labels it through a scoped ref, keyed by `name`.
@@ -321,6 +346,8 @@ class ExpansionTest {
             d -> {
               assertThat(d.rule()).isEqualTo("duplicate-key");
               assertThat(d.message()).isEqualTo("Duplicate sibling key 'a'");
+              assertThat(d.fix()).isEqualTo("Give each child of this parent a distinct key.");
+              assertThat(d.location().page()).isEqualTo("Keys");
               assertThat(d.location().components()).containsExactly("[key=a]");
             });
   }
@@ -411,7 +438,9 @@ class ExpansionTest {
   void rejectsBlankKeyAndUsesLast() {
     var content = p().text("Item");
 
-    assertThatIllegalArgumentException().isThrownBy(() -> content.key(" "));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> content.key(" "))
+        .withMessage("A sibling key must not be blank");
     assertThat(content.key("first").key("second")).isEqualTo(new KeyedElement("second", content));
   }
 
@@ -438,8 +467,13 @@ class ExpansionTest {
     assertThat(failure.diagnostics())
         .singleElement()
         .satisfies(
-            d ->
-                assertThat(d.location().components()).containsExactly("box[outer]", "Note[key=a]"));
+            d -> {
+              assertThat(d.rule()).isEqualTo("note-rendered");
+              assertThat(d.message()).isEqualTo("Rendered A");
+              assertThat(d.fix()).isEqualTo("Nothing to fix.");
+              assertThat(d.location().page()).isEqualTo("Notes");
+              assertThat(d.location().components()).containsExactly("box[outer]", "Note[key=a]");
+            });
   }
 
   @Test
@@ -464,67 +498,6 @@ class ExpansionTest {
     }
   }
 
-  @Test
-  @DisplayName("keyed content inside a scope without scopeId reports generated-scope-id")
-  void reportsKeyedInGeneratedScope() {
-    var alone =
-        catchThrowableOfType(
-            CompilationException.class,
-            () -> Compiler.compile(new PageDocument("Keys", main().child(new Open(p().key("a"))))));
-
-    assertThat(alone.diagnostics())
-        .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message()).contains("open-1");
-              assertThat(d.fix()).contains("scopeId()");
-            });
-
-    var behind =
-        catchThrowableOfType(
-            CompilationException.class,
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Keys",
-                        main().children(new Open(p().text("First")), new Open(p().key("a"))))));
-
-    assertThat(behind.diagnostics())
-        .singleElement()
-        .satisfies(d -> assertThat(d.message()).contains("open-2"));
-  }
-
-  @Test
-  @DisplayName("an explicit scopeId keeps keyed content inside that scope")
-  void explicitScopeIdAllowsKeyedContent() {
-    var page =
-        RenderedPage.render(
-            main().child(new Box("cards", p().id(ElementRef.scoped("body")).key("a"))));
-
-    assertThat(page.element("p").id()).startsWith("cards--");
-  }
-
-  @Test
-  @DisplayName("a generated parent id still flags keyed content in an explicit child scope")
-  void reportsGeneratedParentScope() {
-    var failure =
-        catchThrowableOfType(
-            CompilationException.class,
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Keys", main().child(new Open(new Box("inner", p().key("a")))))));
-
-    assertThat(failure.diagnostics())
-        .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message()).contains("open-1--inner");
-            });
-  }
-
   /// A scope whose expand result is the keyed element, with nothing wrapped around the key.
   private record KeyedOpen() implements Scope {
     @Override
@@ -541,60 +514,77 @@ class ExpansionTest {
     }
   }
 
-  @Test
-  @DisplayName("a generated scope whose expand result is keyed reports generated-scope-id")
-  void reportsKeyedExpandResult() {
+  static Stream<Arguments> keyedContentInGeneratedScope() {
+    return Stream.of(
+        argumentSet(
+            "keyed content inside a scope without scopeId reports generated-scope-id",
+            main().child(new Open(p().key("a"))),
+            "open-1",
+            List.of("open[open-1]", "[key=a]")),
+        argumentSet(
+            "keyed content in a later generated scope reports its own counter",
+            main().children(new Open(p().text("First")), new Open(p().key("a"))),
+            "open-2",
+            List.of("open[open-2]", "[key=a]")),
+        argumentSet(
+            "a generated parent id still flags keyed content in an explicit child scope",
+            main().child(new Open(new Box("inner", p().key("a")))),
+            "open-1--inner",
+            List.of("open[open-1]", "box[open-1--inner]", "[key=a]")),
+        argumentSet(
+            "a generated scope whose expand result is keyed reports generated-scope-id",
+            main().child(new KeyedOpen()),
+            "keyed-open-1",
+            List.of("keyed-open[keyed-open-1]", "[key=a]")),
+        argumentSet(
+            "a component that returns keyed content inside a generated scope is reported",
+            main().child(new Open(new KeyedNote())),
+            "open-1",
+            List.of("open[open-1]", "KeyedNote", "[key=a]")),
+        argumentSet(
+            "deferred keyed content inside a generated scope is reported",
+            main().child(new Open(Elements.deferred(p().key("a")))),
+            "open-1",
+            List.of("open[open-1]", "[key=a]")));
+  }
+
+  @ParameterizedTest
+  @MethodSource("keyedContentInGeneratedScope")
+  @DisplayName("keyed content in a generated id scope reports generated-scope-id")
+  void reportsKeyedContentInGeneratedScope(
+      Element body, String generatedScopeId, List<String> components) {
     var failure =
         catchThrowableOfType(
-            CompilationException.class,
-            () -> Compiler.compile(new PageDocument("Keys", main().child(new KeyedOpen()))));
+            CompilationException.class, () -> Compiler.compile(new PageDocument("Keys", body)));
 
     assertThat(failure.diagnostics())
         .singleElement()
         .satisfies(
             d -> {
               assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message()).contains("keyed-open-1");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "Keyed content is inside scope '"
+                          + generatedScopeId
+                          + "', whose id was generated");
+              assertThat(d.fix())
+                  .isEqualTo(
+                      "Set scopeId() on each enclosing scope. A generated id is numbered in"
+                          + " encounter order, so moving a sibling scope renames every keyed id"
+                          + " inside it.");
+              assertThat(d.location().page()).isEqualTo("Keys");
+              assertThat(d.location().components()).containsExactlyElementsOf(components);
             });
   }
 
   @Test
-  @DisplayName("a component that returns keyed content inside a generated scope is reported")
-  void reportsKeyedComponentContent() {
-    var failure =
-        catchThrowableOfType(
-            CompilationException.class,
-            () ->
-                Compiler.compile(
-                    new PageDocument("Keys", main().child(new Open(new KeyedNote())))));
+  @DisplayName("an explicit scopeId keeps keyed content inside that scope")
+  void explicitScopeIdAllowsKeyedContent() {
+    var page =
+        RenderedPage.render(
+            main().child(new Box("cards", p().id(ElementRef.scoped("body")).key("a"))));
 
-    assertThat(failure.diagnostics())
-        .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message()).contains("open-1");
-            });
-  }
-
-  @Test
-  @DisplayName("deferred keyed content inside a generated scope is reported")
-  void reportsDeferredKeyedContent() {
-    var failure =
-        catchThrowableOfType(
-            CompilationException.class,
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Keys", main().child(new Open(Elements.deferred(p().key("a")))))));
-
-    assertThat(failure.diagnostics())
-        .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message()).contains("open-1");
-            });
+    assertThat(page.element("p").id()).isEqualTo("cards--key-0061--body");
   }
 
   @Test
@@ -645,49 +635,5 @@ class ExpansionTest {
 
     assertThat(wrapper.children()).hasSize(count);
     assertThat(wrapper.select("p[data-scope]")).isEmpty();
-  }
-
-  @Test
-  @DisplayName("repeated fields drop hints and errors without mutating the shared control")
-  void repeatedFieldsDropHintsAndErrors() {
-    var control = Forms.text("name");
-
-    for (var turn = 0; turn < 6; turn++) {
-      var enabled = turn % 2 == 0;
-      var field = Field.of("Name", control).id("name").tooltip("Enter your name");
-      if (enabled) {
-        field.hint("Full name").error("Name is required");
-      }
-      var page = RenderedPage.render(main().child(field));
-      var input = page.element("input");
-      assertThat(page.element("label").attr("for")).isEqualTo(input.id());
-      assertThat(page.elements(".field-hint")).hasSize(enabled ? 1 : 0);
-      assertThat(page.elements(".field-error")).hasSize(enabled ? 1 : 0);
-      assertThat(input.hasAttr("aria-describedby")).isEqualTo(enabled);
-      assertThat(input.hasAttr("aria-errormessage")).isEqualTo(enabled);
-      if (enabled) {
-        assertThat(page.elementById(input.attr("aria-describedby")).text()).isEqualTo("Full name");
-        assertThat(page.elementById(input.attr("aria-errormessage")).text())
-            .contains("Name is required");
-      }
-    }
-    assertThat(control.idReferences()).isEmpty();
-    assertThat(control.isAnchor()).isFalse();
-  }
-
-  @Test
-  @DisplayName("repeated select fields preserve options and link their descriptions")
-  void repeatedSelectsKeepOptions() {
-    var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
-    var field = Field.of("Size", select).hint("Choose a size");
-
-    for (var turn = 0; turn < 3; turn++) {
-      var page = RenderedPage.render(main().child(field));
-      assertThat(page.elements("option")).hasSize(2);
-      assertThat(page.element("option[selected]").attr("value")).isEqualTo("large");
-      assertThat(page.element("label").attr("for")).isEqualTo(page.element("select").attr("id"));
-      assertThat(page.elementById(page.element("select").attr("aria-describedby")).text())
-          .isEqualTo("Choose a size");
-    }
   }
 }

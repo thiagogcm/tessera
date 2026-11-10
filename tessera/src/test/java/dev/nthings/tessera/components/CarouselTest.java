@@ -11,6 +11,19 @@ import org.junit.jupiter.api.Test;
 class CarouselTest {
 
   @Test
+  @DisplayName("is a focusable region named by its label")
+  void trackIsFocusableRegion() {
+    var page = renderMain(Carousel.of("Demo").slide(p().text("1")).slide(p().text("2")));
+
+    var track = page.element("main > [role=region]");
+
+    assertThat(track).hasAttribute("aria-label", "Demo").hasAttribute("tabindex", "0");
+    assertThat(track.select("> .carousel-item > .carousel-card > p"))
+        .extracting(slide -> slide.text())
+        .containsExactly("1", "2");
+  }
+
+  @Test
   @DisplayName("emits native ::scroll-button prev/next controls with alt text")
   void emitsNativeScrollButtons() {
     var css = renderMain(Carousel.of("Demo").slide(p().text("1"))).css();

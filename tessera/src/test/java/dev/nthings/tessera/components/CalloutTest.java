@@ -51,7 +51,7 @@ class CalloutTest {
   }
 
   @Test
-  @DisplayName("a custom title replaces the default")
+  @DisplayName("a custom title replaces the default without dropping the body")
   void customTitleReplacesDefault() {
     var aside =
         renderMain(
@@ -60,5 +60,7 @@ class CalloutTest {
             .element("aside[role=note]");
 
     assertThat(aside.selectFirst(".callout-title")).hasText("Hazard Ahead");
+    assertThat(aside.selectFirst(".callout-content"))
+        .hasText("Destructive operations require confirmation.");
   }
 }

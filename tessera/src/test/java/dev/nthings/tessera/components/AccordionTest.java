@@ -20,8 +20,10 @@ class AccordionTest {
                 .openItem("Question 1", "Answer 1")
                 .item("Question 2", "Answer 2"));
 
-    assertThat(page.elements("details[name=faq]")).hasSize(2);
-    assertThat(page.elements("details[name=faq][open]")).hasSize(1);
+    var items = page.elements("details[name=faq]");
+    assertThat(items).hasSize(2);
+    assertThat(items.get(0)).hasAttribute("open");
+    assertThat(items.get(1)).doesNotHaveAttribute("open");
   }
 
   @Test

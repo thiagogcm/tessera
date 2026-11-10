@@ -57,10 +57,25 @@ class ElementRefTest {
   void unboundRefFailsCompilation() {
     var dangling = ElementRef.scoped("ghost");
 
-    assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(
-            () -> render(div().child(button().command(dangling, BuiltinCommand.CLOSE).text("x"))))
-        .withMessageContainingAll("ElementRef.scoped(ghost)", "not bound");
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> render(div().child(button().command(dangling, BuiltinCommand.CLOSE).text("x"))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("unbound-reference");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "<button commandfor> references ElementRef.scoped(ghost), which is not bound to any element on this page");
+              assertThat(d.fix())
+                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+              assertThat(d.location().page()).isEqualTo("Test");
+              assertThat(d.location().tag()).isEqualTo("button");
+              assertThat(d.location().domId()).isNull();
+            });
   }
 
   static Stream<Arguments> ambiguousTargets() {
@@ -75,7 +90,11 @@ class ElementRefTest {
                     dialog().id(shared).ariaLabel("Confirm").text("Confirm?"),
                     button().command(shared, BuiltinCommand.SHOW_MODAL).text("Open"),
                     button()),
-            "duplicate-reference-binding"),
+            "duplicate-reference-binding",
+            "ElementRef.scoped(confirm) is bound to more than one element on the same page",
+            "Bind this ElementRef once; use a separate reference for the other element.",
+            "dialog",
+            null),
         argumentSet(
             "separate references with the same DOM id",
             div()
@@ -84,18 +103,34 @@ class ElementRefTest {
                     dialog,
                     button().command(dialog.ref(), BuiltinCommand.SHOW_MODAL).text("Open"),
                     button()),
-            "duplicate-id"));
+            "duplicate-id",
+            "Duplicate DOM id 'confirm' on the same page",
+            "Give each element a distinct ID within its id scope.",
+            "dialog",
+            "confirm"));
   }
 
   @ParameterizedTest
   @MethodSource("ambiguousTargets")
   @DisplayName("ambiguous targets report their binding error without secondary command errors")
-  void reportsAmbiguousTargets(Element body, String rule) {
+  void reportsAmbiguousTargets(
+      Element body, String rule, String message, String fix, String tag, String domId) {
     var failure = catchThrowableOfType(CompilationException.class, () -> render(body));
 
     assertThat(failure.diagnostics())
         .extracting(Diagnostic::rule)
         .containsExactlyInAnyOrder(rule, "interactive-label");
+    assertThat(failure.diagnostics())
+        .filteredOn(d -> d.rule().equals(rule))
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.message()).isEqualTo(message);
+              assertThat(d.fix()).isEqualTo(fix);
+              assertThat(d.location().page()).isEqualTo("Test");
+              assertThat(d.location().tag()).isEqualTo(tag);
+              assertThat(d.location().domId()).isEqualTo(domId);
+            });
   }
 
   @Test
@@ -147,8 +182,20 @@ class ElementRefTest {
                     div().id(ElementRef.scoped("first")).id(ElementRef.page("second")).text("x")));
 
     assertThat(failure.diagnostics())
-        .extracting(Diagnostic::rule)
-        .containsExactly("conflicting-element-id");
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("conflicting-element-id");
+              assertThat(d.message())
+                  .isEqualTo(
+                      "<div> is bound to ElementRef.scoped(first) and ElementRef.page(second), which ask for different ids ('first' and 'second')");
+              assertThat(d.fix())
+                  .isEqualTo(
+                      "Bind one named ElementRef per element and pass that ref around; extra handles can use element.ref() or ElementRef.anonymous().");
+              assertThat(d.location().page()).isEqualTo("Test");
+              assertThat(d.location().tag()).isEqualTo("div");
+              assertThat(d.location().domId()).isEqualTo("first");
+            });
   }
 
   @Test
@@ -156,16 +203,40 @@ class ElementRefTest {
   void idAttributeIsRefused() {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> div().attr("id", "literal"))
-        .withMessageContaining("id(ElementRef)");
+        .withMessage(
+            "Use id(ElementRef) instead of the attribute 'id', so the compiler can scope and link it");
   }
 
   @Test
-  @DisplayName("scoped names are sanitized and a page name with whitespace is refused")
-  void namesAreSanitized() {
-    var page = renderMain(div().id(ElementRef.scoped("Save draft!!")).text("x"));
+  @DisplayName("scoped names are sanitized and empty scoped names are refused")
+  void scopedNamesAreSanitized() {
+    var page =
+        renderMain(
+            div()
+                .children(
+                    div().id(ElementRef.scoped("Save draft!!")).text("x"),
+                    div().id(ElementRef.scoped("a  b")).text("y")));
 
     assertThat(page.elementById("Save-draft-")).hasText("x");
+    assertThat(page.elementById("a-b")).hasText("y");
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> ElementRef.page("two words"));
+        .isThrownBy(() -> ElementRef.scoped(""))
+        .withMessage("Identifier cannot be empty");
+  }
+
+  static Stream<Arguments> invalidPageNames() {
+    return Stream.of(
+        argumentSet("empty", ""),
+        argumentSet("space", "two words"),
+        argumentSet("tab", "two\twords"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidPageNames")
+  @DisplayName("page names must be non-empty and contain no whitespace")
+  void rejectsInvalidPageNames(String name) {
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> ElementRef.page(name))
+        .withMessage("Page-level id must be non-empty and contain no whitespace: '" + name + "'");
   }
 }

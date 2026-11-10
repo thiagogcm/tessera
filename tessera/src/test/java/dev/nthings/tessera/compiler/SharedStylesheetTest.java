@@ -23,11 +23,16 @@ class SharedStylesheetTest {
   void everyPageLinksSharedStylesheet() {
     var site = Compiler.compile(siteWithLogo());
 
+    assertThat(site.pages()).containsOnlyKeys("/", "/guide");
     assertThat(site.pages().keySet())
         .allSatisfy(
-            route ->
-                assertThat(RenderedPage.of(site, route).element("head > link[rel=stylesheet]"))
-                    .hasAttribute("href", stylesheetPath(site)));
+            route -> {
+              var page = RenderedPage.of(site, route);
+              assertThat(page.elements("head > link[rel=stylesheet]")).hasSize(1);
+              assertThat(page.element("head > link[rel=stylesheet]"))
+                  .hasAttribute("href", stylesheetPath(site));
+              assertThat(page.elements("head > style")).isEmpty();
+            });
   }
 
   @Nested
@@ -50,7 +55,11 @@ class SharedStylesheetTest {
     @Test
     @DisplayName("site theme tokens are declared in the shared stylesheet")
     void declaresThemeTokens() {
+      var stylesheet = site.files().get(stylesheetPath(site));
+
       assertThat(site.css()).contains("--brand-hue:oklch(60% 0.2 300)");
+      assertThat(stylesheet.contentType()).isEqualTo("text/css; charset=utf-8");
+      assertThat(stylesheet.textContent()).isEqualTo(site.css());
     }
   }
 }

@@ -35,17 +35,27 @@ class FootnotesTest {
     @Test
     @DisplayName("numbers references in document order")
     void numbersInDocumentOrder() {
-      assertThat(page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]")).hasText("[1]");
-      assertThat(page.elementById("fnref-fn-2").selectFirst("a")).hasText("[2]");
+      assertThat(page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]"))
+          .hasText("[1]")
+          .hasAttribute("aria-label", "Footnote 1");
+      assertThat(page.elementById("fnref-fn-2").selectFirst("a"))
+          .hasText("[2]")
+          .hasAttribute("aria-label", "Footnote 2");
     }
 
     @Test
     @DisplayName("links to its note and anchors the preview tooltip")
     void linksToNoteAndTooltip() {
       var link = page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]");
+      var tooltip = page.elementById(link.attr("interestfor"));
 
-      assertThat(link).hasAttribute("href", "#footnotes--fn-1");
-      assertThat(link).hasAttribute("interestfor", link.nextElementSibling().id());
+      assertThat(link)
+          .hasAttribute("href", "#footnotes--fn-1")
+          .hasAttribute("interestfor", link.nextElementSibling().id());
+      assertThat(tooltip)
+          .hasAttribute("popover", "hint")
+          .hasAttribute("role", "tooltip")
+          .hasText("First footnote.");
     }
 
     @Test
@@ -54,6 +64,7 @@ class FootnotesTest {
       var endnotes = page.dom().body().children().last();
 
       assertThat(endnotes).hasAttribute("role", "doc-endnotes");
+      assertThat(endnotes.selectFirst("h2")).hasText("Footnotes");
       assertThat(endnotes.select("ol > li[role=doc-footnote]"))
           .extracting(e -> e.id())
           .containsExactly("footnotes--fn-1", "footnotes--fn-2");
@@ -64,7 +75,10 @@ class FootnotesTest {
     void notesLinkBackToReference() {
       var firstNote = page.elementById("footnotes--fn-1");
 
-      assertThat(firstNote.selectFirst("a[role=doc-backlink]")).hasAttribute("href", "#fnref-fn-1");
+      assertThat(firstNote.selectFirst("a[role=doc-backlink]"))
+          .hasAttribute("href", "#fnref-fn-1")
+          .hasAttribute("aria-label", "Back to reference 1")
+          .hasText("↩");
     }
   }
 
@@ -78,7 +92,9 @@ class FootnotesTest {
             p().child(Footnote.of("Second note")));
 
     assertThat(page.elements("aside[role=doc-endnotes]")).hasSize(1);
-    assertThat(page.elements("aside[role=doc-endnotes] li")).hasSize(2);
+    assertThat(page.elements("aside[role=doc-endnotes] li"))
+        .extracting(e -> e.id())
+        .containsExactly("footnotes--fn-1", "footnotes--fn-2");
     assertThat(page.element("main > :first-child")).hasAttribute("role", "doc-endnotes");
     assertThat(page.element("aside[role=doc-endnotes] h2")).hasText("Notes");
     assertThat(page.elementById("fnref-2").selectFirst("a")).hasText("[2]");
@@ -89,6 +105,18 @@ class FootnotesTest {
   void rejectsDuplicateIds() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> renderMain(Footnote.of("One").id("n"), Footnote.of("Two").id("n")))
-        .withMessageContaining("duplicate-id");
+        .satisfies(
+            failure ->
+                assertThat(failure.diagnostics())
+                    .isNotEmpty()
+                    .allSatisfy(
+                        d -> {
+                          assertThat(d.rule()).isEqualTo("duplicate-id");
+                          assertThat(d.message()).contains("Duplicate DOM id");
+                          assertThat(d.fix()).contains("distinct ID");
+                          assertThat(d.location().components()).containsExactly("Footnote");
+                        })
+                    .anySatisfy(d -> assertThat(d.message()).contains("'fnref-n'"))
+                    .anySatisfy(d -> assertThat(d.message()).contains("'fnlink-n--tooltip'")));
   }
 }

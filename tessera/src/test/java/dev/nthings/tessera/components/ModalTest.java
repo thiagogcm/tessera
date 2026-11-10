@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 class ModalTest {
 
   @Test
-  @DisplayName("dialogs are light-dismiss and open or close via invoker commands")
-  void lightDismissAndInvokerCommands() {
+  @DisplayName("dialogs are labelled, light-dismiss, and open or close via invoker commands")
+  void labelledLightDismissAndInvokerCommands() {
     var modal =
         Modal.of("Confirm Deployment")
             .id("confirm-deploy")
@@ -42,17 +42,54 @@ class ModalTest {
         .extracting(e -> e.id())
         .containsExactlyInAnyOrder(
             "confirm-deploy--confirmation", "inspector--details", "modal-1--dialog");
+    assertThat(page.elements("dialog[open]"))
+        .extracting(e -> e.id())
+        .containsExactly("modal-1--dialog");
+
+    var modalDialog = page.elementById("confirm-deploy--confirmation");
+    assertThat(modalDialog)
+        .hasAttribute("aria-labelledby", "confirm-deploy--title")
+        .hasAttribute("closedby", "any");
+    assertThat(page.elementById(modalDialog.attr("aria-labelledby")))
+        .hasTagName("h2")
+        .hasText("Confirm Deployment");
+    assertThat(modalDialog.select("p"))
+        .extracting(e -> e.text())
+        .containsExactly("Production rollout", "Deploy to all 4 regions?");
+
+    var drawerDialog = page.elementById("inspector--details");
+    assertThat(drawerDialog)
+        .hasAttribute("aria-labelledby", "inspector--title")
+        .hasAttribute("closedby", "any");
+    assertThat(page.elementById(drawerDialog.attr("aria-labelledby")))
+        .hasTagName("h2")
+        .hasText("Live Inspector");
+    assertThat(drawerDialog.select("p"))
+        .extracting(e -> e.text())
+        .containsExactly("Cascade state", "7 cascade layers active.");
+    assertThat(drawerDialog.attr("data-scope")).startsWith("drawer-start-");
+    assertThat(page.scopeBody(drawerDialog))
+        .contains("margin-inline-start:0px")
+        .contains("margin-inline-end:auto");
+
+    var previewDialog = page.elementById("modal-1--dialog");
+    assertThat(previewDialog).hasAttribute("open");
+    assertThat(previewDialog.selectFirst("h2")).hasText("Preview");
+    assertThat(previewDialog.selectFirst("p")).hasText("Shown before the page is published.");
+
     assertThat(page.element("button:contains(Open Modal)"))
         .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", "confirm-deploy--confirmation");
+        .hasAttribute("commandfor", modalDialog.id());
     assertThat(page.element("button:contains(Open Drawer)"))
-        .hasAttribute("commandfor", "inspector--details");
-    assertThat(page.element("dialog[data-scope^=drawer-start-] h2")).hasText("Live Inspector");
-    assertThat(page.element("dialog[open]")).hasAttribute("open");
+        .hasAttribute("command", "show-modal")
+        .hasAttribute("commandfor", drawerDialog.id());
     assertThat(page.elementById("confirm-deploy--close"))
         .hasAttribute("command", "close")
-        .hasAttribute("commandfor", "confirm-deploy--confirmation");
+        .hasAttribute("commandfor", modalDialog.id())
+        .hasText("Close");
     assertThat(page.elementById("inspector--close"))
-        .hasAttribute("commandfor", "inspector--details");
+        .hasAttribute("command", "close")
+        .hasAttribute("commandfor", drawerDialog.id())
+        .hasText("Close");
   }
 }

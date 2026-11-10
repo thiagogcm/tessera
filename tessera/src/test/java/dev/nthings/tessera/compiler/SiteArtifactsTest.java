@@ -33,9 +33,18 @@ class SiteArtifactsTest {
     @Test
     @DisplayName("lists each route under the base URL")
     void listsRoutesUnderBaseUrl() {
-      assertThat(site.sitemapXml())
-          .contains("<loc>https://tessera.dev/</loc>")
-          .contains("<loc>https://tessera.dev/guide</loc>");
+      var locations =
+          site.sitemapXml()
+              .lines()
+              .filter(line -> line.contains("<loc>"))
+              .map(String::strip)
+              .toList();
+
+      assertThat(locations)
+          .containsExactly(
+              "<loc>https://tessera.dev/</loc>",
+              "<loc>https://tessera.dev/guide</loc>",
+              "<loc>https://tessera.dev/faq</loc>");
     }
 
     @Test
@@ -64,32 +73,35 @@ class SiteArtifactsTest {
           Compiler.compile(
               SiteDefinition.of(new SiteRoute("/", new PageDocument("Custom", custom))));
 
-      assertThat(compiled.searchIndexJson())
-          .contains("\"id\": \"custom\"")
-          .contains("\"title\": \"Custom section\"")
-          .contains("\"level\": 2");
+      assertThat(compact(compiled.searchIndexJson()))
+          .contains("{\"id\":\"custom\",\"title\":\"Custom section\",\"level\":2}");
     }
 
-    /// Index with whitespace around JSON punctuation removed; spaces inside values are kept.
+    /// JSON with whitespace around punctuation removed; spaces inside values are kept.
+    private static String compact(String json) {
+      return json.replaceAll("\\s*([{}\\[\\]:,])\\s*", "$1");
+    }
+
     private String compactIndex() {
-      return site.searchIndexJson().replaceAll("\\s*([{}\\[\\]:,])\\s*", "$1");
+      return compact(site.searchIndexJson());
     }
 
     @Test
-    @DisplayName("prefers the route title over the document title")
+    @DisplayName("uses the route title, falling back to the document title")
     void prefersRouteTitle() {
       assertThat(compactIndex())
-          .contains("\"path\":\"/guide\"")
-          .contains("\"title\":\"Getting Started\"");
+          .contains("\"path\":\"/guide\",\"title\":\"Getting Started\"")
+          .contains("\"path\":\"/faq\",\"title\":\"FAQ\"")
+          .doesNotContain("\"title\":\"Guide\"");
     }
 
     @Test
     @DisplayName("lists page sections with their heading level")
     void listsSectionsWithLevel() {
       assertThat(compactIndex())
-          .contains("\"id\":\"config\"")
-          .contains("\"title\":\"Configuration\"")
-          .contains("\"level\":3");
+          .contains("{\"id\":\"features\",\"title\":\"Features\",\"level\":2}")
+          .contains("{\"id\":\"quickstart\",\"title\":\"Quick Start\",\"level\":2}")
+          .contains("{\"id\":\"config\",\"title\":\"Configuration\",\"level\":3}");
     }
   }
 }

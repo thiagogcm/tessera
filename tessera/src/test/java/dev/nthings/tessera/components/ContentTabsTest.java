@@ -12,7 +12,6 @@ import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.PageTree;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,12 +41,19 @@ class ContentTabsTest {
     assertThat(find(tree, "stages--tab-java").attributes())
         .containsEntry("role", "tab")
         .containsEntry("aria-selected", "true")
-        .containsEntry("aria-controls", "stages--panel-java");
+        .containsEntry("aria-controls", "stages--panel-java")
+        .containsEntry("tabindex", "0");
+    assertThat(find(tree, "stages--panel-java").attributes())
+        .containsEntry("role", "tabpanel")
+        .containsEntry("aria-labelledby", "stages--tab-java")
+        .doesNotContainKey("hidden");
     assertThat(find(tree, "stages--panel-html").attributes())
         .containsEntry("role", "tabpanel")
         .containsEntry("aria-labelledby", "stages--tab-html")
         .containsEntry("hidden", "");
-    assertThat(find(tree, "stages--tab-html").attributes()).containsEntry("aria-selected", "false");
+    assertThat(find(tree, "stages--tab-html").attributes())
+        .containsEntry("aria-selected", "false")
+        .containsEntry("tabindex", "-1");
 
     var encoded =
         Compiler.compile(
@@ -103,14 +109,18 @@ class ContentTabsTest {
 
   private static PageTree.Tag find(PageTree tree, String id) {
     var found = find(tree.body(), tag -> id.equals(tag.id()));
-    assertThat(found).as("element %s", id).isNotNull();
-    return Objects.requireNonNull(found);
+    if (found == null) {
+      throw new AssertionError("No element has id: " + id);
+    }
+    return found;
   }
 
   private static PageTree.Tag findAttribute(PageTree tree, String name, String value) {
     var found = find(tree.body(), tag -> value.equals(tag.attributes().get(name)));
-    assertThat(found).as("%s=%s", name, value).isNotNull();
-    return Objects.requireNonNull(found);
+    if (found == null) {
+      throw new AssertionError("No element has " + name + "=" + value);
+    }
+    return found;
   }
 
   private static PageTree.Tag find(List<PageTree.Node> nodes, Predicate<PageTree.Tag> match) {

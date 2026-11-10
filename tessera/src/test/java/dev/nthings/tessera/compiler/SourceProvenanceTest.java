@@ -25,9 +25,17 @@ class SourceProvenanceTest {
     return new Throwable().getStackTrace()[1].getLineNumber();
   }
 
-  record Panel(String text) implements Component {
+  static final class Panel implements Component {
+    private final String text;
+    private int elementLine;
+
+    Panel(String text) {
+      this.text = text;
+    }
+
     @Override
     public Element expand(DocumentContext context) {
+      elementLine = here() + 1;
       return div().child(p().text(text));
     }
   }
@@ -52,14 +60,17 @@ class SourceProvenanceTest {
 
     var page = RenderedPage.render(main().child(built));
     assertThat(page.element("div").attr("data-src")).isEqualTo(THIS_FILE + ":" + line);
+    assertNoCompilerSources(page.html());
   }
 
   @Test
   @DisplayName("a user component's elements point into the component's own code")
   void userComponentKeepsSource() {
-    var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(new Panel("hi"))));
+    var panel = new Panel("hi");
+    var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(panel)));
 
-    assertThat(page.element("p").attr("data-src")).startsWith(THIS_FILE + ":");
+    assertThat(page.element("p").attr("data-src")).isEqualTo(THIS_FILE + ":" + panel.elementLine);
+    assertNoCompilerSources(page.html());
   }
 
   @Test
@@ -69,7 +80,7 @@ class SourceProvenanceTest {
     var line = here() - 1;
 
     assertThat(page.element("button").attr("data-src")).isEqualTo(THIS_FILE + ":" + line);
-    assertThat(page.html()).doesNotContain("PageCompiler").doesNotContain("DocumentPass");
+    assertNoCompilerSources(page.html());
   }
 
   @Test
@@ -83,6 +94,7 @@ class SourceProvenanceTest {
     var diagnostic = failure.diagnostics().getFirst();
     assertThat(diagnostic.location().source()).isEqualTo(sourceAt(line));
     assertThat(failure.getMessage()).contains("<button> (" + THIS_FILE + ":" + line + "): ");
+    assertNoCompilerSources(failure.getMessage());
   }
 
   @Test
@@ -94,64 +106,96 @@ class SourceProvenanceTest {
             () -> Compiler.compile(new PageDocument("Bad", main().child(button()))));
 
     assertThat(failure.diagnostics().getFirst().location().source()).isNull();
-    assertThat(failure.getMessage()).contains("<button>: Interactive <button>");
+    assertThat(failure.getMessage())
+        .contains("<button>: Interactive <button>")
+        .doesNotContain(THIS_FILE + ":");
   }
 
   @Test
   @DisplayName("site compilation tracks pages rendered on worker threads")
   void tracksSiteWorkerThreads() {
+    var first = new Panel("a");
+    var second = new Panel("b");
     var compiled =
         SourceTracking.enabled(
             () ->
                 Compiler.compile(
                     SiteDefinition.builder()
-                        .route(
-                            new SiteRoute(
-                                "/", new PageDocument("Home", main().child(new Panel("a")))))
-                        .route(
-                            new SiteRoute(
-                                "/b", new PageDocument("B", main().child(new Panel("b")))))
+                        .route(new SiteRoute("/", new PageDocument("Home", main().child(first))))
+                        .route(new SiteRoute("/b", new PageDocument("B", main().child(second))))
                         .build()));
 
-    assertThat(compiled.pages().get("/")).contains("data-src=\"" + THIS_FILE + ":");
-    assertThat(compiled.pages().get("/b")).contains("data-src=\"" + THIS_FILE + ":");
+    assertThat(compiled.pages().get("/"))
+        .contains("data-src=\"" + THIS_FILE + ":" + first.elementLine + "\"");
+    assertThat(compiled.pages().get("/b"))
+        .contains("data-src=\"" + THIS_FILE + ":" + second.elementLine + "\"");
+    assertNoCompilerSources(compiled.pages().get("/"));
+    assertNoCompilerSources(compiled.pages().get("/b"));
   }
 
   @Test
   @DisplayName("compiler-built head content carries no source")
   void headElementsHaveNoSource() {
+    var mainLine = new int[1];
     var compiled =
         SourceTracking.enabled(
-            () ->
-                Compiler.compile(
-                    SiteDefinition.builder()
-                        .route(new SiteRoute("/", new PageDocument("Home", main().text("Home"))))
-                        .linkSpeculation(LinkSpeculation.PRERENDER)
-                        .build()));
+            () -> {
+              var body = main().text("Home");
+              mainLine[0] = here() - 1;
+              return Compiler.compile(
+                  SiteDefinition.builder()
+                      .route(new SiteRoute("/", new PageDocument("Home", body)))
+                      .linkSpeculation(LinkSpeculation.PRERENDER)
+                      .build());
+            });
 
-    var html = compiled.pages().get("/");
-    assertThat(html)
-        .contains("<script type=\"speculationrules\">")
-        .contains("<main data-src=\"" + THIS_FILE + ":");
+    var page = RenderedPage.of(compiled, "/");
+    assertThat(page.elements("head [data-src]")).isEmpty();
+    assertThat(page.element("head > script[type=speculationrules]"))
+        .doesNotHaveAttribute("data-src");
+    assertThat(page.element("main").attr("data-src")).isEqualTo(THIS_FILE + ":" + mainLine[0]);
+    assertNoCompilerSources(page.html());
   }
 
   @Test
   @DisplayName("the page tree lists elements with their components and call sites")
   void treeShowsComponentsAndSources() {
+    var panel = new Panel("hi");
     var tree =
         SourceTracking.enabled(
-            () -> Compiler.explain(new PageDocument("Tree", main().child(new Panel("hi")))));
+            () -> Compiler.explain(new PageDocument("Tree", main().child(panel))));
     var text = tree.toText();
 
     assertThat(text).contains("<main>").contains("<p>").contains("\"hi\"").contains("in Panel");
-    assertThat(text).containsPattern("<p>.*at " + THIS_FILE + ":\\d+");
+    assertThat(text).contains("at " + THIS_FILE + ":" + panel.elementLine);
+    assertNoCompilerSources(text);
 
     var body = (PageTree.Tag) tree.body().getFirst();
     assertThat(body.tag()).isEqualTo("main");
     assertThat(body.children()).hasSize(1);
+    var paragraph = (PageTree.Tag) body.children().getFirst();
+    assertThat(paragraph.source()).isEqualTo(sourceAt(panel.elementLine));
   }
 
   private static SourceLocation sourceAt(int line) {
     return new SourceLocation(THIS_FILE, line);
+  }
+
+  private static void assertNoCompilerSources(String text) {
+    assertThat(text)
+        .doesNotContain(
+            "PageCompiler.java",
+            "DocumentPass.java",
+            "SourceTracking.java",
+            "SourceProvenance.java",
+            "HtmlWriter.java",
+            "PageValidator.java",
+            "SiteCompiler.java",
+            "Expansion.java",
+            "ExpansionState.java",
+            "DocumentState.java",
+            "CompilationState.java",
+            "ReferenceLinker.java",
+            "dev.nthings.tessera.compiler");
   }
 }

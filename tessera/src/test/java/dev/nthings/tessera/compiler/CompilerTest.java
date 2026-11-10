@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Compiler")
 class CompilerTest {
@@ -34,17 +36,12 @@ class CompilerTest {
     }
 
     @Test
-    @DisplayName("inlines its styles, so there are no assets to publish")
-    void inlinesItsStyles() {
-      assertThat(page.compiled().assets()).isEmpty();
-      assertThat(page.element("head > style").data()).contains("@scope ([data-scope=");
-    }
-
-    @Test
-    @DisplayName("keys the scope's rules by its data-scope value")
-    void keysRulesByDataScope() {
+    @DisplayName("inlines its styles, keyed by the scope's data-scope value")
+    void inlinesScopedStyles() {
       var view = page.element("main[data-scope-id=workspace-core]");
 
+      assertThat(page.compiled().assets()).isEmpty();
+      assertThat(page.element("head > style").data()).contains(page.css());
       assertThat(page.css()).contains("@scope ([data-scope=\"" + view.attr("data-scope") + "\"])");
     }
 
@@ -53,16 +50,17 @@ class CompilerTest {
     void layersContainerQueries() {
       var card = page.element("main[data-scope-id=workspace-core] section");
       var cqClass = CssBlocks.generatedClass(card.className(), "cq-");
+      var container = CssBlocks.block(page.css(), "@container metric-card (inline-size >= 320px){");
 
-      assertThat(CssBlocks.block(page.css(), "@layer container{"))
-          .contains("@container metric-card (inline-size >= 320px){." + cqClass + "{");
+      assertThat(container).contains("." + cqClass + "{").contains("flex-direction:row");
     }
 
     @Test
     @DisplayName("resolves invoker commands to ids in the enclosing scope")
     void resolvesScopedInvokerCommands() {
       assertThat(page.elementById("workspace-core--open-archive-btn"))
-          .hasAttribute("commandfor", "workspace-core--confirm-archive");
+          .hasAttribute("commandfor", "workspace-core--confirm-archive")
+          .hasAttribute("command", "show-modal");
     }
 
     @Test
@@ -76,6 +74,7 @@ class CompilerTest {
           .hasId(trigger.attr("interestfor"))
           .hasAttribute("popover", "hint")
           .hasAttribute("role", "tooltip");
+      assertThat(tooltip.text()).isEqualTo("Open archive confirmation dialog");
     }
 
     @Test
@@ -187,11 +186,12 @@ class CompilerTest {
     }
   }
 
-  @Test
-  @DisplayName("external output rejects a relative asset base")
-  void externalOutputRejectsRelativeBase() {
+  @ParameterizedTest
+  @ValueSource(strings = {"assets", "/assets//nested", "/assets/../nested"})
+  @DisplayName("external output rejects a relative, empty-segment, or parent-traversing asset base")
+  void externalOutputRejectsInvalidBase(String base) {
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> OutputMode.external("assets"))
-        .withMessageContaining("assets");
+        .isThrownBy(() -> OutputMode.external(base))
+        .withMessage("External asset base must be an absolute path such as /assets: " + base);
   }
 }

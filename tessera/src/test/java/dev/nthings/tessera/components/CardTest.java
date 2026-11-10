@@ -27,12 +27,22 @@ class CardTest {
             .stretchedLink("/docs/compiler")
             .actions(button().text("Bookmark"));
 
-    var media = renderMain(card).element("[data-scope-id=architecture]");
+    var media = renderMain(card).element("article[data-scope-id=architecture]");
 
     assertThat(media.children())
         .extracting(e -> e.tagName())
         .containsExactly("img", "hgroup", "p", "footer");
-    assertThat(media.selectFirst("hgroup h3 a.card-link[href=/docs/compiler]")).isNotNull();
+    assertThat(media.selectFirst("> img"))
+        .hasAttribute("src", "/assets/arch.webp")
+        .hasAttribute("alt", "Architecture diagram");
+    assertThat(media.selectFirst("hgroup > p")).hasText("Three-pass static pipeline");
+    assertThat(media.selectFirst("hgroup h3 a"))
+        .hasClasses("card-link")
+        .hasAttribute("href", "/docs/compiler")
+        .hasText("Multi-Phase Compiler");
+    assertThat(media.selectFirst("> p"))
+        .hasText("Separates layout expansion, validation, and paint.");
+    assertThat(media.selectFirst("footer button")).hasText("Bookmark");
   }
 
   @Test
@@ -43,9 +53,12 @@ class CardTest {
             .bodyText("Uses native light-dark().")
             .bodyText("Zero runtime theme scripts.");
 
-    var textOnly = renderMain(card).element("main > *");
+    var textOnly = renderMain(card).element("main > article");
 
     assertThat(textOnly.children()).extracting(e -> e.tagName()).containsExactly("h3", "div");
+    assertThat(textOnly.select("> div > p"))
+        .extracting(e -> e.text())
+        .containsExactly("Uses native light-dark().", "Zero runtime theme scripts.");
   }
 
   @Test
@@ -56,11 +69,18 @@ class CardTest {
     var choice = renderMain(card).element("main > *");
 
     assertThat(choice).hasTagName("label");
-    assertThat(choice.selectFirst("> input[type=radio][name=plan][checked]")).isNotNull();
+    assertThat(choice.selectFirst("> input"))
+        .hasAttribute("type", "radio")
+        .hasAttribute("name", "plan")
+        .hasAttribute("value", "pro")
+        .hasAttribute("checked");
 
     var checkbox = renderMain(Card.of("Alerts").checkbox("extras", "alerts")).element("label");
-    assertThat(checkbox.selectFirst("> input[type=checkbox][name=extras]:not([checked])"))
-        .isNotNull();
+    assertThat(checkbox.selectFirst("> input"))
+        .hasAttribute("type", "checkbox")
+        .hasAttribute("name", "extras")
+        .hasAttribute("value", "alerts")
+        .doesNotHaveAttribute("checked");
   }
 
   @Test
@@ -68,6 +88,10 @@ class CardTest {
   void checkedBeforeChoiceApplies() {
     var card = Card.of("Alerts").checked().checkbox("extras", "alerts");
 
-    assertThat(renderMain(card).element("label > input[type=checkbox][checked]")).isNotNull();
+    assertThat(renderMain(card).element("label > input"))
+        .hasAttribute("type", "checkbox")
+        .hasAttribute("name", "extras")
+        .hasAttribute("value", "alerts")
+        .hasAttribute("checked");
   }
 }

@@ -59,7 +59,7 @@ class BadgeTest {
   }
 
   @Test
-  @DisplayName("tone, variant, size and pill styling combine")
+  @DisplayName("tone, variant, size and pill styling combine without leaving defaults")
   void optionsCombineModifiers() {
     var badge =
         render(
@@ -69,7 +69,9 @@ class BadgeTest {
                 .size(Size.LG)
                 .pill());
 
-    assertThat(badge).hasClasses("badge--danger", "badge--solid", "badge--lg", "is-pill");
+    assertThat(badge)
+        .hasClasses("badge--danger", "badge--solid", "badge--lg", "is-pill")
+        .doesNotHaveClasses("badge--neutral", "badge--tinted", "badge--md");
   }
 
   @Test

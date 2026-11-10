@@ -18,26 +18,15 @@ class FormsTest {
   class Switches {
 
     @Test
-    @DisplayName("reflects its checked state on a role=switch checkbox")
-    void reflectsCheckedState() {
-      var page =
-          renderMain(
-              Forms.switchInput("enable_notifications")
-                  .boolAttr("checked")
-                  .ariaLabel("Notifications"));
-
-      assertThat(page.element("input[role=switch][name=enable_notifications]"))
-          .hasAttribute("checked");
-    }
-
-    @Test
     @DisplayName("a switch field starts unchecked and its label targets the switch")
     void labelsSwitchField() {
       var page = renderMain(Forms.switchField("Receive updates", "updates"));
 
       var rowSwitch = page.element("input[role=switch][name=updates]");
       assertThat(rowSwitch).doesNotHaveAttribute("checked");
-      assertThat(page.element("label")).hasAttribute("for", rowSwitch.id());
+      assertThat(page.element("label"))
+          .hasAttribute("for", rowSwitch.id())
+          .hasText("Receive updates");
     }
 
     @Test
@@ -73,12 +62,16 @@ class FormsTest {
         assertThat(page.element("label")).hasAttribute("for", input.id());
         assertThat(page.elements(".field-hint")).hasSize(enabled ? 1 : 0);
         assertThat(page.elements(".field-error")).hasSize(enabled ? 1 : 0);
+        assertThat(page.elements(".field-anchor-tooltip")).hasSize(enabled ? 1 : 0);
         if (enabled) {
+          assertThat(page.element(".field-anchor-tooltip")).hasText("Enter your name");
+          assertThat(page.ruleOf(input, "u-")).contains("anchor-name:--anchor-" + input.id());
           assertThat(page.elementById(input.attr("aria-describedby")).text())
               .isEqualTo("Full name");
           assertThat(page.elementById(input.attr("aria-errormessage")).text())
               .contains("Name is required");
         } else {
+          assertThat(page.ruleOf(input, "u-")).doesNotContain("anchor-name:");
           assertThat(input).doesNotHaveAttribute("aria-describedby");
           assertThat(input).doesNotHaveAttribute("aria-errormessage");
         }
@@ -88,7 +81,7 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("a select field keeps its options and hint link across renders")
+    @DisplayName("a select field keeps its options, selected value, and hint link across renders")
     void selectFieldKeepsOptions() {
       var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
       var field = Field.of("Size", select).hint("Choose a size");
@@ -96,8 +89,13 @@ class FormsTest {
       for (var turn = 0; turn < 2; turn++) {
         var page = renderMain(field);
         var element = page.element("select");
-        assertThat(page.elements("option")).hasSize(2);
-        assertThat(page.element("label")).hasAttribute("for", element.id());
+        assertThat(page.elements("option"))
+            .extracting(option -> option.attr("value") + ":" + option.text())
+            .containsExactly("small:Small", "large:Large");
+        assertThat(page.element("option[selected]"))
+            .hasAttribute("value", "large")
+            .hasText("Large");
+        assertThat(page.element("label")).hasAttribute("for", element.id()).hasText("Size");
         assertThat(page.elementById(element.attr("aria-describedby")).text())
             .isEqualTo("Choose a size");
       }
@@ -158,7 +156,8 @@ class FormsTest {
     @Test
     @DisplayName("opts into the base-select appearance")
     void optsIntoBaseSelectAppearance() {
-      assertThat(page.css()).contains("appearance:base-select");
+      assertThat(page.scopeBody(page.element("select[name=theme_mode]")))
+          .contains("appearance:base-select");
     }
   }
 
@@ -182,7 +181,8 @@ class FormsTest {
     @DisplayName("labels its control")
     void labelsItsControl() {
       assertThat(page.element("label"))
-          .hasAttribute("for", page.element("input[name=username]").id());
+          .hasAttribute("for", page.element("input[name=username]").id())
+          .hasText("Username");
     }
 
     @Test
@@ -190,6 +190,7 @@ class FormsTest {
     void describesControlByHint() {
       assertThat(page.element("input[name=username]"))
           .hasAttribute("aria-describedby", page.element(".field-hint").id());
+      assertThat(page.element(".field-hint")).hasText("3-20 characters.");
     }
 
     @Test
@@ -199,6 +200,7 @@ class FormsTest {
       var error = input.nextElementSibling();
 
       assertThat(error).hasClasses("field-error");
+      assertThat(error.text()).contains("Username is taken.");
       assertThat(input).hasAttribute("aria-errormessage", error.id());
     }
 
@@ -211,6 +213,7 @@ class FormsTest {
 
       assertThat(page.ruleOf(input, "u-")).contains("anchor-name:" + anchor);
       assertThat(page.ruleOf(tooltip, "u-")).contains("position-anchor:" + anchor);
+      assertThat(tooltip).hasText("Alphanumeric only");
     }
   }
 
@@ -228,6 +231,10 @@ class FormsTest {
         .extracting(label -> label.attr("for"))
         .doesNotHaveDuplicates()
         .allSatisfy(page::elementById);
+    assertThat(page.elements("input[name=email]"))
+        .hasSize(2)
+        .extracting(input -> input.id())
+        .doesNotHaveDuplicates();
   }
 
   @Test
@@ -235,6 +242,9 @@ class FormsTest {
   void textareaGrowsWithContent() {
     var page = renderMain(Forms.textarea("m", 3));
 
-    assertThat(page.css()).contains("field-sizing:content").contains("min-block-size:calc(3lh");
+    assertThat(page.css())
+        .contains("field-sizing:content")
+        .contains("min-block-size:calc(3lh")
+        .contains("resize:vertical");
   }
 }

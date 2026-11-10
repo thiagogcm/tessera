@@ -142,7 +142,11 @@ class CssValueTest {
             "flip-block flip-inline"),
         argumentSet("scroll snap", ScrollSnap.mandatory(ScrollSnap.Axis.X), "x mandatory"),
         argumentSet("keyword enum", WhiteSpace.PRE_WRAP, "pre-wrap"),
-        argumentSet("sibling index", CssNumber.siblingIndex(), "sibling-index()"));
+        argumentSet("sibling index", CssNumber.siblingIndex(), "sibling-index()"),
+        argumentSet(
+            "fluid length",
+            CssLength.fluid(CssLength.rem(1), CssLength.cqi(4), CssLength.rem(1.5)),
+            "clamp(1rem, 4cqi, 1.5rem)"));
   }
 
   @ParameterizedTest

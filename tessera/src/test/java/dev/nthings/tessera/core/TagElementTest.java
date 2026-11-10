@@ -10,9 +10,12 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfTy
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.HtmlAssertions.entry;
+import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @DisplayName("TagElement")
 class TagElementTest {
@@ -22,7 +25,7 @@ class TagElementTest {
   void voidElementRejectsChildren() {
     assertThatIllegalStateException()
         .isThrownBy(() -> img("/hero.webp", "Hero").child(span().text("Invalid")))
-        .withMessageContaining("void element");
+        .withMessage("HTML5 void element <img> cannot have children");
   }
 
   @Test
@@ -38,6 +41,8 @@ class TagElementTest {
         .isThrownBy(() -> element.childrenList().clear());
     assertThat(element.attributes())
         .containsExactly(entry("data-x", "1"), entry("aria-label", "Box"));
+    assertThat(element.idReferences()).isEmpty();
+    assertThat(element.childrenList()).singleElement().isInstanceOf(TagElement.class);
   }
 
   @Test
@@ -49,9 +54,16 @@ class TagElementTest {
 
     assertThat(element.attributes()).isEmpty();
     assertThat(element.idReferences()).isEmpty();
-    assertThatIllegalArgumentException().isThrownBy(() -> element.removeAttr("aria-label"));
-    assertThatIllegalArgumentException().isThrownBy(() -> element.removeAttr("role"));
-    assertThatIllegalArgumentException().isThrownBy(() -> element.removeAttr("id"));
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> element.removeAttr("aria-label"))
+        .withMessageContaining("attribute 'aria-label'");
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> element.removeAttr("role"))
+        .withMessageContaining("attribute 'role'");
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> element.removeAttr("id"))
+        .withMessage(
+            "Use id(ElementRef) instead of the attribute 'id', so the compiler can scope and link it");
   }
 
   @Test
@@ -60,6 +72,22 @@ class TagElementTest {
     var element = a("/start").href(ElementRef.page("top")).attr("href", "/end");
 
     assertThat(element.idReferences()).isEmpty();
-    assertThat(element.attributes()).containsEntry("href", "/end");
+    assertThat(element.attributes()).containsExactly(entry("href", "/end"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"MENU,menu", "LISTBOX,listbox", "TREE,tree", "GRID,grid", "DIALOG,dialog"})
+  @DisplayName("aria-haspopup serializes its wire token")
+  void ariaHasPopupSerializesWireToken(AriaPopup popup, String wire) {
+    assertThat(renderMain(div().ariaHasPopup(popup)).element("main > div"))
+        .hasAttribute("aria-haspopup", wire);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"OFF,off", "POLITE,polite", "ASSERTIVE,assertive"})
+  @DisplayName("aria-live serializes its wire token")
+  void ariaLiveSerializesWireToken(AriaLive live, String wire) {
+    assertThat(renderMain(div().ariaLive(live)).element("main > div"))
+        .hasAttribute("aria-live", wire);
   }
 }

@@ -57,7 +57,7 @@ public final class Container {
       throw new IllegalArgumentException("A container is SIZE or INLINE_SIZE, not both");
     }
     this.ident = ident;
-    this.types = Set.copyOf(all);
+    this.types = all;
   }
 
   /// A container named `name`, of the given types. Throws IllegalArgumentException if `name` is not

@@ -330,7 +330,6 @@ public final class TagElement
 
   private TagElement aria(String attribute, String value) {
     attributes.put(attribute, value);
-    idReferences.remove(attribute);
     return this;
   }
 

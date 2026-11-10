@@ -119,11 +119,12 @@ final class Expansion {
     if (!ClassNames.isUnstable(type)) {
       return false;
     }
-    try {
-      return type.getMethod("scopeName").getDeclaringClass() == Scope.class;
-    } catch (NoSuchMethodException impossible) {
-      return false;
+    for (var method : type.getMethods()) {
+      if (method.getName().equals("scopeName") && method.getParameterCount() == 0) {
+        return method.getDeclaringClass() == Scope.class;
+      }
     }
+    throw new IllegalStateException("Scope without scopeName(): " + type.getName());
   }
 
   /// Adds the scope attributes to its root element through component and key boundaries, or
@@ -238,7 +239,7 @@ final class Expansion {
   private ExpandedNode.Tag tag(TagElement element, @Nullable String forcedId, PageContext context) {
     var attrs = new LinkedHashMap<>(element.attributes());
     var source = element.source() != null ? element.source() : context.origin();
-    var location = context.location(element.tag().tagName(), attrs.get("id"), source);
+    var location = context.location(element.tag().tagName(), null, source);
     var domId = forcedId;
     var refs = element.boundRefs();
     if (domId == null && !refs.isEmpty()) {
@@ -247,11 +248,6 @@ final class Expansion {
     if (domId != null) {
       attrs.put("id", domId);
       location = location.withDomId(domId);
-    } else {
-      var explicit = location.domId();
-      if (explicit != null && !explicit.isBlank()) {
-        state.registerDomId(explicit, location);
-      }
     }
 
     var style = identityStyles(element, domId, location);
@@ -291,7 +287,7 @@ final class Expansion {
         element.tag(),
         location,
         attrs,
-        references.isEmpty() ? Map.of() : new LinkedHashMap<>(references),
+        references.isEmpty() ? Map.of() : references,
         children(element.childrenList(), owner == null ? context : context.withKeyOwner(owner)),
         companion);
   }

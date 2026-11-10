@@ -37,7 +37,7 @@ final class PageContext implements DocumentContext {
     this.styles = styles;
     this.docState = docState;
     this.state = state;
-    this.componentPath = List.copyOf(componentPath);
+    this.componentPath = componentPath;
     this.origin = origin;
     this.keyOwner = keyOwner;
   }
@@ -89,10 +89,6 @@ final class PageContext implements DocumentContext {
 
   StyleSheet styles() {
     return styles;
-  }
-
-  List<String> componentPath() {
-    return componentPath;
   }
 
   /// The call site of the innermost enclosing component, when source tracking is on. Elements that

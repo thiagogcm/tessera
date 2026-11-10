@@ -35,10 +35,6 @@ final class CssContents {
 
   /// Parts joined with spaces.
   record Sequence(List<CssContent> parts) implements CssContent {
-    Sequence {
-      parts = List.copyOf(parts);
-    }
-
     @Override
     public String toCss() {
       return parts.stream().map(CssContent::toCss).collect(Collectors.joining(" "));

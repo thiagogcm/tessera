@@ -47,7 +47,7 @@ public record TransitionKey(String name, @Nullable String transitionClass) {
     if (RESERVED.contains(name.toLowerCase(Locale.ROOT))) {
       throw new IllegalArgumentException("TransitionKey name is reserved: " + name);
     }
-    if (name.startsWith("--") || !IDENT.matcher(name).matches()) {
+    if (!IDENT.matcher(name).matches()) {
       throw new IllegalArgumentException("Not a CSS identifier: '" + name + "'");
     }
     return name;

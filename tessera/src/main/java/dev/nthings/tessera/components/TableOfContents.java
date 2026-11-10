@@ -88,7 +88,7 @@ public final class TableOfContents extends BuiltinComponent {
     Links(String title, @Nullable String id, List<DocumentHeading> items) {
       this.title = title;
       this.id = id;
-      this.items = List.copyOf(items);
+      this.items = items;
     }
 
     @Override

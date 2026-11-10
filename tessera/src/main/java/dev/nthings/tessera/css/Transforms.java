@@ -51,10 +51,6 @@ final class Transforms {
 
   /// Functions written space-separated in the CSS `transform` list, in the order given.
   record Chain(List<Transform> steps) implements Transform {
-    Chain {
-      steps = List.copyOf(steps);
-    }
-
     @Override
     public String toCss() {
       return steps.stream().map(Transform::toCss).collect(Collectors.joining(" "));

@@ -58,7 +58,7 @@ final class PageValidator {
     for (var node : nodes) {
       if (node instanceof ResolvedTag tag) {
         var id = tag.attributes().get("id");
-        if (id != null && !id.isBlank()) {
+        if (id != null) {
           state.elementsById.putIfAbsent(id, tag);
         }
         var labelled = tag.attributes().get("for");

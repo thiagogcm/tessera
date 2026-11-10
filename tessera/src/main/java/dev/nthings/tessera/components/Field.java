@@ -17,7 +17,6 @@ import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
-import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// Labelled container for a form control: a visible `<label>` that names the control, optional
@@ -31,18 +30,18 @@ public final class Field extends BuiltinScope<Field> {
 
   private final String label;
 
-  /// Exactly one is set: the bare control from [#of(String, TagElement)], or the select from
-  /// [#of(String, Select)], whose `<select>` is the control.
-  private final @Nullable TagElement bareControl;
+  /// The control to render: the bare control from [#of(String, TagElement)], or the `<select>`
+  /// from [#of(String, Select)].
+  private final TagElement control;
 
   private final @Nullable Select select;
   private @Nullable String hint;
   private @Nullable String error;
   private @Nullable String tooltip;
 
-  private Field(String label, @Nullable TagElement bareControl, @Nullable Select select) {
+  private Field(String label, TagElement control, @Nullable Select select) {
     this.label = label;
-    this.bareControl = bareControl;
+    this.control = control;
     this.select = select;
   }
 
@@ -54,7 +53,7 @@ public final class Field extends BuiltinScope<Field> {
 
   /// Wraps `select` in a field labelled `label`.
   public static Field of(String label, Select select) {
-    return new Field(label, null, select);
+    return new Field(label, select.control(), select);
   }
 
   /// Sets hint text shown above the control and linked to it with `aria-describedby`.
@@ -90,8 +89,7 @@ public final class Field extends BuiltinScope<Field> {
   @Override
   IntoElement expand(DocumentContext context) {
     var wrapper = select;
-    var control =
-        (wrapper != null ? wrapper.control() : Objects.requireNonNull(bareControl)).copy();
+    var control = this.control.copy();
     var ctrl = control.ref();
 
     var container = div().attr("class", "field-container");

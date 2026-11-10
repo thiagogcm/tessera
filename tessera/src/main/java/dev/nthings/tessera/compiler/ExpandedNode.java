@@ -22,8 +22,8 @@ sealed interface ExpandedNode
         ExpandedNode.Slot,
         ExpandedNode.Empty {
 
-  /// An expanded element; `companion` is emitted as its next sibling. Takes ownership of the
-  /// maps and list it is given.
+  /// An expanded element; `companion` is emitted as its next sibling. The maps and list are read
+  /// during linking and discarded with the expansion.
   record Tag(
       TagName tag,
       Location location,

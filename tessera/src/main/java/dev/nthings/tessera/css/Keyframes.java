@@ -2,7 +2,6 @@ package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.foundation.Decimals;
-import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;
@@ -57,7 +56,7 @@ public final class Keyframes {
 
   private Keyframes(CssIdent ident, SortedMap<Double, String> steps) {
     this.ident = ident;
-    this.steps = Collections.unmodifiableSortedMap(steps);
+    this.steps = steps;
     this.rule = rule(ident, steps);
   }
 

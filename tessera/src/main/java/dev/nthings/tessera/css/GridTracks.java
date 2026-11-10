@@ -46,7 +46,6 @@ final class GridTracks {
       if (count < 1) {
         throw new IllegalArgumentException("Repeat count must be positive: " + count);
       }
-      tracks = List.copyOf(tracks);
     }
 
     @Override
@@ -63,10 +62,6 @@ final class GridTracks {
 
   /// `repeat(auto-fit | auto-fill, tracks)`.
   record AutoRepeat(AutoCount count, List<GridTrack> tracks) implements GridTrack {
-    AutoRepeat {
-      tracks = List.copyOf(tracks);
-    }
-
     @Override
     public String toCss() {
       return "repeat(" + count.toCss() + ", " + TrackList.joined(tracks) + ")";

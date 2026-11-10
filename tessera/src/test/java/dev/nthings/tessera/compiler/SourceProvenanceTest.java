@@ -33,8 +33,8 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("nothing is recorded or emitted unless tracking is on")
-  void trackingIsOffByDefault() {
+  @DisplayName("records and emits no source by default")
+  void recordsNothingByDefault() {
     var tag = div();
     var page = RenderedPage.render(main().child(tag));
 
@@ -55,8 +55,8 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("a user component's elements point into its own expand method")
-  void userComponentPointsIntoRender() {
+  @DisplayName("a user component's elements point into the component's own code")
+  void userComponentKeepsSource() {
     var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(new Panel("hi"))));
 
     assertThat(page.element("p").attr("data-src")).startsWith(THIS_FILE + ":");
@@ -64,7 +64,7 @@ class SourceProvenanceTest {
 
   @Test
   @DisplayName("a library component's elements point at the line that placed the component")
-  void libraryComponentPointsAtItsPlacement() {
+  void libraryComponentKeepsPlacement() {
     var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(Button.of("Save"))));
     var line = here() - 1;
 
@@ -86,8 +86,8 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("a diagnostic without tracking keeps its familiar form")
-  void diagnosticsWithoutTrackingAreUnchanged() {
+  @DisplayName("a diagnostic without tracking omits its source location")
+  void diagnosticsOmitSource() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -98,8 +98,8 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("site compilation carries tracking onto its worker threads")
-  void siteCompilationTracksComponentsRenderedOnWorkers() {
+  @DisplayName("site compilation tracks pages rendered on worker threads")
+  void tracksSiteWorkerThreads() {
     var compiled =
         SourceTracking.enabled(
             () ->
@@ -118,8 +118,8 @@ class SourceProvenanceTest {
   }
 
   @Test
-  @DisplayName("site head content the compiler builds carries no source")
-  void compilerBuiltHeadElementsHaveNoSource() {
+  @DisplayName("compiler-built head content carries no source")
+  void headElementsHaveNoSource() {
     var compiled =
         SourceTracking.enabled(
             () ->

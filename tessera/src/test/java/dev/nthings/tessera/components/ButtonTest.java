@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Test;
 class ButtonTest {
 
   @Test
-  @DisplayName("commands open a deferred dialog or popover, and a disabled button cannot")
-  void commandsOpenDeferredTargets() {
+  @DisplayName("commands bind a deferred dialog or popover target, even when disabled")
+  void bindsCommandsToDeferredTargets() {
     var dialog = Modal.of("Confirm").id("confirm");
     var hint = ElementRef.scoped("hint");
     var page =
@@ -73,7 +73,7 @@ class ButtonTest {
   }
 
   @Test
-  @DisplayName("a button can show an interest tooltip")
+  @DisplayName("interest tooltip anchors a labelled hint popover")
   void interestTooltipAnchorsAHint() {
     var page = renderMain(Button.of("Hover me").interestTooltip(tip -> tip.text("Saved")));
 
@@ -84,7 +84,7 @@ class ButtonTest {
 
   @Test
   @DisplayName("an icon button keeps its name, hides the icon, and shows keyboard focus")
-  void iconButtonKeepsItsNameAndFocus() {
+  void iconButtonKeepsName() {
     var page = renderMain(IconButton.of("Dismiss", span().text("Dismiss")));
 
     var button = page.element("button");
@@ -109,7 +109,7 @@ class ButtonTest {
 
   @Test
   @DisplayName("a button binds and targets refs in the enclosing id scope")
-  void refsResolveInTheCallersScope() {
+  void refsResolveInScope() {
     var save = ElementRef.scoped("save");
     var panel = ElementRef.scoped("panel");
     var page =

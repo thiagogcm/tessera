@@ -20,7 +20,7 @@ class SiteAssetsTest {
 
   @Test
   @DisplayName("an image referencing an unregistered asset is rejected")
-  void rejectsImageReferencingUnregisteredAsset() {
+  void rejectsUnregisteredImageAsset() {
     var site = SiteDefinition.of(homeWithLogoAndGuide());
 
     assertThatExceptionOfType(CompilationException.class)
@@ -36,7 +36,7 @@ class SiteAssetsTest {
 
   @Test
   @DisplayName("an asset colliding with a generated file is rejected")
-  void rejectsAssetCollidingWithGeneratedFile() {
+  void rejectsGeneratedFileCollision() {
     var site =
         SiteDefinition.builder()
             .routes(homeWithLogoAndGuide())
@@ -82,7 +82,7 @@ class SiteAssetsTest {
 
   @Test
   @DisplayName("two routes at one path are reported before any page renders")
-  void rejectsDuplicateRoutesBeforeRendering() {
+  void rejectsDuplicateRoutes() {
     Component failing =
         context -> {
           throw new AssertionError("rendered");

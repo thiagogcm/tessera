@@ -28,8 +28,8 @@ class SiteLinkValidationTest {
         "/guides/caf%C3%A9/?mode=full#caf%C3%A9%2Bintro",
         "../caf%C3%A9/index.html#caf%C3%A9%2Bintro"
       })
-  @DisplayName("resolves relative and encoded links against published directory URLs")
-  void resolvesRelativeAndEncodedLinksAgainstPublishedDirectoryUrls(String href) {
+  @DisplayName("accepts relative and encoded links to published directory URLs")
+  void acceptsEncodedDirectoryLinks(String href) {
     var site =
         SiteDefinition.of(
             new SiteRoute(
@@ -42,8 +42,8 @@ class SiteLinkValidationTest {
   }
 
   @Test
-  @DisplayName("handles query-only links on HTML files and relative asset URLs")
-  void handlesQueryOnlyLinksOnHtmlFilesAndRelativeAssetUrls() {
+  @DisplayName("accepts query-only links and relative asset URLs")
+  void acceptsQueryOnlyLinksAndAssets() {
     var site =
         SiteDefinition.builder()
             .route(
@@ -63,8 +63,8 @@ class SiteLinkValidationTest {
   }
 
   @Test
-  @DisplayName("rejects missing targets behind queries and encoding")
-  void rejectsMissingTargetsBehindQueriesAndEncoding() {
+  @DisplayName("rejects a missing encoded fragment behind a query")
+  void rejectsEncodedMissingFragment() {
     var site =
         SiteDefinition.of(
             new SiteRoute(
@@ -79,8 +79,8 @@ class SiteLinkValidationTest {
   }
 
   @Test
-  @DisplayName("collects link and transition errors across routes in one contextual report")
-  void collectsSiteErrorsAcrossRoutes() {
+  @DisplayName("collects link and transition errors across routes")
+  void collectsCrossRouteErrors() {
     var site =
         SiteDefinition.of(
             new SiteRoute(
@@ -111,7 +111,7 @@ class SiteLinkValidationTest {
 
   @Test
   @DisplayName("collects page errors across routes")
-  void collectsPageErrorsAcrossRoutes() {
+  void collectsPageErrors() {
     var site =
         SiteDefinition.of(
             new SiteRoute("/profile", new PageDocument("Profile", img("/avatar.png", "Avatar"))),
@@ -140,8 +140,8 @@ class SiteLinkValidationTest {
   }
 
   @Test
-  @DisplayName("rejects a link to a #fragment missing from the target route")
-  void rejectsLinkToMissingAnchor() {
+  @DisplayName("rejects a link to a missing anchor on the target route")
+  void rejectsMissingAnchor() {
     var site =
         SiteDefinition.of(
             new SiteRoute(

@@ -23,7 +23,7 @@ class TableOfContentsTest {
 
     @Test
     @DisplayName("links each item to its target with its heading level")
-    void linksEachItemToItsTargetWithItsLevel() {
+    void linksItemsWithLevels() {
       var intro = ElementRef.page("intro");
       var sub = ElementRef.scoped("sub");
       var toc =
@@ -59,8 +59,8 @@ class TableOfContentsTest {
   class FromContext {
 
     @Test
-    @DisplayName("placed before its sections, lists them")
-    void placedBeforeItsSectionsListsThem() {
+    @DisplayName("lists sections registered after it")
+    void listsFollowingSections() {
       var page =
           renderMain(
               TableOfContents.of("On this page"),
@@ -73,8 +73,8 @@ class TableOfContentsTest {
     }
 
     @Test
-    @DisplayName("reusing a section id on one page is rejected")
-    void rejectsDuplicateSectionIds() {
+    @DisplayName("rejects reusing a section id on a page")
+    void rejectsDuplicateIds() {
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(Section.of("intro", "Intro"), Section.of("intro", "Again")))
           .withMessageContaining("duplicate-id");
@@ -82,8 +82,8 @@ class TableOfContentsTest {
   }
 
   @Test
-  @DisplayName("a doc layout lists its sections in the rail, linked by their page-level ids")
-  void listsSectionsInRailLinkedByPageIds() {
+  @DisplayName("a doc layout lists its sections in the rail by page-level id")
+  void listsSectionsInRail() {
     var layout =
         DocLayout.of(
                 Section.of("getting-started", "Getting Started"),

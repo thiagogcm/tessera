@@ -19,8 +19,8 @@ class ScrollProgressBarTest {
   }
 
   @Test
-  @DisplayName("declares the animation shorthand before the scroll timeline that it would reset")
-  void declaresAnimationShorthandBeforeTimeline() {
+  @DisplayName("declares the animation shorthand before the scroll timeline")
+  void animationShorthandPrecedesTimeline() {
     var animationIndex = page.css().indexOf("animation:tessera-scroll-progress");
     var timelineIndex = page.css().indexOf("animation-timeline:scroll(root block)");
 
@@ -29,7 +29,7 @@ class ScrollProgressBarTest {
 
   @Test
   @DisplayName("is hidden from assistive technology")
-  void isHiddenFromAssistiveTechnology() {
+  void hiddenFromAssistiveTechnology() {
     assertThat(page.element("main > div")).hasAttribute("aria-hidden", "true");
   }
 }

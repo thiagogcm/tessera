@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 class ThemeRolesTest {
 
   @Test
-  @DisplayName("a role override restyles a field and a callout in both appearances")
-  void roleOverrideRestylesFieldAndCallout() {
+  @DisplayName("a control role override restyles the field and callout")
+  void overrideRestylesFieldAndCallout() {
     var theme =
         Theme.defaults()
             .with(
@@ -60,8 +60,8 @@ class ThemeRolesTest {
   }
 
   @Test
-  @DisplayName("compact density scales spacing and leaves the type scale alone")
-  void compactDensityLeavesTypographyAlone() {
+  @DisplayName("compact density scales spacing while the type scale stays fixed")
+  void densityScalesSpacingOnly() {
     var theme = Theme.defaults().with(Tokens.DENSITY, CssNumber.of(0.5));
     var page =
         RenderedPage.of(
@@ -81,7 +81,7 @@ class ThemeRolesTest {
 
   @Test
   @DisplayName("overlay travel and control feedback stay inside the reduced-motion query")
-  void motionTravelStaysInsideTheReducedMotionQuery() {
+  void motionGuardedByReducedMotion() {
     var page =
         renderMain(Forms.switchField("Lights", "lights"), Modal.of("Confirm").bodyText("Deploy"));
 

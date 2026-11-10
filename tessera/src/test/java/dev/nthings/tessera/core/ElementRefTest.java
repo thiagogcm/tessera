@@ -40,7 +40,7 @@ class ElementRefTest {
 
   @Test
   @DisplayName("resolves to its bind-site scope from an invoker in another scope")
-  void resolvesToBindSiteScopeFromInvokerInAnotherView() {
+  void resolvesToBindSiteScope() {
     var target = ElementRef.scoped("confirm");
 
     var page =
@@ -89,9 +89,8 @@ class ElementRefTest {
 
   @ParameterizedTest
   @MethodSource("ambiguousTargets")
-  @DisplayName(
-      "ambiguous targets report their binding error and independent errors without guessing command compatibility")
-  void reportsAmbiguousTargetsWithoutSecondaryCommandErrors(Element body, String rule) {
+  @DisplayName("ambiguous targets report their binding error without secondary command errors")
+  void reportsAmbiguousTargets(Element body, String rule) {
     var failure = catchThrowableOfType(CompilationException.class, () -> render(body));
 
     assertThat(failure.diagnostics())
@@ -139,7 +138,7 @@ class ElementRefTest {
 
   @Test
   @DisplayName("two named refs asking for different ids report conflicting-element-id")
-  void conflictingNamedRefsReport() {
+  void reportsConflictingElementId() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,

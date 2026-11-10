@@ -64,8 +64,8 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName("numbers generated ids within each scope, so one scope never renumbers another")
-  void numbersGeneratedIdsWithinEachScope() {
+  @DisplayName("generated ids number within each scope")
+  void numbersGeneratedIdsPerScope() {
     var single =
         RenderedPage.render(
             main()
@@ -90,7 +90,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a failing expand callback keeps its exception and names its component")
-  void aFailingExpandCallbackKeepsItsExceptionAndNamesItsComponent() {
+  void reportsExpandCallbackFailure() {
     var failure =
         catchThrowable(
             () ->
@@ -113,7 +113,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("late conversion failures retain their page and component context")
-  void lateConversionFailuresRetainContext() {
+  void retainsLateFailureContext() {
     IntoElement broken =
         () -> {
           throw new IllegalStateException("Broken conversion");
@@ -169,7 +169,7 @@ class ExpansionTest {
   @ParameterizedTest
   @MethodSource("unstableViews")
   @DisplayName("a scope without a stable class name and the default scopeName is reported")
-  void reportsUnstableViewType(Scope view) {
+  void reportsUnstableScopeName(Scope view) {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -182,7 +182,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("an anonymous scope that names its scopeName compiles")
-  void anonymousViewWithViewTypeCompiles() {
+  void anonymousScopeWithNameCompiles() {
     var named =
         new Scope() {
           @Override
@@ -203,7 +203,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a component diagnostic is located at the reporting component")
-  void componentDiagnosticIsLocatedAtTheComponent() {
+  void locatesComponentDiagnostic() {
     Component strict =
         context -> {
           context.report("hero-conflict", "Two hero images", "Keep one hero image.");
@@ -230,7 +230,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a registered heading whose target is never bound is reported")
-  void unboundHeadingTargetIsReported() {
+  void reportsUnboundHeadingTarget() {
     Component heading =
         context -> {
           context.registerHeading(ElementRef.page("missing"), "Missing", 2);
@@ -262,7 +262,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("keyed items keep their ids when siblings are inserted, removed and reordered")
-  void keyedItemsKeepTheirIdsWhenSiblingsMove() {
+  void keyedItemsKeepIds() {
     var before = cards(List.of("a", "b"));
     var after = cards(List.of("c", "b"));
     var reordered = cards(List.of("b", "d", "a"));
@@ -289,7 +289,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("keyed content is emitted in place, without a wrapper")
-  void keyedContentIsEmittedInPlace() {
+  void emitsKeyedContentInPlace() {
     var page =
         RenderedPage.render(
             main()
@@ -327,7 +327,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("the same key under different parents is valid and gives distinct ids")
-  void sameKeyUnderDifferentParentsIsValid() {
+  void allowsSameKeyAcrossParents() {
     var page =
         RenderedPage.render(
             main()
@@ -356,8 +356,8 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName("keyed ids stay put when another keyed list is added or removed before them")
-  void keyedIdsIgnoreOtherKeyedLists() {
+  @DisplayName("keyed ids stay stable when other keyed lists precede them")
+  void keyedIdsStayStable() {
     var alone = RenderedPage.render(main().child(list(List.of("a", "b"))));
     var behindAnother =
         RenderedPage.render(
@@ -379,9 +379,8 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName(
-      "keyed lists in one scope that reuse a key collide, and naming their parents fixes it")
-  void keyedListsSharingKeysNeedNamedParents() {
+  @DisplayName("keyed lists sharing a key collide unless their parents are named")
+  void sharedKeysNeedNamedParents() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -409,7 +408,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a blank key is rejected and a later key replaces an earlier one")
-  void blankKeyIsRejectedAndTheLastKeyWins() {
+  void rejectsBlankKeyAndUsesLast() {
     var content = p().text("Item");
 
     assertThatIllegalArgumentException().isThrownBy(() -> content.key(" "));
@@ -427,7 +426,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a keyed component takes its key on its own boundary")
-  void keyedComponentTakesItsKeyOnItsOwnBoundary() {
+  void keysComponentAtItsBoundary() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -445,7 +444,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a keyed component keeps its scoped ids when siblings are inserted before it")
-  void keyedComponentKeepsItsScopedIds() {
+  void keyedComponentKeepsScopedIds() {
     Component quiet = _ -> p().id(ElementRef.scoped("note")).text("Quiet");
     var alone = RenderedPage.render(main().child(quiet.key("q")));
     var behind =
@@ -467,7 +466,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("keyed content inside a scope without scopeId reports generated-scope-id")
-  void keyedContentInsideAGeneratedScopeIsReported() {
+  void reportsKeyedInGeneratedScope() {
     var alone =
         catchThrowableOfType(
             CompilationException.class,
@@ -507,8 +506,8 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName("a generated parent id still numbers keyed content in an explicit child scope")
-  void generatedParentIdReachesKeyedContent() {
+  @DisplayName("a generated parent id still flags keyed content in an explicit child scope")
+  void reportsGeneratedParentScope() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -544,7 +543,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a generated scope whose expand result is keyed reports generated-scope-id")
-  void keyedExpandResultInsideAGeneratedScopeIsReported() {
+  void reportsKeyedExpandResult() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -561,7 +560,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a component that returns keyed content inside a generated scope is reported")
-  void componentReturningKeyedContentInsideAGeneratedScopeIsReported() {
+  void reportsKeyedComponentContent() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -580,7 +579,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("deferred keyed content inside a generated scope is reported")
-  void deferredKeyedContentInsideAGeneratedScopeIsReported() {
+  void reportsDeferredKeyedContent() {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
@@ -600,7 +599,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a generated scope id and the same explicit scopeId share one id counter")
-  void generatedAndExplicitScopeIdsShareOneCounter() {
+  void sharesScopeIdCounter() {
     var page =
         RenderedPage.render(
             main()
@@ -613,7 +612,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("a generated parent and an explicit scope with the same id share the nested counter")
-  void generatedParentAndExplicitScopeShareTheNestedCounter() {
+  void sharesNestedIdCounter() {
     var page =
         RenderedPage.render(
             main()
@@ -636,7 +635,7 @@ class ExpansionTest {
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 2})
   @DisplayName("fragment roots retain their scope wrapper regardless of child count")
-  void fragmentRootsRetainTheirScopeWrapper(int count) {
+  void retainsFragmentScopeWrapper(int count) {
     var children = fragment();
     for (var index = 0; index < count; index++) {
       children.child(p().text("Child " + index));
@@ -650,7 +649,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("repeated fields drop hints and errors without mutating the shared control")
-  void repeatedFieldsDropHintsAndErrorsWithoutMutatingTheSharedControl() {
+  void repeatedFieldsDropHintsAndErrors() {
     var control = Forms.text("name");
 
     for (var turn = 0; turn < 6; turn++) {
@@ -678,7 +677,7 @@ class ExpansionTest {
 
   @Test
   @DisplayName("repeated select fields preserve options and link their descriptions")
-  void repeatedSelectFieldsPreserveOptionsAndLinkTheirDescriptions() {
+  void repeatedSelectsKeepOptions() {
     var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
     var field = Field.of("Size", select).hint("Choose a size");
 

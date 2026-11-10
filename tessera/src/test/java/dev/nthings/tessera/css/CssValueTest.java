@@ -189,7 +189,7 @@ class CssValueTest {
 
   @Test
   @DisplayName("themes add new tokens at the end and refuse a name of another category")
-  void themesAddTokensAndRefuseCategoryClashes() {
+  void addsTokensAndRefusesClashes() {
     var brand = new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300));
     var theme = Theme.defaults().with(brand, brand.defaultValue());
     assertThat(theme.declarations()).last().isEqualTo("--brand:oklch(60% 0.2 300)");
@@ -210,7 +210,7 @@ class CssValueTest {
   }
 
   @Test
-  @DisplayName("identifiers reject text that is not a CSS identifier")
+  @DisplayName("CSS identifiers reject invalid and reserved names")
   void identifiersAreValidated() {
     assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("1st"));
     assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("has space"));

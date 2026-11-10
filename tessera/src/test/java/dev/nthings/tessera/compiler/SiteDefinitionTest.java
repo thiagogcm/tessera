@@ -12,7 +12,7 @@ class SiteDefinitionTest {
   private final SiteDefinition site = SiteDefinition.of(documentationRoutes());
 
   @Test
-  @DisplayName("finds a route by its path, normalized like a route path")
+  @DisplayName("finds a route by its normalized path")
   void findsRouteByNormalizedPath() {
     assertThat(site.route("guide/"))
         .hasValueSatisfying(route -> assertThat(route.path()).isEqualTo("/guide"));

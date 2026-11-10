@@ -52,7 +52,7 @@ class CodeBlockTest {
 
   @Test
   @DisplayName("diff markers win over highlighting")
-  void diffMarkersWinOverHighlighting() {
+  void diffMarkersOverrideHighlighting() {
     var lines = diff.elements("span.code-line");
 
     assertThat(lines.get(2)).hasClasses("is-add").doesNotHaveClasses("is-highlighted");
@@ -61,7 +61,7 @@ class CodeBlockTest {
 
   @Test
   @DisplayName("header shows the filename and the language as a pill badge")
-  void headerShowsFilenameAndLanguagePill() {
+  void headerShowsFilenameAndLanguage() {
     var page =
         renderMain(
             CodeBlock.ofLines("const greeting = 'hello';")

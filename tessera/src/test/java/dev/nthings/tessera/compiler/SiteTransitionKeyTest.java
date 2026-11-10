@@ -14,8 +14,8 @@ class SiteTransitionKeyTest {
   private final TransitionKey key = TransitionKey.of("page-title-morph", "morph-class");
 
   @Test
-  @DisplayName("a key must appear on at least two distinct routes")
-  void mustAppearOnAtLeastTwoRoutes() {
+  @DisplayName("rejects a key declared on only one route")
+  void rejectsUnsharedKey() {
     var singleOccurrenceSite =
         SiteDefinition.of(
             new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
@@ -29,8 +29,8 @@ class SiteTransitionKeyTest {
   }
 
   @Test
-  @DisplayName("a key shared by two routes generates a class-specific timing rule")
-  void generatesClassSpecificTimingRuleWhenShared() {
+  @DisplayName("generates a class-specific view-transition rule for a shared key")
+  void generatesClassRuleWhenShared() {
     var validSite =
         SiteDefinition.of(
             new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),

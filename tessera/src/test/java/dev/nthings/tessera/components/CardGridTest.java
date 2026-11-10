@@ -12,7 +12,7 @@ class CardGridTest {
 
   @Test
   @DisplayName("scopes each card's scope id under the grid's id, assigning one when absent")
-  void scopesCardViewIdsUnderGridId() {
+  void scopesCardIdsUnderGridId() {
     var grid =
         CardGrid.of(
                 CssLength.rem(18),

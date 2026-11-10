@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 class ImageTest {
 
   @Nested
-  @DisplayName("on a page with a hero and a secondary image")
+  @DisplayName("hero and secondary image")
   class HeroAndSecondary {
 
     private static RenderedPage page;
@@ -33,24 +33,24 @@ class ImageTest {
     }
 
     @Test
-    @DisplayName("the hero is preloaded from <head> with high fetch priority (LCP)")
-    void heroIsPreloadedWithHighFetchPriority() {
+    @DisplayName("the hero image is preloaded from head with high priority")
+    void heroIsPreloaded() {
       assertThat(page.element("head > link[rel=preload][as=image]"))
           .hasAttribute("href", "/assets/hero-banner.webp")
           .hasAttribute("fetchpriority", "high");
     }
 
     @Test
-    @DisplayName("the hero <img> is high priority and never lazy")
-    void heroIsHighPriorityAndNeverLazy() {
+    @DisplayName("the hero img is high priority and has no loading attribute")
+    void heroHasHighPriority() {
       assertThat(page.element("img[src='/assets/hero-banner.webp']"))
           .hasAttribute("fetchpriority", "high")
           .doesNotHaveAttribute("loading");
     }
 
     @Test
-    @DisplayName("below-the-fold images load lazily and decode asynchronously")
-    void belowTheFoldImagesLoadLazily() {
+    @DisplayName("non-hero images load lazily and decode asynchronously")
+    void secondaryImageLoadsLazily() {
       assertThat(page.element("img[src='/assets/thumbnail.webp']"))
           .hasAttribute("loading", "lazy")
           .hasAttribute("decoding", "async")
@@ -59,8 +59,8 @@ class ImageTest {
   }
 
   @Test
-  @DisplayName("a second hero image on a page is reported as a diagnostic")
-  void reportsMoreThanOneHeroPerPage() {
+  @DisplayName("a second hero on a page reports a duplicate-hero-image diagnostic")
+  void reportsDuplicateHero() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(
             () ->
@@ -79,8 +79,8 @@ class ImageTest {
   }
 
   @Test
-  @DisplayName("element options reach the <img>, and a loading value they set wins")
-  void elementOptionsReachTheImg() {
+  @DisplayName("element options reach the img and an explicit loading value wins")
+  void elementOptionsReachImg() {
     var page =
         renderMain(
             Image.of("/assets/divider.svg", "")

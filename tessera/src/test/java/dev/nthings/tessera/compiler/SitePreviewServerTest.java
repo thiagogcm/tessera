@@ -40,7 +40,7 @@ class SitePreviewServerTest {
 
   @Test
   @DisplayName("serves registered assets with their content type")
-  void servesRegisteredAssetsWithContentType() throws Exception {
+  void servesAssetsWithContentType() throws Exception {
     var logo = get(LOGO_PATH);
 
     assertThat(logo.statusCode()).isEqualTo(200);
@@ -50,27 +50,27 @@ class SitePreviewServerTest {
 
   @Test
   @DisplayName("serves the shared stylesheet as UTF-8 CSS")
-  void servesSharedStylesheetAsCss() throws Exception {
+  void servesStylesheetAsCss() throws Exception {
     var stylesheet = get(stylesheetPath(site));
 
     assertThat(stylesheet.headers().firstValue("Content-Type")).hasValue("text/css; charset=utf-8");
   }
 
   @Test
-  @DisplayName("serves each route at its index.html path")
-  void servesRoutesAtIndexHtmlPath() throws Exception {
+  @DisplayName("serves a route at its index.html path")
+  void servesRouteIndexHtml() throws Exception {
     assertThat(get("/guide/index.html").body()).isEqualTo(site.pages().get("/guide"));
   }
 
   @Test
-  @DisplayName("answers 404 for unknown paths")
-  void answersNotFoundForUnknownPaths() throws Exception {
+  @DisplayName("answers 404 for an unknown path")
+  void returns404ForUnknownPath() throws Exception {
     assertThat(get("/missing").statusCode()).isEqualTo(404);
   }
 
   @Test
-  @DisplayName("redirects directory routes without losing queries")
-  void redirectsDirectoryRoutesWithoutLosingQueries() throws Exception {
+  @DisplayName("redirects a directory route to its trailing-slash URL, keeping the query")
+  void redirectsKeepingQuery() throws Exception {
     var response = get("/guide?q=a%2Bb");
 
     assertThat(response.statusCode()).isEqualTo(308);

@@ -34,8 +34,8 @@ class SearchPaletteTest {
     }
 
     @Test
-    @DisplayName("is opened as a modal by its trigger through an invoker command")
-    void triggerOpensDialogAsModal() {
+    @DisplayName("the trigger opens the dialog with a show-modal command")
+    void triggerShowsDialog() {
       var dialog = page.element("dialog[closedby=any]");
 
       assertThat(dialog).hasAttribute("id", "site-search--dialog");
@@ -46,7 +46,7 @@ class SearchPaletteTest {
     }
 
     @Test
-    @DisplayName("is closed by its close button through an invoker command")
+    @DisplayName("the close button targets the dialog with a close command")
     void closeButtonClosesDialog() {
       var dialog = page.element("dialog[closedby=any]");
 
@@ -80,8 +80,8 @@ class SearchPaletteTest {
     }
 
     @Test
-    @DisplayName("link items are grouped by their group")
-    void linkItemsAreGroupedByGroup() {
+    @DisplayName("groups link items into one block per group")
+    void groupsItemsByGroup() {
       var groups = page.elements("dialog .palette-group");
 
       assertThat(groups).hasSize(2);
@@ -92,7 +92,7 @@ class SearchPaletteTest {
 
     @Test
     @DisplayName("a description adds a secondary line and a badge replaces the arrow")
-    void descriptionAndBadgeAreOptional() {
+    void rendersDescriptionAndBadge() {
       var links = page.elements("a.palette-item");
 
       assertThat(links.get(0).select(".palette-item-desc").text()).isEqualTo("Real-time metrics");

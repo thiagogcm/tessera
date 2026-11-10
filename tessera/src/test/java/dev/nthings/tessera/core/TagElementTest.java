@@ -26,8 +26,8 @@ class TagElementTest {
   }
 
   @Test
-  @DisplayName("the compiler-facing views cannot bypass the typed attribute methods")
-  void compilerFacingViewsAreReadOnly() {
+  @DisplayName("compiler-facing attribute and child views are read-only")
+  void viewsAreReadOnly() {
     var element = div().attr("data-x", "1").ariaLabel("Box").child(span());
 
     assertThatExceptionOfType(UnsupportedOperationException.class)
@@ -42,7 +42,7 @@ class TagElementTest {
 
   @Test
   @DisplayName("removeAttr drops an attribute or a reference, and refuses id, role and aria-*")
-  void removeAttrDropsAttributesAndReferences() {
+  void removesAttributesAndReferences() {
     var control = ElementRef.scoped("name");
     var element = label().attr("data-x", "1").labelFor(control).removeAttr("data-x");
     element.removeAttr("for").removeAttr("missing");

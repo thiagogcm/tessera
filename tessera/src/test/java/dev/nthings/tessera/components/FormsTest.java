@@ -18,7 +18,7 @@ class FormsTest {
   class Switches {
 
     @Test
-    @DisplayName("is a role=switch checkbox reflecting its checked state")
+    @DisplayName("reflects its checked state on a role=switch checkbox")
     void reflectsCheckedState() {
       var page =
           renderMain(
@@ -31,8 +31,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("a switch field starts unchecked and is labelled for its switch")
-    void switchFieldIsLabelledForItsSwitch() {
+    @DisplayName("a switch field starts unchecked and its label targets the switch")
+    void labelsSwitchField() {
       var page = renderMain(Forms.switchField("Receive updates", "updates"));
 
       var rowSwitch = page.element("input[role=switch][name=updates]");
@@ -41,8 +41,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("a checked switch field starts checked")
-    void checkedSwitchFieldStartsChecked() {
+    @DisplayName("a checked switch field starts on")
+    void checkedFieldStartsOn() {
       var page = renderMain(Forms.checkedSwitchField("Receive updates", "updates"));
 
       assertThat(page.element("input[role=switch][name=updates]")).hasAttribute("checked");
@@ -55,7 +55,7 @@ class FormsTest {
 
     @Test
     @DisplayName("repeated renders follow the current hint and error without mutating the control")
-    void repeatedRendersDoNotMutateTheControl() {
+    void repeatedRendersDoNotMutate() {
       var control = Forms.text("name");
       var described =
           Field.of("Name", control)
@@ -88,8 +88,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("a select field keeps its options and links its hint on every render")
-    void selectFieldRendersRepeatedly() {
+    @DisplayName("a select field keeps its options and hint link across renders")
+    void selectFieldKeepsOptions() {
       var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
       var field = Field.of("Size", select).hint("Choose a size");
 
@@ -121,7 +121,7 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("adds a selectedcontent trigger as the first child of the <select>")
+    @DisplayName("emits a select-trigger button with selectedcontent")
     void addsSelectedContentTrigger() {
       // Jsoup's parser hoists <button> out of <select>; inspect the emitted markup.
       assertThat(page.html())
@@ -131,7 +131,7 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("keeps native options and marks only the initial one selected")
+    @DisplayName("marks only the initial option selected")
     void marksOnlyInitialOptionSelected() {
       assertThat(page.elements("select[name=theme_mode] option[selected]"))
           .extracting(o -> o.attr("value"))
@@ -139,8 +139,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("marks the selected option of an optgroup")
-    void marksSelectedGroupOption() {
+    @DisplayName("marks the selected option inside an optgroup")
+    void marksSelectedOptgroupOption() {
       var grouped =
           renderMain(
               Select.of("region")
@@ -193,8 +193,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("places the error directly after the control, as its :user-invalid styling needs")
-    void placesErrorDirectlyAfterControl() {
+    @DisplayName("places the error directly after the control")
+    void placesErrorAfterControl() {
       var input = page.element("input[name=username]");
       var error = input.nextElementSibling();
 
@@ -203,8 +203,8 @@ class FormsTest {
     }
 
     @Test
-    @DisplayName("anchor-positions its tooltip against the control's anchor name")
-    void anchorPositionsTooltipAgainstControl() {
+    @DisplayName("anchors the tooltip to the control's anchor name")
+    void anchorsTooltipToControl() {
       var input = page.element("input[name=username]");
       var tooltip = page.element(".field-anchor-tooltip[role=tooltip]");
       var anchor = "--anchor-" + input.id();
@@ -215,8 +215,8 @@ class FormsTest {
   }
 
   @Test
-  @DisplayName("same-named fields get distinct compiler-assigned scopes")
-  void sameNamedFieldsDoNotCollide() {
+  @DisplayName("same-named fields get distinct ids that resolve to elements")
+  void sameNamedFieldsGetDistinctIds() {
     var page =
         renderMain(
             Field.of("Email", Forms.email("email")),

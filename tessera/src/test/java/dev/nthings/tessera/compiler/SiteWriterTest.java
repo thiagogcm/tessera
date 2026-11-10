@@ -27,13 +27,13 @@ class SiteWriterTest {
 
   @Test
   @DisplayName("writes registered assets verbatim")
-  void writesRegisteredAssetsVerbatim() {
+  void writesAssetsVerbatim() {
     assertThat(out.resolve(LOGO_PATH.substring(1))).hasContent(LOGO_CONTENT);
   }
 
   @Test
-  @DisplayName("writes each route as a directory index")
-  void writesEachRouteAsDirectoryIndex() {
+  @DisplayName("writes a route as a directory index")
+  void writesRouteIndex() {
     assertThat(out.resolve("guide/index.html")).isRegularFile();
   }
 

@@ -120,7 +120,7 @@ class ConditionalStylingTest {
 
   @Test
   @DisplayName("reveal drives the animation from a view timeline, gated by reduced motion")
-  void revealUsesViewTimelineBehindReducedMotionQuery() {
+  void revealsFromViewTimeline() {
     var page =
         renderMain(
             section()
@@ -141,7 +141,7 @@ class ConditionalStylingTest {
 
   @Test
   @DisplayName("revealOnce triggers a one-shot animation, and stagger delays it by sibling index")
-  void revealOnceTriggersOneShotAnimation() {
+  void revealOnceTriggersAnimation() {
     var page =
         renderMain(
             p().animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60))

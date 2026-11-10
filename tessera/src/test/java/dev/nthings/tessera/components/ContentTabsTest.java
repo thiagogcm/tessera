@@ -92,7 +92,7 @@ class ContentTabsTest {
   }
 
   @Test
-  @DisplayName("tabs without any tab are reported")
+  @DisplayName("empty content tabs are reported")
   void reportsEmptyTabs() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(

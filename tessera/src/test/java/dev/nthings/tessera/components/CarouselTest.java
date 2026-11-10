@@ -12,7 +12,7 @@ class CarouselTest {
 
   @Test
   @DisplayName("emits native ::scroll-button prev/next controls with alt text")
-  void emitsNativeScrollButtonsWithAltText() {
+  void emitsNativeScrollButtons() {
     var css = renderMain(Carousel.of("Demo").slide(p().text("1"))).css();
 
     assertThat(css)

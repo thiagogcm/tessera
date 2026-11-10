@@ -69,9 +69,8 @@ class AccessibilityRulesTest {
   }
 
   @Test
-  @DisplayName(
-      "reports independent errors with their lexical component paths, including late and deferred content")
-  void reportsIndependentErrorsWithLexicalComponentPaths() {
+  @DisplayName("independent errors carry their lexical component paths")
+  void reportsErrorsWithComponentPaths() {
     var missing = ElementRef.scoped("confirmation");
     var document =
         new PageDocument(
@@ -176,9 +175,8 @@ class AccessibilityRulesTest {
   }
 
   @Test
-  @DisplayName(
-      "an unresolved label reports its binding error without an additional missing-label error")
-  void unresolvedLabelDoesNotProduceSecondaryLabelError() {
+  @DisplayName("an unresolved label reports only its binding error")
+  void reportsOnlyBindingError() {
     var label = ElementRef.scoped("save-label");
     var failure =
         catchThrowableOfType(
@@ -192,8 +190,7 @@ class AccessibilityRulesTest {
 
   @ParameterizedTest
   @EnumSource(BuiltinCommand.class)
-  @DisplayName(
-      "rejects native commands aimed at an ordinary element and accepts compatible targets")
+  @DisplayName("native commands reject ordinary targets and accept compatible elements")
   void checksNativeCommandTargets(BuiltinCommand command) {
     var target = div().id(ElementRef.scoped("target"));
     var failure =
@@ -236,7 +233,7 @@ class AccessibilityRulesTest {
 
   @ParameterizedTest
   @MethodSource("violations")
-  @DisplayName("rejects invalid markup")
+  @DisplayName("rejects unlabeled buttons and underspecified images")
   void rejectsInvalidMarkup(PageDocument document, String message) {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> Compiler.compile(document))
@@ -245,7 +242,7 @@ class AccessibilityRulesTest {
 
   @Test
   @DisplayName("accepts decorative images and links labelled by aria-label")
-  void acceptsDecorativeImagesAndAriaLabelledLinks() {
+  void acceptsDecorativeImagesAndLabels() {
     var document =
         new PageDocument(
             "Valid A11y",
@@ -261,7 +258,7 @@ class AccessibilityRulesTest {
 
   @Test
   @DisplayName("percent encoded fragment links resolve without treating plus as space")
-  void percentEncodedFragmentLinksResolveWithoutTreatingPlusAsSpace() {
+  void resolvesEncodedFragmentLinks() {
     var document =
         new PageDocument(
             "Links",

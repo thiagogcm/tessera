@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class CompilerTest {
 
   @Nested
-  @DisplayName("compiling a scope with scoped ids, invokers, tooltips, actions and portals")
+  @DisplayName("workspace view output")
   class WorkspaceView {
 
     private static RenderedPage page;
@@ -42,15 +42,15 @@ class CompilerTest {
 
     @Test
     @DisplayName("keys the scope's rules by its data-scope value")
-    void keysScopedRulesByDataViewValue() {
+    void keysRulesByDataScope() {
       var view = page.element("main[data-scope-id=workspace-core]");
 
       assertThat(page.css()).contains("@scope ([data-scope=\"" + view.attr("data-scope") + "\"])");
     }
 
     @Test
-    @DisplayName("puts container-query rules in the container layer behind a generated class")
-    void putsContainerQueriesInContainerLayer() {
+    @DisplayName("container-query rules sit in the container layer behind a generated class")
+    void layersContainerQueries() {
       var card = page.element("main[data-scope-id=workspace-core] section");
       var cqClass = CssBlocks.generatedClass(card.className(), "cq-");
 
@@ -60,14 +60,14 @@ class CompilerTest {
 
     @Test
     @DisplayName("resolves invoker commands to ids in the enclosing scope")
-    void resolvesInvokerCommandsToIdScopedIds() {
+    void resolvesScopedInvokerCommands() {
       assertThat(page.elementById("workspace-core--open-archive-btn"))
           .hasAttribute("commandfor", "workspace-core--confirm-archive");
     }
 
     @Test
     @DisplayName("renders the interest tooltip as the trigger's adjacent sibling, never inside it")
-    void rendersInterestTooltipBesideTrigger() {
+    void rendersTooltipBesideTrigger() {
       var trigger = page.elementById("workspace-core--open-archive-btn");
       var tooltip = trigger.nextElementSibling();
 
@@ -89,7 +89,7 @@ class CompilerTest {
 
     @Test
     @DisplayName("hoists a deferred element to the end of <body>, keeping its lexical scoped id")
-    void hoistsDeferredElementKeepingScopedId() {
+    void hoistsDeferredWithScopedId() {
       var bodyChildren = page.dom().body().children();
 
       assertThat(bodyChildren).extracting(e -> e.tagName()).containsExactly("main", "dialog");
@@ -136,8 +136,8 @@ class CompilerTest {
   }
 
   @Test
-  @DisplayName("hoists deferred portals to the end of <body>, ordered by priority then sequence")
-  void ordersDeferredPortalsByPriorityThenSequence() {
+  @DisplayName("deferred portals follow priority then sequence")
+  void ordersDeferredPortals() {
     var page =
         render(
             div()
@@ -175,8 +175,8 @@ class CompilerTest {
     }
 
     @Test
-    @DisplayName("is the first asset, published under the base and linked from <head>")
-    void isFirstAssetLinkedFromHead() {
+    @DisplayName("the stylesheet is the first asset, linked from head under the base")
+    void publishesLinkedStylesheetAsset() {
       var stylesheet = page.compiled().assets().getFirst();
 
       assertThat(stylesheet.path()).startsWith("/static/assets/styles-").endsWith(".css");

@@ -11,7 +11,7 @@ class AccordionTest {
 
   @Test
   @DisplayName("an exclusive accordion shares one name and opens a single item")
-  void exclusiveAccordionOpensSingleItem() {
+  void exclusiveOpensSingleItem() {
     var page =
         renderMain(
             Accordion.of()
@@ -25,8 +25,8 @@ class AccordionTest {
   }
 
   @Test
-  @DisplayName("exclusive accordions without ids get distinct groups on one page")
-  void exclusiveAccordionsWithoutIdsGetDistinctGroups() {
+  @DisplayName("unnamed exclusive accordions get distinct group names")
+  void unnamedAccordionsGetDistinctGroups() {
     var page =
         renderMain(
             Accordion.of().exclusive().item("A", "a"),

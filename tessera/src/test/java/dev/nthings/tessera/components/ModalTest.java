@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 class ModalTest {
 
   @Test
-  @DisplayName("modals and drawers are light-dismiss dialogs")
-  void modalsAndDrawersLightDismiss() {
+  @DisplayName("dialogs are light-dismiss and open or close via invoker commands")
+  void lightDismissAndInvokerCommands() {
     var modal =
         Modal.of("Confirm Deployment")
             .id("confirm-deploy")

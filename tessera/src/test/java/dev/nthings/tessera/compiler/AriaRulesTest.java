@@ -195,7 +195,7 @@ class AriaRulesTest {
 
   @Test
   @DisplayName("a lone landmark needs no name, and a heading outline may climb back up")
-  void acceptsSingleLandmarkAndDescendingHeadings() {
+  void acceptsLoneLandmarkAndHeadings() {
     compiles(
         main()
             .children(
@@ -207,7 +207,7 @@ class AriaRulesTest {
 
   @Test
   @DisplayName("a focusable control is allowed inside aria-hidden once it leaves the tab order")
-  void acceptsHiddenControlsOutOfTabOrder() {
+  void acceptsUntabbableHiddenControls() {
     compiles(
         main()
             .children(

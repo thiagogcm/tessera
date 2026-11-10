@@ -33,13 +33,13 @@ class DataTableTest {
 
   @Test
   @DisplayName("escapes headers reused as stacked-cell labels in CSS")
-  void escapesHeadersUsedAsStackedCellLabels() {
+  void escapesStackedCellLabels() {
     assertThat(page.css()).contains("--label-2:").doesNotContain("\"Region \"AZ\"\"");
   }
 
   @Test
   @DisplayName("labels stacked data cells but not the row-header column")
-  void labelsStackedDataCellsButNotRowHeaders() {
+  void labelsOnlyDataCells() {
     assertThat(page.css())
         .contains("td:nth-child(2)::before")
         .doesNotContain("td:nth-child(1)::before");
@@ -47,7 +47,7 @@ class DataTableTest {
 
   @Test
   @DisplayName("is a focusable scroll region labelled by its caption")
-  void isFocusableScrollRegionLabelledByCaption() {
+  void scrollRegionLabelledByCaption() {
     var region = page.element("div[role=region][tabindex=0]");
 
     assertThat(region).hasAttribute("aria-labelledby", "services--caption");

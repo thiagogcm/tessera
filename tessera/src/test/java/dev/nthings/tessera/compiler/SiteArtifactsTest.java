@@ -32,15 +32,15 @@ class SiteArtifactsTest {
 
     @Test
     @DisplayName("lists each route under the base URL")
-    void listsEachRouteUnderBaseUrl() {
+    void listsRoutesUnderBaseUrl() {
       assertThat(site.sitemapXml())
           .contains("<loc>https://tessera.dev/</loc>")
           .contains("<loc>https://tessera.dev/guide</loc>");
     }
 
     @Test
-    @DisplayName("is not generated without a base URL")
-    void isNotGeneratedWithoutBaseUrl() {
+    @DisplayName("omits the sitemap when the base URL is absent")
+    void requiresBaseUrl() {
       var withoutBaseUrl = Compiler.compile(SiteDefinition.of(documentationRoutes()));
 
       assertThat(withoutBaseUrl.sitemapXml()).isNull();
@@ -52,7 +52,8 @@ class SiteArtifactsTest {
   class SearchIndex {
 
     @Test
-    void indexesHeadingsFromCustomComponents() {
+    @DisplayName("indexes headings registered by a custom component")
+    void indexesCustomHeadings() {
       Component custom =
           context -> {
             var target = ElementRef.scoped("custom");
@@ -76,15 +77,15 @@ class SiteArtifactsTest {
 
     @Test
     @DisplayName("prefers the route title over the document title")
-    void prefersRouteTitleOverDocumentTitle() {
+    void prefersRouteTitle() {
       assertThat(compactIndex())
           .contains("\"path\":\"/guide\"")
           .contains("\"title\":\"Getting Started\"");
     }
 
     @Test
-    @DisplayName("lists table-of-contents sections with their level")
-    void listsTableOfContentsSectionsWithLevel() {
+    @DisplayName("lists page sections with their heading level")
+    void listsSectionsWithLevel() {
       assertThat(compactIndex())
           .contains("\"id\":\"config\"")
           .contains("\"title\":\"Configuration\"")

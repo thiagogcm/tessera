@@ -23,7 +23,7 @@ class LinkSpeculationTest {
 
   @Test
   @DisplayName("site pages declare same-site speculation rules by default")
-  void declaresSpeculationRulesByDefault() {
+  void declaresSpeculationRules() {
     var rules = home(SiteDefinition.of(routes)).element("head > script[type=speculationrules]");
 
     assertThat(rules.data()).contains("\"prerender\"").contains("\"eagerness\":\"moderate\"");

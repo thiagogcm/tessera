@@ -27,7 +27,7 @@ class ElementSurfaceTest {
 
   @Test
   @DisplayName("an unlabelled button inside a fragment is reported")
-  void fragmentChildrenParticipateInDiagnostics() {
+  void reportsFragmentDiagnostics() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> renderMain(fragment().child(button())))
         .withMessageContaining("interactive-label");
@@ -42,7 +42,7 @@ class ElementSurfaceTest {
 
   @Test
   @DisplayName("a scope rooted in a fragment is hosted by one div carrying its data-scope")
-  void fragmentRootedViewGetsOneHost() {
+  void fragmentViewGetsOneHost() {
     var page = renderMain(ul().child(new Rows()));
 
     assertThat(page.elements("ul > div[data-scope=rows]")).hasSize(1);

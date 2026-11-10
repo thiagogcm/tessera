@@ -42,7 +42,7 @@ class SiteNavigationTest {
 
   @Test
   @DisplayName("searchPalette indexes every route, preferring the route title")
-  void searchPaletteIndexesEveryRoute() {
+  void indexesEveryRoute() {
     var site =
         SiteDefinition.of(
             new SiteRoute("/", new PageDocument("Home Page", div()), "Home"),

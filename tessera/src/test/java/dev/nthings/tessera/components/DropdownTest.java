@@ -44,8 +44,8 @@ class DropdownTest {
   }
 
   @Test
-  @DisplayName("exposes its panel to invokers outside the scope")
-  void exposesItsPanelToInvokersOutsideTheView() {
+  @DisplayName("exposes its panel to an invoker outside the menu")
+  void panelRefExposesPanel() {
     var reference = ElementRef.scoped("tools-panel");
     var dropdown =
         Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "Scope Logs"));
@@ -60,22 +60,22 @@ class DropdownTest {
   }
 
   @Test
-  @DisplayName("claims no menu semantics it does not implement")
-  void claimsNoFalseMenuSemantics() {
+  @DisplayName("the trigger sets no aria-haspopup")
+  void triggerOmitsHaspopup() {
     assertThat(page.element("button.dropdown-trigger")).doesNotHaveAttribute("aria-haspopup");
   }
 
   @Test
-  @DisplayName("a command item opens the modal declared elsewhere on the page")
-  void commandItemOpensModalDeclaredElsewhere() {
+  @DisplayName("a command item targets a modal declared elsewhere")
+  void commandItemTargetsModal() {
     assertThat(page.elementById("actions-menu--open-deploy"))
         .hasAttribute("command", "show-modal")
         .hasAttribute("commandfor", "confirm-deploy--dialog");
   }
 
   @Test
-  @DisplayName("a shortcut hint is shown at the end of its item and hidden from assistive tech")
-  void shortcutHintIsOptionalAndHidden() {
+  @DisplayName("a shortcut hint is hidden from assistive technology and omitted when absent")
+  void shortcutHintIsHidden() {
     assertThat(page.element("a.dropdown-item[href=/logs] > .dropdown-hint"))
         .hasText("G L")
         .hasAttribute("aria-hidden", "true");

@@ -33,15 +33,15 @@ class FootnotesTest {
     }
 
     @Test
-    @DisplayName("are numbered in document order")
-    void areNumberedInDocumentOrder() {
+    @DisplayName("numbers references in document order")
+    void numbersInDocumentOrder() {
       assertThat(page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]")).hasText("[1]");
       assertThat(page.elementById("fnref-fn-2").selectFirst("a")).hasText("[2]");
     }
 
     @Test
-    @DisplayName("link to their note and anchor a preview tooltip")
-    void linkToTheirNoteAndAnchorPreviewTooltip() {
+    @DisplayName("links to its note and anchors the preview tooltip")
+    void linksToNoteAndTooltip() {
       var link = page.elementById("fnref-fn-1").selectFirst("a[role=doc-noteref]");
 
       assertThat(link).hasAttribute("href", "#footnotes--fn-1");
@@ -49,8 +49,8 @@ class FootnotesTest {
     }
 
     @Test
-    @DisplayName("collect their notes after all content when no section is declared")
-    void collectNotesAfterAllContentWithoutExplicitSection() {
+    @DisplayName("appends endnotes after all content when no section is declared")
+    void appendsNotesWithoutSection() {
       var endnotes = page.dom().body().children().last();
 
       assertThat(endnotes).hasAttribute("role", "doc-endnotes");
@@ -60,8 +60,8 @@ class FootnotesTest {
     }
 
     @Test
-    @DisplayName("are linked back from their note")
-    void areLinkedBackFromTheirNote() {
+    @DisplayName("each note links back to its reference")
+    void notesLinkBackToReference() {
       var firstNote = page.elementById("footnotes--fn-1");
 
       assertThat(firstNote.selectFirst("a[role=doc-backlink]")).hasAttribute("href", "#fnref-fn-1");
@@ -69,8 +69,8 @@ class FootnotesTest {
   }
 
   @Test
-  @DisplayName("an explicit section placed before the references lists them once")
-  void explicitSectionBeforeReferencesListsThemOnce() {
+  @DisplayName("an explicit section placed before references lists each note once")
+  void explicitSectionListsOnce() {
     var page =
         renderMain(
             Footnotes.of().title("Notes"),
@@ -85,8 +85,8 @@ class FootnotesTest {
   }
 
   @Test
-  @DisplayName("reusing a footnote id on one page is rejected")
-  void rejectsDuplicateFootnoteIds() {
+  @DisplayName("rejects reusing a footnote id on a page")
+  void rejectsDuplicateIds() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() -> renderMain(Footnote.of("One").id("n"), Footnote.of("Two").id("n")))
         .withMessageContaining("duplicate-id");

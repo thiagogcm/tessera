@@ -30,7 +30,7 @@ class PageScriptTest {
 
   @Test
   @DisplayName("an inline script is emitted once per page")
-  void inlineBehaviorIsEmittedOnce() {
+  void emitsInlineScriptOnce() {
     var page = Compiler.compile(page(BEHAVIOR, BEHAVIOR));
 
     assertThat(page.html()).containsOnlyOnce("customElements.define");
@@ -39,7 +39,7 @@ class PageScriptTest {
 
   @Test
   @DisplayName("an external script becomes an asset referenced by the page")
-  void externalBehaviorBecomesAsset() {
+  void publishesExternalScriptAsset() {
     var page = Compiler.compile(page(BEHAVIOR), Theme.defaults(), OutputMode.external("/assets"));
 
     var asset = page.assets().getLast();

@@ -42,8 +42,8 @@ class CalloutTest {
 
   @ParameterizedTest
   @MethodSource("calloutsByTone")
-  @DisplayName("carries its tone class and a default title")
-  void carriesToneClassAndDefaultTitle(Callout callout, String tone, String defaultTitle) {
+  @DisplayName("renders its kind class and default title")
+  void rendersKindClassAndDefaultTitle(Callout callout, String tone, String defaultTitle) {
     var aside = renderMain(callout).element("aside[role=note]");
 
     assertThat(aside).hasClasses("callout--" + tone);

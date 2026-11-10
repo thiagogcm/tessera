@@ -48,8 +48,8 @@ class SharedStylesheetTest {
     }
 
     @Test
-    @DisplayName("are declared in the shared stylesheet")
-    void areDeclaredInSharedStylesheet() {
+    @DisplayName("site theme tokens are declared in the shared stylesheet")
+    void declaresThemeTokens() {
       assertThat(site.css()).contains("--brand-hue:oklch(60% 0.2 300)");
     }
   }

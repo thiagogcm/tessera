@@ -40,7 +40,7 @@ class FlexLayoutTest {
 
   @Test
   @DisplayName("an inline row stays in the surrounding line")
-  void inlineRowStaysBesideNeighbors() {
+  void inlineRowStaysInLine() {
     var page =
         render(
             p().children(
@@ -64,7 +64,7 @@ class FlexLayoutTest {
 
   @Test
   @DisplayName("a height-constrained column leaves scrolling to the inner panel's own declarations")
-  void constrainedColumnKeepsScrollDeclarations() {
+  void keepsPanelScrollDeclarations() {
     var page =
         render(
             section()
@@ -94,7 +94,7 @@ class FlexLayoutTest {
 
   @Test
   @DisplayName("refining one element's gap leaves other uses of the same recipe unchanged")
-  void gapRefinementStaysOnOneElement() {
+  void refinesGapLocally() {
     var links = FlexLayout.row(Tokens.SPACE_4, Align.CENTER, Wrap.WRAP);
     RenderedPage page =
         render(

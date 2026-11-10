@@ -37,7 +37,7 @@ class CardTest {
 
   @Test
   @DisplayName("several body paragraphs are grouped into one element")
-  void severalBodyParagraphsShareOneRegion() {
+  void bodyParagraphsShareOneRegion() {
     var card =
         Card.of("Reactive Tokens")
             .bodyText("Uses native light-dark().")
@@ -50,7 +50,7 @@ class CardTest {
 
   @Test
   @DisplayName("choice cards are <label>s wrapping their own radio or checkbox input")
-  void choiceCardIsLabelWrappingItsInput() {
+  void choiceCardWrapsItsInput() {
     var card = Card.of("Pro Tier").bodyText("Isolated workers.").radio("plan", "pro").checked();
 
     var choice = renderMain(card).element("main > *");
@@ -64,8 +64,8 @@ class CardTest {
   }
 
   @Test
-  @DisplayName("checked() applies whether it comes before or after the choice")
-  void checkedIsOrderIndependent() {
+  @DisplayName("checked() before the choice still checks the input")
+  void checkedBeforeChoiceApplies() {
     var card = Card.of("Alerts").checked().checkbox("extras", "alerts");
 
     assertThat(renderMain(card).element("label > input[type=checkbox][checked]")).isNotNull();

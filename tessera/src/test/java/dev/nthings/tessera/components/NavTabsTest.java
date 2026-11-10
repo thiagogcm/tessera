@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 class NavTabsTest {
 
   @Test
-  @DisplayName("nav tabs mark only the current route with aria-current=page")
-  void navTabsMarkOnlyCurrentRoute() {
+  @DisplayName("marks only the active route with aria-current=page")
+  void marksOnlyCurrentRoute() {
     var page =
         renderMain(
             NavTabs.of(

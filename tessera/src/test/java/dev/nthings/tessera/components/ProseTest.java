@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 class ProseTest {
 
   @Test
-  @DisplayName("applies a custom reading measure to its canvas")
-  void appliesCustomMeasureToCanvas() {
+  @DisplayName("applies the custom measure as max-inline-size on the canvas")
+  void appliesCustomMeasure() {
     var page = renderMain(Prose.of(p().text("Text")).maxMeasure(CssLength.ch(60)));
 
     assertThat(page.elements(".prose-canvas > p")).isNotEmpty();

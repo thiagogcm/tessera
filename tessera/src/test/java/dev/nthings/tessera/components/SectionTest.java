@@ -35,8 +35,8 @@ class SectionTest {
   }
 
   @Test
-  @DisplayName("registers its heading and keeps its page-level id inside an id scope")
-  void registersHeadingWithPageLevelId() {
+  @DisplayName("registers its heading at page level inside an id scope")
+  void registersHeadingWithPageId() {
     var page =
         renderMain(
             TableOfContents.of("Contents"),
@@ -47,7 +47,7 @@ class SectionTest {
   }
 
   @Test
-  @DisplayName("rejects an id that is empty or contains whitespace")
+  @DisplayName("rejects an id that contains whitespace")
   void rejectsInvalidIds() {
     assertThatIllegalArgumentException().isThrownBy(() -> Section.of("two words", "Bad"));
   }
@@ -65,7 +65,7 @@ class SectionTest {
   @ParameterizedTest
   @ValueSource(ints = {1, 5})
   @DisplayName("level() rejects values outside 2..4")
-  void levelRejectsValuesOutsideTwoToFour(int level) {
+  void rejectsOutOfRangeLevels(int level) {
     assertThatIllegalArgumentException().isThrownBy(() -> Section.of("bad", "Bad").level(level));
   }
 }

@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 class TransitionKeyTest {
 
   @Test
-  @DisplayName("must be unique on one page")
-  void mustBeUniqueOnOnePage() {
+  @DisplayName("a duplicate key on one page fails compilation")
+  void rejectsDuplicateOnPage() {
     var key = TransitionKey.of("hero-title");
 
     assertThatExceptionOfType(CompilationException.class)
@@ -27,7 +27,7 @@ class TransitionKeyTest {
   }
 
   @Test
-  @DisplayName("rejects view-transition keywords in any case")
+  @DisplayName("rejects reserved keywords case-insensitively")
   void rejectsKeywordsInAnyCase() {
     assertThatIllegalArgumentException().isThrownBy(() -> TransitionKey.of("None"));
     assertThatIllegalArgumentException().isThrownBy(() -> TransitionKey.of("Auto"));

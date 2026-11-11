@@ -3,9 +3,8 @@ package dev.nthings.tessera.compiler;
 import java.io.Serializable;
 
 /// One authoring error found during compilation. `rule` is a stable kebab-case code, such as
-/// `image-alt`, `unbound-reference` or `duplicate-route`; the accessibility rule codes are
-/// described in `docs/architecture.md`. `message` says what is wrong, `fix` how to correct it, and
-/// `location` where it happened.
+/// `image-alt`, `unbound-reference` or `duplicate-route`. `message` says what is wrong, `fix` how
+/// to correct it, and `location` where it happened.
 public record Diagnostic(String rule, String message, String fix, Location location)
     implements Serializable {
 

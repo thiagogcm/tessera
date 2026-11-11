@@ -32,7 +32,7 @@ import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
 import java.nio.file.Path;
 
-/// Runnable companion to docs/consumer-guide.md; depends exclusively on public library APIs.
+/// Runnable two-page site example using only public library APIs.
 public final class GuideSite {
   private GuideSite() {}
 

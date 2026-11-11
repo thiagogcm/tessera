@@ -1,255 +1,56 @@
 # Tessera
 
-> **A declarative, type-safe HTML/CSS compiler and component system for JDK 25 and the latest Chromium and Firefox, with native platform controls and page scripts bundled only when a component needs one.**
+Tessera compiles Java components into HTML, CSS, and static assets. It provides typed element and style builders, reusable UI components, and tools for compiling and publishing multi-page sites.
 
-[![Java 25](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](#) [![Browsers](https://img.shields.io/badge/Browser-latest%20Chromium%20%7C%20Firefox-blue.svg)](#) [![JavaScript](https://img.shields.io/badge/Client%20JavaScript-Bundled%20when%20needed-success.svg)](#) [![Quality Gate](https://img.shields.io/badge/Quality-SpotBugs%20Max%20%7C%20NullAway%20%7C%20Checkstyle-brightgreen.svg)](#) [![Compiler](<https://img.shields.io/badge/javac--warnings-0%20(%40SuppressWarnings%20forbidden)-critical.svg>)](#)
+Use it to generate documentation, content sites, or HTML in a Java application. The compiler checks element references, local site links, and accessibility rules before returning output. Components use native browser controls and contribute JavaScript modules when they need filtering, tab selection, or tooltip support.
 
----
+Tessera requires **JDK 25** and targets current stable **Chromium and Firefox**. See [browser support](docs/browser-support.md) for the feature contract and its limits. Browser rendering from Java through WebAssembly is [planned work](docs/roadmap.md).
 
-## Overview
+## Try it
 
-Tessera is an advanced server-side UI framework built exclusively for **modern Java 25** and the **latest Chromium and Firefox**. Rather than treating HTML and CSS as untyped strings or shipping client-side JavaScript runtimes to reconstruct the DOM in the browser, Tessera treats the web platform as a first-class compilation target.
+From the repository root, with JDK 25 and [Just](https://just.systems/) installed:
 
-The supported browser contract is deliberately bleeding-edge: the latest stable Chromium and Firefox, with no fallback matrix. Native HTML and CSS power dialogs, popovers, layout, styling, and navigation. Components contribute deduplicated page scripts only where HTML cannot do the job: `SearchPalette` filters links, and `ContentTabs` switches panels because HTML has no roving-tab widget. The interest-tooltip script is the Firefox polyfill for interest invokers. Pages that contribute no script receive none.
-
-Start with the [consumer guide](docs/consumer-guide.md), including the runnable two-page example (`just guide`), component authoring, identity references, URL handling, tokens, assets, and search. The API is Java-first and also reads naturally from Kotlin 2.3.20+; see [Use from Kotlin](docs/consumer-guide.md#use-from-kotlin).
-
-```mermaid
-flowchart LR
-    subgraph Authoring["Java 25 authoring"]
-        Components["Component and Scope<br/>Reusable components"]
-        References["ElementRef and Command<br/>Symbolic identities and invokers"]
-        Styles["ScopeStyle, Tokens and Theme<br/>Scoped CSS and design tokens"]
-    end
-
-    subgraph Compiler["Compiler"]
-        Expand["1. Expansion<br/>Expand components, bind ids, collect styles"]
-        Link["2. ReferenceLinker<br/>Resolve references"]
-        Validate["3. PageValidator<br/>Check the linked tree"]
-        Emit["4. HtmlWriter<br/>Emit HTML with the selected CSS"]
-        Expand --> Link --> Validate -->|Valid page| Emit
-    end
-
-    subgraph Browser["Native browser platform"]
-        Controls["Dialogs, popovers, and invoker commands"]
-        CSS["Cascade layers, scopes, and modern layout"]
-        Search["SearchPalette module when used"]
-    end
-
-    Authoring --> Expand
-    Emit --> Browser
-```
-
----
-
-## Core Pillars & Architectural Principles
-
-### 1. Bleeding-Edge Native Web Standards
-
-Tessera emits purely standard HTML and CSS features available in modern browsers:
-
-- **Invoker Commands**: Declarative button interactions via `commandfor="target-id"` and `command="show-modal"` / `command="toggle-popover"` / custom commands without JavaScript event listeners.
-- **Native Light-Dismiss Overlays**: `<dialog closedby="any">` and `[popover="auto"]` with native backdrop styling and top-layer positioning.
-- **CSS Cascade Layers (`@layer`)**: Strict, deterministic cascade hierarchy: `@layer reset, base, theme, components, utilities, interactive, container;`
-- **Scoped Styling (`@scope`)**: Modular CSS styling isolated directly to component boundaries (`@scope ([data-scope="tessera-card"])`) without CSS Modules or naming collisions.
-- **OKLCH & `light-dark()`**: Perceptually uniform OKLCH color palettes with automatic OS light/dark mode adaptation via pure CSS variables.
-- **Subgrid & Anchor Positioning**: Seamless multi-column card alignments, sticky headers, and pure CSS anchored tooltips.
-- **Link Speculation Rules**: Native browser prefetch and prerender for instant multi-page transitions.
-
-#### Browser support
-
-The contract is the latest stable Chromium and Firefox, tested on every build. Features that are still Chromium-leading (`::scroll-button`, `::scroll-marker`, `appearance: base-select`, `@container scroll-state`) degrade to the native behavior in Firefox. `interestfor` hint popovers use the native invoker in Chromium. Firefox gets `interest-tooltip.js`, which listens for `pointerover`. There is no version matrix and no legacy engine.
-
-### 2. JDK 25 Idiomatic Language Features
-
-- **Explicit `DocumentContext`**: Expand and document callbacks receive their turn's contribution capabilities (head content, page scripts, headings, per-page state, diagnostics) directly.
-- **Algebraic Data Types (ADTs)**: Sealed interfaces and records for type-safe CSS lengths (`CssLength`), tag names (`TagName`, `HtmlTag`, `CustomElement`), and tokens.
-- **Markdown Documentation Comments (JEP 467)**: All Javadoc is written using modern `///` Markdown syntax.
-- **Zero-Warning Self-Typing**: Fluent builder traits (`Styled<SELF>`, `ParentElement<SELF>`, `FluentBuilder<SELF>`) utilize `SELF self()` overridden by leaf classes, yielding completely type-safe fluent chaining with **zero unchecked casts**.
-- **Typed Style Values**: Style methods accept `CssLength`, `CssColor`, `Border`, `Shadow`, `TrackList`, keyword enums, and other sealed values, so no declaration is built from raw text.
-- **Typed ARIA**: Roles are `Role` constants and each `aria-*` state has a typed method; the compiler checks every role's name, children, state, and attribute requirements.
-- **Source Provenance**: With tracking on, rendered elements carry `data-src="File.java:42"` and diagnostics name the Java line that built them.
-
-### 3. Linker-Style Element Identity
-
-In Tessera, DOM ids come only from `ElementRef` tokens: `ElementRef.scoped(name)` for ids namespaced by the enclosing scope, `ElementRef.page(name)` for stable public fragments, and anonymous refs for compiler-assigned ids. A key's own slug has no sibling index. A scope that omits `scopeId()` is still numbered in encounter order, and keyed content inside that scope reports `generated-scope-id`. References to other elements (such as `commandfor`, `<label for>`, `aria-labelledby`, `aria-describedby`, or `href="#..."`) take the same refs. During compilation, the **Linker** statically resolves and verifies every reference:
-
-- Unbound references trigger compile-time errors.
-- Duplicate bindings, duplicate DOM IDs, and conflicting names on one element are reported before HTML is emitted.
-- Invoker command targets are checked for existence in the compiled document.
-- Accessibility contracts (roles, landmarks, heading order, label targets, focus) are checked on the linked tree.
-
-### 4. Zero `@SuppressWarnings` & Extreme Quality Gates
-
-Tessera enforces an unyielding quality policy:
-
-- Forked `javac` with `-Xlint:all -Xdoclint:all/protected,-missing -Werror`.
-- Error Prone combined with Uber's NullAway in `@NullMarked` JSpecify mode, plus `CheckReturnValue` for the `@CheckReturnValue` immutable value types (`Theme`, `Keyframes`, `Animation`, `Transition`, `CssLength`, ...).
-- Checkstyle 14.4.0 enforcing Markdown docs (`///`) and banning legacy `/** */`.
-- SpotBugs 4.10.5 running at `effort=Max` and `threshold=Low`.
-- Spotless with google-java-format.
-- **Zero `@SuppressWarnings`**: Suppressing warnings is strictly prohibited and verified by CI (`just no-suppress-warnings`).
-
----
-
-## Component Catalog
-
-Tessera includes a comprehensive catalog of accessible, responsive components:
-
-| Category | Components | Highlights |
-| :-- | :-- | :-- |
-| **Typography & Prose** | `Prose`, `CodeBlock`, `Formatting`, `Footnote`, `Footnotes` | Subgrid alignment, typography scales, line numbering, and language tags. |
-| **Status** | `Badge` | OKLCH tinted, outline, and solid variants across 6 semantic tones, pill shape, status dot indicators, anchor link support. |
-| **Navigation** | `Breadcrumbs`, `NavTabs`, `DocPager`, `StickyHeader`, `TableOfContents`, `DocLayout` | Accessible breadcrumbs, link tabs, pagination, sticky headers, and a collapsible table of contents with integrated scrollspy. |
-| **Overlays & Popovers** | `Modal`, `Drawer`, `Dropdown` | Native `<dialog closedby="any">`, `popover="auto"`, `interestfor` hover hints, zero JavaScript dialogs. |
-| **Forms & Input** | `Forms`, `Field`, `Select`, `SearchPalette` | Labelled fields, native validation states, customizable selects, modal command palette with keyboard shortcuts. |
-| **Actions** | `Button`, `IconButton` | Native buttons with separate tone, surface, size, submit, invoker command, disabled, and busy states. |
-| **Data Presentation** | `SimpleTable`, `DataTable`, `Card`, `CardGrid` | Responsive tables, card grids with CSS subgrid alignment, hover elevation. |
-| **Layout & Containers** | `Section`, `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` | Responsive columns, scroll reveals, lazy and high-priority LCP image loading, pure CSS accordions and carousels. |
-
-Every component is created with a static factory such as `Modal.of(title)`, configured with fluent options, and takes an optional `id(String)` when its instance ids matter; see the [consumer guide](docs/consumer-guide.md#use-the-built-in-components).
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- **JDK 25** (with `JAVA_HOME` pointing to JDK 25)
-- **`just`** task runner (optional but recommended) or `./mvnw`
-
-### Running the Multi-Page Showcase
-
-Compile and run the showcase. Documentation pages cover the component library, and named cases are published under `/stories/`.
-
-```bash
-# Compile the static site into target/site
-just site
-
-# Build and launch the built-in HTTP preview server at http://localhost:8080
+```sh
 just demo
-
-# Generate the two-page consumer-guide example
-just guide
 ```
 
-### Running Tests & Quality Gates
+Open `http://localhost:8080/` to explore the component showcase. The preview is a compiled snapshot; run the command again after changes.
 
-```bash
-# Install Playwright Chromium and Firefox (once, and after upgrades)
-just browsers
+For a smaller example, follow [Getting started](docs/getting-started.md). It covers local installation, a two-page site, and the files to publish.
 
-# On Linux hosts needing system packages (requires sudo)
-just browsers --with-deps
-
-# Run unit tests, browser E2E tests, and all quality gates
-just verify
-
-# Run fast unit tests without a browser
-just test
-
-# Enforce zero @SuppressWarnings across the entire tree
-just no-suppress-warnings
-
-# Format code with Spotless
-just format
-```
-
----
-
-## Code Examples
-
-### 1. Defining a Scoped Component (`Scope`)
+## Compile a page
 
 ```java
-public record MetricCard(String title, String value, Badge badge) implements Scope {
-  @Override
-  public void configureScope(ScopeStyle scope) {
-    scope
-        .root(s -> s.layout(
-            FlexLayout.column(CssLength.rem(0.5), FlexLayout.Align.START, FlexLayout.Wrap.NOWRAP)))
-        .select(".metric-value", s -> s.fontSize(CssLength.rem(1.5)).fontWeight(700));
-  }
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.core.Elements;
 
-  @Override
-  public IntoElement expand(DocumentContext context) {
-    return div()
-        .child(div().children(span().text(title), badge))
-        .child(div().attr("class", "metric-value").text(value));
-  }
+void main() {
+  var document = new PageDocument("Hello", Elements.main().children(
+      Elements.h1().text("Hello"),
+      Elements.p().text("Built with Tessera.")));
+
+  System.out.println(Compiler.compile(document).html());
 }
 ```
 
-### 2. Badges
-
-```java
-// Badges with semantic tones, variants and sizes
-Badge.of("Production").tone(Tone.SUCCESS).variant(Badge.Variant.SOLID).dot();
-Badge.of("Deprecated").tone(Tone.WARNING).variant(Badge.Variant.OUTLINE);
-
-// Pills are badges with fully rounded ends
-Badge.of("v0.1.0").tone(Tone.INFO).pill();
-Badge.of("JDK 25").size(Size.SM).pill();
-```
-
-### 3. Native Dialogs with Invoker Commands
-
-```java
-var modal = Modal.of("Confirm action")
-    .id("confirm")
-    .bodyText("Are you sure you want to proceed?")
-    .closeLabel("Cancel");
-
-// The trigger's commandfor is resolved by the Linker to the dialog's scoped id, confirm--dialog.
-main().children(modal.triggerButton("Delete item"), Elements.deferred(modal, 10));
-```
-
----
-
-## Project Structure
-
-```mermaid
-treeView-beta
-    tessera/ ## Repository and Maven reactor
-        pom.xml ## Parent and shared quality configuration
-        config/ ## Checkstyle and SpotBugs policies
-        tessera/ ## Published dev.nthings:tessera library
-            pom.xml
-            src/
-                main/java/ ## foundation, css, core, compiler, components, navigation
-                test/java/ ## Compiler, component, and site tests
-        tessera-showcase/ ## Public API example and browser tests
-            pom.xml
-            src/
-                main/java/ ## Showcase and consumer-guide example
-                test/java/ ## Playwright browser suite
-        docs/
-            architecture.md ## Boundaries, APIs, and compilation contracts
-            architecture-redesign.md ## Dual-backend architecture proposal
-            consumer-guide.md ## Authoring and publishing guide
-            roadmap.md ## Browser backend roadmap and verification gates
-        justfile ## Build, test, browser setup, and demo commands
-        .github/
-            workflows/
-                ci.yml ## Full verification with Chromium and Firefox
-```
-
-The showcase depends on the library's public API. Playwright is test-scoped in the showcase module and never becomes a library dependency. Maven `test` runs the unit suite; Maven `verify` also runs the showcase's Failsafe browser tests.
-
-The browser suite compiles the showcase, writes it to a temporary directory, and serves those files over local HTTP. It opens documentation routes and component cases at desktop and mobile widths, and exercises native interactions on both latest Chromium and latest Firefox. Tests use the browser builds bundled with the configured Playwright release. Traces are written to `tessera-showcase/target/playwright/{chromium,firefox}/`; failed tests also save a screenshot there. CI uploads these diagnostics on failure. The suite also runs axe-core WCAG A/AA audits, keyboard flows, forced-colors, reduced-motion, 200% zoom, and text-spacing checks.
-
-For library-only verification, run `./mvnw -pl tessera verify`. For a focused browser run after compilation, use `./mvnw -pl tessera-showcase -am verify -Dit.test=ChromiumShowcaseIT` or `-Dit.test=FirefoxShowcaseIT`.
-
----
+This Java 25 source file prints a complete HTML document with its stylesheet embedded. [Site compilation](docs/sites.md) shares stylesheets across routes and produces files for a static host.
 
 ## Documentation
 
-For a comprehensive deep-dive into Tessera's architecture, compiler phases, linker mechanics, and CSS layer design, see the [Canonical Architecture Specification](docs/architecture.md) and the [Dual-Backend Architecture Proposal](docs/architecture-redesign.md).
-
-For application development, see the [consumer guide](docs/consumer-guide.md) and the [browser roadmap](docs/roadmap.md).
-
----
+| Task | Read |
+| --- | --- |
+| Install locally and build a first site | [Getting started](docs/getting-started.md) |
+| Compose elements, components, identities, and interactions | [Component guide](docs/consumer-guide.md) |
+| Set themes, layout, conditional styles, and animation | [Styling](docs/styling.md) |
+| Define routes, assets, navigation, search, and hosting | [Sites](docs/sites.md) |
+| Read compiler errors and trace elements to Java source | [Diagnostics](docs/diagnostics.md) |
+| Call the Java API from Kotlin | [Kotlin](docs/kotlin.md) |
+| Check browser requirements and script behavior | [Browser support](docs/browser-support.md) |
+| Build, test, and contribute | [Development](docs/development.md) |
+| Understand package boundaries and the compiler | [Architecture](docs/architecture.md) |
+| Review proposed browser rendering and acceptance gates | [Browser architecture proposal](docs/architecture-redesign.md) and [roadmap](docs/roadmap.md) |
 
 ## License
 
-Tessera is open-source software licensed under the [Apache License, Version 2.0](LICENSE).
+[Apache 2.0](LICENSE).

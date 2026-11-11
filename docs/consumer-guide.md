@@ -81,6 +81,8 @@ public record ItemList(String id) implements Scope {
 
 `scopeName()` defaults to the kebab-cased class name, such as `metric-card`. It identifies the component's `data-scope` attribute and CSS scope. Override it for anonymous implementations, which otherwise report `unstable-scope-name`. The root also carries `data-scope-id`; scope styles stop at nested scopes.
 
+Use an authored tag as the host when nesting scopes. `Scope.expand` still returns `IntoElement`; the compile-time host API is [explicit scope roots](design/authoring.md#require-explicit-scope-roots).
+
 `scopeId()` identifies an instance within its enclosing scope. Give repeated instances distinct IDs. The default, `null`, assigns `<scopeName>-<n>` in encounter order. Use explicit IDs when links must stay stable or the scope contains [keyed items](#key-list-items-that-move).
 
 Keep expansion free of shared mutable application state: site compilation expands pages concurrently. The supplied `DocumentContext` belongs to the callback; do not retain it for asynchronous work. Browser roots receive the same context with [backend-specific capability limits](browser-rendering.md).

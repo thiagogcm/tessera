@@ -1,130 +1,87 @@
-# Browser rendering architecture proposal
+# Dual-backend architecture proposal
 
-This proposal defines a Java-to-WebAssembly backend for mounting Tessera views into the browser DOM. Its APIs are design targets beyond the [experimental backend](browser-rendering.md). That backend is available through the opt-in `wasm` profile; document-context separation, unified control lowering, and compiler-managed mounts remain proposed work.
+Use one portable component model to produce static documents and live browser views. Keep document assembly and browser execution explicit, and make unsupported placement a type error. This proposal defines the target design; [Architecture](architecture.md) describes the implementation available now.
 
-The design keeps static document authoring focused on HTML/CSS while allowing portable components, live controls, and compiler-managed browser assets. [Architecture](architecture.md) and [browser internals](browser-internals.md) describe the implementation that exists. The [roadmap](roadmap.md) defines delivery order and acceptance evidence.
+The intended readers are maintainers changing authoring APIs, compiler passes, and the browser runtime. The [roadmap](roadmap.md) defines prerequisites, delivery order, and acceptance evidence. Proposed names below describe responsibilities; they are not available APIs.
 
-## Design goals
+## Read the design by responsibility
 
-| Goal | Design rule |
+| Decision | Primary specification |
 | --- | --- |
-| Keep static authoring simple | Keep events, lifetimes, and WebAssembly-specific operations out of universal element builders |
-| Make component portability explicit | Distinguish portable expansion from document assembly through context types |
-| Share control semantics | Define one initial-state model with separate static and live implementations |
-| Publish complete browser bundles | Compile mount descriptors into validated HTML and a resource graph |
-| Protect internal contracts | Expose authoring APIs publicly and restrict backend access through module boundaries |
+| Placement types, contexts, scope roots, controls, and widgets | [Authoring design](design/authoring.md) |
+| Commit ownership, disposal, identity, and browser publication | [Runtime design](design/runtime.md) |
+| Packages, module access, and change policy | This document |
+| Work sequence and completion gates | [Roadmap](roadmap.md) |
 
-## Context hierarchy and placement
+## Design commitments
 
-Portable components need render-scoped state and diagnostics. Document templates also need head content, document-end sections, scripts, and navigation headings. A browser mount has no document assembly phase, so these capabilities belong to different contracts.
+Preserve shared expansion, reference linking, semantic validation, and CSS generation. The static compiler and browser renderer remain separate consumers of those operations. Neither backend depends on the other backend's implementation.
 
-```mermaid
-classDiagram
-    direction TB
-    class ViewContext {
-        <<interface>>
-        +state(ViewKey) Object
-        +report(rule, message, fix) void
-    }
-    class DocumentContext {
-        <<interface>>
-        +contributeHead(content) void
-        +atDocumentEnd(owner, callback) void
-        +contributeScript(script) void
-        +headings() List
-    }
-    class Component {
-        <<interface>>
-        +expand(ViewContext) IntoElement
-    }
-    class Scope {
-        <<interface>>
-        +expand(ViewContext) IntoElement
-    }
-    class DocumentComponent {
-        <<interface>>
-        +expand(DocumentContext) IntoElement
-    }
-    ViewContext <|-- DocumentContext
-    Component ..> ViewContext : receives
-    Scope ..> ViewContext : receives
-    DocumentComponent ..> DocumentContext : receives
-```
+| Concern | Decision |
+| --- | --- |
+| Portability | Portable output cannot contain document-only or live-only children, including children received from callers |
+| Static authoring | Document composition adds assembly capabilities without importing browser services |
+| Live authoring | Browser events, effects, and services belong to the browser module |
+| Scope composition | Every styled scope has an explicit authored host; expansion never invents a host or replaces another scope's markers |
+| Control state | Portable declarations describe initial state; live bindings separately declare application ownership |
+| Runtime ownership | Every acquired resource has an owner before callbacks can request disposal |
+| Validation | Types exclude unsupported capabilities; shared validation checks authored values and relationships |
+| Change policy | Replace obsolete APIs and migrate all callers together; do not add compatibility aliases or alternate legacy paths |
 
-The diagram summarizes capabilities; the state operation remains generic as `state(ViewKey<T>)`. `Component`, `Scope`, and browser view callbacks receive `ViewContext`. `DocumentComponent` and document callbacks receive `DocumentContext`. Outline headings are collected from elements that carry them; `headings()` reads that collection, and the context does not register headings.
+The browser target is main-thread WebAssembly with garbage collection (WasmGC), built through GraalVM Web Image. Invalidation stays explicit. Hydration, workers, WASI, implicit observable stores, and serialization of JVM closures are outside this proposal.
 
-Move `deferred`, `late`, and `rawHtml` placement behind document-only APIs. Portable components should be unable to create document-only nodes, rather than discovering the mismatch during browser rendering.
+## Package and module boundaries
 
-## Form controls and adaptive widgets
+Keep two runtime artifacts: `tessera` for portable authoring and static compilation, and `tessera-wasm` for live authoring and browser execution. Keep each showcase separate. Do not split the shared library into more artifacts solely to hide individual classes.
 
-Proposed `TagElement.value(String)`, `checked(boolean)`, and `selectedValues(List<String>)` describe control state for both backends.
+The Java Platform Module System (JPMS) controls exports on the module path. The public API must remain usable there, and the Web Image build must consume the same implementation. Classpath execution does not enforce qualified exports; document that limitation rather than claiming universal access protection.
 
-| Control state | Static document | Live browser mount |
+| Package or module | Contents | Access |
 | --- | --- | --- |
-| Input value | Initial `value` attribute | Reconciled DOM value |
-| Textarea value | Text content | Reconciled DOM value |
-| Checkbox/radio selection | Initial `checked` attribute | Reconciled DOM checked property |
-| Select values | `selected` on matching options | Reconciled option selection |
+| `foundation` | Fluent composition and deterministic identifiers | Public authoring support |
+| `css` | Typed CSS values, declarations, style callbacks, and package-private serialization | Exported public authoring package |
+| `core` | Portable elements, component contracts, references, render context, and public diagnostics | Exported public authoring package |
+| `document` and `document.components` | Document content, builders, assembly context, and document-only components | Exported from `tessera`; no browser dependencies |
+| `components` | Portable widget structure and configuration | Exported; depends on portable authoring |
+| `compiler` | Static orchestration, page/site inputs, output, filesystem and preview adapters | Exported entry points; package-private coordination |
+| `navigation` | Site-derived document UI | Exported; depends on document components and compiler |
+| `internal.authoring` | Closed node data and controlled access from public builders | Not exported |
+| `internal.css` | CSS collection entry point and immutable collected rule data | Not exported |
+| `view` | Shared backend entry points and linked snapshots | Qualified export to `dev.nthings.tessera.wasm` |
+| `dev.nthings.tessera.wasm` | Live content, builders, events, effects, root ownership, and host services | Public live API; DOM bridge and reconciliation stay internal |
 
-Shared expansion checks host compatibility through `control-value`, `control-checked`, and `control-selection`. Live updates apply after attributes and children and preserve focus, selection, caret position, and active input method editor (IME) composition.
+The linked backend tree carries backend-owned metadata through one internal type parameter. The browser owns the concrete handler and effect payloads; shared traversal carries them without interpreting them or importing browser classes. Portable authoring types remain free of that parameter. Document and live lowering feed the same structural expansion and validation operations through their respective entry points.
 
-Built-in widgets should use the same declared state with backend-specific behavior:
+Shared backend interfaces carry only the capabilities each backend implements. Remove hooks whose only role is to reject a node that the placement types already exclude. Do not replace them with a general plugin registry, service locator, or backend-mode flags on portable builders.
 
-| Widget | Proposed authoring | Static behavior | Live behavior |
-| --- | --- | --- | --- |
-| `ContentTabs` | `selected(key)`, optional `onSelect(Consumer<String>)` | Page module selects panels and handles focus | Java handlers update selection and roving focus; invoke the callback |
-| `Field` | `validationMessage(text)`, `invalid(error)` | Reveal errors for native invalid state or explicit `aria-invalid` | Apply explicit errors immediately |
-| `Modal` / `Drawer` | `opened()` or `open(boolean)`, `dialogRef(ref)` | Native dialog and invokers | Reconcile dialog state in place, with top-layer behavior and focus restoration |
-| Interest tooltip | `interestTooltip(callback)` | Native invoker plus Firefox module | Live hover/focus handling or CSS anchoring |
+### Access authoring data without public inspection APIs
 
-Java callbacks belong to the compiled browser application. Static HTML output does not serialize JVM closures or services. The existing static usage remains documented in the [component guide](consumer-guide.md).
+Store mutable node data in the internal authoring package. Public builders delegate writes to that data and retain their value checks. Public element interfaces are sealed where needed to keep the portable node set closed; user components remain extensible through `Component`.
 
-## Browser mounts and resource publication
+An internal accessor registered by the owning public package reads each builder's data. Expansion captures the data it needs into its own representation. This narrowly scoped accessor is the cross-package bridge; it is not a public escape hatch, reflective lookup, or adapter supplied by applications.
 
-A proposed `WasmBundle` describes a compiled entry point as an immutable resource graph: launcher script, Wasm image, supplementary chunks, MIME types, and SHA-384 integrity digests.
+Remove public wrapper constructors and backend inspection getters after compiler and browser callers use the bridge. Exported authoring signatures must not expose internal node data or linked snapshots. The qualified backend API may expose its own linked types. A client using supported APIs should not need `--add-exports` or reflective access.
 
-A mount declaration such as `Elements.mount(hostId, bundle, viewName).fallback(content)` connects a named browser entry point to static fallback content. The compiler should:
+### Keep CSS authoring and collection separate
 
-1. Expand, link, and validate the non-interactive fallback as part of the document.
-2. Publish content-hashed bootstrap, launcher, binary, and manifest resources under the external asset base.
-3. Include every resource in `CompiledPage.assets()` or `CompiledSite.files()`.
-4. Serialize mount configuration into escaped `data-tessera-*` attributes.
-5. Support root and nested asset bases and publish `.wasm` with `application/wasm`.
+Move stylesheet aggregation behind `internal.css`, while keeping property ordering, serialization, and `ScopeStyle` construction with their package-private CSS collaborators. A CSS-owned internal accessor exposes collection operations and immutable rule data to the aggregator. This avoids making serialization helpers public merely because `StyleSheet` moves packages.
 
-The host must apply the Content Security Policy (CSP) headers. Target a distribution that runs with `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'`, without inline script/style exceptions.
+The shared `view` boundary returns collected rules needed by the browser. Browser consumers use public CSS authoring APIs but do not reach into CSS serialization or `internal.css`. Static and embedded output continue to derive from one rule representation, including live-value shapes, rather than two serializers that can drift.
 
-Mounting must preserve readable content on failure:
+### Keep browser behavior out of portable widgets
 
-```mermaid
-stateDiagram-v2
-    [*] --> Fallback
-    Fallback: Static fallback remains visible
-    Fallback --> Loading: Start supported browser entry point
-    Loading --> Mounted: Initial render succeeds
-    Loading --> Failed: Capability, fetch, or render failure
-    Failed: Keep fallback and report an actionable error
-    Mounted: Replace fallback with live DOM
-    Mounted --> Disposed: Owning root closes
-    Disposed: Cancel work and release handlers
-    Disposed --> [*]
-```
+Portable widgets expose markup, configuration, and initial state. Static widget behavior contributes its module during document lowering. Browser adapters in `tessera-wasm` attach Java bindings and lifecycle work to portable structure through the qualified backend interface.
 
-Unsupported capabilities must also preserve the fallback without requiring a successful loader. Streaming Fetch responses should update incrementally, cancel with the owning lifetime/root, and ignore stale completions.
+An adapter returns live content. It cannot be placed back into portable or document content. The [widget state rules](design/authoring.md#adaptive-widgets) define which layer owns state and how native actions reach the application.
 
-## Module and package boundaries
+## Preserve the compiler's useful boundaries
 
-Extract shared expansion and validation into a backend package while keeping static authoring independent of live runtime types. Java Platform Module System (JPMS) qualified exports should restrict access to backend internals.
+Retain preparation before emission, ordered document contributions, reference linking before validation, and deterministic site stylesheet merging. Prepared pages own their linked trees and expose metadata snapshots. Emission does not rerun author callbacks.
 
-| Surface | Proposed boundary |
-| --- | --- |
-| Public authoring | `foundation`, `css`, `core`, `components` |
-| Static compilation and integration | `compiler`, `navigation` |
-| Shared backend operations | `view`, exported only to the browser backend module |
-| Diagnostic model | Shared `Diagnostic` and `Location` types in `core` |
-| Wrapper records and tag inspection | Internal access contract for expansion; author-facing tag APIs retain mutation guards |
-| Stylesheet collection | `StyleSheet` in the backend package; public CSS API contains authoring values and callbacks |
-| Browser runtime | Events, effects, lifetimes, root ownership, and the internal DOM/Web Image bridge in the browser module |
+Retain the separation between compilation and publication. The compiler returns pages and assets; filesystem and HTTP adapters publish them. Browser bundle support extends that resource boundary without teaching the compiler to invoke the ahead-of-time toolchain.
 
-The proposed browser module is `dev.nthings.tessera.wasm`; final live-package placement remains a design choice. Qualified exports control access between modules but do not grant cross-package access to package-private members. The internal access contract must account for that restriction before wrapper visibility changes.
+Keep diagnostics precise about authoring locations and recoverable failures. Checks for duplicate IDs, invalid control hosts, unresolved references, malformed URLs, and accessibility relationships remain useful even when placement is type-safe.
 
-Acceptance criteria, browser evidence, and delivery constraints belong to the [roadmap](roadmap.md).
+## Verify the design
+
+Use the roadmap's [acceptance rules](roadmap.md#acceptance-rules) and stage-specific scenarios. Keep behavioral compiler and browser coverage through the migration; revise representation-pinning assertions with the code they constrain.

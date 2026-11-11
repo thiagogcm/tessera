@@ -50,7 +50,7 @@ This Java 25 source file prints a complete HTML document with its stylesheet emb
 | Check browser requirements and script behavior | [Browser support](docs/browser-support.md) |
 | Build, test, and contribute | [Development](docs/development.md) |
 | Understand package boundaries and rendering | [Architecture](docs/architecture.md), [compiler](docs/compiler.md), and [browser internals](docs/browser-internals.md) |
-| Review proposed browser rendering and acceptance gates | [Browser architecture proposal](docs/architecture-redesign.md) and [roadmap](docs/roadmap.md) |
+| Review the dual-backend design and delivery gates | [Proposal](docs/architecture-redesign.md), [authoring design](docs/design/authoring.md), [runtime design](docs/design/runtime.md), and [roadmap](docs/roadmap.md) |
 
 ## License
 

@@ -1,8 +1,14 @@
 # Browser runtime internals
 
-This document describes the experimental `tessera-wasm` runtime. See [Browser rendering](browser-rendering.md) for authoring and setup, and [Architecture](architecture.md) for shared package boundaries.
+This document describes the experimental `tessera-wasm` runtime. Its [current limits](architecture.md#current-limits) qualify the ownership and identity behavior below; the [runtime proposal](design/runtime.md) specifies the target guarantees. See [Browser rendering](browser-rendering.md) for authoring and setup, and [Architecture](architecture.md) for shared package boundaries.
 
-`ViewRenderer.render(content, scope)` runs one turn of a mounted view through the same `ViewExpansion` with a mounted-view backend and returns the linked `ViewSnapshot` without document placement or page validation. Per-page state (`DocumentContext.document`) and headings last one turn there. Head contributions, document-end sections, page scripts (including the interest-tooltip script), late or deferred placement and raw HTML are reported as `native-head-contribution`, `native-document-end`, `native-page-script`, `native-document-placement` and `native-raw-html`, which reject the candidate like any other `ViewException`. Event handlers travel through shared expansion on the linked tags; the document backend rejects them because Java closures cannot be serialized into static HTML. `tessera-wasm` builds the browser backend on this entry point.
+`ViewRenderer.render(content, scope)` runs one turn of a mounted view through the same `ViewExpansion` with a mounted-view backend and returns the linked `ViewSnapshot` without document placement or whole-document validation. Shared semantic validation still runs.
+
+Per-page state (`DocumentContext.document`) and headings last one turn there.
+
+Head contributions, document-end sections, page scripts (including the interest-tooltip script), late or deferred placement and raw HTML are reported as `native-head-contribution`, `native-document-end`, `native-page-script`, `native-document-placement` and `native-raw-html`, which reject the candidate like any other `ViewException`.
+
+Event handlers travel through shared expansion on the linked tags; the document backend rejects them because Java closures cannot be serialized into static HTML. `tessera-wasm` builds the browser backend on this entry point.
 
 ## Native identity and reconciliation
 
@@ -20,7 +26,11 @@ Shared expansion allocates each keyed child's scope from the enclosing id scope,
 | Text | Earliest unmatched sibling text node |
 | Incompatible child | Create the replacement and dispose the obsolete subtree |
 
-The reconciler patches changed text and attributes, removes obsolete attributes, updates event registrations and recursively reconciles children. Retained ranges on the longest run already in sibling order stay in place; only the others move, and new nodes are inserted directly at their final position, so inserting or removing one child costs one DOM operation. Connected moves use the browser's state-preserving `moveBefore` operation when available. Unchanged attributes are not reapplied, so unrelated updates do not overwrite dirty native input values. Matching unkeyed children by kind keeps a field's control when its hint or error appears or disappears beside it; inserting a sibling of the same kind before it still shifts the match, so such lists need keys. Removing a subtree releases its listeners, including callbacks on detached native nodes.
+The reconciler patches changed text and attributes, removes obsolete attributes, updates event registrations and recursively reconciles children. Retained ranges on the longest run already in sibling order stay in place; only the others move, and new nodes are inserted directly at their final position, so ordinary insertion or removal does not move unchanged sibling ranges. Connected moves use the browser's state-preserving `moveBefore` operation when available.
+
+Unchanged attributes are not reapplied, so unrelated updates do not overwrite dirty native input values. Matching unkeyed children by kind keeps a field's control when its hint or error appears or disappears beside it; inserting a sibling of the same kind before it still shifts the match, so such lists need keys.
+
+Ordinary subtree removal releases its listeners, including callbacks on detached native nodes. The [closure-during-reconciliation limit](architecture.md#current-limits) is an exception.
 
 ## Event contract
 
@@ -42,9 +52,17 @@ The reconciler applies controls after attributes and children, comparing each de
 
 ## Entry points and cross-root identity
 
-A page declares each mount on its host element: `data-tessera-entry` names the launcher of the compiled entry and `data-tessera-view` the view to mount (the host id by default). `bootstrap.js` loads each distinct launcher once, one at a time. Every Web Image launcher assigns the same `GraalVM` global, so the bootstrap captures each launcher's object as soon as its script runs and restores the previous value; each entry then runs with its own `Config`, with its hosts passed to `main` as `host=view` arguments. `BrowserEntry.start(args, views)` mounts each declared host through the mount function its view names. An undeclared view or a failed mount is reported and leaves that host's fallback content; other hosts and entries still mount. Each entry keeps its own shared stylesheet.
+A page declares each mount on its host element: `data-tessera-entry` names the launcher of the compiled entry and `data-tessera-view` the view to mount (the host id by default).
 
-Identity checks read the document, so they cover roots of every compiled entry. A root refuses a host that already holds a root, lies inside one or contains one; closing removes the host's root marker, so the host can be mounted again. Generated and scoped ids are prefixed with the host id. Before each commit, every DOM id the candidate introduces (an id in `ViewSnapshot.ids()` that the root's last commit did not render) is checked against the document: an id that an element outside the root already uses, in another root or in the host page, rejects the candidate with a `cross-root-id` error naming the owner. A newly mounting root therefore checks all its ids. Ids a root has committed are its own and are not checked again, so markup the host page adds later with one of them does not block the root's renders; an id the root stops rendering is released, and rendering it again checks it again. Sibling keys, authoring types and element refs never become DOM ids, so they cannot collide across roots.
+`bootstrap.js` loads each distinct launcher once, one at a time. Every Web Image launcher assigns the same `GraalVM` global, so the bootstrap captures each launcher's object as soon as its script runs and restores the previous value; each entry then runs with its own `Config`, with its hosts passed to `main` as `host=view` arguments. `BrowserEntry.start(args, views)` mounts each declared host through the mount function its view names. An undeclared view or a failed mount is reported and leaves that host's fallback content; other hosts and entries still mount. Each entry keeps its own shared stylesheet.
+
+Identity checks read the document, so they cover roots of every compiled entry. A root refuses a host that already holds a root, lies inside one or contains one; closing removes the host's root marker, so the host can be mounted again.
+
+Generated and scoped ids are prefixed with the host id. Before each commit, every DOM id the candidate introduces (an id in `ViewSnapshot.ids()` that the root's last commit did not render) is checked against the document: an id that an element outside the root already uses, in another root or in the host page, rejects the candidate with a `cross-root-id` error naming the owner. A newly mounting root therefore checks all its ids.
+
+Ids a root has committed are its own and are not checked again, so markup the host page adds later with one of them does not block the root's renders; an id the root stops rendering is released, and rendering it again checks it again.
+
+Sibling matching is separate from this DOM-ID check: a logical group's key and definition identify its retained range. The host itself is currently exempted by the containment check, as described under [current limits](architecture.md#current-limits).
 
 ## Host services
 
@@ -61,18 +79,20 @@ Each turn expands a candidate before touching the DOM. Failures become readable 
 | Failure | Effect |
 | --- | --- |
 | Diagnostics or a throwing render/style callback | Candidate rejected; the committed tree is unchanged and a later invalidation retries. Callback failures carry the component and key path. |
-| Initial render | Same as above; the host keeps its fallback content and later roots still mount. |
-| Unexpected DOM commit failure | Closes the root through its normal disposal path and reports the error. |
+| Initial preparation failure | The host keeps its fallback content and later roots still mount. |
+| Unexpected DOM commit failure | Attempts root disposal and reports the error. An initial commit may already have cleared fallback; disposal during reconciliation has the limits linked below. |
 | Java event handler | Reported with the event type and root; the root and its tree stay interactive. |
 | Application cleanup while closing | Remaining application cleanups still run; failures are reported together once. |
 
-Closing a root is idempotent and safe from the root's own handlers and effects. It cancels scheduled work, releases every listener, disposes effects innermost first, closes open dialogs and popovers, empties the owned host, disposes the root lifetime and releases its style rules. The root then drops its view callback, so it no longer references application state.
+Closing a root is idempotent. Outside an active reconciliation, it cancels scheduled work, releases listeners, disposes effects innermost first, closes open dialogs and popovers, empties the owned host, disposes the root lifetime, and releases styles. It also drops its view callback. Closure from a removed effect's cleanup during reconciliation does not yet provide complete resource release; see [current limits](architecture.md#current-limits).
 
 ## Embedded styles
 
 `StyleSheet.embeddedBaseRules(theme)` emits the reset and base rules under the `data-tessera-root` host and the token values under a content-addressed `data-tessera-theme` key (`StyleSheet.themeKey(theme)`); a root acquires them once at mount, after `StyleSheet.LAYER_ORDER`. Each render's `embeddedRules()` emits one self-contained rule per entry: the same component, utility, interactive and container rules as static output, so only those are diffed between commits. Static and embedded output are written from one source of registered rules, and the reset and base rules take the root they apply beneath. Each embedded rule carries a short key (its `u-`, `i-` or `cq-` class, its `data-scope` selector, or its property name), so a root keeps the rule text it built per key and compares renders by key, wrapping and hashing only rules it does not hold yet. Mounting never restyles `:root`, `body` or the rest of the host page, and document navigation transitions are omitted.
 
-All roots share one constructed stylesheet adopted into the document, so no inline `<style>` element is needed and a `style-src 'self'` policy suffices. `StyleSink.Root` owns each root's base rules from mount to close and its render rules by key, acquires new rules before native mutation, and releases superseded rules after a successful commit. `StyleLedger` reference-counts rules across roots. Up to 512 unused rules stay inserted for later renders and mounts; the least recently released beyond that are deleted. The layer-order statement is pinned first so reinserted rules never change the cascade order.
+Roots within one compiled entry share a constructed stylesheet adopted into the document. The stylesheet needs no inline `<style>` element and is exercised under `style-src 'self'`. This establishes stylesheet behavior, not the complete proposed deployment policy.
+
+`StyleSink.Root` owns each root's base rules from mount to close and its render rules by key, acquires new rules before native mutation, and releases superseded rules after a successful commit. `StyleLedger` reference-counts rules across roots. Up to 512 unused rules stay inserted for later renders and mounts; the least recently released beyond that are deleted. The layer-order statement is pinned first so reinserted rules never change the cascade order.
 
 Every distinct style value is a content-addressed rule, so a value that changes on every render would churn rules through that pool. `TagElement.live(...)` avoids that: `StyleSheet.registerLive` compiles each live declaration into the element's stable rule as `property: var(--tl-property)`, and the reconciler sets `--tl-property` on the element through CSSOM `style.setProperty`, which a `style-src 'self'` policy allows. Values stay in the element's cascade layer, so state and container rules still apply, and each `--tl-*` name is registered once with `@property … inherits: false`, so a changing value restyles only its element.
 

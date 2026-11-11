@@ -1,71 +1,144 @@
-# Browser rendering roadmap
+# Dual-backend delivery roadmap
 
-Deliver a Java-to-WebAssembly backend that mounts portable Tessera components into the browser DOM. The [architecture proposal](architecture-redesign.md) defines the target contracts; this roadmap defines implementation order and acceptance evidence.
+Stabilize the existing compiler and browser runtime before changing their public boundaries. Then implement the [architecture proposal](architecture-redesign.md), followed by browser publication and additional services. This roadmap tells maintainers what to do next and what evidence completes each step.
 
-The opt-in `wasm` profile provides `tessera-wasm`, browser roots, and an image-building showcase. [Browser rendering](browser-rendering.md) covers setup and current capabilities. The phases below target the context split, unified widgets, and compiler-managed bundle descriptors beyond that experimental implementation.
+[Architecture](architecture.md) describes the current implementation. The opt-in browser backend is already available; its setup and commands belong in [Browser rendering](browser-rendering.md#build-and-verify).
 
-## Acceptance approach
+## Delivery order
 
-Complete each phase before starting work that depends on it. A gate passes when its scenario works in an HTTP-served browser distribution in both Chromium and Firefox. JVM unit tests and ahead-of-time compilation support that evidence but cannot replace it.
+The prerequisite fixes use the current implementation and the target ownership rules. They do not depend on the new placement types or module exports. Complete them before migrating the authoring API.
 
-Keep static compilation and its showcase verification passing throughout. Update implementation, examples, tests, and documentation together when changing shared APIs.
+```mermaid
+flowchart TD
+    accTitle: Prerequisites, refactoring, and feature delivery
+    accDescr: Correctness repairs and browser feasibility precede placement and module changes. Widgets and publication follow the shared control model.
+    P1["P1 Scope composition"] --> R1["R1 Placement and contexts"]
+    P2["P2 Commit ownership and identity"] --> R1
+    P3["P3 Browser feasibility"] --> R1
+    R1 --> R2["R2 Internal access and modules"]
+    R2 --> R3["R3 Initial state and live bindings"]
+    R3 --> F1["F1 Adaptive widgets"]
+    R3 --> F2["F2 Bundle publication"]
+    P2 --> F3["F3 Streaming requests"]
+    F1 --> Release["Release evidence"]
+    F2 --> Release
+    F3 --> Release
+```
 
-## Phase 1: Context and module boundaries
+The arrows express dependencies, not dates. Streaming can be delivered separately from the refactor once its lifetime prerequisite passes.
 
-Implement the [context hierarchy](architecture-redesign.md#context-hierarchy-and-placement) and [module boundaries](architecture-redesign.md#module-and-package-boundaries).
+## Acceptance rules
 
-| Deliverable | Acceptance evidence |
+- Read related tests first. Adapt existing fixtures and scenarios before adding another suite.
+- Test observable failures and outcomes. Do not pin private tree layouts, wrapper classes, exact diagnostic prose, source structure, or build configuration.
+- Use normal consumer compilation and focused API inspection for type and module boundaries. Do not create a parallel invariant-testing framework.
+- Verify DOM, interaction, lifecycle, and deployment behavior in HTTP-served Chromium and Firefox. JVM tests and image compilation alone cannot establish those results.
+- Keep static compilation and its browser showcase passing. Update affected implementation, examples, tests, and documentation together.
+- Replace superseded APIs directly. Do not add compatibility shims, deprecated aliases, silent capability fallbacks, or duplicate old/new paths.
+
+A capability fallback that preserves readable document content in an unsupported browser is part of the product behavior. It is distinct from preserving an obsolete Java API.
+
+## Pre-refactoring work
+
+### P1: Correct scope composition
+
+Runtime expansion already applies the observable part of the [explicit scope-root rule](design/authoring.md#require-explicit-scope-roots). A scope must resolve to one authored element through ordinary component and keyed wrappers. Direct delegation to another scope reports `scope-root` and preserves the inner boundary. A fragment, text, raw HTML, late or deferred content, or an empty root reports `scope-root`. Expansion inserts no host.
+
+`Scope.expand` still returns `IntoElement`. Changing that return type, together with the wider placement families, remains [R1](#r1-enforce-placement-and-context-boundaries).
+
+| Work | Completion evidence |
 | --- | --- |
-| Portable `ViewContext` and document-only assembly | Portable components compile without document capabilities; document placement is unavailable to browser views |
-| Shared expansion and validation boundary | Both compiler and browser backend use shared operations without exposing backend types in authoring APIs |
-| Module descriptors and internal access contract | API inspection and showcase compilation confirm that wrappers, inspection getters, and stylesheet collection respect the intended boundary |
+| Require an authored scope host at runtime | Done: nested scopes retain their own selectors and computed styles in static and live output, and a missing host reports `scope-root` |
+| Remove implicit host insertion | Done: expansion inserts no wrapper, and a missing host is rejected rather than wrapped |
+| Compile-time host API | Deferred to R1 with the other placement-family changes |
 
-## Phase 2: Controls and adaptive widgets
+### P2: Correct commit ownership and ID reservations
 
-Implement the [shared control model](architecture-redesign.md#form-controls-and-adaptive-widgets).
+Implement the [commit and closure rules](design/runtime.md#own-resources-before-exposing-callbacks) inside the current runtime. Fix the host-ID check at the existing identity boundary.
 
-| Deliverable | Acceptance evidence |
+| Work | Completion evidence |
 | --- | --- |
-| Portable control state | Static/live parity for input, textarea, and select; live updates preserve caret, selection, focus, and IME composition |
-| Tabs and field errors | Add/remove tabs while selected; verify roving focus and ARIA state; apply and clear explicit field errors |
-| Dialogs, drawers, and tooltips | Open/dismiss in place, restore focus, and verify live tooltips without document script contributions |
+| Track acquired, committed, and retiring resources through a commit | Removing an effect whose cleanup closes the root releases a newly created replacement button's handler; clicking its retained detached node cannot change application state |
+| Settle closure at defined boundaries | Closure during expansion, native mutation, effect startup, or after-render work cannot publish later or start subsequent work |
+| Release resources from partial failures | An induced failure after acquiring listeners or styles leaves no callable detached handlers or retained ownership after closure |
+| Reserve the mount host ID | A child claiming the host's ID is rejected before publication; the previous tree or fallback remains intact |
+| Preserve ordinary disposal behavior | Key changes, request cancellation, repeated close, and cleanup failures still release each resource once |
 
-## Phase 3: Resources, policy, and fallback
+Exercise these through the existing lifecycle and identity fixtures. Add failure injection only where a real acquisition or mutation boundary needs evidence; avoid synthetic permutations that cannot occur through supported APIs.
 
-Implement [compiler-managed browser mounts](architecture-redesign.md#browser-mounts-and-resource-publication).
+### P3: Establish browser feasibility
 
-| Deliverable | Acceptance evidence |
+Use the existing toolchain and packaged application to establish the [policy and performance baseline](design/runtime.md#establish-policy-and-performance-evidence-early). This gate happens before substantial API migration, so unacceptable runtime costs can change the design early.
+
+| Work | Completion evidence |
 | --- | --- |
-| Immutable resource graph | Publish root and nested asset bases with correct MIME types, content hashes, and manifest integrity |
-| Strict Content Security Policy | Browser acceptance runs under the proposed policy with no violations or inline script/style exceptions |
-| Safe mount configuration | Escaping tests cover serialized mount attributes and entry-point configuration |
-| Failure recovery | Missing launcher/binary assets, unsupported capabilities, and failing initial renders retain readable fallback content with an actionable error |
+| Pin reproducible build inputs | Record GraalVM/Web Image, interoperability SDK, Binaryen, and browser versions beside build instructions |
+| Exercise the complete target CSP | Launch, fetch binaries, render controls, and update styles without policy violations in both engines |
+| Define workload and budgets | Record test device, network settings, list size, number of roots, cold-start procedure, and numeric thresholds before evaluating results |
+| Measure the real distribution | Report compressed bytes, boot-to-interaction time, update latency, and retained resources for one and two entries |
+| Evaluate the result | Thresholds are met, or the proposal is revised before dependent work starts; do not silently relax budgets after measurement |
 
-## Phase 4: Runtime resilience and release evidence
+Keep results in build artifacts or a dedicated performance record with its measurement conditions. Do not hard-code one machine's observations into architecture contracts.
 
-Verify the packaged application, including its dynamic behavior and resource lifecycle.
+## Refactoring
 
-| Deliverable | Acceptance evidence |
+### R1: Enforce placement and context boundaries
+
+Implement [content families and contexts](design/authoring.md#separate-capabilities-from-placement). This stage changes supported composition, rather than renaming `DocumentContext` while retaining one unrestricted node type.
+
+| Work | Completion evidence |
 | --- | --- |
-| Streaming Fetch | Incremental DOM updates, cancellation during a stream, and ignored completion after root disposal |
-| Dynamic accessibility | Keyboard, accessibility-tree, and axe-core WCAG A/AA checks after DOM mutations in both engines; reduced-motion and forced-colors coverage |
-| Performance budgets | Define thresholds and report compressed size, boot-to-interactive time, render latency, and retained handles over repeated mount/close cycles |
-| Complete distribution | Resource graph excludes compiler intermediates and remote dependencies |
-| Acceptance application | A form and filterable list built with Tessera and the browser backend pass deployed browser verification |
+| Introduce portable, document, and live output families | A portable component reused in a static page and browser root compiles and behaves correctly |
+| Restrict every child path, including callbacks and collections | Representative consumer snippets cannot place document or live content inside portable content, including through a wrapper accepting caller-supplied children |
+| Separate expansion state from persistent application state | A rejected render does not retain expansion-local values or start external work |
+| Migrate the [component inventory](design/authoring.md#assign-existing-components-to-a-family) and placement factories | Document components and browser adapters use their own contracts; bundled icons render as structured SVG in both outputs; obsolete universal factories and setters are removed |
+| Preserve shared passes | Both backends use the same identity, reference, CSS, and semantic validation operations |
 
-## Scope limits
+### R2: Restrict internal access and module exports
 
-| Capability | Boundary |
+Implement the [module and accessor design](architecture-redesign.md#package-and-module-boundaries) after placement types define the public boundary.
+
+| Work | Completion evidence |
 | --- | --- |
-| Server-rendered DOM hydration/adoption | Mounts replace validated fallback after a successful initial render |
-| Implicit observable stores | Invalidation remains explicit through the browser root |
-| Worker rendering or WASI | Target main-thread browser WasmGC through GraalVM Web Image |
-| JVM closure/service transfer | Compile browser entry points ahead of time |
+| Introduce narrowly scoped authoring and CSS accessors | Expansion and CSS collection work without public inspection getters or reflective access |
+| Hide wrappers, collection plumbing, and linked representations | Ordinary modular consumers compile using public APIs and need no export overrides |
+| Qualify the shared backend export | The browser module builds against `view`; authoring modules have no browser-runtime dependency |
+| Preserve toolchain reachability | Both real Web Image entry points build and mount with the new module/source layout |
+| Remove obsolete hooks and aliases | No backend policy exists solely to reject capabilities excluded by the new placement types |
 
-## Toolchain and command design
+### R3: Unify initial control state and separate live bindings
 
-Choose and pin a compatible GraalVM Web Image toolchain, JavaScript interoperability API, and Binaryen version when implementing the backend. Keep that toolchain outside the default JVM build.
+Implement the [control ownership model](design/authoring.md#distinguish-initial-state-from-live-ownership). Keep control lowering in shared code and native property updates in the browser backend.
 
-Keep the existing browser build and verification recipes aligned with the new contracts. They must assemble a self-contained browser host, serve it over HTTP, and exercise packaged output in both engines. Record prerequisites in the [browser guide](browser-rendering.md#build-and-verify) so users can reproduce the distribution.
+| Work | Completion evidence |
+| --- | --- |
+| Lower portable initial state | Input, textarea, checkbox/radio, and select examples have equivalent initial values in static and live output |
+| Preserve browser-owned changes | Unrelated renders retain edits, selection, focus, and native reset behavior |
+| Apply explicit live bindings | Accepted and rejected edits, binding removal, and application-driven reset follow the declared owner |
+| Preserve composition behavior | Existing real input and IME cases pass without equal-value writes that reset caret or selection |
+| Diagnose conflicting configuration | Unsupported hosts and conflicting initial declarations produce actionable authoring errors |
 
-Reference the [Web Image manual](https://www.graalvm.org/latest/reference-manual/web-image/) and its [JavaScript interoperability API](https://www.graalvm.org/latest/reference-manual/web-image/api-guide/) when selecting the toolchain.
+## Feature delivery after the refactor
+
+These features use the new boundaries. Keep their implementation and review separate from the structural migration.
+
+| Stage | Specification | Completion evidence |
+| --- | --- | --- |
+| F1: Adaptive widgets | [Widget state rules](design/authoring.md#adaptive-widgets) | Tabs handle selected-item removal and keyboard focus; fields apply and clear errors; dialogs acknowledge native dismissal and restore focus; live search and tooltips operate through browser adapters without document script contributions |
+| F2: Bundle publication | [Resource graph and mount design](design/runtime.md#publish-complete-browser-bundles) | Root/nested asset bases, media types, escaped attributes, verified integrity, complete files, and full CSP work in the deployed distribution; missing resources and initial failures preserve usable fallback |
+| F3: Streaming requests | [Streaming boundary](design/runtime.md#establish-policy-and-performance-evidence-early) | Chunks update the DOM incrementally; cancellation releases the reader/request; late chunks cannot update removed effects or closed roots |
+
+## Release evidence
+
+Use a representative form and filterable keyed list built through the public API. Verify the complete published distribution, rather than a test-only loader or manually assembled substitute.
+
+| Area | Required evidence |
+| --- | --- |
+| Static regression | Default verification, site output, and document examples pass |
+| Browser behavior | Both engines pass real-image interaction, identity, composition, disposal, and failure-recovery scenarios |
+| Dynamic accessibility | Keyboard, accessibility-tree, and axe-core checks after mutations; reduced-motion and forced-colors coverage |
+| Distribution | No missing graph resources, compiler intermediates, unexpected remote dependencies, or full-policy violations |
+| Performance | Repeat the P3 workload and compare against its recorded budgets, including repeated mount/close cycles |
+| Documentation | Current guides match implemented APIs; proposal links and remaining roadmap work are accurate |
+
+Build and verification commands stay in [Development](development.md) and [Browser rendering](browser-rendering.md#build-and-verify). Update those commands when the corresponding implementation is runnable, rather than documenting future commands as available.

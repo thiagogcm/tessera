@@ -57,7 +57,11 @@ public final class Editor {
 }
 ```
 
-Several entries can share a page; each launcher loads once however many hosts it serves. The first render replaces the fallback content; a render that fails keeps it and a later invalidation retries. `root.close()` empties the host, which can then be mounted again. Generated and `ElementRef.scoped` ids are prefixed with the host id, so roots never collide; an id that another root or the host page already uses (such as an `ElementRef.page` id) rejects the render with `cross-root-id`, as does mounting on a host that already holds a root. The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders.
+Several entries can share a page; each launcher loads once however many hosts it serves. The first committed render replaces fallback content. A rejected candidate keeps it and a later invalidation retries; a native commit failure can clear it. `root.close()` empties the host, which can then be mounted again.
+
+Generated and `ElementRef.scoped` ids use a namespace derived from the host id; an introduced id used outside the host rejects the render with `cross-root-id`. Mounting on a host that already holds a root fails separately.
+
+The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. Reserve the host's own ID and observe the [current identity and disposal limits](architecture.md#current-limits).
 
 ## Schedule updates
 

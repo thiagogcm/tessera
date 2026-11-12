@@ -87,7 +87,7 @@ Elements.main().children(
 | Dialogs and popovers | `Modal`, `Drawer`, `Dropdown` |
 | Forms and search | `Forms`, `Field`, `Select`, `SearchPalette` |
 | Actions | `Button`, `IconButton` |
-| Data | `SimpleTable`, `DataTable`, `Card`, `CardGrid` |
+| Data | `DataTable`, `TableGrid`, `Card`, `CardGrid` |
 | Layout and disclosure | `Section`, `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` |
 
 Factories describe the required shape, such as `Grid.autoFit(minWidth, ...)`, `Grid.columns(count, ...)`, `CodeBlock.of(source)`, and `CodeBlock.ofLines(...)`. Optional content uses methods such as `description(...)`, `previous(link)`, or `next(link)`.
@@ -95,6 +95,44 @@ Factories describe the required shape, such as `Grid.autoFit(minWidth, ...)`, `G
 Initial state uses named methods: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)`, `Select.selectedOption(value, label)`, and `Forms.checkedSwitchField(label, name)`. Apply an option conditionally with `onlyIf(condition, x -> x.checked())`, or `ifPresent(value, (x, v) -> ...)` for a nullable value.
 
 Components share `Tone` for semantic color, `Size` (`SM`, `MD`, `LG`) for buttons and badges, and `Link(href, label)` for navigation items. A `label` is an accessible name; a `title` is a visible heading; a `description` is secondary text; `actions(...)` supplies footer actions. [Styling](styling.md) covers their appearance.
+
+## Build tables with a logical grid
+
+`DataTable.of(caption, grid)` renders a `TableGrid` in a labelled, keyboard-scrollable region. Build the grid from rows inside `head(...)`, `body(...)`, and `foot(...)` groups. Use a separate body group for each section of the table. Head and foot groups occur at most once.
+
+```java
+import static dev.nthings.tessera.components.TableGrid.Merge.LEFT;
+import static dev.nthings.tessera.components.TableGrid.Merge.UP;
+import static dev.nthings.tessera.components.TableGrid.body;
+import static dev.nthings.tessera.components.TableGrid.columnHeader;
+import static dev.nthings.tessera.components.TableGrid.data;
+import static dev.nthings.tessera.components.TableGrid.head;
+import static dev.nthings.tessera.components.TableGrid.row;
+import static dev.nthings.tessera.components.TableGrid.rowHeader;
+
+var grid = TableGrid.of(
+    head(
+        row(columnHeader("Region"), columnHeader("2026"), LEFT),
+        row(UP, columnHeader("Q1"), columnHeader("Q2"))),
+    body(
+        row(rowHeader("East"), data("12"), data("15")),
+        row(rowHeader("West"), data("9"), data("11"))));
+
+var table = DataTable.of("Quarterly sales", grid)
+    .id("sales")
+    .stickyHead()
+    .stickyFirstColumn();
+```
+
+Every row has one slot per logical column. OTSL continuation slots extend the owning cell: `LEFT` extends its first row, `UP` extends its first column, and `BOTH` fills the interior where both spans meet. For example, `row(data("A"), LEFT)` followed by `row(UP, BOTH)` creates one cell spanning two rows and two columns. `empty()` creates an independent empty cell. Construction rejects ragged rows, missing merge neighbors, nonrectangular cells, and merges across row-group boundaries.
+
+Use `columnHeader(...)` for headers above columns, `rowHeader(...)` for headers to the left of rows, and `sectionHeader(...)` to name a body group. `cornerHeader(...)` marks the intersection of row and column headings without associating it with data cells. The renderer binds headers through table-local references and emits the corresponding HTML `headers` attributes. Column headers in the head group apply to subsequent groups; column headers inside another group apply only within that group. Section headers label data and row-header cells within their own body group.
+
+Cells accept text or any `IntoElement`, including links, code, and nested tables. For a rich column heading, use `columnHeader(plainTextLabel, content)` to provide its card-mode label. `cell.align(TableGrid.Align.NUMERIC)` aligns that cell to the end with tabular numbers; `START`, `CENTER`, and `END` control the other alignments. Grid topology is immutable, while cell content follows the usual mutable element-builder contract.
+
+Tables scroll horizontally by default. `stickyHead()` sticks the whole head group, including multiple header rows. `stickyFirstColumn()` sticks row headers starting in logical column zero; other columns continue to scroll. These options are independent.
+
+For a flat grid, `.stackBelow(CssLength.rem(36))` turns body rows into labelled cards below the specified container width. Card mode requires exactly one head row of column headers, unspanned cells, and body groups containing only data or row headers. Other shapes throw `IllegalArgumentException` when card mode is requested. The labels are HTML content, hidden from assistive technology because the header relationships already name the cells. Stacking resets numeric alignment and sticky row headers so each card reads from start to end.
 
 ## Link elements with identity references
 

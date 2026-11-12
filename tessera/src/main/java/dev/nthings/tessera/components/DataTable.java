@@ -1,121 +1,82 @@
 package dev.nthings.tessera.components;
 
+import dev.nthings.tessera.components.TableGrid.Anchor;
+import dev.nthings.tessera.components.TableGrid.Kind;
 import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
-import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.CustomProperty;
-import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
-import java.util.List;
-import java.util.function.Function;
+import java.util.HashMap;
+import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
-/// Table of `rows` described by `columns`, with a caption. Create one with
-/// [#of(String, List, List)]; `T` is the row model type. The table sits in a focusable region
-/// named by the caption, which scrolls when the table is too wide.
+/// A captioned [TableGrid] in a labelled, keyboard-scrollable region. Cells emit native table
+/// markup with resolved spans and symbolic header references. Create one with [#of].
 ///
-/// - Column headers stay at the top and row headers stay at the left while the region scrolls.
-/// - Narrower than [#stackBelow(CssLength)] (default 36rem, measured on the region), each row
-///   becomes a stacked card: the header row is hidden, and each cell that is not a row header is
-///   prefixed with its column header.
-/// - The caption's id is `<instance id>--caption`.
-///
-/// Without an [#id(String)], the compiler numbers instances `data-table-<n>`.
-public final class DataTable<T> extends BuiltinScope<DataTable<T>> {
+/// Scrolling is the default narrow layout. [#stackBelow] enables labelled cards for flat grids.
+/// Sticky head groups and the first row-header column are opt-in. All generated ids are local
+/// to the table's [#id(String)]; unnamed instances use `data-table-<n>`.
+public final class DataTable extends BuiltinScope<DataTable> {
 
-  /// The scroll region; the stacked layout queries its width.
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
-
-  /// Horizontal alignment of a column's cells. `NUMERIC` aligns to the end with tabular figures.
-  public enum CellAlign {
-    START(TextAlign.START, false),
-    CENTER(TextAlign.CENTER, false),
-    END(TextAlign.END, false),
-    NUMERIC(TextAlign.END, true);
-
-    private final TextAlign textAlign;
-    private final boolean tabularNums;
-
-    CellAlign(TextAlign textAlign, boolean tabularNums) {
-      this.textAlign = textAlign;
-      this.tabularNums = tabularNums;
-    }
-
-    TextAlign textAlign() {
-      return textAlign;
-    }
-
-    boolean tabularNums() {
-      return tabularNums;
-    }
-  }
-
-  /// One column: its `header` text, the `cellExtractor` that produces each row's cell, the `align`,
-  /// and whether its cells are row headers (`th scope="row"`).
-  public record Column<T>(
-      String header,
-      Function<T, ? extends IntoElement> cellExtractor,
-      CellAlign align,
-      boolean rowHeader) {
-
-    /// Creates a start-aligned column whose cells are row headers.
-    public static <T> Column<T> rowHeader(
-        String header, Function<T, ? extends IntoElement> extractor) {
-      return new Column<>(header, extractor, CellAlign.START, true);
-    }
-
-    /// Creates a start-aligned column of plain text cells.
-    public static <T> Column<T> text(String header, Function<T, String> stringExtractor) {
-      return new Column<>(
-          header, item -> Elements.text(stringExtractor.apply(item)), CellAlign.START, false);
-    }
-
-    /// Creates a `NUMERIC` column of plain text cells.
-    public static <T> Column<T> numeric(String header, Function<T, String> numericExtractor) {
-      return new Column<>(
-          header, item -> Elements.text(numericExtractor.apply(item)), CellAlign.NUMERIC, false);
-    }
-
-    /// Creates a column whose cells are the elements `extractor` returns, aligned by `align`.
-    public static <T> Column<T> of(
-        String header, CellAlign align, Function<T, ? extends IntoElement> extractor) {
-      return new Column<>(header, extractor, align, false);
-    }
-  }
+  private static final String CELLS =
+      ":scope > table > :is(thead, tbody, tfoot) > tr > :is(th, td)";
+  private static final String BODY_ROWS = ":scope > table > tbody > tr";
+  private static final String STICKY_COLUMN =
+      ":scope[data-sticky-column] > table > :is(tbody, tfoot) > tr > [data-row-header][data-column=\"0\"]";
 
   private final String caption;
-  private final List<Column<T>> columns;
-  private final List<T> rows;
-  private CssLength stackBelow = CssLength.rem(36);
+  private final TableGrid grid;
+  private @Nullable CssLength stackBelow;
+  private boolean stickyHead;
+  private boolean stickyFirstColumn;
 
-  private DataTable(String caption, List<Column<T>> columns, List<T> rows) {
+  private DataTable(String caption, TableGrid grid) {
     this.caption = caption;
-    this.columns = List.copyOf(columns);
-    this.rows = List.copyOf(rows);
+    this.grid = grid;
   }
 
-  /// Creates a table of `rows` described by `columns`, captioned `caption`. The caption is
-  /// visible and names the scroll region.
-  public static <T> DataTable<T> of(String caption, List<Column<T>> columns, List<T> rows) {
-    return new DataTable<>(caption, columns, rows);
+  public static DataTable of(String caption, TableGrid grid) {
+    return new DataTable(caption, grid);
   }
 
-  /// Sets the region width below which rows stack as cards. The default is 36rem.
-  public DataTable<T> stackBelow(CssLength width) {
-    this.stackBelow = width;
+  /// Makes flat body rows into cards below `width`. Requires one head row of column headers,
+  /// no spans, and only data or row-header cells in body groups. Other grids throw
+  /// IllegalArgumentException. Rich headers supply their card label through
+  /// [TableGrid#columnHeader(String, IntoElement)].
+  public DataTable stackBelow(CssLength width) {
+    if (!grid.supportsCards()) {
+      throw new IllegalArgumentException(
+          "Stacked cards require a flat grid with one column-header row");
+    }
+    stackBelow = width;
+    return this;
+  }
+
+  /// Sticks the entire head group, including all its rows, to the scroll region's top edge.
+  public DataTable stickyHead() {
+    stickyHead = true;
+    return this;
+  }
+
+  /// Sticks row headers starting in logical column zero to the scroll region's start edge.
+  /// Other row-header columns scroll normally.
+  public DataTable stickyFirstColumn() {
+    stickyFirstColumn = true;
     return this;
   }
 
   @Override
-  public DataTable<T> self() {
+  public DataTable self() {
     return this;
   }
 
@@ -130,21 +91,17 @@ public final class DataTable<T> extends BuiltinScope<DataTable<T>> {
         .root(
             s ->
                 s.overflow(Overflow.AUTO)
+                    .minInlineSize(CssLength.px(0))
                     .maxInlineSize(CssLength.pct(100))
                     .container(TABLE)
                     .border(Border.hairline(Tokens.BORDER_SUBTLE))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD))
         .select(
-            ":scope table",
-            s -> {
-              s.inlineSize(CssLength.pct(100)).borderSeparateZero().textAlign(TextAlign.START);
-              for (var i = 0; i < columns.size(); i++) {
-                s.customProperty(labelProperty(i + 1), CssContent.text(columns.get(i).header()));
-              }
-            })
+            ":scope > table",
+            s -> s.inlineSize(CssLength.pct(100)).borderSeparateZero().textAlign(TextAlign.START))
         .select(
-            ":scope caption",
+            ":scope > table > caption",
             s ->
                 s.px(Tokens.SPACE_4)
                     .py(Tokens.SPACE_3_5)
@@ -152,106 +109,132 @@ public final class DataTable<T> extends BuiltinScope<DataTable<T>> {
                     .textAlign(TextAlign.START)
                     .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
         .select(
-            ":scope thead",
-            s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(2).bg(Tokens.SURFACE_SUBTLE))
-        .select(
-            ":scope th, :scope td",
+            CELLS,
             s ->
                 s.px(Tokens.SPACE_4)
                     .py(Tokens.SPACE_3)
                     .borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
+        .select(":scope > table > thead", s -> s.bg(Tokens.SURFACE_SUBTLE))
+        .select(":scope > table > thead > tr > th", s -> s.textColor(Tokens.TEXT_MUTED))
+        .select(CELLS + "[data-align=center]", s -> s.textAlign(TextAlign.CENTER))
         .select(
-            ":scope tbody th",
-            s ->
-                s.sticky()
-                    .insetInlineStart(CssLength.px(0))
-                    .zIndex(1)
-                    .bg(Tokens.SURFACE_CARD)
-                    .fontWeight(600))
-        .select(":scope thead th", s -> s.textColor(Tokens.TEXT_MUTED));
+            CELLS + "[data-align=end], " + CELLS + "[data-align=numeric]",
+            s -> s.textAlign(TextAlign.END))
+        .select(CELLS + "[data-align=numeric]", s -> s.tabularNums())
+        .select(CELLS + " > .table-cell-label", s -> s.hidden())
+        .select(
+            ":scope[data-sticky-head] > table > thead",
+            s -> s.sticky().insetBlockStart(CssLength.px(0)).zIndex(2))
+        .select(
+            STICKY_COLUMN,
+            s -> s.sticky().insetInlineStart(CssLength.px(0)).zIndex(1).bg(Tokens.SURFACE_CARD));
 
-    // Align per column, not per cell. START is inherited from the table.
-    for (var i = 0; i < columns.size(); i++) {
-      var align = columns.get(i).align();
-      if (align != CellAlign.START) {
-        scope.select(
-            ":scope tr > :nth-child(" + (i + 1) + ")",
-            s ->
-                s.textAlign(align.textAlign())
-                    .onlyIf(align.tabularNums(), Declarations::tabularNums));
-      }
-    }
-
-    scope.on(
-        TABLE.below(stackBelow),
-        c -> {
-          c.select(
-                  ":scope table, :scope caption, :scope thead, :scope tbody, :scope tr, :scope th, :scope td",
-                  s -> s.block())
-              .select(":scope thead", s -> s.hidden())
-              // Card mode: label and value read left to right whatever the alignment.
-              .select(":scope tr > :nth-child(n)", s -> s.textAlign(TextAlign.START))
-              .select(
-                  ":scope tr",
-                  s ->
-                      s.m(Tokens.SPACE_3)
-                          .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                          .rounded(Tokens.RADIUS_LG))
-              .select(
-                  ":scope tbody th",
-                  s ->
-                      s.sticky()
-                          .insetBlockStart(CssLength.px(0))
-                          .zIndex(2)
-                          .bg(Tokens.SURFACE_SUBTLE));
-
-          for (var i = 0; i < columns.size(); i++) {
-            if (!columns.get(i).rowHeader()) {
-              var colIndex = i + 1;
+    var breakpoint = stackBelow;
+    if (breakpoint != null) {
+      scope.on(
+          TABLE.below(breakpoint),
+          c ->
               c.select(
-                  ":scope td:nth-child(" + colIndex + ")::before",
-                  s ->
-                      s.content(
-                              CssContent.sequence(
-                                  CssContent.property(labelProperty(colIndex)),
-                                  CssContent.text(": ")))
-                          .fontWeight(600)
-                          .textColor(Tokens.TEXT_MUTED));
-            }
-          }
-        });
+                      ":scope > table, :scope > table > caption, :scope > table > tbody, "
+                          + BODY_ROWS,
+                      s -> s.block())
+                  .select(":scope > table > thead", s -> s.hidden())
+                  .select(
+                      BODY_ROWS,
+                      s ->
+                          s.m(Tokens.SPACE_3)
+                              .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                              .rounded(Tokens.RADIUS_LG))
+                  .select(CELLS + "[data-align]", s -> s.block().textAlign(TextAlign.START))
+                  .select(STICKY_COLUMN, s -> s.relative())
+                  .select(
+                      CELLS + " > .table-cell-label",
+                      s -> s.inlineBlock().fontWeight(600).textColor(Tokens.TEXT_MUTED)));
+    }
   }
 
   @Override
   IntoElement expand(DocumentContext context) {
     var captionRef = ElementRef.scoped("caption");
-
-    var headerRow = Elements.tr();
-    for (var col : columns) {
-      headerRow.child(Elements.th().attr("scope", "col").text(col.header()));
-    }
-
-    var tbody = Elements.tbody();
-    for (var item : rows) {
-      var tr = Elements.tr();
-      for (var col : columns) {
-        var cell = col.rowHeader() ? Elements.th().attr("scope", "row") : Elements.td();
-        tr.child(cell.child(col.cellExtractor().apply(item)));
+    var references = new HashMap<Anchor, ElementRef>();
+    var table = Elements.table().child(Elements.caption().id(captionRef).text(caption));
+    for (var group : grid.groups()) {
+      var section =
+          switch (group.kind()) {
+            case HEAD -> Elements.thead();
+            case BODY -> Elements.tbody();
+            case FOOT -> Elements.tfoot();
+          };
+      for (var row : group.rows()) {
+        var tr = Elements.tr();
+        for (var cell : row) {
+          tr.child(renderCell(cell, references));
+        }
+        section.child(tr);
       }
-      tbody.child(tr);
+      table.child(section);
     }
-
-    var table =
-        Elements.table()
-            .children(
-                Elements.caption().id(captionRef).text(caption),
-                Elements.thead().child(headerRow),
-                tbody);
-
-    return Elements.div().tabIndex(0).role(Role.REGION).ariaLabelledBy(captionRef).child(table);
+    return Elements.div()
+        .tabIndex(0)
+        .role(Role.REGION)
+        .ariaLabelledBy(captionRef)
+        .onlyIf(stickyHead, el -> el.boolAttr("data-sticky-head"))
+        .onlyIf(stickyFirstColumn, el -> el.boolAttr("data-sticky-column"))
+        .child(table);
   }
 
-  private static CustomProperty labelProperty(int column) {
-    return CustomProperty.named("label-" + column);
+  private TagElement renderCell(Anchor anchor, Map<Anchor, ElementRef> references) {
+    var cell = anchor.cell();
+    var tag = cell.kind() == Kind.DATA ? Elements.td() : Elements.th();
+    tag.attr("data-column", Integer.toString(anchor.column()));
+    tag.attr(
+        "data-align",
+        switch (cell.align()) {
+          case START -> "start";
+          case CENTER -> "center";
+          case END -> "end";
+          case NUMERIC -> "numeric";
+        });
+    if (anchor.rowSpan() > 1) {
+      tag.attr("rowspan", Integer.toString(anchor.rowSpan()));
+    }
+    if (anchor.columnSpan() > 1) {
+      tag.attr("colspan", Integer.toString(anchor.columnSpan()));
+    }
+    if (cell.kind() != Kind.DATA) {
+      tag.id(references.computeIfAbsent(anchor, DataTable::headerReference));
+    }
+    switch (cell.kind()) {
+      case COLUMN_HEADER -> {
+        if (anchor.columnSpan() == 1) {
+          tag.attr("scope", "col");
+        }
+      }
+      case ROW_HEADER -> {
+        tag.boolAttr("data-row-header");
+        if (anchor.rowSpan() == 1) {
+          tag.attr("scope", "row");
+        }
+      }
+      case SECTION_HEADER -> tag.attr("scope", "rowgroup");
+      case DATA, CORNER_HEADER -> {}
+    }
+    var headers =
+        grid.headers(anchor).stream()
+            .map(header -> references.computeIfAbsent(header, DataTable::headerReference))
+            .toArray(ElementRef[]::new);
+    if (headers.length > 0) {
+      tag.idRef("headers", headers);
+    }
+    if (stackBelow != null && cell.kind() == Kind.DATA) {
+      var label = grid.groups().getFirst().rows().getFirst().get(anchor.column()).cell().label();
+      tag.child(
+          Elements.span().attr("class", "table-cell-label").ariaHidden(true).text(label + ": "));
+    }
+    return tag.child(cell.content());
+  }
+
+  private static ElementRef headerReference(Anchor cell) {
+    return ElementRef.scoped("cell-" + cell.row() + "-" + cell.column());
   }
 }

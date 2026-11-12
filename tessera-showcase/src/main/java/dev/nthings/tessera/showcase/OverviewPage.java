@@ -1,5 +1,10 @@
 package dev.nthings.tessera.showcase;
 
+import static dev.nthings.tessera.components.TableGrid.body;
+import static dev.nthings.tessera.components.TableGrid.columnHeader;
+import static dev.nthings.tessera.components.TableGrid.data;
+import static dev.nthings.tessera.components.TableGrid.head;
+import static dev.nthings.tessera.components.TableGrid.row;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h2;
 import static dev.nthings.tessera.core.Elements.p;
@@ -8,10 +13,11 @@ import static dev.nthings.tessera.core.Elements.section;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.ContentTabs;
+import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DescriptionList;
 import dev.nthings.tessera.components.Grid;
 import dev.nthings.tessera.components.Image;
-import dev.nthings.tessera.components.SimpleTable;
+import dev.nthings.tessera.components.TableGrid;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TransitionKey;
@@ -99,16 +105,24 @@ final class OverviewPage {
             .term("Reproducible", "Deterministic ids and class names; byte-identical builds");
 
     var features =
-        SimpleTable.of()
-            .caption("Platform features behind the components")
-            .headers("Feature", "Used by")
-            .row("@scope, @layer, @container", "Every component")
-            .row("<dialog closedby>, invoker commands", "Modal, Drawer, Search palette")
-            .row("popover, interestfor, anchor positioning", "Dropdown, tooltips, form hints")
-            .row("::scroll-marker, ::scroll-button()", "Carousel")
-            .row("scroll-target-group, :target-current", "Table of contents")
-            .row("appearance: base-select, field-sizing", "Forms")
-            .row("Cross-document view transitions, speculation rules", "Site navigation");
+        DataTable.of(
+            "Platform features behind the components",
+            TableGrid.of(
+                head(row(columnHeader("Feature"), columnHeader("Used by"))),
+                body(
+                    row(data("@scope, @layer, @container"), data("Every component")),
+                    row(
+                        data("<dialog closedby>, invoker commands"),
+                        data("Modal, Drawer, Search palette")),
+                    row(
+                        data("popover, interestfor, anchor positioning"),
+                        data("Dropdown, tooltips, form hints")),
+                    row(data("::scroll-marker, ::scroll-button()"), data("Carousel")),
+                    row(data("scroll-target-group, :target-current"), data("Table of contents")),
+                    row(data("appearance: base-select, field-sizing"), data("Forms")),
+                    row(
+                        data("Cross-document view transitions, speculation rules"),
+                        data("Site navigation")))));
 
     return div()
         .flex()

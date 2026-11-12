@@ -1,5 +1,10 @@
 package dev.nthings.tessera.showcase;
 
+import static dev.nthings.tessera.components.TableGrid.body;
+import static dev.nthings.tessera.components.TableGrid.columnHeader;
+import static dev.nthings.tessera.components.TableGrid.data;
+import static dev.nthings.tessera.components.TableGrid.head;
+import static dev.nthings.tessera.components.TableGrid.row;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.h1;
@@ -7,6 +12,7 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 
 import dev.nthings.tessera.components.Breadcrumbs;
+import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DescriptionList;
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Drawer;
@@ -15,8 +21,8 @@ import dev.nthings.tessera.components.Link;
 import dev.nthings.tessera.components.NavTabs;
 import dev.nthings.tessera.components.ScrollProgressBar;
 import dev.nthings.tessera.components.SearchPalette;
-import dev.nthings.tessera.components.SimpleTable;
 import dev.nthings.tessera.components.StickyHeader;
+import dev.nthings.tessera.components.TableGrid;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentContext;
@@ -55,13 +61,23 @@ record Shell(Page page) implements Component {
                     .term(
                         "JavaScript",
                         "Search includes its module; native controls use HTML and CSS"),
-                SimpleTable.of()
-                    .caption("Compiler phases")
-                    .headers("Phase", "Responsibility")
-                    .row("1. Expand", "Expand components, bind ElementRefs, intern styles")
-                    .row("2. Link", "Resolve late content, fragments and id references")
-                    .row("3. Validate", "Check accessibility, links, duplicates and invokers")
-                    .row("4. Emit", "Write encoded HTML and one shared stylesheet"));
+                DataTable.of(
+                    "Compiler phases",
+                    TableGrid.of(
+                        head(row(columnHeader("Phase"), columnHeader("Responsibility"))),
+                        body(
+                            row(
+                                data("1. Expand"),
+                                data("Expand components, bind ElementRefs, intern styles")),
+                            row(
+                                data("2. Link"),
+                                data("Resolve late content, fragments and id references")),
+                            row(
+                                data("3. Validate"),
+                                data("Check accessibility, links, duplicates and invokers")),
+                            row(
+                                data("4. Emit"),
+                                data("Write encoded HTML and one shared stylesheet"))))));
 
     var search =
         SearchPalette.of()

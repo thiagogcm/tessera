@@ -264,6 +264,40 @@ abstract class ShowcaseBrowserSupport {
   }
 
   @Test
+  @DisplayName("flat tables become cards while grouped tables retain a scrollable grid")
+  void tablesAdaptToTheirStructure() {
+    page.setViewportSize(1280, 900);
+    page.navigate(baseUrl + "/data");
+    var flat =
+        page.getByRole(
+            AriaRole.REGION,
+            new Page.GetByRoleOptions().setName("Service health by region").setExact(true));
+    var grouped =
+        page.getByRole(
+            AriaRole.REGION,
+            new Page.GetByRoleOptions().setName("Quarterly infrastructure spend").setExact(true));
+    assertThat(flat).isVisible();
+    assertThat(flat.locator(".table-cell-label").first()).isHidden();
+    assertThat(grouped.locator("thead")).hasCSS("position", "sticky");
+    assertThat(grouped.locator("thead > tr")).hasCount(2);
+
+    page.setViewportSize(360, 900);
+    assertThat(flat.locator("thead")).isHidden();
+    assertThat(flat.locator(".table-cell-label").first()).isVisible();
+    assertThat(flat.locator("tbody td[data-align=numeric]").first()).hasCSS("text-align", "start");
+    assertThat(flat.locator("tbody th").first()).hasCSS("position", "relative");
+    assertThat(grouped.locator("thead")).isVisible();
+    assertThat(grouped.locator("tbody td").first()).hasCSS("display", "table-cell");
+    Assertions.assertThat(grouped.evaluate("el => el.scrollWidth > el.clientWidth"))
+        .isEqualTo(true);
+    grouped.scrollIntoViewIfNeeded();
+    grouped.focus();
+    page.keyboard().press("ArrowRight");
+    page.waitForFunction("el => el.scrollLeft > 0", grouped.elementHandle());
+    Assertions.assertThat(fitsViewport()).isTrue();
+  }
+
+  @Test
   @DisplayName("modal opens dismisses and restores focus")
   void modalOpensDismissesAndRestoresFocus() {
     page.navigate(caseUrl("modal", "closed"));

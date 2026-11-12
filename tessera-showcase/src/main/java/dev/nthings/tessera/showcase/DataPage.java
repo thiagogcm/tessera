@@ -1,14 +1,23 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.text;
+import static dev.nthings.tessera.components.TableGrid.Align.NUMERIC;
+import static dev.nthings.tessera.components.TableGrid.Merge.LEFT;
+import static dev.nthings.tessera.components.TableGrid.Merge.UP;
+import static dev.nthings.tessera.components.TableGrid.body;
+import static dev.nthings.tessera.components.TableGrid.columnHeader;
+import static dev.nthings.tessera.components.TableGrid.data;
+import static dev.nthings.tessera.components.TableGrid.head;
+import static dev.nthings.tessera.components.TableGrid.row;
+import static dev.nthings.tessera.components.TableGrid.rowHeader;
+import static dev.nthings.tessera.components.TableGrid.sectionHeader;
 
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.DataTable;
-import dev.nthings.tessera.components.DataTable.Column;
-import dev.nthings.tessera.components.SimpleTable;
+import dev.nthings.tessera.components.TableGrid;
+import dev.nthings.tessera.css.CssLength;
 import java.util.List;
 
-/// Responsive data tables, simple tables, and code blocks.
+/// Grid-backed tables, responsive cards, and code blocks.
 final class DataPage {
 
   record ServiceMetric(
@@ -24,7 +33,8 @@ final class DataPage {
         "Tables that turn into labelled cards in narrow containers, compact reference tables, and "
             + "keyboard-scrollable code with line numbers and diffs.",
         dataTable(),
-        simpleTable(),
+        groupedTable(),
+        referenceTable(),
         codeBlock());
   }
 
@@ -40,42 +50,106 @@ final class DataPage {
             "Sticky column and row headers in a labelled, keyboard-scrollable region. Below 36rem "
                 + "of container width, rows become cards whose cells are labelled from the headers. "
                 + "Narrow the window to see it.")
-        .features(
-            "@container (inline-size < 36rem)", "position: sticky", "tabular-nums", ":nth-child()")
+        .features("@container (inline-size < 36rem)", "position: sticky", "tabular-nums")
         .example(
             DataTable.of(
                     "Service health by region",
-                    List.of(
-                        Column.rowHeader("Service", (ServiceMetric r) -> text(r.service())),
-                        Column.text("Region", ServiceMetric::region),
-                        Column.numeric("P99 latency", ServiceMetric::latency),
-                        Column.numeric("Throughput", ServiceMetric::throughput),
-                        Column.numeric("Availability", ServiceMetric::availability)),
-                    rows)
+                    TableGrid.of(
+                        head(
+                            row(
+                                columnHeader("Service"),
+                                columnHeader("Region"),
+                                columnHeader("P99 latency"),
+                                columnHeader("Throughput"),
+                                columnHeader("Availability"))),
+                        body(
+                            rows.stream()
+                                .map(
+                                    r ->
+                                        row(
+                                            rowHeader(r.service()),
+                                            data(r.region()),
+                                            data(r.latency()).align(NUMERIC),
+                                            data(r.throughput()).align(NUMERIC),
+                                            data(r.availability()).align(NUMERIC)))
+                                .toArray(TableGrid.Row[]::new))))
+                .stackBelow(CssLength.rem(36))
+                .stickyHead()
+                .stickyFirstColumn()
                 .id("services"))
         .code(
-            "DataTable.of(\"Service health by region\", List.of(",
-            "    Column.rowHeader(\"Service\", r -> text(r.service())),",
-            "    Column.numeric(\"P99 latency\", ServiceMetric::latency)), rows);");
+            "DataTable.of(\"Service health\", TableGrid.of(",
+            "    head(row(columnHeader(\"Service\"), columnHeader(\"Latency\"))),",
+            "    body(row(rowHeader(\"gateway\"), data(\"3.4 ms\").align(NUMERIC)))))",
+            "    .stackBelow(CssLength.rem(36)).stickyHead().stickyFirstColumn();");
   }
 
-  private static Demo simpleTable() {
-    return Demo.of("simple-table", "Simple table")
+  private static Demo groupedTable() {
+    return Demo.of("grouped-table", "Grouped table")
+        .summary(
+            "Two header rows and separate regional sections use OTSL merge slots. "
+                + "The table keeps its grid and scrolls horizontally on narrow screens.")
+        .features("rowspan", "colspan", "headers", "<tbody>")
+        .example(
+            DataTable.of(
+                    "Quarterly infrastructure spend",
+                    TableGrid.of(
+                        head(
+                            row(
+                                columnHeader("Service and region"),
+                                columnHeader("2026 spend in USD"),
+                                LEFT,
+                                LEFT),
+                            row(
+                                UP,
+                                columnHeader("First quarter"),
+                                columnHeader("Second quarter"),
+                                columnHeader("Year to date"))),
+                        body(
+                            row(sectionHeader("Americas"), LEFT, LEFT, LEFT),
+                            row(
+                                rowHeader("Gateway — us-east-1"), data("$12,400").align(NUMERIC),
+                                data("$13,100").align(NUMERIC), data("$25,500").align(NUMERIC)),
+                            row(
+                                rowHeader("Audit — us-west-2"), data("$8,600").align(NUMERIC),
+                                data("$9,200").align(NUMERIC), data("$17,800").align(NUMERIC))),
+                        body(
+                            row(sectionHeader("Europe"), LEFT, LEFT, LEFT),
+                            row(
+                                rowHeader("Compiler — eu-central-1"),
+                                    data("$10,800").align(NUMERIC),
+                                data("$11,600").align(NUMERIC), data("$22,400").align(NUMERIC)))))
+                .stickyHead()
+                .stickyFirstColumn()
+                .id("quarterly-spend"))
+        .code(
+            "TableGrid.of(",
+            "    head(row(columnHeader(\"Region\"), columnHeader(\"2026\"), LEFT),",
+            "         row(UP, columnHeader(\"Q1\"), columnHeader(\"Q2\"))),",
+            "    body(row(rowHeader(\"East\"), data(\"12\"), data(\"15\"))));");
+  }
+
+  private static Demo referenceTable() {
+    return Demo.of("reference-table", "Reference table")
         .summary("A captioned table for small reference data.")
         .features("<caption>", "border-collapse: separate")
         .example(
-            SimpleTable.of()
-                .caption("Cascade layers, lowest to highest priority")
-                .headers("Layer", "Contents")
-                .row("reset", "Box sizing and margins")
-                .row("base", "Document defaults and view transitions")
-                .row("theme", "Design tokens as custom properties")
-                .row("components", "@scope rules per scope name")
-                .row("utilities", "Content-hashed element styles")
-                .row("interactive", "Pseudo-class and motion states")
-                .row("container", "Container query overrides"))
+            DataTable.of(
+                "Cascade layers, lowest to highest priority",
+                TableGrid.of(
+                    head(row(columnHeader("Layer"), columnHeader("Contents"))),
+                    body(
+                        row(data("reset"), data("Box sizing and margins")),
+                        row(data("base"), data("Document defaults and view transitions")),
+                        row(data("theme"), data("Design tokens as custom properties")),
+                        row(data("components"), data("@scope rules per scope name")),
+                        row(data("utilities"), data("Content-hashed element styles")),
+                        row(data("interactive"), data("Pseudo-class and motion states")),
+                        row(data("container"), data("Container query overrides"))))))
         .code(
-            "SimpleTable.of().caption(\"…\").headers(\"Layer\", \"Contents\").row(\"reset\", \"…\");");
+            "DataTable.of(\"Cascade layers\", TableGrid.of(",
+            "    head(row(columnHeader(\"Layer\"), columnHeader(\"Contents\"))),",
+            "    body(row(data(\"reset\"), data(\"Box sizing and margins\")))));");
   }
 
   private static Demo codeBlock() {

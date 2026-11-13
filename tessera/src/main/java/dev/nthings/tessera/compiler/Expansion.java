@@ -123,8 +123,9 @@ final class Expansion {
                               scope.configureScope(block);
                               return block;
                             }));
-        yield new ExpandedNode.Boundary(
-            scoped(expand(child, "Expand", scope::expand), type, scopeId, child));
+        yield new ExpandedNode.ScopeBoundary(
+            scoped(
+                expand(child, "Expand", scope::expand), scope.scopeName(), type, scopeId, child));
       }
       case TagElement tag -> tag(tag, null, context);
     };
@@ -151,31 +152,73 @@ final class Expansion {
     throw new IllegalStateException("Scope without scopeName(): " + type.getName());
   }
 
-  /// Adds the scope attributes to its root element through component and key boundaries, or
-  /// wraps a root that is not one.
-  private ExpandedNode scoped(ExpandedNode node, String type, String scopeId, PageContext context) {
-    if (node instanceof ExpandedNode.Boundary(var content)) {
-      return new ExpandedNode.Boundary(scoped(content, type, scopeId, context));
-    }
-    if (node instanceof ExpandedNode.Keyed(var key, var location, var content)) {
-      return new ExpandedNode.Keyed(key, location, scoped(content, type, scopeId, context));
-    }
-    var scope = new LinkedHashMap<String, String>();
-    if (node instanceof ExpandedNode.Tag tag) {
-      scope.putAll(tag.attributes());
-    }
-    scope.put("data-scope", type);
-    scope.put("data-scope-id", scopeId);
-    if (node instanceof ExpandedNode.Tag tag) {
-      return tag.withAttributes(scope);
-    }
-    return new ExpandedNode.Tag(
-        HtmlTag.DIV,
-        context.location(HtmlTag.DIV.tagName(), null, context.origin()),
-        scope,
-        Map.of(),
-        List.of(node),
-        null);
+  /// Puts `data-scope` on the one element host `node` resolves to. Component boundaries and keyed
+  /// wrappers are transparent. Another scope keeps its own host. Anything else reports
+  /// `scope-root` and is left unchanged: expansion does not invent a wrapper.
+  private ExpandedNode scoped(
+      ExpandedNode node, String scopeName, String type, String scopeId, PageContext context) {
+    return switch (node) {
+      case ExpandedNode.Boundary(var content) ->
+          new ExpandedNode.Boundary(scoped(content, scopeName, type, scopeId, context));
+      case ExpandedNode.Keyed(var key, var location, var content) ->
+          new ExpandedNode.Keyed(key, location, scoped(content, scopeName, type, scopeId, context));
+      case ExpandedNode.ScopeBoundary boundary -> {
+        state.report(
+            context.location(),
+            "scope-root",
+            "Scope '"
+                + scopeName
+                + "' returns another scope as its root. That scope keeps its own data-scope",
+            "Return one element, such as a div, ul, or tr, and place the nested scope inside it.");
+        yield boundary;
+      }
+      case ExpandedNode.Tag tag -> {
+        var attributes = new LinkedHashMap<>(tag.attributes());
+        attributes.put("data-scope", type);
+        attributes.put("data-scope-id", scopeId);
+        yield tag.withAttributes(attributes);
+      }
+      default -> {
+        state.report(
+            context.location(),
+            "scope-root",
+            "Scope '"
+                + scopeName
+                + "' returns "
+                + rootKind(node)
+                + " as its root, which cannot carry data-scope",
+            rootFix(node));
+        yield node;
+      }
+    };
+  }
+
+  /// What an invalid scope root is, for the `scope-root` message.
+  private static String rootKind(ExpandedNode node) {
+    return switch (node) {
+      case ExpandedNode.Fragment _ -> "a fragment";
+      case ResolvedText _ -> "text";
+      case ResolvedRaw _ -> "raw HTML";
+      case ExpandedNode.Empty _ -> "nothing";
+      case ExpandedNode.Slot _ -> "late content";
+      default -> "content that is not an element";
+    };
+  }
+
+  /// How to give `node` an element host.
+  private static String rootFix(ExpandedNode node) {
+    return switch (node) {
+      case ExpandedNode.Fragment _ ->
+          "Return one element host. Put several children in an element you choose, such as ul or"
+              + " div.";
+      case ResolvedText _ -> "Return one element host and place the text inside it.";
+      case ResolvedRaw _ -> "Return one element host instead of raw HTML.";
+      case ExpandedNode.Empty _ ->
+          "Return one element host. Deferred content is moved out of the scope and cannot be its"
+              + " root.";
+      case ExpandedNode.Slot _ -> "Return one element host and place the late content inside it.";
+      default -> "Return one element host, such as a div, ul, or tr.";
+    };
   }
 
   /// Runs an authoring callback; a failure keeps its type and gains the component path as a
@@ -303,6 +346,11 @@ final class Expansion {
       state.registerDomId(tooltipId, location);
       context.contributeScript(TooltipScript.INSTANCE);
       companion = tag(tooltip, tooltipId, context);
+    }
+
+    var navigation = element.navigationHeading();
+    if (navigation != null) {
+      context.collectHeading(navigation, location);
     }
 
     var references = element.idReferences();

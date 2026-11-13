@@ -409,6 +409,29 @@ abstract class ShowcaseBrowserSupport {
   }
 
   @Test
+  @DisplayName("repeated note references share an endnote and return to their own occurrence")
+  void repeatedFootnotesNavigateBothWays() {
+    page.navigate(baseUrl + "/docs");
+    var documentUrl = page.url();
+    var refs = page.locator("a[role=doc-noteref]");
+    var notes = page.locator("li[role=doc-footnote]");
+    assertThat(refs).hasText(new String[] {"[1]", "[2]", "[1]"});
+    assertThat(notes).hasCount(2);
+    var target = refs.first().getAttribute("href");
+    assertThat(refs.nth(2)).hasAttribute("href", target);
+    var returnTarget = refs.nth(2).locator("..").getAttribute("id");
+    var backlinks = notes.first().locator("a[role=doc-backlink]");
+    assertThat(backlinks).hasCount(2);
+    assertThat(backlinks.nth(1)).hasAttribute("href", "#" + returnTarget);
+
+    refs.nth(2).click();
+    assertThat(page).hasURL(documentUrl + target);
+    backlinks.nth(1).click();
+    assertThat(page).hasURL(documentUrl + "#" + returnTarget);
+    assertThat(refs.nth(2)).isInViewport();
+  }
+
+  @Test
   @DisplayName("navigation and table of contents reach published targets")
   void navigationAndTableOfContentsReachPublishedTargets() {
     page.navigate(baseUrl + "/");

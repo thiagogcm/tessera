@@ -1,9 +1,15 @@
 package dev.nthings.tessera.compiler;
 
+import static dev.nthings.tessera.core.Elements.h2;
+import static dev.nthings.tessera.core.Elements.main;
+import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
-import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.components.Card;
+import dev.nthings.tessera.components.Footnote;
+import dev.nthings.tessera.components.Footnotes;
+import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,20 +67,38 @@ class SiteArtifactsTest {
   class SearchIndex {
 
     @Test
-    @DisplayName("indexes headings registered by a custom component")
-    void indexesCustomHeadings() {
-      Component custom =
-          context -> {
-            var target = ElementRef.scoped("custom");
-            context.registerHeading(target, "Custom section", 2);
-            return Elements.h2().id(target).text("Custom section");
-          };
+    @DisplayName("indexes an outlined heading and skips interface headings")
+    void indexesOutlinedHeadings() {
+      var target = ElementRef.scoped("custom");
       var compiled =
           Compiler.compile(
-              SiteDefinition.of(new SiteRoute("/", new PageDocument("Custom", custom))));
+              SiteDefinition.of(
+                  new SiteRoute(
+                      "/",
+                      new PageDocument(
+                          "Custom",
+                          main()
+                              .children(
+                                  Heading.of(
+                                          2,
+                                          "Custom section",
+                                          Elements.code().text("mvn"),
+                                          Elements.text(" install"))
+                                      .id(target)
+                                      .outline(target),
+                                  h2().text("Toolbar"),
+                                  Card.of("Widget").headingLevel(2),
+                                  Footnotes.of().title("Notes"),
+                                  p().child(Footnote.of("A detail.").reference()))))));
 
       assertThat(compact(compiled.searchIndexJson()))
-          .contains("{\"id\":\"custom\",\"title\":\"Custom section\",\"level\":2}");
+          .contains("{\"id\":\"custom\",\"title\":\"Custom section\",\"level\":2}")
+          .doesNotContain("Toolbar")
+          .doesNotContain("Widget")
+          .doesNotContain("Notes");
+      assertThat(compiled.pages().get("/"))
+          .contains("<code>mvn</code>")
+          .doesNotContain(">Custom section<");
     }
 
     /// JSON with whitespace around punctuation removed; spaces inside values are kept.

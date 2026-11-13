@@ -3,7 +3,6 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.DocumentKey;
-import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.SourceLocation;
@@ -68,9 +67,9 @@ final class PageContext implements DocumentContext {
     docState.contributeScript(script);
   }
 
-  @Override
-  public void registerHeading(ElementRef target, String title, int level) {
-    docState.registerHeading(new DocumentHeading(target, title, level), location());
+  /// Records outline metadata found on an element. The first heading for a target is kept.
+  void collectHeading(DocumentHeading heading, Location placedBy) {
+    docState.registerHeading(heading, placedBy);
   }
 
   @Override

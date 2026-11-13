@@ -38,14 +38,15 @@ class SectionTest {
   }
 
   @Test
-  @DisplayName("registers its heading at page level inside an id scope")
-  void registersHeadingWithPageId() {
+  @DisplayName("keeps its page id on the section and outlines that id")
+  void keepsPageIdOnTheSection() {
     var page =
         renderMain(
             TableOfContents.of("Contents"),
             Prose.of(Section.of("install", "Install").child(p().text("Run it."))).id("docs"));
 
     assertThat(page.elementById("install")).hasTagName("section");
+    assertThat(page.element("#install h2")).hasText("Install").doesNotHaveAttribute("id");
     assertThat(page.element("nav[aria-label=Contents] a"))
         .hasAttribute("href", "#install")
         .hasAttribute("data-level", "2")

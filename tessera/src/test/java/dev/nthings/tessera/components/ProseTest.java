@@ -1,6 +1,9 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.h1;
+import static dev.nthings.tessera.core.Elements.h2;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
@@ -30,5 +33,15 @@ class ProseTest {
     var page = renderMain(Prose.of(p().text("Text")));
 
     assertThat(page.scopeBody(page.element(".prose-canvas"))).contains("max-inline-size:75ch");
+  }
+
+  @Test
+  @DisplayName("styles native heading levels, including a heading in a nested section")
+  void stylesNativeHeadingLevels() {
+    var page = renderMain(Prose.of(h1().text("Title"), section().child(h2().text("Inside"))));
+    var css = page.scopeBody(page.element(".prose-canvas"));
+
+    assertThat(css).contains(":scope h1").contains(":scope h4").contains(":scope h6");
+    assertThat(page.element(".prose-canvas > section > h2")).hasText("Inside");
   }
 }

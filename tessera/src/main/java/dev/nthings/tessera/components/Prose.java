@@ -16,7 +16,8 @@ import java.util.List;
 /// Container for long-form text. It spaces paragraphs, lists, headings, quotes and rules, and
 /// limits the line length to 75ch unless [#maxMeasure(CssLength)] changes it. Create one with
 /// [#of(IntoElement...)] and add more content as children. Paragraphs with a class attribute keep
-/// their own styling.
+/// their own styling. Heading rules cover native levels 1 through 6, including headings inside a
+/// nested `<section>`. They stop at nested component scopes.
 ///
 /// Without an [#id(String)], the compiler numbers instances `prose-container-<n>`.
 public final class Prose extends BuiltinScope<Prose> implements ParentElement<Prose> {
@@ -77,7 +78,15 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
                     .textColor(Tokens.TEXT_PRIMARY)
                     .lineHeight(1.75))
         .select(
-            ":scope > h2",
+            ":scope h1",
+            s ->
+                s.fontSize(CssLength.rem(2))
+                    .fontWeight(700)
+                    .mt(CssLength.rem(2.5))
+                    .mb(Tokens.SPACE_4)
+                    .lineHeight(1.2))
+        .select(
+            ":scope h2",
             s ->
                 s.fontSize(Tokens.FONT_SIZE_2XL)
                     .fontWeight(700)
@@ -85,7 +94,7 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
                     .mb(Tokens.SPACE_3)
                     .lineHeight(1.3))
         .select(
-            ":scope > h3",
+            ":scope h3",
             s ->
                 s.fontSize(Tokens.FONT_SIZE_XL)
                     .fontWeight(600)
@@ -93,10 +102,34 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
                     .mb(Tokens.SPACE_2)
                     .lineHeight(1.4))
         .select(
-            ":scope > ul, :scope > ol",
+            ":scope h4",
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_LG)
+                    .fontWeight(600)
+                    .mt(CssLength.rem(1.5))
+                    .mb(Tokens.SPACE_2)
+                    .lineHeight(1.4))
+        .select(
+            ":scope h5",
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_MD)
+                    .fontWeight(600)
+                    .mt(Tokens.SPACE_5)
+                    .mb(Tokens.SPACE_2)
+                    .lineHeight(1.45))
+        .select(
+            ":scope h6",
+            s ->
+                s.fontSize(Tokens.FONT_SIZE_SM)
+                    .fontWeight(700)
+                    .mt(Tokens.SPACE_4)
+                    .mb(Tokens.SPACE_1)
+                    .lineHeight(1.5))
+        .select(
+            ":scope > ul, :scope > ol, :scope section :is(ul, ol)",
             s -> s.ps(Tokens.SPACE_6).mb(Tokens.SPACE_5).lineHeight(1.75))
         .select(
-            ":scope > blockquote",
+            ":scope > blockquote, :scope section blockquote",
             s ->
                 s.borderInlineStart(Border.solid(CssLength.px(3), Tokens.ACCENT_PRIMARY))
                     .ps(Tokens.SPACE_4)
@@ -104,7 +137,7 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
                     .my(Tokens.SPACE_6)
                     .textColor(Tokens.TEXT_MUTED))
         .select(
-            ":scope > hr",
+            ":scope > hr, :scope section hr",
             s ->
                 s.border(Border.none())
                     .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))

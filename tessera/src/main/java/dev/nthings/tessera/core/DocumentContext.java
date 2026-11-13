@@ -4,10 +4,11 @@ import java.util.List;
 import java.util.function.Function;
 
 /// What an expand callback can do beyond returning content: per-page state, head and end-of-body
-/// contributions, page scripts, heading registration and diagnostics. Expand callbacks, late
-/// elements and document-end sections receive it from the compiler. Don't keep it after the
+/// contributions, page scripts, reading the document outline, and diagnostics. Expand callbacks,
+/// late elements and document-end sections receive it from the compiler. Don't keep it after the
 /// callback returns, and don't share mutable application state through it: callbacks may run
-/// concurrently across pages.
+/// concurrently across pages. Outline headings are collected from elements that carry them; this
+/// context does not register headings.
 public interface DocumentContext {
 
   /// Per-page state for `key`, created on first use. Use it for facts that must hold once per page,
@@ -28,15 +29,9 @@ public interface DocumentContext {
   /// with that id are ignored silently.
   void contributeScript(PageScript script);
 
-  /// Registers a navigation heading for the element bound to `target`, with `title` and `level`.
-  /// Table-of-contents components and the site search index list it. Bind `target` on the heading
-  /// element with [TagElement#id(ElementRef)]; a target never bound on the page reports
-  /// `unbound-reference`. Registering one target twice keeps the first heading. Throws
-  /// IllegalArgumentException if `level` is outside 1 through 6.
-  void registerHeading(ElementRef target, String title, int level);
-
-  /// Headings registered so far on this page, in registration order. Late elements see every
-  /// heading in the body.
+  /// Headings collected so far on this page, in collection order. A late callback sees every
+  /// heading collected from the body. The first heading for a target is kept. An unbound target
+  /// reports `unbound-reference` when the document is linked.
   List<DocumentHeading> headings();
 
   /// Reports an authoring error found by a component, such as two options that cannot be combined.

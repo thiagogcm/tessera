@@ -92,11 +92,11 @@ Duplicate routes, conflicting file paths, missing local targets, and malformed U
 
 ## Add headings and navigation
 
-`Section.of(id, title)` binds a page-level fragment and registers its heading. Its supported heading levels are 2 through 4. `TableOfContents.of(title)` reads registered headings through a late callback, so it can appear before the sections. `DocLayout.of(sections...)` combines sections with a sticky table of contents.
+`Section.of(id, title)` binds a page-level fragment on the `<section>` and outlines that id. Its heading levels are 2 through 4. `Heading.of(level, label, content...)` is an `h1` through `h6`. Call `outline(target)` and bind `target` to include it. The outline uses the plain label; rich phrasing stays in the HTML. Ordinary HTML headings, dialog titles, and the footnotes heading are not indexed.
 
-Custom components can call `context.registerHeading(target, title, level)` with levels 1 through 6 and bind the reference on the page. Registration order determines heading order; ordinary HTML headings are not automatically registered. `TableOfContents.headings(list)` uses a fixed list instead.
+`TableOfContents.of(title)` reads the collected outline through a late callback, so it can appear before the sections. `DocLayout.of(sections...)` combines sections with a sticky table of contents. `TableOfContents.headings(list)` uses a fixed list instead. Collection order is heading order.
 
-The search index reads registered headings without depending on `TableOfContents`. `SiteNavigation.searchPalette(site)` derives page entries from routes; `SiteNavigation.docPager(...)` derives page navigation.
+The search index reads the same collected headings without depending on `TableOfContents`. `SiteNavigation.searchPalette(site)` derives page entries from routes; `SiteNavigation.docPager(...)` derives page navigation.
 
 ## Add search
 

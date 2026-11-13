@@ -4,6 +4,10 @@ import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.fragment;
 import static dev.nthings.tessera.core.Elements.li;
+import static dev.nthings.tessera.core.Elements.table;
+import static dev.nthings.tessera.core.Elements.tbody;
+import static dev.nthings.tessera.core.Elements.td;
+import static dev.nthings.tessera.core.Elements.tr;
 import static dev.nthings.tessera.core.Elements.ul;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
@@ -52,26 +56,54 @@ class ElementSurfaceTest {
             });
   }
 
-  record Rows() implements Scope {
+  record Items() implements Scope {
+    @Override
+    public String scopeId() {
+      return "items";
+    }
+
     @Override
     public Element expand(DocumentContext context) {
-      return fragment().children(li().text("One"), li().text("Two"));
+      return ul().children(li().text("One"), li().text("Two"));
+    }
+  }
+
+  record Row() implements Scope {
+    @Override
+    public String scopeId() {
+      return "row";
+    }
+
+    @Override
+    public Element expand(DocumentContext context) {
+      return tr().child(td().text("Cell"));
     }
   }
 
   @Test
-  @DisplayName("a scope rooted in a fragment is hosted by one div carrying its data-scope")
-  void fragmentViewGetsOneHost() {
-    var page = renderMain(ul().child(new Rows()));
+  @DisplayName("a list scope uses the ul as its host")
+  void listScopeUsesTheList() {
+    var page = renderMain(new Items());
 
-    assertThat(page.elements("ul > div")).hasSize(1);
-    assertThat(page.element("ul > div"))
-        .hasTagName("div")
-        .hasAttribute("data-scope", "rows")
-        .hasAttribute("data-scope-id");
-    assertThat(page.elements("ul > div > li"))
+    assertThat(page.element("main > ul"))
+        .hasAttribute("data-scope", "items")
+        .hasAttribute("data-scope-id", "items");
+    assertThat(page.elements("main > ul > li"))
         .extracting(element -> element.text())
         .containsExactly("One", "Two");
+    assertThat(page.elements("main > div")).isEmpty();
+  }
+
+  @Test
+  @DisplayName("a row scope uses the tr as its host")
+  void rowScopeUsesTheRow() {
+    var page = renderMain(table().child(tbody().child(new Row())));
+
+    assertThat(page.element("table > tbody > tr"))
+        .hasAttribute("data-scope", "row")
+        .hasAttribute("data-scope-id", "row");
+    assertThat(page.element("table > tbody > tr > td")).hasText("Cell");
+    assertThat(page.elements("tr > div")).isEmpty();
   }
 
   @Test

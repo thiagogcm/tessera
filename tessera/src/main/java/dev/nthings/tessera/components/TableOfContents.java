@@ -30,10 +30,11 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Collapsible `<nav>` of links to the page's headings, with the link for the section in view
-/// highlighted. Create one with [#of(String)]: it lists every heading registered on the page,
-/// such as [Section] headings, in registration order, and is resolved after layout, so it may
-/// appear before the sections it lists. [#headings(List)] lists a fixed set instead. [DocLayout]
-/// places one beside its sections.
+/// highlighted. Create one with [#of(String)]: it lists every heading collected into the document
+/// outline, such as [Section] and [Heading] entries, in collection order, and is resolved after
+/// layout, so it may appear before the sections it lists. Headings that do not opt into the
+/// outline, including dialog titles and the footnotes heading, are omitted. [#headings(List)]
+/// lists a fixed set instead. [DocLayout] places one beside its sections.
 public final class TableOfContents extends BuiltinComponent {
 
   private static final String CHEVRON_SVG =

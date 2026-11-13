@@ -1,8 +1,10 @@
 package dev.nthings.tessera.showcase;
 
 import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.h2;
 import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Badge;
@@ -120,15 +122,20 @@ final class LayoutPage {
         .features("text-wrap: balance", "text-wrap: pretty", "ch-based measure")
         .example(
             Prose.of(
-                h3().text("Static output, dynamic platform"),
+                h2().text("Static output, dynamic platform"),
                 p().text(
                         "Every interaction on this site — opening dialogs, toggling popovers, "
                             + "tracking the visible section, sliding carousels — is declared in "
                             + "HTML attributes and CSS. The browser does the rest."),
-                p().text(
-                        "Because nothing hydrates, pages are interactive as soon as they "
-                            + "render, and the markup is exactly what the compiler validated.")))
-        .code("Prose.of(h3().text(\"…\"), p().text(\"…\"), p().text(\"…\"));");
+                section()
+                    .children(
+                        h3().text("No hydration"),
+                        p().text(
+                                "Because nothing hydrates, pages are interactive as soon as they "
+                                    + "render, and the markup is exactly what the compiler validated."))))
+        .code(
+            "Prose.of(h2().text(\"…\"), p().text(\"…\"),",
+            "    section().children(h3().text(\"…\"), p().text(\"…\")));");
   }
 
   private static Demo lists() {

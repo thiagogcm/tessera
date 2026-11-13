@@ -29,7 +29,7 @@ Use `Elements.el(HtmlTag.TIME)` for a built-in tag without a dedicated factory. 
 | Contract | Use it for | Expansion result |
 | --- | --- | --- |
 | `Component` | Reusable composition within the caller's identity scope | Any `IntoElement` |
-| `Scope` | A component with its own identity namespace and scoped CSS | Any `IntoElement`; a result without a single root tag gets a `<div>` wrapper |
+| `Scope` | A component with its own identity namespace and scoped CSS | One element host. A fragment, text, raw HTML, another scope, or nothing reports `scope-root` |
 
 A component can be a lambda:
 
@@ -59,7 +59,25 @@ public record MetricCard(String id, String title, String value) implements Scope
 }
 ```
 
-Place it with `parent.child(new MetricCard("builds", "Successful builds", "128"))`. Return one element when a wrapper would break the parent's HTML content model.
+Place it with `parent.child(new MetricCard("builds", "Successful builds", "128"))`. Return one element host. A list scope returns `ul` or `ol`, and a row scope returns `tr`, so that host can sit in its parent's content model:
+
+```java
+public record ItemList(String id) implements Scope {
+  @Override
+  public String scopeId() {
+    return id;
+  }
+
+  @Override
+  public IntoElement expand(DocumentContext context) {
+    return Elements.ul().children(
+        Elements.li().text("One"),
+        Elements.li().text("Two"));
+  }
+}
+```
+
+`Elements.main().child(new ItemList("items"))` emits the `ul` with `data-scope` and `data-scope-id`. A component that resolves to one element is a valid host. Returning another scope reports `scope-root` and leaves that scope's host alone. A fragment, text, raw HTML, late or deferred content, or nothing also reports `scope-root`. Expansion does not insert a wrapper.
 
 `scopeName()` defaults to the kebab-cased class name, such as `metric-card`. It identifies the component's `data-scope` attribute and CSS scope. Override it for anonymous implementations, which otherwise report `unstable-scope-name`. The root also carries `data-scope-id`; scope styles stop at nested scopes.
 
@@ -88,7 +106,7 @@ Elements.main().children(
 | Forms and search | `Forms`, `Field`, `Select`, `SearchPalette` |
 | Actions | `Button`, `IconButton` |
 | Data | `DataTable`, `TableGrid`, `Card`, `CardGrid` |
-| Layout and disclosure | `Section`, `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` |
+| Layout and disclosure | `Section`, `Heading`, `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` |
 
 Factories describe the required shape, such as `Grid.autoFit(minWidth, ...)`, `Grid.columns(count, ...)`, `CodeBlock.of(source)`, and `CodeBlock.ofLines(...)`. Optional content uses methods such as `description(...)`, `previous(link)`, or `next(link)`.
 
@@ -221,11 +239,44 @@ Components receive `DocumentContext` during expansion. It supports these documen
 | Keep page-local component state | `document(DocumentKey<T>)` creates state on first use |
 | Add head content | `contributeHead(element)` preserves registration order; use page-local state if it must be deduplicated |
 | Add an end-of-body section | `atDocumentEnd(owner, callback)` keeps the first registration for each owner |
-| Register navigation headings | `registerHeading(ref, title, level)` records levels 1 through 6; bind the reference on the page |
-| Read registered headings | `headings()` returns a snapshot; a late callback sees body registrations |
+| Outline a heading | `Heading.outline(target)` or `Section.of(id, title)` collects the heading; bind the target on the page |
+| Read collected headings | `headings()` returns a snapshot; a late callback sees headings collected from the body |
 | Report an authoring error | `report(rule, message, fix)` adds a located diagnostic that fails compilation |
 
-`Elements.deferred(content, priority)` moves content to the end of the body while retaining its lexical identity scope. Lower priorities come first; equal priorities retain placement order. `Elements.late(context -> ...)` resolves after body expansion, before document-end sections and head contributions. Use it for content such as a table of contents that depends on later registrations.
+`Elements.deferred(content, priority)` moves content to the end of the body while retaining its lexical identity scope. Lower priorities come first; equal priorities retain placement order. `Elements.late(context -> ...)` resolves after body expansion, before document-end sections and head contributions. Use it for content such as a table of contents that depends on headings collected later in the body.
+
+## Outline a heading
+
+`Heading` is a native `h1` through `h6`. It does not join the document outline until `outline(target)`. The table of contents and the search index use the plain label. Rich phrasing stays in the HTML.
+
+```java
+var install = ElementRef.page("install");
+Heading.of(2, "Install", Elements.code().text("mvn"), Elements.text(" verify"))
+    .id(install)
+    .outline(install);
+```
+
+`Heading.of(level, text)` uses `text` for both the visible heading and the label. Levels outside 1 through 6 throw `IllegalArgumentException`. This primitive does not represent heading levels above 6.
+
+`Section.of(id, title)` keeps `id` on the `<section>` and outlines that same id through a `Heading`. Section levels are 2 through 4. Use `Heading` directly for levels 1 through 6 or a rich title. Dialog titles and the footnotes list heading are ordinary HTML headings and are not outlined.
+
+`TableOfContents` and the search index read the collected outline. A late table of contents sees headings from the body. The first heading for a target is kept.
+
+## Place footnotes
+
+A `Footnote` is one definition. `reference()` places one occurrence. The first reference on the page numbers the note. Every reference gets its own marker and backlink, and the body is expanded once, in the `Footnotes` list.
+
+```java
+var engine = Footnote.of("latest Chromium and Firefox.").id("engine");
+Elements.p().children(
+    Elements.text("Tessera targets current browsers"),
+    engine.reference());
+Footnotes.of().title("Notes");
+```
+
+A plain-text note previews that text: the preview is new text, not a second copy of an element. A markup body has no preview until `preview(String)` or `preview(IntoElement)`. A preview element is placed at every reference, so keep ids out of one that is reused, and use a string preview when the note is referenced more than once.
+
+The list may precede the references. Without `Footnotes.of()`, the list is appended at the end of the document. Its heading is not a document heading. A second list repeats every note and reports `duplicate-id`. Numbering follows the first reference. Set `id` before the note is referenced; it names the endnote `fn-<id>` in the footnotes scope. This registry is a document contribution, not a portable component.
 
 ## Contribute a page script
 

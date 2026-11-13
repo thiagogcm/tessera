@@ -10,7 +10,8 @@
 /// scope; the DOM ids they bind are prefixed with it (`<id>--dialog`). Without one the compiler
 /// assigns `<scopeName>-<n>`, numbered per scope, so give an instance an id when other code links
 /// to its ids. [Section] ids are the exception: they are page-level DOM ids, so other pages can
-/// link to `#<id>`. Buttons bind their own element with `id(ElementRef)` instead.
+/// link to `#<id>`. [Heading] is the native `h1` through `h6`; [Section] uses one and keeps the
+/// page id on the `<section>`. Buttons bind their own element with `id(ElementRef)` instead.
 ///
 /// Shared vocabulary: [dev.nthings.tessera.css.Tone] for semantic color, [Size] for size and
 /// [Link] for navigation targets. A `label` is an accessible name, a `title` a visible heading,

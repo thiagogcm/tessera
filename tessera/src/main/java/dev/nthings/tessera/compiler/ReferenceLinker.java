@@ -40,6 +40,7 @@ final class ReferenceLinker {
       switch (node) {
         case ExpandedNode.Slot slot -> link(slot.content());
         case ExpandedNode.Boundary(var content) -> new Siblings(state, out).link(content);
+        case ExpandedNode.ScopeBoundary(var content) -> new Siblings(state, out).link(content);
         case ExpandedNode.Fragment fragment -> {
           var children = new Siblings(state, out);
           fragment.children().forEach(children::link);

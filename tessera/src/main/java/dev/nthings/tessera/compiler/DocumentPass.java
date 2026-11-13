@@ -33,7 +33,7 @@ final class DocumentPass implements Expansion.Placement {
     }
   }
 
-  /// `headings` are the registered headings whose targets are bound, with their DOM ids.
+  /// `headings` are the collected headings whose targets are bound, with their DOM ids.
   record Result(
       List<ResolvedNode> bodyNodes,
       List<ResolvedNode> headNodes,
@@ -78,7 +78,7 @@ final class DocumentPass implements Expansion.Placement {
     return new Result(bodyNodes, headNodes, headings, contributions, compilation);
   }
 
-  /// Resolves each registered heading's target; an unbound target is reported.
+  /// Resolves each collected heading's target; an unbound target is reported.
   private static List<PageHeading> headings(DocumentState contributions, Expansion expansion) {
     var headings = new ArrayList<PageHeading>();
     for (var contribution : contributions.headingContributions()) {

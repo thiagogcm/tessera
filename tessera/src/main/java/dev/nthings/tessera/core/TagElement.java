@@ -46,6 +46,7 @@ public final class TagElement
   private boolean anchorSelf;
   private @Nullable ElementRef anchorTarget;
   private @Nullable TransitionKey transitionKey;
+  private @Nullable DocumentHeading navigationHeading;
   private final @Nullable SourceLocation source;
 
   /// Creates an element for `tag`. Authors normally use the [Elements] factories.
@@ -75,6 +76,7 @@ public final class TagElement
     copy.anchorSelf = anchorSelf;
     copy.anchorTarget = anchorTarget;
     copy.transitionKey = transitionKey;
+    copy.navigationHeading = navigationHeading;
     return copy;
   }
 
@@ -402,6 +404,20 @@ public final class TagElement
   /// Compiler-facing: the tooltip element, or `null` if none was added.
   public @Nullable TagElement interestTooltip() {
     return interestTooltip;
+  }
+
+  /// Marks this element as a document-outline heading. The compiler collects `heading` when the
+  /// element is expanded. The first heading for a target is kept. Ordinary headings leave this
+  /// unset, so dialog titles, footnote chrome, and other interface headings stay out of the
+  /// outline. Heading components set it when the author opts in.
+  public TagElement navigationHeading(DocumentHeading heading) {
+    this.navigationHeading = heading;
+    return this;
+  }
+
+  /// Compiler-facing: the outline heading carried by this element, or `null`.
+  public @Nullable DocumentHeading navigationHeading() {
+    return navigationHeading;
   }
 
   /// Declares an anchor named after this element's DOM id, so [#anchoredTo] elements can position

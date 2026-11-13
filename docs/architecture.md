@@ -64,6 +64,8 @@ classDiagram
 
 These wrapper records are public for compiler access across packages. They are compiler-facing representations; application composition uses the [component contracts](consumer-guide.md#choose-a-component-contract).
 
+A scope root must be one element host. Expansion stamps `data-scope` on that host. It does not insert a `div`, and it does not retarget an inner scope's host.
+
 `Styled`, `ParentElement`, and `FluentBuilder` share authoring operations without unchecked self casts. `StyleBlock`, `ScopeBlock`, and `ElementBlock` carry the `KotlinReceiver` marker for optional [Kotlin receiver lambdas](kotlin.md#enable-receiver-lambdas).
 
 ## Built-in components
@@ -93,7 +95,7 @@ Compiler-private `IdScope` values qualify scoped names. Generated counters are l
 
 `DocumentState` owns page-local registries, ordered head contributions, document-end sections, and headings. `DocumentKey<T>` lets the compiler retain component state without depending on its concrete type. `Image.hero()` uses this mechanism to detect a second hero image.
 
-`DocumentHeading` is component-independent metadata. Linking resolves its reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
+`DocumentHeading` is component-independent metadata collected from an element during expansion, not a context side effect. `Heading` carries an optional `DocumentHeading`. `Expansion` records it, and `DocumentContext` does not register headings. Linking resolves the reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
 
 ## Stylesheet assembly
 

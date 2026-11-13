@@ -1,8 +1,9 @@
 package dev.nthings.tessera.core;
 
-/// Navigation and search metadata for one heading on the page: the element bound to `target`, its
-/// title and its level. Register one with [DocumentContext#registerHeading]; table-of-contents
-/// components link to `target`. Throws IllegalArgumentException if `level` is outside 1 through 6.
+/// Navigation and search metadata for one heading: the element bound to `target`, its plain label,
+/// and its level. The compiler collects this from an element that opts into the document outline.
+/// Table-of-contents components link to `target`. The first heading for a target is kept. Throws
+/// IllegalArgumentException if `level` is outside 1 through 6.
 public record DocumentHeading(ElementRef target, String title, int level) {
   public DocumentHeading {
     if (level < 1 || level > 6) {

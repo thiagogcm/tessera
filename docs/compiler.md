@@ -22,7 +22,7 @@ sequenceDiagram
     Expand->>Link: Resolve slots and references
     Link-->>Expand: Linked nodes
     Expand-->>Document: Linked document
-    Document->>Expand: Resolve registered heading references
+    Document->>Expand: Resolve collected heading references
     Document-->>Page: Linked nodes, headings, and compilation state
     Page->>Validate: Index and validate linked document
     Validate-->>Page: Metadata and diagnostics
@@ -33,7 +33,7 @@ sequenceDiagram
 | Owner | Responsibility |
 | --- | --- |
 | `DocumentPass` | Root context, deferred priorities, late slots, and processing document contributions |
-| `Expansion` | Expand components/scopes, allocate identities, collect styles, and preserve origins |
+| `Expansion` | Expand components/scopes, require one element host per scope, allocate identities, collect styles and outline headings, and preserve origins |
 | `ExpansionState` | Reference bindings, DOM IDs, generated counters, transition identities, and preparation diagnostics |
 | `ReferenceLinker` | Resolve symbolic references and late slots, check sibling keys, splice transparent wrappers, and place tooltip companions |
 | `CompilationState` | Read-only identity/transition views, validation indexes, outgoing URLs, and accumulated diagnostics |
@@ -44,7 +44,11 @@ sequenceDiagram
 
 Deferred content expands in its lexical scope and is emitted in priority/sequence order. Late callbacks resolve before document-end sections and head contributions. Contribution processing allows end sections to register more end sections and head contributions to register more head content.
 
-`ReferenceLinker` converts `ExpandedNode` values to `ResolvedNode` values. Components, scopes, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
+A scope root must be one element. Expansion walks component boundaries and keyed wrappers to that element and stamps `data-scope` and `data-scope-id`. Another scope, a fragment, text, raw HTML, late or deferred content, or nothing reports `scope-root`. Expansion does not insert a `div` or replace an inner scope's host.
+
+`ReferenceLinker` converts `ExpandedNode` values to `ResolvedNode` values. Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
+
+Heading metadata is read from the element during expansion and resolved by `DocumentPass` after linking. An unbound outline target reports `unbound-reference`.
 
 Only linked tags, text, and raw HTML reach validation, inspection, and emission. Their attributes and child lists are compiler-owned copies. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
 

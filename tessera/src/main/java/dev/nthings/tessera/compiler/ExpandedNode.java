@@ -18,6 +18,7 @@ sealed interface ExpandedNode
         ResolvedRaw,
         ExpandedNode.Fragment,
         ExpandedNode.Boundary,
+        ExpandedNode.ScopeBoundary,
         ExpandedNode.Keyed,
         ExpandedNode.Slot,
         ExpandedNode.Empty {
@@ -40,9 +41,13 @@ sealed interface ExpandedNode
   /// Siblings emitted without a wrapper.
   record Fragment(List<ExpandedNode> children) implements ExpandedNode {}
 
-  /// A component or scope's own sibling namespace. Scopes look through this wrapper for their
-  /// root element; linking removes it without emitting an HTML wrapper.
+  /// A component's own sibling namespace. A scope looks through this wrapper for its element host.
+  /// Linking removes it without emitting an HTML wrapper.
   record Boundary(ExpandedNode content) implements ExpandedNode {}
+
+  /// A scope's own sibling namespace. An enclosing scope does not look through it or replace its
+  /// host. Linking removes it without emitting an HTML wrapper.
+  record ScopeBoundary(ExpandedNode content) implements ExpandedNode {}
 
   /// A keyed child's identity, retained until linking can check its resolved siblings. The
   /// wrapper emits no HTML and keeps its content's own sibling namespace separate.

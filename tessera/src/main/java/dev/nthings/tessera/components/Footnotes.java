@@ -12,19 +12,53 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
-import org.jspecify.annotations.Nullable;
+import java.util.Map;
 
-/// Endnotes list for the page's [Footnote] references, each note linking back to its reference.
-/// Create one with [#of()] to place the list; without one, the list is appended at the end of the
-/// document. The list is filled after layout, so it covers every reference on the page. Its
-/// heading is always an `<h2>`, and link names such as "Back to reference 1" are fixed English.
+/// Endnotes list for the page's [Footnote] definitions. Each note appears once and links back to
+/// every reference. Create one with [#of()] to place the list; without one, the list is appended
+/// at the end of the document. The list is filled after layout, so it may precede the references
+/// and still cover every one. Its heading is an `<h2>` and is not a document-outline heading.
+/// Link names such as "Back to reference 1" are fixed English. A second list on the page repeats
+/// every note and reports `duplicate-id`.
 public final class Footnotes extends BuiltinComponent {
 
-  /// Numbered footnote registered on the page: the reference marker and the endnote it links to.
-  record Entry(int number, ElementRef reference, ElementRef note, Element content) {}
+  /// One definition on the page, numbered by its first reference, with every later occurrence.
+  static final class Entry {
+    private final int number;
+    private final ElementRef note;
+    private final Element body;
+    private final List<ElementRef> markers = new ArrayList<>();
+
+    private Entry(int number, String key, Element body) {
+      this.number = number;
+      this.note = ElementRef.scoped("fn-" + key);
+      this.body = body;
+    }
+
+    int number() {
+      return number;
+    }
+
+    ElementRef note() {
+      return note;
+    }
+
+    Element body() {
+      return body;
+    }
+
+    List<ElementRef> markers() {
+      return markers;
+    }
+  }
+
+  /// The occurrence just placed, with an identity independent of the note's author-supplied id.
+  record Placed(Entry entry, ElementRef marker) {}
 
   private static final class Registry {
+    private final Map<Footnote, Entry> byDefinition = new IdentityHashMap<>();
     private final List<Entry> entries = new ArrayList<>();
     private boolean sectionPlaced;
   }
@@ -36,8 +70,7 @@ public final class Footnotes extends BuiltinComponent {
 
   private Footnotes() {}
 
-  /// Creates an endnotes list titled "Footnotes". Use one per page: a second one repeats every
-  /// note and reports `duplicate-id`.
+  /// Creates an endnotes list titled "Footnotes". Use one per page.
   public static Footnotes of() {
     return new Footnotes();
   }
@@ -48,20 +81,25 @@ public final class Footnotes extends BuiltinComponent {
     return this;
   }
 
-  /// Registers the next footnote on the page. `key` names its reference ids, or `null` to use its
-  /// number.
-  static Entry register(DocumentContext context, @Nullable String key, Element content) {
+  /// Records one reference to `note`. The first reference assigns the note's number and endnote id.
+  /// Each reference gets its own marker. Without an explicit list, endnotes are appended after all
+  /// content.
+  static Placed reference(DocumentContext context, Footnote note) {
     var registry = context.document(REGISTRY);
-    var number = registry.entries.size() + 1;
-    var name = key != null ? key : Integer.toString(number);
-    var entry =
-        new Entry(
-            number, ElementRef.scoped("fnref-" + name), ElementRef.scoped("fn-" + number), content);
-    registry.entries.add(entry);
-    // Without an explicit list on the page, endnotes are appended after all content.
+    var entry = registry.byDefinition.get(note);
+    if (entry == null) {
+      var number = registry.entries.size() + 1;
+      var id = note.id();
+      var key = id != null ? id : Integer.toString(number);
+      entry = new Entry(number, key, note.body());
+      registry.byDefinition.put(note, entry);
+      registry.entries.add(entry);
+    }
+    var marker = ElementRef.anonymous();
+    entry.markers().add(marker);
     context.atDocumentEnd(
         REGISTRY, _ -> registry.sectionPlaced ? Elements.empty() : new Footnotes());
-    return entry;
+    return new Placed(entry, marker);
   }
 
   @Override
@@ -118,23 +156,29 @@ public final class Footnotes extends BuiltinComponent {
                       .textColor(Tokens.TEXT_PRIMARY));
     }
 
+    private static String backLabel(int number, int occurrence) {
+      return occurrence == 1
+          ? "Back to reference " + number
+          : "Back to reference " + number + ", occurrence " + occurrence;
+    }
+
     @Override
     IntoElement expand(DocumentContext context) {
       var ol = Elements.ol().tabularNums();
       for (var entry : entries) {
-        var backlink =
-            Elements.a(entry.reference())
-                .role(Role.DOC_BACKLINK)
-                .ariaLabel("Back to reference " + entry.number())
-                .textColor(Tokens.ACCENT_PRIMARY)
-                .px(Tokens.SPACE_1)
-                .text("↩");
-
-        var li =
-            Elements.li()
-                .id(entry.note())
-                .role(Role.DOC_FOOTNOTE)
-                .children(entry.content(), Elements.text(" "), backlink);
+        var li = Elements.li().id(entry.note()).role(Role.DOC_FOOTNOTE).child(entry.body());
+        var occurrence = 1;
+        for (var marker : entry.markers()) {
+          li.child(Elements.text(" "))
+              .child(
+                  Elements.a(marker)
+                      .role(Role.DOC_BACKLINK)
+                      .ariaLabel(backLabel(entry.number(), occurrence))
+                      .textColor(Tokens.ACCENT_PRIMARY)
+                      .px(Tokens.SPACE_1)
+                      .text("↩"));
+          occurrence++;
+        }
         ol.child(li);
       }
 

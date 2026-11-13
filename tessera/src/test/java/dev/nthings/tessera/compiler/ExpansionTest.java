@@ -1,12 +1,17 @@
 package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.article;
+import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.empty;
 import static dev.nthings.tessera.core.Elements.fragment;
 import static dev.nthings.tessera.core.Elements.h2;
+import static dev.nthings.tessera.core.Elements.late;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.rawHtml;
+import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.core.Elements.ul;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -16,12 +21,12 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.Scope;
@@ -33,7 +38,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Scope expansion")
 class ExpansionTest {
@@ -243,18 +247,17 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName("a registered heading whose target is never bound is reported")
+  @DisplayName("a heading whose outline target is never bound is reported")
   void reportsUnboundHeadingTarget() {
-    Component heading =
-        context -> {
-          context.registerHeading(ElementRef.page("missing"), "Missing", 2);
-          return p().text("No heading element");
-        };
-
     var failure =
         catchThrowableOfType(
             CompilationException.class,
-            () -> Compiler.compile(new PageDocument("Headings", main().child(heading))));
+            () ->
+                Compiler.compile(
+                    new PageDocument(
+                        "Headings",
+                        main()
+                            .child(Heading.of(2, "Missing").outline(ElementRef.page("missing"))))));
 
     assertThat(failure.diagnostics())
         .singleElement()
@@ -268,7 +271,8 @@ class ExpansionTest {
               assertThat(d.fix())
                   .isEqualTo("Bind this reference with .id(ref) on the intended target.");
               assertThat(d.location().page()).isEqualTo("Headings");
-              assertThat(d.location().components()).containsExactly("Component");
+              assertThat(d.location().tag()).isEqualTo("h2");
+              assertThat(d.location().components()).containsExactly("Heading");
             });
   }
 
@@ -615,25 +619,154 @@ class ExpansionTest {
         .containsExactly("open-1--inner--p-1", "open-1--inner--p-2");
   }
 
-  private record Children(FragmentElement children) implements Scope {
+  /// A scope whose root is whatever the test supplies.
+  private record Host(IntoElement content) implements Scope {
+    @Override
+    public String scopeId() {
+      return "host";
+    }
+
+    @Override
+    public String scopeName() {
+      return "host";
+    }
+
     @Override
     public IntoElement expand(DocumentContext context) {
-      return children;
+      return content;
     }
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {0, 1, 2})
-  @DisplayName("fragment roots retain their scope wrapper regardless of child count")
-  void retainsFragmentScopeWrapper(int count) {
-    var children = fragment();
-    for (var index = 0; index < count; index++) {
-      children.child(p().text("Child " + index));
+  /// A scope that returns another scope as its root.
+  private record Outer() implements Scope {
+    @Override
+    public String scopeId() {
+      return "outer";
     }
-    var page = RenderedPage.render(main().child(new Children(children)));
-    var wrapper = page.element("main > div[data-scope]");
 
-    assertThat(wrapper.children()).hasSize(count);
-    assertThat(wrapper.select("p[data-scope]")).isEmpty();
+    @Override
+    public IntoElement expand(DocumentContext context) {
+      return new Box("inner", p().text("Inside"));
+    }
+  }
+
+  /// A component whose result is a fragment.
+  private record FragmentNote() implements Component {
+    @Override
+    public IntoElement expand(DocumentContext context) {
+      return fragment().children(p().text("One"), p().text("Two"));
+    }
+  }
+
+  /// A component whose result is a scope.
+  private record NestedScope() implements Component {
+    @Override
+    public IntoElement expand(DocumentContext context) {
+      return new Box("inner", p().text("Inside"));
+    }
+  }
+
+  /// A component whose result is one list element.
+  private record Listed() implements Component {
+    @Override
+    public Element expand(DocumentContext context) {
+      return ul().children(li().text("One"), li().text("Two"));
+    }
+  }
+
+  /// A scope that delegates to one unscoped list component.
+  private record ItemList() implements Scope {
+    @Override
+    public String scopeId() {
+      return "items";
+    }
+
+    @Override
+    public String scopeName() {
+      return "items";
+    }
+
+    @Override
+    public IntoElement expand(DocumentContext context) {
+      return new Listed();
+    }
+  }
+
+  /// A scope whose host is the keyed element itself.
+  private record KeyedHost() implements Scope {
+    @Override
+    public String scopeId() {
+      return "cards";
+    }
+
+    @Override
+    public String scopeName() {
+      return "keyed";
+    }
+
+    @Override
+    public Element expand(DocumentContext context) {
+      return article().child(p().text("Body")).key("a");
+    }
+  }
+
+  static Stream<Arguments> invalidScopeRoots() {
+    return Stream.of(
+        argumentSet("empty fragment", new Host(fragment())),
+        argumentSet("one-child fragment", new Host(fragment().child(p().text("Only")))),
+        argumentSet(
+            "two-child fragment", new Host(fragment().children(p().text("One"), p().text("Two")))),
+        argumentSet("text", new Host(text("Loose"))),
+        argumentSet("raw HTML", new Host(rawHtml("<p>Hi</p>"))),
+        argumentSet("nothing", new Host(empty())),
+        argumentSet("deferred content", new Host(deferred(p().text("Moved")))),
+        argumentSet("late content", new Host(late(_ -> p().text("Later")))),
+        argumentSet("another scope", new Outer()),
+        argumentSet("a component that returns a fragment", new Host(new FragmentNote())),
+        argumentSet("a component that returns a scope", new Host(new NestedScope())));
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidScopeRoots")
+  @DisplayName("a scope root that is not one element host reports scope-root")
+  void rejectsNonHostScopeRoot(Scope scope) {
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> Compiler.compile(new PageDocument("Scopes", main().child(scope))));
+
+    assertThat(failure.diagnostics())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.rule()).isEqualTo("scope-root");
+              assertThat(d.fix()).isNotBlank();
+              assertThat(d.location().page()).isEqualTo("Scopes");
+              assertThat(d.location().components()).isNotEmpty();
+            });
+  }
+
+  @Test
+  @DisplayName("a component that returns one element is the scope host")
+  void componentDelegationStampsReturnedElement() {
+    var page = RenderedPage.render(main().child(new ItemList()));
+    var list = page.element("main > ul");
+
+    assertThat(list.attr("data-scope")).isEqualTo("items");
+    assertThat(list.attr("data-scope-id")).isEqualTo("items");
+    assertThat(list.children()).extracting(element -> element.text()).containsExactly("One", "Two");
+    assertThat(page.elements("main > div")).isEmpty();
+  }
+
+  @Test
+  @DisplayName("a keyed element can be the scope host")
+  void keyedElementCarriesScope() {
+    var page = RenderedPage.render(main().child(new KeyedHost()));
+    var host = page.element("main > article");
+
+    assertThat(host.attr("data-scope")).isEqualTo("keyed");
+    assertThat(host.attr("data-scope-id")).isEqualTo("cards");
+    assertThat(host.selectFirst("p").text()).isEqualTo("Body");
+    assertThat(page.elements("main > div")).isEmpty();
   }
 }

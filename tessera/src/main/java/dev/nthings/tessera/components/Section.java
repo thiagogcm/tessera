@@ -1,9 +1,6 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.h2;
-import static dev.nthings.tessera.core.Elements.h3;
-import static dev.nthings.tessera.core.Elements.h4;
 import static dev.nthings.tessera.core.Elements.header;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
@@ -23,11 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Titled `<section>` whose heading is registered as a document heading, so [TableOfContents]
-/// and the site search index list it. Create one with [#of(String, String)] and add its content
-/// as children. Its `id` is a page-level DOM id ([ElementRef#page(String)]), so
-/// `/guide/#installation` links to it from any page; two sections with one id on a page report
-/// `duplicate-id`, and placing one instance twice on a page reports `duplicate-reference-binding`.
+/// Titled `<section>` whose heading joins the document outline, so [TableOfContents] and the site
+/// search index list it. Create one with [#of(String, String)] and add its content as children.
+/// Its `id` is a page-level DOM id ([ElementRef#page(String)]) on the `<section>`, so
+/// `/guide/#installation` links to the section from any page; the heading points the outline at
+/// that same id. Two sections with one id on a page report `duplicate-id`, and placing one
+/// instance twice on a page reports `duplicate-reference-binding`. The heading is a [Heading].
+/// Levels are 2 through 4. Use [Heading] directly for levels 1 through 6 or a rich title.
 public final class Section extends BuiltinComponent implements ParentElement<Section> {
 
   /// Visual surface of a [Section].
@@ -101,21 +100,17 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
 
   @Override
   IntoElement expand(DocumentContext context) {
-    context.registerHeading(target, title, level);
-
-    var tag =
-        switch (level) {
-          case 2 -> h2();
-          case 3 -> h3();
-          default -> h4();
-        };
     var heading =
-        tag.fontSize(
-                level == 2
-                    ? Tokens.FONT_SIZE_2XL
-                    : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
-            .fontWeight(level == 2 ? 700 : 600)
-            .text(title);
+        Heading.of(level, title)
+            .outline(target)
+            .present(
+                tag ->
+                    tag.fontSize(
+                            level == 2
+                                ? Tokens.FONT_SIZE_2XL
+                                : level == 3 ? Tokens.FONT_SIZE_XL : Tokens.FONT_SIZE_LG)
+                        .fontWeight(level == 2 ? 700 : 600)
+                        .m(CssLength.px(0)));
 
     var headerEl =
         header().attr("class", "section-header").flex().flexCol().gap(CssLength.rem(0.35));

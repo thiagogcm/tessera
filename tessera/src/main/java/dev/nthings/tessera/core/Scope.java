@@ -31,9 +31,12 @@ public interface Scope extends IntoElement {
   /// instances share one `@scope` block.
   default void configureScope(ScopeStyle scope) {}
 
-  /// Builds the scope's content, which may be another component. The root element carries
-  /// `data-scope` and `data-scope-id`. A result that is not a single element, such as text, a
-  /// fragment or nothing, is wrapped in a `<div>`.
+  /// Builds the scope's content. The result must resolve to one element host, which carries
+  /// `data-scope` and `data-scope-id`. A component that itself resolves to one element is a valid
+  /// host. Returning another scope reports `scope-root` and leaves that scope's host alone. A
+  /// fragment, text, raw HTML, late or deferred content, or nothing also reports `scope-root`.
+  /// Expansion does not insert a wrapper. Place nested scopes inside the host: a list scope
+  /// returns `ul` or `ol`, and a table-row scope returns `tr`.
   IntoElement expand(DocumentContext context);
 
   @Override

@@ -9,8 +9,8 @@ import dev.nthings.tessera.wasm.BrowserRoot;
 
 /// Cross-root identity evidence: explicit ids already used by another entry's root, by the host
 /// page, or by the mount host itself reject the candidate instead of producing ambiguous
-/// references. The note's id is owned once committed; toggling the note off and on introduces
-/// it again.
+/// references. The note's id is owned once committed; toggling the note off and on introduces it
+/// again.
 public final class CollisionsDemo {
   private final String host;
   private boolean claimShared;
@@ -38,12 +38,11 @@ public final class CollisionsDemo {
             Button.of("Claim host id").onClick(root.update(() -> claimHost = true)),
             Button.of("Release ids")
                 .onClick(
-                    root.update(
-                        () -> {
-                          claimShared = false;
-                          claimPage = false;
-                          claimHost = false;
-                        })),
+                    root.update(() -> {
+                      claimShared = false;
+                      claimPage = false;
+                      claimHost = false;
+                    })),
             Button.of("Toggle note").onClick(root.update(() -> showNote = !showNote)),
             showNote
                 ? Elements.p().id(ElementRef.page("collisions-note")).text("Owned")

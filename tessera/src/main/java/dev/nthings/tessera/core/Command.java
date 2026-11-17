@@ -3,16 +3,15 @@ package dev.nthings.tessera.core;
 import java.util.Map;
 
 /// What an invoker button does to its target, written as the `command` attribute and set with
-/// [TagElement#command(ElementRef, Command)]. Either a native [BuiltinCommand], checked
-/// against its target, or a custom command from [#custom(String, String)], which any existing
-/// target accepts.
+/// [TagElement#command(ElementRef, Command)]. Either a native [BuiltinCommand], checked against its
+/// target, or a custom command from [#custom(String, String)], which any existing target accepts.
 public sealed interface Command permits BuiltinCommand, CustomCommand {
 
   /// The `command` attribute value, such as `show-modal` or `--cart-add`.
   String wireValue();
 
-  /// Attributes set on the invoking element together with the command, such as `data-id`. Empty
-  /// for built-in commands.
+  /// Attributes set on the invoking element together with the command, such as `data-id`. Empty for
+  /// built-in commands.
   Map<String, String> payload();
 
   /// Creates the custom command `--<namespace>-<name>`, handled by the application's own script on

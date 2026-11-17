@@ -105,16 +105,15 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.flex()
-                    .flexCol()
-                    .gap(Tokens.SPACE_2)
-                    .px(Tokens.SPACE_5)
-                    .py(Tokens.SPACE_4)
-                    .my(Tokens.SPACE_5)
-                    .rounded(Tokens.RADIUS_LG)
-                    .border(Border.none()))
+        .root(s ->
+            s.flex()
+                .flexCol()
+                .gap(Tokens.SPACE_2)
+                .px(Tokens.SPACE_5)
+                .py(Tokens.SPACE_4)
+                .my(Tokens.SPACE_5)
+                .rounded(Tokens.RADIUS_LG)
+                .border(Border.none()))
         .select(
             ":scope > .callout-header",
             s ->

@@ -7,12 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
-/// Multi-page static site specification; build one with [#builder()] or [#of(SiteRoute...)].
-/// Throws IllegalArgumentException if it has no routes.
+/// Multi-page static site specification; build one with [#builder()] or [#of(SiteRoute...)]. Throws
+/// IllegalArgumentException if it has no routes.
 ///
-/// Defaults to [OutputMode#external(String)] (`"/assets"`), so pages share one
-/// content-hashed stylesheet across cross-document view transitions, and to
-/// [LinkSpeculation#PRERENDER].
+/// Defaults to [OutputMode#external(String)] (`"/assets"`), so pages share one content-hashed
+/// stylesheet across cross-document view transitions, and to [LinkSpeculation#PRERENDER].
 public record SiteDefinition(
     Theme theme,
     OutputMode outputMode,
@@ -60,8 +59,8 @@ public record SiteDefinition(
     return new Builder();
   }
 
-  /// Routes and assets keep declaration order. Other settings start at the
-  /// [SiteDefinition] defaults.
+  /// Routes and assets keep declaration order. Other settings start at the [SiteDefinition]
+  /// defaults.
   public static final class Builder {
 
     private Theme theme = Theme.defaults();
@@ -100,9 +99,9 @@ public record SiteDefinition(
       return this;
     }
 
-    /// Sets the base URL prepended to route paths in `sitemap.xml`, such as
-    /// `https://example.com`. Without one, no sitemap is generated. A trailing `/` is removed.
-    /// Throws IllegalArgumentException from [#build()] if the value is empty or only `/`.
+    /// Sets the base URL prepended to route paths in `sitemap.xml`, such as `https://example.com`.
+    /// Without one, no sitemap is generated. A trailing `/` is removed. Throws
+    /// IllegalArgumentException from [#build()] if the value is empty or only `/`.
     public Builder baseUrl(String url) {
       this.baseUrl = url;
       return this;

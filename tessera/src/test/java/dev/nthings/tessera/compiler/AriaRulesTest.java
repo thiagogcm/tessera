@@ -178,16 +178,15 @@ class AriaRulesTest {
       Element body, String rule, String message, String fix, String tag, int count) {
     assertThat(diagnosticsOf(body))
         .hasSize(count)
-        .allSatisfy(
-            d -> {
-              assertThat(d.rule()).isEqualTo(rule);
-              assertThat(d.message()).isEqualTo(message);
-              assertThat(d.fix()).isEqualTo(fix);
-              assertThat(d.location().page()).isEqualTo("Aria");
-              assertThat(d.location().components()).isEmpty();
-              assertThat(d.location().tag()).isEqualTo(tag);
-              assertThat(d.location().domId()).isNull();
-            });
+        .allSatisfy(d -> {
+          assertThat(d.rule()).isEqualTo(rule);
+          assertThat(d.message()).isEqualTo(message);
+          assertThat(d.fix()).isEqualTo(fix);
+          assertThat(d.location().page()).isEqualTo("Aria");
+          assertThat(d.location().components()).isEmpty();
+          assertThat(d.location().tag()).isEqualTo(tag);
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   static Stream<Arguments> unnamedDeclaredRoles() {
@@ -218,15 +217,14 @@ class AriaRulesTest {
     var diagnostics = diagnosticsOf(body);
     assertThat(diagnostics)
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("role-name-required");
-              assertThat(d.message()).isEqualTo(message);
-              assertThat(d.fix()).isEqualTo(fix);
-              assertThat(d.location().page()).isEqualTo("Aria");
-              assertThat(d.location().tag()).isEqualTo(tag);
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("role-name-required");
+          assertThat(d.message()).isEqualTo(message);
+          assertThat(d.fix()).isEqualTo(fix);
+          assertThat(d.location().page()).isEqualTo("Aria");
+          assertThat(d.location().tag()).isEqualTo(tag);
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   @Test

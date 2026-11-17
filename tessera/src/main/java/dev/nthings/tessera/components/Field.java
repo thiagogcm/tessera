@@ -19,19 +19,19 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import org.jspecify.annotations.Nullable;
 
-/// Labelled container for a form control: a visible `<label>` that names the control, optional
-/// hint text that describes it, error text shown while it is `:user-invalid`, and an optional
-/// visual tooltip. Create one with [#of(String, TagElement)] for a control from [Forms] or
-/// [#of(String, Select)].
+/// Labelled container for a form control: a visible `<label>` that names the control, optional hint
+/// text that describes it, error text shown while it is `:user-invalid`, and an optional visual
+/// tooltip. Create one with [#of(String, TagElement)] for a control from [Forms] or [#of(String,
+/// Select)].
 ///
-/// The control, hint and error ids are prefixed with its [#id(String)]. Without an id, the
-/// compiler numbers instances `form-field-<n>`.
+/// The control, hint and error ids are prefixed with its [#id(String)]. Without an id, the compiler
+/// numbers instances `form-field-<n>`.
 public final class Field extends BuiltinScope<Field> {
 
   private final String label;
 
-  /// The control to render: the bare control from [#of(String, TagElement)], or the `<select>`
-  /// from [#of(String, Select)].
+  /// The control to render: the bare control from [#of(String, TagElement)], or the `<select>` from
+  /// [#of(String, Select)].
   private final TagElement control;
 
   private final @Nullable Select select;

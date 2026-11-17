@@ -15,8 +15,8 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
-/// A button opens no id scope of its own: it renders a single `<button>` styled with
-/// element-level styles, so the refs it binds and targets resolve in the enclosing scope.
+/// A button opens no id scope of its own: it renders a single `<button>` styled with element-level
+/// styles, so the refs it binds and targets resolve in the enclosing scope.
 abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     implements FluentBuilder<B> {
 
@@ -30,6 +30,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   @Nullable ElementRef commandTarget;
   @Nullable Command command;
   @Nullable UnaryOperator<TagElement> tooltip;
+
   /// Replayed in order onto the button, whose own map keeps the last listener per key.
   final List<EventListener> events = new ArrayList<>();
 
@@ -38,8 +39,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     this.variant = variant;
   }
 
-  /// Sets the semantic color; `ACCENT` for [Button] and `NEUTRAL` for [IconButton] by default.
-  /// It does not change the surface or behavior.
+  /// Sets the semantic color; `ACCENT` for [Button] and `NEUTRAL` for [IconButton] by default. It
+  /// does not change the surface or behavior.
   public B tone(Tone tone) {
     this.tone = tone;
     return self();
@@ -82,8 +83,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     return onEvent(event, EventOptions.DEFAULT, handler);
   }
 
-  /// Runs `handler` for `event` with native listener `options`, as
-  /// [TagElement#onEvent(String, EventOptions, Consumer)] does.
+  /// Runs `handler` for `event` with native listener `options`, as [TagElement#onEvent(String,
+  /// EventOptions, Consumer)] does.
   public B onEvent(String event, EventOptions options, Consumer<BrowserEvent> handler) {
     events.add(new EventListener(event, options, handler));
     return self();
@@ -98,8 +99,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
 
   /// Binds `ref` to the `<button>` element, so other elements can reference it. The ref binds in
   /// the enclosing id scope, so `ElementRef.scoped("save")` inside an id scope with id `toolbar`
-  /// emits `toolbar--save`. Binding several refs aliases them, as [TagElement#id(ElementRef)]
-  /// does.
+  /// emits `toolbar--save`. Binding several refs aliases them, as [TagElement#id(ElementRef)] does.
   public B id(ElementRef ref) {
     domRefs.add(ref);
     return self();
@@ -112,8 +112,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     return self();
   }
 
-  /// Sets `aria-busy="true"` and a progress cursor. The button stays enabled and clickable, so
-  /// the application must guard the action itself.
+  /// Sets `aria-busy="true"` and a progress cursor. The button stays enabled and clickable, so the
+  /// application must guard the action itself.
   public B busy() {
     this.busy = true;
     return self();

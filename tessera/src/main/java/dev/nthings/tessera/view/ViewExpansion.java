@@ -40,9 +40,9 @@ import org.jspecify.annotations.Nullable;
 /// Expansion runs component and view render callbacks, binds element refs to DOM ids within view
 /// scopes and keyed children, registers styles in the [StyleSheet], keeps the per-page
 /// [DocumentRegistry], and checks the contracts every backend shares (ids, references, transition
-/// keys, sibling keys, controlled form properties). What differs between backends goes through
-/// the [Backend], which reports what it rejects through the [Reporter] it is handed. Diagnostics
-/// are collected, not thrown; the backend decides how to fail.
+/// keys, sibling keys, controlled form properties). What differs between backends goes through the
+/// [Backend], which reports what it rejects through the [Reporter] it is handed. Diagnostics are
+/// collected, not thrown; the backend decides how to fail.
 public final class ViewExpansion {
 
   /// Backend-facing: what an output backend decides during expansion: placement of deferred and
@@ -59,8 +59,8 @@ public final class ViewExpansion {
     /// Places `content` after the main flow, ordered by `priority`, or rejects it.
     ViewNode defer(Supplier<ViewNode> content, int priority, Location placedBy, Reporter reporter);
 
-    /// Expands `content` after the main flow, in its original position, into a [ViewNode.Slot]
-    /// the backend fills; or rejects it.
+    /// Expands `content` after the main flow, in its original position, into a [ViewNode.Slot] the
+    /// backend fills; or rejects it.
     ViewNode late(Supplier<ViewNode> content, Location placedBy, Reporter reporter);
 
     /// Places trusted raw HTML, or rejects it.
@@ -70,8 +70,8 @@ public final class ViewExpansion {
     ViewNode effect(ViewSnapshot.Effect effect, Reporter reporter);
 
     /// Writes the declarations compiled for an element's `live` styles into `into`, which already
-    /// holds the element's other declarations. A live backend reads values from custom
-    /// properties, which it records in `properties` and registers with its stylesheet
+    /// holds the element's other declarations. A live backend reads values from custom properties,
+    /// which it records in `properties` and registers with its stylesheet
     /// ([StyleSheet#registerLive]); a document compiles the values themselves.
     void liveDeclarations(Declarations live, Map<String, String> properties, Declarations into);
 
@@ -93,8 +93,8 @@ public final class ViewExpansion {
     void contributeScript(PageScript behavior, Location placedBy, Reporter reporter);
   }
 
-  /// Backend-facing: where a [Backend] reports what it rejects or finds wrong, as a
-  /// [Diagnostic] of the expansion.
+  /// Backend-facing: where a [Backend] reports what it rejects or finds wrong, as a [Diagnostic] of
+  /// the expansion.
   @FunctionalInterface
   public interface Reporter {
 
@@ -129,8 +129,8 @@ public final class ViewExpansion {
     return expand(content.intoElement(), root);
   }
 
-  /// Expands what `content` returns in the component context of `placedBy`, at the top level of
-  /// the id scope; a failure names `phase` and the component.
+  /// Expands what `content` returns in the component context of `placedBy`, at the top level of the
+  /// id scope; a failure names `phase` and the component.
   public ViewNode expand(
       Location placedBy, String phase, Function<DocumentContext, ? extends IntoElement> content) {
     return expand(root.withPlacement(placedBy), phase, content);
@@ -235,9 +235,9 @@ public final class ViewExpansion {
   }
 
   /// Expands keyed content in the context [#keyedContext] made for it. A generated enclosing id
-  /// scope reports `generated-scope-id` once for this key, then expansion continues. A component
-  /// or fragment keeps its own boundary and takes the key on it; anything else is wrapped so the
-  /// key still names one sibling.
+  /// scope reports `generated-scope-id` once for this key, then expansion continues. A component or
+  /// fragment keeps its own boundary and takes the key on it; anything else is wrapped so the key
+  /// still names one sibling.
   private ViewNode keyed(KeyedElement keyed, ViewContext context) {
     var child = keyedContext(keyed, context);
     if (context.idScope().generated()) {
@@ -276,10 +276,10 @@ public final class ViewExpansion {
   ///
   /// Its slug depends only on the enclosing id scope, the [ViewContext#keyOwner()] and the key,
   /// never on a sibling index. A generated id anywhere in that enclosing scope is reported as
-  /// `generated-scope-id`, because that counter does change when siblings move:
-  /// `key-<hex key>` without an owner and `<owner>-key-<hex key>` with one. The key's hexadecimal
-  /// UTF-16 units contain no `-`, so the slug splits back at its last `-key-` and distinct keys or
-  /// owner slugs never share a scope.
+  /// `generated-scope-id`, because that counter does change when siblings move: `key-<hex key>`
+  /// without an owner and `<owner>-key-<hex key>` with one. The key's hexadecimal UTF-16 units
+  /// contain no `-`, so the slug splits back at its last `-key-` and distinct keys or owner slugs
+  /// never share a scope.
   private static ViewContext keyedContext(KeyedElement keyed, ViewContext context) {
     var owner = context.keyOwner();
     var slug = (owner == null ? "" : owner + "-") + "key-" + encodeKey(keyed.key());
@@ -297,9 +297,9 @@ public final class ViewExpansion {
   }
 
   /// Puts `data-scope` on the one element host `node` resolves to. Component boundaries and keyed
-  /// wrappers are transparent. Another scope keeps its own host. Anything else reports
-  /// `scope-root` and is left unchanged: expansion does not invent a wrapper. A
-  /// `generated-scope-id` reported for a keyed host does not make that host invalid.
+  /// wrappers are transparent. Another scope keeps its own host. Anything else reports `scope-root`
+  /// and is left unchanged: expansion does not invent a wrapper. A `generated-scope-id` reported
+  /// for a keyed host does not make that host invalid.
   private ViewNode scoped(
       ViewNode node, String scopeName, String type, String scopeId, ViewContext context) {
     return switch (node) {

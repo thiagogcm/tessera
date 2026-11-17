@@ -14,9 +14,9 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the
-/// steps progress. Create one with [#of(String...)] for plain text steps or
-/// [#of(IntoElement...)] for steps with markup.
+/// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the steps
+/// progress. Create one with [#of(String...)] for plain text steps or [#of(IntoElement...)] for
+/// steps with markup.
 ///
 /// Without an [#id(String)], the compiler numbers instances `step-list-<n>`.
 public final class StepList extends BuiltinScope<StepList> {

@@ -36,8 +36,8 @@ import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
 
-/// Chrome shared by every route: header, search, quick actions, inspector, heading,
-/// pager and footer.
+/// Chrome shared by every route: header, search, quick actions, inspector, heading, pager and
+/// footer.
 record Shell(Page page) implements Component {
 
   static final CssLength MAX_WIDTH = CssLength.rem(76);

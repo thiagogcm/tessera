@@ -51,8 +51,8 @@ public record Transition(
         .allowingDiscrete();
   }
 
-  /// Disclosure: block size and `content-visibility` over [Tokens#DISCLOSURE_DURATION] (250ms)
-  /// with `ease`. Discrete values transition, so hidden content can animate open.
+  /// Disclosure: block size and `content-visibility` over [Tokens#DISCLOSURE_DURATION] (250ms) with
+  /// `ease`. Discrete values transition, so hidden content can animate open.
   public static Transition disclosure() {
     return of(
             Tokens.DISCLOSURE_DURATION,

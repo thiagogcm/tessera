@@ -24,12 +24,12 @@ public final class Compiler {
   /// Compiles every route of `site` into one [CompiledSite].
   ///
   /// Routes are first checked for duplicate paths (`duplicate-route`) and for registered or
-  /// generated files that share a path with a route or another file (`file-path-collision`);
-  /// these stop compilation before any page renders. Pages are then prepared concurrently on
-  /// virtual threads, so expand callbacks must not change shared application state. Once every
-  /// page compiles, links, fragments and transition keys are checked across pages, generated
-  /// stylesheet and module paths are checked for collisions, the shared stylesheet is merged, and
-  /// pages are emitted concurrently.
+  /// generated files that share a path with a route or another file (`file-path-collision`); these
+  /// stop compilation before any page renders. Pages are then prepared concurrently on virtual
+  /// threads, so expand callbacks must not change shared application state. Once every page
+  /// compiles, links, fragments and transition keys are checked across pages, generated stylesheet
+  /// and module paths are checked for collisions, the shared stylesheet is merged, and pages are
+  /// emitted concurrently.
   ///
   /// Throws [CompilationException] with the route and file diagnostics, else with the page
   /// diagnostics in route order, else with the cross-route diagnostics.

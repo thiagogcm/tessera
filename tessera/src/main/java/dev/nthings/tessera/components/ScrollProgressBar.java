@@ -11,10 +11,10 @@ import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 
-/// Thin bar fixed to the top of the viewport that fills as the page scrolls. It is decorative
-/// and hidden from assistive technology. When the user prefers reduced motion, it stays a
-/// static, full-width bar. Create one with [#of()]; it is accent-colored, 0.25rem thick, and
-/// follows block-axis scrolling unless changed.
+/// Thin bar fixed to the top of the viewport that fills as the page scrolls. It is decorative and
+/// hidden from assistive technology. When the user prefers reduced motion, it stays a static,
+/// full-width bar. Create one with [#of()]; it is accent-colored, 0.25rem thick, and follows
+/// block-axis scrolling unless changed.
 public final class ScrollProgressBar extends BuiltinComponent {
 
   private static final Keyframes PROGRESS =

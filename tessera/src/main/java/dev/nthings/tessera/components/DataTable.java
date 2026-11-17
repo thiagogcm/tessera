@@ -23,8 +23,8 @@ import org.jspecify.annotations.Nullable;
 /// markup with resolved spans and symbolic header references. Create one with [#of].
 ///
 /// Scrolling is the default narrow layout. [#stackBelow] enables labelled cards for flat grids.
-/// Sticky head groups and the first row-header column are opt-in. All generated ids are local
-/// to the table's [#id(String)]; unnamed instances use `data-table-<n>`.
+/// Sticky head groups and the first row-header column are opt-in. All generated ids are local to
+/// the table's [#id(String)]; unnamed instances use `data-table-<n>`.
 public final class DataTable extends BuiltinScope<DataTable> {
 
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);
@@ -49,8 +49,8 @@ public final class DataTable extends BuiltinScope<DataTable> {
     return new DataTable(caption, grid);
   }
 
-  /// Makes flat body rows into cards below `width`. Requires one head row of column headers,
-  /// no spans, and only data or row-header cells in body groups. Other grids throw
+  /// Makes flat body rows into cards below `width`. Requires one head row of column headers, no
+  /// spans, and only data or row-header cells in body groups. Other grids throw
   /// IllegalArgumentException. Rich headers supply their card label through
   /// [TableGrid#columnHeader(String, IntoElement)].
   public DataTable stackBelow(CssLength width) {
@@ -68,8 +68,8 @@ public final class DataTable extends BuiltinScope<DataTable> {
     return this;
   }
 
-  /// Sticks row headers starting in logical column zero to the scroll region's start edge.
-  /// Other row-header columns scroll normally.
+  /// Sticks row headers starting in logical column zero to the scroll region's start edge. Other
+  /// row-header columns scroll normally.
   public DataTable stickyFirstColumn() {
     stickyFirstColumn = true;
     return this;
@@ -88,15 +88,14 @@ public final class DataTable extends BuiltinScope<DataTable> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.overflow(Overflow.AUTO)
-                    .minInlineSize(CssLength.px(0))
-                    .maxInlineSize(CssLength.pct(100))
-                    .container(TABLE)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD))
+        .root(s ->
+            s.overflow(Overflow.AUTO)
+                .minInlineSize(CssLength.px(0))
+                .maxInlineSize(CssLength.pct(100))
+                .container(TABLE)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD))
         .select(
             ":scope > table",
             s -> s.inlineSize(CssLength.pct(100)).borderSeparateZero().textAlign(TextAlign.START))

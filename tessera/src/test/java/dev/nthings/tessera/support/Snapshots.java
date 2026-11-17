@@ -24,13 +24,11 @@ public final class Snapshots {
   /// Every tag in document order, looking through groups.
   public static Stream<ViewSnapshot.Tag> tags(List<ViewSnapshot.Node> nodes) {
     return nodes.stream()
-        .flatMap(
-            node ->
-                switch (node) {
-                  case ViewSnapshot.Tag tag -> Stream.concat(Stream.of(tag), tags(tag.children()));
-                  case ViewSnapshot.Group group -> tags(group.children());
-                  case ViewSnapshot.Text _, ViewSnapshot.Raw _, ViewSnapshot.Effect _ ->
-                      Stream.empty();
-                });
+        .flatMap(node ->
+            switch (node) {
+              case ViewSnapshot.Tag tag -> Stream.concat(Stream.of(tag), tags(tag.children()));
+              case ViewSnapshot.Group group -> tags(group.children());
+              case ViewSnapshot.Text _, ViewSnapshot.Raw _, ViewSnapshot.Effect _ -> Stream.empty();
+            });
   }
 }

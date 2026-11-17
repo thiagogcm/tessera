@@ -117,13 +117,12 @@ class SourceProvenanceTest {
     var first = new Panel("a");
     var second = new Panel("b");
     var compiled =
-        SourceTracking.enabled(
-            () ->
-                Compiler.compile(
-                    SiteDefinition.builder()
-                        .route(new SiteRoute("/", new PageDocument("Home", main().child(first))))
-                        .route(new SiteRoute("/b", new PageDocument("B", main().child(second))))
-                        .build()));
+        SourceTracking.enabled(() ->
+            Compiler.compile(
+                SiteDefinition.builder()
+                    .route(new SiteRoute("/", new PageDocument("Home", main().child(first))))
+                    .route(new SiteRoute("/b", new PageDocument("B", main().child(second))))
+                    .build()));
 
     assertThat(compiled.pages().get("/"))
         .contains("data-src=\"" + THIS_FILE + ":" + first.elementLine + "\"");
@@ -138,16 +137,15 @@ class SourceProvenanceTest {
   void headElementsHaveNoSource() {
     var mainLine = new int[1];
     var compiled =
-        SourceTracking.enabled(
-            () -> {
-              var body = main().text("Home");
-              mainLine[0] = here() - 1;
-              return Compiler.compile(
-                  SiteDefinition.builder()
-                      .route(new SiteRoute("/", new PageDocument("Home", body)))
-                      .linkSpeculation(LinkSpeculation.PRERENDER)
-                      .build());
-            });
+        SourceTracking.enabled(() -> {
+          var body = main().text("Home");
+          mainLine[0] = here() - 1;
+          return Compiler.compile(
+              SiteDefinition.builder()
+                  .route(new SiteRoute("/", new PageDocument("Home", body)))
+                  .linkSpeculation(LinkSpeculation.PRERENDER)
+                  .build());
+        });
 
     var page = RenderedPage.of(compiled, "/");
     assertThat(page.elements("head [data-src]")).isEmpty();

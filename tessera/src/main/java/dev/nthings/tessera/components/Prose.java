@@ -63,13 +63,12 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.block()
-                    .inlineSize(CssLength.pct(100))
-                    .maxInlineSize(maxMeasure)
-                    .textColor(Tokens.TEXT_PRIMARY)
-                    .lineHeight(1.75))
+        .root(s ->
+            s.block()
+                .inlineSize(CssLength.pct(100))
+                .maxInlineSize(maxMeasure)
+                .textColor(Tokens.TEXT_PRIMARY)
+                .lineHeight(1.75))
         .select(
             ":scope p:not([class])",
             s ->

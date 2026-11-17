@@ -1,8 +1,8 @@
 package dev.nthings.tessera.css;
 
 /// Font family, size, weight, line height, and tracking, applied with
-/// [Styled#typography(Typography)]. Every field is a design token except `weight`, a plain
-/// font weight.
+/// [Styled#typography(Typography)]. Every field is a design token except `weight`, a plain font
+/// weight.
 public record Typography(
     DesignToken.FontFamily family,
     DesignToken.Length size,

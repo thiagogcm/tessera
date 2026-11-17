@@ -23,15 +23,15 @@ import org.jspecify.annotations.Nullable;
 /// Experimental native DOM mount for shared Java components.
 ///
 /// Invalidation reconciles compatible native nodes by sibling key, or by kind among unkeyed
-/// siblings (tag name, or component type for a component's DOM range). Each flush renders a
-/// bounded number of turns, coalesces pending invalidations and yields a paint opportunity between
-/// batches. Repeated self-invalidation stops with a reported diagnostic.
+/// siblings (tag name, or component type for a component's DOM range). Each flush renders a bounded
+/// number of turns, coalesces pending invalidations and yields a paint opportunity between batches.
+/// Repeated self-invalidation stops with a reported diagnostic.
 ///
-/// Generated and [dev.nthings.tessera.core.ElementRef#scoped] ids are prefixed with the host id,
-/// so roots on one page never collide. The host's own id is reserved: a child claiming it rejects
-/// the render. An id the render introduces, one the root's last commit did not render, that
-/// another root or the host page already uses rejects the render (`cross-root-id`); ids the root
-/// has committed are its own and are not checked again.
+/// Generated and [dev.nthings.tessera.core.ElementRef#scoped] ids are prefixed with the host id, so
+/// roots on one page never collide. The host's own id is reserved: a child claiming it rejects the
+/// render. An id the render introduces, one the root's last commit did not render, that another
+/// root or the host page already uses rejects the render (`cross-root-id`); ids the root has
+/// committed are its own and are not checked again.
 ///
 /// The root owns its host element: it marks it for embedded styles, replaces fallback content on
 /// the first successful render and empties it on [#close()]. Style rules are shared with other
@@ -39,9 +39,9 @@ import org.jspecify.annotations.Nullable;
 public final class BrowserRoot implements AutoCloseable {
 
   /// Scheduling limits for one mounted root: `workBudget` render turns run in one browser task
-  /// before yielding to paint, and after `runawayLimit` consecutive turns that each request
-  /// another render, the root stops and reports a runaway. Both must be positive, or the
-  /// constructor throws IllegalArgumentException.
+  /// before yielding to paint, and after `runawayLimit` consecutive turns that each request another
+  /// render, the root stops and reports a runaway. Both must be positive, or the constructor throws
+  /// IllegalArgumentException.
   public record Scheduling(int workBudget, int runawayLimit) {
     /// Eight turns per task, runaway after 32 self-requested turns.
     public static final Scheduling DEFAULT = new Scheduling(8, 32);
@@ -62,8 +62,10 @@ public final class BrowserRoot implements AutoCloseable {
   private final LifetimeScope lifetime = new LifetimeScope();
   private final Host services;
   private Map<ElementRef, String> committedReferences = Map.of();
+
   /// The DOM ids of the committed tree, which the root owns; only other ids are checked.
   private Set<String> committedIds = Set.of();
+
   private final List<Runnable> afterRender = new ArrayList<>();
   private final Theme theme = Theme.defaults();
   private final StyleSink.Root styles = StyleSink.shared().root(theme);
@@ -230,8 +232,8 @@ public final class BrowserRoot implements AutoCloseable {
 
   /// Expands a candidate, then commits it.
   ///
-  /// A rejected candidate or failed render callback leaves the committed tree unchanged and
-  /// permits another invalidation. An unexpected commit failure closes the root and is reported.
+  /// A rejected candidate or failed render callback leaves the committed tree unchanged and permits
+  /// another invalidation. An unexpected commit failure closes the root and is reported.
   private void turn() {
     rendering = true;
     try {
@@ -333,9 +335,9 @@ public final class BrowserRoot implements AutoCloseable {
   /// Disposes the root. Idempotent; safe to call from the root's own handlers and effects.
   ///
   /// In order: cancels scheduled work, releases listeners, disposes effects (innermost first),
-  /// closes dialogs and popovers, empties the host, and disposes the root [#lifetime()].
-  /// Disposal cancels tasks and requests and releases styles. The view callback is dropped.
-  /// Application cleanup failures are collected and reported together once.
+  /// closes dialogs and popovers, empties the host, and disposes the root [#lifetime()]. Disposal
+  /// cancels tasks and requests and releases styles. The view callback is dropped. Application
+  /// cleanup failures are collected and reported together once.
   @Override
   public void close() {
     if (closed) {

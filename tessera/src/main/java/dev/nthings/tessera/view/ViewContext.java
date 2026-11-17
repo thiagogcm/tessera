@@ -99,8 +99,8 @@ final class ViewContext implements DocumentContext {
     return new Location(componentPath, "", null, origin);
   }
 
-  /// The local name of the nearest enclosing element in this id scope that is bound to a named
-  /// ref, or `null` if there is none. Keyed lists use it to tell themselves apart.
+  /// The local name of the nearest enclosing element in this id scope that is bound to a named ref,
+  /// or `null` if there is none. Keyed lists use it to tell themselves apart.
   @Nullable String keyOwner() {
     return keyOwner;
   }

@@ -2,8 +2,8 @@ package dev.nthings.tessera.support;
 
 import java.util.Arrays;
 
-/// Extracts rule blocks so tests can assert where a declaration lives, not match whole
-/// minified CSS.
+/// Extracts rule blocks so tests can assert where a declaration lives, not match whole minified
+/// CSS.
 public final class CssBlocks {
 
   private CssBlocks() {}

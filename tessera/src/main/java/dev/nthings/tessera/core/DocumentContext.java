@@ -6,11 +6,11 @@ import java.util.function.Function;
 /// What an expand callback can do beyond returning content: per-page state, head and end-of-body
 /// contributions, page scripts, reading the document outline, and diagnostics. Expand callbacks,
 /// late elements and document-end sections receive it from the compiler, or from a live backend
-/// such as a browser mount. A mounted view has no document: there, per-page state and headings
-/// last one render, and head contributions, document-end sections and page scripts are reported
-/// as diagnostics. Don't keep it after the callback returns, and don't share mutable application
-/// state through it: callbacks may run concurrently across pages. Outline headings are collected
-/// from elements that carry them; this context does not register headings.
+/// such as a browser mount. A mounted view has no document: there, per-page state and headings last
+/// one render, and head contributions, document-end sections and page scripts are reported as
+/// diagnostics. Don't keep it after the callback returns, and don't share mutable application state
+/// through it: callbacks may run concurrently across pages. Outline headings are collected from
+/// elements that carry them; this context does not register headings.
 public interface DocumentContext {
 
   /// Per-page state for `key`, created on first use. Use it for facts that must hold once per page,

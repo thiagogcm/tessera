@@ -13,14 +13,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/// Renders one turn of a mounted view, such as a browser root in `tessera-wasm`.
-/// Expansion, linking, styles and semantic checks are shared with the compiler.
-/// Document placement, whole-page checks and HTML emission belong to the compiler.
+/// Renders one turn of a mounted view, such as a browser root in `tessera-wasm`. Expansion,
+/// linking, styles and semantic checks are shared with the compiler. Document placement, whole-page
+/// checks and HTML emission belong to the compiler.
 ///
 /// A mounted view has no document, so document-only features are reported as diagnostics: head
 /// contributions (`native-head-contribution`), document-end sections (`native-document-end`),
-/// client behaviors (`native-page-script`, including the interest-tooltip fallback),
-/// deferred and late elements (`native-document-placement`) and raw HTML (`native-raw-html`).
+/// client behaviors (`native-page-script`, including the interest-tooltip fallback), deferred and
+/// late elements (`native-document-placement`) and raw HTML (`native-raw-html`).
 /// `DocumentContext#document` values and headings last one render.
 public final class ViewRenderer {
 
@@ -28,9 +28,9 @@ public final class ViewRenderer {
 
   /// Renders what `content` returns into a linked snapshot with its embedded style rules. Every
   /// generated and scoped DOM id is prefixed with `scope` (sanitized like a view id), so roots on
-  /// one page keep distinct ids; pass an empty `scope` for page-level ids. Throws
-  /// [ViewException] listing every diagnostic if the render has authoring errors; a failing render
-  /// callback propagates its own exception with a suppressed [ViewException] naming the component.
+  /// one page keep distinct ids; pass an empty `scope` for page-level ids. Throws [ViewException]
+  /// listing every diagnostic if the render has authoring errors; a failing render callback
+  /// propagates its own exception with a suppressed [ViewException] naming the component.
   public static ViewSnapshot render(
       Function<DocumentContext, ? extends IntoElement> content, String scope) {
     var backend = new LiveBackend();

@@ -1,9 +1,9 @@
 package dev.nthings.tessera.core;
 
-/// The data of a mouse or pointer event, clicks included, copied from [BrowserEvent#pointer()]:
-/// the `button` that changed state (0 primary, 1 auxiliary, 2 secondary), the position in
-/// viewport coordinates, the click count `detail` (0 for events other than clicks) and the
-/// modifier keys held.
+/// The data of a mouse or pointer event, clicks included, copied from [BrowserEvent#pointer()]: the
+/// `button` that changed state (0 primary, 1 auxiliary, 2 secondary), the position in viewport
+/// coordinates, the click count `detail` (0 for events other than clicks) and the modifier keys
+/// held.
 public record PointerData(
     int button,
     double clientX,

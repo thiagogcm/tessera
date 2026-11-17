@@ -2,8 +2,8 @@ package dev.nthings.tessera.css;
 
 /// A custom property local to some elements, such as a per-item index: set it with
 /// [Declarations#customProperty(CustomProperty, CssValue)] and read it with
-/// [CssNumber#property(CustomProperty)] or [CssContent#property(CustomProperty)]. Theme-wide
-/// values belong in a [DesignToken] instead. Serializes as `--name`.
+/// [CssNumber#property(CustomProperty)] or [CssContent#property(CustomProperty)]. Theme-wide values
+/// belong in a [DesignToken] instead. Serializes as `--name`.
 public final class CustomProperty extends NamedValue {
 
   private CustomProperty(CssIdent ident) {

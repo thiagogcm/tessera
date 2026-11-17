@@ -11,8 +11,8 @@ record CssIdent(String value) implements CssValue {
   private static final Pattern IDENT =
       Pattern.compile("--[A-Za-z0-9_-]+|-?[A-Za-z_][A-Za-z0-9_-]*");
 
-  /// Rejected as names: the CSS-wide keywords, `default`, and `none`, which name-taking
-  /// properties also accept as values.
+  /// Rejected as names: the CSS-wide keywords, `default`, and `none`, which name-taking properties
+  /// also accept as values.
   private static final Set<String> RESERVED =
       Set.of("initial", "inherit", "unset", "revert", "revert-layer", "default", "none");
 

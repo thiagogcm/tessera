@@ -3,9 +3,9 @@
 /// [FragmentElement] or plain [Element]. Write components as [Component] (no id scope of its own)
 /// or [Scope] (own id namespace and scoped CSS); both return any [IntoElement] from `expand`. Give
 /// elements ids and link them with [ElementRef], run invoker commands with [Command], and
-/// contribute head content, page scripts, headings and diagnostics through the
-/// [DocumentContext] passed to expand callbacks. Compile with `compiler.Compiler`; here, "document"
-/// means the page being compiled.
+/// contribute head content, page scripts, headings and diagnostics through the [DocumentContext]
+/// passed to expand callbacks. Compile with `compiler.Compiler`; here, "document" means the page
+/// being compiled.
 ///
 /// For live backends such as the `tessera-wasm` browser mount, elements also take Java event
 /// handlers ([TagElement#onEvent], receiving a [BrowserEvent]), controlled form properties

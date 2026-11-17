@@ -14,8 +14,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
-/// A mutable set of declarations and custom properties, written through the [Styled] methods,
-/// plus the conditional styles written with [#on(Condition, StyleBlock)] and
+/// A mutable set of declarations and custom properties, written through the [Styled] methods, plus
+/// the conditional styles written with [#on(Condition, StyleBlock)] and
 /// [#startingStyle(StyleBlock)]. Elements hold one for their style, and state, selector and scope
 /// callbacks receive one to fill. The last call wins: writing a property again replaces its value,
 /// and writing a shorthand (such as [#p(CssLength)] or [#border(Border)]) removes the longhands it
@@ -30,6 +30,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
+
   /// Created on first use, so a plain style allocates no conditional state.
   private @Nullable Map<Condition, Declarations> conditional;
 
@@ -146,8 +147,8 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     return this;
   }
 
-  /// Whether conditional styles, a starting style or keyframes were written, so the style may
-  /// emit more than its plain declarations.
+  /// Whether conditional styles, a starting style or keyframes were written, so the style may emit
+  /// more than its plain declarations.
   boolean hasConditionalStyles() {
     return conditional != null || startingStyle != null || keyframes != null;
   }
@@ -180,8 +181,8 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     return this;
   }
 
-  /// The `--tl-<property>` custom property each live declaration reads its value from.
-  /// Indexed by [CssProperty#ordinal()].
+  /// The `--tl-<property>` custom property each live declaration reads its value from. Indexed by
+  /// [CssProperty#ordinal()].
   private static final CssIdent[] LIVE_NAMES = liveNames();
 
   private static CssIdent[] liveNames() {
@@ -200,13 +201,12 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   /// `generated` receives the names of the `--tl-` properties. Conditional and starting styles are
   /// written as they are.
   void writeLiveShape(Declarations into, Map<String, String> values, Consumer<String> generated) {
-    declarations.forEach(
-        (property, value) -> {
-          var name = LIVE_NAMES[property.ordinal()];
-          into.put(property, name.varReference());
-          values.put(name.toCss(), value);
-          generated.accept(name.toCss());
-        });
+    declarations.forEach((property, value) -> {
+      var name = LIVE_NAMES[property.ordinal()];
+      into.put(property, name.varReference());
+      values.put(name.toCss(), value);
+      generated.accept(name.toCss());
+    });
     values.putAll(customProperties);
     into.mergeConditionalFrom(this);
   }
@@ -288,12 +288,11 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
       return Map.of();
     }
     var queries = new LinkedHashMap<ContainerQuery, Declarations>();
-    rules.forEach(
-        (condition, style) -> {
-          if (condition instanceof ContainerQuery query && !style.isEmpty()) {
-            queries.put(query, style);
-          }
-        });
+    rules.forEach((condition, style) -> {
+      if (condition instanceof ContainerQuery query && !style.isEmpty()) {
+        queries.put(query, style);
+      }
+    });
     return queries;
   }
 

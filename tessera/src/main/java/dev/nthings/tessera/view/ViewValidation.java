@@ -50,8 +50,8 @@ public final class ViewValidation {
     return state;
   }
 
-  /// Checks the whole-document rules a mounted root, which shares its page with host content,
-  /// does not have: literal fragment targets, landmark names and heading order. Returns the first
+  /// Checks the whole-document rules a mounted root, which shares its page with host content, does
+  /// not have: literal fragment targets, landmark names and heading order. Returns the first
   /// location of each outgoing URL.
   public Map<String, Location> checkDocument(
       List<ViewSnapshot.Node> body, List<ViewSnapshot.Node> head) {

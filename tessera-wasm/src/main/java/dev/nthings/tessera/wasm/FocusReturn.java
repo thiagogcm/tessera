@@ -4,8 +4,8 @@ import dev.nthings.tessera.core.ElementRef;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
-/// The element that had focus when [Host#rememberFocus()] was called, for restoring it later,
-/// for example after a dialog closes. The element itself is never exposed.
+/// The element that had focus when [Host#rememberFocus()] was called, for restoring it later, for
+/// example after a dialog closes. The element itself is never exposed.
 ///
 /// A focus return is used once: restoring it releases the element, and it does nothing once its
 /// host's lifetime or root is disposed.

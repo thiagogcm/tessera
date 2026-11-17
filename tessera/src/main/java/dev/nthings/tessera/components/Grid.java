@@ -15,10 +15,10 @@ import dev.nthings.tessera.css.TrackList;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Grid of items in columns. Create one with [#autoFit] (as many columns as fit, each at least
-/// the minimum width) or [#columns] (a fixed count), and add more items as children. A `columns`
-/// grid stacks into one column while it is narrower than 36rem. Wrap an item in [#cell] to span
-/// columns or rows; spans apply only when the grid is 36rem or wider.
+/// Grid of items in columns. Create one with [#autoFit] (as many columns as fit, each at least the
+/// minimum width) or [#columns] (a fixed count), and add more items as children. A `columns` grid
+/// stacks into one column while it is narrower than 36rem. Wrap an item in [#cell] to span columns
+/// or rows; spans apply only when the grid is 36rem or wider.
 public final class Grid extends BuiltinComponent implements ParentElement<Grid> {
 
   private static final Container GRID_CONTAINER =
@@ -48,8 +48,8 @@ public final class Grid extends BuiltinComponent implements ParentElement<Grid> 
     return new Grid(template, count > 1).children(items);
   }
 
-  /// Wraps `content` in a cell spanning `colSpan` columns and `rowSpan` rows. Spans apply only
-  /// when the enclosing grid is 36rem or wider; otherwise the cell takes one column and row.
+  /// Wraps `content` in a cell spanning `colSpan` columns and `rowSpan` rows. Spans apply only when
+  /// the enclosing grid is 36rem or wider; otherwise the cell takes one column and row.
   public static TagElement cell(int colSpan, int rowSpan, IntoElement content) {
     return Elements.div().on(MULTI_COLUMN, s -> s.colSpan(colSpan).rowSpan(rowSpan)).child(content);
   }

@@ -93,18 +93,17 @@ public final class Carousel extends BuiltinScope<Carousel> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.anchorName(anchorIdent())
-                    .flex()
-                    .gap(Tokens.SPACE_4)
-                    .overflowX(Overflow.AUTO)
-                    .scrollSnapType(ScrollSnap.mandatory(ScrollSnap.Axis.X))
-                    .scrollMarkerGroup(ScrollMarkerGroup.AFTER)
-                    .overscrollBehaviorX(Overscroll.CONTAIN)
-                    .scrollbarWidthNone()
-                    .counterReset(ITEM_COUNTER)
-                    .py(Tokens.SPACE_2))
+        .root(s ->
+            s.anchorName(anchorIdent())
+                .flex()
+                .gap(Tokens.SPACE_4)
+                .overflowX(Overflow.AUTO)
+                .scrollSnapType(ScrollSnap.mandatory(ScrollSnap.Axis.X))
+                .scrollMarkerGroup(ScrollMarkerGroup.AFTER)
+                .overscrollBehaviorX(Overscroll.CONTAIN)
+                .scrollbarWidthNone()
+                .counterReset(ITEM_COUNTER)
+                .py(Tokens.SPACE_2))
         .select(
             ":scope > .carousel-item",
             s ->

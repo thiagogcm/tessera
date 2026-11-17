@@ -19,11 +19,11 @@ import dev.nthings.tessera.css.TrackList;
 import dev.nthings.tessera.css.Transition;
 import org.jspecify.annotations.Nullable;
 
-/// Previous and next page cards in a `<nav>`. Create one with [#of()] and set the sides that
-/// exist with [#previous(Link)] and [#next(Link)]: `DocPager.of().previous(intro).next(setup)`.
-/// Each card shows "← Previous" or "Next →" above the link label; those hints are fixed English.
-/// The cards sit side by side when the nearest ancestor container, such as the one [DocLayout]
-/// sets, is 36rem or wider. Otherwise they stack.
+/// Previous and next page cards in a `<nav>`. Create one with [#of()] and set the sides that exist
+/// with [#previous(Link)] and [#next(Link)]: `DocPager.of().previous(intro).next(setup)`. Each card
+/// shows "← Previous" or "Next →" above the link label; those hints are fixed English. The cards
+/// sit side by side when the nearest ancestor container, such as the one [DocLayout] sets, is 36rem
+/// or wider. Otherwise they stack.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
 public final class DocPager extends BuiltinScope<DocPager> {
@@ -51,8 +51,8 @@ public final class DocPager extends BuiltinScope<DocPager> {
     return this;
   }
 
-  /// Sets the accessible name of the landmark; make it distinct when a page has several pagers.
-  /// The default is `Documentation navigation`.
+  /// Sets the accessible name of the landmark; make it distinct when a page has several pagers. The
+  /// default is `Documentation navigation`.
   public DocPager label(String label) {
     this.label = label;
     return this;
@@ -71,13 +71,12 @@ public final class DocPager extends BuiltinScope<DocPager> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.grid()
-                    .gap(Tokens.SPACE_4)
-                    .mt(Tokens.SPACE_12)
-                    .pt(Tokens.SPACE_6)
-                    .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE)))
+        .root(s ->
+            s.grid()
+                .gap(Tokens.SPACE_4)
+                .mt(Tokens.SPACE_12)
+                .pt(Tokens.SPACE_6)
+                .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE)))
         .on(
             Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(36)),
             c -> c.root(s -> s.gridColumns(TrackList.equal(2))))

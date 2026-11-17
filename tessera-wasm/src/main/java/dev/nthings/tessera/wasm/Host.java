@@ -22,19 +22,23 @@ import org.graalvm.webimage.api.JSValue;
 /// reach an element of another root. Resolving a reference that the committed tree does not bind,
 /// or using a closed root, fails with an `IllegalStateException`.
 ///
-/// Scheduled callbacks and request completions run only while the lifetime and the root are
-/// active, then invalidate the root, like [BrowserRoot#update(Runnable)]; [#afterRender(Runnable)]
-/// tasks do not invalidate it again. Disposing the lifetime
-/// cancels every pending callback and aborts every request it started; closing the root disposes
-/// the root lifetime and every effect lifetime. Use [#within(Lifetime)] to scope work to an effect.
+/// Scheduled callbacks and request completions run only while the lifetime and the root are active,
+/// then invalidate the root, like [BrowserRoot#update(Runnable)]; [#afterRender(Runnable)] tasks do
+/// not invalidate it again. Disposing the lifetime cancels every pending callback and aborts every
+/// request it started; closing the root disposes the root lifetime and every effect lifetime. Use
+/// [#within(Lifetime)] to scope work to an effect.
 public final class Host {
   private final BrowserRoot root;
   private final Lifetime lifetime;
+
   /// The root host tracks every pending task; scoped hosts also track their own subset.
   private final Host owner;
+
   private final Set<Task> active = new LinkedHashSet<>();
+
   /// On the root host: the scoped host of each lifetime, until that lifetime is disposed.
   private final Map<Lifetime, Host> scoped = new IdentityHashMap<>();
+
   private boolean registered;
 
   Host(BrowserRoot root, Lifetime lifetime) {
@@ -62,11 +66,10 @@ public final class Host {
     if (!scope.disposed()) {
       hosts.put(scope, host);
       host.registered = true;
-      scope.onDispose(
-          () -> {
-            hosts.remove(scope);
-            host.cancelAll();
-          });
+      scope.onDispose(() -> {
+        hosts.remove(scope);
+        host.cancelAll();
+      });
     }
     return host;
   }
@@ -91,8 +94,8 @@ public final class Host {
   }
 
   /// Runs `task` once after the next committed render, when the committed tree contains the
-  /// elements that render placed, for example to focus an element it created. Requests that
-  /// render; does not invalidate the root again afterwards.
+  /// elements that render placed, for example to focus an element it created. Requests that render;
+  /// does not invalidate the root again afterwards.
   public Cancellable afterRender(Runnable task) {
     return start(handle -> root.afterRender(() -> handle.complete(task, false)));
   }
@@ -107,23 +110,20 @@ public final class Host {
   // --- Requests -----------------------------------------------------------------------------
 
   /// Fetches `url` as text with `GET`. Exactly one callback runs while the request is active: a
-  /// successful status calls `completed` with the body, any other status or a network failure
-  /// calls `failed`. Cancelling, disposing the lifetime or closing the root aborts the request.
+  /// successful status calls `completed` with the body, any other status or a network failure calls
+  /// `failed`. Cancelling, disposing the lifetime or closing the root aborts the request.
   public Cancellable fetchText(
       String url, Consumer<String> completed, Consumer<RequestFailure> failed) {
-    return start(
-        handle ->
-            releasing(
-                Dom.fetchText(
-                    url,
-                    body -> handle.complete(() -> completed.accept(text(body))),
-                    (status, message) ->
-                        handle.complete(
-                            () ->
-                                failed.accept(
-                                    new RequestFailure(
-                                        JSValue.checkedCoerce(status, Integer.class),
-                                        text(message)))))));
+    return start(handle ->
+        releasing(
+            Dom.fetchText(
+                url,
+                body -> handle.complete(() -> completed.accept(text(body))),
+                (status, message) ->
+                    handle.complete(() ->
+                        failed.accept(
+                            new RequestFailure(
+                                JSValue.checkedCoerce(status, Integer.class), text(message)))))));
   }
 
   private static String text(Object value) {
@@ -171,8 +171,8 @@ public final class Host {
 
   // --- Dialogs and popovers -----------------------------------------------------------------
 
-  /// Opens a `<dialog>` modally; a no-op when it already is. Call it from a user event handler
-  /// so that focus moves into the dialog within the user's activation.
+  /// Opens a `<dialog>` modally; a no-op when it already is. Call it from a user event handler so
+  /// that focus moves into the dialog within the user's activation.
   public void showModal(ElementRef dialog) {
     var node = kind(dialog, "a <dialog>", HtmlTag.DIALOG);
     if (Dom.isModal(node)) {
@@ -242,15 +242,14 @@ public final class Host {
   /// `failed` receives the browser's reason, for example an autoplay policy rejection.
   public void play(ElementRef media, Runnable playing, Consumer<String> failed) {
     var node = mediaElement(media);
-    start(
-        handle -> {
-          Dom.play(
-              node,
-              () -> handle.complete(playing),
-              reason -> handle.complete(() -> failed.accept(text(reason))));
-          // A play request cannot be withdrawn; cancelling only drops its callbacks.
-          return () -> {};
-        });
+    start(handle -> {
+      Dom.play(
+          node,
+          () -> handle.complete(playing),
+          reason -> handle.complete(() -> failed.accept(text(reason))));
+      // A play request cannot be withdrawn; cancelling only drops its callbacks.
+      return () -> {};
+    });
   }
 
   public void pause(ElementRef media) {
@@ -292,8 +291,8 @@ public final class Host {
 
   // --- Ownership ----------------------------------------------------------------------------
 
-  /// Starts work only while this host is alive; `work` begins the native operation and returns
-  /// its cancellation. The first started work registers cancellation with the lifetime.
+  /// Starts work only while this host is alive; `work` begins the native operation and returns its
+  /// cancellation. The first started work registers cancellation with the lifetime.
   private Cancellable start(Function<Task, Runnable> work) {
     var task = new Task();
     if (!alive()) {

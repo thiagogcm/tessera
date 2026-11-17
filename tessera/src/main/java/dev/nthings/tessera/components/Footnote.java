@@ -40,8 +40,8 @@ public final class Footnote {
     return new Footnote(Elements.text(text), text);
   }
 
-  /// A note whose body is `body`. The body is placed only in the endnote. There is no preview
-  /// until [#preview(String)] or [#preview(IntoElement)].
+  /// A note whose body is `body`. The body is placed only in the endnote. There is no preview until
+  /// [#preview(String)] or [#preview(IntoElement)].
   public static Footnote of(IntoElement body) {
     return new Footnote(body.intoElement(), null);
   }
@@ -68,8 +68,7 @@ public final class Footnote {
     return this;
   }
 
-  /// A reference to this note. Each call is a separate occurrence with its own marker and
-  /// backlink.
+  /// A reference to this note. Each call is a separate occurrence with its own marker and backlink.
   public IntoElement reference() {
     return new FootnoteReference(this);
   }
@@ -120,14 +119,13 @@ public final class Footnote {
               .text(label);
       var preview = note.preview();
       if (preview != null) {
-        link.interestTooltip(
-            tip ->
-                tip.p(Tokens.SPACE_3)
-                    .maxInlineSize(CssLength.rem(22))
-                    .bg(Tokens.SURFACE_CARD)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .rounded(Tokens.RADIUS_LG)
-                    .child(preview));
+        link.interestTooltip(tip ->
+            tip.p(Tokens.SPACE_3)
+                .maxInlineSize(CssLength.rem(22))
+                .bg(Tokens.SURFACE_CARD)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .rounded(Tokens.RADIUS_LG)
+                .child(preview));
       }
       return Elements.sup().id(placed.marker()).child(link);
     }

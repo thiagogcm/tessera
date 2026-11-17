@@ -17,9 +17,9 @@ import dev.nthings.tessera.css.WhiteSpace;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Navigation bar of links for site navigation, in a `<nav>`. Create one with
-/// [#of(String, List)]; the link whose `href` equals [#active(String)] is marked with
-/// `aria-current="page"` and an underline that slides between links.
+/// Navigation bar of links for site navigation, in a `<nav>`. Create one with [#of(String, List)];
+/// the link whose `href` equals [#active(String)] is marked with `aria-current="page"` and an
+/// underline that slides between links.
 ///
 /// Without an [#id(String)], the compiler numbers instances `nav-tabs-<n>`.
 public final class NavTabs extends BuiltinScope<NavTabs> {

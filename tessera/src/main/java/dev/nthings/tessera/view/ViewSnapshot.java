@@ -16,9 +16,9 @@ import org.jspecify.annotations.Nullable;
 /// is final output; a document backend links the same [Node]s without a snapshot.
 ///
 /// - `roots`: the top-level nodes.
-/// - `styleRules`: this render's self-contained embedded rules (`StyleSheet#embeddedRules()`),
-///   each with a short key that identifies its text; an embedder may insert each one
-///   independently, deduplicate them across roots and keep them, by key, for later renders.
+/// - `styleRules`: this render's self-contained embedded rules (`StyleSheet#embeddedRules()`), each
+///   with a short key that identifies its text; an embedder may insert each one independently,
+///   deduplicate them across roots and keep them, by key, for later renders.
 /// - `references`: each element ref bound in this tree and its DOM id, so a backend can find the
 ///   committed element of a ref.
 /// - `ids`: every DOM id the tree renders, generated or explicit, so a backend can detect
@@ -42,8 +42,8 @@ public record ViewSnapshot(
 
   /// The content of a component, scope, fragment or keyed child, with no element wrapper. A live
   /// backend keeps its complete DOM range together and matches it by `key`, or by `definition`
-  /// among unkeyed siblings; document output flattens it. `definition` is the authoring class of
-  /// a component or keyed child, the [dev.nthings.tessera.core.Scope#scopeName()] of a scope, or
+  /// among unkeyed siblings; document output flattens it. `definition` is the authoring class of a
+  /// component or keyed child, the [dev.nthings.tessera.core.Scope#scopeName()] of a scope, or
   /// [dev.nthings.tessera.core.FragmentElement]'s class for a fragment. A scope name is a stable
   /// value, not a scope instance allocated for that render.
   public record Group(@Nullable String key, Object definition, List<Node> children)
@@ -54,9 +54,9 @@ public record ViewSnapshot(
   }
 
   /// A linked element. `unresolvedAttributes` names reference attributes whose targets were
-  /// reported missing or ambiguous, so validators skip secondary errors for them.
-  /// `liveProperties` are the custom properties a live backend sets on the element for its live
-  /// styles. Only linking builds one, reusing the expanded element's collections.
+  /// reported missing or ambiguous, so validators skip secondary errors for them. `liveProperties`
+  /// are the custom properties a live backend sets on the element for its live styles. Only linking
+  /// builds one, reusing the expanded element's collections.
   public static final class Tag implements Node {
     private final TagCore core;
     private final Map<String, String> attributes;

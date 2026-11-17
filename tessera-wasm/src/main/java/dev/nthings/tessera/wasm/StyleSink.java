@@ -47,9 +47,11 @@ final class StyleSink {
 
   final class Root implements AutoCloseable {
     private final List<String> baseRules;
+
     /// The render rules this root holds, by key, with the text built for each. Includes rules
     /// acquired for a failed commit, which remain owned until close.
     private final Map<String, String> held = new LinkedHashMap<>();
+
     private boolean mounted;
 
     private Root(List<String> baseRules) {

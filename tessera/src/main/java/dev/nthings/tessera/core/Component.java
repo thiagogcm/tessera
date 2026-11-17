@@ -1,7 +1,7 @@
 package dev.nthings.tessera.core;
 
-/// Stateless component, typically a record or a lambda, for composition without an id scope of
-/// its own: the ids it binds live in the enclosing scope. Use [Scope] for a reusable component that
+/// Stateless component, typically a record or a lambda, for composition without an id scope of its
+/// own: the ids it binds live in the enclosing scope. Use [Scope] for a reusable component that
 /// needs its own id namespace or scoped CSS.
 @FunctionalInterface
 public interface Component extends IntoElement {

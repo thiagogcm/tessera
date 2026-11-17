@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Quick-open search dialog over the links you add with [#item]. Create one with [#of()], place
-/// its [#triggerButton()] where users open it, and place the palette itself, usually with
+/// Quick-open search dialog over the links you add with [#item]. Create one with [#of()], place its
+/// [#triggerButton()] where users open it, and place the palette itself, usually with
 /// `Elements.deferred`. The palette's script is contributed once per document, shared by every
 /// palette on the page.
 ///
@@ -115,22 +115,22 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     return this;
   }
 
-  /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order
-  /// they are first used, and links keep their insertion order.
+  /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order they
+  /// are first used, and links keep their insertion order.
   public SearchPalette item(String group, String title, String href) {
     return item(group, Item.of(title, href));
   }
 
-  /// Adds `item` under `group`, for a link with a description or a badge:
-  /// `item("Guides", SearchPalette.Item.of("Install", "/install").description("Set up"))`.
+  /// Adds `item` under `group`, for a link with a description or a badge: `item("Guides",
+  /// SearchPalette.Item.of("Install", "/install").description("Set up"))`.
   public SearchPalette item(String group, Item item) {
     groupedItems.computeIfAbsent(group, _ -> new ArrayList<>()).add(item);
     return this;
   }
 
-  /// Creates a button that opens the palette with `command="show-modal"`, showing the trigger
-  /// label and an Alt K hint. The button's `accesskey` is `k`, but the browser chooses the chord
-  /// that activates it, which differs by browser and operating system. The visible hint and
+  /// Creates a button that opens the palette with `command="show-modal"`, showing the trigger label
+  /// and an Alt K hint. The button's `accesskey` is `k`, but the browser chooses the chord that
+  /// activates it, which differs by browser and operating system. The visible hint and
   /// `aria-keyshortcuts="Alt+K"` may therefore not match the chord that works. Returns a plain
   /// [TagElement].
   public TagElement triggerButton() {
@@ -294,24 +294,23 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.m(CssLength.auto())
-                    .insetBlockStart(CssLength.rem(5))
-                    .maxInlineSize(CssLength.rem(42))
-                    .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
-                    .p(CssLength.px(0))
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD)
-                    .textColor(Tokens.TEXT_PRIMARY)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .shadow(
-                        Shadow.drop(
-                            CssLength.px(25),
-                            CssLength.px(50),
-                            CssLength.px(-12),
-                            CssColor.oklch(0, 0, 0, 0.35)))
-                    .overflow(Overflow.HIDDEN))
+        .root(s ->
+            s.m(CssLength.auto())
+                .insetBlockStart(CssLength.rem(5))
+                .maxInlineSize(CssLength.rem(42))
+                .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
+                .p(CssLength.px(0))
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD)
+                .textColor(Tokens.TEXT_PRIMARY)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .shadow(
+                    Shadow.drop(
+                        CssLength.px(25),
+                        CssLength.px(50),
+                        CssLength.px(-12),
+                        CssColor.oklch(0, 0, 0, 0.35)))
+                .overflow(Overflow.HIDDEN))
         .select(
             ":scope::backdrop",
             s -> s.bg(CssColor.oklch(0, 0, 0, 0.5)).backdropFilter(CssFilter.blur(CssLength.px(4))))
@@ -340,13 +339,12 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                             s.opacity(1)
                                 .transform(
                                     Transform.translateY(CssLength.zero()).then(Transform.scale(1)))
-                                .startingStyle(
-                                    start ->
-                                        start
-                                            .opacity(0)
-                                            .transform(
-                                                Transform.translateY(CssLength.px(-12))
-                                                    .then(Transform.scale(0.98))))))
+                                .startingStyle(start ->
+                                    start
+                                        .opacity(0)
+                                        .transform(
+                                            Transform.translateY(CssLength.px(-12))
+                                                .then(Transform.scale(0.98))))))
         .select(
             ":scope .palette-header",
             s ->

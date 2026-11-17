@@ -32,11 +32,10 @@ class TableGridTest {
     assertThat(grid.columns()).isEqualTo(3);
     assertThat(grid.cells())
         .singleElement()
-        .satisfies(
-            cell -> {
-              assertThat(cell.rowSpan()).isEqualTo(3);
-              assertThat(cell.columnSpan()).isEqualTo(3);
-            });
+        .satisfies(cell -> {
+          assertThat(cell.rowSpan()).isEqualTo(3);
+          assertThat(cell.columnSpan()).isEqualTo(3);
+        });
     assertThat(grid.groups().getFirst().rows().get(1)).isEmpty();
   }
 

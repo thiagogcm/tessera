@@ -21,16 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Card with four regions, in source order: media, header (title and description), body, and
-/// footer (actions). It renders as an `<article>`, or as a `<label>` after [#radio] or
-/// [#checkbox]. Create one with [#of(String)].
+/// Card with four regions, in source order: media, header (title and description), body, and footer
+/// (actions). It renders as an `<article>`, or as a `<label>` after [#radio] or [#checkbox]. Create
+/// one with [#of(String)].
 ///
 /// - A card whose media is an image or a `media` region places the media beside the other regions
 ///   once the card is 28rem or wider.
 /// - [#stretchedLink(String)] makes the title a link that covers the whole card. Other links,
 ///   buttons, and form controls in the card stay clickable.
-/// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins.
-///   [#checked()] starts a radio or checkbox card checked, in any call order.
+/// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins. [#checked()]
+///   starts a radio or checkbox card checked, in any call order.
 ///
 /// Without an [#id(String)], the compiler numbers instances `card-<n>`.
 public final class Card extends BuiltinScope<Card> {
@@ -158,17 +158,16 @@ public final class Card extends BuiltinScope<Card> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.container(CONTAINER)
-                    .flex()
-                    .flexCol()
-                    .gap(Tokens.SPACE_3)
-                    .p(Tokens.SPACE_5)
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD)
-                    .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
-                    .relative())
+        .root(s ->
+            s.container(CONTAINER)
+                .flex()
+                .flexCol()
+                .gap(Tokens.SPACE_3)
+                .p(Tokens.SPACE_5)
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD)
+                .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
+                .relative())
         .select(
             ":scope a.card-link",
             s ->

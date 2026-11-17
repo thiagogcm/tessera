@@ -10,10 +10,10 @@ import java.util.SequencedSet;
 
 /// Reference counts for content-addressed style rules shared by mounted roots.
 ///
-/// A rule stays inserted while any committed tree uses it. Unused rules remain available for
-/// reuse by later renders and mounts, up to `retained` of them; beyond that the least recently
-/// released are evicted. Style values that change on every render therefore cost at most
-/// `retained` stale rules instead of growing without bound.
+/// A rule stays inserted while any committed tree uses it. Unused rules remain available for reuse
+/// by later renders and mounts, up to `retained` of them; beyond that the least recently released
+/// are evicted. Style values that change on every render therefore cost at most `retained` stale
+/// rules instead of growing without bound.
 final class StyleLedger {
   private final int retained;
   private final Map<String, Integer> users = new HashMap<>();

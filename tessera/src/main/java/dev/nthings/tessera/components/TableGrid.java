@@ -11,14 +11,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-/// A rectangular table described by OTSL cells and continuation slots. Each row has one entry
-/// per logical column: [Merge#LEFT] extends a cell horizontally, [Merge#UP] vertically, and
+/// A rectangular table described by OTSL cells and continuation slots. Each row has one entry per
+/// logical column: [Merge#LEFT] extends a cell horizontally, [Merge#UP] vertically, and
 /// [Merge#BOTH] fills the interior of a cell spanning both axes. An empty cell is [#empty()].
 ///
 /// Build rows with [#row], group them with [#head], [#body] and [#foot], then call [#of].
-/// Construction resolves merges and rejects ragged rows, invalid continuations and
-/// nonrectangular cells. Cells never span row groups. The resolved topology is immutable;
-/// authored element content follows Tessera's usual mutable builder contract.
+/// Construction resolves merges and rejects ragged rows, invalid continuations and nonrectangular
+/// cells. Cells never span row groups. The resolved topology is immutable; authored element content
+/// follows Tessera's usual mutable builder contract.
 public final class TableGrid {
 
   public sealed interface Entry permits Cell, Merge {}
@@ -50,8 +50,8 @@ public final class TableGrid {
     FOOT
   }
 
-  /// Content and semantics of one anchor. `label` supplies plain text for card-mode column
-  /// labels; it is explicit when a column header contains rich markup.
+  /// Content and semantics of one anchor. `label` supplies plain text for card-mode column labels;
+  /// it is explicit when a column header contains rich markup.
   @CheckReturnValue
   public record Cell(Kind kind, Element content, String label, Align align) implements Entry {
     public Cell align(Align alignment) {
@@ -71,8 +71,8 @@ public final class TableGrid {
     }
   }
 
-  /// One resolved cell, with zero-based global row and column coordinates. Continuation slots
-  /// have no anchor of their own.
+  /// One resolved cell, with zero-based global row and column coordinates. Continuation slots have
+  /// no anchor of their own.
   public record Anchor(Cell cell, int row, int column, int rowSpan, int columnSpan, int group) {}
 
   /// Resolved rows contain only anchors starting in that row, in column order. A row entirely
@@ -173,8 +173,8 @@ public final class TableGrid {
     return new Section(SectionKind.FOOT, List.of(rows));
   }
 
-  /// Resolves and validates the grid. Head and foot groups occur at most once, in that order
-  /// around any body groups. Groups must contain rows, and rows must contain entries.
+  /// Resolves and validates the grid. Head and foot groups occur at most once, in that order around
+  /// any body groups. Groups must contain rows, and rows must contain entries.
   public static TableGrid of(Section... sections) {
     var groups = new ArrayList<Group>();
     var columns = 0;
@@ -216,9 +216,9 @@ public final class TableGrid {
     return cells;
   }
 
-  /// Headers associated with `target`, in reading order. Column headers label overlapping
-  /// columns below them, row headers label overlapping rows to their right, and section headers
-  /// label their body group. Column headers in a head group apply to subsequent groups.
+  /// Headers associated with `target`, in reading order. Column headers label overlapping columns
+  /// below them, row headers label overlapping rows to their right, and section headers label their
+  /// body group. Column headers in a head group apply to subsequent groups.
   public List<Anchor> headers(Anchor target) {
     var candidates = new HashSet<Anchor>();
     for (var c = target.column(); c < target.column() + target.columnSpan(); c++) {

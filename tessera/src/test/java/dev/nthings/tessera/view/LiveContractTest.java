@@ -50,16 +50,13 @@ class LiveContractTest {
   @Test
   @DisplayName("effect keys share the sibling namespace with keyed children")
   void effectKeysShareTheSiblingNamespaceWithKeyedChildren() {
-    assertThatThrownBy(
-            () ->
-                render(
-                    div().children(Elements.effect("a", NOTHING), Elements.effect("a", NOTHING))))
+    assertThatThrownBy(() ->
+            render(div().children(Elements.effect("a", NOTHING), Elements.effect("a", NOTHING))))
         .isInstanceOf(ViewException.class)
         .hasMessageContaining("duplicate-key")
         .hasMessageContaining("Duplicate sibling key 'a'");
-    assertThatThrownBy(
-            () ->
-                render(div().children(Elements.effect("a", NOTHING), button().text("A").key("a"))))
+    assertThatThrownBy(() ->
+            render(div().children(Elements.effect("a", NOTHING), button().text("A").key("a"))))
         .isInstanceOf(ViewException.class)
         .hasMessageContaining("duplicate-key")
         .hasMessageContaining("Duplicate sibling key 'a'");
@@ -135,11 +132,10 @@ class LiveContractTest {
     var snapshot =
         render(
             div()
-                .live(
-                    style ->
-                        style
-                            .inlineSize(CssLength.px(3))
-                            .on(State.HOVER, hover -> hover.opacity(0.5))));
+                .live(style ->
+                    style
+                        .inlineSize(CssLength.px(3))
+                        .on(State.HOVER, hover -> hover.opacity(0.5))));
     var tag = (ViewSnapshot.Tag) snapshot.roots().getFirst();
 
     assertThat(tag.liveProperties()).containsOnlyKeys("--tl-inline-size");

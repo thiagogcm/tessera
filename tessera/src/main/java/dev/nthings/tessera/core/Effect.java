@@ -1,8 +1,8 @@
 package dev.nthings.tessera.core;
 
-/// Work bound to a position in a live tree, placed with [Elements#effect(String, Effect)]: a
-/// timer, a subscription, a request. Only a live backend runs effects; static compilation reports
-/// them as `native-effect`.
+/// Work bound to a position in a live tree, placed with [Elements#effect(String, Effect)]: a timer,
+/// a subscription, a request. Only a live backend runs effects; static compilation reports them as
+/// `native-effect`.
 @FunctionalInterface
 public interface Effect {
 

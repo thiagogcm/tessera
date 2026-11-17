@@ -56,12 +56,11 @@ public final class SchedulingDemo {
             Elements.h2().text("Scheduling"),
             Button.of("Burst invalidations")
                 .onClick(
-                    root.update(
-                        () -> {
-                          for (var index = 0; index < 5; index++) {
-                            root.invalidate();
-                          }
-                        })),
+                    root.update(() -> {
+                      for (var index = 0; index < 5; index++) {
+                        root.invalidate();
+                      }
+                    })),
             Button.of("Start render chain").onClick(root.update(() -> remaining = CHAIN)),
             Button.of("Start runaway").onClick(root.update(() -> runaway = true)),
             Button.of("Stop runaway").onClick(root.update(() -> runaway = false)),
@@ -88,10 +87,9 @@ public final class SchedulingDemo {
             Button.of("Close schedule root").onClick(root.update(() -> schedule.get().close())),
             Button.of("Complete stale update").onClick(root.update(() -> complete("stale"))),
             Button.of("Throw from handler")
-                .onClick(
-                    () -> {
-                      throw new IllegalStateException("Simulated handler failure");
-                    }),
+                .onClick(() -> {
+                  throw new IllegalStateException("Simulated handler failure");
+                }),
             Elements.p().attr("data-control-status", "").text(completion));
   }
 

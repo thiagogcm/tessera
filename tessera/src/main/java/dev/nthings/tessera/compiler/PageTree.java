@@ -22,8 +22,8 @@ public record PageTree(List<Node> head, List<Node> body) {
   public sealed interface Node permits Tag, Text, Raw {}
 
   /// An element after expansion and linking. The component path lists the enclosing components,
-  /// outermost first; scope entries include their instance id. The source is where authoring
-  /// code built the element, when tracked.
+  /// outermost first; scope entries include their instance id. The source is where authoring code
+  /// built the element, when tracked.
   public record Tag(
       String tag,
       List<String> componentPath,

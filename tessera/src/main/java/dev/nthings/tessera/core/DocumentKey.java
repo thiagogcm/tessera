@@ -3,10 +3,9 @@ package dev.nthings.tessera.core;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/// Typed state for one page, created on first use by [DocumentContext#document(DocumentKey)].
-/// Keys compare by identity, so declare them `static final`. A key created inside an expand
-/// callback is a new slot on each call, so its state is never shared. `initial` runs once
-/// per page compilation.
+/// Typed state for one page, created on first use by [DocumentContext#document(DocumentKey)]. Keys
+/// compare by identity, so declare them `static final`. A key created inside an expand callback is
+/// a new slot on each call, so its state is never shared. `initial` runs once per page compilation.
 ///
 /// ```java
 /// private static final DocumentKey<AtomicInteger> NOTES =
@@ -37,8 +36,7 @@ public final class DocumentKey<T> {
     return name;
   }
 
-  /// Compiler-facing: this key's state in `values`, created with the initial supplier on first
-  /// use.
+  /// Compiler-facing: this key's state in `values`, created with the initial supplier on first use.
   public T getOrCreate(Map<DocumentKey<?>, Object> values) {
     return type.cast(values.computeIfAbsent(this, _ -> initial.get()));
   }

@@ -93,12 +93,11 @@ class AccessibilityRulesTest {
                             "actions",
                             div()
                                 .children(
-                                    late(
-                                        _ ->
-                                            button()
-                                                .id(ElementRef.scoped("save"))
-                                                .command(missing, BuiltinCommand.SHOW_MODAL)
-                                                .text("Save")),
+                                    late(_ ->
+                                        button()
+                                            .id(ElementRef.scoped("save"))
+                                            .command(missing, BuiltinCommand.SHOW_MODAL)
+                                            .text("Save")),
                                     a("#details%ZZ")
                                         .id(ElementRef.scoped("details"))
                                         .text("Details"),
@@ -194,18 +193,17 @@ class AccessibilityRulesTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("unbound-reference");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "<button aria-labelledby> references ElementRef.scoped(save-label), which is not bound to any element on this page");
-              assertThat(d.fix())
-                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
-              assertThat(d.location().page()).isEqualTo("Editor");
-              assertThat(d.location().tag()).isEqualTo("button");
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("unbound-reference");
+          assertThat(d.message())
+              .isEqualTo(
+                  "<button aria-labelledby> references ElementRef.scoped(save-label), which is not bound to any element on this page");
+          assertThat(d.fix())
+              .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+          assertThat(d.location().page()).isEqualTo("Editor");
+          assertThat(d.location().tag()).isEqualTo("button");
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   @ParameterizedTest
@@ -231,24 +229,23 @@ class AccessibilityRulesTest {
         };
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("incompatible-command-target");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "Command \""
-                          + command.wireValue()
-                          + "\" targets <div> with ID \"target\" but requires "
-                          + requirement);
-              assertThat(d.fix())
-                  .isEqualTo(
-                      "Point this command at "
-                          + requirement
-                          + ", or choose a command compatible with the target.");
-              assertThat(d.location().page()).isEqualTo("Commands");
-              assertThat(d.location().tag()).isEqualTo("button");
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("incompatible-command-target");
+          assertThat(d.message())
+              .isEqualTo(
+                  "Command \""
+                      + command.wireValue()
+                      + "\" targets <div> with ID \"target\" but requires "
+                      + requirement);
+          assertThat(d.fix())
+              .isEqualTo(
+                  "Point this command at "
+                      + requirement
+                      + ", or choose a command compatible with the target.");
+          assertThat(d.location().page()).isEqualTo("Commands");
+          assertThat(d.location().tag()).isEqualTo("button");
+          assertThat(d.location().domId()).isNull();
+        });
 
     var compatible =
         switch (command) {
@@ -288,16 +285,15 @@ class AccessibilityRulesTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo(rule);
-              assertThat(d.message()).isEqualTo(message);
-              assertThat(d.fix()).isEqualTo(fix);
-              assertThat(d.location().page()).isEqualTo(document.title());
-              assertThat(d.location().components()).isEmpty();
-              assertThat(d.location().tag()).isEqualTo(tag);
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo(rule);
+          assertThat(d.message()).isEqualTo(message);
+          assertThat(d.fix()).isEqualTo(fix);
+          assertThat(d.location().page()).isEqualTo(document.title());
+          assertThat(d.location().components()).isEmpty();
+          assertThat(d.location().tag()).isEqualTo(tag);
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   @Test

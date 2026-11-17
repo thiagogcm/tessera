@@ -25,8 +25,8 @@ final class ViewState {
   private final Set<String> transitionNames = new HashSet<>();
   private final List<Diagnostic> diagnostics = new ArrayList<>();
 
-  /// Generated ids are numbered per dom id, keyed flag and prefix. `generated` is not part of
-  /// the key, so an explicit scope id and a generated one in the same namespace share a counter.
+  /// Generated ids are numbered per dom id, keyed flag and prefix. `generated` is not part of the
+  /// key, so an explicit scope id and a generated one in the same namespace share a counter.
   private record IdCounter(String domId, boolean keyed, String prefix) {}
 
   private static final String DUPLICATE_ID_FIX =
@@ -165,8 +165,8 @@ final class ViewState {
     return List.copyOf(diagnostics);
   }
 
-  /// Every registered DOM id, in registration order; live, since expansion state is discarded
-  /// after its turn.
+  /// Every registered DOM id, in registration order; live, since expansion state is discarded after
+  /// its turn.
   Set<String> ids() {
     return ids;
   }

@@ -96,23 +96,21 @@ class ExpansionTest {
   @DisplayName("a failing expand callback keeps its exception and names its component")
   void reportsExpandCallbackFailure() {
     var failure =
-        catchThrowable(
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Broken", main().child(new Box("outer", new Exploding().intoElement())))));
+        catchThrowable(() ->
+            Compiler.compile(
+                new PageDocument(
+                    "Broken", main().child(new Box("outer", new Exploding().intoElement())))));
 
     assertThat(failure).isInstanceOf(IllegalStateException.class).hasMessage("Broken render");
     assertThat(failure.getSuppressed())
         .singleElement()
-        .satisfies(
-            context ->
-                assertThat(context)
-                    .hasMessageContaining(
-                        "[callback-failure]",
-                        "page \"Broken\"",
-                        "box[outer] > Exploding",
-                        "Expand callback failed: Broken render"));
+        .satisfies(context ->
+            assertThat(context)
+                .hasMessageContaining(
+                    "[callback-failure]",
+                    "page \"Broken\"",
+                    "box[outer] > Exploding",
+                    "Expand callback failed: Broken render"));
   }
 
   @Test
@@ -123,23 +121,21 @@ class ExpansionTest {
           throw new IllegalStateException("Broken conversion");
         };
     var failure =
-        catchThrowable(
-            () ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Late page", main().child(new Box("outer", Elements.late(_ -> broken))))));
+        catchThrowable(() ->
+            Compiler.compile(
+                new PageDocument(
+                    "Late page", main().child(new Box("outer", Elements.late(_ -> broken))))));
 
     assertThat(failure).isInstanceOf(IllegalStateException.class).hasMessage("Broken conversion");
     assertThat(failure.getSuppressed())
         .singleElement()
-        .satisfies(
-            context ->
-                assertThat(context)
-                    .hasMessageContaining(
-                        "[callback-failure]",
-                        "page \"Late page\"",
-                        "box[outer]",
-                        "Late callback failed: Broken conversion"));
+        .satisfies(context ->
+            assertThat(context)
+                .hasMessageContaining(
+                    "[callback-failure]",
+                    "page \"Late page\"",
+                    "box[outer]",
+                    "Late callback failed: Broken conversion"));
   }
 
   /// A component that returns another component, with no `.intoElement()` in between.
@@ -181,19 +177,18 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("unstable-scope-name");
-              assertThat(d.message())
-                  .contains(
-                      "is an anonymous class or lambda, so its default scopeName() changes"
-                          + " between builds");
-              assertThat(d.fix())
-                  .isEqualTo(
-                      "Implement the scope as a named class or record, or override scopeName().");
-              assertThat(d.location().page()).isEqualTo("Unstable");
-              assertThat(d.location().components()).hasSize(1);
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("unstable-scope-name");
+          assertThat(d.message())
+              .contains(
+                  "is an anonymous class or lambda, so its default scopeName() changes"
+                      + " between builds");
+          assertThat(d.fix())
+              .isEqualTo(
+                  "Implement the scope as a named class or record, or override scopeName().");
+          assertThat(d.location().page()).isEqualTo("Unstable");
+          assertThat(d.location().components()).hasSize(1);
+        });
   }
 
   @Test
@@ -236,15 +231,14 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("hero-conflict");
-              assertThat(d.message()).isEqualTo("Two hero images");
-              assertThat(d.fix()).isEqualTo("Keep one hero image.");
-              assertThat(d.location().page()).isEqualTo("Strict");
-              assertThat(d.location().tag()).isEmpty();
-              assertThat(d.location().components()).containsExactly("box[outer]", "Component");
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("hero-conflict");
+          assertThat(d.message()).isEqualTo("Two hero images");
+          assertThat(d.fix()).isEqualTo("Keep one hero image.");
+          assertThat(d.location().page()).isEqualTo("Strict");
+          assertThat(d.location().tag()).isEmpty();
+          assertThat(d.location().components()).containsExactly("box[outer]", "Component");
+        });
   }
 
   @Test
@@ -262,19 +256,18 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("unbound-reference");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "Heading \"Missing\" references ElementRef.page(missing), which is not"
-                          + " bound to any element on this page");
-              assertThat(d.fix())
-                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
-              assertThat(d.location().page()).isEqualTo("Headings");
-              assertThat(d.location().tag()).isEqualTo("h2");
-              assertThat(d.location().components()).containsExactly("Heading");
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("unbound-reference");
+          assertThat(d.message())
+              .isEqualTo(
+                  "Heading \"Missing\" references ElementRef.page(missing), which is not"
+                      + " bound to any element on this page");
+          assertThat(d.fix())
+              .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+          assertThat(d.location().page()).isEqualTo("Headings");
+          assertThat(d.location().tag()).isEqualTo("h2");
+          assertThat(d.location().components()).containsExactly("Heading");
+        });
   }
 
   /// A list item whose heading labels it through a scoped ref, keyed by `name`.
@@ -303,10 +296,9 @@ class ExpansionTest {
     assertThat(reordered.elements("article").get(2).outerHtml())
         .isEqualTo(before.elements("article").getFirst().outerHtml());
     assertThat(reordered.elements("article"))
-        .allSatisfy(
-            card ->
-                assertThat(reordered.elementById(card.attr("aria-labelledby")).parent())
-                    .isEqualTo(card));
+        .allSatisfy(card ->
+            assertThat(reordered.elementById(card.attr("aria-labelledby")).parent())
+                .isEqualTo(card));
   }
 
   @Test
@@ -347,15 +339,13 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("duplicate-key");
-              assertThat(d.message()).isEqualTo("Duplicate sibling key 'a'");
-              assertThat(d.fix())
-                  .isEqualTo("Give each child in this parent a distinct stable key.");
-              assertThat(d.location().page()).isEqualTo("Keys");
-              assertThat(d.location().components()).containsExactly("[key=a]");
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("duplicate-key");
+          assertThat(d.message()).isEqualTo("Duplicate sibling key 'a'");
+          assertThat(d.fix()).isEqualTo("Give each child in this parent a distinct stable key.");
+          assertThat(d.location().page()).isEqualTo("Keys");
+          assertThat(d.location().components()).containsExactly("[key=a]");
+        });
   }
 
   @Test
@@ -472,14 +462,13 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("note-rendered");
-              assertThat(d.message()).isEqualTo("Rendered A");
-              assertThat(d.fix()).isEqualTo("Nothing to fix.");
-              assertThat(d.location().page()).isEqualTo("Notes");
-              assertThat(d.location().components()).containsExactly("box[outer]", "Note[key=a]");
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("note-rendered");
+          assertThat(d.message()).isEqualTo("Rendered A");
+          assertThat(d.fix()).isEqualTo("Nothing to fix.");
+          assertThat(d.location().page()).isEqualTo("Notes");
+          assertThat(d.location().components()).containsExactly("box[outer]", "Note[key=a]");
+        });
   }
 
   @Test
@@ -565,22 +554,21 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("generated-scope-id");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "Keyed content is inside scope '"
-                          + generatedScopeId
-                          + "', whose id was generated");
-              assertThat(d.fix())
-                  .isEqualTo(
-                      "Set scopeId() on each enclosing scope. A generated id is numbered in"
-                          + " encounter order, so moving a sibling scope renames every keyed id"
-                          + " inside it.");
-              assertThat(d.location().page()).isEqualTo("Keys");
-              assertThat(d.location().components()).containsExactlyElementsOf(components);
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("generated-scope-id");
+          assertThat(d.message())
+              .isEqualTo(
+                  "Keyed content is inside scope '"
+                      + generatedScopeId
+                      + "', whose id was generated");
+          assertThat(d.fix())
+              .isEqualTo(
+                  "Set scopeId() on each enclosing scope. A generated id is numbered in"
+                      + " encounter order, so moving a sibling scope renames every keyed id"
+                      + " inside it.");
+          assertThat(d.location().page()).isEqualTo("Keys");
+          assertThat(d.location().components()).containsExactlyElementsOf(components);
+        });
   }
 
   @Test
@@ -739,13 +727,12 @@ class ExpansionTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("scope-root");
-              assertThat(d.fix()).isNotBlank();
-              assertThat(d.location().page()).isEqualTo("Scopes");
-              assertThat(d.location().components()).isNotEmpty();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("scope-root");
+          assertThat(d.fix()).isNotBlank();
+          assertThat(d.location().page()).isEqualTo("Scopes");
+          assertThat(d.location().components()).isNotEmpty();
+        });
   }
 
   @Test

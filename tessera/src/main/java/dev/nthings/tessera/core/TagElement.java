@@ -17,8 +17,8 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
-/// HTML element node backed by a [TagName] and a [Declarations]. Authors usually create one
-/// through the [Elements] factories.
+/// HTML element node backed by a [TagName] and a [Declarations]. Authors usually create one through
+/// the [Elements] factories.
 ///
 /// Besides the [Styled] methods and the child methods of [ParentElement], an element takes:
 ///
@@ -26,10 +26,10 @@ import org.jspecify.annotations.Nullable;
 ///   [#tabIndex], [#popover] and [#dimensions].
 /// - References to other elements, resolved to their DOM ids: [#idRef], [#labelFor], [#list],
 ///   [#href(ElementRef)] and [#command].
-/// - Accessibility: [#role(Role)] and one typed method per `aria-*` attribute, such as
-///   [#ariaLabel] or [#ariaExpanded]. The generic attribute methods refuse `id`, `role` and
-///   `aria-*`, so these go through the typed methods, and the compiler checks the result against
-///   the [Role] requirements.
+/// - Accessibility: [#role(Role)] and one typed method per `aria-*` attribute, such as [#ariaLabel]
+///   or [#ariaExpanded]. The generic attribute methods refuse `id`, `role` and `aria-*`, so these
+///   go through the typed methods, and the compiler checks the result against the [Role]
+///   requirements.
 ///
 /// Give the element an id with [#id(ElementRef)]. Features that need the element's own id
 /// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
@@ -50,8 +50,10 @@ public final class TagElement
   private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   private final List<Element> children = new ArrayList<>();
   private final List<ElementRef> refs = new ArrayList<>(1);
+
   /// Allocated on the first handler: most elements bind none.
   private Map<EventListener.Key, EventListener> events = Map.of();
+
   private ControlProperties controlProperties = ControlProperties.UNCONTROLLED;
   private @Nullable Declarations live;
   private @Nullable TagElement interestTooltip;
@@ -74,8 +76,8 @@ public final class TagElement
   /// Copies this builder and every descendant element, so expansion can wire the copy without
   /// writing the builder the caller still holds. [ElementRef] handles are the same objects: a ref
   /// is an identity, not configuration. Component and scope instances nested in the tree are
-  /// shared. Event handlers and controlled properties are copied; live styles are a new
-  /// declaration set.
+  /// shared. Event handlers and controlled properties are copied; live styles are a new declaration
+  /// set.
   public TagElement copy() {
     var copy = new TagElement(tag, source);
     copy.style.mergeFrom(style);
@@ -133,9 +135,9 @@ public final class TagElement
     return style;
   }
 
-  /// Compiler-facing: a read-only view of the attributes, in the order they were first set. The
-  /// id comes from bound refs and generated style classes are appended to `class` at compile time,
-  /// so neither is in this map; slots of [#idReferences()] hold an empty placeholder.
+  /// Compiler-facing: a read-only view of the attributes, in the order they were first set. The id
+  /// comes from bound refs and generated style classes are appended to `class` at compile time, so
+  /// neither is in this map; slots of [#idReferences()] hold an empty placeholder.
   public Map<String, String> attributes() {
     return Collections.unmodifiableMap(attributes);
   }
@@ -325,8 +327,8 @@ public final class TagElement
     return aria("aria-haspopup", popup.wireValue());
   }
 
-  /// Sets `aria-level`, the level of a `role="heading"`. Throws IllegalArgumentException outside
-  /// 1 through 6.
+  /// Sets `aria-level`, the level of a `role="heading"`. Throws IllegalArgumentException outside 1
+  /// through 6.
   public TagElement ariaLevel(int level) {
     if (level < 1 || level > 6) {
       throw new IllegalArgumentException("aria-level must be 1 to 6: " + level);
@@ -468,8 +470,8 @@ public final class TagElement
     return anchorTarget;
   }
 
-  /// Emits `view-transition-name` (and class) for a cross-document transition. Keys are checked
-  /// per page (`duplicate-transition-key`) and across the site (`unshared-transition-key`). See
+  /// Emits `view-transition-name` (and class) for a cross-document transition. Keys are checked per
+  /// page (`duplicate-transition-key`) and across the site (`unshared-transition-key`). See
   /// [TransitionKey].
   public TagElement transitionKey(TransitionKey key) {
     this.transitionKey = key;
@@ -481,18 +483,18 @@ public final class TagElement
     return transitionKey;
   }
 
-  /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input`
-  /// or `keydown`) to this element in a live backend, bubble phase. A handler for the same type
-  /// and phase replaces the previous one. Re-rendering rebinds the current handler, so it may
-  /// capture the state of the render that created it. Static compilation reports
-  /// `native-event-handlers`. Throws IllegalArgumentException if `event` is blank.
+  /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input` or
+  /// `keydown`) to this element in a live backend, bubble phase. A handler for the same type and
+  /// phase replaces the previous one. Re-rendering rebinds the current handler, so it may capture
+  /// the state of the render that created it. Static compilation reports `native-event-handlers`.
+  /// Throws IllegalArgumentException if `event` is blank.
   public TagElement onEvent(String event, Consumer<BrowserEvent> handler) {
     return onEvent(event, EventOptions.DEFAULT, handler);
   }
 
-  /// Runs `handler` for `event` with native listener `options`: capture phase, passive, or once.
-  /// A handler for the same type and phase replaces the previous one. Throws
-  /// IllegalArgumentException if `event` is blank.
+  /// Runs `handler` for `event` with native listener `options`: capture phase, passive, or once. A
+  /// handler for the same type and phase replaces the previous one. Throws IllegalArgumentException
+  /// if `event` is blank.
   public TagElement onEvent(String event, EventOptions options, Consumer<BrowserEvent> handler) {
     var listener = new EventListener(event, options, handler);
     if (events.isEmpty()) {
@@ -510,8 +512,8 @@ public final class TagElement
   /// Writes styles that change continuously, such as an animated size or a progress width, through
   /// `styles`. A live backend compiles them into one rule that reads each value from a custom
   /// property on this element, so new values add no style rules; static compilation emits them as
-  /// ordinary declarations. Calling again extends the same live styles. Only plain declarations
-  /// are live: write state and media rules with `on(...)`.
+  /// ordinary declarations. Calling again extends the same live styles. Only plain declarations are
+  /// live: write state and media rules with `on(...)`.
   public TagElement live(StyleBlock styles) {
     var target = live;
     if (target == null) {
@@ -544,8 +546,8 @@ public final class TagElement
     return this;
   }
 
-  /// Controls the selected options of a multiple select in a live backend; an empty list
-  /// deselects every option. Another host reports `control-selection`; static compilation reports
+  /// Controls the selected options of a multiple select in a live backend; an empty list deselects
+  /// every option. Another host reports `control-selection`; static compilation reports
   /// `native-control-properties`.
   public TagElement selectedValues(List<String> values) {
     controlProperties = controlProperties.withSelectedValues(values);

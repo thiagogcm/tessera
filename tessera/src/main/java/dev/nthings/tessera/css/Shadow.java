@@ -55,8 +55,8 @@ public final class Shadow implements CssValue {
     return new Shadow(true, CssLength.zero(), offsetY, blur, null, color);
   }
 
-  /// An inner shadow that also grows or shrinks by `spread`, as `inset 0 <offsetY> <blur>
-  /// <spread> <color>`.
+  /// An inner shadow that also grows or shrinks by `spread`, as `inset 0 <offsetY> <blur> <spread>
+  /// <color>`.
   public static Shadow inset(CssLength offsetY, CssLength blur, CssLength spread, CssColor color) {
     return new Shadow(true, CssLength.zero(), offsetY, blur, spread, color);
   }

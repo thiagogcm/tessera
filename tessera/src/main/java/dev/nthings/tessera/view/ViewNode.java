@@ -54,8 +54,8 @@ public sealed interface ViewNode
     }
   }
 
-  /// An expanded element. Only expansion builds one, handing over collections it no longer
-  /// touches, so linking reuses them without copying.
+  /// An expanded element. Only expansion builds one, handing over collections it no longer touches,
+  /// so linking reuses them without copying.
   final class Tag implements ViewNode {
     private final TagCore core;
     private final Map<String, String> attributes;

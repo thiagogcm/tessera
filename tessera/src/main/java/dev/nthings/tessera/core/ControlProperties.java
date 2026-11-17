@@ -4,8 +4,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: the live form properties an element controls, set with
-/// [TagElement#value(String)], [TagElement#checked(boolean)] and
-/// [TagElement#selectedValues(List)]. A `null` property is left to the browser.
+/// [TagElement#value(String)], [TagElement#checked(boolean)] and [TagElement#selectedValues(List)].
+/// A `null` property is left to the browser.
 public record ControlProperties(
     @Nullable String value, @Nullable Boolean checked, @Nullable List<String> selectedValues) {
 

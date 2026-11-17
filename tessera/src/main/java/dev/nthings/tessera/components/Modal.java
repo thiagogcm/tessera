@@ -78,22 +78,21 @@ public final class Modal extends DialogView<Modal> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.m(CssLength.auto())
-                    .maxInlineSize(CssLength.rem(32))
-                    .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
-                    .p(Tokens.SPACE_6)
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD)
-                    .textColor(Tokens.TEXT_PRIMARY)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .shadow(
-                        Shadow.drop(
-                            CssLength.px(24),
-                            CssLength.px(48),
-                            CssLength.px(-12),
-                            CssColor.oklch(0, 0, 0, 0.28))))
+        .root(s ->
+            s.m(CssLength.auto())
+                .maxInlineSize(CssLength.rem(32))
+                .inlineSize(CssLength.pct(100).minus(CssLength.rem(2)))
+                .p(Tokens.SPACE_6)
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD)
+                .textColor(Tokens.TEXT_PRIMARY)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .shadow(
+                    Shadow.drop(
+                        CssLength.px(24),
+                        CssLength.px(48),
+                        CssLength.px(-12),
+                        CssColor.oklch(0, 0, 0, 0.28))))
         .select(":scope::backdrop", backdrop(CssLength.px(4)))
         .on(
             Media.MOTION_SAFE,
@@ -128,11 +127,10 @@ public final class Modal extends DialogView<Modal> {
                         s ->
                             s.bg(CssColor.oklch(0, 0, 0, 0.45))
                                 .backdropFilter(CssFilter.blur(CssLength.px(4)))
-                                .startingStyle(
-                                    start ->
-                                        start
-                                            .bg(CssColor.oklch(0, 0, 0, 0))
-                                            .backdropFilter(CssFilter.blur(CssLength.px(0))))));
+                                .startingStyle(start ->
+                                    start
+                                        .bg(CssColor.oklch(0, 0, 0, 0))
+                                        .backdropFilter(CssFilter.blur(CssLength.px(0))))));
   }
 
   @Override

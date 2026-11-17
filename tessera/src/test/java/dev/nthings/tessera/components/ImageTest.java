@@ -67,27 +67,23 @@ class ImageTest {
   @DisplayName("a second hero on a page reports a duplicate-hero-image diagnostic")
   void reportsDuplicateHero() {
     assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(
-            () ->
-                renderMain(
-                    Image.of("/hero1.webp", "Hero 1").hero().dimensions(800, 400),
-                    Image.of("/hero2.webp", "Hero 2").hero().dimensions(800, 400)))
-        .satisfies(
-            failure ->
-                assertThat(failure.diagnostics())
-                    .singleElement()
-                    .satisfies(
-                        d -> {
-                          assertThat(d.rule()).isEqualTo("duplicate-hero-image");
-                          assertThat(d.message())
-                              .isEqualTo(
-                                  "Only one hero image is allowed per page: '/hero1.webp' is"
-                                      + " already the hero, so '/hero2.webp' cannot be");
-                          assertThat(d.fix())
-                              .isEqualTo(
-                                  "Call hero() on one image per page; load the others lazily.");
-                          assertThat(d.location().components()).containsExactly("Image");
-                        }));
+        .isThrownBy(() ->
+            renderMain(
+                Image.of("/hero1.webp", "Hero 1").hero().dimensions(800, 400),
+                Image.of("/hero2.webp", "Hero 2").hero().dimensions(800, 400)))
+        .satisfies(failure ->
+            assertThat(failure.diagnostics())
+                .singleElement()
+                .satisfies(d -> {
+                  assertThat(d.rule()).isEqualTo("duplicate-hero-image");
+                  assertThat(d.message())
+                      .isEqualTo(
+                          "Only one hero image is allowed per page: '/hero1.webp' is"
+                              + " already the hero, so '/hero2.webp' cannot be");
+                  assertThat(d.fix())
+                      .isEqualTo("Call hero() on one image per page; load the others lazily.");
+                  assertThat(d.location().components()).containsExactly("Image");
+                }));
   }
 
   @Test

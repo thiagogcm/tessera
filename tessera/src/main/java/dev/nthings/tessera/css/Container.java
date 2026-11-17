@@ -74,15 +74,15 @@ public final class Container {
     return new Container(null, first, rest);
   }
 
-  /// Matches while the container's inline size is at least `minInlineSize`:
-  /// `@container [name] (inline-size >= min)`. Paired with [#below(CssLength)] at the same length,
-  /// the two ranges do not overlap.
+  /// Matches while the container's inline size is at least `minInlineSize`: `@container [name]
+  /// (inline-size >= min)`. Paired with [#below(CssLength)] at the same length, the two ranges do
+  /// not overlap.
   public ContainerQuery atLeast(CssLength minInlineSize) {
     return new ContainerQuery(this, "(inline-size >= " + minInlineSize.toCss() + ")");
   }
 
-  /// Matches while the container's inline size is less than `maxInlineSize`:
-  /// `@container [name] (inline-size < max)`.
+  /// Matches while the container's inline size is less than `maxInlineSize`: `@container [name]
+  /// (inline-size < max)`.
   public ContainerQuery below(CssLength maxInlineSize) {
     return new ContainerQuery(this, "(inline-size < " + maxInlineSize.toCss() + ")");
   }
@@ -92,8 +92,7 @@ public final class Container {
     return new ContainerQuery(this, "scroll-state(stuck: " + edge.toCss() + ")");
   }
 
-  /// Matches while the container is a snap target snapped on `axis`:
-  /// `scroll-state(snapped: axis)`.
+  /// Matches while the container is a snap target snapped on `axis`: `scroll-state(snapped: axis)`.
   public ContainerQuery snapped(Axis axis) {
     return new ContainerQuery(this, "scroll-state(snapped: " + axis.toCss() + ")");
   }

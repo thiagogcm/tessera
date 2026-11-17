@@ -234,11 +234,10 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
                         s ->
                             s.opacity(1)
                                 .translate(Translation.none())
-                                .startingStyle(
-                                    start ->
-                                        start
-                                            .opacity(0)
-                                            .translate(Translation.y(CssLength.rem(-0.25))))));
+                                .startingStyle(start ->
+                                    start
+                                        .opacity(0)
+                                        .translate(Translation.y(CssLength.rem(-0.25))))));
   }
 
   /// Returns the ref bound to the popover panel, for use as a command target outside the menu.

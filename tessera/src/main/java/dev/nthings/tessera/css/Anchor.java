@@ -8,8 +8,8 @@ public final class Anchor extends NamedValue {
     super(ident);
   }
 
-  /// The anchor `--name`. Pass `name` without the leading `--`. Throws IllegalArgumentException
-  /// if it is empty, starts with `-`, or has characters outside `[A-Za-z0-9_-]`.
+  /// The anchor `--name`. Pass `name` without the leading `--`. Throws IllegalArgumentException if
+  /// it is empty, starts with `-`, or has characters outside `[A-Za-z0-9_-]`.
   public static Anchor named(String name) {
     return new Anchor(CssIdent.custom(name));
   }

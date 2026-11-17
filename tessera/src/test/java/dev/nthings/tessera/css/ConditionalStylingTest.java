@@ -184,10 +184,9 @@ class ConditionalStylingTest {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Animation.enterViewport(Keyframes.FADE_IN).staggerBySiblingIndex(-1));
     assertThatIllegalStateException()
-        .isThrownBy(
-            () ->
-                Animation.of(Keyframes.FADE_IN, CssDuration.ms(200), Easing.ease())
-                    .along(TimelineAxis.INLINE));
+        .isThrownBy(() ->
+            Animation.of(Keyframes.FADE_IN, CssDuration.ms(200), Easing.ease())
+                .along(TimelineAxis.INLINE));
   }
 
   private record PulseView(Keyframes pulse) implements Scope {

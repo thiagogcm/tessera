@@ -4,8 +4,8 @@ import com.google.errorprone.annotations.CheckReturnValue;
 import java.util.ArrayList;
 import java.util.List;
 
-/// A `transform` function or a sequence of them, applied with [Styled#transform(Transform)].
-/// Build values with the static factories and [#then(Transform)].
+/// A `transform` function or a sequence of them, applied with [Styled#transform(Transform)]. Build
+/// values with the static factories and [#then(Transform)].
 @CheckReturnValue
 public sealed interface Transform extends CssValue
     permits Transforms.Scale,

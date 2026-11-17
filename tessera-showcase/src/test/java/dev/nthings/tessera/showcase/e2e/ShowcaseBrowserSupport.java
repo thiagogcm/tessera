@@ -216,16 +216,11 @@ abstract class ShowcaseBrowserSupport {
 
   private static Stream<Arguments> routesAndViewports() {
     return documentationRoutes().stream()
-        .flatMap(
-            route ->
-                Stream.of(390, 1440)
-                    .map(
-                        width ->
-                            Arguments.of(
-                                route.path(),
-                                route.document().title(),
-                                route.displayTitle(),
-                                width)));
+        .flatMap(route ->
+            Stream.of(390, 1440)
+                .map(width ->
+                    Arguments.of(
+                        route.path(), route.document().title(), route.displayTitle(), width)));
   }
 
   @ParameterizedTest(name = "{0} at {3}px")
@@ -234,12 +229,11 @@ abstract class ShowcaseBrowserSupport {
   void publishedPagesRenderWithStylesAndImages(
       String route, String title, String heading, int width) {
     var failures = new ArrayList<String>();
-    page.onResponse(
-        response -> {
-          if (response.status() >= 400) {
-            failures.add(response.status() + " " + response.url());
-          }
-        });
+    page.onResponse(response -> {
+      if (response.status() >= 400) {
+        failures.add(response.status() + " " + response.url());
+      }
+    });
     page.onRequestFailed(request -> failures.add(request.url() + ": " + request.failure()));
     page.setViewportSize(width, 900);
     var response = page.navigate(baseUrl + route);
@@ -560,12 +554,11 @@ abstract class ShowcaseBrowserSupport {
   @DisplayName("component cases fit the viewport")
   void componentCasesFitTheViewport(int width) {
     var failures = new ArrayList<String>();
-    page.onResponse(
-        response -> {
-          if (response.status() >= 400) {
-            failures.add(response.status() + " " + response.url());
-          }
-        });
+    page.onResponse(response -> {
+      if (response.status() >= 400) {
+        failures.add(response.status() + " " + response.url());
+      }
+    });
     page.onRequestFailed(request -> failures.add(request.url() + ": " + request.failure()));
     page.setViewportSize(width, 900);
     for (var route : ShowcaseSite.createDefinition().routes()) {
@@ -944,10 +937,10 @@ abstract class ShowcaseBrowserSupport {
   /// Opens `url` and returns once every custom element on it is defined by its behavior module.
   ///
   /// Module scripts run before `load`, so after navigation an element is either defined or its
-  /// module never ran: its request failed, it answered with an HTTP error, or it threw. Waiting
-  /// for such an element can only time out, so the load records those causes and fails with them.
-  /// A transport failure (a reset loopback connection, a network change reported by the browser)
-  /// says nothing about the published site, so that load is repeated once before failing.
+  /// module never ran: its request failed, it answered with an HTTP error, or it threw. Waiting for
+  /// such an element can only time out, so the load records those causes and fails with them. A
+  /// transport failure (a reset loopback connection, a network change reported by the browser) says
+  /// nothing about the published site, so that load is repeated once before failing.
   private void openWithBehaviors(String url) {
     var problems = loadRecordingScriptProblems(url);
     if (!problems.isEmpty() && problems.stream().allMatch(p -> p.startsWith(TRANSPORT))) {

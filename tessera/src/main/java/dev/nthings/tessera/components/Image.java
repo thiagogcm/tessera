@@ -9,13 +9,12 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import org.jspecify.annotations.Nullable;
 
-/// Image with an accessible description and reserved layout space. Create one with
-/// [#of(String, String)]; it decodes asynchronously and loads lazily (`loading="lazy"`) unless it
-/// is the page's [#hero()] image. Style the `<img>`, give it ARIA states, a ref or a transition key
-/// with [#element(ElementBlock)].
+/// Image with an accessible description and reserved layout space. Create one with [#of(String,
+/// String)]; it decodes asynchronously and loads lazily (`loading="lazy"`) unless it is the page's
+/// [#hero()] image. Style the `<img>`, give it ARIA states, a ref or a transition key with
+/// [#element(ElementBlock)].
 ///
-/// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports
-///   `image-dimensions`.
+/// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
 public final class Image extends BuiltinComponent {
@@ -45,9 +44,9 @@ public final class Image extends BuiltinComponent {
     return new Image(src, alt);
   }
 
-  /// Makes this the page's main above-the-fold image: it loads eagerly with
-  /// `fetchpriority="high"`, and a `<link rel="preload">` for it goes in `<head>`. A page allows
-  /// one hero; a second reports `duplicate-hero-image`.
+  /// Makes this the page's main above-the-fold image: it loads eagerly with `fetchpriority="high"`,
+  /// and a `<link rel="preload">` for it goes in `<head>`. A page allows one hero; a second reports
+  /// `duplicate-hero-image`.
   public Image hero() {
     this.hero = true;
     return this;
@@ -64,8 +63,8 @@ public final class Image extends BuiltinComponent {
   }
 
   /// Runs `block` on the `<img>` now, to set its styles, ARIA states, attributes, refs or
-  /// transition key. The image sets `loading`, `decoding` and `fetchpriority` when it renders,
-  /// so a value `block` gives one of them wins.
+  /// transition key. The image sets `loading`, `decoding` and `fetchpriority` when it renders, so a
+  /// value `block` gives one of them wins.
   public Image element(ElementBlock block) {
     block.configure(img);
     return this;

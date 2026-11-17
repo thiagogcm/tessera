@@ -2,8 +2,8 @@ package dev.nthings.tessera.css;
 
 /// A typed CSS value that serializes into a declaration.
 ///
-/// Style methods accept only the value category their property takes, so a color cannot be
-/// passed where a length belongs. Keyword sets are enums ([CssKeyword]); compounds are records.
+/// Style methods accept only the value category their property takes, so a color cannot be passed
+/// where a length belongs. Keyword sets are enums ([CssKeyword]); compounds are records.
 public sealed interface CssValue
     permits CssLength,
         CssColor,

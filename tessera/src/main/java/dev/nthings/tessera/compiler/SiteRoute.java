@@ -7,9 +7,9 @@ import org.jspecify.annotations.Nullable;
 
 /// A route and the [PageDocument] published there. The path is normalized: it is trimmed, gains a
 /// leading `/`, and loses one trailing `/` except on the root, so `guide/` and `/guide` name the
-/// same route. A blank path throws IllegalArgumentException. `title` replaces
-/// the name shown in navigation and search, but not the page's `<title>`, which comes from the
-/// document. `description` feeds `search-index.json` and the search palette.
+/// same route. A blank path throws IllegalArgumentException. `title` replaces the name shown in
+/// navigation and search, but not the page's `<title>`, which comes from the document.
+/// `description` feeds `search-index.json` and the search palette.
 public record SiteRoute(
     String path, PageDocument document, @Nullable String title, @Nullable String description) {
 
@@ -46,8 +46,8 @@ public record SiteRoute(
     return title != null ? title : document.title();
   }
 
-  /// The browser URL of the published page. Directory routes end in `/`; routes ending in
-  /// `.html` keep their path.
+  /// The browser URL of the published page. Directory routes end in `/`; routes ending in `.html`
+  /// keep their path.
   public URI documentUri() {
     return documentUriFor(path);
   }

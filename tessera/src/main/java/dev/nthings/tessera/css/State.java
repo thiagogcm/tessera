@@ -1,12 +1,12 @@
 package dev.nthings.tessera.css;
 
-/// An element state for [Styled#on(Condition, StyleBlock)], emitted as a nested
-/// `&:pseudo-class` rule. Every state adds the specificity of one pseudo-class: the not-disabled
-/// guard of `HOVER` and `ACTIVE` is wrapped in `:where()`, which adds none. Rules are emitted in
-/// constant order, not call order, so when two states match at once the later constant wins:
-/// `ACTIVE` overrides `HOVER`, and `DISABLED` overrides every other state. A state rule nested in
-/// a [ScopeStyle] rule is as specific as the raw selector with the pseudo-class appended, so
-/// `select(":scope a", s -> s.on(State.HOVER, ...))` matches `:scope a:hover`.
+/// An element state for [Styled#on(Condition, StyleBlock)], emitted as a nested `&:pseudo-class`
+/// rule. Every state adds the specificity of one pseudo-class: the not-disabled guard of `HOVER`
+/// and `ACTIVE` is wrapped in `:where()`, which adds none. Rules are emitted in constant order, not
+/// call order, so when two states match at once the later constant wins: `ACTIVE` overrides
+/// `HOVER`, and `DISABLED` overrides every other state. A state rule nested in a [ScopeStyle] rule
+/// is as specific as the raw selector with the pseudo-class appended, so `select(":scope a", s ->
+/// s.on(State.HOVER, ...))` matches `:scope a:hover`.
 public enum State implements Condition {
   /// `:hover`, while the element is not disabled.
   HOVER("&:hover:not(:where(:disabled))"),

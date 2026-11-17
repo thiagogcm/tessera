@@ -2,9 +2,9 @@ package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 
-/// A flex layout preset, applied with [Styled#layout(FlexLayout)]. The preset is copied into
-/// the element's [Declarations], so a later declaration replaces only that property. Block and
-/// inline layouts are separate choices.
+/// A flex layout preset, applied with [Styled#layout(FlexLayout)]. The preset is copied into the
+/// element's [Declarations], so a later declaration replaces only that property. Block and inline
+/// layouts are separate choices.
 @CheckReturnValue
 public record FlexLayout(
     Display display, Direction direction, CssLength gap, Align align, Wrap wrap) {

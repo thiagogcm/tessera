@@ -9,11 +9,11 @@
 /// emits. [ViewValidation] checks linked element, reference and accessibility semantics.
 /// [Diagnostic] and [Location] carry errors in every backend, with optional page and route context.
 ///
-/// The compiler (`compiler.Compiler`) is the static document backend. [ViewRenderer] is the
-/// backend for mounted views: it renders one turn of a live root into a [ViewSnapshot] with
-/// keyed groups, effects, event handlers and controlled form properties, and reports document-only
-/// features as diagnostics. Types documented as "Backend-facing" are public only because backends
-/// in other packages read them.
+/// The compiler (`compiler.Compiler`) is the static document backend. [ViewRenderer] is the backend
+/// for mounted views: it renders one turn of a live root into a [ViewSnapshot] with keyed groups,
+/// effects, event handlers and controlled form properties, and reports document-only features as
+/// diagnostics. Types documented as "Backend-facing" are public only because backends in other
+/// packages read them.
 @NullMarked
 @SourceBoundary
 package dev.nthings.tessera.view;

@@ -3,8 +3,8 @@ package dev.nthings.tessera.core;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
-/// Identity handle for an element's DOM id, resolved by the compiler once the page is expanded.
-/// It is the only way to give an element an id.
+/// Identity handle for an element's DOM id, resolved by the compiler once the page is expanded. It
+/// is the only way to give an element an id.
 ///
 /// Bind a ref with [TagElement#id(ElementRef)]. Elements may reference it through `for`,
 /// `commandfor`, `aria-*` or `href`, before or after the bind site. Anchor positioning is the
@@ -26,9 +26,9 @@ public final class ElementRef {
     this.pageLevel = pageLevel;
   }
 
-  /// Creates a ref whose DOM id is `name` prefixed by the bind site's id scope. Inside an id
-  /// scope with id `toolbar`, `scoped("save")` emits `toolbar--save`. At the top of the page it
-  /// emits `save`. Two refs with the same name bound in one scope report `duplicate-id`.
+  /// Creates a ref whose DOM id is `name` prefixed by the bind site's id scope. Inside an id scope
+  /// with id `toolbar`, `scoped("save")` emits `toolbar--save`. At the top of the page it emits
+  /// `save`. Two refs with the same name bound in one scope report `duplicate-id`.
   public static ElementRef scoped(String name) {
     return new ElementRef(Fnv1a64.sanitizeLocalId(name), false);
   }
@@ -46,8 +46,8 @@ public final class ElementRef {
     return new ElementRef(name, true);
   }
 
-  /// Creates a ref whose local id the compiler assigns as `<tag>-<n>`, numbered per id scope.
-  /// When the element also has a named ref, it takes that ref's id instead.
+  /// Creates a ref whose local id the compiler assigns as `<tag>-<n>`, numbered per id scope. When
+  /// the element also has a named ref, it takes that ref's id instead.
   public static ElementRef anonymous() {
     return new ElementRef(null, false);
   }

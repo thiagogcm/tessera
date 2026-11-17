@@ -11,9 +11,9 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 
-/// Inline text formatting functions. Each returns an element with a semantic tag (`mark`, `u`,
-/// `s`, `del`, `ins`, `code`, `kbd`) styled with the theme's colors, to place anywhere an inline
-/// element fits. Methods that take a style come as a text and a markup overload.
+/// Inline text formatting functions. Each returns an element with a semantic tag (`mark`, `u`, `s`,
+/// `del`, `ins`, `code`, `kbd`) styled with the theme's colors, to place anywhere an inline element
+/// fits. Methods that take a style come as a text and a markup overload.
 public final class Formatting {
 
   private Formatting() {}

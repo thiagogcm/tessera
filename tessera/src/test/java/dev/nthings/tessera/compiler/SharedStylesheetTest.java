@@ -25,14 +25,13 @@ class SharedStylesheetTest {
 
     assertThat(site.pages()).containsOnlyKeys("/", "/guide");
     assertThat(site.pages().keySet())
-        .allSatisfy(
-            route -> {
-              var page = RenderedPage.of(site, route);
-              assertThat(page.elements("head > link[rel=stylesheet]")).hasSize(1);
-              assertThat(page.element("head > link[rel=stylesheet]"))
-                  .hasAttribute("href", stylesheetPath(site));
-              assertThat(page.elements("head > style")).isEmpty();
-            });
+        .allSatisfy(route -> {
+          var page = RenderedPage.of(site, route);
+          assertThat(page.elements("head > link[rel=stylesheet]")).hasSize(1);
+          assertThat(page.element("head > link[rel=stylesheet]"))
+              .hasAttribute("href", stylesheetPath(site));
+          assertThat(page.elements("head > style")).isEmpty();
+        });
   }
 
   @Nested

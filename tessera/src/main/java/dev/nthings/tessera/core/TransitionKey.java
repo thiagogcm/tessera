@@ -6,10 +6,10 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
-/// Identity shared by counterpart elements on different routes for cross-document view
-/// transitions. The same key on two routes emits a matching `view-transition-name`, so the browser
-/// morphs one element into the other. The optional `transitionClass` emits
-/// `view-transition-class` and receives shared `::view-transition-group(*.<class>)` timing rules.
+/// Identity shared by counterpart elements on different routes for cross-document view transitions.
+/// The same key on two routes emits a matching `view-transition-name`, so the browser morphs one
+/// element into the other. The optional `transitionClass` emits `view-transition-class` and
+/// receives shared `::view-transition-group(*.<class>)` timing rules.
 ///
 /// Rules: `duplicate-transition-key` reports a name used twice on one page.
 /// `unshared-transition-key` reports a key that appears on fewer than two routes site-wide. Both

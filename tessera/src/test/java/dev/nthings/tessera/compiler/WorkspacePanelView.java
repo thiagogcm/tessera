@@ -80,11 +80,10 @@ record WorkspacePanelView(String workspaceSlug) implements Scope {
         button()
             .id(ElementRef.scoped("open-archive-btn"))
             .command(confirmModal.ref(), BuiltinCommand.SHOW_MODAL)
-            .interestTooltip(
-                tip ->
-                    tip.p(CssLength.rem(0.5))
-                        .bg(Tokens.SURFACE_SUBTLE)
-                        .text("Open archive confirmation dialog"))
+            .interestTooltip(tip ->
+                tip.p(CssLength.rem(0.5))
+                    .bg(Tokens.SURFACE_SUBTLE)
+                    .text("Open archive confirmation dialog"))
             .px(CssLength.rem(1))
             .py(CssLength.rem(0.5))
             .bg(Tokens.ACCENT_PRIMARY)

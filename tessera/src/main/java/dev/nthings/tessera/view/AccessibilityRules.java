@@ -14,8 +14,8 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import org.jspecify.annotations.Nullable;
 
-/// Accessibility contracts on the linked tree: role requirements, landmark and heading
-/// structure, focus order and label targets.
+/// Accessibility contracts on the linked tree: role requirements, landmark and heading structure,
+/// focus order and label targets.
 ///
 /// Role rules apply to elements that declare a role; native elements are checked where their
 /// semantics are unambiguous (`<dialog>`, headings, landmarks, `<label for>`).

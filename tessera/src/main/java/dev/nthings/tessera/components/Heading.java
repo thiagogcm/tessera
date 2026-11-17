@@ -15,15 +15,15 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Native HTML heading, `h1` through `h6`, with phrasing content and an optional document-outline
-/// entry. Create one with [#of(int, String)] when the visible text and the navigation label are
-/// the same plain string, or [#of(int, String, IntoElement...)] when the visible title is rich
-/// and the table of contents needs a separate plain label. Levels outside 1 through 6 throw
+/// entry. Create one with [#of(int, String)] when the visible text and the navigation label are the
+/// same plain string, or [#of(int, String, IntoElement...)] when the visible title is rich and the
+/// table of contents needs a separate plain label. Levels outside 1 through 6 throw
 /// IllegalArgumentException. This primitive does not represent heading levels above 6.
 ///
-/// The heading does not register itself. Call [#outline(ElementRef)] to put `label` in the
-/// document outline, aimed at `target`. Dialog titles, footnote chrome, and other interface
-/// headings leave the outline unset. [#id(ElementRef)] binds an anchor on the heading element
-/// itself; a section can aim the outline at the section instead.
+/// The heading does not register itself. Call [#outline(ElementRef)] to put `label` in the document
+/// outline, aimed at `target`. Dialog titles, footnote chrome, and other interface headings leave
+/// the outline unset. [#id(ElementRef)] binds an anchor on the heading element itself; a section
+/// can aim the outline at the section instead.
 public final class Heading extends BuiltinComponent implements ParentElement<Heading> {
 
   private final int level;
@@ -55,8 +55,8 @@ public final class Heading extends BuiltinComponent implements ParentElement<Hea
     return this;
   }
 
-  /// Includes this heading in the document outline, linking to the element bound to `target`.
-  /// The outline uses [#of]'s plain label and this heading's level. Bind `target` on the page.
+  /// Includes this heading in the document outline, linking to the element bound to `target`. The
+  /// outline uses [#of]'s plain label and this heading's level. Bind `target` on the page.
   public Heading outline(ElementRef target) {
     this.outlineTarget = target;
     return this;

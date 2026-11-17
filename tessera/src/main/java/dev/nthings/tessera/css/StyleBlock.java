@@ -2,10 +2,10 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.KotlinReceiver;
 
-/// Writes declarations into a [Declarations]: the callback taken by
-/// [Styled#on(Condition, StyleBlock)], [ScopeStyle#select(String, StyleBlock)],
-/// [Declarations#startingStyle(StyleBlock)] and the [Keyframes] steps, and the type of a
-/// reusable style preset applied with [Styled#styles(StyleBlock)]:
+/// Writes declarations into a [Declarations]: the callback taken by [Styled#on(Condition,
+/// StyleBlock)], [ScopeStyle#select(String, StyleBlock)], [Declarations#startingStyle(StyleBlock)]
+/// and the [Keyframes] steps, and the type of a reusable style preset applied with
+/// [Styled#styles(StyleBlock)]:
 ///
 /// ```java
 /// StyleBlock card = s -> s.p(Tokens.SPACE_4).rounded(Tokens.RADIUS_XL);

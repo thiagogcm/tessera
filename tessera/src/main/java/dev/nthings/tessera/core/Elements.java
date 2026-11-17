@@ -395,13 +395,12 @@ public final class Elements {
 
   /// Places `effect` at this position of a live tree, keyed by `key` like
   /// [IntoElement#key(String)]. A browser mount starts it after the first commit that contains it
-  /// and keeps it running while later renders place an effect with the same `key` here; a
-  /// different key disposes it and starts the new one, so the key names the effect's
-  /// dependencies. Removing it, or closing the root, disposes it. The effect emits no markup. The
-  /// key shares its parent's sibling namespace with keyed children, so it must differ from every
-  /// other effect and keyed sibling of that parent (`duplicate-key`). Static compilation reports
-  /// `native-effect`, since a document has no lifetime to bind it to. Throws
-  /// IllegalArgumentException if `key` is blank.
+  /// and keeps it running while later renders place an effect with the same `key` here; a different
+  /// key disposes it and starts the new one, so the key names the effect's dependencies. Removing
+  /// it, or closing the root, disposes it. The effect emits no markup. The key shares its parent's
+  /// sibling namespace with keyed children, so it must differ from every other effect and keyed
+  /// sibling of that parent (`duplicate-key`). Static compilation reports `native-effect`, since a
+  /// document has no lifetime to bind it to. Throws IllegalArgumentException if `key` is blank.
   public static Element effect(String key, Effect effect) {
     return new EffectElement(effect).key(key);
   }

@@ -10,11 +10,11 @@ import org.jspecify.annotations.Nullable;
 /// Use [Component] for markup that needs no scope of its own.
 public interface Scope extends IntoElement {
 
-  /// Instance id in the enclosing id scope. Characters outside `[A-Za-z0-9_-]` become `-` and
-  /// runs of `-` collapse to one; an empty id throws IllegalArgumentException during compilation.
-  /// `null` (the default) makes the compiler assign `<scopeName>-<n>`, numbered per scope. Give
-  /// repeated instances distinct ids within one enclosing scope: two instances with one id share
-  /// an id scope, so their scoped element ids collide (`duplicate-id`).
+  /// Instance id in the enclosing id scope. Characters outside `[A-Za-z0-9_-]` become `-` and runs
+  /// of `-` collapse to one; an empty id throws IllegalArgumentException during compilation. `null`
+  /// (the default) makes the compiler assign `<scopeName>-<n>`, numbered per scope. Give repeated
+  /// instances distinct ids within one enclosing scope: two instances with one id share an id
+  /// scope, so their scoped element ids collide (`duplicate-id`).
   default @Nullable String scopeId() {
     return null;
   }
@@ -35,8 +35,8 @@ public interface Scope extends IntoElement {
   /// `data-scope` and `data-scope-id`. A component that itself resolves to one element is a valid
   /// host. Returning another scope reports `scope-root` and leaves that scope's host alone. A
   /// fragment, text, raw HTML, late or deferred content, or nothing also reports `scope-root`.
-  /// Expansion does not insert a wrapper. Place nested scopes inside the host: a list scope
-  /// returns `ul` or `ol`, and a table-row scope returns `tr`.
+  /// Expansion does not insert a wrapper. Place nested scopes inside the host: a list scope returns
+  /// `ul` or `ol`, and a table-row scope returns `tr`.
   IntoElement expand(DocumentContext context);
 
   @Override

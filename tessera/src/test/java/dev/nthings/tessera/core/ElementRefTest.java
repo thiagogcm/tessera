@@ -64,18 +64,17 @@ class ElementRefTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("unbound-reference");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "<button commandfor> references ElementRef.scoped(ghost), which is not bound to any element on this page");
-              assertThat(d.fix())
-                  .isEqualTo("Bind this reference with .id(ref) on the intended target.");
-              assertThat(d.location().page()).isEqualTo("Test");
-              assertThat(d.location().tag()).isEqualTo("button");
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("unbound-reference");
+          assertThat(d.message())
+              .isEqualTo(
+                  "<button commandfor> references ElementRef.scoped(ghost), which is not bound to any element on this page");
+          assertThat(d.fix())
+              .isEqualTo("Bind this reference with .id(ref) on the intended target.");
+          assertThat(d.location().page()).isEqualTo("Test");
+          assertThat(d.location().tag()).isEqualTo("button");
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   static Stream<Arguments> ambiguousTargets() {
@@ -123,14 +122,13 @@ class ElementRefTest {
     assertThat(failure.diagnostics())
         .filteredOn(d -> d.rule().equals(rule))
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.message()).isEqualTo(message);
-              assertThat(d.fix()).isEqualTo(fix);
-              assertThat(d.location().page()).isEqualTo("Test");
-              assertThat(d.location().tag()).isEqualTo(tag);
-              assertThat(d.location().domId()).isEqualTo(domId);
-            });
+        .satisfies(d -> {
+          assertThat(d.message()).isEqualTo(message);
+          assertThat(d.fix()).isEqualTo(fix);
+          assertThat(d.location().page()).isEqualTo("Test");
+          assertThat(d.location().tag()).isEqualTo(tag);
+          assertThat(d.location().domId()).isEqualTo(domId);
+        });
   }
 
   @Test
@@ -183,19 +181,18 @@ class ElementRefTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("conflicting-element-id");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "<div> is bound to ElementRef.scoped(first) and ElementRef.page(second), which ask for different ids ('first' and 'second')");
-              assertThat(d.fix())
-                  .isEqualTo(
-                      "Bind one named ElementRef per element and pass that ref around; extra handles can use element.ref() or ElementRef.anonymous().");
-              assertThat(d.location().page()).isEqualTo("Test");
-              assertThat(d.location().tag()).isEqualTo("div");
-              assertThat(d.location().domId()).isEqualTo("first");
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("conflicting-element-id");
+          assertThat(d.message())
+              .isEqualTo(
+                  "<div> is bound to ElementRef.scoped(first) and ElementRef.page(second), which ask for different ids ('first' and 'second')");
+          assertThat(d.fix())
+              .isEqualTo(
+                  "Bind one named ElementRef per element and pass that ref around; extra handles can use element.ref() or ElementRef.anonymous().");
+          assertThat(d.location().page()).isEqualTo("Test");
+          assertThat(d.location().tag()).isEqualTo("div");
+          assertThat(d.location().domId()).isEqualTo("first");
+        });
   }
 
   @Test

@@ -2,8 +2,8 @@ package dev.nthings.tessera.css;
 
 import java.util.List;
 
-/// A `content` value: text, a counter, or a string custom property, combined as needed. Set it
-/// with [Styled#content(CssContent)]. Build values with the static factories.
+/// A `content` value: text, a counter, or a string custom property, combined as needed. Set it with
+/// [Styled#content(CssContent)]. Build values with the static factories.
 public sealed interface CssContent extends CssValue
     permits CssContents.Text,
         CssContents.CounterValue,

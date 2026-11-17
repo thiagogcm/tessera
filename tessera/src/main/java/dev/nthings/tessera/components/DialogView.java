@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-/// Options shared by [Modal] and [Drawer]: a titled modal `<dialog>` with an optional
-/// description, a body and a close button. Each setter returns the same dialog, for chaining.
+/// Options shared by [Modal] and [Drawer]: a titled modal `<dialog>` with an optional description,
+/// a body and a close button. Each setter returns the same dialog, for chaining.
 ///
 /// @param <D> the concrete dialog type
 abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {

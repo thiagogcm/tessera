@@ -16,8 +16,8 @@ public final class BrowserEntry {
 
   /// Mounts every host declared in `args` with the function `views` maps its view name to, which
   /// receives the host id, and returns the mounted roots in declaration order. A host whose view
-  /// this entry does not provide, or whose mount fails, is reported and keeps its fallback
-  /// content; the other hosts still mount.
+  /// this entry does not provide, or whose mount fails, is reported and keeps its fallback content;
+  /// the other hosts still mount.
   public static List<BrowserRoot> start(
       String[] args, Map<String, Function<String, BrowserRoot>> views) {
     var roots = new ArrayList<BrowserRoot>();

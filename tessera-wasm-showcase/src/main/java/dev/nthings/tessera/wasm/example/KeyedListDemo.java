@@ -58,12 +58,11 @@ public final class KeyedListDemo {
                         .onClick(root.update(() -> Collections.reverse(keys))),
                     Button.of("Remove first entry")
                         .onClick(
-                            root.update(
-                                () -> {
-                                  if (!keys.isEmpty()) {
-                                    keys.removeFirst();
-                                  }
-                                })),
+                            root.update(() -> {
+                              if (!keys.isEmpty()) {
+                                keys.removeFirst();
+                              }
+                            })),
                     Button.of("Refresh entries").onClick(root.update(() -> revision++)),
                     Button.of("Toggle details").onClick(root.update(() -> details = !details)),
                     Button.of("Replace entry type")

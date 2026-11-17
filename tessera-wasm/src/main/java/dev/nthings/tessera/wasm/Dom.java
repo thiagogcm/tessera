@@ -76,18 +76,18 @@ final class Dom {
       args = {"parent", "first", "last", "before"},
       value =
           """
-      if (first.parentNode === parent && last.nextSibling === before) return;
-      const stop = last.nextSibling;
-      for (let node = first; node !== stop;) {
-        const next = node.nextSibling;
-        if (parent.moveBefore && node.isConnected && parent.isConnected) {
-          parent.moveBefore(node, before);
-        } else {
-          parent.insertBefore(node, before);
-        }
-        node = next;
-      }
-      """)
+          if (first.parentNode === parent && last.nextSibling === before) return;
+          const stop = last.nextSibling;
+          for (let node = first; node !== stop;) {
+            const next = node.nextSibling;
+            if (parent.moveBefore && node.isConnected && parent.isConnected) {
+              parent.moveBefore(node, before);
+            } else {
+              parent.insertBefore(node, before);
+            }
+            node = next;
+          }
+          """)
   static native void moveRange(
       JSObject parent, JSObject first, JSObject last, @Nullable JSObject before);
 
@@ -95,13 +95,13 @@ final class Dom {
       args = {"first", "last"},
       value =
           """
-      const stop = last.nextSibling;
-      for (let node = first; node !== stop;) {
-        const next = node.nextSibling;
-        node.remove();
-        node = next;
-      }
-      """)
+          const stop = last.nextSibling;
+          for (let node = first; node !== stop;) {
+            const next = node.nextSibling;
+            node.remove();
+            node = next;
+          }
+          """)
   static native void removeRange(JSObject first, JSObject last);
 
   @JS(
@@ -119,8 +119,8 @@ final class Dom {
       """)
   static native JSObject adoptStyleSheet();
 
-  /// Appends `rule` and returns the inserted `CSSRule`. A rule the browser cannot parse is
-  /// dropped, as in a parsed stylesheet, and yields `null`.
+  /// Appends `rule` and returns the inserted `CSSRule`. A rule the browser cannot parse is dropped,
+  /// as in a parsed stylesheet, and yields `null`.
   @JS.Coerce
   @JS(
       args = {"sheet", "rule"},
@@ -145,8 +145,8 @@ final class Dom {
       value = "rules.add(rule);")
   static native void addRule(JSObject rules, JSObject rule);
 
-  /// Deletes every rule in `rules` from `sheet` in one pass; indices shift as rules come and go,
-  /// so it walks from the end.
+  /// Deletes every rule in `rules` from `sheet` in one pass; indices shift as rules come and go, so
+  /// it walks from the end.
   @JS(
       args = {"sheet", "rules"},
       value =
@@ -547,8 +547,8 @@ final class Dom {
           """)
   static native @Nullable String mountConflict(JSObject host, String attribute);
 
-  /// The first of the newline-separated `ids` that an element outside `host` already uses,
-  /// followed by a newline and that element's owner, or `null`.
+  /// The first of the newline-separated `ids` that an element outside `host` already uses, followed
+  /// by a newline and that element's owner, or `null`.
   @JS.Coerce
   @JS(
       args = {"host", "ids", "attribute"},

@@ -8,11 +8,11 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Executors;
 
-/// Local preview server for a [CompiledSite], built on the JDK's `HttpServer` with virtual
-/// threads. It listens on `127.0.0.1` only and serves a fixed snapshot of the site, so recompile
-/// and restart after a change. Responses carry `Cache-Control: no-store`. A route requested
-/// without its trailing slash gets a 308 redirect to its directory URL, keeping the query string,
-/// and `index.html` aliases are accepted. Other paths return 404.
+/// Local preview server for a [CompiledSite], built on the JDK's `HttpServer` with virtual threads.
+/// It listens on `127.0.0.1` only and serves a fixed snapshot of the site, so recompile and restart
+/// after a change. Responses carry `Cache-Control: no-store`. A route requested without its
+/// trailing slash gets a 308 redirect to its directory URL, keeping the query string, and
+/// `index.html` aliases are accepted. Other paths return 404.
 public final class SitePreviewServer implements AutoCloseable {
 
   private final HttpServer server;

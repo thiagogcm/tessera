@@ -50,20 +50,16 @@ class TableOfContentsTest {
 
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(brokenToc))
-          .satisfies(
-              failure ->
-                  assertThat(failure.diagnostics())
-                      .singleElement()
-                      .satisfies(
-                          d -> {
-                            assertThat(d.rule()).isEqualTo("unbound-reference");
-                            assertThat(d.message())
-                                .contains("missing-section")
-                                .contains("not bound");
-                            assertThat(d.fix()).contains("Bind this reference");
-                            assertThat(d.location().tag()).isEqualTo("a");
-                            assertThat(d.location().components()).contains("TableOfContents");
-                          }));
+          .satisfies(failure ->
+              assertThat(failure.diagnostics())
+                  .singleElement()
+                  .satisfies(d -> {
+                    assertThat(d.rule()).isEqualTo("unbound-reference");
+                    assertThat(d.message()).contains("missing-section").contains("not bound");
+                    assertThat(d.fix()).contains("Bind this reference");
+                    assertThat(d.location().tag()).isEqualTo("a");
+                    assertThat(d.location().components()).contains("TableOfContents");
+                  }));
     }
   }
 
@@ -90,16 +86,15 @@ class TableOfContentsTest {
     void rejectsDuplicateIds() {
       assertThatExceptionOfType(CompilationException.class)
           .isThrownBy(() -> renderMain(Section.of("intro", "Intro"), Section.of("intro", "Again")))
-          .satisfies(
-              failure -> {
-                assertThat(failure.diagnostics())
-                    .extracting(d -> d.rule())
-                    .containsOnly("duplicate-id");
-                var diagnostic = failure.diagnostics().getFirst();
-                assertThat(diagnostic.message()).contains("Duplicate DOM id 'intro'");
-                assertThat(diagnostic.fix()).contains("distinct ID");
-                assertThat(diagnostic.location().components()).containsExactly("Section");
-              });
+          .satisfies(failure -> {
+            assertThat(failure.diagnostics())
+                .extracting(d -> d.rule())
+                .containsOnly("duplicate-id");
+            var diagnostic = failure.diagnostics().getFirst();
+            assertThat(diagnostic.message()).contains("Duplicate DOM id 'intro'");
+            assertThat(diagnostic.fix()).contains("distinct ID");
+            assertThat(diagnostic.location().components()).containsExactly("Section");
+          });
     }
   }
 

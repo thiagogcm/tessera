@@ -8,6 +8,7 @@ public final class Fnv1a64 {
 
   /// Compiler-facing: the FNV-1a 64-bit offset basis, the starting value of a hash.
   public static final long OFFSET_BASIS = 0xcbf29ce484222325L;
+
   private static final long PRIME = 0x100000001b3L;
 
   private Fnv1a64() {}

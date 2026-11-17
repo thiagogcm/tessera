@@ -19,9 +19,9 @@ import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
 
-/// Modal `<dialog>` sheet that slides in from an edge, with a title, optional description, body
-/// and a close button in its header. Create one with [#of(String)]; it docks to the inline-end
-/// edge unless [#side(Side)] changes it. Place it and open it as a [Modal].
+/// Modal `<dialog>` sheet that slides in from an edge, with a title, optional description, body and
+/// a close button in its header. Create one with [#of(String)]; it docks to the inline-end edge
+/// unless [#side(Side)] changes it. Place it and open it as a [Modal].
 ///
 /// The dialog, title and close button ids are prefixed with its [#id(String)]. Without an id, the
 /// compiler numbers instances `drawer-start-<n>` or `drawer-end-<n>`.
@@ -66,28 +66,27 @@ public final class Drawer extends DialogView<Drawer> {
     var offscreenTranslate =
         Translation.of(CssLength.pct(side == Side.INLINE_START ? -100 : 100), CssLength.zero());
     scope
-        .root(
-            s -> {
-              s.my(CssLength.px(0))
-                  .blockSize(CssLength.dvh(100))
-                  .maxBlockSize(CssLength.dvh(100))
-                  .inlineSize(CssLength.min(CssLength.rem(24), CssLength.dvw(85)))
-                  .p(Tokens.SPACE_6)
-                  .bg(Tokens.SURFACE_CARD)
-                  .textColor(Tokens.TEXT_PRIMARY)
-                  .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                  .shadow(
-                      Shadow.drop(
-                          CssLength.px(24),
-                          CssLength.px(48),
-                          CssLength.px(-12),
-                          CssColor.oklch(0, 0, 0, 0.32)));
-              if (side == Side.INLINE_START) {
-                s.ms(CssLength.px(0)).me(CssLength.auto());
-              } else {
-                s.ms(CssLength.auto()).me(CssLength.px(0));
-              }
-            })
+        .root(s -> {
+          s.my(CssLength.px(0))
+              .blockSize(CssLength.dvh(100))
+              .maxBlockSize(CssLength.dvh(100))
+              .inlineSize(CssLength.min(CssLength.rem(24), CssLength.dvw(85)))
+              .p(Tokens.SPACE_6)
+              .bg(Tokens.SURFACE_CARD)
+              .textColor(Tokens.TEXT_PRIMARY)
+              .border(Border.hairline(Tokens.BORDER_SUBTLE))
+              .shadow(
+                  Shadow.drop(
+                      CssLength.px(24),
+                      CssLength.px(48),
+                      CssLength.px(-12),
+                      CssColor.oklch(0, 0, 0, 0.32)));
+          if (side == Side.INLINE_START) {
+            s.ms(CssLength.px(0)).me(CssLength.auto());
+          } else {
+            s.ms(CssLength.auto()).me(CssLength.px(0));
+          }
+        })
         .select(":scope::backdrop", backdrop(CssLength.px(3)))
         .on(
             Media.MOTION_SAFE,

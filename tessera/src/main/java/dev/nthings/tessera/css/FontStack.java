@@ -44,8 +44,8 @@ public record FontStack(List<Entry> entries) implements CssValue {
     return new FontStack(List.of(entries));
   }
 
-  /// A family looked up by name, quoted in CSS when it is not a plain identifier, such as
-  /// `"Fira Code"`.
+  /// A family looked up by name, quoted in CSS when it is not a plain identifier, such as `"Fira
+  /// Code"`.
   public static Entry named(String family) {
     return new Named(family);
   }

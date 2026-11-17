@@ -27,10 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/// Stack of collapsible sections on native `<details>` and `<summary>` elements, so "Find in
-/// page" can reach closed items. Create one with [#of()]; by default any number of items can be
-/// open, and [#exclusive()] makes opening one close the others. The open and close animation is
-/// skipped under reduced motion.
+/// Stack of collapsible sections on native `<details>` and `<summary>` elements, so "Find in page"
+/// can reach closed items. Create one with [#of()]; by default any number of items can be open, and
+/// [#exclusive()] makes opening one close the others. The open and close animation is skipped under
+/// reduced motion.
 ///
 /// An exclusive accordion also uses its [#id(String)] as its `<details name>` group. Without an id,
 /// the compiler numbers instances `accordion-<n>` and the group gets a page-unique name.
@@ -101,14 +101,13 @@ public final class Accordion extends BuiltinScope<Accordion> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.flex()
-                    .flexCol()
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .overflow(Overflow.CLIP))
+        .root(s ->
+            s.flex()
+                .flexCol()
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .overflow(Overflow.CLIP))
         .select(":scope > details", s -> s.borderBlockEnd(Border.hairline(Tokens.BORDER_SUBTLE)))
         .select(":scope > details:last-child", s -> s.border(Border.none()))
         .select(

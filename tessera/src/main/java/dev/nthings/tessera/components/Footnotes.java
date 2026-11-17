@@ -17,11 +17,11 @@ import java.util.List;
 import java.util.Map;
 
 /// Endnotes list for the page's [Footnote] definitions. Each note appears once and links back to
-/// every reference. Create one with [#of()] to place the list; without one, the list is appended
-/// at the end of the document. The list is filled after layout, so it may precede the references
-/// and still cover every one. Its heading is an `<h2>` and is not a document-outline heading.
-/// Link names such as "Back to reference 1" are fixed English. A second list on the page repeats
-/// every note and reports `duplicate-id`.
+/// every reference. Create one with [#of()] to place the list; without one, the list is appended at
+/// the end of the document. The list is filled after layout, so it may precede the references and
+/// still cover every one. Its heading is an `<h2>` and is not a document-outline heading. Link
+/// names such as "Back to reference 1" are fixed English. A second list on the page repeats every
+/// note and reports `duplicate-id`.
 public final class Footnotes extends BuiltinComponent {
 
   /// One definition on the page, numbered by its first reference, with every later occurrence.
@@ -107,11 +107,10 @@ public final class Footnotes extends BuiltinComponent {
     var registry = context.document(REGISTRY);
     registry.sectionPlaced = true;
     var heading = title;
-    return Elements.late(
-        _ ->
-            registry.entries.isEmpty()
-                ? Elements.empty()
-                : new EndnotesView(heading, List.copyOf(registry.entries)));
+    return Elements.late(_ ->
+        registry.entries.isEmpty()
+            ? Elements.empty()
+            : new EndnotesView(heading, List.copyOf(registry.entries)));
   }
 
   /// The endnotes list, a scope for its scoped styles.
@@ -139,13 +138,12 @@ public final class Footnotes extends BuiltinComponent {
     @Override
     void configureScope(ScopeStyle scope) {
       scope
-          .root(
-              s ->
-                  s.mt(Tokens.SPACE_10)
-                      .pt(Tokens.SPACE_5)
-                      .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
-                      .fontSize(Tokens.FONT_SIZE_SM)
-                      .textColor(Tokens.TEXT_MUTED))
+          .root(s ->
+              s.mt(Tokens.SPACE_10)
+                  .pt(Tokens.SPACE_5)
+                  .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE))
+                  .fontSize(Tokens.FONT_SIZE_SM)
+                  .textColor(Tokens.TEXT_MUTED))
           .select(":scope ol", s -> s.flex().flexCol().gap(Tokens.SPACE_2).ps(Tokens.SPACE_6))
           .select(
               ":scope li:target",

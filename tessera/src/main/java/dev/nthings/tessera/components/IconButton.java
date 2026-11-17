@@ -5,9 +5,9 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.Tone;
 
 /// Icon-only `<button>` created with [#of(String, IntoElement)]. The label you pass is its only
-/// accessible name, because the icon is decorative and hidden from assistive technology, so pass
-/// a non-blank label. It defaults to the neutral tone, ghost variant and medium size, and takes
-/// the same tone, variant, size, command and disabled settings as [Button].
+/// accessible name, because the icon is decorative and hidden from assistive technology, so pass a
+/// non-blank label. It defaults to the neutral tone, ghost variant and medium size, and takes the
+/// same tone, variant, size, command and disabled settings as [Button].
 public final class IconButton extends ButtonBase<IconButton> {
 
   private final String label;

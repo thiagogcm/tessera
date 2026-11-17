@@ -37,8 +37,8 @@ public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
     return new Breadcrumbs(List.of(links));
   }
 
-  /// Sets the accessible name of the landmark; make it distinct when a page has several trails.
-  /// The default is `Breadcrumb`.
+  /// Sets the accessible name of the landmark; make it distinct when a page has several trails. The
+  /// default is `Breadcrumb`.
   public Breadcrumbs label(String label) {
     this.label = label;
     return this;

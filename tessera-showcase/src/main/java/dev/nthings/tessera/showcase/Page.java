@@ -6,8 +6,8 @@ import dev.nthings.tessera.core.IntoElement;
 import java.util.List;
 import java.util.function.Supplier;
 
-/// Showcase route: nav metadata, search-indexed demo sections, and body (by default a
-/// scroll-spy documentation layout).
+/// Showcase route: nav metadata, search-indexed demo sections, and body (by default a scroll-spy
+/// documentation layout).
 record Page(
     String path,
     String navLabel,

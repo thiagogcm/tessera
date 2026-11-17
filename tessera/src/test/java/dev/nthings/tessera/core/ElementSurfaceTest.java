@@ -40,20 +40,19 @@ class ElementSurfaceTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("interactive-label");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "Interactive <button> element must have text content or an aria-label / aria-labelledby / title attribute");
-              assertThat(d.fix())
-                  .isEqualTo(
-                      "Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.");
-              assertThat(d.location().page()).isEqualTo("Test");
-              assertThat(d.location().components()).isEmpty();
-              assertThat(d.location().tag()).isEqualTo("button");
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("interactive-label");
+          assertThat(d.message())
+              .isEqualTo(
+                  "Interactive <button> element must have text content or an aria-label / aria-labelledby / title attribute");
+          assertThat(d.fix())
+              .isEqualTo(
+                  "Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.");
+          assertThat(d.location().page()).isEqualTo("Test");
+          assertThat(d.location().components()).isEmpty();
+          assertThat(d.location().tag()).isEqualTo("button");
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   record Items() implements Scope {

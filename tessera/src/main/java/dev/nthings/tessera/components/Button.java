@@ -5,9 +5,8 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.Tone;
 import java.util.List;
 
-/// Native `<button>`, `type="button"` unless [#submit()] is called. Create one with
-/// [#of(String, IntoElement...)]; it is an accent, solid, medium button by default. Use a link for
-/// navigation.
+/// Native `<button>`, `type="button"` unless [#submit()] is called. Create one with [#of(String,
+/// IntoElement...)]; it is an accent, solid, medium button by default. Use a link for navigation.
 public final class Button extends ButtonBase<Button> {
 
   /// Surface: `SOLID` (filled with the tone, the default), `OUTLINE` (transparent with a tone

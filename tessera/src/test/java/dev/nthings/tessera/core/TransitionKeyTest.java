@@ -34,19 +34,18 @@ class TransitionKeyTest {
 
     assertThat(failure.diagnostics())
         .singleElement()
-        .satisfies(
-            d -> {
-              assertThat(d.rule()).isEqualTo("duplicate-transition-key");
-              assertThat(d.message())
-                  .isEqualTo(
-                      "Duplicate TransitionKey name 'hero-title' found on the same page. TransitionKey names must be unique per document.");
-              assertThat(d.fix())
-                  .isEqualTo("Give each transitioning element a distinct TransitionKey name.");
-              assertThat(d.location().page()).isEqualTo("Test");
-              assertThat(d.location().components()).isEmpty();
-              assertThat(d.location().tag()).isEqualTo("h1");
-              assertThat(d.location().domId()).isNull();
-            });
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("duplicate-transition-key");
+          assertThat(d.message())
+              .isEqualTo(
+                  "Duplicate TransitionKey name 'hero-title' found on the same page. TransitionKey names must be unique per document.");
+          assertThat(d.fix())
+              .isEqualTo("Give each transitioning element a distinct TransitionKey name.");
+          assertThat(d.location().page()).isEqualTo("Test");
+          assertThat(d.location().components()).isEmpty();
+          assertThat(d.location().tag()).isEqualTo("h1");
+          assertThat(d.location().domId()).isNull();
+        });
   }
 
   @Test

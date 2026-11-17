@@ -24,8 +24,8 @@ import org.jspecify.annotations.Nullable;
 
 /// Source listing in a keyboard-focusable `<pre>`, one `<span class="code-line">` per line. It can
 /// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
-/// Line numbers are display-only and are not part of the copied text. Create one with
-/// [#of(String)] for a source string or [#ofLines(String...)] for lines you already have.
+/// Line numbers are display-only and are not part of the copied text. Create one with [#of(String)]
+/// for a source string or [#ofLines(String...)] for lines you already have.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-code-block-<n>`.
 public final class CodeBlock extends BuiltinScope<CodeBlock> {
@@ -99,8 +99,8 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
     return this;
   }
 
-  /// Marks a line starting with `+` as added and one starting with `-` as deleted. The marker
-  /// stays in the text. Explicit line numbers still apply.
+  /// Marks a line starting with `+` as added and one starting with `-` as deleted. The marker stays
+  /// in the text. Explicit line numbers still apply.
   public CodeBlock diffAutoDetect() {
     this.diffAutoDetect = true;
     return this;
@@ -114,13 +114,12 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.my(Tokens.SPACE_5)
-                    .rounded(Tokens.RADIUS_LG)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .bg(Tokens.SURFACE_CARD)
-                    .overflow(Overflow.CLIP))
+        .root(s ->
+            s.my(Tokens.SPACE_5)
+                .rounded(Tokens.RADIUS_LG)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .bg(Tokens.SURFACE_CARD)
+                .overflow(Overflow.CLIP))
         .select(
             ":scope > .code-header",
             s ->
@@ -227,11 +226,8 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
         pre()
             .attr("class", "code-pre")
             .tabIndex(0)
-            .styles(
-                s ->
-                    s.fontFamily(Tokens.FONT_MONO)
-                        .overflowX(Overflow.AUTO)
-                        .counterReset(LINE_COUNTER))
+            .styles(s ->
+                s.fontFamily(Tokens.FONT_MONO).overflowX(Overflow.AUTO).counterReset(LINE_COUNTER))
             .child(codeEl);
 
     return wrapper.child(preEl);

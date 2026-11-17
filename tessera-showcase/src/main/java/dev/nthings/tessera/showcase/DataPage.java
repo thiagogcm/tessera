@@ -64,14 +64,13 @@ final class DataPage {
                                 columnHeader("Availability"))),
                         body(
                             rows.stream()
-                                .map(
-                                    r ->
-                                        row(
-                                            rowHeader(r.service()),
-                                            data(r.region()),
-                                            data(r.latency()).align(NUMERIC),
-                                            data(r.throughput()).align(NUMERIC),
-                                            data(r.availability()).align(NUMERIC)))
+                                .map(r ->
+                                    row(
+                                        rowHeader(r.service()),
+                                        data(r.region()),
+                                        data(r.latency()).align(NUMERIC),
+                                        data(r.throughput()).align(NUMERIC),
+                                        data(r.availability()).align(NUMERIC)))
                                 .toArray(TableGrid.Row[]::new))))
                 .stackBelow(CssLength.rem(36))
                 .stickyHead()

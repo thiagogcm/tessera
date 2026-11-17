@@ -11,11 +11,11 @@ import org.jspecify.annotations.Nullable;
 /// that uses the animation registers the rule in the stylesheet, so there is nothing else to
 /// declare. The value is immutable: [#start], [#end] and [#at] return a new one.
 ///
-/// Each step keeps only the plain declarations its callback writes; conditional styles
-/// (`on(...)`), starting styles and nested animations inside a step are ignored. The presets
-/// ([#FADE_IN], [#FADE_UP], [#SCALE_IN], [#SLIDE_INLINE], [#FADE_OUT]) animate `opacity` and
-/// `transform`. Give each definition its own name: two different rules with one name both emit,
-/// and the later one wins.
+/// Each step keeps only the plain declarations its callback writes; conditional styles (`on(...)`),
+/// starting styles and nested animations inside a step are ignored. The presets ([#FADE_IN],
+/// [#FADE_UP], [#SCALE_IN], [#SLIDE_INLINE], [#FADE_OUT]) animate `opacity` and `transform`. Give
+/// each definition its own name: two different rules with one name both emit, and the later one
+/// wins.
 @CheckReturnValue
 public final class Keyframes {
 
@@ -72,8 +72,8 @@ public final class Keyframes {
     return at(0, styles);
   }
 
-  /// The same keyframes with an end step (100%, emitted as `to`) written by `styles`, replacing
-  /// any 100% step.
+  /// The same keyframes with an end step (100%, emitted as `to`) written by `styles`, replacing any
+  /// 100% step.
   public Keyframes end(StyleBlock styles) {
     return at(100, styles);
   }

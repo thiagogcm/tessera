@@ -108,12 +108,11 @@ public final class GuideSite {
 
     @Override
     public void configureScope(ScopeStyle scope) {
-      scope.root(
-          s ->
-              s.p(Tokens.SPACE_5)
-                  .rounded(Tokens.RADIUS_XL)
-                  .bg(Tokens.SURFACE_CARD)
-                  .border(Border.hairline(Tokens.BORDER_SUBTLE)));
+      scope.root(s ->
+          s.p(Tokens.SPACE_5)
+              .rounded(Tokens.RADIUS_XL)
+              .bg(Tokens.SURFACE_CARD)
+              .border(Border.hairline(Tokens.BORDER_SUBTLE)));
     }
 
     @Override

@@ -1,10 +1,10 @@
 package dev.nthings.tessera.view;
 
 /// The namespace that generated and scoped DOM ids live in. Each [dev.nthings.tessera.core.Scope]
-/// opens one, nested where it is placed, so `domId` joins every enclosing scope id with `--`.
-/// Keyed content opens one too; `keyed` marks that scope and every scope nested in it.
-/// `generated` is set when any segment of `domId` came from an encounter-order counter rather than
-/// an explicit [dev.nthings.tessera.core.Scope#scopeId]. The page itself is [#ROOT].
+/// opens one, nested where it is placed, so `domId` joins every enclosing scope id with `--`. Keyed
+/// content opens one too; `keyed` marks that scope and every scope nested in it. `generated` is set
+/// when any segment of `domId` came from an encounter-order counter rather than an explicit
+/// [dev.nthings.tessera.core.Scope#scopeId]. The page itself is [#ROOT].
 record ViewScope(String domId, boolean keyed, boolean generated) {
 
   static final ViewScope ROOT = new ViewScope("", false, false);

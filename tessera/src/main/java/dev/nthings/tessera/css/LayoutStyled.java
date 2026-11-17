@@ -346,8 +346,8 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
     return self();
   }
 
-  /// Makes this element `container`: sets `container-type` to its types and, for a named
-  /// container, `container-name`. Descendants then match the container's queries, such as
+  /// Makes this element `container`: sets `container-type` to its types and, for a named container,
+  /// `container-name`. Descendants then match the container's queries, such as
   /// `on(container.atLeast(rem(36)), ...)`. Containment changes layout (an inline-size container
   /// does not size to its content), so declare it only where queries need it.
   default SELF container(Container container) {

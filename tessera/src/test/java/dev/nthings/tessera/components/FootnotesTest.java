@@ -196,19 +196,16 @@ class FootnotesTest {
   @DisplayName("rejects reusing a footnote id on a page")
   void rejectsDuplicateIds() {
     assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(
-            () ->
-                renderMain(
-                    Footnote.of("One").id("n").reference(), Footnote.of("Two").id("n").reference()))
-        .satisfies(
-            failure -> {
-              assertThat(failure.diagnostics())
-                  .singleElement()
-                  .satisfies(
-                      d -> {
-                        assertThat(d.rule()).isEqualTo("duplicate-id");
-                        assertThat(d.location().domId()).isEqualTo("footnotes--fn-n");
-                      });
-            });
+        .isThrownBy(() ->
+            renderMain(
+                Footnote.of("One").id("n").reference(), Footnote.of("Two").id("n").reference()))
+        .satisfies(failure -> {
+          assertThat(failure.diagnostics())
+              .singleElement()
+              .satisfies(d -> {
+                assertThat(d.rule()).isEqualTo("duplicate-id");
+                assertThat(d.location().domId()).isEqualTo("footnotes--fn-n");
+              });
+        });
   }
 }

@@ -5,8 +5,8 @@ import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// Plays [Keyframes] on an element, applied with [Styled#animation(Animation)]. Every animation
-/// applies only under `prefers-reduced-motion: no-preference` ([Media#MOTION_SAFE]), and using
-/// one registers its keyframes in the stylesheet. The value is immutable: [#along],
+/// applies only under `prefers-reduced-motion: no-preference` ([Media#MOTION_SAFE]), and using one
+/// registers its keyframes in the stylesheet. The value is immutable: [#along],
 /// [#staggerBySiblingIndex] and the other modifiers return a new one.
 ///
 /// Timelines:

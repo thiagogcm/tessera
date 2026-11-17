@@ -7,13 +7,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 
-/// A file published at `path`: a static file registered on a site, or a stylesheet or client
-/// page script produced under [OutputMode#external(String)].
+/// A file published at `path`: a static file registered on a site, or a stylesheet or client page
+/// script produced under [OutputMode#external(String)].
 ///
 /// The path must start with `/` and must not end with `/`, contain `..`, or contain `//`; the
 /// content type must not be blank. Violations throw IllegalArgumentException. Site compilation
-/// validates internal `href`, `src` and `poster` URLs against registered assets, as it does
-/// routes. The record holds its own copy of the bytes.
+/// validates internal `href`, `src` and `poster` URLs against registered assets, as it does routes.
+/// The record holds its own copy of the bytes.
 public record Asset(String path, String contentType, byte[] content) {
 
   public Asset {

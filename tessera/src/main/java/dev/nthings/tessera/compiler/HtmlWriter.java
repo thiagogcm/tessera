@@ -22,9 +22,9 @@ final class HtmlWriter {
 
   private HtmlWriter() {}
 
-  /// The stylesheet and behavior modules shared by the pages of one compilation, hashed and
-  /// encoded once: under external output each file is an [Asset] at a content-hashed path, which
-  /// every page painted with these resources links.
+  /// The stylesheet and behavior modules shared by the pages of one compilation, hashed and encoded
+  /// once: under external output each file is an [Asset] at a content-hashed path, which every page
+  /// painted with these resources links.
   static final class Resources {
     private final String css;
     private final OutputMode outputMode;

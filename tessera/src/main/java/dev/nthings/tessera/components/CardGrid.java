@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /// Responsive grid of [Card]s, created with [#of(CssLength, IntoElement...)]. It fits as many
-/// columns as are at least the minimum card width. Cards in the same row align their media,
-/// header, body, and footer regions, so their footers line up.
+/// columns as are at least the minimum card width. Cards in the same row align their media, header,
+/// body, and footer regions, so their footers line up.
 ///
 /// Without an [#id(String)], the compiler numbers instances `card-grid-<n>`.
 public final class CardGrid extends BuiltinScope<CardGrid> implements ParentElement<CardGrid> {

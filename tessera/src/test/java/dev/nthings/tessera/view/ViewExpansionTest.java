@@ -85,10 +85,9 @@ class ViewExpansionTest {
         .filteredOn(
             rule -> rule.startsWith("@layer utilities{") || rule.startsWith("@layer components{"))
         .isNotEmpty()
-        .allSatisfy(
-            rule ->
-                assertThat(page.css())
-                    .contains(rule.substring(rule.indexOf('{') + 1, rule.length() - 1)));
+        .allSatisfy(rule ->
+            assertThat(page.css())
+                .contains(rule.substring(rule.indexOf('{') + 1, rule.length() - 1)));
   }
 
   @ParameterizedTest
@@ -142,13 +141,10 @@ class ViewExpansionTest {
         .noneMatch(rule -> rule.startsWith("@layer reset{") || rule.startsWith("@layer theme{"));
     assertThat(base)
         .noneSatisfy(rule -> assertThat(rule).containsAnyOf(":root", "body{", "@view-transition"))
-        .anySatisfy(
-            rule ->
-                assertThat(rule)
-                    .startsWith(
-                        "@layer theme{[data-tessera-theme=\""
-                            + StyleSheet.themeKey(theme)
-                            + "\"]{"))
+        .anySatisfy(rule ->
+            assertThat(rule)
+                .startsWith(
+                    "@layer theme{[data-tessera-theme=\"" + StyleSheet.themeKey(theme) + "\"]{"))
         .anySatisfy(rule -> assertThat(rule).startsWith("@layer reset{[data-tessera-root]{"));
     var custom = theme.with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
     assertThat(StyleSheet.themeKey(theme))
@@ -283,11 +279,9 @@ class ViewExpansionTest {
     assertThat(failure.getSuppressed())
         .singleElement()
         .isInstanceOf(ViewException.class)
-        .satisfies(
-            context ->
-                assertThat(context)
-                    .hasMessageContaining(
-                        "panel[outer]", "panel[outer--inner]", "callback failed"));
+        .satisfies(context ->
+            assertThat(context)
+                .hasMessageContaining("panel[outer]", "panel[outer--inner]", "callback failed"));
 
     var next = dom(render(new Panel("fresh", p().text("Ready"), false, false)));
     assertThat(next.select("[data-scope-id]").attr("data-scope-id")).isEqualTo("fresh");
@@ -693,20 +687,17 @@ class ViewExpansionTest {
 
   private static List<SemanticElement> semantics(Document document) {
     return document.body().getAllElements().stream()
-        .map(
-            element -> {
-              var attributes = new HashMap<String, String>();
-              element
-                  .attributes()
-                  .forEach(
-                      attribute -> {
-                        if (!List.of("class", "data-scope", "data-scope-id")
-                            .contains(attribute.getKey())) {
-                          attributes.put(attribute.getKey(), attribute.getValue());
-                        }
-                      });
-              return new SemanticElement(element.tagName(), attributes, element.ownText());
-            })
+        .map(element -> {
+          var attributes = new HashMap<String, String>();
+          element
+              .attributes()
+              .forEach(attribute -> {
+                if (!List.of("class", "data-scope", "data-scope-id").contains(attribute.getKey())) {
+                  attributes.put(attribute.getKey(), attribute.getValue());
+                }
+              });
+          return new SemanticElement(element.tagName(), attributes, element.ownText());
+        })
         .toList();
   }
 

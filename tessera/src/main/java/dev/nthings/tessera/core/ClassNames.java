@@ -2,9 +2,9 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.foundation.Fnv1a64;
 
-/// Compiler-facing: the class-derived names of components and scopes, computed once per class.
-/// A class has no stable name when it is anonymous, or a lambda or other hidden or synthetic
-/// class: its name can change between builds.
+/// Compiler-facing: the class-derived names of components and scopes, computed once per class. A
+/// class has no stable name when it is anonymous, or a lambda or other hidden or synthetic class:
+/// its name can change between builds.
 public final class ClassNames {
 
   private record Names(boolean unstable, String simpleName, String kebabName) {}

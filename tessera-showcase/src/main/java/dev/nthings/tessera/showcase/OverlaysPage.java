@@ -71,10 +71,9 @@ final class OverlaysPage {
         .features("interestfor", "popover=\"hint\"", "position-try-fallbacks")
         .example(
             Button.of("Hover me")
-                .interestTooltip(
-                    tip ->
-                        Demo.surface(tip.p(CssLength.rem(0.5)), CssLength.rem(0.375))
-                            .text("Saved 2 minutes ago")))
+                .interestTooltip(tip ->
+                    Demo.surface(tip.p(CssLength.rem(0.5)), CssLength.rem(0.375))
+                        .text("Saved 2 minutes ago")))
         .code("Button.of(\"Hover me\").interestTooltip(tip -> tip.text(\"Saved 2 minutes ago\"));");
   }
 

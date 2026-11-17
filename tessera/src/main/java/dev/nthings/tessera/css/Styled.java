@@ -25,8 +25,8 @@ package dev.nthings.tessera.css;
 ///   `backdropFilter`, [#cursor(Cursor)].
 /// - Conditions: [#on(Condition, StyleBlock)] for states, media features and container queries.
 /// - Presets: [#styles(StyleBlock)] runs a shared [StyleBlock] on this target.
-/// - Scrolling and anchoring: snapping, scroll margins and markers, `anchorName`,
-///   `positionAnchor`, `positionArea`, `positionTryFallbacks`.
+/// - Scrolling and anchoring: snapping, scroll margins and markers, `anchorName`, `positionAnchor`,
+///   `positionArea`, `positionTryFallbacks`.
 ///
 /// A keyword property with several useful values takes an enum (`cursor(Cursor)`,
 /// `overflow(Overflow)`); one with a single useful non-default value has a named toggle

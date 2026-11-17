@@ -187,8 +187,8 @@ interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SELF> {
     return self();
   }
 
-  /// `appearance`: [Appearance#NONE] drops native control rendering, and
-  /// [Appearance#BASE_SELECT] opts a `<select>` into the stylable base rendering.
+  /// `appearance`: [Appearance#NONE] drops native control rendering, and [Appearance#BASE_SELECT]
+  /// opts a `<select>` into the stylable base rendering.
   default SELF appearance(Appearance appearance) {
     style().put(CssProperty.APPEARANCE, appearance);
     return self();

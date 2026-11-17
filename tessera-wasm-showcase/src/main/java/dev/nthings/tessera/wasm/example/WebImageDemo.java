@@ -103,11 +103,10 @@ public final class WebImageDemo {
   /// Advances the live meter once per frame for `frames` frames.
   private void animate(Host host, int frames) {
     if (frames > 0) {
-      host.frame(
-          () -> {
-            liveMeter++;
-            animate(host, frames - 1);
-          });
+      host.frame(() -> {
+        liveMeter++;
+        animate(host, frames - 1);
+      });
     }
   }
 

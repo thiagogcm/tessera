@@ -11,8 +11,8 @@ import dev.nthings.tessera.css.TrackList;
 import java.util.ArrayList;
 import java.util.List;
 
-/// Description list: each term is a `<dt>` and each description a `<dd>`, laid out in two
-/// columns. Create one with [#of()] and add terms.
+/// Description list: each term is a `<dt>` and each description a `<dd>`, laid out in two columns.
+/// Create one with [#of()] and add terms.
 public final class DescriptionList extends BuiltinComponent {
 
   private record Term(String term, Element description) {}

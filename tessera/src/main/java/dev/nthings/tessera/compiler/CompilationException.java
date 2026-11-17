@@ -16,9 +16,8 @@ public final class CompilationException extends RuntimeException {
     this.diagnostics = diagnostics.toArray(Diagnostic[]::new);
   }
 
-  /// The diagnostics in the order they were reported. Site compilation reports route and file
-  /// path conflicts on their own; otherwise page errors in route order; otherwise cross-route
-  /// errors.
+  /// The diagnostics in the order they were reported. Site compilation reports route and file path
+  /// conflicts on their own; otherwise page errors in route order; otherwise cross-route errors.
   public List<Diagnostic> diagnostics() {
     return List.of(diagnostics);
   }

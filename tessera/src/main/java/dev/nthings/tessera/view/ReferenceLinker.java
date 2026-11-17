@@ -38,6 +38,7 @@ final class ReferenceLinker {
   /// One sibling list being linked, with its key namespace.
   private final class Siblings {
     private final List<ViewSnapshot.Node> out;
+
     /// Created at the first key: most sibling lists have none.
     private @Nullable Set<String> keys;
 
@@ -98,24 +99,23 @@ final class ReferenceLinker {
       var linked = new LinkedHashMap<>(attrs);
       var missing = new LinkedHashSet<String>();
       tag.references()
-          .forEach(
-              (name, reference) -> {
-                var ids = new ArrayList<String>(reference.targets().size());
-                var usage = "<" + tag.tag().tagName() + " " + name + ">";
-                for (var target : reference.targets()) {
-                  var id = state.boundId(target, usage, tag.location());
-                  if (id != null) {
-                    ids.add(id);
-                  }
-                }
-                // Unresolved attributes cannot be validated; other nodes still can.
-                if (ids.size() == reference.targets().size()) {
-                  linked.put(name, reference.prefix() + String.join(" ", ids));
-                } else {
-                  linked.remove(name);
-                  missing.add(name);
-                }
-              });
+          .forEach((name, reference) -> {
+            var ids = new ArrayList<String>(reference.targets().size());
+            var usage = "<" + tag.tag().tagName() + " " + name + ">";
+            for (var target : reference.targets()) {
+              var id = state.boundId(target, usage, tag.location());
+              if (id != null) {
+                ids.add(id);
+              }
+            }
+            // Unresolved attributes cannot be validated; other nodes still can.
+            if (ids.size() == reference.targets().size()) {
+              linked.put(name, reference.prefix() + String.join(" ", ids));
+            } else {
+              linked.remove(name);
+              missing.add(name);
+            }
+          });
       attrs = linked;
       unresolved = missing;
     }

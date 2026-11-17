@@ -21,9 +21,9 @@ import java.util.List;
 
 /// Two-column documentation layout: sections on the left and, on the right, a sticky
 /// [TableOfContents] listing every heading on the page. In a container narrower than 48rem, the
-/// table of contents stacks above the sections. Create one with [#of(IntoElement...)] and add
-/// more sections as children; they keep their page-level ids, so links to them do not depend on
-/// the layout.
+/// table of contents stacks above the sections. Create one with [#of(IntoElement...)] and add more
+/// sections as children; they keep their page-level ids, so links to them do not depend on the
+/// layout.
 ///
 /// Without an [#id(String)], the compiler numbers instances `doc-layout-<n>`.
 public final class DocLayout extends BuiltinScope<DocLayout> implements ParentElement<DocLayout> {

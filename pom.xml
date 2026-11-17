@@ -59,7 +59,7 @@
         <axe-core.version>4.14.0</axe-core.version>
         <checkstyle.version>14.4.0</checkstyle.version>
         <errorprone.version>2.52.0</errorprone.version>
-        <google-java-format.version>1.32.0</google-java-format.version>
+        <google-java-format.version>2.0.0</google-java-format.version>
         <jacoco-maven-plugin.version>0.8.16</jacoco-maven-plugin.version>
         <jsoup.version>1.24.1</jsoup.version>
         <jspecify.version>1.0.1</jspecify.version>

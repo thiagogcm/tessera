@@ -20,16 +20,16 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
-/// Customizable `<select>`: where the browser supports customizable selects, the library styles
-/// its button and open list; other browsers show their native list. Create one with
-/// [#of(String)], add options, and wrap it with [Field#of(String, Select)] to label it.
+/// Customizable `<select>`: where the browser supports customizable selects, the library styles its
+/// button and open list; other browsers show their native list. Create one with [#of(String)], add
+/// options, and wrap it with [Field#of(String, Select)] to label it.
 ///
 /// Without an [#id(String)], the compiler numbers instances `custom-select-<n>`.
 public final class Select extends BuiltinScope<Select> {
 
-  /// One option for [Select#optgroup(String, List)]: the submitted `value`, the visible
-  /// `label`, and whether it starts selected. Create one with [#of(String, String)] or
-  /// [#selected(String, String)].
+  /// One option for [Select#optgroup(String, List)]: the submitted `value`, the visible `label`,
+  /// and whether it starts selected. Create one with [#of(String, String)] or [#selected(String,
+  /// String)].
   public static final class Option {
 
     private final String value;
@@ -126,11 +126,10 @@ public final class Select extends BuiltinScope<Select> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                Forms.controlChrome(s.appearance(Appearance.BASE_SELECT))
-                    .cursor(Cursor.POINTER)
-                    .on(State.FOCUS_VISIBLE, Forms::controlFocusRing))
+        .root(s ->
+            Forms.controlChrome(s.appearance(Appearance.BASE_SELECT))
+                .cursor(Cursor.POINTER)
+                .on(State.FOCUS_VISIBLE, Forms::controlFocusRing))
         .select(
             ":scope::picker(select)",
             s ->

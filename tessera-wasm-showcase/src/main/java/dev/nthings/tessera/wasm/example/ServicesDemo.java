@@ -49,11 +49,10 @@ public final class ServicesDemo {
             Button.of("Select first word").onClick(() -> host.select(draft, 0, 5)),
             Button.of("Read selection")
                 .onClick(
-                    root.update(
-                        () -> {
-                          var selection = host.selection(draft);
-                          status = "selection " + selection.start() + "-" + selection.end();
-                        })),
+                    root.update(() -> {
+                      var selection = host.selection(draft);
+                      status = "selection " + selection.start() + "-" + selection.end();
+                    })),
             Button.of("Re-render services").onClick(root.update(() -> {})),
             Elements.button()
                 .id(opener)
@@ -76,41 +75,37 @@ public final class ServicesDemo {
                     Elements.p().attr("data-dialog-renders", "").text("Renders: " + renders),
                     Button.of("Re-render inside dialog").onClick(root.update(() -> {})),
                     Button.of("Close services dialog")
-                        .onClick(
-                            () -> {
-                              host.close(dialog);
-                              restoreFocus();
-                            }),
+                        .onClick(() -> {
+                          host.close(dialog);
+                          restoreFocus();
+                        }),
                     Button.of("Close and replace opener")
-                        .onClick(
-                            () -> {
-                              generation++;
-                              host.close(dialog);
-                              // The new opener exists only after the next commit.
-                              host.afterRender(this::restoreFocus);
-                            })),
+                        .onClick(() -> {
+                          generation++;
+                          host.close(dialog);
+                          // The new opener exists only after the next commit.
+                          host.afterRender(this::restoreFocus);
+                        })),
             Button.of("Toggle menu").onClick(() -> host.togglePopover(menu)),
             Elements.div().id(menu).attr("popover", "auto").text("Menu"),
             Elements.audio().id(audio).attr("src", "/tone.wav").boolAttr("loop"),
             Button.of("Play audio")
-                .onClick(
-                    () -> {
-                      host.muted(audio, true);
-                      host.play(
-                          audio, () -> status = "playing", reason -> status = "rejected " + reason);
-                    }),
+                .onClick(() -> {
+                  host.muted(audio, true);
+                  host.play(
+                      audio, () -> status = "playing", reason -> status = "rejected " + reason);
+                }),
             Button.of("Pause audio").onClick(root.update(() -> host.pause(audio))),
             Button.of("Read media")
                 .onClick(
-                    root.update(
-                        () -> {
-                          var media = host.media(audio);
-                          status =
-                              "media paused="
-                                  + media.paused()
-                                  + " advanced="
-                                  + (media.currentTime() > 0);
-                        })),
+                    root.update(() -> {
+                      var media = host.media(audio);
+                      status =
+                          "media paused="
+                              + media.paused()
+                              + " advanced="
+                              + (media.currentTime() > 0);
+                    })),
             owned,
             rebuilt,
             Button.of("Open overlay later")
@@ -119,11 +114,10 @@ public final class ServicesDemo {
                         () -> host.timeout(Duration.ofMillis(100), () -> host.showModal(confirm)))),
             Button.of("Open stale overlay later")
                 .onClick(
-                    root.update(
-                        () -> {
-                          var stale = rebuilt.dialogRef();
-                          host.timeout(Duration.ofMillis(100), () -> host.showModal(stale));
-                        })),
+                    root.update(() -> {
+                      var stale = rebuilt.dialogRef();
+                      host.timeout(Duration.ofMillis(100), () -> host.showModal(stale));
+                    })),
             Button.of("Focus unbound reference")
                 .onClick(() -> host.focus(ElementRef.scoped("missing"))),
             Button.of("Close services root").onClick(root::close),

@@ -1,14 +1,14 @@
 package dev.nthings.tessera.css;
 
 /// A theme-wide CSS custom property with a default value of type `V`. A token is itself a value of
-/// its category, serializing as `var(--name)`, so `bg(Tokens.SURFACE_CARD)` works wherever a
-/// color does. [Theme#with(DesignToken, CssValue)] overrides it with a value of the same category,
-/// so a length cannot replace a color. [Tokens] holds the built-in tokens; create your own with a
+/// its category, serializing as `var(--name)`, so `bg(Tokens.SURFACE_CARD)` works wherever a color
+/// does. [Theme#with(DesignToken, CssValue)] overrides it with a value of the same category, so a
+/// length cannot replace a color. [Tokens] holds the built-in tokens; create your own with a
 /// category's constructor, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`,
 /// and add it to a theme with `Theme.with`.
 ///
-/// Pass the name without its leading `--`. Every constructor throws IllegalArgumentException for
-/// an empty name, a name starting with `-`, or one with characters outside `[A-Za-z0-9_-]`.
+/// Pass the name without its leading `--`. Every constructor throws IllegalArgumentException for an
+/// empty name, a name starting with `-`, or one with characters outside `[A-Za-z0-9_-]`.
 ///
 /// @param <V> the value category, such as [CssColor]
 public sealed interface DesignToken<V extends CssValue> extends CssValue
@@ -53,8 +53,8 @@ public sealed interface DesignToken<V extends CssValue> extends CssValue
     }
   }
 
-  /// A font family token, used with [Styled#fontFamily(DesignToken.FontFamily)] or as a
-  /// [FontStack] entry.
+  /// A font family token, used with [Styled#fontFamily(DesignToken.FontFamily)] or as a [FontStack]
+  /// entry.
   record FontFamily(String name, FontStack defaultValue)
       implements DesignToken<FontStack>, FontStack.Entry {
     public FontFamily {

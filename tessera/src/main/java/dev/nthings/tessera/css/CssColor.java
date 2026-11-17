@@ -74,8 +74,8 @@ public sealed interface CssColor extends CssValue
     return mix(space, CssLength.pct(percent), other);
   }
 
-  /// This color weighted by `weight` (a percentage or a calculation of one) against `other`,
-  /// mixed in `space`.
+  /// This color weighted by `weight` (a percentage or a calculation of one) against `other`, mixed
+  /// in `space`.
   default CssColor mix(Space space, CssLength weight, CssColor other) {
     return new CssColors.Mix(space, this, weight, other);
   }

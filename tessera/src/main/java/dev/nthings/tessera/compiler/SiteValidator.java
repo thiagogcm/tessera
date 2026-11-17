@@ -23,11 +23,10 @@ final class SiteValidator {
       entry
           .getValue()
           .transitionLocations()
-          .forEach(
-              (key, location) ->
-                  locationsByKey
-                      .computeIfAbsent(key, _ -> new ArrayList<>())
-                      .add(location.atRoute(route)));
+          .forEach((key, location) ->
+              locationsByKey
+                  .computeIfAbsent(key, _ -> new ArrayList<>())
+                  .add(location.atRoute(route)));
     }
     for (var entry : locationsByKey.entrySet()) {
       var key = entry.getKey();
@@ -53,12 +52,10 @@ final class SiteValidator {
       Set<String> assetPaths,
       List<Diagnostic> diagnostics) {
     var publishedPages = new LinkedHashMap<String, PreparedPage>();
-    preparedByRoute.forEach(
-        (route, page) -> {
-          publishedPages.put(route, page);
-          publishedPages.put(
-              "/" + SiteRoute.outputPathFor(route).toString().replace('\\', '/'), page);
-        });
+    preparedByRoute.forEach((route, page) -> {
+      publishedPages.put(route, page);
+      publishedPages.put("/" + SiteRoute.outputPathFor(route).toString().replace('\\', '/'), page);
+    });
     for (var entry : preparedByRoute.entrySet()) {
       var sourceRoute = entry.getKey();
       var sourcePage = entry.getValue();

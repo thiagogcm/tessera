@@ -106,25 +106,24 @@ public final class Badge extends BuiltinScope<Badge> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.inlineFlex()
-                    .itemsCenter()
-                    .justifyCenter()
-                    .gap(CssLength.rem(0.35))
-                    .fontFamilyInherit()
-                    .fontWeight(500)
-                    .lineHeight(1)
-                    .whiteSpace(WhiteSpace.NOWRAP)
-                    .rounded(Tokens.RADIUS_MD)
-                    .textDecorationNone()
-                    .transition(
-                        Transition.controlFeedback()
-                            .properties(
-                                Animatable.BACKGROUND_COLOR,
-                                Animatable.COLOR,
-                                Animatable.BORDER_COLOR,
-                                Animatable.OPACITY)))
+        .root(s ->
+            s.inlineFlex()
+                .itemsCenter()
+                .justifyCenter()
+                .gap(CssLength.rem(0.35))
+                .fontFamilyInherit()
+                .fontWeight(500)
+                .lineHeight(1)
+                .whiteSpace(WhiteSpace.NOWRAP)
+                .rounded(Tokens.RADIUS_MD)
+                .textDecorationNone()
+                .transition(
+                    Transition.controlFeedback()
+                        .properties(
+                            Animatable.BACKGROUND_COLOR,
+                            Animatable.COLOR,
+                            Animatable.BORDER_COLOR,
+                            Animatable.OPACITY)))
         .select(":scope.is-pill", s -> s.rounded(Tokens.RADIUS_FULL))
         .select(
             ":scope.badge--sm",

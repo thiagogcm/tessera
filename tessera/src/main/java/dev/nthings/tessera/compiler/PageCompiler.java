@@ -18,9 +18,9 @@ final class PageCompiler {
     return new CompiledPage(emit(prepared, resources), css, resources.assets());
   }
 
-  /// Lays out and validates `document` without emitting HTML. `siteHead` goes in
-  /// `<head>` before the page's own head contributions, so a site can share it across pages.
-  /// Throws [CompilationException] if the document has authoring errors.
+  /// Lays out and validates `document` without emitting HTML. `siteHead` goes in `<head>` before
+  /// the page's own head contributions, so a site can share it across pages. Throws
+  /// [CompilationException] if the document has authoring errors.
   static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
     var styles = new StyleSheet();
     var layout = DocumentPass.layout(document, siteHead, styles);
@@ -49,8 +49,8 @@ final class PageCompiler {
         layout.contributions().scripts());
   }
 
-  /// Emits `prepared` with `resources`, the stylesheet and modules the page links or inlines:
-  /// its own for a standalone page, or the shared ones of a site.
+  /// Emits `prepared` with `resources`, the stylesheet and modules the page links or inlines: its
+  /// own for a standalone page, or the shared ones of a site.
   static String emit(PreparedPage prepared, HtmlWriter.Resources resources) {
     return HtmlWriter.emit(
         prepared.document(),

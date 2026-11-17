@@ -50,6 +50,7 @@ class WebImageIT {
 
   /// Never released: `/slow` responds only after its timeout, long after a test aborts it.
   private static final CountDownLatch SLOW = new CountDownLatch(1);
+
   private static Playwright playwright;
 
   @BothEngines
@@ -501,12 +502,12 @@ class WebImageIT {
             control.focus();
             control.evaluate(
                 """
-            node => {
-              node.dispatchEvent(new CompositionEvent('compositionstart', {bubbles: true}));
-              node.value = 'かな';
-              node.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: true, data: 'かな'}));
-            }
-            """);
+                node => {
+                  node.dispatchEvent(new CompositionEvent('compositionstart', {bubbles: true}));
+                  node.value = 'かな';
+                  node.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: true, data: 'かな'}));
+                }
+                """);
             assertThat(page.locator("[data-form-event]")).containsText("composing=true");
             button(page, "Reset form").dispatchEvent("click");
             settleFrames(page);
@@ -514,12 +515,12 @@ class WebImageIT {
             assertThat(control).isFocused();
             control.evaluate(
                 """
-            node => {
-              node.dispatchEvent(new CompositionEvent('compositionend', {bubbles: true, data: '確定'}));
-              node.value = '確定';
-              node.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: false, data: '確定'}));
-            }
-            """);
+                node => {
+                  node.dispatchEvent(new CompositionEvent('compositionend', {bubbles: true, data: '確定'}));
+                  node.value = '確定';
+                  node.dispatchEvent(new InputEvent('input', {bubbles: true, isComposing: false, data: '確定'}));
+                }
+                """);
             assertThat(page.locator("[data-form-event]")).containsText(":確定;");
             assertThat(page.locator("[data-form-event]")).containsText("composing=false");
             settleFrames(page);
@@ -557,12 +558,12 @@ class WebImageIT {
           var captured = page.locator("[data-form-event]").textContent();
           page.evaluate(
               """
-          () => {
-            for (const type of ['compositionstart', 'input', 'change', 'compositionend']) {
-              removedControl.dispatchEvent(new Event(type));
-            }
-          }
-          """);
+              () => {
+                for (const type of ['compositionstart', 'input', 'change', 'compositionend']) {
+                  removedControl.dispatchEvent(new Event(type));
+                }
+              }
+              """);
           settleFrames(page);
           assertThat(section).hasAttribute("data-form-turn", turn);
           assertThat(page.locator("[data-form-event]")).hasText(captured);
@@ -588,21 +589,21 @@ class WebImageIT {
           settleFrames(page);
           text.evaluate(
               """
-          node => {
-            window.imeEvents = [];
-            for (const type of ['compositionstart', 'compositionupdate', 'compositionend']) {
-              node.addEventListener(type, event => imeEvents.push({type, trusted: event.isTrusted}));
-            }
-          }
-          """);
+              node => {
+                window.imeEvents = [];
+                for (const type of ['compositionstart', 'compositionupdate', 'compositionend']) {
+                  node.addEventListener(type, event => imeEvents.push({type, trusted: event.isTrusted}));
+                }
+              }
+              """);
           var session = page.context().newCDPSession(page);
           try {
             session.send(
                 "Input.imeSetComposition",
                 JsonParser.parseString(
                         """
-            {"text":"かな","selectionStart":2,"selectionEnd":2}
-            """)
+                        {"text":"かな","selectionStart":2,"selectionEnd":2}
+                        """)
                     .getAsJsonObject());
             assertThat(page.locator("[data-form-event]")).containsText("composing=true");
             button(page, "Reset form").dispatchEvent("click");
@@ -613,8 +614,8 @@ class WebImageIT {
                 "Input.insertText",
                 JsonParser.parseString(
                         """
-            {"text":"確定"}
-            """)
+                        {"text":"確定"}
+                        """)
                     .getAsJsonObject());
             settleFrames(page);
             assertThat(text).hasValue("確定");
@@ -809,12 +810,11 @@ class WebImageIT {
           assertThat(label(page, "Notes")).isVisible();
           Assertions.assertThat(failures)
               .singleElement()
-              .satisfies(
-                  error ->
-                      Assertions.assertThat(error)
-                          .contains("Render rejected in browser root 'broken'")
-                          .contains("BrokenPanel")
-                          .contains("Simulated initial render failure"));
+              .satisfies(error ->
+                  Assertions.assertThat(error)
+                      .contains("Render rejected in browser root 'broken'")
+                      .contains("BrokenPanel")
+                      .contains("Simulated initial render failure"));
         });
   }
 
@@ -972,12 +972,11 @@ class WebImageIT {
           page.waitForFunction(
               "Number(document.querySelector('[data-lifetime-ticks]').dataset.lifetimeTicks) >= 2");
           var aborted = new ArrayList<String>();
-          page.onRequestFailed(
-              request -> {
-                if (request.url().endsWith("/slow")) {
-                  aborted.add(request.failure());
-                }
-              });
+          page.onRequestFailed(request -> {
+            if (request.url().endsWith("/slow")) {
+              aborted.add(request.failure());
+            }
+          });
           button(page, "Start request").click();
           assertThat(control).hasAttribute("data-lifetime-request", "pending");
 
@@ -1711,8 +1710,8 @@ class WebImageIT {
     }
   }
 
-  /// One browser per engine for the class; each test gets an isolated context.
-  /// Runs every engine through the same parameterized test.
+  /// One browser per engine for the class; each test gets an isolated context. Runs every engine
+  /// through the same parameterized test.
   @Target(ElementType.METHOD)
   @Retention(RetentionPolicy.RUNTIME)
   @ParameterizedTest(name = "{0}")

@@ -23,17 +23,17 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
 
 /// Form control functions: styled text-like inputs, a textarea and a switch, returned as plain
-/// elements you can refine further. The controls are bare: wrap one with
-/// [Field#of(String, TagElement)] to add a visible label, hint and error text.
-/// [#switchField(String, String)] and [#checkedSwitchField(String, String)] are labelled switches
-/// and need no wrapper; [Select] is the customizable select. Validation styling
-/// follows the browser's `:user-invalid` and `:user-valid` states.
+/// elements you can refine further. The controls are bare: wrap one with [Field#of(String,
+/// TagElement)] to add a visible label, hint and error text. [#switchField(String, String)] and
+/// [#checkedSwitchField(String, String)] are labelled switches and need no wrapper; [Select] is the
+/// customizable select. Validation styling follows the browser's `:user-invalid` and `:user-valid`
+/// states.
 public final class Forms {
 
   private Forms() {}
 
-  /// Styled `<input>` of `type` submitted as `name`. Wrap it with [Field#of(String, TagElement)]
-  /// to label it.
+  /// Styled `<input>` of `type` submitted as `name`. Wrap it with [Field#of(String, TagElement)] to
+  /// label it.
   public static TagElement input(String name, String type) {
     return controlChrome(Elements.input(type).attr("name", name))
         .on(State.FOCUS_VISIBLE, Forms::controlFocusRing)
@@ -70,9 +70,9 @@ public final class Forms {
     return input(name, "search");
   }
 
-  /// Styled `<textarea>` submitted as `name` with a minimum height of `minRows` lines plus 1rem.
-  /// It grows with its content where the browser supports that. Wrap it with
-  /// [Field#of(String, TagElement)] to label it.
+  /// Styled `<textarea>` submitted as `name` with a minimum height of `minRows` lines plus 1rem. It
+  /// grows with its content where the browser supports that. Wrap it with [Field#of(String,
+  /// TagElement)] to label it.
   public static TagElement textarea(String name, int minRows) {
     return controlChrome(Elements.textarea().attr("name", name))
         .fieldSizingContent()
@@ -83,8 +83,8 @@ public final class Forms {
         .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 
-  /// On/off switch submitted as `name`: a checkbox with `role="switch"`, drawn as a track and
-  /// a thumb.
+  /// On/off switch submitted as `name`: a checkbox with `role="switch"`, drawn as a track and a
+  /// thumb.
   ///
   /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
   /// background layer that slides when checked. It starts off; add `boolAttr("checked")` to start
@@ -119,14 +119,14 @@ public final class Forms {
   }
 
   /// Labelled switch row, off on load: the visible `label` names the switch. The switch's id is
-  /// `switch-<name>` in the enclosing id scope, so two switches with the same name in one id
-  /// scope report `duplicate-id`.
+  /// `switch-<name>` in the enclosing id scope, so two switches with the same name in one id scope
+  /// report `duplicate-id`.
   public static TagElement switchField(String label, String name) {
     return switchRow(label, name, switchInput(name));
   }
 
-  /// Labelled switch row that is on (checked) on load; otherwise the same as
-  /// [#switchField(String, String)].
+  /// Labelled switch row that is on (checked) on load; otherwise the same as [#switchField(String,
+  /// String)].
   public static TagElement checkedSwitchField(String label, String name) {
     return switchRow(label, name, switchInput(name).boolAttr("checked"));
   }

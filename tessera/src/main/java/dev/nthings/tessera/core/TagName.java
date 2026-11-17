@@ -1,7 +1,7 @@
 package dev.nthings.tessera.core;
 
-/// Emitted element name: a built-in [HtmlTag] or an author-defined [CustomElement].
-/// Sealed so compiler dispatch stays exhaustive.
+/// Emitted element name: a built-in [HtmlTag] or an author-defined [CustomElement]. Sealed so
+/// compiler dispatch stays exhaustive.
 public sealed interface TagName permits HtmlTag, CustomElement {
 
   String tagName();

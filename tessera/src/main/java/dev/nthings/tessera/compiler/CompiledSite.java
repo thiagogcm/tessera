@@ -14,9 +14,9 @@ import org.jspecify.annotations.Nullable;
 /// - `pages`: each route path mapped to its HTML document, in route declaration order.
 /// - `css`: the stylesheet every page shares. Under [OutputMode#inline()] each page embeds it;
 ///   under [OutputMode#external(String)] it is also one of the `files`.
-/// - `files`: each published URL path mapped to its file: registered assets, the shared
-///   stylesheet and page scripts (external output), `search-index.json`, and
-///   `sitemap.xml` when the site has a base URL.
+/// - `files`: each published URL path mapped to its file: registered assets, the shared stylesheet
+///   and page scripts (external output), `search-index.json`, and `sitemap.xml` when the site has a
+///   base URL.
 ///
 /// [SiteWriter] and [SitePreviewServer] publish pages and files together.
 public record CompiledSite(

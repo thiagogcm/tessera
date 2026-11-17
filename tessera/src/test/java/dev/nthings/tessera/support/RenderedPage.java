@@ -13,8 +13,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-/// A compiled page with its parsed DOM, so assertions on markup and styles never re-compile
-/// or re-parse.
+/// A compiled page with its parsed DOM, so assertions on markup and styles never re-compile or
+/// re-parse.
 public record RenderedPage(CompiledPage compiled, Document dom) {
 
   public static RenderedPage render(IntoElement body) {

@@ -33,8 +33,8 @@ import org.jspecify.annotations.Nullable;
 /// highlighted. Create one with [#of(String)]: it lists every heading collected into the document
 /// outline, such as [Section] and [Heading] entries, in collection order, and is resolved after
 /// layout, so it may appear before the sections it lists. Headings that do not opt into the
-/// outline, including dialog titles and the footnotes heading, are omitted. [#headings(List)]
-/// lists a fixed set instead. [DocLayout] places one beside its sections.
+/// outline, including dialog titles and the footnotes heading, are omitted. [#headings(List)] lists
+/// a fixed set instead. [DocLayout] places one beside its sections.
 public final class TableOfContents extends BuiltinComponent {
 
   private static final String CHEVRON_SVG =
@@ -51,8 +51,7 @@ public final class TableOfContents extends BuiltinComponent {
     this.title = title;
   }
 
-  /// Creates a table of contents titled `title`, which is its visible heading and the `<nav>`
-  /// name.
+  /// Creates a table of contents titled `title`, which is its visible heading and the `<nav>` name.
   public static TableOfContents of(String title) {
     return new TableOfContents(title);
   }
@@ -105,14 +104,13 @@ public final class TableOfContents extends BuiltinComponent {
     @Override
     void configureScope(ScopeStyle scope) {
       scope
-          .root(
-              s ->
-                  s.flex()
-                      .flexCol()
-                      .gap(Tokens.SPACE_2)
-                      .p(CssLength.px(0))
-                      .bg(CssColor.transparent())
-                      .border(Border.none()))
+          .root(s ->
+              s.flex()
+                  .flexCol()
+                  .gap(Tokens.SPACE_2)
+                  .p(CssLength.px(0))
+                  .bg(CssColor.transparent())
+                  .border(Border.none()))
           .select(
               ":scope .toc-summary",
               s ->

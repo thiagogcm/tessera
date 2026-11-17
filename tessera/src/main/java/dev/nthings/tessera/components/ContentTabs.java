@@ -24,15 +24,15 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-/// In-page tabs that switch between panels of content, following the ARIA tabs pattern. Create
-/// one with [#of(String)] and add tabs with [#tab(String, String, IntoElement)]; the first tab
-/// starts selected. All panels are in the page. Arrow, Home and End keys move between tabs, which
-/// HTML does not do on its own, so the component contributes the `tessera-tabs` page script. Until
-/// that script loads, the tab bar is hidden and every panel is visible. Tabs without any tab
-/// report `empty-content-tabs`. Two tabs with the same key report `duplicate-tab`.
+/// In-page tabs that switch between panels of content, following the ARIA tabs pattern. Create one
+/// with [#of(String)] and add tabs with [#tab(String, String, IntoElement)]; the first tab starts
+/// selected. All panels are in the page. Arrow, Home and End keys move between tabs, which HTML
+/// does not do on its own, so the component contributes the `tessera-tabs` page script. Until that
+/// script loads, the tab bar is hidden and every panel is visible. Tabs without any tab report
+/// `empty-content-tabs`. Two tabs with the same key report `duplicate-tab`.
 ///
-/// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting
-/// a tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-`. Without an
+/// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting a
+/// tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-`. Without an
 /// [#id(String)], the compiler numbers instances `content-tabs-<n>`.
 public final class ContentTabs extends BuiltinScope<ContentTabs> {
 
@@ -79,14 +79,13 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
   @Override
   void configureScope(ScopeStyle scope) {
     scope
-        .root(
-            s ->
-                s.flex()
-                    .flexCol()
-                    .rounded(Tokens.RADIUS_XL)
-                    .bg(Tokens.SURFACE_CARD)
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                    .overflow(Overflow.CLIP))
+        .root(s ->
+            s.flex()
+                .flexCol()
+                .rounded(Tokens.RADIUS_XL)
+                .bg(Tokens.SURFACE_CARD)
+                .border(Border.hairline(Tokens.BORDER_SUBTLE))
+                .overflow(Overflow.CLIP))
         .select(
             ":scope > .tab-bar",
             s ->

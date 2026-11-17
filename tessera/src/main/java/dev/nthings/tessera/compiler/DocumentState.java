@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-/// The document side of one page compilation: head contributions, client behaviors and
-/// end-of-body sections, as the [DocumentPass] backend receives them. Per-page values and headings
-/// live in the expansion's [dev.nthings.tessera.view.DocumentRegistry], as in every backend.
+/// The document side of one page compilation: head contributions, client behaviors and end-of-body
+/// sections, as the [DocumentPass] backend receives them. Per-page values and headings live in the
+/// expansion's [dev.nthings.tessera.view.DocumentRegistry], as in every backend.
 final class DocumentState {
 
   private final List<Contribution<Element>> headElements = new ArrayList<>();

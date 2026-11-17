@@ -12,13 +12,13 @@ import org.jspecify.annotations.Nullable;
 
 /// Opt-in capture of the Java call site that builds each element.
 ///
-/// While active, each element and component wrapper records the first calling frame that is
-/// neither Tessera's nor the platform's. Compilation carries it into diagnostics and, as
-/// `data-src="File.java:42"`, into the emitted HTML. Tracking costs a stack walk per element;
-/// leave it off in production.
+/// While active, each element and component wrapper records the first calling frame that is neither
+/// Tessera's nor the platform's. Compilation carries it into diagnostics and, as
+/// `data-src="File.java:42"`, into the emitted HTML. Tracking costs a stack walk per element; leave
+/// it off in production.
 ///
-/// Use [#enabled(Supplier)] for tracked authoring and compilation.
-/// Component-generated elements point to the line that placed the component.
+/// Use [#enabled(Supplier)] for tracked authoring and compilation. Component-generated elements
+/// point to the line that placed the component.
 public final class SourceTracking {
 
   private static final StackWalker WALKER =

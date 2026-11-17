@@ -22,12 +22,12 @@ import org.jspecify.annotations.Nullable;
 
 /// Retains native elements and anchored logical groups within one owned host.
 final class DomReconciler {
-  /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names
-  /// and group definitions.
+  /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names and
+  /// group definitions.
   private static final Object TEXT = new Object();
 
-  /// Identity of every effect. `Elements.effect` places each effect alone in a keyed group, so
-  /// the group's key restarts it.
+  /// Identity of every effect. `Elements.effect` places each effect alone in a keyed group, so the
+  /// group's key restarts it.
   private static final Object EFFECT = new Object();
 
   /// A keyed group matches only a previous group with the same key and definition.
@@ -47,8 +47,8 @@ final class DomReconciler {
     this.invalidate = invalidate;
   }
 
-  /// Replaces fallback content on the first successful update. A browser failure while applying
-  /// the update propagates so the owner can close the root.
+  /// Replaces fallback content on the first successful update. A browser failure while applying the
+  /// update propagates so the owner can close the root.
   ///
   /// Effects placed by the update start after it is committed; effects it removes are disposed
   /// during reconciliation. Application failures in either are reported without affecting the tree.
@@ -82,10 +82,9 @@ final class DomReconciler {
     }
   }
 
-  /// Releases every listener and effect, closes open dialogs and popovers, then
-  /// empties the owned host. Application cleanup failures are collected for one report.
-  /// Clearing the host rather than removing retained ranges also disposes a tree left
-  /// inconsistent by a failed update.
+  /// Releases every listener and effect, closes open dialogs and popovers, then empties the owned
+  /// host. Application cleanup failures are collected for one report. Clearing the host rather than
+  /// removing retained ranges also disposes a tree left inconsistent by a failed update.
   void close(List<RuntimeException> failures) {
     roots.forEach(instance -> release(instance, failures));
     roots = List.of();
@@ -96,8 +95,8 @@ final class DomReconciler {
     }
   }
 
-  /// Releases the listeners and effects of `instance` and its descendants, innermost first,
-  /// without touching the DOM. Application cleanup failures do not interrupt disposal.
+  /// Releases the listeners and effects of `instance` and its descendants, innermost first, without
+  /// touching the DOM. Application cleanup failures do not interrupt disposal.
   private static void release(Mounted instance, List<RuntimeException> failures) {
     instance.children.forEach(child -> release(child, failures));
     var lifetime = instance.lifetime;
@@ -116,10 +115,9 @@ final class DomReconciler {
     Dom.removeRange(instance.first, instance.last);
   }
 
-  /// Matches `next` against `previous`, then moves only the retained ranges outside the
-  /// longest run already in order, creates new nodes in their final position, and disposes the
-  /// rest. Matched nodes are patched in sibling order with creations, so effects start in
-  /// document order.
+  /// Matches `next` against `previous`, then moves only the retained ranges outside the longest run
+  /// already in order, creates new nodes in their final position, and disposes the rest. Matched
+  /// nodes are patched in sibling order with creations, so effects start in document order.
   private List<Mounted> reconcile(
       JSObject parent,
       List<Mounted> previous,
@@ -235,8 +233,8 @@ final class DomReconciler {
     return stable;
   }
 
-  /// What a child matches among its previous siblings: a keyed child its key, an unkeyed child
-  /// the earliest unmatched sibling of its kind (tag name, text, effect or group definition), so a
+  /// What a child matches among its previous siblings: a keyed child its key, an unkeyed child the
+  /// earliest unmatched sibling of its kind (tag name, text, effect or group definition), so a
   /// conditional sibling of another kind does not shift the match. Equal identities are always
   /// compatible, so a matched node is patched and an unmatched one replaced.
   private static Object identity(ViewSnapshot.Node node) {
@@ -379,12 +377,11 @@ final class DomReconciler {
         remove.accept(node, name);
       }
     }
-    next.forEach(
-        (name, value) -> {
-          if (!value.equals(previous.get(name))) {
-            set.apply(node, name, value);
-          }
-        });
+    next.forEach((name, value) -> {
+      if (!value.equals(previous.get(name))) {
+        set.apply(node, name, value);
+      }
+    });
   }
 
   @FunctionalInterface
@@ -392,10 +389,10 @@ final class DomReconciler {
     void apply(JSObject node, String name, String value);
   }
 
-  /// Keeps one native listener per type and phase. A re-render with the same options only swaps
-  /// the Java handler it calls, so the previous callback is no longer referenced; different
-  /// options register a new listener. A dispatched `once` listener stays spent while it remains
-  /// bound and is re-armed only after a render removes it.
+  /// Keeps one native listener per type and phase. A re-render with the same options only swaps the
+  /// Java handler it calls, so the previous callback is no longer referenced; different options
+  /// register a new listener. A dispatched `once` listener stays spent while it remains bound and
+  /// is re-armed only after a render removes it.
   private void events(Mounted instance, Map<EventListener.Key, EventListener> next) {
     if (instance.events.isEmpty() && next.isEmpty()) {
       return;
@@ -412,21 +409,22 @@ final class DomReconciler {
     if (instance.events.isEmpty() && !next.isEmpty()) {
       instance.events = new LinkedHashMap<>();
     }
-    next.forEach(
-        (key, listener) -> {
-          var binding = instance.events.get(key);
-          if (binding != null) {
-            binding.handler = listener.handler();
-          } else {
-            instance.events.put(key, new Binding(instance, listener, hostId));
-          }
-        });
+    next.forEach((key, listener) -> {
+      var binding = instance.events.get(key);
+      if (binding != null) {
+        binding.handler = listener.handler();
+      } else {
+        instance.events.put(key, new Binding(instance, listener, hostId));
+      }
+    });
   }
 
   private static final class Mounted {
     private ViewSnapshot.Node view;
+
     /// Fixed for the node's life: a node is only patched with a view of the same identity.
     private final Object identity;
+
     private final JSObject first;
     private final JSObject last;
     private List<Mounted> children = List.of();

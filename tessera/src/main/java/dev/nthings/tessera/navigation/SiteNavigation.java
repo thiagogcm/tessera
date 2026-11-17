@@ -12,15 +12,14 @@ public final class SiteNavigation {
 
   private SiteNavigation() {}
 
-  /// `SearchPalette` listing every route of the given [SiteDefinition]; see
-  /// [#searchPalette(List)].
+  /// `SearchPalette` listing every route of the given [SiteDefinition]; see [#searchPalette(List)].
   public static SearchPalette searchPalette(SiteDefinition site) {
     return searchPalette(site.routes());
   }
 
-  /// `SearchPalette` over the given routes, under a "Pages & Guides" group. Each route is a link
-  /// to its path, with its description and path shown beside it. Set an id or other options on
-  /// the returned palette.
+  /// `SearchPalette` over the given routes, under a "Pages & Guides" group. Each route is a link to
+  /// its path, with its description and path shown beside it. Set an id or other options on the
+  /// returned palette.
   public static SearchPalette searchPalette(List<SiteRoute> routes) {
     var palette = SearchPalette.of();
     for (var route : routes) {

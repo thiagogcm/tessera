@@ -108,12 +108,11 @@ public enum Role implements WireToken {
   private static final class Supported {
     static final List<Set<String>> BY_ORDINAL =
         Stream.of(values())
-            .map(
-                role -> {
-                  var supported = new HashSet<>(GLOBAL_ARIA);
-                  supported.addAll(role.specificAria());
-                  return Set.copyOf(supported);
-                })
+            .map(role -> {
+              var supported = new HashSet<>(GLOBAL_ARIA);
+              supported.addAll(role.specificAria());
+              return Set.copyOf(supported);
+            })
             .toList();
   }
 
@@ -151,8 +150,8 @@ public enum Role implements WireToken {
     };
   }
 
-  /// State attributes a custom element with this role must declare. Native elements that expose
-  /// the state, such as `<input type="checkbox">`, are exempt.
+  /// State attributes a custom element with this role must declare. Native elements that expose the
+  /// state, such as `<input type="checkbox">`, are exempt.
   public Set<String> requiredAria() {
     return switch (this) {
       case CHECKBOX, SWITCH, RADIO, MENUITEMCHECKBOX, MENUITEMRADIO -> Set.of("aria-checked");

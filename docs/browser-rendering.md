@@ -61,7 +61,7 @@ Several entries can share a page; each launcher loads once however many hosts it
 
 Generated and `ElementRef.scoped` ids use a namespace derived from the host id; an introduced id used outside the host rejects the render with `cross-root-id`. Mounting on a host that already holds a root fails separately.
 
-The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. Reserve the host's own ID and observe the [current identity and disposal limits](architecture.md#current-limits).
+The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. The host's own ID is reserved: a render claiming it for a child is rejected with `cross-root-id`, and the committed view or fallback stays. Remaining identity and disposal limits are listed under [current limits](architecture.md#current-limits).
 
 ## Schedule updates
 

@@ -54,14 +54,14 @@ Runtime expansion already applies the observable part of the [explicit scope-roo
 
 ### P2: Correct commit ownership and ID reservations
 
-Implement the [commit and closure rules](design/runtime.md#own-resources-before-exposing-callbacks) inside the current runtime. Fix the host-ID check at the existing identity boundary.
+Implement the [commit and closure rules](design/runtime.md#own-resources-before-exposing-callbacks) inside the current runtime. The host-ID reservation is complete at the existing identity boundary; the commit and closure rows remain.
 
 | Work | Completion evidence |
 | --- | --- |
 | Track acquired, committed, and retiring resources through a commit | Removing an effect whose cleanup closes the root releases a newly created replacement button's handler; clicking its retained detached node cannot change application state |
 | Settle closure at defined boundaries | Closure during expansion, native mutation, effect startup, or after-render work cannot publish later or start subsequent work |
 | Release resources from partial failures | An induced failure after acquiring listeners or styles leaves no callable detached handlers or retained ownership after closure |
-| Reserve the mount host ID | A child claiming the host's ID is rejected before publication; the previous tree or fallback remains intact |
+| Reserve the mount host ID | Done: a child claiming the host's ID is rejected before publication, and the previous tree or fallback remains intact |
 | Preserve ordinary disposal behavior | Key changes, request cancellation, repeated close, and cleanup failures still release each resource once |
 
 Exercise these through the existing lifecycle and identity fixtures. Add failure injection only where a real acquisition or mutation boundary needs evidence; avoid synthetic permutations that cannot occur through supported APIs.

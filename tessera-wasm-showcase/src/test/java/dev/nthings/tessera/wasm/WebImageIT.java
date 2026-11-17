@@ -1480,6 +1480,38 @@ class WebImageIT {
   }
 
   @BothEngines
+  @DisplayName("a child claiming the host's own id is rejected before publication")
+  void aChildClaimingTheHostsOwnIdIsRejectedBeforePublication(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          page.waitForSelector(
+              "#collisions section", new Page.WaitForSelectorOptions().setTimeout(30_000));
+          var collisions = page.locator("#collisions");
+          var before = collisions.innerHTML();
+
+          button(page, "Claim host id").click();
+          assertReported(
+              page,
+              failures,
+              "Render rejected in browser root 'collisions'",
+              "DOM id 'collisions' is already used by the host element of this root");
+          Assertions.assertThat(collisions.innerHTML()).isEqualTo(before);
+          Assertions.assertThat(page.evaluate("document.querySelectorAll('#collisions').length"))
+              .isEqualTo(1);
+
+          // The rejected candidate ran the view once, so the retry commits the next count.
+          var renders = collisions.locator("[data-collisions-renders]");
+          var committed = renderCount(renders, "data-collisions-renders");
+          button(page, "Release ids").click();
+          assertThat(renders)
+              .hasAttribute("data-collisions-renders", Integer.toString(committed + 2));
+          Assertions.assertThat(failures).hasSize(1);
+        });
+  }
+
+  @BothEngines
   @DisplayName("a host declaring a view its entry lacks is reported and keeps its fallback")
   void hostDeclaringAViewItsEntryLacksIsReportedAndKeepsItsFallback(String engine) {
     withPage(

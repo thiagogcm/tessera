@@ -58,11 +58,11 @@ A page declares each mount on its host element: `data-tessera-entry` names the l
 
 Identity checks read the document, so they cover roots of every compiled entry. A root refuses a host that already holds a root, lies inside one or contains one; closing removes the host's root marker, so the host can be mounted again.
 
-Generated and scoped ids are prefixed with the host id. Before each commit, every DOM id the candidate introduces (an id in `ViewSnapshot.ids()` that the root's last commit did not render) is checked against the document: an id that an element outside the root already uses, in another root or in the host page, rejects the candidate with a `cross-root-id` error naming the owner. A newly mounting root therefore checks all its ids.
+Generated and scoped ids are prefixed with the host id. Before each commit, every DOM id the candidate introduces (an id in `ViewSnapshot.ids()` that the root's last commit did not render) is checked against the document: an id that an element outside the root already uses, in another root or in the host page, rejects the candidate with a `cross-root-id` error naming the owner. The host's own id is reserved, so an id the candidate renders that names the mount host rejects the candidate the same way; a child never duplicates the host's identity. A newly mounting root therefore checks all its ids.
 
 Ids a root has committed are its own and are not checked again, so markup the host page adds later with one of them does not block the root's renders; an id the root stops rendering is released, and rendering it again checks it again.
 
-Sibling matching is separate from this DOM-ID check: a logical group's key and definition identify its retained range. The host itself is currently exempted by the containment check, as described under [current limits](architecture.md#current-limits).
+Sibling matching is separate from this DOM-ID check: a logical group's key and definition identify its retained range.
 
 ## Host services
 

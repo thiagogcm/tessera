@@ -28,9 +28,10 @@ import org.jspecify.annotations.Nullable;
 /// batches. Repeated self-invalidation stops with a reported diagnostic.
 ///
 /// Generated and [dev.nthings.tessera.core.ElementRef#scoped] ids are prefixed with the host id,
-/// so roots on one page never collide. An id the render introduces, one the root's last commit
-/// did not render, that another root or the host page already uses rejects the render
-/// (`cross-root-id`); ids the root has committed are its own and are not checked again.
+/// so roots on one page never collide. The host's own id is reserved: a child claiming it rejects
+/// the render. An id the render introduces, one the root's last commit did not render, that
+/// another root or the host page already uses rejects the render (`cross-root-id`); ids the root
+/// has committed are its own and are not checked again.
 ///
 /// The root owns its host element: it marks it for embedded styles, replaces fallback content on
 /// the first successful render and empties it on [#close()]. Style rules are shared with other
@@ -285,11 +286,15 @@ public final class BrowserRoot implements AutoCloseable {
     }
   }
 
-  /// The first of `ids` the committed tree does not render that an element outside the host
-  /// already uses, followed by a newline and that element's owner, or `null`. Committed ids are
-  /// the root's own, so markup the host page adds later with one of them does not block renders;
-  /// an id the root removed and renders again is checked again.
+  /// The first of `ids` an element outside the root's committed tree already uses, followed by a
+  /// newline and that element's owner, or `null`. The host's own id is reserved, so a child
+  /// claiming it is foreign. Committed ids are the root's own, so markup the host page adds later
+  /// with one of them does not block renders; an id the root removed and renders again is checked
+  /// again.
   private @Nullable String foreignId(Set<String> ids) {
+    if (ids.contains(hostId)) {
+      return hostId + "\n" + "the host element of this root";
+    }
     var introduced = new StringJoiner("\n");
     for (var id : ids) {
       if (!committedIds.contains(id)) {

@@ -2,7 +2,7 @@
 
 Tessera uses shared expansion, reference linking, validation, and CSS collection for two outputs: static HTML documents and experimental live browser roots. Applications author mutable elements and components; each expansion captures its own tree before output or DOM reconciliation.
 
-This document helps maintainers locate responsibilities in the current implementation. Read [compiler internals](compiler.md) for static pass ownership and [browser internals](browser-internals.md) for runtime behavior. The [proposal](architecture-redesign.md) defines target contracts; the [roadmap](roadmap.md) separates prerequisite repairs from the refactor and later features.
+This document helps maintainers locate responsibilities in the current implementation. Read [compiler internals](compiler.md) for static pass ownership and [browser internals](browser-internals.md) for runtime behavior. The [proposal](architecture-redesign.md) defines target contracts; the [roadmap](roadmap.md) orders the refactor and later features.
 
 ## Rendering paths
 
@@ -176,6 +176,6 @@ These constraints affect current use and define the repairs required before broa
 | Non-element scope roots | A fragment, text, raw HTML, late or deferred content, or an empty root reports `scope-root`. Expansion inserts no host | [Compile-time scope hosts](design/authoring.md#require-explicit-scope-roots) |
 | Portable placement | One `IntoElement` surface accepts features that only one backend can execute | [Placement families](design/authoring.md#separate-capabilities-from-placement) |
 | Public internals | Wrappers, inspection getters, stylesheet collection, and shared backend types are accessible to consumers | [Internal access](architecture-redesign.md#package-and-module-boundaries) |
-| Deployment evidence | Existing CSP acceptance exercises `style-src 'self'`; full policy and performance budgets need a dedicated gate | [P3: Browser feasibility](roadmap.md#p3-establish-browser-feasibility) |
+| Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#f2-bundle-publication) |
 
 For current applications, return one authored element from a scope. Runtime expansion reports `scope-root` when that host is missing; it does not insert a wrapper or replace an inner scope. Each mount host's ID is reserved: a child claiming it is rejected before publication. The remaining scope-host gap is the compile-time API in [explicit scope roots](design/authoring.md#require-explicit-scope-roots).

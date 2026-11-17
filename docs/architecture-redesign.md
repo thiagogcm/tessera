@@ -2,7 +2,7 @@
 
 Use one portable component model to produce static documents and live browser views. Keep document assembly and browser execution explicit, and make unsupported placement a type error. This proposal defines the target design; [Architecture](architecture.md) describes the implementation available now.
 
-The intended readers are maintainers changing authoring APIs, compiler passes, and the browser runtime. The [roadmap](roadmap.md) defines prerequisites, delivery order, and acceptance evidence. Proposed names below describe responsibilities; they are not available APIs.
+The intended readers are maintainers changing authoring APIs, compiler passes, and the browser runtime. The [roadmap](roadmap.md) defines delivery order and acceptance evidence. Proposed names below describe responsibilities; they are not available APIs.
 
 ## Read the design by responsibility
 

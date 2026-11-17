@@ -118,7 +118,7 @@ A document mount accepts document fallback content, including portable component
 
 Support root and nested asset bases. Publish `.wasm` as `application/wasm`, include every resource in compiled outputs, and exclude build intermediates. SHA-384 metadata is useful only if checked: apply script integrity where supported and verify fetched binary or chunk bytes before using them. A digest in an unchecked manifest is not integrity enforcement.
 
-## Establish policy and performance evidence early
+## Target deployment policy
 
 The target Content Security Policy is:
 
@@ -128,6 +128,6 @@ default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; obje
 
 Exercise the actual launcher, binary loading, controls, and dynamic styles under that complete policy. Do not weaken it to make a test pass or infer full-policy support from a stylesheet-only check. The hosting adapter applies the headers; compilation returns the required resources and deployment information.
 
-Before broad API migration, establish a representative form and keyed-list workload, one-entry and two-entry distributions, repeatable hardware/network conditions, and explicit budgets. Measure compressed transfer size, cold boot to interaction, update latency, and retained resources over repeated mount/close cycles. Store measurements outside architecture prose; the [roadmap](../roadmap.md#p3-establish-browser-feasibility) defines the gate for acting on them.
+## Stream updates within their owner
 
 Streaming requests are a subsequent host-service feature. Deliver chunks incrementally, cancel the reader and request with their owner, and ignore late chunks after cancellation. Keep this feature separate from changes to content types and module exports.

@@ -80,11 +80,13 @@ Each turn expands a candidate before touching the DOM. Failures become readable 
 | --- | --- |
 | Diagnostics or a throwing render/style callback | Candidate rejected; the committed tree is unchanged and a later invalidation retries. Callback failures carry the component and key path. |
 | Initial preparation failure | The host keeps its fallback content and later roots still mount. |
-| Unexpected DOM commit failure | Attempts root disposal and reports the error. An initial commit may already have cleared fallback; disposal during reconciliation has the limits linked below. |
+| Unexpected DOM commit failure | Closes the root and reports the error, releasing what the commit acquired. A first commit builds off the host, so a failure before publication keeps the fallback content. |
 | Java event handler | Reported with the event type and root; the root and its tree stay interactive. |
 | Application cleanup while closing | Remaining application cleanups still run; failures are reported together once. |
 
-Closing a root is idempotent. Outside an active reconciliation, it cancels scheduled work, releases listeners, disposes effects innermost first, closes open dialogs and popovers, empties the owned host, disposes the root lifetime, and releases styles. It also drops its view callback. Closure from a removed effect's cleanup during reconciliation does not yet provide complete resource release; see [current limits](architecture.md#current-limits).
+Closing a root is idempotent. It cancels scheduled work, releases listeners, disposes effects innermost first, closes open dialogs and popovers, empties the owned host, disposes the root lifetime, and releases styles. It also drops its view callback.
+
+A commit owns what it acquires. It registers each instance it creates before that instance acquires listeners or an effect lifetime, detaches replaced ranges, publishes the tree, references and IDs at one boundary, retires the replaced resources with their application cleanups, and starts the new effects. No application callback runs while the commit mutates the DOM, so a closure request settles at a phase boundary: closing during expansion discards the candidate, closing during mutation aborts and releases what the commit acquired, and closing from a retirement cleanup, an effect start or an after-render task joins teardown and stops the rest of the batch. A root that has started closing dispatches no handler, so a detached node cannot run application code after teardown.
 
 ## Embedded styles
 

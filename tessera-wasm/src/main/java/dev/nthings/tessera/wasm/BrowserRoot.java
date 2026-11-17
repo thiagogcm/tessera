@@ -84,7 +84,7 @@ public final class BrowserRoot implements AutoCloseable {
     this.hostId = hostId;
     this.scheduling = scheduling;
     this.hostElement = Dom.host(hostId);
-    this.renderer = new DomReconciler(hostElement, hostId, this::invalidate);
+    this.renderer = new DomReconciler(hostElement, hostId, this::invalidate, () -> !closed);
     this.view = view;
     this.services = new Host(this, lifetime);
   }
@@ -230,10 +230,14 @@ public final class BrowserRoot implements AutoCloseable {
     }
   }
 
-  /// Expands a candidate, then commits it.
+  /// Expands a candidate, then applies, publishes, retires and activates it in phases.
   ///
   /// A rejected candidate or failed render callback leaves the committed tree unchanged and permits
-  /// another invalidation. An unexpected commit failure closes the root and is reported.
+  /// another invalidation. The candidate publishes at one boundary: its tree, references and IDs
+  /// install together, obsolete resources release with their cleanups, and new effects start only
+  /// while the root remains open. Closure requested at any boundary settles there: nothing
+  /// publishes or starts afterwards. An unexpected native failure closes the root and is reported;
+  /// a failure before the first publication leaves the fallback content in the host.
   private void turn() {
     rendering = true;
     try {
@@ -249,6 +253,10 @@ public final class BrowserRoot implements AutoCloseable {
             rejected instanceof ViewException
                 ? String.valueOf(rejected.getMessage())
                 : Failures.describe(rejected));
+        return;
+      }
+      // Closing during expansion discards the result: nothing publishes afterwards.
+      if (closed) {
         return;
       }
       var foreign = foreignId(snapshot.ids());
@@ -268,23 +276,32 @@ public final class BrowserRoot implements AutoCloseable {
         styles.update(
             snapshot.styleRules(),
             () -> {
-              // Effects start inside the commit and may already resolve the elements it creates.
+              var commit = renderer.apply(snapshot);
+              renderer.publish(commit);
               committedReferences = snapshot.references();
-              renderer.update(snapshot);
+              committedIds = snapshot.ids();
             });
+        renderer.retire();
+        renderer.activate();
+        runAfterRender();
+      } catch (ClosedRoot _) {
+        return;
       } catch (RuntimeException hostFailure) {
         close();
         Failures.report("DOM commit", hostId, hostFailure);
         return;
       }
-      committedIds = snapshot.ids();
-      if (!afterRender.isEmpty()) {
-        var tasks = List.copyOf(afterRender);
-        afterRender.clear();
-        tasks.forEach(Runnable::run);
-      }
     } finally {
       rendering = false;
+    }
+  }
+
+  /// Runs queued after-render work while the root stays open. A task that closes the root stops the
+  /// rest of the batch, and a failing task is reported without affecting the root.
+  private void runAfterRender() {
+    while (!closed && !afterRender.isEmpty()) {
+      var task = afterRender.remove(0);
+      Failures.run("After-render task", hostId, task);
     }
   }
 

@@ -41,6 +41,7 @@ public final class WebImageDemo {
     var demo = new WebImageDemo();
     var scheduling = new SchedulingDemo();
     var lifetime = new LifetimeDemo();
+    var closure = new ClosureDemo();
     BrowserEntry.start(
         args,
         Map.ofEntries(
@@ -66,7 +67,9 @@ public final class WebImageDemo {
             Map.entry("lifetime-control", lifetime::mountControl),
             Map.entry("events", EventsDemo::mount),
             Map.entry("services", ServicesDemo::mount),
-            Map.entry("collisions", CollisionsDemo::mount)));
+            Map.entry("collisions", CollisionsDemo::mount),
+            Map.entry("closure", closure::mount),
+            Map.entry("closure-control", closure::mountControl)));
   }
 
   private IntoElement view(BrowserRoot root, DocumentContext context) {

@@ -54,15 +54,15 @@ Runtime expansion already applies the observable part of the [explicit scope-roo
 
 ### P2: Correct commit ownership and ID reservations
 
-Implement the [commit and closure rules](design/runtime.md#own-resources-before-exposing-callbacks) inside the current runtime. The host-ID reservation is complete at the existing identity boundary; the commit and closure rows remain.
+The [commit and closure rules](design/runtime.md#own-resources-before-exposing-callbacks) now run inside the current runtime: each commit registers acquisitions before exposing callbacks, publishes at one boundary, retires replaced resources, and activates effects while the root remains open.
 
 | Work | Completion evidence |
 | --- | --- |
-| Track acquired, committed, and retiring resources through a commit | Removing an effect whose cleanup closes the root releases a newly created replacement button's handler; clicking its retained detached node cannot change application state |
-| Settle closure at defined boundaries | Closure during expansion, native mutation, effect startup, or after-render work cannot publish later or start subsequent work |
-| Release resources from partial failures | An induced failure after acquiring listeners or styles leaves no callable detached handlers or retained ownership after closure |
+| Track acquired, committed, and retiring resources through a commit | Done: removing an effect whose cleanup closes the root releases the replacement button the same commit created; clicking its retained detached node cannot change application state |
+| Settle closure at defined boundaries | Done: closure during expansion, native mutation, effect startup or after-render work publishes nothing and starts no later work; a cleanup closing mid-retire joins teardown and the remaining cleanups still run |
+| Release resources from partial failures | Done: a failing effect start is reported with the root preserved, and closing afterwards releases the commit's resources once, leaving no callable detached handler |
 | Reserve the mount host ID | Done: a child claiming the host's ID is rejected before publication, and the previous tree or fallback remains intact |
-| Preserve ordinary disposal behavior | Key changes, request cancellation, repeated close, and cleanup failures still release each resource once |
+| Preserve ordinary disposal behavior | Done: key changes, request cancellation, repeated close and failing cleanups still release each resource once, and a failing cleanup keeps the remaining releases running |
 
 Exercise these through the existing lifecycle and identity fixtures. Add failure injection only where a real acquisition or mutation boundary needs evidence; avoid synthetic permutations that cannot occur through supported APIs.
 

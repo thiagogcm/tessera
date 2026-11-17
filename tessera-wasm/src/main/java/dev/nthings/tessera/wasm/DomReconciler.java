@@ -16,11 +16,22 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
 /// Retains native elements and anchored logical groups within one owned host.
+///
+/// A commit runs in phases, and each phase owns what it touches. [#apply] reconciles a candidate
+/// against the committed tree, registering every instance it creates before that instance acquires
+/// listeners or an effect lifetime, and detaching obsolete ranges; a first commit builds off the
+/// host, so a failure before publication leaves the fallback nodes in place. [#publish] installs
+/// the candidate as the committed tree, moving a first build into the host. [#retire] then releases
+/// the resources of replaced subtrees with their application cleanups, and [#activate] starts the
+/// effects the commit placed. A root that closes while a phase runs settles through [ClosedRoot]:
+/// the commit releases everything it acquired, publishes nothing and starts nothing, and the
+/// closing root releases what it already owned.
 final class DomReconciler {
   /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names and
   /// group definitions.
@@ -33,47 +44,126 @@ final class DomReconciler {
   /// A keyed group matches only a previous group with the same key and definition.
   private record KeyedGroup(String key, Object definition) {}
 
+  /// One prepared commit: the candidate tree [#publish] installs as the committed tree.
+  record Commit(List<Mounted> tree) {}
+
   private final JSObject host;
   private final String hostId;
   private final Runnable invalidate;
+
+  /// The closing boundary of the owning root: `false` once the root starts closing.
+  private final BooleanSupplier open;
+
   private List<Mounted> roots = List.of();
+
+  /// Acquired by the active commit; released by [#abort] when the commit fails or the root closes.
+  private final List<Mounted> created = new ArrayList<>();
+
+  /// Obsolete subtrees the active commit detached; released with their cleanups by [#retire].
+  private final List<Mounted> retiring = new ArrayList<>();
+
+  /// Effects the active commit placed; started by [#activate] while the root remains open.
   private final List<Mounted> starting = new ArrayList<>();
+
   private final List<RuntimeException> disposalFailures = new ArrayList<>();
   private boolean mounted;
 
-  DomReconciler(JSObject host, String hostId, Runnable invalidate) {
+  DomReconciler(JSObject host, String hostId, Runnable invalidate, BooleanSupplier open) {
     this.host = host;
     this.hostId = hostId;
     this.invalidate = invalidate;
+    this.open = open;
   }
 
-  /// Replaces fallback content on the first successful update. A browser failure while applying the
-  /// update propagates so the owner can close the root.
+  /// Applies a candidate without publishing it, returning the commit for [#publish].
   ///
-  /// Effects placed by the update start after it is committed; effects it removes are disposed
-  /// during reconciliation. Application failures in either are reported without affecting the tree.
-  void update(ViewSnapshot snapshot) {
+  /// A first commit builds off the host, so failure leaves the fallback nodes intact. Instances the
+  /// commit creates are registered before they acquire resources, obsolete ranges are detached and
+  /// queued for [#retire], and no application callback runs during the phase. The caller settles a
+  /// failure or closure: the closing root has already released the created instances, and a native
+  /// failure closes the root, whose teardown releases the committed tree and the acquisitions.
+  Commit apply(ViewSnapshot snapshot) {
     starting.clear();
     disposalFailures.clear();
+    created.clear();
+    retiring.clear();
+    var parent = host;
     if (!mounted) {
-      Dom.clear(host);
+      parent = Dom.element("div");
+    }
+    return new Commit(reconcile(parent, roots, snapshot.roots(), null));
+  }
+
+  /// Publishes a prepared commit: installs its tree as the committed tree, replacing fallback
+  /// content on the first commit. Acquired instances transfer to the committed tree here; a failure
+  /// while moving a first build into the host releases them before it propagates.
+  void publish(Commit commit) {
+    if (!open.getAsBoolean()) {
+      abort();
+      throw new ClosedRoot();
+    }
+    if (!mounted) {
+      var installed = false;
+      try {
+        Dom.clear(host);
+        for (var instance : commit.tree()) {
+          Dom.moveRange(host, instance.first, instance.last, null);
+        }
+        installed = true;
+      } finally {
+        if (!installed) {
+          abort();
+        }
+      }
       mounted = true;
     }
-    roots = reconcile(host, roots, snapshot.roots(), null);
-    report("Effect cleanup failed", disposalFailures);
-    if (starting.isEmpty()) {
-      return;
+    roots = commit.tree();
+    created.clear();
+  }
+
+  /// Releases the obsolete subtrees the last commit replaced, descendant first and each resource
+  /// once, running their application cleanups. A cleanup that closes the root joins the teardown
+  /// already in progress; the remaining cleanups still run and are still reported.
+  void retire() {
+    var obsolete = List.copyOf(retiring);
+    retiring.clear();
+    for (var instance : obsolete) {
+      dispose(instance);
     }
+    report("Effect cleanup failed", disposalFailures);
+    disposalFailures.clear();
+  }
+
+  /// Starts the effects the last commit placed, in document order, while the root remains open. A
+  /// start that closes the root stops the batch: no later effect starts. Start failures are
+  /// collected and reported without closing the root.
+  void activate() {
+    var pending = List.copyOf(starting);
+    starting.clear();
     var started = new ArrayList<RuntimeException>();
-    for (var instance : List.copyOf(starting)) {
+    for (var instance : pending) {
+      if (!open.getAsBoolean()) {
+        break;
+      }
       var lifetime = instance.lifetime;
       if (lifetime != null && !lifetime.disposed()) {
         var effect = ((ViewSnapshot.Effect) instance.view).effect();
         Failures.attempt(started, () -> effect.start(lifetime));
       }
     }
-    starting.clear();
     report("Effect failed to start", started);
+  }
+
+  /// Releases what an aborted commit acquired: newest first, so descendants release before their
+  /// parents, detaching what the commit had attached. A closing root has already released the
+  /// committed tree; a native failure closes the root next.
+  private void abort() {
+    for (var index = created.size() - 1; index >= 0; index--) {
+      dispose(created.get(index));
+    }
+    created.clear();
+    starting.clear();
+    retiring.clear();
   }
 
   private void report(String what, List<RuntimeException> failures) {
@@ -83,11 +173,19 @@ final class DomReconciler {
   }
 
   /// Releases every listener and effect, closes open dialogs and popovers, then empties the owned
-  /// host. Application cleanup failures are collected for one report. Clearing the host rather than
-  /// removing retained ranges also disposes a tree left inconsistent by a failed update.
+  /// host. A commit interrupted by this close owns what it acquired and what it retired; each is
+  /// released here once. Application cleanup failures are collected for one report. Clearing the
+  /// host rather than removing retained ranges also disposes a tree left inconsistent by a failed
+  /// update.
   void close(List<RuntimeException> failures) {
     roots.forEach(instance -> release(instance, failures));
     roots = List.of();
+    retiring.forEach(instance -> release(instance, failures));
+    retiring.clear();
+    for (var index = created.size() - 1; index >= 0; index--) {
+      release(created.get(index), failures);
+    }
+    created.clear();
     starting.clear();
     if (mounted) {
       Dom.closeTransient(host);
@@ -95,9 +193,13 @@ final class DomReconciler {
     }
   }
 
-  /// Releases the listeners and effects of `instance` and its descendants, innermost first, without
-  /// touching the DOM. Application cleanup failures do not interrupt disposal.
+  /// Releases the resources of `instance` and its descendants, innermost first, without touching
+  /// the DOM. Each instance releases once, so repeated requests join the same teardown.
   private static void release(Mounted instance, List<RuntimeException> failures) {
+    if (instance.released) {
+      return;
+    }
+    instance.released = true;
     instance.children.forEach(child -> release(child, failures));
     var lifetime = instance.lifetime;
     if (lifetime != null) {
@@ -109,15 +211,16 @@ final class DomReconciler {
     instance.composition = List.of();
   }
 
-  /// Releases a subtree, then detaches its whole DOM range at once.
+  /// Releases a subtree's resources, then detaches its whole DOM range at once.
   private void dispose(Mounted instance) {
     release(instance, disposalFailures);
     Dom.removeRange(instance.first, instance.last);
   }
 
   /// Matches `next` against `previous`, then moves only the retained ranges outside the longest run
-  /// already in order, creates new nodes in their final position, and disposes the rest. Matched
-  /// nodes are patched in sibling order with creations, so effects start in document order.
+  /// already in order, creates new nodes in their final position, and detaches the rest for
+  /// [#retire]. Matched nodes are patched in sibling order with creations, so effects start in
+  /// document order. The root closing mid-mutation aborts at the next child or range boundary.
   private List<Mounted> reconcile(
       JSObject parent,
       List<Mounted> previous,
@@ -126,6 +229,7 @@ final class DomReconciler {
     if (previous.isEmpty() && next.isEmpty()) {
       return List.of();
     }
+    requireOpen();
     for (var index = 0; index < previous.size(); index++) {
       previous.get(index).slot = index;
     }
@@ -167,6 +271,7 @@ final class DomReconciler {
     @Nullable JSObject[] anchors = new JSObject[next.size()];
     var before = end;
     for (var index = next.size() - 1; index >= 0; index--) {
+      requireOpen();
       var old = matched[index];
       if (old == null) {
         anchors[index] = before;
@@ -179,6 +284,7 @@ final class DomReconciler {
     }
     var result = new ArrayList<Mounted>(next.size());
     for (var index = 0; index < next.size(); index++) {
+      requireOpen();
       var old = matched[index];
       if (old != null) {
         patch(parent, old, next.get(index));
@@ -189,10 +295,19 @@ final class DomReconciler {
     }
     for (var index = 0; index < previous.size(); index++) {
       if (!consumed[index]) {
-        dispose(previous.get(index));
+        var obsolete = previous.get(index);
+        Dom.removeRange(obsolete.first, obsolete.last);
+        retiring.add(obsolete);
       }
     }
     return result;
+  }
+
+  /// The root closed mid-mutation: settle at this boundary, releasing what was acquired.
+  private void requireOpen() {
+    if (!open.getAsBoolean()) {
+      throw new ClosedRoot();
+    }
   }
 
   /// Marks the previous slots on one longest increasing run of matched slots in `matched` order;
@@ -255,11 +370,15 @@ final class DomReconciler {
       case ViewSnapshot.Text(var text) -> {
         var node = Dom.text(text);
         Dom.insert(parent, node, before);
-        yield new Mounted(view, node, node);
+        var instance = new Mounted(view, node, node);
+        created.add(instance);
+        yield instance;
       }
       case ViewSnapshot.Tag tag -> {
         var node = Dom.element(tag.tag().tagName());
         var instance = new Mounted(view, node, node);
+        // Registered before any acquisition, so a failure or closure releases this subtree.
+        created.add(instance);
         attributes(node, Map.of(), tag.attributes());
         liveProperties(node, Map.of(), tag.liveProperties());
         composition(instance, tag);
@@ -275,6 +394,7 @@ final class DomReconciler {
         Dom.insert(parent, first, before);
         Dom.insert(parent, last, before);
         var instance = new Mounted(view, first, last);
+        created.add(instance);
         instance.children = reconcile(parent, List.of(), group.children(), last);
         yield instance;
       }
@@ -282,6 +402,7 @@ final class DomReconciler {
         var anchor = Dom.marker();
         Dom.insert(parent, anchor, before);
         var instance = new Mounted(view, anchor, anchor);
+        created.add(instance);
         instance.lifetime = new LifetimeScope();
         starting.add(instance);
         yield instance;
@@ -392,9 +513,14 @@ final class DomReconciler {
   /// Keeps one native listener per type and phase. A re-render with the same options only swaps the
   /// Java handler it calls, so the previous callback is no longer referenced; different options
   /// register a new listener. A dispatched `once` listener stays spent while it remains bound and
-  /// is re-armed only after a render removes it.
+  /// is re-armed only after a render removes it. A root that has started closing dispatches
+  /// nothing, so a detached node cannot run application handlers after teardown.
   private void events(Mounted instance, Map<EventListener.Key, EventListener> next) {
     if (instance.events.isEmpty() && next.isEmpty()) {
+      return;
+    }
+    // The root is closing: released instances keep no bindings and acquire none.
+    if (!open.getAsBoolean()) {
       return;
     }
     var iterator = instance.events.entrySet().iterator();
@@ -414,7 +540,7 @@ final class DomReconciler {
       if (binding != null) {
         binding.handler = listener.handler();
       } else {
-        instance.events.put(key, new Binding(instance, listener, hostId));
+        instance.events.put(key, new Binding(instance, listener, hostId, open));
       }
     });
   }
@@ -429,11 +555,16 @@ final class DomReconciler {
     private final JSObject last;
     private List<Mounted> children = List.of();
     private int slot;
-    // Allocated on first use: most nodes bind no listeners.
+
+    /// Allocated on first use: most nodes bind no listeners.
     private Map<EventListener.Key, Binding> events = Map.of();
+
     private List<JSObject> composition = List.of();
     private boolean composing;
     private @Nullable LifetimeScope lifetime;
+
+    /// Set when this instance's resources are released, so each releases once.
+    private boolean released;
 
     private Mounted(ViewSnapshot.Node view, JSObject first, JSObject last) {
       this.view = view;
@@ -448,7 +579,7 @@ final class DomReconciler {
     private final EventOptions options;
     private final JSObject cleanup;
 
-    private Binding(Mounted target, EventListener listener, String hostId) {
+    private Binding(Mounted target, EventListener listener, String hostId, BooleanSupplier open) {
       this.handler = listener.handler();
       this.options = listener.options();
       var type = listener.type();
@@ -459,7 +590,11 @@ final class DomReconciler {
               options.capture(),
               options.passive(),
               options.once(),
-              event -> dispatch(event, target, type, hostId));
+              event -> {
+                if (open.getAsBoolean()) {
+                  dispatch(event, target, type, hostId);
+                }
+              });
     }
 
     /// An application handler failure is reported and does not affect the root or its tree.

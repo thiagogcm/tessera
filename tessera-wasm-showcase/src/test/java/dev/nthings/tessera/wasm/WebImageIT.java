@@ -1511,6 +1511,148 @@ class WebImageIT {
   }
 
   @BothEngines
+  @DisplayName(
+      "a commit whose retiring cleanup closes the root releases the replacement it created")
+  void aCommitWhoseRetiringCleanupClosesTheRootReleasesTheReplacementItCreated(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          page.waitForSelector(
+              "#closure section", new Page.WaitForSelectorOptions().setTimeout(30_000));
+          var log = page.locator("[data-closure-log]");
+          // Retain the button the closing commit creates, so it can be clicked after teardown.
+          page.evaluate(
+              """
+              () => {
+                window.replacement = null;
+                new MutationObserver(records => {
+                  for (const record of records) {
+                    for (const node of record.addedNodes) {
+                      if (node.textContent === 'Action 2') window.replacement = node;
+                    }
+                  }
+                }).observe(document.getElementById('closure'), {childList: true, subtree: true});
+              }\
+              """);
+
+          button(page, "Replace action").click();
+          assertThat(page.locator("#closure")).isEmpty();
+          settleFrames(page);
+          assertThat(log).hasAttribute("data-closure-log", "root disposed");
+          Assertions.assertThat(page.evaluate("window.replacement !== null")).isEqualTo(true);
+
+          page.evaluate("window.replacement.click()");
+          settleFrames(page);
+          assertThat(log).hasAttribute("data-closure-log", "root disposed");
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName("closing during expansion discards the candidate and publishes nothing")
+  void closingDuringExpansionDiscardsTheCandidateAndPublishesNothing(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          page.waitForSelector(
+              "#closure section", new Page.WaitForSelectorOptions().setTimeout(30_000));
+          button(page, "Close during render").click();
+          assertThat(page.locator("#closure")).isEmpty();
+          assertThat(page.locator("[data-never-published]")).hasCount(0);
+          assertThat(page.locator("[data-closure-log]"))
+              .hasAttribute("data-closure-log", "root disposed");
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName("closing during effect startup starts no later effect in the batch")
+  void closingDuringEffectStartupStartsNoLaterEffectInTheBatch(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          button(page, "Close during startup").click();
+          assertThat(page.locator("#closure")).isEmpty();
+          assertThat(page.locator("[data-closure-log]"))
+              .hasAttribute(
+                  "data-closure-log", "started closing-start,disposed closing-start,root disposed");
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName("closing during an after-render task stops the rest of the batch")
+  void closingDuringAnAfterRenderTaskStopsTheRestOfTheBatch(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          button(page, "Close in after-render").click();
+          assertThat(page.locator("#closure")).isEmpty();
+          assertThat(page.locator("[data-closure-log]"))
+              .hasAttribute("data-closure-log", "after-render first,root disposed");
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName(
+      "a failing effect start is reported, preserves the root, and closing releases it once")
+  void aFailingEffectStartIsReportedPreservesTheRootAndClosingReleasesItOnce(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          page.waitForSelector(
+              "#closure section", new Page.WaitForSelectorOptions().setTimeout(30_000));
+          button(page, "Fail effect start").click();
+          assertReported(
+              page,
+              failures,
+              "Effect failed to start in browser root 'closure'",
+              "Simulated effect start failure");
+          assertThat(page.locator("#closure section")).isVisible();
+
+          page.evaluate(
+              "window.action = Array.from(document.querySelectorAll('#closure button'))"
+                  + ".find(button => button.textContent === 'Action 1')");
+          button(page, "Close closure root").click();
+          assertThat(page.locator("#closure")).isEmpty();
+          var log = page.locator("[data-closure-log]");
+          assertThat(log).hasAttribute("data-closure-log", "disposed failing,root disposed");
+
+          page.evaluate("window.action.click()");
+          settleFrames(page);
+          assertThat(log).hasAttribute("data-closure-log", "disposed failing,root disposed");
+          Assertions.assertThat(failures).hasSize(1);
+        });
+  }
+
+  @BothEngines
+  @DisplayName("a failing cleanup is reported and the remaining cleanups still release once")
+  void aFailingCleanupIsReportedAndTheRemainingCleanupsStillReleaseOnce(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          button(page, "Add failing cleanups").click();
+          button(page, "Remove failing cleanups").click();
+          assertReported(
+              page,
+              failures,
+              "Effect cleanup failed in browser root 'closure'",
+              "Simulated cleanup failure");
+          assertThat(page.locator("#closure section")).isVisible();
+          assertThat(page.locator("[data-closure-log]"))
+              .hasAttribute("data-closure-log", "disposed victim,disposed survivor");
+          Assertions.assertThat(failures).hasSize(1);
+        });
+  }
+
+  @BothEngines
   @DisplayName("a host declaring a view its entry lacks is reported and keeps its fallback")
   void hostDeclaringAViewItsEntryLacksIsReportedAndKeepsItsFallback(String engine) {
     withPage(

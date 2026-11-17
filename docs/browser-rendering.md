@@ -61,7 +61,7 @@ Several entries can share a page; each launcher loads once however many hosts it
 
 Generated and `ElementRef.scoped` ids use a namespace derived from the host id; an introduced id used outside the host rejects the render with `cross-root-id`. Mounting on a host that already holds a root fails separately.
 
-The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. The host's own ID is reserved: a render claiming it for a child is rejected with `cross-root-id`, and the committed view or fallback stays. Remaining identity and disposal limits are listed under [current limits](architecture.md#current-limits).
+The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. The host's own ID is reserved: a render claiming it for a child is rejected with `cross-root-id`, and the committed view or fallback stays. Remaining limits are listed under [current limits](architecture.md#current-limits).
 
 ## Schedule updates
 
@@ -141,7 +141,7 @@ var ticker = Elements.effect("ticker-" + intervalMillis, lifetime -> {
 });
 ```
 
-The effect starts after its tree is committed and keeps running while renders place the same key there; the key names its dependencies. It is a sibling key like `key(...)`, so it must differ from the keys of the effect's keyed siblings. Removing it, changing its key or closing the root disposes its lifetime, and a key change then starts the new effect. Use `root.lifetime()` for root-wide cleanup.
+The effect starts after its tree is committed and keeps running while renders place the same key there; the key names its dependencies. It is a sibling key like `key(...)`, so it must differ from the keys of the effect's keyed siblings. Removing it, changing its key or closing the root disposes its lifetime, and a key change then starts the new effect. Use `root.lifetime()` for root-wide cleanup. A cleanup that closes its own root settles at the commit boundary: the committed tree is released once, later effects in the same batch do not start, and nothing detached runs application handlers afterwards.
 
 ## Use browser services
 

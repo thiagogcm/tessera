@@ -6,7 +6,7 @@ A browser root receives the same `DocumentContext` and expands components exactl
 
 ## Build and verify
 
-Use Oracle GraalVM **25.4.4.1.1**, matching the `webimage-preview` SDK pinned in [tessera-wasm/pom.xml](../tessera-wasm/pom.xml). Install Native Image prerequisites and Binaryen **119 or later** on `PATH`. Set `JAVA_HOME` to that GraalVM distribution. The default JVM build does not invoke these tools.
+Use Oracle GraalVM **25.5.5.0.3+1.1**, matching the `webimage-preview` SDK pinned in [tessera-wasm/pom.xml](../tessera-wasm/pom.xml). Install Native Image prerequisites and Binaryen **119 or later** on `PATH`. Set `JAVA_HOME` to that GraalVM distribution. The default JVM build does not invoke these tools.
 
 ```sh
 # Build both entry points and assemble the browser distribution

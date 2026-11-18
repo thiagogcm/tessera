@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
-/// Named component cases shared by showcase pages and browser fixtures.
+/// Named component cases shown on showcase pages and published as standalone case pages.
 public final class Catalog {
 
   public enum Appearance {

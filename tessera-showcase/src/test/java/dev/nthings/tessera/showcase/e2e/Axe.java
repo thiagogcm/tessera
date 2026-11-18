@@ -1,5 +1,6 @@
 package dev.nthings.tessera.showcase.e2e;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,40 +8,47 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
-/// Runs the WebJar-bundled axe-core against a page.
+/// Runs the WebJar-bundled axe-core against the current state of a page, so an audit can include an
+/// open dialog or menu.
 final class Axe {
 
   private static final String SOURCE = load();
 
+  private static final String REPORT =
+      """
+      async ([root, rules]) => {
+        const options = rules
+          ? { runOnly: { type: 'rule', values: rules } }
+          : { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } };
+        const results = await axe.run(root ?? document, { ...options, resultTypes: ['violations'] });
+        return results.violations
+          .map((violation) =>
+            `${violation.id} (${violation.impact}): ${violation.help}\\n  ` +
+            violation.nodes.map((node) => node.target.join(' ') + ': ' + node.failureSummary)
+              .join('\\n  '))
+          .join('\\n');
+      }
+      """;
+
   private Axe() {}
 
-  /// Injects axe-core into every document `page` navigates to; sends the script once.
-  static void install(Page page) {
-    page.addInitScript(SOURCE);
+  /// WCAG A/AA violations in the page as it is now, one block per rule; empty when there are none.
+  static String violations(Page page) {
+    load(page);
+    return String.valueOf(page.evaluate(REPORT, new Object[] {null, null}));
   }
 
-  /// WCAG A/AA violations in the current document, one block per rule. Needs [#install].
-  static String violations(Page page) {
-    var result =
-        page.evaluate(
-            """
-            async () => {
-              const results = await axe.run(document, {
-                runOnly: {
-                  type: 'tag',
-                  values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'],
-                },
-                resultTypes: ['violations'],
-              });
-              return results.violations
-                .map((violation) =>
-                  `${violation.id} (${violation.impact}): ${violation.help}\\n  ` +
-                  violation.nodes.map((node) => node.target.join(' ')).join('\\n  '),
-                )
-                .join('\\n');
-            }
-            """);
-    return result instanceof String text ? text : String.valueOf(result);
+  /// Color-contrast violations inside `element`; empty when its text is legible.
+  static String contrastViolations(Locator element) {
+    load(element.page());
+    return String.valueOf(
+        element.evaluate("(el, report) => (0, eval)(report)([el, ['color-contrast']])", REPORT));
+  }
+
+  private static void load(Page page) {
+    if (Boolean.TRUE.equals(page.evaluate("typeof axe === 'undefined'"))) {
+      page.addScriptTag(new Page.AddScriptTagOptions().setContent(SOURCE));
+    }
   }
 
   /// Reads the axe-core script of the WebJar version on the classpath.

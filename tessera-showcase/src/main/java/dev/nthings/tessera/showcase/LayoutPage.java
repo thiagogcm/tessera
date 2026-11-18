@@ -9,6 +9,7 @@ import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Badge;
 import dev.nthings.tessera.components.BulletList;
+import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.Card;
 import dev.nthings.tessera.components.CardGrid;
@@ -91,7 +92,22 @@ final class LayoutPage {
                     Card.of("Stretched link")
                         .description("Whole card is a link")
                         .bodyText("Click anywhere on this card to open the Data page.")
-                        .stretchedLink("/data"),
+                        .stretchedLink("/data")
+                        .actions(Button.of("Save for later")),
+                    Card.of("Release notes")
+                        .description("Card with actions")
+                        .bodyText(
+                            "A longer body that wraps over several lines. The footer still lines "
+                                + "up with its neighbours because the cards share subgrid rows.")
+                        .actions(Button.of("Read more")),
+                    Card.of("Changelog")
+                        .description("Card with actions")
+                        .bodyText("A short body.")
+                        .actions(Button.of("Open")))
+                .id("card-variants")
+                .gap(CssLength.rem(1)),
+            CardGrid.of(
+                    CssLength.rem(15),
                     Card.of("Team plan")
                         .description("Choice card (radio)")
                         .bodyText("Selection is styled with :has(> input:checked).")
@@ -101,7 +117,7 @@ final class LayoutPage {
                         .description("Choice card (radio)")
                         .bodyText("Only one plan can be selected.")
                         .radio("plan", "org"))
-                .id("card-variants")
+                .id("plan-choice")
                 .gap(CssLength.rem(1)),
             Card.of("Media card")
                 .media(Image.of(Art.MEDIA_BANNER, "Media card banner").dimensions(600, 240))
@@ -109,7 +125,7 @@ final class LayoutPage {
                 .bodyText(
                     "This card switches to media-beside-content once its container is wide enough."))
         .code(
-            "Card.of(\"Stretched link\").stretchedLink(\"/data\");",
+            "Card.of(\"Stretched link\").stretchedLink(\"/data\").actions(Button.of(\"Save\"));",
             "Card.of(\"Team plan\").radio(\"plan\", \"team\").checked();",
             "Card.of(\"Media card\").media(Image.of(src, alt).dimensions(600, 240));");
   }
@@ -120,6 +136,7 @@ final class LayoutPage {
             "A measured reading column with balanced headings and pretty-wrapped paragraphs that "
                 + "avoid orphans.")
         .features("text-wrap: balance", "text-wrap: pretty", "ch-based measure")
+        .surface(Section.Surface.HIGHLIGHT)
         .example(
             Prose.of(
                 h2().text("Static output, dynamic platform"),
@@ -132,7 +149,10 @@ final class LayoutPage {
                         h3().text("No hydration"),
                         p().text(
                                 "Because nothing hydrates, pages are interactive as soon as they "
-                                    + "render, and the markup is exactly what the compiler validated."))))
+                                    + "render, and the markup is exactly what the compiler validated.")),
+                Card.of("Changelog")
+                    .description("Card with actions")
+                    .bodyText("Components placed in prose keep their own styles.")))
         .code(
             "Prose.of(h2().text(\"…\"), p().text(\"…\"),",
             "    section().children(h3().text(\"…\"), p().text(\"…\")));");

@@ -14,6 +14,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Resize;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 
@@ -104,7 +105,12 @@ final class MotionPage {
                 s -> s.flexRow().itemsCenter().justifyBetween())
             .children(
                 span().fontWeight(700).text("Responsive to its container"),
-                span().textColor(Tokens.TEXT_MUTED).text("Stacked when narrow, a row when wide."));
+                span().textColor(Tokens.TEXT_MUTED).text("Stacked when narrow, a row when wide."),
+                a("/layout")
+                    .textColor(Tokens.TEXT_MUTED)
+                    .on(RESIZABLE.atLeast(CssLength.rem(28)), s -> s.textColor(Tokens.TEXT_PRIMARY))
+                    .on(State.HOVER, s -> s.textColor(Tokens.ACCENT_TEXT))
+                    .text("More layouts"));
     return Demo.of("container-queries", "Container queries")
         .summary(
             "Drag the corner of the dashed box. The card switches layout at 28rem of container "

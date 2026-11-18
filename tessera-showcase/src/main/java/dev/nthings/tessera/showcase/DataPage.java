@@ -167,9 +167,9 @@ final class DataPage {
                 .filename("Modal.java")
                 .language("java")
                 .diffAutoDetect()
-                .highlightLines(1))
+                .highlightLines(1, 3))
         .code(
             "CodeBlock.ofLines(\"…\", \"-old\", \"+new\")",
-            "    .filename(\"Modal.java\").diffAutoDetect().highlightLines(1);");
+            "    .filename(\"Modal.java\").diffAutoDetect().highlightLines(1, 3);");
   }
 }

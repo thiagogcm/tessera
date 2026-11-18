@@ -138,6 +138,7 @@ record Shell(Page page) implements DocumentComponent {
                                     .text("Tessera"),
                                 div()
                                     .flex()
+                                    .flexWrap()
                                     .itemsCenter()
                                     .gap(CssLength.rem(0.5))
                                     .children(

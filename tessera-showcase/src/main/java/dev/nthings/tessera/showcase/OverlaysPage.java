@@ -52,6 +52,7 @@ final class OverlaysPage {
             DocumentContent.of(
                 div()
                     .flex()
+                    .flexWrap()
                     .gap(CssLength.rem(0.75))
                     .children(
                         Button.of("Open start drawer")

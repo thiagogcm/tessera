@@ -9,6 +9,7 @@ import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.jsoup.Jsoup;
@@ -83,6 +84,27 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
       throw new AssertionError("No element has id: " + id);
     }
     return found;
+  }
+
+  /// The elements named by the space-separated id references in `element`'s `attribute`; fails the
+  /// test if the attribute is missing or any reference does not resolve.
+  public List<Element> referenced(Element element, String attribute) {
+    if (!element.hasAttr(attribute) || element.attr(attribute).isBlank()) {
+      throw new AssertionError(
+          "Expected " + element.shallowClone().outerHtml() + " to have " + attribute);
+    }
+    return Arrays.stream(element.attr(attribute).trim().split("\\s+"))
+        .map(this::elementById)
+        .toList();
+  }
+
+  /// The single element `element`'s `attribute` references.
+  public Element target(Element element, String attribute) {
+    var targets = referenced(element, attribute);
+    if (targets.size() != 1) {
+      throw new AssertionError("Expected one " + attribute + " target but got " + targets.size());
+    }
+    return targets.getFirst();
   }
 
   /// The `@scope` body of the scope that contains `element`.

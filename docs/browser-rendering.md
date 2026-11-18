@@ -23,16 +23,27 @@ just wasm-verify
 
 Install the Playwright browsers with `just browsers` before verification. The acceptance suite serves the compiled distribution and exercises root lifetimes, events, controls, identity, styling, scheduling, and adaptive widgets. See [runtime internals](browser-internals.md) for the implementation contracts.
 
+## Publish a browser bundle
+
+Build the GraalVM Web Image entry with the pinned toolchain and `-H:-AutoRunVM`. On the JVM, import the generated launcher and image with `GraalWebImage.read`. Add a document-only mount with its host ID, view name, and static fallback. The fallback can contain ordinary links and form controls.
+
+```java
+var bundle = GraalWebImage.read(Path.of("editor.js"), Path.of("editor.js.wasm"));
+var page = Compiler.compile(
+    new PageDocument("Editor", Documents.wasmMount(
+        "editor", "editor", bundle, Elements.a("/edit/").text("Open the static editor"))),
+    Theme.defaults(), OutputMode.external("/assets/editor"));
+```
+
+Publish every returned asset at its path and media type, and apply `page.responseHeaders()` to the HTML response. For sites, `SiteWriter` writes the complete output and `CompiledSite.pageHeaders()` carries headers by route. `SitePreviewServer` applies those headers. Configure the same headers on a file-based host. Use an external output mode for the full Content Security Policy. Bundle assets always remain separate files. Inline output puts them under `/assets/wasm/`.
+
+The compiler validates the resource graph and publishes content-derived filenames under the chosen asset base. The bootstrap applies SHA-384 integrity to scripts and to binary fetches before starting the entry. It keeps the fallback in place when loading fails. The pinned GraalVM adapter accepts the classic launcher and primary image. A prepared `WasmBundle` can also declare supplementary binary resources. Compatible launchers receive verified bytes by logical name through `config.tesseraResources`.
+
+`just wasm` builds the published sample in `tessera-wasm-showcase/target/published-web`. The existing `target/web` sample supports local development of individual runtime fixtures. `just wasm-verify` tests compiled publication at root and nested asset bases in Chromium and Firefox.
+
 ## Mount a view
 
-Declare each mount on its host, with fallback content for browsers that cannot start it:
-
-```html
-<div id="editor" data-tessera-entry="editor.js" data-tessera-view="editor">
-  <p>The editor needs a current browser.</p>
-</div>
-<script defer src="bootstrap.js"></script>
-```
+A [document mount](#publish-a-browser-bundle) declares the host ID and the view to instantiate, and supplies fallback content.
 
 The entry's `main` mounts every host the page declares for it. The view is a `LiveComponent`: it receives a `LiveContext`, whose `root()` is the mounted root, and returns live content:
 
@@ -62,7 +73,7 @@ public final class Editor {
 
 `LiveElement.of(tag)` wraps a portable element without changing it, so the same `TagElement` or component markup stays valid in a static page. Portable content is accepted directly as a child of live content; `LiveContent.of(content)` converts it where a `LiveContent` value is required. `LiveComponent` and `LiveScope` are the live counterparts of `Component` and `Scope`. Buttons expose `element()` so a `LiveElement` can bind their handlers.
 
-Several entries can share a page; each launcher loads once however many hosts it serves. The first committed render replaces fallback content. A rejected candidate keeps it and a later invalidation retries; a native commit failure can clear it. `root.close()` empties the host, which can then be mounted again.
+Several entries can share a page; each launcher loads once however many hosts it serves. The first committed render replaces fallback content. A rejected candidate keeps the fallback and a later invalidation retries. A native failure during initial installation restores the fallback nodes. `root.close()` empties the host, which can then be mounted again.
 
 Generated and `ElementRef.scoped` ids use a namespace derived from the host id; an introduced id used outside the host rejects the render with `cross-root-id`. Mounting on a host that already holds a root fails separately.
 

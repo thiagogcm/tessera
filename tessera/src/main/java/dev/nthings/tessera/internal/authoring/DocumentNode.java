@@ -1,6 +1,7 @@
 package dev.nthings.tessera.internal.authoring;
 
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.document.DocumentComponent;
@@ -8,6 +9,7 @@ import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
+import dev.nthings.tessera.document.WasmBundle;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -34,6 +36,9 @@ public sealed interface DocumentNode extends DocumentContent {
       children = List.copyOf(children);
     }
   }
+
+  record Mount(ElementRef id, String view, WasmBundle bundle, DocumentNode fallback)
+      implements DocumentNode {}
 
   record Fragment(List<DocumentNode> children) implements DocumentNode {
     public Fragment {

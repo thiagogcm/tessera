@@ -5,7 +5,6 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Location;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -56,8 +55,9 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
-    var siteHead = site.linkSpeculation().headElements();
-    var preparedPages = preparePages(site, siteHead);
+    var output = site.outputMode();
+    var speculation = site.linkSpeculation();
+    var preparedPages = preparePages(site, new BundlePublication(output));
     var preparedByRoute = new LinkedHashMap<String, PreparedPage>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
@@ -77,10 +77,23 @@ final class SiteCompiler {
       behaviors.addAll(prepared.scripts());
     }
     // One stylesheet and one file per distinct module, hashed and encoded once for every page.
-    var resources = new HtmlWriter.Resources(css, site.outputMode(), behaviors);
+    var resources = new HtmlWriter.Resources(css, output, behaviors);
+    var externalRules =
+        output instanceof ExternalOutput external
+                && preparedPages.stream().anyMatch(page -> page.bundleBootstrap() != null)
+            ? speculation.externalRules(external)
+            : null;
     var linkedFiles = new LinkedHashMap<String, Asset>();
     for (var asset : resources.assets()) {
       linkedFiles.putIfAbsent(asset.path(), asset);
+    }
+    for (var page : preparedPages) {
+      for (var asset : page.bundleAssets()) {
+        linkedFiles.putIfAbsent(asset.path(), asset);
+      }
+    }
+    if (externalRules != null) {
+      linkedFiles.putIfAbsent(externalRules.path(), externalRules);
     }
     for (var asset : linkedFiles.values()) {
       addFile(files, pageTitles, asset, "Generated file", diagnostics);
@@ -89,7 +102,14 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
-    var emitted = parallelMap(preparedPages, page -> PageCompiler.emit(page, resources));
+    var emitted =
+        parallelMap(
+            preparedPages,
+            page ->
+                PageCompiler.emit(
+                    page,
+                    resources,
+                    page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null));
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       pages.put(routes.get(i).path(), emitted.get(i));
@@ -103,7 +123,18 @@ final class SiteCompiler {
         SEARCH_INDEX_PATH,
         Asset.text(
             SEARCH_INDEX_PATH, SiteArtifacts.generateSearchIndexJson(routes, preparedPages)));
-    return new CompiledSite(pages, css, files);
+    var pageHeaders = new LinkedHashMap<String, Map<String, String>>();
+    preparedByRoute.forEach((route, page) -> {
+      var headers = page.responseHeaders(output);
+      if (!headers.isEmpty()) {
+        var published = new LinkedHashMap<>(headers);
+        if (externalRules != null) {
+          published.put("Speculation-Rules", '"' + externalRules.path() + '"');
+        }
+        pageHeaders.put(route, published);
+      }
+    });
+    return new CompiledSite(pages, css, files, pageHeaders);
   }
 
   /// Adds `file`, reporting a path already used by a route or another file.
@@ -154,14 +185,13 @@ final class SiteCompiler {
 
   private record Failed(List<Diagnostic> diagnostics) implements Preparation {}
 
-  private static List<PreparedPage> preparePages(
-      SiteDefinition site, List<DocumentContent> siteHead) {
+  private static List<PreparedPage> preparePages(SiteDefinition site, BundlePublication bundles) {
     List<Preparation> preparations =
         parallelMap(
             site.routes(),
             route -> {
               try {
-                return new Prepared(PageCompiler.prepare(route.document(), siteHead));
+                return new Prepared(PageCompiler.prepare(route.document(), bundles));
               } catch (CompilationException failure) {
                 return new Failed(
                     failure.diagnostics().stream().map(d -> d.atRoute(route.path())).toList());

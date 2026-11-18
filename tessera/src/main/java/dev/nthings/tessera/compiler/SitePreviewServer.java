@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 /// Local preview server for a [CompiledSite], built on the JDK's `HttpServer` with virtual threads.
@@ -83,6 +84,8 @@ public final class SitePreviewServer implements AutoCloseable {
         exchange.close();
         return;
       }
+      var headers = exchange.getResponseHeaders();
+      site.pageHeaders().getOrDefault(normalized, Map.of()).forEach(headers::set);
       sendResponse(exchange, 200, "text/html; charset=utf-8", page);
       return;
     }

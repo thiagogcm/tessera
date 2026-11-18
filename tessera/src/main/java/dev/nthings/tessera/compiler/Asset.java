@@ -88,6 +88,7 @@ public record Asset(String path, String contentType, byte[] content) {
       case "txt" -> "text/plain; charset=utf-8";
       case "xml" -> "application/xml; charset=utf-8";
       case "pdf" -> "application/pdf";
+      case "wasm" -> "application/wasm";
       default -> "application/octet-stream";
     };
   }

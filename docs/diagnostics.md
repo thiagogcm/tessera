@@ -67,6 +67,8 @@ Use [portable defaults](consumer-guide.md#set-form-defaults) for initial values 
 
 A browser root keeps its last committed tabs when a candidate has an invalid bound selection. See [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) for updating selection alongside the tab list.
 
+A `wasm-mount-placement` diagnostic identifies a browser mount in the head, inside another mount, or inside a container where the browser cannot create an active host. Place each mount as an independent host in the body.
+
 ## Accessibility rules
 
 Use [typed roles and states](consumer-guide.md#declare-roles-and-states) to declare semantics. Role-specific checks apply to explicitly declared roles; native semantics are checked where the compiler recognizes them.

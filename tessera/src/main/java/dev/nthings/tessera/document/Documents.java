@@ -1,5 +1,6 @@
 package dev.nthings.tessera.document;
 
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.internal.authoring.DocumentNode;
 import java.util.ArrayList;
@@ -71,6 +72,28 @@ public final class Documents {
   /// contributions.
   public static DocumentContent late(Function<DocumentContext, ? extends DocumentContent> content) {
     return new DocumentNode.Late(content);
+  }
+
+  /// Declares a host for `view` from an already built `bundle`. The compiler validates and
+  /// publishes the fallback as document content. The host id is a page-wide DOM id and cannot
+  /// contain `=` (the host/view separator) or a null character. A view must be nonblank and contain
+  /// no null character.
+  public static DocumentContent wasmMount(
+      String id, String view, WasmBundle bundle, DocumentContent fallback) {
+    if (id.indexOf('=') >= 0 || id.indexOf(0) >= 0) {
+      throw new IllegalArgumentException("Invalid Wasm mount host id: " + id);
+    }
+    if (view.isBlank() || view.indexOf(0) >= 0) {
+      throw new IllegalArgumentException("A Wasm mount needs a nonblank view name");
+    }
+    return new DocumentNode.Mount(
+        ElementRef.page(id), view, bundle, DocumentNode.capture(fallback));
+  }
+
+  /// Declares a Wasm host with portable fallback content.
+  public static DocumentContent wasmMount(
+      String id, String view, WasmBundle bundle, IntoElement fallback) {
+    return wasmMount(id, view, bundle, DocumentContent.of(fallback));
   }
 
   /// Groups document `children` as siblings without wrapper markup.

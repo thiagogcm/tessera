@@ -77,7 +77,7 @@ These features use the new boundaries. Keep their implementation and review sepa
 | Stage | Specification | Completion evidence |
 | --- | --- | --- |
 | F1: Adaptive widgets | [Widget state rules](design/authoring.md#adaptive-widgets) | Done: browser adapters cover tab removal and keyboard focus, field validation, native dialog dismissal and focus return, search filtering and result focus, and tooltip interaction and cleanup |
-| F2: Bundle publication | [Resource graph and mount design](design/runtime.md#publish-complete-browser-bundles) | Root/nested asset bases, media types, escaped attributes, verified integrity, complete files, and full CSP work in the deployed distribution; missing resources and initial failures preserve usable fallback |
+| F2: Bundle publication | [Resource graph and mount design](design/runtime.md#publish-complete-browser-bundles) | Done: compiler publication includes the resource graph, typed assets, escaped mounts, integrity checks, and deployment headers. Chromium and Firefox exercise the published bundles and usable fallbacks under the full policy |
 | F3: Streaming requests | [Streaming boundary](design/runtime.md#stream-updates-within-their-owner) | Chunks update the DOM incrementally; cancellation releases the reader/request; late chunks cannot update removed effects or closed roots |
 
 ## Release evidence

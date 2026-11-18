@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.compiler.BundlePublication.File;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Theme;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /// A page that has been laid out and validated but not yet painted to HTML. Site compilation uses
 /// it to check links across pages and to merge stylesheets before painting.
@@ -23,6 +25,8 @@ final class PreparedPage {
   private final Map<TransitionKey, Location> transitionLocations;
   private final List<PageHeading> headings;
   private final List<PageScript> behaviors;
+  private final List<Asset> bundleAssets;
+  private final @Nullable File bundleBootstrap;
 
   PreparedPage(
       PageDocument document,
@@ -33,7 +37,9 @@ final class PreparedPage {
       Map<TransitionKey, Location> transitionLocations,
       List<ViewSnapshot.Node<String>> headNodes,
       List<PageHeading> headings,
-      List<PageScript> behaviors) {
+      List<PageScript> behaviors,
+      List<Asset> bundleAssets,
+      @Nullable File bundleBootstrap) {
     this.document = document;
     // Taken over as is: the compilation that produced it is finished and discarded.
     this.styles = styles;
@@ -44,6 +50,8 @@ final class PreparedPage {
     this.transitionLocations = Collections.unmodifiableMap(transitionLocations);
     this.headings = headings;
     this.behaviors = behaviors;
+    this.bundleAssets = bundleAssets;
+    this.bundleBootstrap = bundleBootstrap;
   }
 
   PageDocument document() {
@@ -81,6 +89,20 @@ final class PreparedPage {
   /// Page scripts registered on this page, in contribution order.
   List<PageScript> scripts() {
     return behaviors;
+  }
+
+  List<Asset> bundleAssets() {
+    return bundleAssets;
+  }
+
+  @Nullable File bundleBootstrap() {
+    return bundleBootstrap;
+  }
+
+  Map<String, String> responseHeaders(OutputMode mode) {
+    return bundleBootstrap != null && mode instanceof ExternalOutput
+        ? BundlePublication.HEADERS
+        : Map.of();
   }
 
   /// An inspection snapshot of this page's element tree.

@@ -1,7 +1,6 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.css.Theme;
-import java.util.List;
 
 /// Compiles pages and sites. Every method throws [CompilationException] when it finds authoring
 /// errors, before any HTML is produced; each reported error carries a stable rule code such as
@@ -15,8 +14,8 @@ public final class Compiler {
   }
 
   /// Compiles `document` with `theme`'s token values, packaging CSS and page scripts as
-  /// `outputMode` specifies. Under [OutputMode#external(String)] the caller must publish every
-  /// asset of the result at its path.
+  /// `outputMode` specifies. Publish every returned asset at its path and apply the response
+  /// headers to the page when serving it.
   public static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
     return PageCompiler.compile(document, theme, outputMode);
   }
@@ -40,6 +39,6 @@ public final class Compiler {
   /// Lays out and validates `document` and returns its element tree instead of HTML. The theme does
   /// not affect the tree, so there is no theme overload.
   public static PageTree explain(PageDocument document) {
-    return PageCompiler.prepare(document, List.of()).tree();
+    return PageCompiler.prepare(document, new BundlePublication(OutputMode.inline())).tree();
   }
 }

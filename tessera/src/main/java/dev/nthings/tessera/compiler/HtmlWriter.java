@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.compiler.BundlePublication.File;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.view.ViewSnapshot;
@@ -71,7 +72,9 @@ final class HtmlWriter {
       List<ViewSnapshot.Node<String>> bodyNodes,
       List<ViewSnapshot.Node<String>> headNodes,
       Resources resources,
-      List<PageScript> behaviors) {
+      List<PageScript> behaviors,
+      @Nullable File bootstrap,
+      @Nullable String speculationRules) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
     out.append(Encode.forHtmlAttribute(doc.lang()));
@@ -82,6 +85,11 @@ final class HtmlWriter {
     out.append("<title>");
     out.append(Encode.forHtmlContent(doc.title()));
     out.append("</title>\n");
+    if (speculationRules != null) {
+      out.append("<script type=\"speculationrules\">")
+          .append(inlineModule(speculationRules))
+          .append("</script>\n");
+    }
     for (var head : headNodes) {
       writeNode(head, out);
       out.append('\n');
@@ -111,6 +119,13 @@ final class HtmlWriter {
       }
     }
 
+    if (bootstrap != null) {
+      out.append("<script type=\"module\" src=\"")
+          .append(Encode.forHtmlAttribute(bootstrap.asset().path()))
+          .append("\" integrity=\"")
+          .append(Encode.forHtmlAttribute(bootstrap.integrity()))
+          .append("\" crossorigin=\"anonymous\"></script>\n");
+    }
     out.append("</head>\n<body>\n");
     for (var node : bodyNodes) {
       writeNode(node, out);

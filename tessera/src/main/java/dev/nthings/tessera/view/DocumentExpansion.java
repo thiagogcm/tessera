@@ -1,6 +1,7 @@
 package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
@@ -38,6 +39,8 @@ public final class DocumentExpansion extends ViewExpansion<String> {
         Location placedBy);
 
     void contributeScript(PageScript script);
+
+    Map<String, String> mountAttributes(DocumentNode.Mount mount);
   }
 
   private final Assembly assembly;
@@ -80,6 +83,12 @@ public final class DocumentExpansion extends ViewExpansion<String> {
               deferred.priority());
       case DocumentNode.Late(var expand) -> assembly.late(() -> callback(context, "Late", expand));
       case DocumentNode.Host host -> documentHost(host, context);
+      case DocumentNode.Mount mount -> {
+        var host = Elements.div().id(mount.id());
+        assembly.mountAttributes(mount).forEach(host::attr);
+        yield tag(
+            host, null, child -> List.of(expandDocument(mount.fallback(), child)), null, context);
+      }
       case DocumentNode.Fragment(var children) ->
           new ViewNode.Fragment<>(
               null, context.location(), children(children, context, this::expandDocument));

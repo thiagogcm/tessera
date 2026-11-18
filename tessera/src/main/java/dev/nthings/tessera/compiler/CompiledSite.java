@@ -5,6 +5,7 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.SequencedMap;
 import org.jspecify.annotations.Nullable;
@@ -15,16 +16,28 @@ import org.jspecify.annotations.Nullable;
 /// - `css`: the stylesheet every page shares. Under [OutputMode#inline()] each page embeds it;
 ///   under [OutputMode#external(String)] it is also one of the `files`.
 /// - `files`: each published URL path mapped to its file: registered assets, the shared stylesheet
-///   and page scripts (external output), `search-index.json`, and `sitemap.xml` when the site has a
-///   base URL.
+///   and page scripts (external output), published browser bundles, `search-index.json`, and
+///   `sitemap.xml` when the site has a base URL.
+/// - `pageHeaders`: deployment response headers keyed by route. Apply them to each HTML response.
 ///
 /// [SiteWriter] and [SitePreviewServer] publish pages and files together.
 public record CompiledSite(
-    SequencedMap<String, String> pages, String css, SequencedMap<String, Asset> files) {
+    SequencedMap<String, String> pages,
+    String css,
+    SequencedMap<String, Asset> files,
+    Map<String, Map<String, String>> pageHeaders) {
+
+  public CompiledSite(
+      SequencedMap<String, String> pages, String css, SequencedMap<String, Asset> files) {
+    this(pages, css, files, Map.of());
+  }
 
   public CompiledSite {
     pages = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(pages));
     files = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(files));
+    var headers = new LinkedHashMap<String, Map<String, String>>();
+    pageHeaders.forEach((route, values) -> headers.put(route, Map.copyOf(values)));
+    pageHeaders = Collections.unmodifiableMap(headers);
   }
 
   /// The text of `sitemap.xml`, or null when the site has no base URL.

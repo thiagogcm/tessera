@@ -26,7 +26,7 @@ SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 
 `route.documentUri()` returns the public URL. `site.route("/guide")` looks up a route as an `Optional`; lookup normalizes paths like route construction does.
 
-The builder accepts a [theme](styling.md#set-a-theme), an output mode, registered assets, a sitemap base URL, and `LinkSpeculation`. Speculation defaults to `PRERENDER` and controls the same-site speculation rules added to the head. Set `baseUrl("https://example.com")` to generate `sitemap.xml`; omit it to omit the sitemap.
+The builder accepts a [theme](styling.md#set-a-theme), an output mode, registered assets, a sitemap base URL, and `LinkSpeculation`. Speculation defaults to `PRERENDER`. Pages with the browser bundle deployment policy publish these rules through a response header. Other pages include the rules in the head. Set `baseUrl("https://example.com")` to generate `sitemap.xml`; omit it to omit the sitemap.
 
 ## Choose an output mode
 
@@ -47,10 +47,10 @@ The asset base must be an absolute URL path. Relative paths, `//`, and `..` are 
 
 | Result | Accessors |
 | --- | --- |
-| `CompiledPage` | `html()`, `css()`, `assets()`; external assets start with the stylesheet, followed by module files |
+| `CompiledPage` | `html()`, `css()`, `assets()`, and `responseHeaders()` |
 | `CompiledSite` | `pages()` in route order, `css()`, and `files()` containing registered and generated assets |
 
-Site files include `search-index.json`, optional `sitemap.xml`, and any external stylesheet and modules. Compilation returns data; filesystem writes belong to `SiteWriter`.
+Site files include `search-index.json`, optional `sitemap.xml`, external stylesheets and modules, and any [published browser bundles](browser-rendering.md#publish-a-browser-bundle). `CompiledSite.pageHeaders()` maps routes to deployment response headers. Compilation returns data; filesystem writes belong to `SiteWriter`.
 
 ## Register assets and images
 
@@ -130,7 +130,7 @@ Module packaging follows the [output mode](#choose-an-output-mode). See [Browser
 
 Write the compiled site with `SiteWriter.writeToDirectory(compiled, output)`, then upload the whole directory. For the origin-root examples, enable directory indexes and redirects from paths such as `/guide` to `/guide/`. Setting an asset base changes resource paths; it does not automatically rebase every route or authored link for a hosting subdirectory.
 
-To preview the in-memory result, use `SitePreviewServer.start(compiled, port)` and retain the returned server until shutdown. It listens on loopback, serves a fixed snapshot, redirects directory routes while preserving queries, accepts `index.html` aliases, and sends `Cache-Control: no-store`. Recompile and restart to see changes.
+To preview the in-memory result, use `SitePreviewServer.start(compiled, port)` and retain the returned server until shutdown. It listens on loopback, serves a fixed snapshot, redirects directory routes while preserving queries, accepts `index.html` aliases, applies the compiled page headers, and sends `Cache-Control: no-store`. Recompile and restart to see changes.
 
 To inspect files as they will be uploaded:
 

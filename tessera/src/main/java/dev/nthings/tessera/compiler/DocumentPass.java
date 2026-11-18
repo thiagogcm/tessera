@@ -14,7 +14,9 @@ import dev.nthings.tessera.view.ViewNode;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -26,12 +28,14 @@ final class DocumentPass implements DocumentExpansion.Assembly {
   private final String pageTitle;
   private final DocumentState contributions = new DocumentState();
   private final DocumentExpansion expansion;
+  private final BundlePublication bundles;
   private final ArrayDeque<Runnable> pending = new ArrayDeque<>();
   private final PriorityQueue<Deferred> deferred = new PriorityQueue<>();
   private long sequence;
 
-  private DocumentPass(String pageTitle, StyleSheet styles) {
+  private DocumentPass(String pageTitle, StyleSheet styles, BundlePublication bundles) {
     this.pageTitle = pageTitle;
+    this.bundles = bundles;
     this.expansion = new DocumentExpansion(this, styles);
   }
 
@@ -52,13 +56,11 @@ final class DocumentPass implements DocumentExpansion.Assembly {
       DocumentState contributions,
       CompilationState compilation) {}
 
-  static Result layout(PageDocument document, List<DocumentContent> siteHead, StyleSheet styles) {
-    return new DocumentPass(document.title(), styles).document(document, siteHead);
+  static Result layout(PageDocument document, StyleSheet styles, BundlePublication bundles) {
+    return new DocumentPass(document.title(), styles, bundles).document(document);
   }
 
-  private Result document(PageDocument document, List<DocumentContent> siteHead) {
-    siteHead.forEach(
-        head -> contributions.contributeHead(DocumentNode.capture(head), Location.ROOT));
+  private Result document(PageDocument document) {
     var body = expansion.expandDocument(Location.ROOT, DocumentNode.capture(document.bodyRoot()));
     resolveLate();
     // Sections and head content may register further sections and head content in either
@@ -161,6 +163,20 @@ final class DocumentPass implements DocumentExpansion.Assembly {
       Function<DocumentContext, ? extends DocumentContent> section,
       Location placedBy) {
     contributions.atDocumentEnd(owner, section, placedBy);
+  }
+
+  @Override
+  public Map<String, String> mountAttributes(DocumentNode.Mount mount) {
+    var entry = bundles.entry(mount.bundle());
+    contributions.contributeBundle(bundles.bootstrap(), entry);
+    var attributes = new LinkedHashMap<String, String>();
+    attributes.put("data-tessera-bundle", "");
+    attributes.put("data-tessera-entry", entry.launcher().asset().path());
+    attributes.put("data-tessera-integrity", entry.launcher().integrity());
+    attributes.put("data-tessera-image", entry.image());
+    attributes.put("data-tessera-resources", entry.resources());
+    attributes.put("data-tessera-view", mount.view());
+    return attributes;
   }
 
   @Override

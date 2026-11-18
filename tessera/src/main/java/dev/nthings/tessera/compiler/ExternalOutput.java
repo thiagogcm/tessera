@@ -7,6 +7,7 @@ record ExternalOutput(String base) implements OutputMode {
       throw new IllegalArgumentException(
           "External asset base must be an absolute path such as /assets: " + base);
     }
+    base = base.replaceAll("/\\.(?=/|$)", "");
     if (base.endsWith("/")) {
       base = base.substring(0, base.length() - 1);
     }

@@ -44,6 +44,30 @@
 
     <build>
         <plugins>
+            <!-- Refresh only the generated deployment tree on incremental package builds. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>${maven-clean-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>refresh-published-site</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>${project.build.directory}/published-web</directory>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -87,6 +111,19 @@
                                 <argument>-o</argument>
                                 <argument>${project.build.directory}/tessera-second</argument>
                                 <argument>dev.nthings.tessera.wasm.example.SecondEntry</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>publish-browser-bundles</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>dev.nthings.tessera.wasm.example.PublishedWeb</mainClass>
+                            <arguments combine.self="override">
+                                <argument>${project.build.directory}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -142,6 +179,7 @@
                 <configuration>
                     <systemPropertyVariables>
                         <wasm.site>${project.build.directory}/web</wasm.site>
+                        <wasm.build>${project.build.directory}</wasm.build>
                     </systemPropertyVariables>
                     <environmentVariables>
                         <PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>1</PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>

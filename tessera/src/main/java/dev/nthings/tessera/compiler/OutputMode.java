@@ -4,7 +4,7 @@ package dev.nthings.tessera.compiler;
 public sealed interface OutputMode permits InlineOutput, ExternalOutput {
 
   /// Inline output: the stylesheet is embedded in a `<style>` element in `<head>`, and each page
-  /// script in an inline `<script type="module">`. The page has no assets.
+  /// script in an inline `<script type="module">`. Browser bundles still publish separate assets.
   static OutputMode inline() {
     return InlineOutput.INSTANCE;
   }
@@ -14,8 +14,9 @@ public sealed interface OutputMode permits InlineOutput, ExternalOutput {
   /// content, so a changed file is never served stale from a cache. The stylesheet and modules are
   /// returned as [Asset]s, which the caller must publish at their paths.
   ///
-  /// `assetBase` must be an absolute URL path such as `/assets`; a trailing `/` is ignored. Throws
-  /// IllegalArgumentException if it does not start with `/`, or contains `//` or `..`.
+  /// `assetBase` must be an absolute URL path such as `/assets`; trailing slashes and `.` path
+  /// segments are normalized. Throws IllegalArgumentException if it does not start with `/`, or
+  /// contains `//` or `..`.
   static OutputMode external(String assetBase) {
     return new ExternalOutput(assetBase);
   }

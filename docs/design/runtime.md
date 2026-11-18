@@ -103,7 +103,7 @@ Use one stylesheet ledger per compiled entry. Multiple roots of that entry share
 
 Bundle publication is a separate feature after the authoring and ownership refactor. The static compiler consumes an already built `WasmBundle`; it does not invoke GraalVM, resolve toolchain installations, or transfer JVM closures into a page.
 
-The bundle describes a closed graph of launcher, Wasm image, supplementary chunks, and bootstrap resources. Each resource records its content, media type, digest, and references to other resources. Publication assigns content-derived paths and rewrites supported references consistently. Reject an unsupported launcher layout rather than guessing file names.
+The imported bundle describes a closed graph of launcher, Wasm image, and supplementary chunks. Each resource records its content, media type, digest, and references to other resources. The compiler adds a shared bootstrap to the published graph. Publication assigns content-derived paths and resolves supported references by logical name. Reject an unsupported launcher layout rather than guessing file names.
 
 | Boundary | Responsibility |
 | --- | --- |

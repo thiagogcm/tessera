@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.compiler.BundlePublication.File;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
@@ -12,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 
 /// The document side of one page compilation: head contributions, client behaviors and end-of-body
 /// sections, as the [DocumentPass] backend receives them. Expansion state and headings live in the
@@ -20,6 +22,8 @@ final class DocumentState {
 
   private final List<Contribution<DocumentNode>> headElements = new ArrayList<>();
   private final Map<String, PageScript> behaviors = new LinkedHashMap<>();
+  private final Map<String, Asset> bundleAssets = new LinkedHashMap<>();
+  private @Nullable File bootstrap;
   private final Map<ViewKey<?>, Contribution<Function<DocumentContext, ? extends DocumentContent>>>
       documentEndSections = new LinkedHashMap<>();
 
@@ -40,6 +44,20 @@ final class DocumentState {
   /// Registers `behavior` once per page; a later behavior with the same id is ignored.
   void contributeScript(PageScript behavior) {
     behaviors.putIfAbsent(behavior.id(), behavior);
+  }
+
+  void contributeBundle(BundlePublication.File script, BundlePublication.Entry entry) {
+    bootstrap = script;
+    bundleAssets.putIfAbsent(script.asset().path(), script.asset());
+    entry.assets().forEach(asset -> bundleAssets.putIfAbsent(asset.path(), asset));
+  }
+
+  List<Asset> bundleAssets() {
+    return List.copyOf(bundleAssets.values());
+  }
+
+  @Nullable File bootstrap() {
+    return bootstrap;
   }
 
   List<PageScript> scripts() {

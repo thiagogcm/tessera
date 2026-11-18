@@ -122,29 +122,38 @@ final class DomReconciler {
 
   /// Publishes a prepared commit: installs its tree as the committed tree, replacing fallback
   /// content on the first commit. Acquired instances transfer to the committed tree here; a failure
-  /// while moving a first build into the host releases them before it propagates.
+  /// during first installation releases them and restores the original fallback nodes.
   void publish(Commit commit) {
     if (!open.getAsBoolean()) {
       abort();
       throw new ClosedRoot();
     }
-    if (!mounted) {
+    if (mounted) {
+      finishControls();
+      requireOpen();
+    } else {
+      // Retain the real nodes until installation succeeds, including dirty native controls.
+      var fallback = Dom.snapshotChildren(host);
       var installed = false;
       try {
         Dom.clear(host);
         for (var instance : commit.tree()) {
           Dom.moveRange(host, instance.first, instance.last, null);
         }
+        finishControls();
+        requireOpen();
         installed = true;
       } finally {
         if (!installed) {
-          abort();
+          try {
+            abort();
+          } finally {
+            Dom.restoreChildren(host, fallback);
+          }
         }
       }
       mounted = true;
     }
-    finishControls();
-    requireOpen();
     roots = commit.tree();
     created.clear();
   }

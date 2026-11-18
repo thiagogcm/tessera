@@ -149,8 +149,4 @@ Styles are shared by roots within one compiled entry. `StyleSink` manages the co
 
 These constraints affect current use and define the work that remains. They are not guarantees of the proposed design.
 
-| Boundary | Current limitation | Required work |
-| --- | --- | --- |
-| Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#feature-delivery-after-the-refactor) |
-
 Each mount host's ID is reserved: a child claiming it is rejected before publication.

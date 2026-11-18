@@ -116,6 +116,16 @@ final class Dom {
       value = "host.replaceChildren();")
   static native void clear(JSObject host);
 
+  @JS(
+      args = {"host"},
+      value = "return [...host.childNodes];")
+  static native JSObject snapshotChildren(JSObject host);
+
+  @JS(
+      args = {"host", "children"},
+      value = "host.replaceChildren(...children);")
+  static native void restoreChildren(JSObject host, JSObject children);
+
   /// Adopts a new constructed stylesheet into the document. Constructed sheets need no inline
   /// `<style>` element, so they work under a `style-src` policy without `'unsafe-inline'`.
   @JS(

@@ -1,12 +1,11 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.document.DocumentContent;
-import dev.nthings.tessera.document.Documents;
-import java.util.List;
+import dev.nthings.tessera.foundation.Fnv1a64;
+import java.nio.charset.StandardCharsets;
 import org.jspecify.annotations.Nullable;
 
-/// Same-site speculation as declarative `<script type="speculationrules">` (no JavaScript): links
-/// are prefetched or prerendered on hover or pointer-down (`moderate` eagerness).
+/// Same-site speculation through declarative Speculation Rules. Links are prefetched or prerendered
+/// on hover or pointer-down (`moderate` eagerness).
 public enum LinkSpeculation {
   /// Emits no speculation rules.
   NONE(null),
@@ -26,11 +25,19 @@ public enum LinkSpeculation {
                 + "\":[{\"where\":{\"href_matches\":\"/*\"},\"eagerness\":\"moderate\"}]}";
   }
 
-  /// Site-wide `<head>` content: the rules element, or nothing for [#NONE].
-  List<DocumentContent> headElements() {
-    if (rulesJson == null) {
-      return List.of();
+  @Nullable String inlineRules() {
+    return rulesJson;
+  }
+
+  @Nullable Asset externalRules(ExternalOutput output) {
+    var json = rulesJson;
+    if (json == null) {
+      return null;
     }
-    return List.of(Documents.script("speculationrules", rulesJson));
+    var hash = Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, json));
+    return new Asset(
+        output.base() + "/speculation-" + hash + ".json",
+        "application/speculationrules+json",
+        json.getBytes(StandardCharsets.UTF_8));
   }
 }

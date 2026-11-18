@@ -5,11 +5,11 @@ package dev.nthings.tessera.css;
 /// border); [#color()], [#textColor()] and [#onSolid()] are the colors it draws from.
 public enum Tone {
   NEUTRAL(Tokens.TEXT_MUTED, Tokens.TEXT_MUTED, Tokens.SURFACE_CARD),
-  ACCENT(Tokens.ACCENT_PRIMARY, Tokens.ACCENT_TEXT, CssColor.white()),
-  INFO(Tokens.STATUS_INFO, Tokens.STATUS_INFO_TEXT, CssColor.white()),
-  SUCCESS(Tokens.STATUS_SUCCESS, Tokens.STATUS_SUCCESS_TEXT, CssColor.white()),
+  ACCENT(Tokens.ACCENT_PRIMARY, Tokens.ACCENT_TEXT, onFill(262)),
+  INFO(Tokens.STATUS_INFO, Tokens.STATUS_INFO_TEXT, onFill(235)),
+  SUCCESS(Tokens.STATUS_SUCCESS, Tokens.STATUS_SUCCESS_TEXT, onFill(152)),
   WARNING(Tokens.STATUS_WARNING, Tokens.STATUS_WARNING_TEXT, CssColor.oklch(15, 0.02, 75)),
-  DANGER(Tokens.STATUS_DANGER, Tokens.STATUS_DANGER_TEXT, CssColor.white());
+  DANGER(Tokens.STATUS_DANGER, Tokens.STATUS_DANGER_TEXT, onFill(25));
 
   private final DesignToken.Color color;
   private final DesignToken.Color textColor;
@@ -19,6 +19,11 @@ public enum Tone {
     this.color = color;
     this.textColor = textColor;
     this.onSolid = onSolid;
+  }
+
+  /// White on the darker light-mode fills; near-black in dark mode, whose fills are lighter.
+  private static CssColor onFill(double hue) {
+    return CssColor.lightDark(CssColor.white(), CssColor.oklch(18, 0.02, hue));
   }
 
   /// The tone's base color token, for fills, borders and icons.

@@ -14,16 +14,17 @@ public final class SiteWriter {
   /// needed. Existing files are overwritten, and files left from an earlier build are kept. Throws
   /// UncheckedIOException if a file cannot be written.
   public static void writeToDirectory(CompiledSite compiledSite, Path outputDirectory) {
+    var root = outputDirectory.toAbsolutePath().normalize();
     try {
-      Files.createDirectories(outputDirectory);
+      Files.createDirectories(root);
       for (var entry : compiledSite.pages().entrySet()) {
         writeFile(
-            outputDirectory,
+            root,
             SiteRoute.outputPathFor(entry.getKey()),
             entry.getValue().getBytes(StandardCharsets.UTF_8));
       }
       for (var file : compiledSite.files().values()) {
-        writeFile(outputDirectory, file.relativeOutputPath(), file.contentView());
+        writeFile(root, file.relativeOutputPath(), file.contentView());
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);
@@ -32,7 +33,7 @@ public final class SiteWriter {
 
   private static void writeFile(Path root, Path relative, byte[] content) throws IOException {
     var target = root.resolve(relative).normalize();
-    if (!target.startsWith(root.normalize())) {
+    if (!target.startsWith(root)) {
       throw new IllegalArgumentException("Output escapes the site directory: " + relative);
     }
     var parent = target.getParent();

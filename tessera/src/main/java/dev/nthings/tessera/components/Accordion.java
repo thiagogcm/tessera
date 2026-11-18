@@ -7,10 +7,10 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -23,22 +23,18 @@ import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Transition;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /// Stack of collapsible sections on native `<details>` and `<summary>` elements, so "Find in page"
 /// can reach closed items. Create one with [#of()]; by default any number of items can be open, and
 /// [#exclusive()] makes opening one close the others. The open and close animation is skipped under
 /// reduced motion.
 ///
-/// An exclusive accordion also uses its [#id(String)] as its `<details name>` group. Without an id,
-/// the compiler numbers instances `accordion-<n>` and the group gets a page-unique name.
+/// An exclusive accordion's `<details name>` group is the DOM id of its root, `<scoped id>--group`,
+/// so separate accordions never share a group, even when they have one [#id(String)] in different
+/// scopes. Without an id, the compiler numbers instances `accordion-<n>`.
 public final class Accordion extends BuiltinScope<Accordion> {
-
-  private static final ViewKey<AtomicInteger> GROUPS =
-      ViewKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
 
   private record Item(String title, Element content, boolean open) {}
 
@@ -154,11 +150,14 @@ public final class Accordion extends BuiltinScope<Accordion> {
   @Override
   TagElement expand(ViewContext context) {
     var root = div();
-    var group = exclusive ? groupName(context) : null;
+    var group = exclusive ? ElementRef.scoped("group") : null;
+    if (group != null) {
+      root.id(group);
+    }
     for (var item : items) {
       var detailsEl =
           details()
-              .ifPresent(group, (d, name) -> d.attr("name", name))
+              .ifPresent(group, (d, ref) -> d.idRef("name", ref))
               .onlyIf(item.open(), d -> d.boolAttr("open"))
               .children(
                   summary()
@@ -169,12 +168,5 @@ public final class Accordion extends BuiltinScope<Accordion> {
       root.child(detailsEl);
     }
     return root;
-  }
-
-  private String groupName(ViewContext context) {
-    var explicit = id;
-    return explicit != null
-        ? Fnv1a64.sanitizeLocalId(explicit)
-        : "accordion-" + context.state(GROUPS).incrementAndGet();
   }
 }

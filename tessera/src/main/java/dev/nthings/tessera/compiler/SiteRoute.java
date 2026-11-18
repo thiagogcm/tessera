@@ -74,4 +74,9 @@ public record SiteRoute(
     }
     return Path.of(stripped, "index.html");
   }
+
+  /// The URL path of the output file of a normalized route, such as `/guide/index.html`.
+  static String outputUrlPathFor(String routePath) {
+    return "/" + outputPathFor(routePath).toString().replace('\\', '/');
+  }
 }

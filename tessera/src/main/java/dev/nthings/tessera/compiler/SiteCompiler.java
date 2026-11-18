@@ -28,28 +28,20 @@ final class SiteCompiler {
     var routes = site.routes();
 
     // Route and declared-file paths are known up front: reject conflicts before rendering.
-    var pageTitles = new LinkedHashMap<String, String>(routes.size());
+    var routePaths = new RoutePaths();
     var diagnostics = new ArrayList<Diagnostic>();
     for (var route : routes) {
-      var title = route.document().title();
-      if (pageTitles.putIfAbsent(route.path(), title) != null) {
-        diagnostics.add(
-            new Diagnostic(
-                "duplicate-route",
-                "Route path \"" + route.path() + "\" is declared more than once",
-                "Give each route a distinct path, or remove the duplicate route.",
-                Location.site(route.path(), title)));
-      }
+      routePaths.add(route, diagnostics);
     }
     var files = new LinkedHashMap<String, Asset>();
     for (var asset : site.assets()) {
-      addFile(files, pageTitles, asset, "File", diagnostics);
+      addFile(files, routePaths, asset, "File", diagnostics);
     }
     var baseUrl = site.baseUrl();
     // Generated later; a route or registered file must not take their paths.
-    collides(files, pageTitles, SEARCH_INDEX_PATH, "Generated file", diagnostics);
+    collides(files, routePaths, SEARCH_INDEX_PATH, "Generated file", diagnostics);
     if (baseUrl != null) {
-      collides(files, pageTitles, SITEMAP_PATH, "Generated file", diagnostics);
+      collides(files, routePaths, SITEMAP_PATH, "Generated file", diagnostics);
     }
     if (!diagnostics.isEmpty()) {
       throw new CompilationException(diagnostics);
@@ -62,9 +54,6 @@ final class SiteCompiler {
     for (var i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
     }
-
-    SiteValidator.validateSiteLinks(preparedByRoute, files.keySet(), diagnostics);
-    SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
 
     // Merge route stylesheets in route order so output is deterministic.
     var sharedStyles = new StyleSheet();
@@ -95,8 +84,17 @@ final class SiteCompiler {
     if (externalRules != null) {
       linkedFiles.putIfAbsent(externalRules.path(), externalRules);
     }
+    // Links may point at any published file, including the generated ones.
+    var publishedFiles = new LinkedHashSet<>(files.keySet());
+    publishedFiles.addAll(linkedFiles.keySet());
+    publishedFiles.add(SEARCH_INDEX_PATH);
+    if (baseUrl != null) {
+      publishedFiles.add(SITEMAP_PATH);
+    }
+    SiteValidator.validateSiteLinks(preparedByRoute, publishedFiles, diagnostics);
+    SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
     for (var asset : linkedFiles.values()) {
-      addFile(files, pageTitles, asset, "Generated file", diagnostics);
+      addFile(files, routePaths, asset, "Generated file", diagnostics);
     }
     if (!diagnostics.isEmpty()) {
       throw new CompilationException(diagnostics);
@@ -137,27 +135,59 @@ final class SiteCompiler {
     return new CompiledSite(pages, css, files, pageHeaders);
   }
 
+  /// The URL paths and output files taken by routes.
+  private static final class RoutePaths {
+    private final Map<String, String> titles = new LinkedHashMap<>();
+    private final Map<String, String> routesByOutput = new LinkedHashMap<>();
+
+    /// Takes `route`'s path and output file, reporting a route that already holds either.
+    void add(SiteRoute route, List<Diagnostic> diagnostics) {
+      var path = route.path();
+      var title = route.document().title();
+      if (titles.putIfAbsent(path, title) != null) {
+        diagnostics.add(
+            new Diagnostic(
+                "duplicate-route",
+                "Route path \"" + path + "\" is declared more than once",
+                "Give each route a distinct path, or remove the duplicate route.",
+                Location.site(path, title)));
+        return;
+      }
+      var output = SiteRoute.outputUrlPathFor(path);
+      var other = routesByOutput.putIfAbsent(output, path);
+      if (other != null) {
+        diagnostics.add(
+            new Diagnostic(
+                "file-path-collision",
+                "Route \"" + path + "\" is written to " + output + ", like route \"" + other + "\"",
+                "Publish one of the routes at a different path.",
+                Location.site(path, title)));
+      }
+    }
+  }
+
   /// Adds `file`, reporting a path already used by a route or another file.
   private static void addFile(
       SequencedMap<String, Asset> files,
-      Map<String, String> pageTitles,
+      RoutePaths routes,
       Asset file,
       String kind,
       List<Diagnostic> diagnostics) {
-    if (collides(files, pageTitles, file.path(), kind, diagnostics)) {
+    if (collides(files, routes, file.path(), kind, diagnostics)) {
       return;
     }
     files.put(file.path(), file);
   }
 
-  /// Reports `path` if a route or another file already uses it.
+  /// Reports `path` if a route or another file already uses it, or if a route's page is written to
+  /// the same output file.
   private static boolean collides(
       Map<String, Asset> files,
-      Map<String, String> pageTitles,
+      RoutePaths routes,
       String path,
       String kind,
       List<Diagnostic> diagnostics) {
-    var title = pageTitles.get(path);
+    var title = routes.titles.get(path);
     if (title != null) {
       diagnostics.add(
           new Diagnostic(
@@ -165,6 +195,16 @@ final class SiteCompiler {
               kind + " \"" + path + "\" has the same path as a route",
               "Publish the file or the route at a different path.",
               Location.site(path, title)));
+      return true;
+    }
+    var page = routes.routesByOutput.get(path);
+    if (page != null) {
+      diagnostics.add(
+          new Diagnostic(
+              "file-path-collision",
+              kind + " \"" + path + "\" is written over the page of route \"" + page + "\"",
+              "Publish the file or the route at a different path.",
+              Location.site(page, routes.titles.get(page))));
       return true;
     }
     if (files.containsKey(path)) {
@@ -228,8 +268,10 @@ final class SiteCompiler {
       Thread.currentThread().interrupt();
       throw new IllegalStateException("Site compilation interrupted", e);
     } catch (ExecutionException e) {
-      if (e.getCause() instanceof RuntimeException unchecked) {
-        throw unchecked;
+      switch (e.getCause()) {
+        case RuntimeException unchecked -> throw unchecked;
+        case Error error -> throw error;
+        case null, default -> {}
       }
       throw new IllegalStateException("Site compilation failed", e.getCause());
     }

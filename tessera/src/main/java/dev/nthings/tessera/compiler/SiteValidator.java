@@ -13,7 +13,19 @@ import java.util.Set;
 
 /// Cross-route contracts over prepared page metadata.
 final class SiteValidator {
+  /// A fragment browsers scroll to the top of the document when no element has it as its id.
+  private static final String TOP_FRAGMENT = "top";
+
   private SiteValidator() {}
+
+  /// `path` with the `..` segments that climb above the root dropped, as browsers resolve them.
+  private static String withinRoot(String path) {
+    var resolved = path;
+    while (resolved.startsWith("/../") || resolved.equals("/..")) {
+      resolved = resolved.substring(3);
+    }
+    return resolved.isEmpty() ? "/" : resolved;
+  }
 
   static void validateViewTransitions(
       Map<String, PreparedPage> preparedByRoute, List<Diagnostic> diagnostics) {
@@ -54,7 +66,7 @@ final class SiteValidator {
     var publishedPages = new LinkedHashMap<String, PreparedPage>();
     preparedByRoute.forEach((route, page) -> {
       publishedPages.put(route, page);
-      publishedPages.put("/" + SiteRoute.outputPathFor(route).toString().replace('\\', '/'), page);
+      publishedPages.put(SiteRoute.outputUrlPathFor(route), page);
     });
     for (var entry : preparedByRoute.entrySet()) {
       var sourceRoute = entry.getKey();
@@ -69,10 +81,10 @@ final class SiteValidator {
           // Empty path (query or fragment only) means the current document.
           var referencePath = Objects.requireNonNull(reference.getRawPath());
           var rawPath =
-              Objects.requireNonNull(
-                  referencePath.isEmpty()
-                      ? base.getPath()
-                      : base.resolve(reference).normalize().getPath());
+              referencePath.isEmpty()
+                  ? Objects.requireNonNull(base.getPath())
+                  : withinRoot(
+                      Objects.requireNonNull(base.resolve(reference).normalize().getPath()));
           var fragment = reference.getFragment();
           if (assetPaths.contains(rawPath)) {
             continue;
@@ -95,6 +107,7 @@ final class SiteValidator {
           }
           if (fragment != null
               && !fragment.isEmpty()
+              && !fragment.equalsIgnoreCase(TOP_FRAGMENT)
               && !targetPage.registeredDomIds().contains(fragment)) {
             diagnostics.add(
                 new Diagnostic(

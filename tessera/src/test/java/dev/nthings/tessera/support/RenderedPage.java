@@ -43,13 +43,16 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return of(Compiler.compile(document));
   }
 
-  /// The page at `route` of `site`, with the site's shared stylesheet.
+  /// The page at `route` of `site`, with the site's shared stylesheet and the route's response
+  /// headers. Its assets are empty: the site publishes them in [CompiledSite#files()].
   public static RenderedPage of(CompiledSite site, String route) {
     var html = site.pages().get(route);
     if (html == null) {
       throw new AssertionError("No page at route: " + route);
     }
-    return of(new CompiledPage(html, site.css(), List.of(), Map.of()));
+    return of(
+        new CompiledPage(
+            html, site.css(), List.of(), site.pageHeaders().getOrDefault(route, Map.of())));
   }
 
   public static RenderedPage of(CompiledPage compiled) {

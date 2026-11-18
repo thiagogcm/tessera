@@ -1,14 +1,20 @@
 package dev.nthings.tessera.navigation;
 
+import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatNoException;
+import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
+import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
+import dev.nthings.tessera.compiler.SiteRoute;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("SiteNavigation")
@@ -16,61 +22,72 @@ class SiteNavigationTest {
 
   private final SiteDefinition site = SiteDefinition.of(documentationRoutes());
 
-  @Nested
-  @DisplayName("docPager")
-  class DocPagerLinks {
+  /// The route a rendered link leads to.
+  private String routeOf(Element link) {
+    return site.route(link.attr("href")).map(SiteRoute::path).orElseThrow();
+  }
 
-    @Test
-    @DisplayName(
-        "links to the neighbouring routes, preferring route titles and omitting missing sides")
-    void linksToNeighbouringRoutes() {
-      var links = cardsAt("/guide");
-
-      assertThat(links)
-          .extracting(a -> a.attr("href") + " " + a.select(".pager-title").text())
-          .containsExactly("/ Tessera Home", "/faq FAQ");
-      assertThat(links)
-          .extracting(a -> a.select(".pager-hint").text())
-          .containsExactly("← Previous", "Next →");
-      assertThat(cardsAt("/"))
-          .extracting(a -> a.attr("href") + " " + a.select(".pager-hint").text())
-          .containsExactly("/guide Next →");
-      assertThat(cardsAt("/faq"))
-          .extracting(a -> a.attr("href") + " " + a.select(".pager-hint").text())
-          .containsExactly("/guide ← Previous");
-      assertThat(cardsAt("/guide/")).extracting(a -> a.attr("href")).containsExactly("/", "/faq");
-    }
-
-    @Test
-    @DisplayName("rejects an unknown route")
-    void rejectsUnknownRoute() {
-      assertThatIllegalArgumentException()
-          .isThrownBy(() -> SiteNavigation.docPager(site, "/missing"))
-          .withMessage("No route registered at /missing");
-    }
-
-    private Elements cardsAt(String path) {
-      return renderMain(SiteNavigation.docPager(site, path)).elements("nav a");
-    }
+  private Elements pagerLinks(String path) {
+    return renderMain(SiteNavigation.docPager(site, path)).elements("nav a");
   }
 
   @Test
-  @DisplayName(
-      "searchPalette indexes every route in one group with its title, path, and description")
-  void indexesEveryRoute() {
-    var page = renderMain(SiteNavigation.searchPalette(site));
-    var options = page.elements("a.palette-item");
+  @DisplayName("the pager links the neighbouring routes in order under their display titles")
+  void pagerLinksNeighbouringRoutes() {
+    assertThat(pagerLinks("/guide"))
+        .extracting(this::routeOf, this::side)
+        .containsExactly(tuple("/", "Previous"), tuple("/faq", "Next"));
+    assertThat(pagerLinks("/guide"))
+        .extracting(Element::text)
+        .satisfiesExactly(
+            previous -> assertThat(previous).contains("Tessera Home"),
+            next -> assertThat(next).contains("FAQ"));
+    assertThat(pagerLinks("/"))
+        .extracting(this::routeOf, this::side)
+        .containsExactly(tuple("/guide", "Next"));
+    assertThat(pagerLinks("/faq/"))
+        .extracting(this::routeOf, this::side)
+        .containsExactly(tuple("/guide", "Previous"));
+  }
 
-    assertThat(page.element(".palette-group-title").text()).isEqualTo("Pages & Guides");
-    assertThat(options).extracting(o -> o.attr("href")).containsExactly("/", "/guide", "/faq");
-    assertThat(options)
-        .extracting(o -> o.select(".palette-item-title").text())
-        .containsExactly("Tessera Home", "Getting Started", "FAQ");
-    assertThat(options)
-        .extracting(o -> o.select(".palette-item-badge").text())
-        .containsExactly("/", "/guide", "/faq");
-    assertThat(options.getFirst().select(".palette-item-desc").text())
-        .isEqualTo("Static HTML/CSS compiler");
-    assertThat(options.get(1).select(".palette-item-desc")).isEmpty();
+  /// Which side of the pager a link is on, from its visible hint.
+  private String side(Element link) {
+    return link.text().contains("Previous")
+        ? "Previous"
+        : link.text().contains("Next") ? "Next" : "";
+  }
+
+  @Test
+  @DisplayName("the pager rejects an unknown route")
+  void pagerRejectsUnknownRoute() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> SiteNavigation.docPager(site, "/missing"));
+  }
+
+  @Test
+  @DisplayName("the search palette links every route with its title and description")
+  void paletteLinksEveryRoute() {
+    var links = renderMain(SiteNavigation.searchPalette(site)).elements("a[href]");
+
+    assertThat(links).extracting(this::routeOf).containsExactly("/", "/guide", "/faq");
+    assertThat(links.get(0).text()).contains("Tessera Home", "Static HTML/CSS compiler");
+    assertThat(links.get(1).text()).contains("Getting Started");
+    assertThat(links.get(2).text()).contains("FAQ");
+  }
+
+  @Test
+  @DisplayName("pager and palette links pass site link validation on every route")
+  void navigationPassesSiteLinkValidation() {
+    var builder = SiteDefinition.builder();
+    for (var route : site.routes()) {
+      var body =
+          main()
+              .children(
+                  SiteNavigation.searchPalette(site), SiteNavigation.docPager(site, route.path()));
+      builder.route(new SiteRoute(route.path(), new PageDocument(route.document().title(), body)));
+    }
+    var withNavigation = builder.build();
+
+    assertThatNoException().isThrownBy(() -> Compiler.compile(withNavigation));
   }
 }

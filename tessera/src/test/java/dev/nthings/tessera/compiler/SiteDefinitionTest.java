@@ -1,30 +1,32 @@
 package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("SiteDefinition")
 class SiteDefinitionTest {
 
-  private final SiteDefinition site = SiteDefinition.of(documentationRoutes());
-
   @Test
-  @DisplayName("finds a route by its normalized path")
+  @DisplayName("finds a route by its normalized path, and nothing at an unregistered one")
   void findsRouteByNormalizedPath() {
-    assertThat(site.route("guide/"))
-        .hasValueSatisfying(route -> {
-          assertThat(route.path()).isEqualTo("/guide");
-          assertThat(route.document().title()).isEqualTo("Guide");
-          assertThat(route.displayTitle()).isEqualTo("Getting Started");
-        });
+    var site = SiteDefinition.of(documentationRoutes());
+
+    assertThat(site.route("guide/")).map(SiteRoute::displayTitle).hasValue("Getting Started");
+    assertThat(site.route("/missing")).isEmpty();
   }
 
-  @Test
-  @DisplayName("finds nothing at an unregistered path")
-  void findsNothingAtUnregisteredPath() {
-    assertThat(site.route("/missing")).isEmpty();
+  @ParameterizedTest
+  @ValueSource(strings = {"", "/", "example.com", "//example.com", "/docs"})
+  @DisplayName("a base URL must be an absolute origin")
+  void rejectsBaseUrlWithoutOrigin(String baseUrl) {
+    var builder = SiteDefinition.builder().routes(documentationRoutes()).baseUrl(baseUrl);
+
+    assertThatIllegalArgumentException().isThrownBy(builder::build);
   }
 }

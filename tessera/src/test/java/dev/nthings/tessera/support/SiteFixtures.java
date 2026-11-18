@@ -16,10 +16,18 @@ import java.util.List;
 /// Route sets built fresh per call, so tests cannot affect each other.
 public final class SiteFixtures {
 
-  public static final String LOGO_PATH = "/assets/logo.svg";
-  public static final String LOGO_CONTENT = "<svg/>";
+  public static final String LOGO_PATH = "/assets/logo.png";
 
   private SiteFixtures() {}
+
+  /// Bytes that are not valid UTF-8, so any transcoding on the way out changes them.
+  public static byte[] logoBytes() {
+    return new byte[] {(byte) 0x89, 'P', 'N', 'G', 0, (byte) 0xFF, (byte) 0xC3, 0x28};
+  }
+
+  public static Asset logo() {
+    return Asset.of(LOGO_PATH, logoBytes());
+  }
 
   /// URL path of the shared stylesheet of a site compiled with external output.
   public static String stylesheetPath(CompiledSite site) {
@@ -29,25 +37,22 @@ public final class SiteFixtures {
         .orElseThrow(() -> new AssertionError("No stylesheet published"));
   }
 
-  public static Asset logo() {
-    return Asset.text(LOGO_PATH, LOGO_CONTENT);
-  }
-
-  /// Embeds unregistered [#LOGO_PATH], so compiling these routes alone fails; see
-  /// [#siteWithLogo()].
-  public static List<SiteRoute> homeWithLogoAndGuide() {
+  /// A small documentation site: a home page showing [#logo()], a directory route, a nested route
+  /// and an `.html` route, all linked from home.
+  public static SiteDefinition.Builder docsSite() {
     var home =
-        new PageDocument(
-            "Home",
-            main().children(img(LOGO_PATH, "Logo").dimensions(1, 1), a("/guide").text("Guide")));
-    return List.of(
-        new SiteRoute("/", home),
-        new SiteRoute("/guide", new PageDocument("Guide", main().text("Guide"))));
-  }
-
-  /// [#homeWithLogoAndGuide()] with [#logo()] registered: a valid site.
-  public static SiteDefinition siteWithLogo() {
-    return SiteDefinition.builder().routes(homeWithLogoAndGuide()).asset(logo()).build();
+        main()
+            .children(
+                img(LOGO_PATH, "Logo").dimensions(16, 16),
+                a("/guide").text("Guide"),
+                a("guide/install/").text("Install"),
+                a("/notes.html").text("Notes"));
+    return SiteDefinition.builder()
+        .route(new SiteRoute("/", new PageDocument("Home", home)))
+        .route(new SiteRoute("/guide", new PageDocument("Guide", main().text("Guide"))))
+        .route(new SiteRoute("/guide/install", new PageDocument("Install", main().text("Install"))))
+        .route(new SiteRoute("/notes.html", new PageDocument("Notes", main().text("Notes"))))
+        .asset(logo());
   }
 
   /// Three documentation routes; the untitled FAQ falls back to its document title.

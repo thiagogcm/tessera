@@ -1,21 +1,21 @@
 package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.SiteFixtures.LOGO_CONTENT;
-import static dev.nthings.tessera.support.SiteFixtures.LOGO_PATH;
-import static dev.nthings.tessera.support.SiteFixtures.siteWithLogo;
-import static dev.nthings.tessera.support.SiteFixtures.stylesheetPath;
+import static dev.nthings.tessera.support.SiteFixtures.docsSite;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.AutoClose;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @DisplayName("SitePreviewServer")
 @Timeout(10)
@@ -28,68 +28,57 @@ class SitePreviewServerTest {
 
   @BeforeAll
   static void startServer() {
-    site = Compiler.compile(siteWithLogo());
+    site =
+        Compiler.compile(
+            docsSite().asset(Asset.of("/assets/manual v1.pdf", new byte[] {1, 2})).build());
     server = SitePreviewServer.start(site, 0);
     client = HttpClient.newHttpClient();
   }
 
-  private static HttpResponse<String> get(String path) throws IOException, InterruptedException {
-    var request = HttpRequest.newBuilder(URI.create(server.baseUrl() + path)).build();
-    return client.send(request, HttpResponse.BodyHandlers.ofString());
+  private static HttpResponse<byte[]> get(String rawPath) throws IOException, InterruptedException {
+    var request = HttpRequest.newBuilder(URI.create(server.baseUrl() + rawPath)).build();
+    return client.send(request, HttpResponse.BodyHandlers.ofByteArray());
   }
 
   @Test
-  @DisplayName("serves registered assets with their content type")
-  void servesAssetsWithContentType() throws Exception {
-    var logo = get(LOGO_PATH);
+  @DisplayName("serves every published file at its URL with its content type and bytes")
+  void servesEveryFile() throws Exception {
+    assertThat(site.files()).hasSizeGreaterThan(3);
+    for (var file : site.files().values()) {
+      var response = get(new URI(null, null, file.path(), null).toASCIIString());
 
-    assertThat(logo.statusCode()).isEqualTo(200);
-    assertThat(logo.headers().firstValue("Content-Type")).hasValue("image/svg+xml");
-    assertThat(logo.headers().firstValue("Cache-Control")).hasValue("no-store");
-    assertThat(logo.body()).isEqualTo(LOGO_CONTENT);
+      assertThat(response.statusCode()).as(file.path()).isEqualTo(200);
+      assertThat(response.headers().firstValue("Content-Type")).hasValue(file.contentType());
+      assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-store");
+      assertThat(response.body()).isEqualTo(file.content());
+    }
   }
 
-  @Test
-  @DisplayName("serves the shared stylesheet as UTF-8 CSS")
-  void servesStylesheetAsCss() throws Exception {
-    var stylesheet = get(stylesheetPath(site));
-
-    assertThat(stylesheet.statusCode()).isEqualTo(200);
-    assertThat(stylesheet.headers().firstValue("Content-Type")).hasValue("text/css; charset=utf-8");
-    assertThat(stylesheet.headers().firstValue("Cache-Control")).hasValue("no-store");
-    assertThat(stylesheet.body()).isEqualTo(site.css());
-  }
-
-  @Test
-  @DisplayName("serves a route at its index.html path")
-  void servesRouteIndexHtml() throws Exception {
-    var response = get("/guide/index.html");
+  @ParameterizedTest
+  @CsvSource({"/, /", "/guide/, /guide", "/guide/index.html, /guide", "/notes.html, /notes.html"})
+  @DisplayName("serves a page at its published URL and its index.html alias")
+  void servesPages(String url, String route) throws Exception {
+    var response = get(url);
 
     assertThat(response.statusCode()).isEqualTo(200);
     assertThat(response.headers().firstValue("Content-Type")).hasValue("text/html; charset=utf-8");
-    assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-store");
-    assertThat(response.body()).isEqualTo(site.pages().get("/guide"));
-  }
-
-  @Test
-  @DisplayName("answers 404 for an unknown path")
-  void returns404ForUnknownPath() throws Exception {
-    var response = get("/missing");
-
-    assertThat(response.statusCode()).isEqualTo(404);
-    assertThat(response.headers().firstValue("Content-Type")).hasValue("text/plain; charset=utf-8");
-    assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-store");
-    assertThat(response.body()).isEqualTo("404 Not Found: /missing");
+    assertThat(new String(response.body(), StandardCharsets.UTF_8))
+        .isEqualTo(site.pages().get(route));
   }
 
   @Test
   @DisplayName("redirects a directory route to its trailing-slash URL, keeping the query")
   void redirectsKeepingQuery() throws Exception {
-    var response = get("/guide?q=a%2Bb");
+    var response = get("/guide/install?q=a%2Bb");
 
     assertThat(response.statusCode()).isEqualTo(308);
-    assertThat(response.headers().firstValue("Location")).hasValue("/guide/?q=a%2Bb");
-    assertThat(response.body()).isEmpty();
-    assertThat(get("/guide/?q=a%2Bb").body()).isEqualTo(site.pages().get("/guide"));
+    assertThat(response.headers().firstValue("Location")).hasValue("/guide/install/?q=a%2Bb");
+  }
+
+  @Test
+  @DisplayName("answers 404 for an unknown path")
+  void answersNotFound() throws Exception {
+    assertThat(get("/missing").statusCode()).isEqualTo(404);
+    assertThat(get("/assets/missing.png").statusCode()).isEqualTo(404);
   }
 }

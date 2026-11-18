@@ -73,7 +73,8 @@ public final class LiveDialog implements LiveComponent {
     return this;
   }
 
-  /// Sets a focus target for when the original opener has been removed.
+  /// Sets a focus target for when the dialog closes and its opener cannot take focus: the opener
+  /// was removed or disabled, or the dialog opened while nothing had focus, as from a timer.
   public LiveDialog focusFallback(ElementRef target) {
     fallback = target;
     return this;
@@ -227,11 +228,22 @@ public final class LiveDialog implements LiveComponent {
       notifyApplication(binding.dismissal());
     }
 
+    /// Returns focus to `target`, the opener, or to the fallback when the opener is gone, is the
+    /// document itself (the dialog opened with nothing focused) or cannot take focus, such as a
+    /// button disabled while the dialog was open.
     private void restoreFocus(@Nullable JSObject target) {
-      if (target != null && Dom.flag(target, "isConnected") && !WidgetDom.contains(node, target)) {
+      if (target != null
+          && !WidgetDom.noFocus(target)
+          && Dom.flag(target, "isConnected")
+          && !WidgetDom.contains(node, target)) {
         WidgetDom.focus(target);
-      } else if (binding.fallback() != null) {
-        var replacement = root.findReference(binding.fallback());
+        if (Dom.isActiveElement(target)) {
+          return;
+        }
+      }
+      var fallback = binding.fallback();
+      if (fallback != null) {
+        var replacement = root.findReference(fallback);
         if (replacement != null) {
           WidgetDom.focus(replacement);
         }

@@ -27,7 +27,8 @@ import dev.nthings.tessera.css.Translation;
 /// compiler numbers instances `drawer-start-<n>` or `drawer-end-<n>`.
 public final class Drawer extends DialogView<Drawer> {
 
-  /// Edge a drawer docks to. `INLINE_START` is the left edge in left-to-right text.
+  /// Edge a drawer docks to and slides in from. `INLINE_START` is the left edge in left-to-right
+  /// text and the right edge in right-to-left text.
   public enum Side {
     INLINE_START,
     INLINE_END
@@ -69,8 +70,10 @@ public final class Drawer extends DialogView<Drawer> {
 
   @Override
   void configureScope(ScopeStyle scope) {
-    var offscreenTranslate =
-        Translation.of(CssLength.pct(side == Side.INLINE_START ? -100 : 100), CssLength.zero());
+    // The start edge is the left one in left-to-right text and the right one in right-to-left.
+    var offscreen = side == Side.INLINE_START ? -100 : 100;
+    var offscreenTranslate = Translation.of(CssLength.pct(offscreen), CssLength.zero());
+    var mirroredTranslate = Translation.of(CssLength.pct(-offscreen), CssLength.zero());
     scope
         .root(s -> {
           s.my(CssLength.px(0))
@@ -110,6 +113,13 @@ public final class Drawer extends DialogView<Drawer> {
                                 .translate(Translation.none())
                                 .startingStyle(
                                     start -> start.opacity(0).translate(offscreenTranslate)))
+                    .select(":scope:dir(rtl)", s -> s.translate(mirroredTranslate))
+                    .select(
+                        ":scope:dir(rtl):open",
+                        s ->
+                            s.translate(Translation.none())
+                                .startingStyle(
+                                    start -> start.opacity(0).translate(mirroredTranslate)))
                     .select(
                         ":scope::backdrop",
                         s ->

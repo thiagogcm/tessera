@@ -42,7 +42,10 @@ public sealed interface CssLength extends CssValue
     BOTTOM,
     LEFT,
     RIGHT,
-    CENTER
+    CENTER,
+    /// The anchor's edge on the same side as the inset property, such as its inline-start edge for
+    /// `inset-inline-start`, in either writing direction.
+    INSIDE
   }
 
   /// A length in pixels, such as `12px`.

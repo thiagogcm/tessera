@@ -216,13 +216,13 @@ public final class Carousel extends BuiltinComponent implements FluentBuilder<Ca
             s ->
                 s.content(CssContent.labelled("‹", "Previous slide"))
                     .insetInlineStart(
-                        CssLength.anchor(CssLength.AnchorSide.LEFT).plus(CssLength.rem(0.5))))
+                        CssLength.anchor(CssLength.AnchorSide.INSIDE).plus(CssLength.rem(0.5))))
         .select(
             ":scope::scroll-button(inline-end)",
             s ->
                 s.content(CssContent.labelled("›", "Next slide"))
                     .insetInlineEnd(
-                        CssLength.anchor(CssLength.AnchorSide.RIGHT).plus(CssLength.rem(0.5))))
+                        CssLength.anchor(CssLength.AnchorSide.INSIDE).plus(CssLength.rem(0.5))))
         .select(":scope::scroll-button(*):disabled", s -> s.opacity(0.35).cursor(Cursor.DEFAULT))
         .on(
             Media.MOTION_SAFE,

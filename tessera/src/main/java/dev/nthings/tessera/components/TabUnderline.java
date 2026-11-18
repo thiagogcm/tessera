@@ -28,8 +28,8 @@ final class TabUnderline {
                     .positionAnchor(anchorIdent)
                     .insetBlockStart(
                         CssLength.anchor(CssLength.AnchorSide.BOTTOM).minus(CssLength.px(2)))
-                    .insetInlineStart(CssLength.anchor(CssLength.AnchorSide.LEFT))
-                    .insetInlineEnd(CssLength.anchor(CssLength.AnchorSide.RIGHT))
+                    .insetInlineStart(CssLength.anchor(CssLength.AnchorSide.INSIDE))
+                    .insetInlineEnd(CssLength.anchor(CssLength.AnchorSide.INSIDE))
                     // A border rather than a background, so forced colors keep the line.
                     .blockSize(CssLength.px(0))
                     .borderBlockStart(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY)))

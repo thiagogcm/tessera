@@ -15,7 +15,7 @@ final class SiteArtifacts {
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     for (var route : routes) {
-      var loc = baseUrl + route.path();
+      var loc = baseUrl + route.documentUri().toASCIIString();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");
@@ -64,6 +64,24 @@ final class SiteArtifacts {
   }
 
   private static String escapeJson(String s) {
-    return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    var out = new StringBuilder(s.length() + 8);
+    for (var i = 0; i < s.length(); i++) {
+      var c = s.charAt(i);
+      switch (c) {
+        case '"' -> out.append("\\\"");
+        case '\\' -> out.append("\\\\");
+        case '\n' -> out.append("\\n");
+        case '\r' -> out.append("\\r");
+        case '\t' -> out.append("\\t");
+        default -> {
+          if (c < 0x20) {
+            out.append("\\u%04x".formatted((int) c));
+          } else {
+            out.append(c);
+          }
+        }
+      }
+    }
+    return out.toString();
   }
 }

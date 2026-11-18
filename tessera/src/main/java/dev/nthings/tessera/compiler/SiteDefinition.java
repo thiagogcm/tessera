@@ -1,6 +1,8 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.css.Theme;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,9 +33,24 @@ public record SiteDefinition(
       if (baseUrl.endsWith("/")) {
         baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
       }
-      if (baseUrl.isEmpty()) {
-        throw new IllegalArgumentException("Site baseUrl must be an absolute origin");
+      if (!isAbsoluteHttpUrl(baseUrl)) {
+        throw new IllegalArgumentException(
+            "Site baseUrl must be an absolute http(s) URL such as https://example.com: " + baseUrl);
       }
+    }
+  }
+
+  private static boolean isAbsoluteHttpUrl(String url) {
+    try {
+      var uri = new URI(url);
+      var scheme = uri.getScheme();
+      return scheme != null
+          && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
+          && uri.getHost() != null
+          && uri.getRawQuery() == null
+          && uri.getRawFragment() == null;
+    } catch (URISyntaxException invalid) {
+      return false;
     }
   }
 
@@ -99,9 +116,10 @@ public record SiteDefinition(
       return this;
     }
 
-    /// Sets the base URL prepended to route paths in `sitemap.xml`, such as `https://example.com`.
-    /// Without one, no sitemap is generated. A trailing `/` is removed. Throws
-    /// IllegalArgumentException from [#build()] if the value is empty or only `/`.
+    /// Sets the base URL prepended to each page's published URL in `sitemap.xml`, such as
+    /// `https://example.com`. Without one, no sitemap is generated. A trailing `/` is removed.
+    /// Throws IllegalArgumentException from [#build()] unless the value is an absolute `http` or
+    /// `https` URL with a host and no query or fragment.
     public Builder baseUrl(String url) {
       this.baseUrl = url;
       return this;
@@ -128,7 +146,7 @@ public record SiteDefinition(
     }
 
     /// Builds the site. Throws IllegalArgumentException if no route was added, or if the base URL
-    /// is empty or only `/`.
+    /// is not an absolute `http` or `https` URL.
     public SiteDefinition build() {
       return new SiteDefinition(theme, outputMode, routes, baseUrl, linkSpeculation, assets);
     }

@@ -2,6 +2,7 @@ package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.Location;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -110,7 +111,12 @@ final class ReferenceLinker<M> {
             }
             // Unresolved attributes cannot be validated; other nodes still can.
             if (ids.size() == reference.targets().size()) {
-              linked.put(name, reference.prefix() + String.join(" ", ids));
+              var value = String.join(" ", ids);
+              linked.put(
+                  name,
+                  reference.prefix().equals("#")
+                      ? "#" + fragment(value)
+                      : reference.prefix() + value);
             } else {
               linked.remove(name);
               missing.add(name);
@@ -128,4 +134,25 @@ final class ReferenceLinker<M> {
             ViewSnapshot.Defaults.NONE);
     return ControlLowering.lower(linked, tag.core().initial(), state::report);
   }
+
+  /// `id` as a URL fragment: characters a fragment may not hold, `%` and non-ASCII characters are
+  /// percent-encoded as UTF-8, which browsers decode before matching the id.
+  private static String fragment(String id) {
+    var sb = new StringBuilder(id.length());
+    for (var b : id.getBytes(StandardCharsets.UTF_8)) {
+      var c = (char) (b & 0xFF);
+      if ((c >= 'a' && c <= 'z')
+          || (c >= 'A' && c <= 'Z')
+          || (c >= '0' && c <= '9')
+          || FRAGMENT_SAFE.indexOf(c) >= 0) {
+        sb.append(c);
+      } else {
+        sb.append('%').append(HEX.charAt(c >> 4)).append(HEX.charAt(c & 0xF));
+      }
+    }
+    return sb.toString();
+  }
+
+  private static final String FRAGMENT_SAFE = "-._~!$&'()*+,;=:@/?";
+  private static final String HEX = "0123456789ABCDEF";
 }

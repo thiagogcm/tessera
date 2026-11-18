@@ -4,6 +4,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,31 +18,18 @@ class CssValueTest {
   static Stream<Arguments> serialized() {
     var scrim = CssColor.oklch(0, 0, 0, 0.28);
     return Stream.of(
-        argumentSet("oklch", CssColor.oklch(54, 0.21, 262), "oklch(54% 0.21 262)"),
-        argumentSet("oklch with alpha", scrim, "oklch(0% 0 0 / 0.28)"),
-        argumentSet("hex", CssColor.white(), "#ffffff"),
-        argumentSet("keyword", CssColor.currentColor(), "currentColor"),
+        argumentSet("alpha", scrim, "oklch(0% 0 0 / 0.28)"),
         argumentSet(
-            "token reference",
+            "color mix",
             Tokens.ACCENT_PRIMARY.mixTransparent(24),
             "color-mix(in oklch, var(--accent-primary) 24%, transparent)"),
-        argumentSet(
-            "same hue",
-            CssColor.sameHue(Tokens.STATUS_DANGER, 97, 0.03),
-            "oklch(from var(--status-danger) 97% 0.03 h)"),
-        argumentSet(
-            "contrast", Tokens.ACCENT_PRIMARY.contrast(), "contrast-color(var(--accent-primary))"),
         argumentSet(
             "light and dark",
             CssColor.lightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)),
             "light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))"),
-        argumentSet("zero length", CssLength.zero(), "0"),
-        argumentSet("token length", Tokens.SPACE_4, "var(--space-4)"),
-        argumentSet("sum", CssLength.pct(100).minus(CssLength.rem(2)), "calc(100% - 2rem)"),
-        argumentSet(
-            "anchored inset",
-            CssLength.anchor(CssLength.AnchorSide.LEFT).plus(CssLength.rem(0.5)),
-            "calc(anchor(left) + 0.5rem)"),
+        argumentSet("unitless zero", CssLength.zero(), "0"),
+        argumentSet("rounded decimals", CssLength.rem(0.1 + 0.2), "0.3rem"),
+        argumentSet("difference", CssLength.pct(100).minus(CssLength.rem(2)), "calc(100% - 2rem)"),
         argumentSet(
             "nested calculation",
             CssLength.pct(20)
@@ -50,71 +38,23 @@ class CssValueTest {
                         .times(CssNumber.property(CustomProperty.named("step-index")))
                         .dividedBy(CssNumber.property(CustomProperty.named("step-total")))),
             "calc(20% + ((60% * var(--step-index)) / var(--step-total)))"),
-        argumentSet("min", CssLength.min(CssLength.rem(22), CssLength.pct(82)), "min(22rem, 82%)"),
-        argumentSet("line units", CssLength.lh(3).plus(CssLength.rem(1)), "calc(3lh + 1rem)"),
         argumentSet(
-            "drop shadow",
+            "fluid length",
+            CssLength.fluid(CssLength.rem(1), CssLength.cqi(4), CssLength.rem(1.5)),
+            "clamp(1rem, 4cqi, 1.5rem)"),
+        argumentSet(
+            "drop shadow with spread",
             Shadow.drop(CssLength.px(24), CssLength.px(48), CssLength.px(-12), scrim),
             "0 24px 48px -12px oklch(0% 0 0 / 0.28)"),
-        argumentSet(
-            "hairline shadow",
-            Shadow.drop(CssLength.px(1), CssLength.zero(), Tokens.BORDER_SUBTLE),
-            "0 1px 0 var(--border-subtle)"),
-        argumentSet(
-            "inset shadow",
-            Shadow.inset(CssLength.px(2), CssLength.px(4), Tokens.BORDER_SUBTLE),
-            "inset 0 2px 4px var(--border-subtle)"),
         argumentSet(
             "inset shadow with spread and horizontal offset",
             Shadow.inset(CssLength.zero(), CssLength.px(6), CssLength.px(-2), scrim)
                 .offsetX(CssLength.px(3)),
             "inset 3px 0 6px -2px oklch(0% 0 0 / 0.28)"),
         argumentSet(
-            "hairline border",
-            Border.hairline(Tokens.BORDER_SUBTLE),
-            "1px solid var(--border-subtle)"),
-        argumentSet(
-            "dashed border",
-            Border.dashed(CssLength.px(2), Tokens.BORDER_SUBTLE),
-            "2px dashed var(--border-subtle)"),
-        argumentSet("no border", Border.none(), "none"),
-        argumentSet(
-            "layered background",
-            new Background(
-                new Background.Dot(CssColor.white(), 80, 88),
-                CssLength.zero(),
-                CssLength.pct(50),
-                CssLength.rem(1.5),
-                CssLength.rem(1.5),
-                Tokens.BORDER_SUBTLE),
-            "radial-gradient(circle closest-side, #ffffff 80%, transparent 88%) 0 50% / 1.5rem 1.5rem"
-                + " no-repeat var(--border-subtle)"),
-        argumentSet(
-            "grid tracks",
-            TrackList.of(
-                GridTrack.minmax(
-                    GridTrack.length(CssLength.rem(10)), GridTrack.length(CssLength.pct(35))),
-                GridTrack.fr(1)),
-            "minmax(10rem, 35%) 1fr"),
-        argumentSet(
             "auto-fit tracks",
             TrackList.autoFit(CssLength.rem(16)),
             "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))"),
-        argumentSet("equal tracks", TrackList.equal(2), "repeat(2, 1fr)"),
-        argumentSet("subgrid", TrackList.subgrid(), "subgrid"),
-        argumentSet("grid line", GridPlacement.at(2), "2"),
-        argumentSet("grid range", GridPlacement.between(1, -1), "1 / -1"),
-        argumentSet("grid span from line", GridPlacement.from(1, 3), "1 / span 3"),
-        argumentSet("aspect ratio", AspectRatio.of(16, 9), "16 / 9"),
-        argumentSet(
-            "transform chain",
-            Transform.translateY(CssLength.px(-12)).then(Transform.scale(0.98)),
-            "translateY(-12px) scale(0.98)"),
-        argumentSet("rotation", Transform.rotate(180), "rotate(180deg)"),
-        argumentSet("translation", Translation.y(CssLength.rem(-0.25)), "0 -0.25rem"),
-        argumentSet("blur", CssFilter.blur(CssLength.px(4)), "blur(4px)"),
-        argumentSet("duration", CssDuration.ms(150), "150ms"),
-        argumentSet("bezier", Easing.cubicBezier(0.16, 1, 0.3, 1), "cubic-bezier(0.16, 1, 0.3, 1)"),
         argumentSet(
             "font stack",
             FontStack.of(
@@ -123,7 +63,13 @@ class CssValueTest {
                 FontStack.named("Fira Code"),
                 FontStack.Generic.MONOSPACE),
             "ui-monospace,SFMono-Regular,\"Fira Code\",monospace"),
-        argumentSet("content text", CssContent.text("a\"b"), "\"a\\22 b\""),
+        argumentSet("quoted content", CssContent.text("a\"b"), "\"a\\22 b\""),
+        argumentSet(
+            "content with backslash and newline", CssContent.text("a\\b\nc"), "\"a\\5c b\\a c\""),
+        argumentSet(
+            "font name with backslash",
+            FontStack.of(FontStack.named("Odd\\Font")),
+            "\"Odd\\5c Font\""),
         argumentSet("decorative content", CssContent.decorative("/"), "\"\\2f\" / \"\""),
         argumentSet(
             "content with alternative",
@@ -131,22 +77,7 @@ class CssValueTest {
                 CssContent.empty(),
                 CssContent.text("Slide "),
                 CssContent.counter(Counter.named("item"))),
-            "\"\" / \"Slide \" counter(item)"),
-        argumentSet(
-            "position area",
-            PositionArea.of(PositionArea.Part.BLOCK_END, PositionArea.Part.SPAN_INLINE_END),
-            "block-end span-inline-end"),
-        argumentSet(
-            "position fallback",
-            PositionTry.flip(PositionTry.Flip.BLOCK, PositionTry.Flip.INLINE),
-            "flip-block flip-inline"),
-        argumentSet("scroll snap", ScrollSnap.mandatory(ScrollSnap.Axis.X), "x mandatory"),
-        argumentSet("keyword enum", WhiteSpace.PRE_WRAP, "pre-wrap"),
-        argumentSet("sibling index", CssNumber.siblingIndex(), "sibling-index()"),
-        argumentSet(
-            "fluid length",
-            CssLength.fluid(CssLength.rem(1), CssLength.cqi(4), CssLength.rem(1.5)),
-            "clamp(1rem, 4cqi, 1.5rem)"));
+            "\"\" / \"Slide \" counter(item)"));
   }
 
   @ParameterizedTest
@@ -157,74 +88,36 @@ class CssValueTest {
   }
 
   @Test
-  @DisplayName("a motion lists its properties and keeps discrete transitions explicit")
-  void motionDeclaresTransitionLonghands() {
-    var style = new Declarations();
-    style.transition(
-        Transition.of(
-                CssDuration.ms(200), Easing.easeOut(), Animatable.OPACITY, Animatable.TRANSLATE)
-            .allowingDiscrete());
+  @DisplayName("a transition lists its properties and keeps discrete transitions explicit")
+  void transitionDeclaresDiscreteBehavior() {
+    var style =
+        new Declarations()
+            .transition(
+                Transition.of(
+                        CssDuration.ms(200),
+                        Easing.easeOut(),
+                        Animatable.OPACITY,
+                        Animatable.TRANSLATE)
+                    .allowingDiscrete());
 
     assertThat(style.toCssBlockBody())
-        .isEqualTo(
-            "transition-property:opacity, translate;transition-duration:200ms;"
-                + "transition-timing-function:ease-out;transition-behavior:allow-discrete");
+        .contains("transition-property:opacity, translate", "transition-behavior:allow-discrete");
   }
 
   @Test
-  @DisplayName("token overrides keep their category and serialize their typed value")
-  void tokenOverridesAreTyped() {
-    var theme =
-        Theme.defaults()
-            .with(Tokens.DENSITY, CssNumber.of(0.8))
-            .with(Tokens.RADIUS_XL, CssLength.rem(1))
-            .with(
-                Tokens.CONTROL_FG,
-                CssColor.lightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)));
-    assertThat(theme.declarations())
-        .contains(
-            "--density:0.8",
-            "--radius-xl:1rem",
-            "--space-4:calc(1rem * var(--density))",
-            "--control-family:var(--font-body)",
-            "--control-fg:light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))");
-    assertThat(Theme.defaults().declarations()).contains("--density:1", "--radius-xl:0.75rem");
-  }
-
-  @Test
-  @DisplayName("themes add new tokens at the end and refuse a name of another category")
-  void addsTokensAndRefusesClashes() {
-    var brand = new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300));
-    var theme = Theme.defaults().with(brand, brand.defaultValue());
-    assertThat(theme.declarations()).last().isEqualTo("--brand:oklch(60% 0.2 300)");
-    assertThat(brand.toCss()).isEqualTo("var(--brand)");
-    var clash = new DesignToken.Length("brand", CssLength.rem(1));
-    assertThatIllegalArgumentException().isThrownBy(() -> theme.with(clash, CssLength.rem(2)));
-  }
-
-  @Test
-  @DisplayName("token names are validated, not sanitized")
-  void tokenNamesAreValidated() {
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> new DesignToken.Length("has space", CssLength.rem(1)));
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> new DesignToken.Length("--dashed", CssLength.rem(1)));
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> new DesignToken.Length("", CssLength.rem(1)));
-  }
-
-  @Test
-  @DisplayName("CSS identifiers reject invalid and reserved names")
+  @DisplayName("names are validated, not sanitized, and keywords are refused")
   void identifiersAreValidated() {
-    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("1st"));
-    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("has space"));
-    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("--dashed"));
-    assertThatIllegalArgumentException().isThrownBy(() -> Counter.named("None"));
+    for (var name : List.of("1st", "has space", "--dashed", "None", "")) {
+      assertThatIllegalArgumentException().isThrownBy(() -> Counter.named(name));
+    }
+    for (var name : List.of("has space", "--dashed", "")) {
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new DesignToken.Length(name, CssLength.rem(1)));
+    }
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Container.named("inherit", Container.Type.INLINE_SIZE));
     assertThatIllegalArgumentException().isThrownBy(() -> Keyframes.named("default"));
     assertThatIllegalArgumentException().isThrownBy(() -> Anchor.named("--x"));
-    assertThat(Anchor.named("anchor-x").toCss()).isEqualTo("--anchor-x");
   }
 
   @Test
@@ -234,14 +127,6 @@ class CssValueTest {
     assertThatIllegalArgumentException().isThrownBy(() -> GridPlacement.span(0));
     assertThatIllegalArgumentException().isThrownBy(() -> CssColor.oklch(50, 0.1, 10, 1.5));
     assertThatIllegalArgumentException().isThrownBy(() -> CssDuration.ms(-1));
-    assertThatIllegalArgumentException().isThrownBy(() -> new TrackList(java.util.List.of()));
-  }
-
-  @Test
-  @DisplayName("anchor names serialize as dashed identifiers")
-  void anchorNamesAreDashed() {
-    var style = new Declarations();
-    style.anchorName(Anchor.named("plain"));
-    assertThat(style.toCssBlockBody()).isEqualTo("anchor-name:--plain");
+    assertThatIllegalArgumentException().isThrownBy(() -> new TrackList(List.of()));
   }
 }

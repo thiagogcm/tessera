@@ -428,9 +428,16 @@ public abstract sealed class ViewExpansion<M>
     return style;
   }
 
-  /// Pairs `anchor-name` on the anchor with `position-anchor` on the elements anchored to it.
+  /// Pairs `anchor-name` on the anchor with `position-anchor` on the elements anchored to it. A
+  /// page-level id may hold characters a dashed ident cannot, such as `.` or `ü`: those are
+  /// replaced and a hash of the id keeps distinct ids apart.
   private static Anchor anchorIdent(String domId) {
-    return Anchor.named("anchor-" + domId);
+    var sanitized = Fnv1a64.sanitizeIdentifier(domId);
+    if (sanitized.equals(domId)) {
+      return Anchor.named("anchor-" + domId);
+    }
+    var hash = Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, domId));
+    return Anchor.named("anchor-" + sanitized + "-" + hash);
   }
 
   /// The name keyed descendants of an element bound to `refs` are told apart by: its first named

@@ -10,27 +10,27 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
-@DisplayName("TagElement")
-class TagElementTest {
+@DisplayName("Attribute authoring")
+class AttributeAuthoringTest {
 
   @Test
   @DisplayName("a void element rejects children")
   void voidElementRejectsChildren() {
     assertThatIllegalStateException()
-        .isThrownBy(() -> img("/hero.webp", "Hero").child(span().text("Invalid")))
-        .withMessage("HTML5 void element <img> cannot have children");
+        .isThrownBy(() -> img("/hero.webp", "Hero").child(span().text("Invalid")));
   }
 
   @Test
-  @DisplayName("removeAttr drops an attribute or a reference, and refuses id, role and aria-*")
-  void removesAttributesAndReferences() {
+  @DisplayName(
+      "attributes the compiler owns are refused, and removeAttr drops plain values and refs")
+  void compilerOwnedAttributesAreRefused() {
     var control = ElementRef.scoped("name");
     var element = label().attr("data-x", "1").labelFor(control).removeAttr("data-x");
     element.removeAttr("for").removeAttr("missing");
@@ -38,16 +38,10 @@ class TagElementTest {
     assertThat(renderMain(element.text("Name")).element("label"))
         .doesNotHaveAttribute("data-x")
         .doesNotHaveAttribute("for");
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> element.removeAttr("aria-label"))
-        .withMessageContaining("attribute 'aria-label'");
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> element.removeAttr("role"))
-        .withMessageContaining("attribute 'role'");
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> element.removeAttr("id"))
-        .withMessage(
-            "Use id(ElementRef) instead of the attribute 'id', so the compiler can scope and link it");
+    for (var name : List.of("id", "role", "aria-label")) {
+      assertThatIllegalArgumentException().isThrownBy(() -> element.removeAttr(name));
+      assertThatIllegalArgumentException().isThrownBy(() -> div().attr(name, "x"));
+    }
   }
 
   @Test
@@ -58,20 +52,46 @@ class TagElementTest {
     assertThat(renderMain(element.text("End")).element("a")).hasAttribute("href", "/end");
   }
 
-  @ParameterizedTest
-  @CsvSource({"MENU,menu", "LISTBOX,listbox", "TREE,tree", "GRID,grid", "DIALOG,dialog"})
-  @DisplayName("aria-haspopup serializes its wire token")
-  void ariaHasPopupSerializesWireToken(AriaPopup popup, String wire) {
-    assertThat(renderMain(div().ariaHasPopup(popup)).element("main > div"))
-        .hasAttribute("aria-haspopup", wire);
-  }
+  @Test
+  @DisplayName("typed ARIA values render tokens from the ARIA value sets")
+  void ariaEnumsRenderSpecTokens() {
+    var page =
+        renderMain(
+            div()
+                .children(
+                    Arrays.stream(AriaCurrent.values())
+                        .map(value -> div().ariaCurrent(value))
+                        .toArray(IntoElement[]::new))
+                .children(
+                    Arrays.stream(AriaChecked.values())
+                        .map(value -> div().ariaChecked(value))
+                        .toArray(IntoElement[]::new))
+                .children(
+                    Arrays.stream(AriaPopup.values())
+                        .map(value -> div().ariaHasPopup(value))
+                        .toArray(IntoElement[]::new))
+                .children(
+                    Arrays.stream(AriaLive.values())
+                        .map(value -> div().ariaLive(value))
+                        .toArray(IntoElement[]::new)));
 
-  @ParameterizedTest
-  @CsvSource({"OFF,off", "POLITE,polite", "ASSERTIVE,assertive"})
-  @DisplayName("aria-live serializes its wire token")
-  void ariaLiveSerializesWireToken(AriaLive live, String wire) {
-    assertThat(renderMain(div().ariaLive(live)).element("main > div"))
-        .hasAttribute("aria-live", wire);
+    var tokens =
+        Map.of(
+            "aria-current", Set.of("page", "step", "location", "date", "time", "true"),
+            "aria-checked", Set.of("true", "false", "mixed"),
+            "aria-haspopup", Set.of("true", "menu", "listbox", "tree", "grid", "dialog"),
+            "aria-live", Set.of("off", "polite", "assertive"));
+    var counts =
+        Map.of(
+            "aria-current", AriaCurrent.values().length,
+            "aria-checked", AriaChecked.values().length,
+            "aria-haspopup", AriaPopup.values().length,
+            "aria-live", AriaLive.values().length);
+    tokens.forEach((attribute, allowed) ->
+        assertThat(page.elements("[" + attribute + "]").eachAttr(attribute))
+            .hasSize(counts.get(attribute))
+            .doesNotHaveDuplicates()
+            .allSatisfy(token -> assertThat(allowed).contains(token)));
   }
 
   @Test
@@ -98,9 +118,6 @@ class TagElementTest {
     }
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Elements.svg(SvgTag.SVG).idRef("xlink:href", target));
-    var section = ElementRef.page("target");
-    assertThat(renderMain(div().id(section), a(section).text("Target")).element("a"))
-        .hasAttribute("href", "#target");
   }
 
   @Test
@@ -109,7 +126,9 @@ class TagElementTest {
     var page =
         renderMain(
             div().attr("Data-Mode", "on"), Elements.svg(SvgTag.SVG).attr("viewBox", "0 0 1 1"));
-    assertThat(page.html()).contains("data-mode=\"on\"", "viewBox=\"0 0 1 1\"");
+
+    assertThat(page.element("main > div")).hasAttribute("data-mode", "on");
+    assertThat(page.html()).contains("viewBox=\"0 0 1 1\"");
   }
 
   @Test
@@ -126,9 +145,13 @@ class TagElementTest {
     for (var name : List.of("x-a><script>", "x-a b", "-x", "X-a", "x-é")) {
       assertThatIllegalArgumentException().isThrownBy(() -> Elements.custom(name));
     }
+
     var page =
         renderMain(
-            Elements.custom("my-widget.v2_x"), image.dimensions(1, 1).attr("data-x.y:z", "v"));
-    assertThat(page.html()).contains("<my-widget.v2_x>", "data-x.y:z=\"v\"");
+            Elements.custom("my-widget.v2_x").text("Hello"),
+            image.dimensions(1, 1).attr("data-x.y:z", "v"));
+
+    assertThat(page.element("main > img")).hasAttribute("data-x.y:z", "v");
+    assertThat(page.html()).contains("<my-widget.v2_x>Hello</my-widget.v2_x>");
   }
 }

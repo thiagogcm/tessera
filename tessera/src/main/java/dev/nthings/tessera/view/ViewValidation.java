@@ -92,7 +92,8 @@ public final class ViewValidation {
         && urlAttribute.equals("href")
         && url.length() > 1
         && url.startsWith("#")
-        && !registeredDomIds.contains(reference.getFragment())) {
+        && !registeredDomIds.contains(reference.getFragment())
+        && !"top".equalsIgnoreCase(reference.getFragment())) {
       report(
           tag.location(),
           "missing-fragment",
@@ -365,15 +366,22 @@ public final class ViewValidation {
             case ViewSnapshot.Special<?> special -> special.readable();
             case ViewSnapshot.Group<?> group -> containsReadableText(group.children());
             case Tag<?> nested ->
-                (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
-                    || isNonBlank(nested.attributes().get("aria-label"))
-                    || containsReadableText(nested.children());
+                !hiddenFromAssistiveTechnology(nested)
+                    && ((nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
+                        || isNonBlank(nested.attributes().get("aria-label"))
+                        || containsReadableText(nested.children()));
           };
       if (found) {
         return true;
       }
     }
     return false;
+  }
+
+  /// Whether `tag`'s subtree is left out of the accessible name: `aria-hidden="true"` or `hidden`.
+  private static boolean hiddenFromAssistiveTechnology(Tag<?> tag) {
+    var attrs = tag.attributes();
+    return "true".equals(attrs.get("aria-hidden")) || attrs.containsKey("hidden");
   }
 
   static boolean isNonBlank(@Nullable String value) {

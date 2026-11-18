@@ -239,18 +239,23 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     return false;
   }
 
-  /// A content hash of the declarations, used to name the generated class.
+  /// A content hash of the declarations, used to name the generated class. Each text is preceded by
+  /// its length, so `--col-1:23` and `--col-12:3` hash apart.
   long contentHash() {
     var hash = Fnv1a64.OFFSET_BASIS;
     for (var entry : declarations.entrySet()) {
       hash = Fnv1a64.updateInt(hash, entry.getKey().ordinal());
-      hash = Fnv1a64.updateChars(hash, entry.getValue());
+      hash = updateText(hash, entry.getValue());
     }
     for (var entry : customProperties.entrySet()) {
-      hash = Fnv1a64.updateChars(hash, entry.getKey());
-      hash = Fnv1a64.updateChars(hash, entry.getValue());
+      hash = updateText(hash, entry.getKey());
+      hash = updateText(hash, entry.getValue());
     }
     return hash;
+  }
+
+  private static long updateText(long hash, String text) {
+    return Fnv1a64.updateChars(Fnv1a64.updateInt(hash, text.length()), text);
   }
 
   /// The full block body, without braces: the declarations, then the state and media rules, the

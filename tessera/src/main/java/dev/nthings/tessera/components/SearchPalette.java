@@ -220,7 +220,7 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                 button()
                     .attr("class", "palette-close")
                     .command(dialog, BuiltinCommand.CLOSE)
-                    .ariaLabel("Close search palette")
+                    .ariaLabel("Esc, close search palette")
                     .child(kbd().attr("class", "palette-esc-kbd").text("Esc")));
 
     var resultsContainer =

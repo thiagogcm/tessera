@@ -7,8 +7,10 @@ import static dev.nthings.tessera.core.Elements.p;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
@@ -32,34 +34,52 @@ import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
-import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.jspecify.annotations.Nullable;
 
 /// Horizontal carousel of slides that snap into place as the user scrolls. It needs no script.
 /// Create one with [#of(String)]; the track is a focusable region named by that label. Chromium
 /// also shows native previous and next buttons and slide markers; other browsers keep the
 /// scrollable track.
 ///
-/// Without an [#id(String)], the compiler numbers instances `carousel-<n>`.
-public final class Carousel extends BuiltinScope<Carousel> {
+/// Without an [#id(String)], the compiler numbers instances `carousel-<n>`. Each placement anchors
+/// its scroll buttons by a name numbered per page, so carousels never take each other's buttons.
+public final class Carousel extends BuiltinComponent implements FluentBuilder<Carousel> {
 
   private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
+
+  /// Numbers the scroll-button anchors of the carousels placed on one page.
+  private static final ViewKey<AtomicInteger> ANCHORS =
+      ViewKey.of("carousel-anchors", AtomicInteger.class, AtomicInteger::new);
 
   /// Each slide is a scroll-state container, so its card can react while it is snapped.
   private static final Container ITEM = Container.unnamed(Container.Type.SCROLL_STATE);
 
   private final String label;
   private final List<Element> slides = new ArrayList<>();
+  private @Nullable String id;
 
   private Carousel(String label) {
     this.label = label;
   }
 
-  /// Creates an empty carousel whose track region is named `label`. Give carousels on one page
-  /// distinct labels or ids: the native scroll buttons are anchored by a name derived from them.
+  /// Creates an empty carousel whose track region is named `label`. Throws IllegalArgumentException
+  /// if `label` is blank, which would leave the region unnamed.
   public static Carousel of(String label) {
+    if (label.isBlank()) {
+      throw new IllegalArgumentException("A carousel label must not be blank");
+    }
     return new Carousel(label);
+  }
+
+  /// Names this instance in the enclosing id scope; ids bound inside it are prefixed with it, as in
+  /// `<id>--name`. Characters outside `[A-Za-z0-9_-]` become `-` and runs of `-` collapse to one.
+  public Carousel id(String id) {
+    this.id = id;
+    return this;
   }
 
   /// Adds a slide with an `h3` title and a muted summary. The heading level does not follow the
@@ -87,15 +107,42 @@ public final class Carousel extends BuiltinScope<Carousel> {
   }
 
   @Override
-  String scopeName() {
-    return "carousel";
+  IntoElement expand(ViewContext context) {
+    var anchor = Anchor.named("carousel-" + context.state(ANCHORS).incrementAndGet());
+    return new Track(id, label, List.copyOf(slides), anchor);
   }
 
-  @Override
-  void configureScope(ScopeStyle scope) {
+  /// One placement: the scrolling region, whose scroll buttons are anchored by `anchor`.
+  private record Track(@Nullable String scopeId, String label, List<Element> slides, Anchor anchor)
+      implements Scope {
+
+    @Override
+    public String scopeName() {
+      return "carousel";
+    }
+
+    @Override
+    public void configureScope(ScopeStyle scope) {
+      style(scope, anchor);
+    }
+
+    @Override
+    public TagElement expand(ViewContext context) {
+      var track = div().role(Role.REGION).ariaLabel(label).tabIndex(0);
+      for (var slide : slides) {
+        track.child(
+            div()
+                .attr("class", "carousel-item")
+                .child(div().attr("class", "carousel-card").child(slide)));
+      }
+      return track;
+    }
+  }
+
+  private static void style(ScopeStyle scope, Anchor anchor) {
     scope
         .root(s ->
-            s.anchorName(anchorIdent())
+            s.anchorName(anchor)
                 .flex()
                 .gap(Tokens.SPACE_4)
                 .overflowX(Overflow.AUTO)
@@ -159,7 +206,7 @@ public final class Carousel extends BuiltinScope<Carousel> {
             ":scope::scroll-button(*)",
             s ->
                 s.absolute()
-                    .positionAnchor(anchorIdent())
+                    .positionAnchor(anchor)
                     .insetBlockStart(CssLength.anchor(CssLength.AnchorSide.CENTER))
                     .translate(Translation.y(CssLength.pct(-50)))
                     .inlineSize(CssLength.rem(2.25))
@@ -207,23 +254,5 @@ public final class Carousel extends BuiltinScope<Carousel> {
                                                 CssLength.px(24),
                                                 CssLength.px(-6),
                                                 CssColor.oklch(0, 0, 0, 0.14))))));
-  }
-
-  /// Anchor for the native scroll buttons, unique per carousel on the page.
-  private Anchor anchorIdent() {
-    var instance = id;
-    return Anchor.named("carousel-" + Fnv1a64.sanitizeLocalId(instance != null ? instance : label));
-  }
-
-  @Override
-  TagElement expand(ViewContext context) {
-    var track = div().role(Role.REGION).ariaLabel(label).tabIndex(0);
-    for (var slide : slides) {
-      track.child(
-          div()
-              .attr("class", "carousel-item")
-              .child(div().attr("class", "carousel-card").child(slide)));
-    }
-    return track;
   }
 }

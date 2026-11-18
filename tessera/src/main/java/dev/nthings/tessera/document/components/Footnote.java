@@ -131,7 +131,8 @@ public final class Footnote {
                 .rounded(Tokens.RADIUS_LG)
                 .child(preview));
       }
-      return DocumentContent.of(Elements.sup().id(placed.marker()).child(link));
+      return DocumentContent.of(
+          Elements.sup().id(placed.marker()).scrollMarginBlockStart(CssLength.rem(7)).child(link));
     }
   }
 }

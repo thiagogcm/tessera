@@ -9,6 +9,7 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.Border;
+import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
@@ -170,7 +171,12 @@ public final class Footnotes implements DocumentComponent {
     public TagElement expand(ViewContext context) {
       var ol = Elements.ol().tabularNums();
       for (var entry : entries) {
-        var li = Elements.li().id(entry.note()).role(Role.DOC_FOOTNOTE).child(entry.body());
+        var li =
+            Elements.li()
+                .id(entry.note())
+                .role(Role.DOC_FOOTNOTE)
+                .scrollMarginBlockStart(CssLength.rem(7))
+                .child(entry.body());
         var occurrence = 1;
         for (var marker : entry.markers()) {
           li.child(Elements.text(" "))

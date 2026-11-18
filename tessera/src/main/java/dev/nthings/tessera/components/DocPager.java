@@ -79,7 +79,10 @@ public final class DocPager extends BuiltinScope<DocPager> {
                 .borderBlockStart(Border.hairline(Tokens.BORDER_SUBTLE)))
         .on(
             Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(36)),
-            c -> c.root(s -> s.gridColumns(TrackList.equal(2))))
+            c ->
+                c.root(s -> s.gridColumns(TrackList.equal(2)))
+                    .select(
+                        ":scope > .pager-card.pager-next", s -> s.gridColumn(GridPlacement.at(2))))
         .select(
             ":scope > .pager-card",
             s ->
@@ -101,10 +104,7 @@ public final class DocPager extends BuiltinScope<DocPager> {
                         h ->
                             h.border(Border.hairline(Tokens.ACCENT_PRIMARY))
                                 .bg(Tokens.SURFACE_SUBTLE)))
-        .select(":scope > .pager-card.pager-prev", s -> s.gridColumn(GridPlacement.at(1)))
-        .select(
-            ":scope > .pager-card.pager-next",
-            s -> s.gridColumn(GridPlacement.at(2)).textAlign(TextAlign.RIGHT))
+        .select(":scope > .pager-card.pager-next", s -> s.textAlign(TextAlign.END))
         .select(
             ":scope > .pager-card > .pager-hint",
             s -> s.fontSize(Tokens.FONT_SIZE_XS).fontWeight(500).textColor(Tokens.TEXT_MUTED))

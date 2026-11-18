@@ -115,7 +115,7 @@ For a scrolling panel inside a fixed-height column, give the column a block size
 
 State order is fixed, independent of call order. `ACTIVE` wins over `HOVER`, and `DISABLED` wins over the other states. Hover and active rules exclude disabled elements using a zero-specificity guard.
 
-On elements, state and media rules use the `interactive` layer; container queries use the `container` layer. Both override base element styles. Inside a scope rule they nest in that selector. `ScopeStyle.on(query, rules)` wraps a group of rules in a media or container query. See [stylesheet assembly](architecture.md#stylesheet-assembly) for the layer order.
+On elements, container queries use the `container` layer; state and media rules use the later `interactive` layer. Both override base element styles, and states override container queries, so a disabled or hovered element keeps its state styles at every container size. Inside a scope rule they nest in that selector. `ScopeStyle.on(query, rules)` wraps a group of rules in a media or container query. See [stylesheet assembly](architecture.md#stylesheet-assembly) for the layer order.
 
 Use `startingStyle(...)` for the values an entry transition starts from:
 

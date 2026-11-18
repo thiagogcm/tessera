@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 /// Compiler-facing: the stylesheet of one page, site or live render. The compiler registers each
 /// element's typed styles and each id scope, receiving the class names or scope keys to emit, and
 /// identical rules are deduplicated. [#render(Theme)] writes a document stylesheet with the layers
-/// in the order `reset, base, theme, components, utilities, interactive, container`.
+/// in the order `reset, base, theme, components, utilities, container, interactive`.
 ///
 /// A live backend that mounts views inside a host page uses the embedded output instead: it
 /// declares [#LAYER_ORDER] once, inserts [#embeddedBaseRules(Theme)] once per mounted root and each
@@ -40,7 +40,7 @@ public final class StyleSheet {
   /// Backend-facing: the cascade layer order statement. An embedder keeps it ahead of every layered
   /// rule it inserts.
   public static final String LAYER_ORDER =
-      "@layer reset, base, theme, components, utilities, interactive, container;";
+      "@layer reset, base, theme, components, utilities, container, interactive;";
 
   private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
 
@@ -142,7 +142,7 @@ public final class StyleSheet {
     // The base layer opens with fixed rules; the others are emitted only when they have rules.
     var base = new StringBuilder();
     var layers = new LinkedHashMap<String, StringBuilder>();
-    for (var layer : List.of("components", "utilities", "interactive", "container")) {
+    for (var layer : List.of("components", "utilities", "container", "interactive")) {
       layers.put(layer, new StringBuilder());
     }
     // A document declares no live properties, so it has no unlayered rules.

@@ -109,7 +109,7 @@ A portable callback always receives the portable context, even inside document o
 The CSS package constructs and serializes scoped styles and supplies rule data through an internal accessor. `internal.css.StyleSheet` aggregates and deduplicates those rules for documents and mounted roots. The browser uses embedded rules from the qualified `view` package. The cascade follows this layer order.
 
 ```css
-@layer reset, base, theme, components, utilities, interactive, container;
+@layer reset, base, theme, components, utilities, container, interactive;
 ```
 
 | Contribution | Generated representation |

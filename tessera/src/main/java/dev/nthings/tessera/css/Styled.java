@@ -56,10 +56,10 @@ public sealed interface Styled<SELF extends Styled<SELF>>
   /// [Media#MOTION_SAFE], or a [ContainerQuery] from a [Container]. Calling again with an equal
   /// condition extends the same rules, and `styles` may call `on` again to nest conditions.
   ///
-  /// On an element, state and media rules sit in the `interactive` cascade layer and container
-  /// queries in the later `container` layer, so both override the element's base style. Inside a
-  /// [ScopeStyle] rule they nest in that rule. States are emitted in [State] order whatever the
-  /// call order, so `ACTIVE` beats `HOVER`.
+  /// On an element, container queries sit in the `container` cascade layer and state and media
+  /// rules in the later `interactive` layer, so both override the element's base style and states
+  /// override container queries. Inside a [ScopeStyle] rule they nest in that rule. States are
+  /// emitted in [State] order whatever the call order, so `ACTIVE` beats `HOVER`.
   default SELF on(Condition condition, StyleBlock styles) {
     styles.configure(StyleTarget.declarations(this).nested(condition));
     return self();

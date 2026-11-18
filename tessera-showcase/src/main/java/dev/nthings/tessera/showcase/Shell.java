@@ -57,7 +57,7 @@ record Shell(Page page) implements DocumentComponent {
                 DescriptionList.of()
                     .term(
                         "Cascade",
-                        "@layer reset, base, theme, components, utilities, interactive, container")
+                        "@layer reset, base, theme, components, utilities, container, interactive")
                     .term("Isolation", "@scope ([data-scope]) to (:scope [data-scope] > *)")
                     .term("Top layer", "<dialog>, [popover], @starting-style")
                     .term(

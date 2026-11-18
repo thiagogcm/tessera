@@ -40,8 +40,9 @@ public final class Forms {
         .on(
             State.USER_INVALID,
             s ->
+                // A tint of the field's own surface, so the text stays legible in dark mode.
                 s.borderColor(Tokens.STATUS_DANGER)
-                    .bg(CssColor.sameHue(Tokens.STATUS_DANGER, 97, 0.03)))
+                    .bg(Tokens.STATUS_DANGER.mix(CssColor.Space.OKLAB, 8, Tokens.SURFACE_CARD)))
         .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 

@@ -207,7 +207,7 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
           sectionEl
               .p(Tokens.SPACE_6)
               .rounded(Tokens.RADIUS_XL)
-              .bg(CssColor.sameHue(Tokens.ACCENT_PRIMARY, 97, 0.03))
+              .bg(Tokens.ACCENT_PRIMARY.mix(CssColor.Space.OKLAB, 6, Tokens.SURFACE_CARD))
               .border(Border.hairline(Tokens.ACCENT_PRIMARY));
     }
 

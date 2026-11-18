@@ -216,7 +216,7 @@ final class Dom {
           """
           let timer = -1;
           const frame = requestAnimationFrame(() => {
-            timer = setTimeout(work, 0);
+            timer = setTimeout(() => work(), 0);
           });
           return () => {
             cancelAnimationFrame(frame);
@@ -349,7 +349,7 @@ final class Dom {
       value =
           """
           if (node.localName === 'select') {
-            return {count: node.options.length, selected: new Set(node.selectedOptions)};
+            return {options: new Set(node.options), selected: new Set(node.selectedOptions)};
           }
           return {value: node.value, checked: node.checked,
                   start: node.selectionStart, end: node.selectionEnd, direction: node.selectionDirection};
@@ -357,7 +357,8 @@ final class Dom {
   static native JSObject captureControl(JSObject node);
 
   /// Restores only properties that become browser-owned. Selection follows option identity across
-  /// moves. When a selected single option is removed, the browser chooses its usual fallback.
+  /// moves. When a selected single option is removed, the browser chooses its usual fallback, and
+  /// options added since the capture keep the selection their defaults gave them.
   @JS.Coerce
   @JS(
       args = {"node", "state", "keepValue", "keepChecked"},
@@ -368,11 +369,13 @@ final class Dom {
             if (node.multiple) {
               for (const option of options) {
                 const selected = state.selected.has(option);
-                if (option.selected !== selected) option.selected = selected;
+                if (state.options.has(option) && option.selected !== selected) {
+                  option.selected = selected;
+                }
               }
             } else {
               const index = options.findIndex(option => state.selected.has(option));
-              if ((index >= 0 || (state.count > 0 && state.selected.size === 0))
+              if ((index >= 0 || (state.options.size > 0 && state.selected.size === 0))
                   && node.selectedIndex !== index) {
                 node.selectedIndex = index;
               }
@@ -553,12 +556,14 @@ final class Dom {
       value = "node.muted = muted;")
   static native void mute(JSObject node, boolean muted);
 
+  /// Timers receive a plain function that calls the Java task: a coerced Java callable is not a
+  /// `Function`, which timer wrappers (fake clocks, instrumentation) call through `apply`.
   @JS.Coerce
   @JS(
       args = {"millis", "task"},
       value =
           """
-          const id = setTimeout(task, millis);
+          const id = setTimeout(() => task(), millis);
           return () => clearTimeout(id);
           """)
   static native JSObject timeout(int millis, Runnable task);
@@ -568,7 +573,7 @@ final class Dom {
       args = {"millis", "task"},
       value =
           """
-          const id = setInterval(task, millis);
+          const id = setInterval(() => task(), millis);
           return () => clearInterval(id);
           """)
   static native JSObject interval(int millis, Runnable task);

@@ -6,7 +6,8 @@ import java.util.List;
 /// whether a checkbox or radio is `checked`, the values of a multiple select's selected options in
 /// document order, and whether an input method (IME) composition is in progress. While `composing`
 /// is true the text is provisional; wait for the composition to end before validating or
-/// reformatting it.
+/// reformatting it. The element's `input` handler runs once more when the composition ends, with
+/// the committed text and `composing` false.
 public record ControlState(
     String value, boolean checked, List<String> selectedValues, boolean composing) {
 

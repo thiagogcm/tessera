@@ -42,6 +42,10 @@ public final class LiveElement implements LiveContent {
   /// `keydown`) to the host, bubble phase. A handler for the same type and phase replaces the
   /// previous one. Re-rendering rebinds the current handler, so it may capture the state of the
   /// render that created it. Throws IllegalArgumentException if `event` is blank.
+  ///
+  /// On an input or textarea, the `input` handler also runs when an IME composition ends, with the
+  /// event type `compositionend` and the committed text: browsers dispatch the composition's last
+  /// `input` event while [ControlState#composing()] is still true.
   public LiveElement on(String event, Consumer<BrowserEvent> handler) {
     return on(event, EventOptions.DEFAULT, handler);
   }
@@ -66,21 +70,24 @@ public final class LiveElement implements LiveContent {
 
   /// Binds the current value of a value-editable input, textarea or single select to application
   /// state. Renders apply changes after attributes and children, and text writes wait for IME
-  /// composition to finish. The native reset default remains the one set at insertion.
+  /// composition to finish. A user edit requests a render, so an edit the application does not
+  /// accept into the bound value is reverted. The native reset default remains the one set at
+  /// insertion.
   public LiveElement bindValue(String value) {
     controls = controls.withValue(value);
     return this;
   }
 
-  /// Controls the live checked state of a checkbox or radio input. Another host reports
-  /// `control-checked`.
+  /// Controls the live checked state of a checkbox or radio input; a user change the application
+  /// does not accept is reverted. Another host reports `control-checked`.
   public LiveElement bindChecked(boolean checked) {
     controls = controls.withChecked(checked);
     return this;
   }
 
-  /// Controls the selected options of a multiple select; an empty list deselects every option.
-  /// Another host reports `control-selection`.
+  /// Controls the selected options of a multiple select; an empty list deselects every option, and
+  /// a user change the application does not accept is reverted. Another host reports
+  /// `control-selection`.
   public LiveElement bindSelectedValues(List<String> values) {
     controls = controls.withSelectedValues(values);
     return this;

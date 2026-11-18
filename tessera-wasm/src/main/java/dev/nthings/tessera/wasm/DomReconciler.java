@@ -297,8 +297,8 @@ final class DomReconciler {
     }
     instance.events.values().forEach(binding -> Dom.release(binding.cleanup));
     instance.events = Map.of();
-    instance.composition.forEach(Dom::release);
-    instance.composition = List.of();
+    instance.formListeners.forEach(Dom::release);
+    instance.formListeners = List.of();
   }
 
   /// Releases a subtree's resources, then detaches its whole DOM range at once.
@@ -381,7 +381,7 @@ final class DomReconciler {
         patch(parent, old, next.get(index), retainOptionDefaults);
         result.add(old);
       } else {
-        result.add(create(parent, next.get(index), anchors[index], retainOptionDefaults));
+        result.add(create(parent, next.get(index), anchors[index]));
       }
     }
     for (var index = 0; index < previous.size(); index++) {
@@ -455,11 +455,11 @@ final class DomReconciler {
     };
   }
 
+  /// Creates the nodes of `view` before `before`. A new option writes its declared `selected`
+  /// default even inside a retained select, so options that arrive in a later render apply the
+  /// select's initial value; a choice the user already made is restored after the patch.
   private Mounted create(
-      JSObject parent,
-      ViewSnapshot.Node<LiveBehavior> view,
-      @Nullable JSObject before,
-      boolean retainOptionDefaults) {
+      JSObject parent, ViewSnapshot.Node<LiveBehavior> view, @Nullable JSObject before) {
     return switch (view) {
       case ViewSnapshot.Text(var text) -> {
         var node = Dom.text(text);
@@ -469,23 +469,12 @@ final class DomReconciler {
       case ViewSnapshot.Tag<LiveBehavior> tag -> {
         var node = Dom.element(tag.tag().namespace().uri(), tag.tag().tagName());
         var instance = track(view, node, node);
-        attributes(
-            node,
-            Map.of(),
-            tag.attributes(),
-            ViewSnapshot.Defaults.NONE,
-            retainOptionDefaults && tag.tag() == HtmlTag.OPTION);
+        attributes(node, Map.of(), tag.attributes(), ViewSnapshot.Defaults.NONE, false);
         liveProperties(node, Map.of(), tag.liveProperties());
-        composition(instance, tag);
+        formListeners(instance, tag);
         var bindings = LiveBehavior.bindings(tag);
         events(instance, bindings.events());
-        instance.children =
-            reconcile(
-                node,
-                List.of(),
-                tag.children(),
-                null,
-                retainOptionDefaults && ControlLowering.mayContainOptions(tag.tag()));
+        instance.children = reconcile(node, List.of(), tag.children(), null, false);
         Dom.insert(parent, node, before);
         if (bindings.widget() != null) {
           widgetUpdates.add(instance);
@@ -501,8 +490,7 @@ final class DomReconciler {
         Dom.insert(parent, first, before);
         Dom.insert(parent, last, before);
         var instance = track(view, first, last);
-        instance.children =
-            reconcile(parent, List.of(), group.children(), last, retainOptionDefaults);
+        instance.children = reconcile(parent, List.of(), group.children(), last, false);
         yield instance;
       }
       case ViewSnapshot.Special<LiveBehavior> _ -> {
@@ -644,27 +632,52 @@ final class DomReconciler {
     controlUpdates.clear();
   }
 
-  /// Tracks provisional text so controlled values can wait until composition ends.
-  private void composition(Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag) {
-    if (tag.tag() != HtmlTag.INPUT && tag.tag() != HtmlTag.TEXTAREA) {
+  /// Listens for what the user changes on a form control. After an edit, a control with a bound
+  /// property requests a render: the application may have accepted the edit, and a bound property
+  /// it left unchanged reverts the control. Text controls also track IME composition, so a bound
+  /// value waits for it to end.
+  private void formListeners(Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag) {
+    var text = tag.tag() == HtmlTag.INPUT || tag.tag() == HtmlTag.TEXTAREA;
+    if (!text && tag.tag() != HtmlTag.SELECT) {
       return;
     }
-    instance.composition =
-        List.of(
-            Dom.listen(instance.first, "compositionstart", _ -> instance.composing = true),
-            Dom.listen(
-                instance.first,
-                "compositionend",
-                _ -> {
-                  instance.composing = false;
-                  // Only a controlled value skipped writes during composition.
-                  if (LiveBehavior.bindings((ViewSnapshot.Tag<LiveBehavior>) instance.view)
-                          .controls()
-                          .value()
-                      != null) {
-                    invalidate.run();
-                  }
-                }));
+    Consumer<JSObject> edited =
+        _ -> {
+          if (bindings(instance).isControlled()) {
+            invalidate.run();
+          }
+        };
+    var listeners = new ArrayList<JSObject>(4);
+    listeners.add(Dom.listen(instance.first, "input", edited));
+    listeners.add(Dom.listen(instance.first, "change", edited));
+    if (text) {
+      listeners.add(Dom.listen(instance.first, "compositionstart", _ -> instance.composing = true));
+      listeners.add(
+          Dom.listen(instance.first, "compositionend", event -> compositionEnded(instance, event)));
+    }
+    instance.formListeners = List.copyOf(listeners);
+  }
+
+  /// Browsers dispatch a composition's last `input` event while it is still composing, so an
+  /// application that waits for the composition to end would never see the committed text. The
+  /// element's `input` handler therefore runs once more with it, and a bound value is reconciled.
+  private void compositionEnded(Mounted instance, JSObject event) {
+    instance.composing = false;
+    if (!open.getAsBoolean()) {
+      return;
+    }
+    var input = instance.events.get(new EventListener.Key("input", false));
+    if (input != null) {
+      input.dispatch(event, instance, "input", hostId);
+    }
+    // Only a controlled value skipped writes during composition.
+    if (bindings(instance).value() != null) {
+      invalidate.run();
+    }
+  }
+
+  private static ControlProperties bindings(Mounted instance) {
+    return LiveBehavior.bindings((ViewSnapshot.Tag<LiveBehavior>) instance.view).controls();
   }
 
   private static void controls(Mounted instance, ControlProperties properties) {
@@ -782,7 +795,7 @@ final class DomReconciler {
     /// Allocated on first use: most nodes bind no listeners.
     private Map<EventListener.Key, Binding> events = Map.of();
 
-    private List<JSObject> composition = List.of();
+    private List<JSObject> formListeners = List.of();
     private boolean composing;
     private @Nullable LifetimeScope lifetime;
     private @Nullable WidgetController widget;

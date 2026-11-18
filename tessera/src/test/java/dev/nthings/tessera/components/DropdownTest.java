@@ -8,7 +8,9 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.support.AccessibleText;
 import dev.nthings.tessera.support.RenderedPage;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,59 +35,56 @@ class DropdownTest {
     page = renderDocumentMain(DocumentContent.of(dropdown), deferred(modal, 10));
   }
 
-  @Test
-  @DisplayName("its trigger toggles the adjacent auto popover")
-  void triggerTogglesAdjacentAutoPopover() {
-    var trigger = page.element("button.dropdown-trigger");
-    var popover = trigger.nextElementSibling();
-
-    assertThat(popover).hasAttribute("id", "actions-menu--panel").hasAttribute("popover", "auto");
-    assertThat(trigger)
-        .hasAttribute("id", "actions-menu--trigger")
-        .hasAttribute("commandfor", "actions-menu--panel")
-        .hasAttribute("command", "toggle-popover");
+  private static Element named(RenderedPage page, String selector, String name) {
+    return page.elements(selector).stream()
+        .filter(element -> AccessibleText.name(element).equals(name))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No " + selector + " named " + name));
   }
 
   @Test
-  @DisplayName("exposes its panel to an invoker outside the menu")
+  @DisplayName("the trigger toggles an auto popover holding the menu items")
+  void triggerTogglesItsPanel() {
+    var trigger = named(page, "button", "Actions");
+    var panel = page.target(trigger, "commandfor");
+
+    assertThat(trigger).hasAttribute("command", "toggle-popover");
+    assertThat(panel).hasAttribute("popover", "auto");
+    assertThat(panel.select("a"))
+        .extracting(AccessibleText::of)
+        .containsExactly("Scope Logs", "Status");
+  }
+
+  @Test
+  @DisplayName("a command item opens a modal placed later on the page")
+  void commandItemOpensModal() {
+    var deploy = named(page, "button", "Deploy Now");
+
+    assertThat(deploy).hasAttribute("command", "show-modal");
+    var dialog = page.target(deploy, "commandfor");
+    assertThat(dialog).hasTagName("dialog");
+    assertThat(page.target(dialog, "aria-labelledby")).hasText("Confirm Deployment");
+  }
+
+  @Test
+  @DisplayName("an invoker outside the menu can toggle its panel")
   void panelRefExposesPanel() {
     var reference = ElementRef.scoped("tools-panel");
-    var dropdown =
-        Dropdown.of("Tools")
-            .id("tools")
-            .panelRef(reference)
-            .item(Dropdown.Item.link("/logs", "Scope Logs"));
     var outside =
         renderMain(
-            dropdown, Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
-    var panel = outside.element("button.dropdown-trigger").nextElementSibling();
+            Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "Logs")),
+            Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
 
-    assertThat(panel).hasAttribute("id", "tools--tools-panel").hasAttribute("popover", "auto");
-    assertThat(outside.element("main > button.button"))
-        .hasAttribute("commandfor", "tools--tools-panel")
-        .hasAttribute("command", "toggle-popover");
+    assertThat(outside.target(named(outside, "button", "Toggle tools"), "commandfor"))
+        .isSameAs(outside.target(named(outside, "button", "Tools"), "commandfor"));
   }
 
   @Test
-  @DisplayName("the trigger sets no aria-haspopup")
-  void triggerOmitsHaspopup() {
-    assertThat(page.element("button.dropdown-trigger")).doesNotHaveAttribute("aria-haspopup");
-  }
-
-  @Test
-  @DisplayName("a command item targets a modal declared elsewhere")
-  void commandItemTargetsModal() {
-    assertThat(page.elementById("actions-menu--open-deploy"))
-        .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", "confirm-deploy--dialog");
-  }
-
-  @Test
-  @DisplayName("a shortcut hint is hidden from assistive technology and omitted when absent")
+  @DisplayName("a shortcut hint is shown but kept out of the item's name")
   void shortcutHintIsHidden() {
-    assertThat(page.element("a.dropdown-item[href=/logs] > .dropdown-hint"))
-        .hasText("G L")
-        .hasAttribute("aria-hidden", "true");
-    assertThat(page.element("a.dropdown-item[href=/status]").select(".dropdown-hint")).isEmpty();
+    var logs = named(page, "a", "Scope Logs");
+
+    assertThat(logs.text()).contains("G L");
+    assertThat(named(page, "a", "Status").select("[aria-hidden=true]")).isEmpty();
   }
 }

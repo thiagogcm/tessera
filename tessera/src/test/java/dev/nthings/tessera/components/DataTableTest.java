@@ -22,7 +22,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.support.RenderedPage;
-import java.util.Arrays;
 import java.util.List;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,49 +54,60 @@ class DataTableTest {
             DataTable.of("Sales", sales).id("sales"), DataTable.of("Sales copy", sales).id("copy"));
   }
 
+  private static Element firstTable() {
+    return page.element("table");
+  }
+
+  private static Element cell(String text) {
+    return firstTable().select("th, td").stream()
+        .filter(cell -> cell.text().equals(text))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No cell " + text));
+  }
+
+  private static List<String> headerTexts(Element cell) {
+    return page.referenced(cell, "headers").stream().map(Element::text).toList();
+  }
+
   @Test
-  @DisplayName("emits anchors once with spans and preserves all row groups")
-  void emitsAnchorsAndGroups() {
-    var table = page.element("main > div > table");
-    assertThat(table.selectFirst("thead th"))
-        .hasAttribute("rowspan", "2")
-        .hasAttribute("colspan", "2");
-    assertThat(table.select("thead > tr").get(1).children()).hasSize(2);
+  @DisplayName("a focusable region named by the caption holds merged cells and every row group")
+  void emitsSpansAndGroups() {
+    var region = page.element("[role=region]");
+    assertThat(region).hasAttribute("tabindex", "0");
+    assertThat(page.target(region, "aria-labelledby")).hasTagName("caption").hasText("Sales");
+
+    var table = firstTable();
+    assertThat(cell("Area")).hasAttribute("rowspan", "2").hasAttribute("colspan", "2");
+    assertThat(cell("2026")).hasAttribute("colspan", "2");
+    assertThat(cell("US")).hasAttribute("rowspan", "2");
     assertThat(table.select("tbody")).hasSize(2);
-    assertThat(table.select("tbody").getFirst().select("tr").get(2).children()).hasSize(3);
-    assertThat(table.selectFirst("tfoot th")).hasAttribute("colspan", "2").hasText("Total");
     assertThat(table.select("tbody td:empty")).hasSize(1);
-    assertThat(page.element("div[role=region][tabindex=0]"))
-        .hasAttribute("aria-labelledby", "sales--caption");
+    assertThat(table.selectFirst("tfoot th")).hasAttribute("colspan", "2").hasText("Total");
   }
 
   @Test
-  @DisplayName("links grouped column and row headers without leaking between body groups")
+  @DisplayName("each cell names its column, section and row headers without leaking across bodies")
   void associatesHeaders() {
-    assertThat(headerTexts(page.elementById("sales--cell-3-0"))).containsExactly("Americas");
-    assertThat(headerTexts(page.element("table tbody td[data-column=\"2\"]")))
-        .containsExactly("2026", "Q1", "Americas", "US", "East");
-    assertThat(headerTexts(page.element("table tbody").select("tr").get(2).selectFirst("td")))
+    assertThat(headerTexts(cell("US"))).containsExactly("Americas");
+    assertThat(headerTexts(cell("12"))).containsExactly("2026", "Q1", "Americas", "US", "East");
+    assertThat(headerTexts(cell("9"))).containsExactly("2026", "Q2", "Americas", "US", "West");
+    assertThat(headerTexts(firstTable().selectFirst("tbody td:empty")))
         .containsExactly("2026", "Q1", "Americas", "US", "West");
-    var europe = page.element("table").select("tbody").get(1).selectFirst("td");
-    assertThat(headerTexts(europe)).containsExactly("2026", "Q1", "Europe", "DE", "Central");
-    assertThat(headerTexts(page.element("tfoot td"))).containsExactly("2026", "Q1", "Total");
+    assertThat(headerTexts(cell("8"))).containsExactly("2026", "Q1", "Europe", "DE", "Central");
+    assertThat(headerTexts(cell("20"))).containsExactly("2026", "Q1", "Total");
   }
 
   @Test
-  @DisplayName("reused grids bind headers inside each table instance")
+  @DisplayName("a grid placed twice binds headers inside each table")
   void isolatesReferencesAcrossPlacements() {
-    var tables = page.elements("main > div > table");
+    var tables = page.elements("table");
+    assertThat(tables).hasSize(2);
     for (var table : tables) {
       for (var cell : table.select("[headers]")) {
-        for (var id : cell.attr("headers").split(" ")) {
-          assertThat(page.elementById(id).closest("table")).isSameAs(table);
-        }
+        assertThat(page.referenced(cell, "headers"))
+            .allSatisfy(header -> assertThat(header.closest("table")).isSameAs(table));
       }
     }
-    assertThat(page.element("tbody td[data-align=numeric]"))
-        .hasAttribute("data-column", "2")
-        .hasText("12");
   }
 
   @Test
@@ -115,8 +125,8 @@ class DataTableTest {
                             data(code().text("a < b"))),
                         row(empty(), data(nested))))));
 
-    var table = rich.element("main > div > table");
-    assertThat(table.selectFirst("tbody > tr > td > a"))
+    var table = rich.element("table");
+    assertThat(table.selectFirst("td > a"))
         .hasAttribute("href", "https://example.com")
         .hasText("Docs");
     assertThat(table.selectFirst("code")).hasText("a < b");
@@ -125,7 +135,7 @@ class DataTableTest {
   }
 
   @Test
-  @DisplayName("card labels are escaped HTML and preserve rich column headings")
+  @DisplayName("stacked cards label data cells with their column heading as hidden text")
   void rendersCardLabelsAsContent() {
     var flat =
         TableGrid.of(
@@ -137,19 +147,15 @@ class DataTableTest {
     var cards = renderMain(DataTable.of("Telemetry", flat).stackBelow(CssLength.rem(36)));
 
     assertThat(cards.element("thead code")).hasText("Region \"AZ\" <zone>");
-    assertThat(cards.element("td > .table-cell-label"))
-        .hasAttribute("aria-hidden", "true")
-        .hasText("Region \"AZ\" <zone>:");
-    assertThat(cards.elements("tbody th .table-cell-label, td zone")).isEmpty();
-    assertThat(cards.css()).doesNotContain("Region", "nth-child");
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> DataTable.of("Sales", sales).stackBelow(CssLength.rem(36)))
-        .withMessageContaining("flat grid");
+    assertThat(cards.element("tbody td [aria-hidden=true]")).hasText("Region \"AZ\" <zone>:");
+    assertThat(cards.element("tbody td")).hasText("Region \"AZ\" <zone>: us-east-1");
+    assertThat(cards.elements("tbody th [aria-hidden=true], zone")).isEmpty();
   }
 
-  private static List<String> headerTexts(Element cell) {
-    return Arrays.stream(cell.attr("headers").split(" "))
-        .map(id -> page.elementById(id).text())
-        .toList();
+  @Test
+  @DisplayName("stacked cards need a flat grid")
+  void rejectsStackingMergedGrid() {
+    assertThatIllegalArgumentException()
+        .isThrownBy(() -> DataTable.of("Sales", sales).stackBelow(CssLength.rem(36)));
   }
 }

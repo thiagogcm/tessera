@@ -46,7 +46,7 @@ Classify components by their required operations, not by their current package. 
 | Footnotes, table of contents, and document layout using late or end contributions | Document components |
 | Section markup and headings | Portable structure; document lowering collects navigation metadata |
 | Image markup and eager-loading attributes | Portable image; a document decorator owns hero uniqueness and head preload |
-| Accordion expansion-local numbering | Portable render state through `ViewKey` |
+| Carousel expansion-local anchor numbering | Portable render state through `ViewKey` |
 | Tabs, search palette, and tooltip interactions | Portable structure with document or browser behavior adapters |
 | Bundled SVG icons | Typed portable SVG nodes with namespace-aware DOM creation |
 | Application-supplied raw icon markup | Document-only placement, subject to the raw-HTML trust boundary |

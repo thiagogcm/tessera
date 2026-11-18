@@ -19,13 +19,14 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.view.WidgetAccess;
 import dev.nthings.tessera.view.WidgetAccess.TabPart;
 import dev.nthings.tessera.view.WidgetAccess.TabsParts;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -35,11 +36,12 @@ import org.jspecify.annotations.Nullable;
 /// Home and End keys move between tabs, which HTML does not do on its own, so a static document
 /// loads the `tessera-tabs` page script. Until that script loads, and in a browser root, which does
 /// not load it, the tab bar is hidden and every panel is visible. Tabs without any tab report
-/// `empty-content-tabs`. Two tabs with the same key report `duplicate-tab`.
+/// `empty-content-tabs`. Two tabs whose keys give the same id suffix report `duplicate-tab`.
 ///
 /// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting a
-/// tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-`. Without an
-/// [#id(String)], the compiler numbers instances `content-tabs-<n>`.
+/// tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-` and runs of `-`
+/// collapse to one, so `c++` and `c#` collide. Without an [#id(String)], the compiler numbers
+/// instances `content-tabs-<n>`.
 public final class ContentTabs extends BuiltinScope<ContentTabs> {
 
   /// The selected tab's anchor; each bar's underline is positioned inside its own tab bar.
@@ -218,14 +220,17 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
     }
     var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(label);
     root.child(tabBar);
-    var seen = new HashSet<String>();
+    var seen = new HashMap<String, String>();
 
     for (var panel : panels) {
-      if (!seen.add(panel.key())) {
+      var earlier = seen.putIfAbsent(Fnv1a64.sanitizeLocalId(panel.key()), panel.key());
+      if (earlier != null) {
         context.report(
             "duplicate-tab",
-            "Duplicate tab key '" + panel.key() + "'",
-            "Give each tab of this ContentTabs a distinct key.");
+            earlier.equals(panel.key())
+                ? "Duplicate tab key '" + panel.key() + "'"
+                : "Tab keys '" + earlier + "' and '" + panel.key() + "' give the same tab id",
+            "Give each tab of this ContentTabs a key that differs in letters, digits, '_' or '-'.");
       }
       var tabRef = ElementRef.scoped("tab-" + panel.key());
       var panelRef = ElementRef.scoped("panel-" + panel.key());

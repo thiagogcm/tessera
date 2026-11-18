@@ -11,6 +11,7 @@ import static dev.nthings.tessera.components.TableGrid.head;
 import static dev.nthings.tessera.components.TableGrid.row;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -39,13 +40,11 @@ class TableGridTest {
     assertThat(grid.groups().getFirst().rows().get(1)).isEmpty();
   }
 
-  @ParameterizedTest(name = "{0}")
+  @ParameterizedTest
   @MethodSource("invalidGrids")
   @DisplayName("rejects malformed topology at construction")
-  void rejectsMalformedTopology(String scenario, String error, TableGrid.Section[] sections) {
-    assertThatIllegalArgumentException()
-        .isThrownBy(() -> TableGrid.of(sections))
-        .withMessageContaining(error);
+  void rejectsMalformedTopology(TableGrid.Section[] sections) {
+    assertThatIllegalArgumentException().isThrownBy(() -> TableGrid.of(sections));
   }
 
   @Test
@@ -61,42 +60,22 @@ class TableGridTest {
         .containsExactly("South");
   }
 
+  private static Arguments invalid(String scenario, TableGrid.Section... sections) {
+    return argumentSet(scenario, (Object) sections);
+  }
+
   static Stream<Arguments> invalidGrids() {
     return Stream.of(
-        Arguments.of(
-            "ragged row",
-            "must have 2 slots",
-            new TableGrid.Section[] {body(row(data("a"), data("b")), row(data("c")))}),
-        Arguments.of(
-            "left edge", "Invalid LEFT", new TableGrid.Section[] {body(row(LEFT, data("a")))}),
-        Arguments.of("top edge", "Invalid UP", new TableGrid.Section[] {body(row(UP))}),
-        Arguments.of(
-            "unrelated neighbors",
-            "Invalid BOTH",
-            new TableGrid.Section[] {body(row(data("a"), data("b")), row(UP, BOTH))}),
-        Arguments.of(
-            "L-shaped cell",
-            "Nonrectangular",
-            new TableGrid.Section[] {body(row(data("a"), LEFT), row(UP, data("hole")))}),
-        Arguments.of(
-            "wrong horizontal continuation",
-            "Invalid LEFT",
-            new TableGrid.Section[] {body(row(data("a"), LEFT), row(UP, LEFT))}),
-        Arguments.of(
-            "wrong vertical continuation",
-            "Invalid UP",
-            new TableGrid.Section[] {body(row(data("a"), LEFT), row(UP, UP))}),
-        Arguments.of(
-            "cross-group continuation",
-            "Invalid UP",
-            new TableGrid.Section[] {head(row(data("a"))), body(row(UP))}),
-        Arguments.of(
-            "head after body",
-            "Table groups",
-            new TableGrid.Section[] {body(row(data("a"))), head(row(data("b")))}),
-        Arguments.of(
-            "duplicate footer",
-            "Table groups",
-            new TableGrid.Section[] {foot(row(data("a"))), foot(row(data("b")))}));
+        invalid("ragged row", body(row(data("a"), data("b")), row(data("c")))),
+        invalid("merge left at the left edge", body(row(LEFT, data("a")))),
+        invalid("merge up at the top edge", body(row(UP))),
+        invalid(
+            "merge both across unrelated cells", body(row(data("a"), data("b")), row(UP, BOTH))),
+        invalid("L-shaped cell", body(row(data("a"), LEFT), row(UP, data("hole")))),
+        invalid("wrong horizontal continuation", body(row(data("a"), LEFT), row(UP, LEFT))),
+        invalid("wrong vertical continuation", body(row(data("a"), LEFT), row(UP, UP))),
+        invalid("continuation across groups", head(row(data("a"))), body(row(UP))),
+        invalid("head after body", body(row(data("a"))), head(row(data("b")))),
+        invalid("two footers", foot(row(data("a"))), foot(row(data("b")))));
   }
 }

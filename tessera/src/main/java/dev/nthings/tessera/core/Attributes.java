@@ -1,7 +1,7 @@
 package dev.nthings.tessera.core;
 
+import dev.nthings.tessera.internal.authoring.TagData;
 import java.util.Locale;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /// Checks shared by the generic attribute setters.
@@ -25,16 +25,12 @@ final class Attributes {
         : attribute;
   }
 
-  /// URL-valued attributes, which hold a URL rather than a list of DOM ids.
-  private static final Set<String> URL_ATTRIBUTES =
-      Set.of("href", "xlink:href", "src", "action", "formaction", "poster", "data");
-
   /// Checks `attribute` as [#generic(TagName, String)] does for an attribute that holds DOM ids,
   /// and refuses URL-valued attributes: an id written there would become a URL that skips the URL
   /// checks. Links use `href(ElementRef)`.
   static String idList(TagName tag, String attribute) {
     var name = generic(tag, attribute);
-    if (URL_ATTRIBUTES.contains(name.toLowerCase(Locale.ROOT))) {
+    if (TagData.URL_ATTRIBUTES.contains(name.toLowerCase(Locale.ROOT))) {
       throw new IllegalArgumentException(
           "'"
               + attribute

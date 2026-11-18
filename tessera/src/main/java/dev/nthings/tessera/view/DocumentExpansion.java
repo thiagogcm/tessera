@@ -11,7 +11,6 @@ import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
-import dev.nthings.tessera.internal.authoring.ClassNames;
 import dev.nthings.tessera.internal.authoring.DocumentNode;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import java.util.List;
@@ -86,8 +85,7 @@ public final class DocumentExpansion extends ViewExpansion<String> {
       case DocumentNode.Mount mount -> {
         var host = Elements.div().id(mount.id());
         assembly.mountAttributes(mount).forEach(host::attr);
-        yield tag(
-            host, null, child -> List.of(expandDocument(mount.fallback(), child)), null, context);
+        yield documentHost(new DocumentNode.Host(host, List.of(mount.fallback())), context);
       }
       case DocumentNode.Fragment(var children) ->
           new ViewNode.Fragment<>(
@@ -145,7 +143,6 @@ public final class DocumentExpansion extends ViewExpansion<String> {
   private Placement<String> placement(DocumentNode.ComponentPlacement component) {
     return new Placement<>(
         component.type(),
-        ClassNames.componentName(component.type()),
         component.source(),
         child -> callback(child, "Expand", component.expand()));
   }
@@ -156,7 +153,7 @@ public final class DocumentExpansion extends ViewExpansion<String> {
   }
 
   @Override
-  Map<String, String> liveDeclarations(Declarations live, Declarations into, StyleSheet styles) {
+  Map<String, String> liveDeclarations(Declarations live, Declarations into) {
     into.mergeFrom(live);
     return Map.of();
   }

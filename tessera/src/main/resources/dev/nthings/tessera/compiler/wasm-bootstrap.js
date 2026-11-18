@@ -86,8 +86,8 @@ function report(hosts, error) {
   }
 }
 
-async function runEntry(vm, group, manifest, image) {
-  const resources = await loadResources(manifest, image);
+async function runEntry(vm, group, loading, image) {
+  const resources = await loading;
   const config = new vm.Config();
   config.tesseraResources = resources;
   config.tesseraWasmBytes = resources.get(image);
@@ -96,14 +96,8 @@ async function runEntry(vm, group, manifest, image) {
 
 async function start() {
   const hosts = [...document.querySelectorAll("[data-tessera-bundle]")];
-  try {
-    if (typeof WebAssembly === "undefined" || !WebAssembly.validate(capabilities)) {
-      throw new Error("This application requires WebAssembly GC, exception handling and typed function references.");
-    }
-    const probe = await WebAssembly.instantiate(capabilities);
-    probe.instance.exports.check();
-  } catch (error) {
-    report(hosts, error);
+  if (typeof WebAssembly === "undefined" || !WebAssembly.validate(capabilities)) {
+    report(hosts, new Error("This application requires WebAssembly GC, exception handling and typed function references."));
     return;
   }
 
@@ -117,12 +111,27 @@ async function start() {
     group.push(host);
     entries.set(key, group);
   }
-  const outcomes = [];
-  for (const [key, group] of entries) {
+  // Every entry's resources download while the probe runs and launchers load; only launcher
+  // execution is serialized. A failed download is reported when its entry awaits it.
+  const loads = [...entries].map(([key, group]) => {
     const [url, integrity, image, manifest] = JSON.parse(key);
+    const loading = loadResources(manifest, image);
+    loading.catch(() => {});
+    return { group, url, integrity, image, loading };
+  });
+  try {
+    const probe = await WebAssembly.instantiate(capabilities);
+    probe.instance.exports.check();
+  } catch (error) {
+    report(hosts, error);
+    return;
+  }
+
+  const outcomes = [];
+  for (const { group, url, integrity, image, loading } of loads) {
     try {
       const vm = await loadLauncher(url, integrity);
-      outcomes.push(runEntry(vm, group, manifest, image).catch(error =>
+      outcomes.push(runEntry(vm, group, loading, image).catch(error =>
         report(group.filter(host => !host.hasAttribute("data-tessera-root")), error)
       ));
     } catch (error) {

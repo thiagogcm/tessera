@@ -63,7 +63,6 @@ public final class ServicesDemo {
             LiveElement.of(
                     Elements.button()
                         .id(opener)
-                        .attr("type", "button")
                         .attr("data-generation", Integer.toString(generation))
                         .text("Open services dialog"))
                 .on(

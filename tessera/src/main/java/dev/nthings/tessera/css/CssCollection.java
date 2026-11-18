@@ -33,7 +33,7 @@ final class CssCollection extends CssAccess {
     Rule interactive = null;
     if (!nested.isEmpty()) {
       var key = "i-" + Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, nested));
-      interactive = new Rule(key, "." + key + "{" + nested + "}");
+      interactive = new Rule(key, "", nested);
     }
     var containers =
         style.containerRules().entrySet().stream()
@@ -48,7 +48,7 @@ final class CssCollection extends CssAccess {
     var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, prelude);
     hash = Fnv1a64.updateChars(hash, body);
     var key = "cq-" + Fnv1a64.toBase36Hash(hash);
-    return new Rule(key, prelude + "{." + key + "{" + body + "}}");
+    return new Rule(key, prelude, body);
   }
 
   @Override

@@ -79,7 +79,7 @@ final class PageCompiler {
     for (var node : nodes) {
       switch (node) {
         case ViewSnapshot.Tag<String> tag -> {
-          var mount = tag.attributes().containsKey("data-tessera-bundle");
+          var mount = tag.attributes().containsKey(BundlePublication.MOUNT_ATTRIBUTE);
           if (mount && forbidden) {
             state.report(
                 tag.location(),

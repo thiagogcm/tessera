@@ -41,7 +41,6 @@ public final class LiveTooltip implements LiveComponent {
     private @Nullable JSObject popupEnter;
     private @Nullable JSObject popupLeave;
     private @Nullable JSObject timer;
-    private boolean initialized;
     private boolean overTrigger;
     private boolean overPopup;
     private boolean focused;
@@ -49,46 +48,44 @@ public final class LiveTooltip implements LiveComponent {
 
     Controller(JSObject node, BrowserRoot root) {
       super(node, root);
+      listen(
+          node,
+          "pointerenter",
+          event -> {
+            if (!Dom.eventString(event, "pointerType").equals("touch")) {
+              overTrigger = true;
+              refresh();
+            }
+          });
+      listen(
+          node,
+          "pointerleave",
+          _ -> {
+            overTrigger = false;
+            refresh();
+          });
+      listen(
+          node,
+          "focusin",
+          _ -> {
+            focused = true;
+            refresh();
+          });
+      listen(
+          node,
+          "focusout",
+          event -> {
+            focused = WidgetDom.contains(node, WidgetDom.related(event));
+            refresh();
+          });
+      listen(WidgetDom.document(), "keydown", this::dismiss);
+      focused = WidgetDom.contains(node, Dom.activeElement());
     }
 
     @Override
     void update(WidgetBinding binding) {
+      // One id lookup: a patch can replace the popup while it retains the trigger.
       var next = root.resolve(((Binding) binding).popup());
-      if (!initialized) {
-        initialized = true;
-        listen(
-            node,
-            "pointerenter",
-            event -> {
-              if (!Dom.eventString(event, "pointerType").equals("touch")) {
-                overTrigger = true;
-                refresh();
-              }
-            });
-        listen(
-            node,
-            "pointerleave",
-            _ -> {
-              overTrigger = false;
-              refresh();
-            });
-        listen(
-            node,
-            "focusin",
-            _ -> {
-              focused = true;
-              refresh();
-            });
-        listen(
-            node,
-            "focusout",
-            event -> {
-              focused = WidgetDom.contains(node, WidgetDom.related(event));
-              refresh();
-            });
-        listen(WidgetDom.document(), "keydown", this::dismiss);
-        focused = WidgetDom.contains(node, Dom.activeElement());
-      }
       if (!WidgetDom.same(popup, next)) {
         releasePopup();
         popup = next;

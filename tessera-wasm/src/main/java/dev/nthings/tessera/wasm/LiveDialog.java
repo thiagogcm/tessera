@@ -81,21 +81,20 @@ public final class LiveDialog implements LiveComponent {
 
   @Override
   public LiveContent expand(LiveContext context) {
-    var scope = WidgetAccess.scope(dialog);
     return new WidgetScope(
-        scope,
-        inner -> {
-          var host = scope.expand(inner);
-          var initiallyOpen = WidgetAccess.initiallyOpen(host);
-          return LiveElement.of(host.removeAttr("open"))
-              .widget(new Binding(mode, open, initiallyOpen, fallback, opening, dismissal));
+        WidgetAccess.scope(dialog),
+        scope -> {
+          var parts = WidgetAccess.dialog(dialog, scope);
+          return LiveElement.of(parts.host())
+              .widget(new Binding(mode, open, parts.opened(), fallback, opening, dismissal));
         });
   }
 
+  /// `opened` is whether the portable dialog was authored open.
   private record Binding(
       @Nullable Mode mode,
       @Nullable Boolean open,
-      boolean initiallyOpen,
+      boolean opened,
       @Nullable ElementRef fallback,
       Runnable opening,
       Runnable dismissal)
@@ -115,13 +114,25 @@ public final class LiveDialog implements LiveComponent {
     private long session;
     private @Nullable JSObject opener;
     private @Nullable JSObject invoker;
-    private boolean initialized;
     private boolean changing;
 
     Controller(JSObject node, BrowserRoot root, Binding binding) {
       super(node, root);
       this.binding = binding;
-      this.initialMode = binding.initiallyOpen() ? Mode.NON_MODAL : Mode.MODAL;
+      this.initialMode = binding.opened() ? Mode.NON_MODAL : Mode.MODAL;
+      listen(node, "beforetoggle", this::beforeToggle);
+      listen(node, "command", this::command);
+      listen(node, "cancel", this::cancel);
+      listen(node, "close", _ -> closed());
+      // A browser-owned dialog authored open starts open, like the portable `open` attribute.
+      if (binding.open() == null && binding.opened()) {
+        changing = true;
+        try {
+          show(Mode.NON_MODAL);
+        } finally {
+          changing = false;
+        }
+      }
     }
 
     @Override
@@ -129,15 +140,7 @@ public final class LiveDialog implements LiveComponent {
       binding = (Binding) next;
       var isOpen = Dom.flag(node, "open");
       var wanted = binding.open();
-      var openInitially = !initialized && wanted == null && binding.initiallyOpen();
-      var shouldOpen = wanted == null ? (isOpen || openInitially) : wanted;
-      if (!initialized) {
-        initialized = true;
-        listen(node, "beforetoggle", this::beforeToggle);
-        listen(node, "command", this::command);
-        listen(node, "cancel", this::cancel);
-        listen(node, "close", _ -> closed());
-      }
+      var shouldOpen = wanted == null ? isOpen : wanted;
       var modeChanged =
           wanted != null && isOpen && Dom.isModal(node) != (openingMode() == Mode.MODAL);
       var previousOpener = opener;
@@ -150,7 +153,7 @@ public final class LiveDialog implements LiveComponent {
           if (modeChanged) {
             invoker = previousOpener;
           }
-          show(openInitially ? Mode.NON_MODAL : openingMode());
+          show(openingMode());
         } else if (!shouldOpen && isOpen && !root.closed()) {
           restoreFocus(previousOpener);
         }
@@ -224,23 +227,13 @@ public final class LiveDialog implements LiveComponent {
       notifyApplication(binding.dismissal());
     }
 
-    private void notifyApplication(Runnable handler) {
-      try {
-        handler.run();
-      } finally {
-        root.invalidate();
-      }
-    }
-
     private void restoreFocus(@Nullable JSObject target) {
       if (target != null && Dom.flag(target, "isConnected") && !WidgetDom.contains(node, target)) {
-        if (!Dom.isActiveElement(target)) {
-          Dom.focus(target);
-        }
+        WidgetDom.focus(target);
       } else if (binding.fallback() != null) {
         var replacement = root.findReference(binding.fallback());
         if (replacement != null) {
-          Dom.focus(replacement);
+          WidgetDom.focus(replacement);
         }
       }
     }

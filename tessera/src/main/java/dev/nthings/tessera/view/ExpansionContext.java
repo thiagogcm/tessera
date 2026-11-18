@@ -6,7 +6,6 @@ import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentHeading;
-import dev.nthings.tessera.internal.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -18,7 +17,6 @@ import org.jspecify.annotations.Nullable;
 final class ExpansionContext implements ViewContext {
 
   private final ViewScope viewScope;
-  private final StyleSheet styles;
   private final ViewExpansion<?> expansion;
   private final List<String> componentPath;
   private final @Nullable SourceLocation origin;
@@ -27,14 +25,12 @@ final class ExpansionContext implements ViewContext {
 
   ExpansionContext(
       ViewScope viewScope,
-      StyleSheet styles,
       ViewExpansion<?> expansion,
       List<String> componentPath,
       @Nullable SourceLocation origin,
       @Nullable String keyOwner,
       TagName.Namespace namespace) {
     this.viewScope = viewScope;
-    this.styles = styles;
     this.expansion = expansion;
     this.componentPath = componentPath;
     this.origin = origin;
@@ -52,8 +48,7 @@ final class ExpansionContext implements ViewContext {
   ExpansionContext withNamespace(TagName.Namespace namespace) {
     return namespace == this.namespace
         ? this
-        : new ExpansionContext(
-            viewScope, styles, expansion, componentPath, origin, keyOwner, namespace);
+        : new ExpansionContext(viewScope, expansion, componentPath, origin, keyOwner, namespace);
   }
 
   @Override
@@ -77,10 +72,6 @@ final class ExpansionContext implements ViewContext {
 
   ViewScope idScope() {
     return viewScope;
-  }
-
-  StyleSheet styles() {
-    return styles;
   }
 
   List<String> components() {
@@ -109,25 +100,18 @@ final class ExpansionContext implements ViewContext {
   /// [#keyOwner()], which belongs to the scope it was bound in.
   ExpansionContext withIdScope(String scopeId, boolean generated) {
     return new ExpansionContext(
-        viewScope.extend(scopeId, generated),
-        styles,
-        expansion,
-        componentPath,
-        origin,
-        null,
-        namespace);
+        viewScope.extend(scopeId, generated), expansion, componentPath, origin, null, namespace);
   }
 
   /// A context for keyed content, whose id scope is nested under the sanitized local id `slug`.
   ExpansionContext withKeyedScope(String slug) {
     return new ExpansionContext(
-        viewScope.extendKeyed(slug), styles, expansion, componentPath, origin, null, namespace);
+        viewScope.extendKeyed(slug), expansion, componentPath, origin, null, namespace);
   }
 
   /// A context inside an element bound to a ref named `owner`, in the same id scope.
   ExpansionContext withKeyOwner(String owner) {
-    return new ExpansionContext(
-        viewScope, styles, expansion, componentPath, origin, owner, namespace);
+    return new ExpansionContext(viewScope, expansion, componentPath, origin, owner, namespace);
   }
 
   /// Enters `component` for diagnostics, keeping the id scope. Without `placedAt`, the enclosing
@@ -141,12 +125,6 @@ final class ExpansionContext implements ViewContext {
   /// A context with the component path and origin of `placedBy`, keeping the id scope.
   ExpansionContext withPlacement(Location placedBy) {
     return new ExpansionContext(
-        viewScope,
-        styles,
-        expansion,
-        placedBy.components(),
-        placedBy.source(),
-        keyOwner,
-        namespace);
+        viewScope, expansion, placedBy.components(), placedBy.source(), keyOwner, namespace);
   }
 }

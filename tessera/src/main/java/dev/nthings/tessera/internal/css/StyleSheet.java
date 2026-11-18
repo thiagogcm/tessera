@@ -77,11 +77,11 @@ public final class StyleSheet {
     }
     var interactive = rules.interactive();
     if (interactive != null) {
-      interactiveRules.putIfAbsent(interactive.key(), interactive.css());
+      interactiveRules.computeIfAbsent(interactive.key(), _ -> interactive.css());
       classes.add(interactive.key());
     }
     for (var rule : rules.containers()) {
-      containerRules.putIfAbsent(rule.key(), rule.css());
+      containerRules.computeIfAbsent(rule.key(), _ -> rule.css());
       classes.add(rule.key());
     }
     return classes;

@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.css.CssAccess;
 import dev.nthings.tessera.view.ViewExpansion.Reporter;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
@@ -106,10 +107,6 @@ public final class ViewValidation {
 
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
-  /// Attributes whose URL a browser navigates to or loads, and so would run as script.
-  private static final List<String> SCRIPTABLE_URL_ATTRIBUTES =
-      List.of("href", "xlink:href", "src", "action", "formaction", "poster", "data");
-
   /// Element contracts checked while the expanded element still carries authored declarations:
   /// image contracts, and URLs that would run script outside document assembly. HTML attribute
   /// names are already lowercase: the builder normalizes them.
@@ -120,7 +117,7 @@ public final class ViewValidation {
     }
     for (var attribute : tag.attributes().entrySet()) {
       var name = attribute.getKey();
-      if (!SCRIPTABLE_URL_ATTRIBUTES.contains(name)) {
+      if (!TagData.URL_ATTRIBUTES.contains(name)) {
         continue;
       }
       var scheme = scheme(attribute.getValue());

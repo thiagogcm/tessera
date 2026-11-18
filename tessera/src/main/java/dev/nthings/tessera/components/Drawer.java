@@ -34,7 +34,6 @@ public final class Drawer extends DialogView<Drawer> {
   }
 
   private Side side = Side.INLINE_END;
-  private boolean opened;
 
   private Drawer(String title) {
     super(title);
@@ -129,7 +128,7 @@ public final class Drawer extends DialogView<Drawer> {
   }
 
   @Override
-  TagElement expand(ViewContext context) {
+  TagElement closedDialog(ViewContext context) {
     var titleRef = ElementRef.scoped("title");
     var closeBtn = closeButton().tone(Tone.NEUTRAL).variant(Button.Variant.OUTLINE).size(Size.SM);
 
@@ -160,7 +159,6 @@ public final class Drawer extends DialogView<Drawer> {
     contentEl.children(body);
 
     return dialogShell(titleRef)
-        .onlyIf(opened, el -> el.boolAttr("open"))
         .child(div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));
   }
 }

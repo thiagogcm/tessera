@@ -9,11 +9,14 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.DialogParts;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -24,8 +27,16 @@ import org.jspecify.annotations.Nullable;
 /// @param <D> the concrete dialog type
 abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
+  static {
+    WidgetAccess.registerDialog((source, context) -> {
+      var view = (DialogView<?>) source;
+      return new DialogParts(view.closedDialog(context), view.opened);
+    });
+  }
+
   final String title;
   ElementRef dialog = ElementRef.scoped("dialog");
+  boolean opened;
   @Nullable String description;
   final List<Element> body = new ArrayList<>();
   String closeLabel = "Close";
@@ -75,6 +86,14 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
     this.dialog = dialog;
     return self();
   }
+
+  @Override
+  final TagElement expand(ViewContext context) {
+    return closedDialog(context).onlyIf(opened, el -> el.boolAttr("open"));
+  }
+
+  /// Builds the `<dialog>` without `open`; [#expand] adds it to a dialog authored `opened()`.
+  abstract TagElement closedDialog(ViewContext context);
 
   /// The `<dialog>` element, named by the heading bound to `titleRef` and dismissed by Escape or a
   /// click outside.

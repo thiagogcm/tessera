@@ -144,7 +144,7 @@ final class HtmlWriter {
   }
 
   /// `dir/name-<content hash>ext`, so changed files are never served stale from cache.
-  private static String hashedPath(String dir, String name, String content, String extension) {
+  static String hashedPath(String dir, String name, String content, String extension) {
     var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, content);
     return dir + "/" + name + "-" + Fnv1a64.toBase36Hash(hash) + extension;
   }

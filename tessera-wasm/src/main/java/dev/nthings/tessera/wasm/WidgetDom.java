@@ -1,7 +1,5 @@
 package dev.nthings.tessera.wasm;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.graalvm.webimage.api.JS;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
@@ -12,43 +10,15 @@ final class WidgetDom {
 
   @JS.Coerce
   @JS(
-      args = {"node", "selector"},
-      value = "return node.querySelector(selector);")
-  static native JSObject child(JSObject node, String selector);
-
-  static List<JSObject> children(JSObject node, String selector) {
-    var matches = matches(node, selector);
-    var size = (int) Dom.number(matches, "length");
-    var nodes = new ArrayList<JSObject>(size);
-    for (var index = 0; index < size; index++) {
-      nodes.add(at(matches, index));
-    }
-    return nodes;
-  }
-
-  @JS.Coerce
-  @JS(
-      args = {"node", "selector"},
-      value = "return node.querySelectorAll(selector);")
-  private static native JSObject matches(JSObject node, String selector);
-
-  @JS.Coerce
-  @JS(
-      args = {"nodes", "index"},
-      value = "return nodes[index];")
-  private static native JSObject at(JSObject nodes, int index);
-
-  @JS.Coerce
-  @JS(
-      args = {"node", "name"},
-      value = "return node.getAttribute(name) || '';")
-  static native String attribute(JSObject node, String name);
-
-  @JS.Coerce
-  @JS(
       args = {"node", "hidden"},
       value = "node.hidden = hidden;")
   static native void hidden(JSObject node, boolean hidden);
+
+  /// Focuses `node` unless it already has focus.
+  @JS(
+      args = {"node"},
+      value = "if (document.activeElement !== node) node.focus();")
+  static native void focus(JSObject node);
 
   @JS.Coerce
   @JS(
@@ -61,6 +31,11 @@ final class WidgetDom {
       args = {"node", "other"},
       value = "return node.contains(other);")
   static native boolean contains(JSObject node, @Nullable JSObject other);
+
+  @JS(
+      args = {"event"},
+      value = "return event.target;")
+  static native @Nullable JSObject target(JSObject event);
 
   @JS.Coerce
   @JS(
@@ -97,18 +72,6 @@ final class WidgetDom {
 
   @JS("return document;")
   static native JSObject document();
-
-  @JS.Coerce
-  @JS(
-      args = {"node"},
-      value = "return node.textContent;")
-  static native String text(JSObject node);
-
-  @JS.Coerce
-  @JS(
-      args = {"node", "selector"},
-      value = "return node.querySelector(selector)?.textContent ?? null;")
-  static native @Nullable String text(JSObject node, String selector);
 
   static boolean skipKey(JSObject event) {
     return Dom.flag(event, "defaultPrevented")

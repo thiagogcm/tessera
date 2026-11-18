@@ -64,7 +64,7 @@ public record SiteDefinition(
   public static final class Builder {
 
     private Theme theme = Theme.defaults();
-    private OutputMode outputMode = OutputMode.external("/assets");
+    private OutputMode outputMode = OutputMode.external(ExternalOutput.DEFAULT_BASE);
     private final List<SiteRoute> routes = new ArrayList<>();
     private @Nullable String baseUrl;
     private LinkSpeculation linkSpeculation = LinkSpeculation.PRERENDER;

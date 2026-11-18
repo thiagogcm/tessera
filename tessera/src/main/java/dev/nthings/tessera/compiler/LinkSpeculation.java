@@ -1,6 +1,5 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.foundation.Fnv1a64;
 import java.nio.charset.StandardCharsets;
 import org.jspecify.annotations.Nullable;
 
@@ -34,9 +33,8 @@ public enum LinkSpeculation {
     if (json == null) {
       return null;
     }
-    var hash = Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, json));
     return new Asset(
-        output.base() + "/speculation-" + hash + ".json",
+        HtmlWriter.hashedPath(output.base(), "speculation", json, ".json"),
         "application/speculationrules+json",
         json.getBytes(StandardCharsets.UTF_8));
   }

@@ -50,17 +50,22 @@ public abstract sealed class ViewExpansion<M>
   /// expansion of its body in the component's context.
   record Placement<M>(
       Class<?> type,
-      String name,
       @Nullable SourceLocation source,
-      Function<ExpansionContext, ViewNode<M>> body) {}
+      Function<ExpansionContext, ViewNode<M>> body) {
+    String name() {
+      return ClassNames.componentName(type);
+    }
+  }
 
   private final ViewState state = new ViewState();
   private final Reporter reporter = state::report;
   private final ExpansionRegistry registry = new ExpansionRegistry();
   final ExpansionContext root;
+  final StyleSheet styles;
 
   ViewExpansion(StyleSheet styles, ViewScope scope) {
-    root = new ExpansionContext(scope, styles, this, List.of(), null, null, TagName.Namespace.HTML);
+    this.styles = styles;
+    root = new ExpansionContext(scope, this, List.of(), null, null, TagName.Namespace.HTML);
   }
 
   final ViewNode<M> expandPortable(Element node, ExpansionContext context) {
@@ -106,7 +111,6 @@ public abstract sealed class ViewExpansion<M>
   private Placement<M> portablePlacement(PortableNode.ComponentPlacement component) {
     return new Placement<>(
         component.type(),
-        ClassNames.componentName(component.type()),
         component.source(),
         child ->
             expandPortable(
@@ -124,8 +128,7 @@ public abstract sealed class ViewExpansion<M>
   }
 
   /// Compiles the values of this element's live declarations for this backend.
-  abstract Map<String, String> liveDeclarations(
-      Declarations live, Declarations into, StyleSheet styles);
+  abstract Map<String, String> liveDeclarations(Declarations live, Declarations into);
 
   /// Validates a host's backend-specific bindings while its authoring location is available.
   void validateHost(
@@ -163,18 +166,16 @@ public abstract sealed class ViewExpansion<M>
           "Implement the scope as a named class or record, or override scopeName().");
     }
     var scopeKey =
-        child
-            .styles()
-            .registerScope(
-                name,
-                block ->
-                    callback(
-                        child,
-                        "Style",
-                        () -> {
-                          scope.configureScope(block);
-                          return block;
-                        }));
+        styles.registerScope(
+            name,
+            block ->
+                callback(
+                    child,
+                    "Style",
+                    () -> {
+                      scope.configureScope(block);
+                      return block;
+                    }));
     var tag = host.apply(child);
     var attributes = new LinkedHashMap<>(tag.attributes());
     attributes.put("data-scope", scopeKey);
@@ -296,9 +297,20 @@ public abstract sealed class ViewExpansion<M>
       @Nullable M payload,
       ExpansionContext context) {
     var element = AuthoringAccess.tag(host);
-    var attrs = new LinkedHashMap<>(element.attributes);
+    var tagName = element.tag;
+    var attrs = new LinkedHashMap<String, String>();
+    var behavior = element.behavior;
+    if (behavior != null) {
+      // The host is the custom element its bundled script defines, defined or not.
+      if (behavior.customizesBuiltIn()) {
+        attrs.put("is", behavior.element().tagName());
+      } else {
+        tagName = behavior.element();
+      }
+    }
+    attrs.putAll(element.attributes);
     var source = element.source != null ? element.source : context.origin();
-    var location = new Location(context.components(), element.tag.tagName(), null, source);
+    var location = new Location(context.components(), tagName.tagName(), null, source);
     var domId = forcedId;
     var refs = element.refs;
     if (domId == null && !refs.isEmpty()) {
@@ -308,8 +320,8 @@ public abstract sealed class ViewExpansion<M>
       attrs.put("id", domId);
       location = location.withDomId(domId);
     }
-    validateHost(payload, element.tag, attrs, location);
-    validateNamespace(element.tag, context.namespace(), location);
+    validateHost(payload, tagName, attrs, location);
+    validateNamespace(tagName, context.namespace(), location);
 
     var style = identityStyles(element, domId, location);
     Map<String, String> live = Map.of();
@@ -319,7 +331,7 @@ public abstract sealed class ViewExpansion<M>
       if (style == element.style) {
         style = new Declarations().mergeFrom(style);
       }
-      live = liveDeclarations(liveStyle, style, context.styles());
+      live = liveDeclarations(liveStyle, style);
     }
 
     var transition = element.transitionKey;
@@ -327,11 +339,11 @@ public abstract sealed class ViewExpansion<M>
       state.registerTransition(transition, location);
       var transitionClass = transition.transitionClass();
       if (transitionClass != null) {
-        context.styles().registerTransitionClass(transitionClass);
+        styles.registerTransitionClass(transitionClass);
       }
     }
 
-    var classes = context.styles().registerElement(style);
+    var classes = styles.registerElement(style);
     if (!classes.isEmpty()) {
       var existing = attrs.get("class");
       var joined = String.join(" ", classes);
@@ -356,13 +368,12 @@ public abstract sealed class ViewExpansion<M>
     var references = element.idReferences;
     var owner = keyOwner(refs);
     var childContext =
-        (owner == null ? context : context.withKeyOwner(owner))
-            .withNamespace(element.tag.namespace());
+        (owner == null ? context : context.withKeyOwner(owner)).withNamespace(tagName.namespace());
     var children = children(element.children, childContext, this::expandPortable);
     children.addAll(extra.apply(childContext));
     var node =
         new ViewNode.Tag<>(
-            new TagCore<>(element.tag, location, payload, live, element.initial),
+            new TagCore<>(tagName, location, payload, live, element.initial),
             attrs,
             references.isEmpty() ? Map.of() : new LinkedHashMap<>(references),
             children,

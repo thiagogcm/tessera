@@ -1,7 +1,6 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.div;
 
 import dev.nthings.tessera.core.Element;
@@ -23,6 +22,8 @@ import dev.nthings.tessera.css.WhiteSpace;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.TabPart;
+import dev.nthings.tessera.view.WidgetAccess.TabsParts;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,8 +46,7 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
   private static final Anchor ACTIVE = Anchor.named("tessera-active-tab");
 
   static {
-    WidgetAccess.registerTabs((tabs, context, controlled, selection) ->
-        tabs.render(context, true, controlled, selection));
+    WidgetAccess.registerTabs(ContentTabs::parts);
   }
 
   /// Whether navigating to a tab also selects it. In manual mode, Enter or Space selects it.
@@ -164,38 +164,57 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
 
   @Override
   TagElement expand(ViewContext context) {
-    return render(context, false, false, null);
-  }
-
-  private TagElement render(
-      ViewContext context, boolean live, boolean controlled, @Nullable String selection) {
-    if (!live && panels.isEmpty()) {
+    if (panels.isEmpty()) {
       context.report(
           "empty-content-tabs",
           "ContentTabs '" + label + "' has no tabs",
           "Add at least one tab with tab(key, label, content).");
     }
+    if (selected != null && !enabledKeys().contains(selected)) {
+      reportSelection(context);
+    }
+    return render(context, selected, false).host();
+  }
 
-    var enabled = panels.stream().filter(panel -> !panel.disabled()).map(Panel::key).toList();
-    var initial = controlled ? selection : selected;
-    if (live && !controlled && initial != null && !enabled.contains(initial)) {
-      initial = null;
+  /// The live parts. A browser root owns the tab set over time, so it may have no tabs and a stale
+  /// `initialSelected` falls back to the first enabled tab; only a bound selection must name an
+  /// enabled tab.
+  private TabsParts parts(ViewContext context, boolean controlled, @Nullable String selection) {
+    var enabled = enabledKeys();
+    if (!controlled) {
+      return render(context, enabled.contains(selected) ? selected : null, true);
     }
-    if ((initial != null && !enabled.contains(initial))
-        || (controlled && initial == null && !enabled.isEmpty())) {
-      context.report(
-          "tab-selection",
-          "Selection for ContentTabs '" + label + "' must name an enabled tab",
-          "Supply an enabled tab key, or an empty selection when every tab is disabled or absent.");
+    if (selection != null ? !enabled.contains(selection) : !enabled.isEmpty()) {
+      reportSelection(context);
     }
+    return render(context, selection, true);
+  }
+
+  private List<String> enabledKeys() {
+    return panels.stream().filter(panel -> !panel.disabled()).map(Panel::key).toList();
+  }
+
+  private void reportSelection(ViewContext context) {
+    context.report(
+        "tab-selection",
+        "Selection for ContentTabs '" + label + "' must name an enabled tab",
+        "Supply an enabled tab key, or an empty selection when every tab is disabled or absent.");
+  }
+
+  /// Lays out the tabs with `initial` selected, or the first enabled tab when it is `null`. Keyed
+  /// content is id-scoped by its key, so only a live root, which needs tabs and panels to keep
+  /// their DOM across edits, keys them: documents keep the `<id>--tab-<key>` ids.
+  private TabsParts render(ViewContext context, @Nullable String initial, boolean keyed) {
+    var enabled = enabledKeys();
     var active = initial != null ? initial : enabled.isEmpty() ? null : enabled.getFirst();
-    var root = live ? div() : custom("tessera-tabs");
-    if (!live) {
-      AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
-    }
-    root.onlyIf(activation == Activation.MANUAL, el -> el.attr("data-activation", "manual"));
+    var selection = enabled.contains(active) ? active : null;
+    var manual = activation == Activation.MANUAL;
+    // The bundled behavior emits the host as `<tessera-tabs>`.
+    var root = div().onlyIf(manual, el -> el.attr("data-activation", "manual"));
+    AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
+    var parts = new ArrayList<TabPart>(panels.size());
     if (panels.isEmpty()) {
-      return root;
+      return new TabsParts(root, parts, selection, manual);
     }
     var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(label);
     root.child(tabBar);
@@ -210,7 +229,7 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
       }
       var tabRef = ElementRef.scoped("tab-" + panel.key());
       var panelRef = ElementRef.scoped("panel-" + panel.key());
-      var isSelected = panel.key().equals(active) && !panel.disabled();
+      var isSelected = panel.key().equals(selection);
       var tab =
           button()
               .id(tabRef)
@@ -228,15 +247,10 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
               .tabIndex(0)
               .onlyIf(!isSelected, el -> el.boolAttr("hidden"))
               .child(panel.content());
-      if (live) {
-        tab.attr("data-tab-key", panel.key());
-        tabBar.child(tab.key(panel.key()));
-        root.child(contents.key(panel.key()));
-      } else {
-        tabBar.child(tab);
-        root.child(contents);
-      }
+      tabBar.child(keyed ? tab.key(panel.key()) : tab);
+      root.child(keyed ? contents.key(panel.key()) : contents);
+      parts.add(new TabPart(panel.key(), !panel.disabled(), tabRef, panelRef));
     }
-    return root;
+    return new TabsParts(root, parts, selection, manual);
   }
 }

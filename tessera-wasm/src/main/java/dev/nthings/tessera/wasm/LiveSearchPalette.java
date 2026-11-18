@@ -3,19 +3,23 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.SearchLink;
+import dev.nthings.tessera.view.WidgetAccess.SearchParts;
+import dev.nthings.tessera.view.WidgetAccess.SearchResult;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
 /// Search palette with a browser-owned query, matching results and keyboard navigation.
 public final class LiveSearchPalette implements LiveComponent {
-  private static final String INPUT = ".palette-input";
-  private static final String ITEM = ".palette-item";
   private static final Pattern MARKS = Pattern.compile("\\p{M}+");
   private static final Pattern SPACE = Pattern.compile("(?U)\\s+");
 
@@ -37,161 +41,180 @@ public final class LiveSearchPalette implements LiveComponent {
 
   @Override
   public LiveContent expand(LiveContext context) {
-    var scope = WidgetAccess.scope(palette);
     return new WidgetScope(
-        scope, inner -> LiveElement.of(WidgetAccess.search(palette, inner)).widget(Binding.SEARCH));
+        WidgetAccess.scope(palette),
+        scope -> {
+          var parts = WidgetAccess.search(palette, scope);
+          return LiveElement.of(parts.host()).widget(new Binding(parts));
+        });
   }
 
-  private enum Binding implements WidgetBinding {
-    SEARCH;
-
+  private record Binding(SearchParts parts) implements WidgetBinding {
     @Override
     public WidgetController create(JSObject node, BrowserRoot root) {
-      return new Controller(node, root);
+      return new Controller(node, root, parts);
     }
   }
 
-  private record Result(
-      String group,
-      String title,
-      String href,
-      @Nullable String description,
-      @Nullable String badge) {}
+  /// A resolved result, its normalized search text and the `hidden` state last written to it.
+  private static final class Entry {
+    final SearchLink link;
+    final JSObject node;
+    final String text;
+    private @Nullable Boolean hidden;
 
-  private record Entry(JSObject node, Result result, String text) {}
+    Entry(SearchLink link, JSObject node) {
+      this.link = link;
+      this.node = node;
+      this.text =
+          normalize(
+              Stream.of(link.group(), link.title(), link.description(), link.badge())
+                  .filter(Objects::nonNull)
+                  .collect(Collectors.joining(" ")));
+    }
+
+    /// Hides or shows the result; returns whether that changed what the DOM shows.
+    boolean hide(boolean hide) {
+      if (Objects.equals(hidden, hide)) {
+        return false;
+      }
+      WidgetDom.hidden(node, hide);
+      hidden = hide;
+      return true;
+    }
+  }
 
   private static final class Controller extends WidgetController {
-    private @Nullable JSObject input;
-    private @Nullable JSObject empty;
-    private List<Entry> entries = List.of();
+    private List<SearchLink> links;
+    private JSObject input;
+    private JSObject empty;
+    private @Nullable Boolean emptyHidden;
+    private List<Entry> entries;
     private List<Entry> visible = List.of();
     private @Nullable Entry focusedBeforePatch;
-    private boolean initialized;
 
-    Controller(JSObject node, BrowserRoot root) {
+    Controller(JSObject node, BrowserRoot root, SearchParts parts) {
       super(node, root);
+      links = links(parts);
+      input = root.resolve(parts.input());
+      empty = root.resolve(parts.empty());
+      entries = entries(parts);
+      listen(
+          node,
+          "input",
+          event -> {
+            if (WidgetDom.same(input, WidgetDom.target(event))) {
+              filter(null);
+            }
+          });
+      listen(node, "keydown", this::navigate);
+      listen(node, "click", this::click);
+      listen(
+          node,
+          "toggle",
+          event -> {
+            if (Dom.eventString(event, "newState").equals("open")) {
+              filter(null);
+            }
+          });
+      filter(null);
     }
 
     @Override
     void beforePatch() {
-      var active = Dom.activeElement();
-      focusedBeforePatch =
-          visible.stream()
-              .filter(entry -> WidgetDom.same(entry.node(), active))
-              .findFirst()
-              .orElse(null);
+      focusedBeforePatch = focusedItem(visible, entry -> entry.node);
     }
 
     @Override
     void update(WidgetBinding binding) {
-      input = WidgetDom.child(node, INPUT);
-      empty = WidgetDom.child(node, ".palette-empty");
-      var next = new ArrayList<Entry>();
-      for (var group : WidgetDom.children(node, ".palette-group")) {
-        var title = WidgetDom.text(WidgetDom.child(group, ".palette-group-title"));
-        for (var item : WidgetDom.children(group, ITEM)) {
-          var content = WidgetDom.text(item);
-          var result =
-              new Result(
-                  title,
-                  WidgetDom.text(WidgetDom.child(item, ".palette-item-title")),
-                  WidgetDom.attribute(item, "href"),
-                  WidgetDom.text(item, ".palette-item-desc"),
-                  WidgetDom.text(item, ".palette-item-badge"));
-          next.add(new Entry(item, result, normalize(title + " " + content)));
-        }
-      }
-      entries = next;
-      if (!initialized) {
-        initialized = true;
-        listen(
-            node,
-            "input",
-            event -> {
-              if (WidgetDom.same(input, WidgetDom.closest(event, INPUT))) {
-                filter();
-              }
-            });
-        listen(node, "keydown", this::navigate);
-        listen(node, "click", this::click);
-        listen(
-            node,
-            "toggle",
-            event -> {
-              if (Dom.eventString(event, "newState").equals("open")) {
-                filter();
-              }
-            });
-      }
-      var previous = focusedBeforePatch;
+      var parts = ((Binding) binding).parts();
+      var before = focusToRestore(focusedBeforePatch, entry -> entry.node);
       focusedBeforePatch = null;
-      var active = Dom.activeElement();
-      var restore =
-          previous != null
-              && (WidgetDom.same(previous.node(), active) || WidgetDom.noFocus(active));
-      filter(restore ? previous : null);
-    }
-
-    private void filter() {
-      filter(null);
-    }
-
-    private void filter(@Nullable Entry previous) {
-      var search = input;
-      var status = empty;
-      if (search == null || status == null) {
+      var next = links(parts);
+      if (next.equals(links)) {
+        // The patch kept every result and the query, so only focus can need restoring.
+        if (before != null) {
+          WidgetDom.focus(before.node);
+        }
         return;
       }
+      links = next;
+      input = root.resolve(parts.input());
+      empty = root.resolve(parts.empty());
+      emptyHidden = null;
+      entries = entries(parts);
+      filter(before);
+    }
+
+    private static List<SearchLink> links(SearchParts parts) {
+      return parts.results().stream().map(SearchResult::link).toList();
+    }
+
+    private List<Entry> entries(SearchParts parts) {
+      return parts.results().stream()
+          .map(result -> new Entry(result.link(), root.resolve(result.ref())))
+          .toList();
+    }
+
+    /// Shows the results that match every query term. Focus returns to `previous`, the result
+    /// focused before a patch, or to a result like it; it leaves a result that becomes hidden.
+    private void filter(@Nullable Entry previous) {
       var terms =
-          Arrays.stream(SPACE.split(normalize(Dom.value(search))))
+          Arrays.stream(SPACE.split(normalize(Dom.value(input))))
               .filter(term -> !term.isEmpty())
               .toList();
       var matches = new ArrayList<Entry>();
-      var active = Dom.activeElement();
       var focusHidden = false;
       for (var entry : entries) {
-        var item = entry.node();
-        var match = terms.stream().allMatch(entry.text()::contains);
-        WidgetDom.hidden(item, !match);
+        var match = terms.stream().allMatch(entry.text::contains);
         if (match) {
           matches.add(entry);
-        } else if (WidgetDom.same(item, active)) {
+        }
+        // Only a result that was visible can have focus.
+        if (entry.hide(!match) && !match && Dom.isActiveElement(entry.node)) {
           focusHidden = true;
         }
       }
       visible = matches;
-      WidgetDom.hidden(status, !visible.isEmpty());
+      var none = visible.isEmpty();
+      if (!Objects.equals(emptyHidden, !none)) {
+        WidgetDom.hidden(empty, !none);
+        emptyHidden = !none;
+      }
       if (previous != null) {
-        var sameResult =
-            matches.stream().filter(entry -> entry.result().equals(previous.result())).toList();
+        var sameLink = matches.stream().filter(entry -> entry.link.equals(previous.link)).toList();
         var retained =
-            sameResult.stream()
-                .filter(entry -> WidgetDom.same(entry.node(), previous.node()))
+            sameLink.stream()
+                .filter(entry -> WidgetDom.same(entry.node, previous.node))
                 .findFirst()
-                .orElse(sameResult.isEmpty() ? null : sameResult.getFirst());
-        focus(retained == null ? firstMatchOr(search) : retained.node());
+                .orElse(sameLink.isEmpty() ? null : sameLink.getFirst());
+        WidgetDom.focus(retained == null ? firstMatchOrInput() : retained.node);
       } else if (focusHidden) {
-        focus(firstMatchOr(search));
+        WidgetDom.focus(firstMatchOrInput());
       }
     }
 
-    private JSObject firstMatchOr(JSObject fallback) {
-      return visible.isEmpty() ? fallback : visible.getFirst().node();
+    private JSObject firstMatchOrInput() {
+      return visible.isEmpty() ? input : visible.getFirst().node;
     }
 
-    private static void focus(JSObject target) {
-      if (!Dom.isActiveElement(target)) {
-        Dom.focus(target);
+    private int visibleIndex(@Nullable JSObject node) {
+      for (var index = 0; index < visible.size(); index++) {
+        if (WidgetDom.same(visible.get(index).node, node)) {
+          return index;
+        }
       }
+      return -1;
     }
 
     private void navigate(JSObject event) {
       if (WidgetDom.skipKey(event)) {
         return;
       }
-      var item = WidgetDom.closest(event, ITEM);
-      var fromInput = WidgetDom.same(input, WidgetDom.closest(event, INPUT));
-      if (!fromInput && item == null) {
+      var target = WidgetDom.target(event);
+      var fromInput = WidgetDom.same(input, target);
+      var index = fromInput ? -1 : visibleIndex(target);
+      if (!fromInput && index < 0) {
         return;
       }
       var key = Dom.eventString(event, "key");
@@ -204,26 +227,19 @@ public final class LiveSearchPalette implements LiveComponent {
           if (fromInput) {
             Dom.preventDefault(event);
             if (!visible.isEmpty()) {
-              WidgetDom.click(visible.getFirst().node());
+              WidgetDom.click(visible.getFirst().node);
             }
           }
         }
         case "ArrowDown", "ArrowUp" -> {
           if (!visible.isEmpty()) {
             Dom.preventDefault(event);
-            var index = -1;
-            for (var current = 0; current < visible.size(); current++) {
-              if (WidgetDom.same(visible.get(current).node(), item)) {
-                index = current;
-                break;
-              }
-            }
             var forward = key.equals("ArrowDown");
             var next =
                 index < 0
                     ? (forward ? 0 : visible.size() - 1)
                     : Math.floorMod(index + (forward ? 1 : -1), visible.size());
-            Dom.focus(visible.get(next).node());
+            Dom.focus(visible.get(next).node);
           }
         }
         default -> {}
@@ -234,7 +250,7 @@ public final class LiveSearchPalette implements LiveComponent {
       if (!WidgetDom.skipKey(event)
           && !Dom.flag(event, "shiftKey")
           && Dom.number(event, "button") == 0
-          && WidgetDom.closest(event, ITEM) != null) {
+          && visibleIndex(WidgetDom.closest(event, "a[href]")) >= 0) {
         WidgetDom.requestClose(node);
       }
     }

@@ -8,7 +8,6 @@ import dev.nthings.tessera.view.ViewExpansion.Reporter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: the live form properties an element controls, set with the browser module's
@@ -22,10 +21,6 @@ record ControlProperties(
     CHECKED,
     SELECTION
   }
-
-  // The value property reflects the attribute in these modes, or cannot be set for file inputs.
-  private static final Set<String> NON_BINDABLE_VALUE_TYPES =
-      Set.of("hidden", "button", "submit", "reset", "image", "checkbox", "radio", "file");
 
   /// No property controlled.
   public static final ControlProperties UNCONTROLLED = new ControlProperties(null, null, null);
@@ -62,7 +57,8 @@ record ControlProperties(
       Reporter reporter,
       Collection<EventListener> listeners) {
     var multiple = attributes.containsKey("multiple");
-    if ((value != null || observes(listeners, Kind.VALUE)) && !supportsValue(tag, attributes)) {
+    if ((value != null || observes(listeners, Kind.VALUE))
+        && !ControlLowering.hasEditableValue(tag, attributes)) {
       reporter.report(
           location,
           "control-value",
@@ -70,7 +66,7 @@ record ControlProperties(
           "Use a compatible input or textarea, or bind selected values on a multiple select.");
     }
     if ((checked != null || observes(listeners, Kind.CHECKED))
-        && !supportsChecked(tag, attributes)) {
+        && !ControlLowering.isCheckable(tag, attributes)) {
       reporter.report(
           location,
           "control-checked",
@@ -85,17 +81,6 @@ record ControlProperties(
           "Live selected values require a multiple select",
           "Use bindValue or onValueChange for a single select, or enable multiple selection.");
     }
-  }
-
-  static boolean supportsValue(TagName tag, Map<String, String> attributes) {
-    return tag == HtmlTag.TEXTAREA
-        || (tag == HtmlTag.SELECT && !attributes.containsKey("multiple"))
-        || (tag == HtmlTag.INPUT
-            && !NON_BINDABLE_VALUE_TYPES.contains(ControlLowering.inputType(attributes)));
-  }
-
-  static boolean supportsChecked(TagName tag, Map<String, String> attributes) {
-    return ControlLowering.isCheckable(tag, attributes);
   }
 
   private static boolean observes(Collection<EventListener> listeners, Kind kind) {

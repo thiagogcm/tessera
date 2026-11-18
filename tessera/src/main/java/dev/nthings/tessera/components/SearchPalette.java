@@ -36,6 +36,9 @@ import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.internal.components.Icons;
 import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.SearchLink;
+import dev.nthings.tessera.view.WidgetAccess.SearchParts;
+import dev.nthings.tessera.view.WidgetAccess.SearchResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,12 +50,13 @@ import org.jspecify.annotations.Nullable;
 /// `Documents.deferred`. A static document loads the palette's script once, shared by every palette
 /// on the page; without it, the dialog opens and closes and lists every link unfiltered.
 ///
-/// The dialog and input ids are prefixed with its [#id(String)], as in `<id>--dialog`. Without an
-/// id, the compiler numbers instances `search-palette-<n>`.
+/// The dialog, input, no-results status and result ids are prefixed with its [#id(String)], as in
+/// `<id>--dialog`, `<id>--input`, `<id>--empty` and `<id>--result-<n>`, numbering results from 1 in
+/// order. Without an id, the compiler numbers instances `search-palette-<n>`.
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   static {
-    WidgetAccess.registerSearch((palette, _) -> palette.render(true));
+    WidgetAccess.registerSearch((palette, _) -> palette.render());
   }
 
   /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is
@@ -194,17 +198,20 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   @Override
   TagElement expand(ViewContext context) {
-    return render(false);
+    return render().host();
   }
 
-  private TagElement render(boolean live) {
+  private SearchParts render() {
+    var input = ElementRef.scoped("input");
+    var empty = ElementRef.scoped("empty");
+    var results = new ArrayList<SearchResult>();
     var headerEl =
         Elements.search()
             .attr("class", "palette-header")
             .child(Icons.search())
             .child(
                 input("search")
-                    .id(ElementRef.scoped("input"))
+                    .id(input)
                     .attr("class", "palette-input")
                     .attr("placeholder", placeholder)
                     .attr("autocomplete", "off")
@@ -228,8 +235,15 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
       groupBlock.child(div().attr("class", "palette-group-title").text(entry.getKey()));
 
       for (var item : entry.getValue()) {
+        var ref = ElementRef.scoped("result-" + (results.size() + 1));
+        results.add(
+            new SearchResult(
+                ref,
+                new SearchLink(
+                    entry.getKey(), item.title, item.href, item.description, item.badge)));
         var link =
             a(item.href)
+                .id(ref)
                 .attr("class", "palette-item")
                 .tabIndex(0)
                 .child(
@@ -255,6 +269,7 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
     resultsContainer.child(
         Elements.p()
+            .id(empty)
             .attr("class", "palette-empty")
             .attr("hidden", "")
             .role(Role.STATUS)
@@ -287,11 +302,9 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
             .child(headerEl)
             .child(resultsContainer)
             .child(footerEl);
-    if (!live) {
-      root.attr("is", "tessera-search");
-      AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
-    }
-    return root;
+    // The bundled behavior marks the host `is="tessera-search"`.
+    AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    return new SearchParts(root, input, empty, results);
   }
 
   @Override

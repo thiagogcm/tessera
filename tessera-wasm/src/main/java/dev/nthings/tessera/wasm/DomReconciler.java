@@ -1,7 +1,7 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.TagName;
+import dev.nthings.tessera.view.ControlLowering;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -95,13 +95,10 @@ final class DomReconciler {
   /// failure or closure: the closing root has already released the created instances, and a native
   /// failure closes the root, whose teardown releases the committed tree and the acquisitions.
   Commit apply(ViewSnapshot<LiveBehavior> snapshot) {
-    starting.clear();
     disposalFailures.clear();
     created.clear();
     retiring.clear();
-    previousControls.clear();
-    controlUpdates.clear();
-    widgetUpdates.clear();
+    clearQueued();
     for (var instance : widgets) {
       requireOpen();
       var controller = instance.widget;
@@ -111,7 +108,10 @@ final class DomReconciler {
     }
     for (var control : boundControls) {
       requireOpen();
-      previousControls.put(control, Dom.captureControl(control.first));
+      // Other controls are captured lazily, before their own patch can change them.
+      if (sharesNativeState((ViewSnapshot.Tag<LiveBehavior>) control.view)) {
+        previousControls.put(control, Dom.captureControl(control.first));
+      }
     }
     var parent = host;
     if (!mounted) {
@@ -229,11 +229,24 @@ final class DomReconciler {
       dispose(created.get(index));
     }
     created.clear();
-    starting.clear();
     retiring.clear();
+    clearQueued();
+  }
+
+  /// Drops the work queued for the active commit's later phases.
+  private void clearQueued() {
+    starting.clear();
     previousControls.clear();
     controlUpdates.clear();
     widgetUpdates.clear();
+  }
+
+  /// Whether siblings can change this control's state before its own patch: a radio unchecked by
+  /// its group, or a select whose options change.
+  private static boolean sharesNativeState(ViewSnapshot.Tag<LiveBehavior> tag) {
+    return tag.tag() == HtmlTag.SELECT
+        || (ControlLowering.isCheckable(tag.tag(), tag.attributes())
+            && "radio".equals(ControlLowering.inputType(tag.attributes())));
   }
 
   private void report(String what, List<RuntimeException> failures) {
@@ -256,12 +269,9 @@ final class DomReconciler {
       release(created.get(index), failures);
     }
     created.clear();
-    starting.clear();
-    previousControls.clear();
+    clearQueued();
     boundControls = List.of();
-    controlUpdates.clear();
     widgets = List.of();
-    widgetUpdates.clear();
     if (mounted) {
       Dom.closeTransient(host);
       Dom.clear(host);
@@ -454,15 +464,11 @@ final class DomReconciler {
       case ViewSnapshot.Text(var text) -> {
         var node = Dom.text(text);
         Dom.insert(parent, node, before);
-        var instance = new Mounted(view, node, node);
-        created.add(instance);
-        yield instance;
+        yield track(view, node, node);
       }
       case ViewSnapshot.Tag<LiveBehavior> tag -> {
         var node = Dom.element(tag.tag().namespace().uri(), tag.tag().tagName());
-        var instance = new Mounted(view, node, node);
-        // Registered before any acquisition, so a failure or closure releases this subtree.
-        created.add(instance);
+        var instance = track(view, node, node);
         attributes(
             node,
             Map.of(),
@@ -479,7 +485,7 @@ final class DomReconciler {
                 List.of(),
                 tag.children(),
                 null,
-                retainOptionDefaults && isOptionContainer(tag.tag()));
+                retainOptionDefaults && ControlLowering.mayContainOptions(tag.tag()));
         Dom.insert(parent, node, before);
         if (bindings.widget() != null) {
           widgetUpdates.add(instance);
@@ -494,8 +500,7 @@ final class DomReconciler {
         var last = Dom.marker();
         Dom.insert(parent, first, before);
         Dom.insert(parent, last, before);
-        var instance = new Mounted(view, first, last);
-        created.add(instance);
+        var instance = track(view, first, last);
         instance.children =
             reconcile(parent, List.of(), group.children(), last, retainOptionDefaults);
         yield instance;
@@ -503,13 +508,19 @@ final class DomReconciler {
       case ViewSnapshot.Special<LiveBehavior> _ -> {
         var anchor = Dom.marker();
         Dom.insert(parent, anchor, before);
-        var instance = new Mounted(view, anchor, anchor);
-        created.add(instance);
+        var instance = track(view, anchor, anchor);
         instance.lifetime = new LifetimeScope();
         starting.add(instance);
         yield instance;
       }
     };
+  }
+
+  /// Registers a new instance before it acquires anything, so a failure or closure releases it.
+  private Mounted track(ViewSnapshot.Node<LiveBehavior> view, JSObject first, JSObject last) {
+    var instance = new Mounted(view, first, last);
+    created.add(instance);
+    return instance;
   }
 
   private void patch(
@@ -564,21 +575,14 @@ final class DomReconciler {
               instance.children,
               tag.children(),
               null,
-              defaults.selection() || (retainOptionDefaults && isOptionContainer(tag.tag())));
+              defaults.selection()
+                  || (retainOptionDefaults && ControlLowering.mayContainOptions(tag.tag())));
     } else if (preserveText) {
       // Keep the native default but release any previously mounted logical children.
       var text = Dom.defaultText(node);
       instance.children = reconcile(node, instance.children, List.of(), null, false);
       Dom.defaultText(node, text);
     }
-  }
-
-  private static boolean isOptionContainer(TagName tag) {
-    return tag != HtmlTag.SELECT
-        && tag != HtmlTag.DATALIST
-        && tag != HtmlTag.TEMPLATE
-        && tag != HtmlTag.OPTION
-        && tag != HtmlTag.HR;
   }
 
   private void queueRetainedControl(
@@ -595,17 +599,17 @@ final class DomReconciler {
         preserveText
             || (old.value() != null
                 && next.value() == null
-                && ControlProperties.supportsValue(tag.tag(), attributes));
+                && ControlLowering.hasEditableValue(tag.tag(), attributes));
     var restoreChecked =
         old.checked() != null
             && next.checked() == null
-            && ControlProperties.supportsChecked(tag.tag(), attributes);
+            && ControlLowering.isCheckable(tag.tag(), attributes);
     var restoreSelection =
         tag.tag() == HtmlTag.SELECT
             && next.value() == null
             && next.selectedValues() == null
             && (defaults.selection() || handoff != null);
-    if ((restoreSelection || restoreValue) && handoff == null) {
+    if ((restoreSelection || restoreValue || restoreChecked) && handoff == null) {
       handoff = Dom.captureControl(instance.first);
     }
     var retained = restoreValue || restoreChecked || restoreSelection ? handoff : null;

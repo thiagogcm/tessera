@@ -27,11 +27,6 @@ public record CompiledSite(
     SequencedMap<String, Asset> files,
     Map<String, Map<String, String>> pageHeaders) {
 
-  public CompiledSite(
-      SequencedMap<String, String> pages, String css, SequencedMap<String, Asset> files) {
-    this(pages, css, files, Map.of());
-  }
-
   public CompiledSite {
     pages = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(pages));
     files = Collections.unmodifiableSequencedMap(new LinkedHashMap<>(files));

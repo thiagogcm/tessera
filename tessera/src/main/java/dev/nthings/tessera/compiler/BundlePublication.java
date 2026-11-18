@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /// Resolves one compilation's bundle resources to immutable published URLs.
 final class BundlePublication {
@@ -20,19 +22,32 @@ final class BundlePublication {
       "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'";
   static final Map<String, String> HEADERS = Map.of("Content-Security-Policy", CSP);
 
+  /// Marks a mount host; the bootstrap module starts every element carrying it.
+  static final String MOUNT_ATTRIBUTE = "data-tessera-bundle";
+
+  private static final Pattern SAFE_BASE = Pattern.compile("(?:/[A-Za-z0-9._-]+)*");
+
   record File(Asset asset, String integrity) {}
 
   record Entry(File launcher, String image, String resources, List<Asset> assets) {}
 
   private final String base;
+  private @Nullable File bootstrap;
   private final Map<WasmBundle, Entry> entries = new ConcurrentHashMap<>();
 
   BundlePublication(OutputMode output) {
-    base = output instanceof ExternalOutput external ? external.base() : "/assets";
+    base =
+        output instanceof ExternalOutput external ? external.base() : ExternalOutput.DEFAULT_BASE;
   }
 
-  File bootstrap() {
-    return file(Bootstrap.RESOURCE);
+  /// The shared bootstrap module, published once per compilation on first use.
+  synchronized File bootstrap() {
+    var published = bootstrap;
+    if (published == null) {
+      published = file(Bootstrap.RESOURCE);
+      bootstrap = published;
+    }
+    return published;
   }
 
   private static final class Bootstrap {
@@ -70,7 +85,7 @@ final class BundlePublication {
   }
 
   private File file(Resource resource) {
-    if (!base.matches("(?:/[A-Za-z0-9._-]+)*")) {
+    if (!SAFE_BASE.matcher(base).matches()) {
       throw new IllegalArgumentException("A Wasm bundle requires a URL-safe asset base: " + base);
     }
     var integrity = resource.integrity();
@@ -78,6 +93,6 @@ final class BundlePublication {
         HexFormat.of()
             .formatHex(Base64.getDecoder().decode(integrity.substring("sha384-".length())));
     var path = base + "/wasm/" + hash + resource.kind().extension();
-    return new File(new Asset(path, resource.kind().mediaType(), resource.content()), integrity);
+    return new File(Asset.of(path, resource.content()), integrity);
   }
 }

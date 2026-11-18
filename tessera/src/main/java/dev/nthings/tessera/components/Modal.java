@@ -35,7 +35,6 @@ import java.util.List;
 public final class Modal extends DialogView<Modal> {
 
   private final List<Element> actions = new ArrayList<>();
-  private boolean opened;
 
   private Modal(String title) {
     super(title);
@@ -135,7 +134,7 @@ public final class Modal extends DialogView<Modal> {
   }
 
   @Override
-  TagElement expand(ViewContext context) {
+  TagElement closedDialog(ViewContext context) {
     var titleRef = ElementRef.scoped("title");
     var headerEl =
         header()
@@ -158,7 +157,6 @@ public final class Modal extends DialogView<Modal> {
     footerEl.child(closeButton());
 
     return dialogShell(titleRef)
-        .onlyIf(opened, el -> el.boolAttr("open"))
         .child(div().flex().flexCol().gap(Tokens.SPACE_5).children(headerEl, contentEl, footerEl));
   }
 }

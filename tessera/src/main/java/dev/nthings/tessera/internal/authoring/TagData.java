@@ -12,10 +12,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// Mutable data owned by one portable tag builder. Expansion copies the collections it needs.
 public final class TagData {
+  /// Attributes whose URL a browser navigates to or loads: a script URL there runs, and an id
+  /// written there would become a URL that skips the URL checks.
+  public static final Set<String> URL_ATTRIBUTES =
+      Set.of("href", "xlink:href", "src", "action", "formaction", "poster", "data");
+
   public final TagName tag;
   public final @Nullable SourceLocation source;
   public final Declarations style = new Declarations();

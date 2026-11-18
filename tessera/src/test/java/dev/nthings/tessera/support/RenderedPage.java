@@ -10,6 +10,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import java.util.List;
+import java.util.Map;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -47,7 +48,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     if (html == null) {
       throw new AssertionError("No page at route: " + route);
     }
-    return of(new CompiledPage(html, site.css(), List.of()));
+    return of(new CompiledPage(html, site.css(), List.of(), Map.of()));
   }
 
   public static RenderedPage of(CompiledPage compiled) {

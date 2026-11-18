@@ -24,6 +24,10 @@ import org.owasp.encoder.Encode;
 public final class ControlLowering {
   private static final Pattern ASCII_WHITESPACE = Pattern.compile("[\\t\\n\\f\\r ]+");
 
+  // The value property reflects the attribute in these modes, or cannot be set for file inputs.
+  private static final Set<String> NON_EDITABLE_VALUE_TYPES =
+      Set.of("hidden", "button", "submit", "reset", "image", "checkbox", "radio", "file");
+
   private ControlLowering() {}
 
   /// Uses the same character repertoire as serialized HTML, then undoes text escaping.
@@ -114,6 +118,24 @@ public final class ControlLowering {
         : type.toLowerCase(Locale.ROOT);
   }
 
+  /// Whether this element's value is user-edited state rather than a reflection of its `value`
+  /// attribute: a textarea, a single select, or an input in value mode other than file. Live value
+  /// bindings require it; an initial value only needs a settable `value` attribute.
+  public static boolean hasEditableValue(TagName tag, Map<String, String> attributes) {
+    return tag == HtmlTag.TEXTAREA
+        || (tag == HtmlTag.SELECT && !attributes.containsKey("multiple"))
+        || (tag == HtmlTag.INPUT && !NON_EDITABLE_VALUE_TYPES.contains(inputType(attributes)));
+  }
+
+  /// Whether options beneath this element can belong to an enclosing select's option list.
+  public static boolean mayContainOptions(TagName tag) {
+    return tag != HtmlTag.SELECT
+        && tag != HtmlTag.DATALIST
+        && tag != HtmlTag.HR
+        && tag != HtmlTag.TEMPLATE
+        && tag != HtmlTag.OPTION;
+  }
+
   /// Whether this element has a native checked property.
   public static boolean isCheckable(TagName tag, Map<String, String> attributes) {
     if (tag != HtmlTag.INPUT) {
@@ -194,7 +216,7 @@ public final class ControlLowering {
           appendOptionText(tag.children(), text);
           var raw = text.toString();
           var normalized = htmlText(raw);
-          value = ASCII_WHITESPACE.matcher(normalized).replaceAll(" ").replaceAll("\\A | \\z", "");
+          value = stripSpace(ASCII_WHITESPACE.matcher(normalized).replaceAll(" "));
           normalizeValue = !raw.equals(normalized);
         } else {
           value = htmlText(authored);
@@ -214,10 +236,7 @@ public final class ControlLowering {
         }
         return tag.withControlMarkup(attributes, tag.children(), tag.defaults());
       }
-      if (tag.tag() == HtmlTag.SELECT
-          || tag.tag() == HtmlTag.DATALIST
-          || tag.tag() == HtmlTag.HR
-          || tag.tag() == HtmlTag.TEMPLATE
+      if (!mayContainOptions(tag.tag())
           || (tag.tag() == HtmlTag.OPTGROUP && inOptgroup)
           || tag.children().isEmpty()) {
         return tag;
@@ -226,6 +245,13 @@ public final class ControlLowering {
           tag.attributes(),
           lower(tag.children(), inOptgroup || tag.tag() == HtmlTag.OPTGROUP),
           tag.defaults());
+    }
+
+    /// Removes the single leading and trailing space left by collapsing whitespace runs.
+    private static String stripSpace(String collapsed) {
+      var start = collapsed.startsWith(" ") ? 1 : 0;
+      var end = collapsed.endsWith(" ") ? collapsed.length() - 1 : collapsed.length();
+      return start >= end ? "" : collapsed.substring(start, end);
     }
 
     private void appendOptionText(List<Node<M>> children, StringBuilder text) {

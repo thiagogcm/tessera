@@ -57,6 +57,12 @@ class SearchPaletteTest {
     }
 
     @Test
+    @DisplayName("the dialog is the customized tessera-search element")
+    void dialogIsCustomized() {
+      assertThat(page.element("dialog[closedby=any]")).hasAttribute("is", "tessera-search");
+    }
+
+    @Test
     @DisplayName("the close button targets the dialog with a close command")
     void closeButtonClosesDialog() {
       var dialog = page.element("dialog[closedby=any]");
@@ -100,6 +106,16 @@ class SearchPaletteTest {
       assertThat(links.get(1).select(".palette-item-desc")).isEmpty();
       assertThat(links.get(2).select(".palette-item-badge").text()).isEqualTo("Action");
       assertThat(links.get(2).select(".palette-item-arrow")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("results and the no-results status have scoped ids")
+    void resultIds() {
+      assertThat(page.elements("a.palette-item"))
+          .extracting(link -> link.id())
+          .containsExactly(
+              "site-search--result-1", "site-search--result-2", "site-search--result-3");
+      assertThat(page.element(".palette-empty")).hasAttribute("id", "site-search--empty");
     }
   }
 }

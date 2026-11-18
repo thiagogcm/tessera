@@ -19,26 +19,21 @@ public final class WasmBundle {
   private static final Pattern NAME =
       Pattern.compile("[A-Za-z0-9_-][A-Za-z0-9_.-]*(/[A-Za-z0-9_-][A-Za-z0-9_.-]*)*");
 
-  /// Media types and file extensions supported by the browser entry protocol.
+  /// Resource kinds supported by the browser entry protocol, each published with its file
+  /// extension; the extension determines the served media type.
   public enum Kind {
-    LAUNCHER(".js", "text/javascript; charset=utf-8"),
-    WASM(".wasm", "application/wasm"),
-    DATA(".bin", "application/octet-stream");
+    LAUNCHER(".js"),
+    WASM(".wasm"),
+    DATA(".bin");
 
     private final String extension;
-    private final String mediaType;
 
-    Kind(String extension, String mediaType) {
+    Kind(String extension) {
       this.extension = extension;
-      this.mediaType = mediaType;
     }
 
     public String extension() {
       return extension;
-    }
-
-    public String mediaType() {
-      return mediaType;
     }
   }
 

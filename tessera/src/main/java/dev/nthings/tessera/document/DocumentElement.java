@@ -4,9 +4,10 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
-import dev.nthings.tessera.internal.authoring.DocumentHostData;
 import dev.nthings.tessera.internal.authoring.DocumentNode;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /// A portable host element whose children continue with document content. The host keeps its own
 /// attributes, styles and children; children added here follow them. Use it to place document
@@ -19,13 +20,15 @@ import java.util.Collection;
 public final class DocumentElement implements DocumentContent {
 
   static {
-    AuthoringAccess.registerDocumentHost(element -> element.data);
+    AuthoringAccess.registerDocumentHost(
+        element -> new DocumentNode.Host(element.host, element.children));
   }
 
-  private final DocumentHostData data;
+  private final TagElement host;
+  private final List<DocumentNode> children = new ArrayList<>();
 
   private DocumentElement(TagElement host) {
-    this.data = new DocumentHostData(host);
+    this.host = host;
   }
 
   /// Wraps `host`, whose attributes, styles and children are read when the page is expanded.
@@ -65,8 +68,8 @@ public final class DocumentElement implements DocumentContent {
   }
 
   private DocumentElement append(DocumentNode child) {
-    AuthoringAccess.tag(data.host).requireChildren();
-    data.children.add(child);
+    AuthoringAccess.tag(host).requireChildren();
+    children.add(child);
     return this;
   }
 }

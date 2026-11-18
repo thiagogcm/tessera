@@ -170,7 +170,7 @@ final class DocumentPass implements DocumentExpansion.Assembly {
     var entry = bundles.entry(mount.bundle());
     contributions.contributeBundle(bundles.bootstrap(), entry);
     var attributes = new LinkedHashMap<String, String>();
-    attributes.put("data-tessera-bundle", "");
+    attributes.put(BundlePublication.MOUNT_ATTRIBUTE, "");
     attributes.put("data-tessera-entry", entry.launcher().asset().path());
     attributes.put("data-tessera-integrity", entry.launcher().integrity());
     attributes.put("data-tessera-image", entry.image());

@@ -10,10 +10,6 @@ import java.util.Map;
 public record CompiledPage(
     String html, String css, List<Asset> assets, Map<String, String> responseHeaders) {
 
-  public CompiledPage(String html, String css, List<Asset> assets) {
-    this(html, css, assets, Map.of());
-  }
-
   public CompiledPage {
     assets = List.copyOf(assets);
     responseHeaders = Map.copyOf(responseHeaders);

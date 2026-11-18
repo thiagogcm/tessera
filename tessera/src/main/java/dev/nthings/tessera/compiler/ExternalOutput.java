@@ -2,6 +2,9 @@ package dev.nthings.tessera.compiler;
 
 /// [OutputMode#external(String)]; `base` has no trailing `/`, so the root base is empty.
 record ExternalOutput(String base) implements OutputMode {
+  /// The default site asset base, which inline output also uses for browser bundles.
+  static final String DEFAULT_BASE = "/assets";
+
   ExternalOutput {
     if (!base.startsWith("/") || base.contains("//") || base.contains("..")) {
       throw new IllegalArgumentException(

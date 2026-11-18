@@ -35,8 +35,7 @@ public final class EventsDemo {
       rearming = false;
       root.invalidate();
     }
-    var once =
-        LiveElement.of(Elements.button().attr("type", "button").attr("data-once", "").text("Once"));
+    var once = LiveElement.of(Elements.button().attr("data-once", "").text("Once"));
     if (bindOnce) {
       once.on("click", EventOptions.DEFAULT.withOnce(), _ -> log(root, "once " + ++onceCount));
     }
@@ -58,7 +57,7 @@ public final class EventsDemo {
                 .on("click", _ -> log(root, "bubble"))
                 .on("click capture", _ -> log(root, "custom"))
                 .child(
-                    LiveElement.of(Elements.button().attr("type", "button").text("Phase target"))
+                    LiveElement.of(Elements.button().text("Phase target"))
                         .on("click", event -> log(root, "target " + event.pointer().button()))))
         .children(
             Ui.button("Stop in capture", root.update(() -> stopInCapture = !stopInCapture)),
@@ -73,9 +72,9 @@ public final class EventsDemo {
                       var key = event.keyboard();
                       log(root, "key " + key.key() + " shift=" + key.shiftKey());
                     }),
-            LiveElement.of(Elements.button().attr("type", "button").text("Keyboard data on click"))
+            LiveElement.of(Elements.button().text("Keyboard data on click"))
                 .on("click", BrowserEvent::keyboard),
-            LiveElement.of(Elements.button().attr("type", "button").text("Open events dialog"))
+            LiveElement.of(Elements.button().text("Open events dialog"))
                 .on(
                     "click",
                     _ -> {
@@ -86,8 +85,7 @@ public final class EventsDemo {
             Elements.dialog()
                 .id(dialog)
                 .ariaLabel("Events dialog")
-                .child(
-                    Elements.button().attr("type", "button").boolAttr("autofocus").text("Dismiss")))
+                .child(Elements.button().boolAttr("autofocus").text("Dismiss")))
         .child(Ui.button("Clear events", root.update(log::clear)))
         .child(Elements.p().text(String.join(",", log)));
   }

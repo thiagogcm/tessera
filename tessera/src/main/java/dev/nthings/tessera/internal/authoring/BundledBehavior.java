@@ -1,26 +1,54 @@
 package dev.nthings.tessera.internal.authoring;
 
+import dev.nthings.tessera.core.CustomElement;
 import dev.nthings.tessera.document.PageScript;
+import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: the static behaviors bundled with the library's portable widgets, declared by
-/// the widget. Document output contributes the behavior's page script once per page; a browser root
-/// renders the structure without it, so the markup stays readable before and without the script.
-/// The set is closed: an application's own scripts belong to document content, through
+/// the widget on its host. Every backend emits the host as the custom element the behavior's script
+/// defines, and document output also contributes the script once per page. A browser root loads no
+/// scripts, so the element stays undefined and the widget keeps its readable fallback; a live
+/// adapter that supplies the behavior itself clears it from the host. The set is closed: an
+/// application's own scripts belong to document content, through
 /// `DocumentContext.contributeScript`.
 public enum BundledBehavior {
-  /// Panel selection and keyboard focus for `components.ContentTabs`.
-  TABS("tessera-tabs", "/dev/nthings/tessera/components/tessera-tabs.js"),
-  /// Result filtering and selection for `components.SearchPalette`.
-  SEARCH("tessera-search", "/dev/nthings/tessera/components/search-palette.js");
+  /// Panel selection and keyboard focus for `components.ContentTabs`, whose host becomes the
+  /// autonomous `tessera-tabs` element.
+  TABS("tessera-tabs", "/dev/nthings/tessera/components/tessera-tabs.js", false),
+  /// Result filtering and selection for `components.SearchPalette`, whose host `<dialog>` becomes
+  /// the customized built-in `is="tessera-search"`.
+  SEARCH("tessera-search", "/dev/nthings/tessera/components/search-palette.js", true);
 
-  private final PageScript script;
+  private final CustomElement element;
+  private final String resource;
+  private final boolean builtIn;
+  // Loaded on first use: only documents need the script, and a browser image does not bundle it.
+  private volatile @Nullable PageScript script;
 
-  BundledBehavior(String id, String resource) {
-    this.script = PageScript.fromResource(id, BundledBehavior.class, resource);
+  BundledBehavior(String element, String resource, boolean builtIn) {
+    this.element = new CustomElement(element);
+    this.resource = resource;
+    this.builtIn = builtIn;
   }
 
   /// The page script a document contributes for this behavior.
   public PageScript script() {
-    return script;
+    var loaded = script;
+    if (loaded == null) {
+      loaded = PageScript.fromResource(element.tagName(), BundledBehavior.class, resource);
+      script = loaded;
+    }
+    return loaded;
+  }
+
+  /// The custom element the script defines.
+  public CustomElement element() {
+    return element;
+  }
+
+  /// Whether the script customizes the host's built-in element through its `is` attribute, rather
+  /// than replacing the host's tag with [#element()].
+  public boolean customizesBuiltIn() {
+    return builtIn;
   }
 }

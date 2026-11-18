@@ -16,8 +16,8 @@ import org.jspecify.annotations.Nullable;
 /// class initialization, before an instance can be passed here.
 public final class AuthoringAccess {
   private static @Nullable Function<TagElement, TagData> tags;
-  private static @Nullable Function<FragmentElement, FragmentData> fragments;
-  private static @Nullable Function<DocumentElement, DocumentHostData> documentHosts;
+  private static @Nullable Function<FragmentElement, List<Element>> fragments;
+  private static @Nullable Function<DocumentElement, DocumentNode.Host> documentHosts;
 
   private static @Nullable Function<ElementRef, Ref> references;
   private static @Nullable StateAccess state;
@@ -54,20 +54,19 @@ public final class AuthoringAccess {
     return Objects.requireNonNull(tags).apply(element);
   }
 
-  public static void registerFragment(Function<FragmentElement, FragmentData> accessor) {
+  public static void registerFragment(Function<FragmentElement, List<Element>> accessor) {
     fragments = accessor;
   }
 
   public static List<Element> fragment(FragmentElement element) {
-    return Objects.requireNonNull(fragments).apply(element).children;
+    return Objects.requireNonNull(fragments).apply(element);
   }
 
-  public static void registerDocumentHost(Function<DocumentElement, DocumentHostData> accessor) {
+  public static void registerDocumentHost(Function<DocumentElement, DocumentNode.Host> accessor) {
     documentHosts = accessor;
   }
 
   public static DocumentNode.Host documentHost(DocumentElement element) {
-    var data = Objects.requireNonNull(documentHosts).apply(element);
-    return new DocumentNode.Host(data.host, data.children);
+    return Objects.requireNonNull(documentHosts).apply(element);
   }
 }

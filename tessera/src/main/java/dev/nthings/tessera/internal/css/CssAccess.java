@@ -17,7 +17,14 @@ public abstract class CssAccess {
 
   protected CssAccess() {}
 
-  public record Rule(String key, String css) {}
+  /// A class rule keyed by its content hash; `prelude` wraps it in a condition when not empty. The
+  /// text is built only by [#css()], so a rule already registered under `key` costs no string.
+  public record Rule(String key, String prelude, String body) {
+    public String css() {
+      var rule = "." + key + "{" + body + "}";
+      return prelude.isEmpty() ? rule : prelude + "{" + rule + "}";
+    }
+  }
 
   public record ElementRules(
       @Nullable Rule interactive, List<Rule> containers, List<Keyframes> keyframes) {

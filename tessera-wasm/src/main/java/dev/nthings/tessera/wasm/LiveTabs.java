@@ -2,6 +2,7 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.TabsParts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,10 +14,6 @@ import org.jspecify.annotations.Nullable;
 /// Adaptive tabs with retained selection and focus. Give the portable tabs an explicit scope id so
 /// their keyed tabs and panels keep their identity across edits.
 public final class LiveTabs implements LiveComponent {
-  private static final String TAB = "[role=tab]";
-  private static final String TABS = ":scope > [role=tablist] > " + TAB;
-  private static final String PANELS = ":scope > [role=tabpanel]";
-
   private final ContentTabs tabs;
   private boolean controlled;
   private @Nullable String selected;
@@ -48,16 +45,20 @@ public final class LiveTabs implements LiveComponent {
 
   @Override
   public LiveContent expand(LiveContext context) {
-    var binding = new Binding(controlled, selected, request);
+    var controlled = this.controlled;
+    var selection = selected;
+    var request = this.request;
     return new WidgetScope(
         WidgetAccess.scope(tabs),
-        scope ->
-            LiveElement.of(
-                    WidgetAccess.tabs(tabs, scope, binding.controlled(), binding.selection()))
-                .widget(binding));
+        scope -> {
+          var parts = WidgetAccess.tabs(tabs, scope, controlled, selection);
+          return LiveElement.of(parts.host())
+              .widget(new Binding(parts, controlled, selection, request));
+        });
   }
 
-  private record Binding(boolean controlled, @Nullable String selection, Consumer<String> request)
+  private record Binding(
+      TabsParts parts, boolean controlled, @Nullable String selection, Consumer<String> request)
       implements WidgetBinding {
     @Override
     public WidgetController create(JSObject node, BrowserRoot root) {
@@ -65,7 +66,7 @@ public final class LiveTabs implements LiveComponent {
     }
   }
 
-  private record Tab(String key, JSObject button, JSObject panel, boolean enabled) {}
+  private record Tab(String key, boolean enabled, JSObject button, JSObject panel) {}
 
   private static final class Controller extends WidgetController {
     private Binding binding;
@@ -73,90 +74,100 @@ public final class LiveTabs implements LiveComponent {
     private @Nullable String selected;
     private @Nullable String roving;
     private @Nullable Tab focusedBeforePatch;
-    private boolean initialized;
+    // The selection and tab stop the DOM shows. A changed model may have rewritten the rendered
+    // attributes of any tab, so `stale` makes the next apply write every tab.
+    private @Nullable String shownSelected;
+    private @Nullable String shownRoving;
+    private boolean stale = true;
 
     Controller(JSObject node, BrowserRoot root, Binding binding) {
       super(node, root);
       this.binding = binding;
+      selected = binding.parts().selected();
+      listen(node, "click", this::click);
+      listen(node, "keydown", this::navigate);
+      listen(
+          node,
+          "focusout",
+          event -> {
+            if (tabOf(WidgetDom.related(event)) == null) {
+              roving = selected;
+              apply();
+            }
+          });
     }
 
     @Override
     void beforePatch() {
-      var active = Dom.activeElement();
-      focusedBeforePatch =
-          tabs.stream()
-              .filter(tab -> WidgetDom.same(tab.button(), active))
-              .findFirst()
-              .orElse(null);
+      focusedBeforePatch = focusedItem(tabs, Tab::button);
     }
 
     @Override
     void update(WidgetBinding next) {
-      binding = (Binding) next;
+      var parts = ((Binding) next).parts();
       var previous = tabs;
-      var buttons = WidgetDom.children(node, TABS);
-      var panels = WidgetDom.children(node, PANELS);
-      var current = new ArrayList<Tab>(buttons.size());
-      for (var index = 0; index < buttons.size(); index++) {
-        var button = buttons.get(index);
-        current.add(
-            new Tab(
-                WidgetDom.attribute(button, "data-tab-key"),
-                button,
-                panels.get(index),
-                !Dom.flag(button, "disabled")));
+      if (stale || changed(parts)) {
+        var current = new ArrayList<Tab>(parts.tabs().size());
+        for (var tab : parts.tabs()) {
+          current.add(
+              new Tab(
+                  tab.key(), tab.enabled(), root.resolve(tab.tab()), root.resolve(tab.panel())));
+        }
+        tabs = current;
+        stale = true;
       }
-      tabs = current;
+      binding = (Binding) next;
       if (binding.controlled()) {
         selected = binding.selection();
-      } else if (!initialized) {
-        selected =
-            tabs.stream()
-                .filter(tab -> WidgetDom.attribute(tab.button(), "aria-selected").equals("true"))
-                .map(Tab::key)
-                .findFirst()
-                .orElse(null);
       } else if (!enabled(selected)) {
         selected = fallback(previous, selected);
       }
-      if (!initialized) {
-        initialized = true;
-        listen(node, "click", this::click);
-        listen(node, "keydown", this::navigate);
-        listen(
-            node,
-            "focusout",
-            event -> {
-              var target = WidgetDom.related(event);
-              if (tabs.stream().noneMatch(tab -> WidgetDom.same(tab.button(), target))) {
-                roving = selected;
-                apply();
-              }
-            });
-      }
 
-      var before = focusedBeforePatch;
+      var before = focusToRestore(focusedBeforePatch, Tab::button);
       focusedBeforePatch = null;
-      var active = Dom.activeElement();
-      var focusKey =
-          before != null && (WidgetDom.same(before.button(), active) || WidgetDom.noFocus(active))
-              ? before.key()
-              : null;
       roving = selected;
-      if (focusKey != null) {
-        roving = enabled(focusKey) ? focusKey : fallback(previous, focusKey);
+      if (before != null) {
+        roving = enabled(before.key()) ? before.key() : fallback(previous, before.key());
       }
       apply();
-      if (focusKey != null) {
+      if (before != null) {
         var tab = tab(roving);
-        if (tab != null && !Dom.isActiveElement(tab.button())) {
-          Dom.focus(tab.button());
+        if (tab != null) {
+          WidgetDom.focus(tab.button());
         }
       }
     }
 
+    /// Whether `parts` differ from the tabs of the previous binding. Equal parts render the same
+    /// keyed elements with the same attributes, so the patch left them as [#apply] wrote them; a
+    /// changed rendered selection means the patch rewrote the selection attributes.
+    private boolean changed(TabsParts parts) {
+      if (!Objects.equals(parts.selected(), binding.parts().selected())
+          || parts.tabs().size() != tabs.size()) {
+        return true;
+      }
+      for (var index = 0; index < tabs.size(); index++) {
+        var tab = tabs.get(index);
+        var rendered = parts.tabs().get(index);
+        if (!tab.key().equals(rendered.key()) || tab.enabled() != rendered.enabled()) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     private @Nullable Tab tab(@Nullable String key) {
       return tabs.stream().filter(tab -> tab.key().equals(key)).findFirst().orElse(null);
+    }
+
+    private @Nullable Tab tabOf(@Nullable JSObject button) {
+      if (button == null) {
+        return null;
+      }
+      return tabs.stream()
+          .filter(tab -> WidgetDom.same(tab.button(), button))
+          .findFirst()
+          .orElse(null);
     }
 
     private boolean enabled(@Nullable String key) {
@@ -212,11 +223,8 @@ public final class LiveTabs implements LiveComponent {
     }
 
     private @Nullable Tab eventTab(JSObject event) {
-      var button = WidgetDom.closest(event, TAB);
-      return tabs.stream()
-          .filter(tab -> tab.enabled() && WidgetDom.same(tab.button(), button))
-          .findFirst()
-          .orElse(null);
+      var tab = tabOf(WidgetDom.closest(event, "[role=tab]"));
+      return tab != null && tab.enabled() ? tab : null;
     }
 
     private void navigate(JSObject event) {
@@ -247,37 +255,47 @@ public final class LiveTabs implements LiveComponent {
       var target = enabled.get(next);
       roving = target.key();
       Dom.focus(target.button());
-      if (!WidgetDom.attribute(node, "data-activation").equals("manual")) {
-        select(target);
-      } else {
+      if (binding.parts().manual()) {
         apply();
+      } else {
+        select(target);
       }
     }
 
     private void select(Tab tab) {
       roving = tab.key();
-      if (!Objects.equals(selected, tab.key())) {
-        if (!binding.controlled()) {
-          selected = tab.key();
-        }
-        apply();
-        try {
-          binding.request().accept(tab.key());
-        } finally {
-          root.invalidate();
-        }
-      } else {
-        apply();
+      var changed = !Objects.equals(selected, tab.key());
+      if (changed && !binding.controlled()) {
+        selected = tab.key();
+      }
+      apply();
+      if (changed) {
+        notifyApplication(() -> binding.request().accept(tab.key()));
       }
     }
 
+    /// Shows the selection and tab stop, writing only the tabs whose state changed.
     private void apply() {
-      for (var tab : tabs) {
-        var active = tab.key().equals(selected);
-        Dom.attribute(tab.button(), "aria-selected", Boolean.toString(active));
-        Dom.attribute(tab.button(), "tabindex", tab.key().equals(roving) ? "0" : "-1");
-        WidgetDom.hidden(tab.panel(), !active);
+      if (!stale
+          && Objects.equals(shownSelected, selected)
+          && Objects.equals(shownRoving, roving)) {
+        return;
       }
+      for (var tab : tabs) {
+        var key = tab.key();
+        var active = key.equals(selected);
+        if (stale || active != key.equals(shownSelected)) {
+          Dom.attribute(tab.button(), "aria-selected", Boolean.toString(active));
+          WidgetDom.hidden(tab.panel(), !active);
+        }
+        var stop = key.equals(roving);
+        if (stale || stop != key.equals(shownRoving)) {
+          Dom.attribute(tab.button(), "tabindex", stop ? "0" : "-1");
+        }
+      }
+      shownSelected = selected;
+      shownRoving = roving;
+      stale = false;
     }
   }
 }

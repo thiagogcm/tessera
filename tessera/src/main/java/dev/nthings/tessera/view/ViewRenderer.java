@@ -7,7 +7,6 @@ import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewException;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.foundation.Fnv1a64;
-import dev.nthings.tessera.internal.authoring.ClassNames;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -130,7 +129,6 @@ public final class ViewRenderer {
     private Placement<M> placement(LiveNode.ComponentPlacement<M> component) {
       return new Placement<>(
           component.type(),
-          ClassNames.componentName(component.type()),
           component.source(),
           child ->
               expandLive(
@@ -140,7 +138,7 @@ public final class ViewRenderer {
     }
 
     @Override
-    Map<String, String> liveDeclarations(Declarations live, Declarations into, StyleSheet styles) {
+    Map<String, String> liveDeclarations(Declarations live, Declarations into) {
       var values = new LinkedHashMap<String, String>();
       styles.registerLive(live, values, into);
       return values;

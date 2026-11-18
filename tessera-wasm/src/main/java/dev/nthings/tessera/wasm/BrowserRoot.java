@@ -153,8 +153,7 @@ public final class BrowserRoot implements AutoCloseable {
   /// The committed element bound to `ref`, found within this root's host.
   JSObject resolve(ElementRef ref) {
     requireOpen();
-    var id = committedReferences.get(ref);
-    var node = id == null ? null : Dom.find(hostElement, id);
+    var node = findReference(ref);
     if (node == null) {
       throw new IllegalStateException(
           ref
@@ -165,6 +164,12 @@ public final class BrowserRoot implements AutoCloseable {
               + " it to the component that binds it on every render.");
     }
     return node;
+  }
+
+  /// Finds a committed reference when its target is optional.
+  @Nullable JSObject findReference(ElementRef ref) {
+    var id = committedReferences.get(ref);
+    return id == null ? null : Dom.find(hostElement, id);
   }
 
   /// Queues `task` for after the next committed render and requests that render; returns the
@@ -278,6 +283,7 @@ public final class BrowserRoot implements AutoCloseable {
               committedIds = snapshot.ids();
             });
         renderer.retire();
+        renderer.updateWidgets(this);
         renderer.activate();
         runAfterRender();
       } catch (ClosedRoot _) {

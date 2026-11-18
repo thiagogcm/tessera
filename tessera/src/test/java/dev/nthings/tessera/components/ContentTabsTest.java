@@ -11,6 +11,7 @@ import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.PageTree;
+import dev.nthings.tessera.components.ContentTabs.Activation;
 import java.util.List;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayName;
@@ -65,6 +66,32 @@ class ContentTabsTest {
                             .id("encoded")
                             .tab("one", "Left & right", p().text("x")))));
     assertThat(encoded.html()).contains("aria-label=\"A &amp; B\"").contains("Left &amp; right");
+  }
+
+  @Test
+  @DisplayName("static tabs expose an explicit selection and manual activation")
+  void explicitSelectionAndActivation() {
+    var tabs =
+        ContentTabs.of("Stages")
+            .id("stages")
+            .activation(Activation.MANUAL)
+            .disabledTab("java", "Java", p().text("Builders"))
+            .tab("html", "HTML", p().text("Markup"))
+            .tab("css", "CSS", p().text("Styles"))
+            .initialSelected("css");
+    var tree = Compiler.explain(new PageDocument("Tabs", main().child(tabs)));
+    assertThat(findAttribute(tree, "data-scope-id", "stages").attributes())
+        .containsEntry("data-activation", "manual");
+    assertThat(find(tree, "stages--tab-java").attributes())
+        .containsEntry("disabled", "")
+        .containsEntry("aria-disabled", "true")
+        .containsEntry("tabindex", "-1");
+    assertThat(find(tree, "stages--tab-css").attributes()).containsEntry("aria-selected", "true");
+
+    tabs.initialSelected("java");
+    assertThatExceptionOfType(CompilationException.class)
+        .isThrownBy(() -> Compiler.explain(new PageDocument("Tabs", main().child(tabs))))
+        .withMessageContaining("tab-selection");
   }
 
   @Test

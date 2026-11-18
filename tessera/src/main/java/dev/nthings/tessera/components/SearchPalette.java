@@ -35,6 +35,7 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.internal.components.Icons;
+import dev.nthings.tessera.view.WidgetAccess;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,6 +50,10 @@ import org.jspecify.annotations.Nullable;
 /// The dialog and input ids are prefixed with its [#id(String)], as in `<id>--dialog`. Without an
 /// id, the compiler numbers instances `search-palette-<n>`.
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
+
+  static {
+    WidgetAccess.registerSearch((palette, _) -> palette.render(true));
+  }
 
   /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is
   /// immutable: [#description(String)] and [#badge(String)] return a new one.
@@ -189,7 +194,10 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   @Override
   TagElement expand(ViewContext context) {
+    return render(false);
+  }
 
+  private TagElement render(boolean live) {
     var headerEl =
         Elements.search()
             .attr("class", "palette-header")
@@ -274,13 +282,15 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     var root =
         Elements.dialog()
             .id(dialog)
-            .attr("is", "tessera-search")
             .closedBy(ClosedBy.ANY)
             .ariaLabel("Quick open command palette")
             .child(headerEl)
             .child(resultsContainer)
             .child(footerEl);
-    AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    if (!live) {
+      root.attr("is", "tessera-search");
+      AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    }
     return root;
   }
 

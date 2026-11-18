@@ -19,7 +19,7 @@ Check the rendered result in both supported engines when relying on these featur
 
 ## Component scripts
 
-Built-in portable widgets declare their bundled module, and static output contributes it; document components contribute other modules through `DocumentContext`. A page without script contributions receives no component script. Modules are deduplicated per page and packaged according to the [output mode](sites.md#choose-an-output-mode). A [browser root](browser-rendering.md) loads none of these modules: tabs show every panel, and tooltips rely on the native interest invoker where the engine has one.
+Built-in portable widgets declare their bundled module, and static output contributes it; document components contribute other modules through `DocumentContext`. A page without script contributions receives no component script. Modules are deduplicated per page and packaged according to the [output mode](sites.md#choose-an-output-mode). Browser roots load no component modules. The [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) provide interactions in browser roots while sharing the portable markup and styles.
 
 | Component | Module responsibility |
 | --- | --- |

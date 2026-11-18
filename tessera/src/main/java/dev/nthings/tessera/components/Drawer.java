@@ -34,6 +34,7 @@ public final class Drawer extends DialogView<Drawer> {
   }
 
   private Side side = Side.INLINE_END;
+  private boolean opened;
 
   private Drawer(String title) {
     super(title);
@@ -48,6 +49,12 @@ public final class Drawer extends DialogView<Drawer> {
   /// Sets the edge the drawer docks to. The default is `INLINE_END`.
   public Drawer side(Side side) {
     this.side = side;
+    return this;
+  }
+
+  /// Starts visible as a non-modal drawer.
+  public Drawer opened() {
+    opened = true;
     return this;
   }
 
@@ -153,6 +160,7 @@ public final class Drawer extends DialogView<Drawer> {
     contentEl.children(body);
 
     return dialogShell(titleRef)
+        .onlyIf(opened, el -> el.boolAttr("open"))
         .child(div().flex().flexCol().blockSize(CssLength.pct(100)).children(headerEl, contentEl));
   }
 }

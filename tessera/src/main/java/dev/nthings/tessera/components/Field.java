@@ -16,6 +16,9 @@ import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.view.WidgetAccess.FieldParts;
+import java.util.ArrayList;
 import org.jspecify.annotations.Nullable;
 
 /// Labelled container for a form control: a visible `<label>` that names the control, optional hint
@@ -27,6 +30,13 @@ import org.jspecify.annotations.Nullable;
 /// numbers instances `form-field-<n>`.
 public final class Field extends BuiltinScope<Field> {
 
+  static {
+    WidgetAccess.registerField(Field::parts);
+  }
+
+  /// Application-supplied validity. An invalid control may have a visible error message.
+  public record Validation(boolean invalid, @Nullable String message) {}
+
   private final String label;
 
   /// The control to render: the bare control from [#of(String, TagElement)], or the `<select>` from
@@ -37,6 +47,7 @@ public final class Field extends BuiltinScope<Field> {
   private @Nullable String hint;
   private @Nullable String error;
   private @Nullable String tooltip;
+  private @Nullable Validation validation;
 
   private Field(String label, TagElement control, @Nullable Select select) {
     this.label = label;
@@ -68,6 +79,12 @@ public final class Field extends BuiltinScope<Field> {
     return this;
   }
 
+  /// Sets explicit validity, overriding the browser-driven error configured with [#error(String)].
+  public Field validation(Validation validation) {
+    this.validation = validation;
+    return this;
+  }
+
   /// Sets a tooltip anchored above the control while it is hovered or focused. The tooltip is
   /// visual only: the control does not reference it, so assistive technology does not read it.
   public Field tooltip(String tooltip) {
@@ -87,18 +104,30 @@ public final class Field extends BuiltinScope<Field> {
 
   @Override
   TagElement expand(ViewContext context) {
-    var wrapper = select;
+    var parts = parts(null);
+    var host = parts.host();
+    parts.before().forEach(host::child);
+    var scope = parts.controlScope();
+    host.child(scope != null ? scope : parts.control());
+    parts.after().forEach(host::child);
+    return host;
+  }
+
+  private FieldParts parts(@Nullable Validation override) {
+    var state = override == null ? validation : override;
     var control = this.control.copy();
     var ctrl = control.ref();
 
     var container = div().attr("class", "field-container");
+    var before = new ArrayList<TagElement>();
+    var after = new ArrayList<TagElement>();
 
     var labelEl = Elements.label().labelFor(ctrl).attr("class", "field-label").text(label);
-    container.child(labelEl);
+    before.add(labelEl);
 
     if (hint != null) {
       var hintRef = ElementRef.scoped("hint");
-      container.child(span().id(hintRef).attr("class", "field-hint").text(hint));
+      before.add(span().id(hintRef).attr("class", "field-hint").text(hint));
       control.ariaDescribedBy(hintRef);
     }
 
@@ -106,19 +135,22 @@ public final class Field extends BuiltinScope<Field> {
       control.anchorName();
     }
 
-    container.child(wrapper != null ? wrapper.around(control) : control);
+    if (state != null) {
+      control.ariaInvalid(state.invalid());
+    }
 
     // Follows the control so adjacent-sibling selectors can style it.
-    if (error != null) {
+    var message = state == null ? error : state.invalid() ? state.message() : null;
+    if (message != null) {
       var errorRef = ElementRef.scoped("error");
       control.ariaErrorMessage(errorRef);
       var errEl =
           div()
               .id(errorRef)
-              .attr("class", "field-error")
+              .attr("class", state == null ? "field-error" : "field-error field-explicit-error")
               .child(span().ariaHidden(true).text("⚠ "))
-              .child(span().text(error));
-      container.child(errEl);
+              .child(span().text(message));
+      after.add(errEl);
     }
 
     if (tooltip != null) {
@@ -132,10 +164,15 @@ public final class Field extends BuiltinScope<Field> {
                   PositionTry.flip(PositionTry.Flip.BLOCK),
                   PositionTry.flip(PositionTry.Flip.INLINE))
               .text(tooltip);
-      container.child(tooltipEl);
+      after.add(tooltipEl);
     }
 
-    return container;
+    return new FieldParts(
+        container,
+        before,
+        control,
+        select == null ? null : WidgetAccess.scope(select.around(control)),
+        after);
   }
 
   @Override
@@ -156,10 +193,13 @@ public final class Field extends BuiltinScope<Field> {
                     .itemsCenter()
                     .gap(Tokens.SPACE_1))
         .select(
-            ":scope:has(:user-invalid) .field-error, :scope :user-invalid + .field-error",
-            s -> s.flex())
-        .select(":scope:has(:user-invalid) .field-label", s -> s.textColor(Tokens.STATUS_DANGER))
-        .select(":scope:has(:user-valid) .field-label", s -> s.textColor(Tokens.STATUS_SUCCESS))
+            ":scope .field-explicit-error, :scope:has(:user-invalid) .field-error", s -> s.flex())
+        .select(
+            ":scope:has(:user-invalid:not([aria-invalid]), [aria-invalid=true]) .field-label",
+            s -> s.textColor(Tokens.STATUS_DANGER))
+        .select(
+            ":scope:has(:user-valid:not([aria-invalid])) .field-label",
+            s -> s.textColor(Tokens.STATUS_SUCCESS))
         .select(
             ":scope .field-anchor-tooltip",
             s ->

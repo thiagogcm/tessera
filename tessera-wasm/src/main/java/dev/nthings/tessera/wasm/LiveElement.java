@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 
 /// A portable host element with live behavior: Java event handlers, controlled form properties and
 /// live children. Wrapping does not change the portable element, which stays valid for static
@@ -25,6 +26,7 @@ public final class LiveElement implements LiveContent {
   private final TagElement host;
   private final Map<EventListener.Key, EventListener> events = new LinkedHashMap<>();
   private ControlProperties controls = ControlProperties.UNCONTROLLED;
+  private @Nullable WidgetBinding widget;
   private final List<LiveNode<LiveBehavior>> children = new ArrayList<>();
 
   private LiveElement(TagElement host) {
@@ -152,7 +154,12 @@ public final class LiveElement implements LiveContent {
     return this;
   }
 
+  LiveElement widget(WidgetBinding binding) {
+    widget = binding;
+    return this;
+  }
+
   LiveNode.Host<LiveBehavior> capture() {
-    return new LiveNode.Host<>(host, children, new LiveBehavior.Bindings(events, controls));
+    return new LiveNode.Host<>(host, children, new LiveBehavior.Bindings(events, controls, widget));
   }
 }

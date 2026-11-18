@@ -59,6 +59,14 @@ Exceptions thrown by application expansion, styling, late, or document-end callb
 
 Use [portable defaults](consumer-guide.md#set-form-defaults) for initial values and [live bindings](browser-rendering.md#bind-form-values) for application state.
 
+## Widget state rules
+
+| Rule | Reported when |
+| --- | --- |
+| `tab-selection` | A static initial selection or live bound selection names an absent or disabled tab, or a live binding is empty while an enabled tab exists |
+
+A browser root keeps its last committed tabs when a candidate has an invalid bound selection. See [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) for updating selection alongside the tab list.
+
 ## Accessibility rules
 
 Use [typed roles and states](consumer-guide.md#declare-roles-and-states) to declare semantics. Role-specific checks apply to explicitly declared roles; native semantics are checked where the compiler recognizes them.

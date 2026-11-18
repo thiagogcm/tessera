@@ -86,6 +86,8 @@ A commit owns what it acquires. It registers each instance it creates before tha
 
 ## Embedded styles
 
+Built-in live widget hosts carry their configuration in the linked snapshot. The reconciler retains the controller with its DOM host, captures any required focus before patching, and updates the controller after publishing the new references and retiring replaced ranges. Removing a widget releases its native listeners and any associated timers or open surfaces.
+
 `EmbeddedStyles.baseRules(theme)` emits the reset and base rules under the `data-tessera-root` host and the token values under a content-addressed `data-tessera-theme` key (`EmbeddedStyles.themeKey(theme)`); a root acquires them once at mount, after `StyleSheet.LAYER_ORDER`. Each render's `embeddedRules()` emits one self-contained rule per entry: the same component, utility, interactive and container rules as static output, so only those are diffed between commits. Static and embedded output are written from one source of registered rules, and the reset and base rules take the root they apply beneath. Each embedded rule carries a short key (its `u-`, `i-` or `cq-` class, its `data-scope` selector, or its property name), so a root keeps the rule text it built per key and compares renders by key, wrapping and hashing only rules it does not hold yet. Mounting never restyles `:root`, `body` or the rest of the host page, and document navigation transitions are omitted.
 
 Roots within one compiled entry share a constructed stylesheet adopted into the document. The stylesheet needs no inline `<style>` element and is exercised under `style-src 'self'`. This establishes stylesheet behavior, not the complete proposed deployment policy.

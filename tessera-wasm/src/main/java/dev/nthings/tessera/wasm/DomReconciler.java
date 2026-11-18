@@ -61,6 +61,9 @@ final class DomReconciler {
   /// Effects the active commit placed; started by [#activate] while the root remains open.
   private final List<Mounted> starting = new ArrayList<>();
 
+  private List<Mounted> widgets = List.of();
+  private final List<Mounted> widgetUpdates = new ArrayList<>();
+
   /// Native state of bindings already on the DOM, read before any sibling mutates their values.
   private final Map<Mounted, JSObject> previousControls = new IdentityHashMap<>();
 
@@ -98,6 +101,14 @@ final class DomReconciler {
     retiring.clear();
     previousControls.clear();
     controlUpdates.clear();
+    widgetUpdates.clear();
+    for (var instance : widgets) {
+      requireOpen();
+      var controller = instance.widget;
+      if (controller != null) {
+        controller.beforePatch();
+      }
+    }
     for (var control : boundControls) {
       requireOpen();
       previousControls.put(control, Dom.captureControl(control.first));
@@ -151,6 +162,35 @@ final class DomReconciler {
     disposalFailures.clear();
   }
 
+  /// Applies browser-owned state once the tree and references are visible.
+  void updateWidgets(BrowserRoot root) {
+    var pending = List.copyOf(widgetUpdates);
+    widgetUpdates.clear();
+    var retained = new ArrayList<Mounted>();
+    for (var instance : pending) {
+      requireOpen();
+      var tag = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
+      var binding = LiveBehavior.bindings(tag).widget();
+      var controller = instance.widget;
+      if (controller != null && (binding == null || instance.widgetKind != binding.getClass())) {
+        instance.widget = null;
+        controller.close();
+        controller = null;
+      }
+      if (binding != null) {
+        if (controller == null) {
+          controller = binding.create(instance.first, root);
+          instance.widget = controller;
+          instance.widgetKind = binding.getClass();
+        }
+        controller.update(binding);
+        retained.add(instance);
+      }
+    }
+    requireOpen();
+    widgets = List.copyOf(retained);
+  }
+
   /// Starts the effects the last commit placed, in document order, while the root remains open. A
   /// start that closes the root stops the batch: no later effect starts. Start failures are
   /// collected and reported without closing the root.
@@ -184,6 +224,7 @@ final class DomReconciler {
     retiring.clear();
     previousControls.clear();
     controlUpdates.clear();
+    widgetUpdates.clear();
   }
 
   private void report(String what, List<RuntimeException> failures) {
@@ -210,6 +251,8 @@ final class DomReconciler {
     previousControls.clear();
     boundControls = List.of();
     controlUpdates.clear();
+    widgets = List.of();
+    widgetUpdates.clear();
     if (mounted) {
       Dom.closeTransient(host);
       Dom.clear(host);
@@ -227,6 +270,11 @@ final class DomReconciler {
     var lifetime = instance.lifetime;
     if (lifetime != null) {
       lifetime.dispose(failures);
+    }
+    var widget = instance.widget;
+    instance.widget = null;
+    if (widget != null) {
+      Failures.attempt(failures, widget::close);
     }
     instance.events.values().forEach(binding -> Dom.release(binding.cleanup));
     instance.events = Map.of();
@@ -424,6 +472,9 @@ final class DomReconciler {
                 null,
                 retainOptionDefaults && isOptionContainer(tag.tag()));
         Dom.insert(parent, node, before);
+        if (bindings.widget() != null) {
+          widgetUpdates.add(instance);
+        }
         if (bindings.controls().isControlled()) {
           controlUpdates.add(new ControlUpdate(instance, bindings.controls(), null, false, false));
         }
@@ -483,6 +534,9 @@ final class DomReconciler {
     var defaults = instance.keepDefaults(tag.defaults());
     var node = instance.first;
     var bindings = LiveBehavior.bindings(tag);
+    if (bindings.widget() != null || instance.widget != null) {
+      widgetUpdates.add(instance);
+    }
     var preserveText = defaults.text() && !hadTextDefault && !instance.children.isEmpty();
     queueRetainedControl(instance, previous, tag, defaults, bindings.controls(), preserveText);
 
@@ -718,6 +772,8 @@ final class DomReconciler {
     private List<JSObject> composition = List.of();
     private boolean composing;
     private @Nullable LifetimeScope lifetime;
+    private @Nullable WidgetController widget;
+    private @Nullable Class<?> widgetKind;
 
     /// Set when this instance's resources are released, so each releases once.
     private boolean released;

@@ -151,7 +151,6 @@ These constraints affect current use and define the work that remains. They are 
 
 | Boundary | Current limitation | Required work |
 | --- | --- | --- |
-| Widget behavior in browser roots | Portable widgets with static behavior scripts, such as `ContentTabs` and the interest-tooltip fallback, render their structure without that behavior | [F1: Adaptive widgets](roadmap.md#feature-delivery-after-the-refactor) |
 | Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#feature-delivery-after-the-refactor) |
 
 Each mount host's ID is reserved: a child claiming it is rejected before publication.

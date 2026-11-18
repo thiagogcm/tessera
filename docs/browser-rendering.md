@@ -2,7 +2,7 @@
 
 The opt-in `tessera-wasm` module mounts the same components in a page as Java compiled to WebAssembly with GraalVM Web Image. A mounted view re-renders from application state, and the backend reconciles the native DOM so focus, selection and form values survive updates. The separate `tessera-wasm-showcase` module builds the runnable images and runs browser acceptance. The [roadmap](roadmap.md) describes planned capability and module boundaries.
 
-A browser root renders `LiveContent`: portable content plus the live-only features below. Portable components expand exactly as the compiler expands them and receive the same portable `ViewContext`. Live content cannot be placed in portable or document content, and document content (raw HTML, deferred and late content, document components) cannot be placed in a root; both mistakes are compile errors. Expansion state from `context.state(key)` lasts one attempted render. A root loads no page scripts, so portable widgets with a bundled script, such as `ContentTabs` or the interest-tooltip fallback, render their structure without it.
+A browser root renders `LiveContent`: portable content plus the live-only features below. Portable components expand exactly as the compiler expands them and receive the same portable `ViewContext`. Live content cannot be placed in portable or document content, and document content (raw HTML, deferred and late content, document components) cannot be placed in a root; both mistakes are compile errors. Expansion state from `context.state(key)` lasts one attempted render. A root loads no page scripts. Use the [adaptive widget adapters](#adapt-portable-widgets) for the built-in browser interactions.
 
 Import live contracts, `BrowserEvent`, `EventOptions`, `Effect`, and `Lifetime` from `dev.nthings.tessera.wasm`. A named Java application can use `requires dev.nthings.tessera.wasm;` in its module descriptor. This also makes the shared authoring packages available. The showcase's Web Image build uses the classpath.
 
@@ -21,7 +21,7 @@ jwebserver -b 127.0.0.1 -p 8000 -d tessera-wasm-showcase/target/web
 just wasm-verify
 ```
 
-Install the Playwright browsers with `just browsers` before verification. The acceptance suite serves the compiled distribution and exercises root lifetimes, events, controls, identity, styling, and scheduling. See [runtime internals](browser-internals.md) for the implementation contracts.
+Install the Playwright browsers with `just browsers` before verification. The acceptance suite serves the compiled distribution and exercises root lifetimes, events, controls, identity, styling, scheduling, and adaptive widgets. See [runtime internals](browser-internals.md) for the implementation contracts.
 
 ## Mount a view
 
@@ -50,7 +50,7 @@ public final class Editor {
     var root = context.root();
     var input = Forms.text("name");
     return LiveElement.of(Elements.main().child(Elements.label().labelFor(input.ref()).text("Name")))
-        .child(LiveElement.of(input).value(name).on("input", event -> {
+        .child(LiveElement.of(input).bindValue(name).on("input", event -> {
           name = event.control().value();
           root.invalidate();
         }))
@@ -118,6 +118,32 @@ var picks = LiveElement.of(Elements.select().boolAttr("multiple")
 Each callback observes the user's edit. Update application state and trigger a render to accept it. A render reapplies an unchanged binding if the user edited the control. Removing a binding hands the current state back to the browser. While an input method composes text, value writes wait for composition to finish.
 
 Native form reset restores the insertion defaults. A later render reapplies any live bindings, so an application that wants reset to update both needs to update its state in the form's `reset` handler as well. Change the control's key when the application needs new native defaults.
+
+## Adapt portable widgets
+
+The live adapters use the same markup and styles as their portable components. They run their interactions inside the browser root and release native listeners when removed.
+
+| Adapter | State and actions |
+| --- | --- |
+| `LiveTabs.of(tabs)` | The browser keeps the selected key while it remains enabled. If it disappears, selection moves to the next enabled tab, then the previous one. With no enabled tabs, none is selected. Use `bindSelection(Optional<String>)` and `onSelectionRequest` to own selection in the application. Give the portable tabs an explicit `id` so keys stay stable. |
+| `LiveField.of(field, bindControl)` | Use the callback to bind the existing input, select, or other control. Set `validation(invalid, message)` to set or clear application-driven validity and the linked error message without resetting the control. |
+| `LiveDialog.of(modalOrDrawer)` | The native dialog keeps its own open state by default. Use `bindOpen`, `onOpenRequest`, and `onDismiss` to own it in the application. Use `mode(Mode.NON_MODAL)` to open without making the page inert. Portable `opened()` starts a browser-owned dialog non-modally. Later invocations use the selected mode. `focusFallback(ref)` supplies a focus target if the opener is removed. |
+| `LiveSearchPalette.of(palette)` | Place its `triggerButton()` and the adapter in the root. The browser retains the query and keeps focus on the current result when the list changes. It filters results, moves focus with the arrow keys, and dismisses the palette on Escape or result activation. |
+| `LiveTooltip.of(trigger)` | Adapt a tag configured with `interestTooltip`. Hover and focus reveal the linked tooltip, and Escape dismisses it. |
+
+Tabs use automatic keyboard activation by default. With `ContentTabs.Activation.MANUAL`, the arrow keys, Home and End move focus, and Enter or Space requests selection. A bound key must name an enabled tab. Use `Optional.empty()` when no enabled tabs remain, and update the binding in the same render that removes its selected tab.
+
+A bound dialog reconciles after native dismissal. Set the bound state to false in `onDismiss` to accept a dismissal, or leave it true to keep the dialog open. The adapter requests a render after each callback.
+
+```java
+var dialog = LiveDialog.of(Modal.of("Discard changes?").body(Elements.p().text("Unsaved changes will be lost.")))
+    .bindOpen(state.confirming)
+    .onOpenRequest(() -> state.confirming = true)
+    .onDismiss(() -> state.confirming = false);
+return LiveElement.of(Elements.div())
+    .child(dialog.triggerButton("Discard"))
+    .child(dialog);
+```
 
 ## Give children stable identities
 

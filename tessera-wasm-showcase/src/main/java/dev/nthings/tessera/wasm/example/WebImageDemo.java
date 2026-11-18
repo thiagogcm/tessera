@@ -66,6 +66,7 @@ public final class WebImageDemo {
                                     .hint("An independent mounted root")))),
             Map.entry("list", KeyedListDemo::mount),
             Map.entry("controls", ControlledFormDemo::mount),
+            Map.entry("widgets", WidgetDemo::mount),
             Map.entry("schedule", scheduling::mount),
             Map.entry("schedule-control", scheduling::mountControl),
             Map.entry("lifetime", lifetime::mount),

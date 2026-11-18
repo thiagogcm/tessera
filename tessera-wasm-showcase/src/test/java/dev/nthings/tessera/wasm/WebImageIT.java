@@ -103,6 +103,289 @@ class WebImageIT {
   }
 
   @BothEngines
+  @DisplayName("live tabs retain browser selection and roving focus and validate bound selection")
+  void adaptiveTabs(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          var widgets = page.locator("#widgets");
+          var tabs = widgets.locator("[data-scope-id$='--views']");
+          var center =
+              tabs.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Center"));
+          var after = tabs.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("After"));
+          var change = button(page, "Change tabs");
+          assertThat(center).hasAttribute("aria-selected", "true");
+          center.focus();
+          page.keyboard().press("ArrowRight");
+          assertThat(after).isFocused();
+          assertThat(after).hasAttribute("aria-selected", "true");
+          page.keyboard().press("ArrowLeft");
+          assertThat(center).isFocused();
+          change.evaluate("button => button.click()");
+          assertThat(tabs.getByText("Before", new Locator.GetByTextOptions().setExact(true)))
+              .hasCount(0);
+          assertThat(center).isFocused();
+          assertThat(center).hasAttribute("aria-selected", "true");
+          change.evaluate("button => button.click()");
+          assertThat(after).hasAttribute("aria-selected", "true");
+          assertThat(after).isFocused();
+          assertThat(tabs.getByRole(AriaRole.TABPANEL)).hasText("After panel");
+          change.click();
+          assertThat(tabs.locator("[aria-selected=true]")).hasCount(0);
+          assertThat(tabs.getByRole(AriaRole.TABPANEL)).hasCount(0);
+          change.click();
+          assertThat(tabs.getByRole(AriaRole.TAB)).hasCount(0);
+          change.click();
+          var before =
+              tabs.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Before"));
+          assertThat(before).hasAttribute("aria-selected", "true");
+          before.focus();
+          page.keyboard().press("End");
+          assertThat(after).isFocused();
+          change.evaluate("button => button.click()");
+          assertThat(after).hasCount(0);
+          assertThat(before).isFocused();
+          assertThat(before).hasAttribute("aria-selected", "true");
+
+          var manual = widgets.locator("[data-scope-id$='--controlled-views']");
+          var left = manual.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Left"));
+          var right =
+              manual.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Right"));
+          left.focus();
+          page.keyboard().press("ArrowRight");
+          assertThat(right).isFocused();
+          assertThat(left).hasAttribute("aria-selected", "true");
+          assertThat(widgets.locator("[data-tab-request]")).hasAttribute("data-tab-request", "");
+          page.keyboard().press("Enter");
+          assertThat(widgets.locator("[data-tab-request]"))
+              .hasAttribute("data-tab-request", "right");
+          assertThat(left).hasAttribute("aria-selected", "true");
+          assertThat(right).isFocused();
+          button(page, "Accept tab requests").click();
+          right.focus();
+          page.keyboard().press("Space");
+          assertThat(right).hasAttribute("aria-selected", "true");
+          button(page, "Supply invalid selection").click();
+          assertReported(page, failures, "tab-selection", "Controlled views");
+          assertThat(right).hasAttribute("aria-selected", "true");
+          button(page, "Reset selection").click();
+          assertThat(left).hasAttribute("aria-selected", "true");
+        });
+  }
+
+  @BothEngines
+  @DisplayName("live field validation preserves the linked control, value, and focus")
+  void adaptiveField(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          var field = page.locator("#widgets [data-scope-id$='--region']");
+          var required = label(page, "Required name");
+          var requiredLabel = page.locator("#widgets [data-scope-id$='--required-name'] label");
+          var validColor =
+              (String) requiredLabel.evaluate("label => getComputedStyle(label).color");
+          required.fill("Name");
+          required.fill("");
+          page.keyboard().press("Tab");
+          assertThat(page.locator("#widgets input[name=required-name]:user-invalid")).hasCount(1);
+          var region = label(page, "Region");
+          var error = field.locator(".field-error");
+          var toggle = button(page, "Toggle region error");
+          region.selectOption("br");
+          region.focus();
+          toggle.evaluate("button => button.click()");
+          assertThat(error).isVisible();
+          assertThat(error).containsText("Region is unavailable");
+          assertThat(region).hasAttribute("aria-invalid", "true");
+          assertThat(requiredLabel).not().hasCSS("color", validColor);
+          assertThat(region).hasAttribute("aria-errormessage", error.getAttribute("id"));
+          assertThat(region)
+              .hasAttribute("aria-describedby", field.locator(".field-hint").getAttribute("id"));
+          assertThat(region).hasValue("br");
+          assertThat(region).isFocused();
+          toggle.evaluate("button => button.click()");
+          assertThat(region).hasAttribute("aria-invalid", "false");
+          assertThat(requiredLabel).hasCSS("color", validColor);
+          assertThat(field.locator("[aria-errormessage]")).hasCount(0);
+          assertThat(error).hasCount(0);
+          assertThat(region).hasValue("br");
+          assertThat(region).isFocused();
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName("live dialogs reconcile native dismissals and restore focus")
+  void adaptiveDialogs(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          var widgets = page.locator("#widgets");
+          var modal =
+              widgets
+                  .locator("dialog[aria-labelledby]")
+                  .filter(new Locator.FilterOptions().setHasText("Adaptive modal"));
+          var invoker = button(page, "Open adaptive modal");
+          var dismissals = widgets.locator("[data-dismissals]");
+          var policy = button(page, "Toggle dismissal rejection");
+          policy.click();
+          invoker.click();
+          assertThat(widgets.locator("dialog:modal")).hasCount(1);
+          page.keyboard().press("Escape");
+          assertThat(dismissals).hasAttribute("data-dismissals", "1");
+          assertThat(modal).isVisible();
+          modal.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Close")).click();
+          assertThat(dismissals).hasAttribute("data-dismissals", "2");
+          assertThat(modal).isVisible();
+          policy.evaluate("button => button.click()");
+          page.mouse().click(2, 2);
+          assertThat(dismissals).hasAttribute("data-dismissals", "3");
+          assertThat(modal).isHidden();
+          assertThat(invoker).isFocused();
+
+          invoker.click();
+          assertThat(modal).isVisible();
+          button(page, "Remove modal invoker").evaluate("button => button.click()");
+          assertThat(invoker).hasCount(0);
+          page.keyboard().press("Escape");
+          assertThat(modal).isHidden();
+          assertThat(button(page, "Return focus here")).isFocused();
+          button(page, "Open modal from app").click();
+          assertThat(modal).isVisible();
+          button(page, "Remove modal").evaluate("button => button.click()");
+          assertThat(modal).hasCount(0);
+          assertThat(button(page, "Open modal from app")).isFocused();
+
+          var drawer =
+              widgets
+                  .locator("dialog[aria-labelledby]")
+                  .filter(new Locator.FilterOptions().setHasText("Adaptive drawer"));
+          var closeDrawer =
+              drawer.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Close"));
+          var showDrawer = button(page, "Show drawer through host");
+          showDrawer.click();
+          assertThat(drawer).isVisible();
+          assertThat(widgets.locator("dialog:modal")).hasCount(0);
+          button(page, "Update widgets").evaluate("button => button.click()");
+          assertThat(widgets.locator("[data-widget-updates]"))
+              .hasAttribute("data-widget-updates", "1");
+          assertThat(drawer).isVisible();
+          assertThat(widgets.locator("dialog:modal")).hasCount(0);
+          closeDrawer.click();
+          assertThat(drawer).isHidden();
+          assertThat(showDrawer).isFocused();
+
+          button(page, "Use non-modal invoker").click();
+          var openDrawer = button(page, "Open adaptive drawer");
+          openDrawer.click();
+          assertThat(drawer).isVisible();
+          assertThat(widgets.locator("dialog:modal")).hasCount(0);
+          drawer.evaluate(
+              """
+              async dialog => {
+                const closed = new Promise(resolve => dialog.addEventListener('close', resolve, { once: true }));
+                dialog.close();
+                document.querySelector(`button[commandfor="${dialog.id}"][command="show-modal"]`).click();
+                await closed;
+              }
+              """);
+          assertThat(closeDrawer).isFocused();
+          closeDrawer.click();
+          assertThat(drawer).isHidden();
+          assertThat(openDrawer).isFocused();
+
+          button(page, "Mount open drawer").click();
+          var initiallyOpen = widgets.locator("dialog[data-scope-id$='--initial']");
+          assertThat(initiallyOpen).isVisible();
+          assertThat(widgets.locator("dialog:modal")).hasCount(0);
+          initiallyOpen
+              .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Close"))
+              .click();
+          assertThat(initiallyOpen).isHidden();
+          button(page, "Reopen drawer modally").click();
+          assertThat(widgets.locator("dialog:modal")).hasCount(1);
+          page.keyboard().press("Escape");
+          assertThat(initiallyOpen).isHidden();
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
+  @DisplayName("live search and tooltip interactions survive updates and release on removal")
+  void adaptiveSearchAndTooltip(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          var widgets = page.locator("#widgets");
+          var openSearch =
+              widgets.getByRole(
+                  AriaRole.BUTTON, new Locator.GetByRoleOptions().setName("Find pages"));
+          var query = label(page, "Search query");
+          var result = widgets.locator(".palette-item:not([hidden])");
+          var status = widgets.locator(".palette-empty");
+          openSearch.click();
+          assertThat(query).isFocused();
+          query.fill("missing");
+          assertThat(status).isVisible();
+          query.fill("guides cafe");
+          assertThat(result).hasCount(2);
+          query.press("ArrowUp");
+          assertThat(result.last()).isFocused();
+          var update = button(page, "Update widgets");
+          update.evaluate("button => button.click()");
+          assertThat(result).hasCount(3);
+          assertThat(result.last()).containsText("Café two");
+          assertThat(result.last()).isFocused();
+          page.keyboard().press("ArrowDown");
+          assertThat(result.first()).isFocused();
+          page.keyboard().press("ArrowUp");
+          assertThat(result.last()).isFocused();
+          update.evaluate("button => button.click()");
+          assertThat(result).hasCount(2);
+          assertThat(result.first()).isFocused();
+          page.keyboard().press("Escape");
+          assertThat(query).isHidden();
+          openSearch.click();
+          assertThat(query).hasValue("guides cafe");
+          query.fill("duplicates");
+          query.press("ArrowUp");
+          assertThat(result.last().locator(".palette-item-desc")).hasText("ab");
+          assertThat(result.last()).isFocused();
+          update.evaluate("button => button.click()");
+          assertThat(widgets.locator("[data-widget-updates]"))
+              .hasAttribute("data-widget-updates", "3");
+          assertThat(result.first().locator(".palette-item-desc")).hasText("ab");
+          assertThat(result.first()).isFocused();
+          query.fill("guides cafe");
+          query.press("Enter");
+          assertThat(query).isHidden();
+          Assertions.assertThat(page.url()).endsWith("#widgets");
+
+          var trigger = button(page, "Search tip");
+          var hint = widgets.locator("[role=tooltip]");
+          trigger.hover();
+          assertThat(hint).isVisible();
+          assertThat(trigger).hasAttribute("aria-describedby", hint.getAttribute("id"));
+          hint.hover();
+          assertThat(hint).isVisible();
+          page.keyboard().press("Escape");
+          assertThat(hint).isHidden();
+          page.mouse().move(0, 0);
+          trigger.focus();
+          assertThat(hint).isVisible();
+          button(page, "Remove tooltip").evaluate("button => button.click()");
+          assertThat(hint).hasCount(0);
+          button(page, "Close widgets root").click();
+          assertThat(widgets).isEmpty();
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
   @DisplayName("unsupported Wasm features retain fallback without loading the launcher")
   void unsupportedWasmFeaturesRetainFallbackWithoutLoadingTheLauncher(String engine) {
     withPage(

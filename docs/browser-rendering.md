@@ -11,17 +11,17 @@ Import live contracts, `BrowserEvent`, `EventOptions`, `Effect`, and `Lifetime` 
 Use Oracle GraalVM **25.5.5.0.3+1.1**, matching the `webimage-preview` SDK pinned in [tessera-wasm/pom.xml](../tessera-wasm/pom.xml). Install Native Image prerequisites and Binaryen **119 or later** on `PATH`. Set `JAVA_HOME` to that GraalVM distribution. The default JVM build does not invoke these tools.
 
 ```sh
-# Build both entry points and assemble the browser distribution
+# Build both entry points and publish the showcase site
 just wasm
 
-# Serve the generated host over HTTP
-jwebserver -b 127.0.0.1 -p 8000 -d tessera-wasm-showcase/target/web
+# Serve the published pages over HTTP
+jwebserver -b 127.0.0.1 -p 8000 -d tessera-wasm-showcase/target/published-web
 
-# Build and exercise the real images in Chromium and Firefox
+# Build, publish and exercise the real images in Chromium and Firefox
 just wasm-verify
 ```
 
-Install the Playwright browsers with `just browsers` before verification. The acceptance suite serves the compiled distribution and exercises root lifetimes, events, controls, identity, styling, scheduling, and adaptive widgets. See [runtime internals](browser-internals.md) for the implementation contracts.
+Install the Playwright browsers with `just browsers` before verification. The showcase publishes a home page, a static guide, and one page per runtime feature, each mounting only that feature's views. The browser suite serves those pages as a deployment would, with their response headers and the full Content Security Policy, and loads them through the shipped bootstrap. It covers bundle loading and fallbacks, form controls and IME composition, keyed lists, adaptive widgets, events, host services, lifecycles, failure recovery, and styles. A plain file server such as `jwebserver` does not send the policy header. See [runtime internals](browser-internals.md) for the implementation contracts.
 
 ## Publish a browser bundle
 
@@ -39,7 +39,7 @@ Publish every returned asset at its path and media type, and apply `page.respons
 
 The compiler validates the resource graph and publishes content-derived filenames under the chosen asset base. The bootstrap applies SHA-384 integrity to scripts and to binary fetches before starting the entry. It keeps the fallback in place when loading fails. The pinned GraalVM adapter accepts the classic launcher and primary image. A prepared `WasmBundle` can also declare supplementary binary resources. Compatible launchers receive verified bytes by logical name through `config.tesseraResources`.
 
-`just wasm` builds the published sample in `tessera-wasm-showcase/target/published-web`. The existing `target/web` sample supports local development of individual runtime fixtures. `just wasm-verify` tests compiled publication at root and nested asset bases in Chromium and Firefox.
+`just wasm` publishes the showcase in `tessera-wasm-showcase/target/published-web`. `just wasm-verify` checks that every published reference resolves to a file with matching integrity, and exercises publication at root and nested asset bases in Chromium and Firefox.
 
 ## Mount a view
 
@@ -126,7 +126,7 @@ var picks = LiveElement.of(Elements.select().boolAttr("multiple")
 | `bindChecked(boolean)` | Checkbox or radio input | `onCheckedChange` reports checked state on `change` |
 | `bindSelectedValues(List<String>)` | Multiple select | `onSelectedValuesChange` reports the selected values in option order on `input` |
 
-Each callback observes the user's edit. Update application state and trigger a render to accept it. A render reapplies an unchanged binding if the user edited the control. Removing a binding hands the current state back to the browser. While an input method composes text, value writes wait for composition to finish.
+Each callback observes the user's edit. Update application state and trigger a render to accept it. The edit itself requests a render, so a control whose binding the application leaves unchanged reverts at once. Removing a binding hands the current state back to the browser. While an input method composes text, value writes wait for composition to finish. Browsers send a composition's last `input` event while it is still composing, so when the composition ends the element's `input` handler, and `onValueChange`, run once more with the committed text and `composing()` false.
 
 Native form reset restores the insertion defaults. A later render reapplies any live bindings, so an application that wants reset to update both needs to update its state in the form's `reset` handler as well. Change the control's key when the application needs new native defaults.
 
@@ -138,7 +138,7 @@ The live adapters use the same markup and styles as their portable components. T
 | --- | --- |
 | `LiveTabs.of(tabs)` | The browser keeps the selected key while it remains enabled. If it disappears, selection moves to the next enabled tab, then the previous one. With no enabled tabs, none is selected. Use `bindSelection(Optional<String>)` and `onSelectionRequest` to own selection in the application. Give the portable tabs an explicit `id` so keys stay stable. |
 | `LiveField.of(field, bindControl)` | Use the callback to bind the existing input, select, or other control. Set `validation(invalid, message)` to set or clear application-driven validity and the linked error message without resetting the control. |
-| `LiveDialog.of(modalOrDrawer)` | The native dialog keeps its own open state by default. Use `bindOpen`, `onOpenRequest`, and `onDismiss` to own it in the application. Use `mode(Mode.NON_MODAL)` to open without making the page inert. Portable `opened()` starts a browser-owned dialog non-modally. Later invocations use the selected mode. `focusFallback(ref)` supplies a focus target if the opener is removed. |
+| `LiveDialog.of(modalOrDrawer)` | The native dialog keeps its own open state by default. Use `bindOpen`, `onOpenRequest`, and `onDismiss` to own it in the application. Use `mode(Mode.NON_MODAL)` to open without making the page inert. Portable `opened()` starts a browser-owned dialog non-modally. Later invocations use the selected mode. `focusFallback(ref)` supplies a focus target for when the dialog closes and its opener cannot take focus: it was removed or disabled, or nothing had focus when the dialog opened, as when a timer opens it. |
 | `LiveSearchPalette.of(palette)` | Place its `triggerButton()` and the adapter in the root. The browser retains the query and keeps focus on the current result when the list changes. It filters results, moves focus with the arrow keys, and dismisses the palette on Escape or result activation. |
 | `LiveTooltip.of(trigger)` | Adapt a tag configured with `interestTooltip`. Hover and focus reveal the linked tooltip, and Escape dismisses it. |
 

@@ -24,7 +24,7 @@ public final class SecondEntry {
     var root = context.root();
     return LiveElement.of(
             Elements.section()
-                .attr("data-second-count", Integer.toString(count))
+                .ariaLabel("Second entry")
                 .children(
                     Elements.h2().text("Second entry"),
                     Elements.p()

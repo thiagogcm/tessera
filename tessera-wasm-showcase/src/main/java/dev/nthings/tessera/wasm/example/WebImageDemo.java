@@ -28,12 +28,12 @@ import dev.nthings.tessera.wasm.LiveElement;
 import java.util.Map;
 import org.graalvm.webimage.api.JS;
 
-/// First browser fixture: shared component styling, linked labels and a captured Java callback.
+/// The showcase's main entry point: every view the published pages mount, plus the home page's
+/// counter with shared component styling and a live-animated meter.
 public final class WebImageDemo {
 
   private int count;
   private boolean badge;
-  private int meter;
   private int liveMeter;
   private final TagElement name = Forms.text("name");
 
@@ -41,22 +41,22 @@ public final class WebImageDemo {
 
   /// Mounts the hosts the page declares for this entry; see [BrowserEntry].
   public static void main(String[] args) {
-    var demo = new WebImageDemo();
+    var home = new WebImageDemo();
+    var activity = new ActivityLog();
+    var lifetime = new LifetimeDemo(activity);
+    var closure = new ClosureDemo(activity);
     var scheduling = new SchedulingDemo();
-    var lifetime = new LifetimeDemo();
-    var closure = new ClosureDemo();
     BrowserEntry.start(
         args,
         Map.ofEntries(
-            // Declared first: its failed initial render must not prevent the roots after it.
             Map.entry(
                 "broken",
                 host ->
                     BrowserRoot.mount(
                         host, _ -> LiveContent.of(Elements.section().child(new BrokenPanel())))),
-            Map.entry("app", host -> BrowserRoot.mount(host, demo::view)),
+            Map.entry("app", host -> BrowserRoot.mount(host, home::view)),
             Map.entry(
-                "secondary",
+                "notes",
                 host ->
                     BrowserRoot.mount(
                         host,
@@ -64,18 +64,21 @@ public final class WebImageDemo {
                             LiveContent.of(
                                 Field.of("Notes", Forms.text("notes"))
                                     .hint("An independent mounted root")))),
-            Map.entry("list", KeyedListDemo::mount),
-            Map.entry("controls", ControlledFormDemo::mount),
-            Map.entry("widgets", WidgetDemo::mount),
-            Map.entry("schedule", scheduling::mount),
-            Map.entry("schedule-control", scheduling::mountControl),
-            Map.entry("lifetime", lifetime::mount),
-            Map.entry("lifetime-control", lifetime::mountControl),
+            Map.entry("forms", ControlledFormDemo::mount),
+            Map.entry("defaults", DefaultsDemo::mount),
+            Map.entry("shipping", ShippingDemo::mount),
+            Map.entry("lists", KeyedListDemo::mount),
+            Map.entry("tabs", TabsDemo::mount),
+            Map.entry("dialogs", DialogDemo::mount),
+            Map.entry("search", SearchDemo::mount),
             Map.entry("events", EventsDemo::mount),
             Map.entry("services", ServicesDemo::mount),
-            Map.entry("collisions", CollisionsDemo::mount),
+            Map.entry("activity", activity::mount),
+            Map.entry("lifetime", lifetime::mount),
+            Map.entry("toolbar", lifetime::mountToolbar),
             Map.entry("closure", closure::mount),
-            Map.entry("closure-control", closure::mountControl)));
+            Map.entry("schedule", scheduling::mount),
+            Map.entry("collisions", CollisionsDemo::mount)));
   }
 
   private LiveContent view(LiveContext context) {
@@ -96,20 +99,15 @@ public final class WebImageDemo {
                     badge ? Badge.of("Saved").tone(Tone.SUCCESS) : Elements.empty()))
         .child(Ui.button("Increment", root.update(() -> count++)))
         .child(Ui.button("Show badge", root.update(() -> badge = true)))
-        // A value that changes on every render, producing a new atomic rule each time.
+        // A value that changes every frame, declared live so it never produces a new rule.
         .child(
             Elements.div()
-                .attr("data-meter", "")
-                .inlineSize(CssLength.px(meter))
-                .blockSize(CssLength.px(4)))
-        .child(Ui.button("Advance meter", root.update(() -> meter++)))
-        // The same kind of value, declared live: one rule however it changes.
-        .child(
-            Elements.div()
-                .attr("data-live-meter", "")
+                .role(Role.PROGRESSBAR)
+                .ariaLabel("Upload progress")
                 .live(style -> style.inlineSize(CssLength.px(liveMeter)))
-                .blockSize(CssLength.px(4)))
-        .child(Ui.button("Animate live meter", () -> animate(root.host(), 120)))
+                .blockSize(CssLength.px(4))
+                .bg(Tokens.ACCENT_PRIMARY))
+        .child(Ui.button("Animate progress", () -> animate(root.host(), 120)))
         .child(Ui.button(Button.of("Unmount").variant(Button.Variant.OUTLINE), root::close));
   }
 

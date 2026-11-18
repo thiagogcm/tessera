@@ -84,6 +84,8 @@ Inspect failures in these locations:
 
 See [Browser support](browser-support.md) for the supported engines and the distinction between the support target and pinned test builds.
 
+The Wasm browser suite in `tessera-wasm-showcase` runs under the `wasm` profile. It compiles the published showcase once per JVM from the images the build produced and serves it with its deployment headers. Each engine launches once per JVM, each test class gets one browser context per engine, and each test a fresh page. A test fails on any page error, `console.error` message, or policy violation it did not declare. Behavior the engine implements (typing, IME, focus, dialogs, event defaults, media, the policy, and bundle loading) runs in Chromium and Firefox; behavior implemented in Java (scheduling, render rejection, effect lifecycles, id ownership, and failure reports) runs in Chromium. Timers are driven with Playwright's clock rather than sleeps. Reports are in `tessera-wasm-showcase/target/failsafe-reports/`.
+
 ## Change the API
 
 During development, update the implementation, examples, tests, and docs together when changing contracts. Keep proposed APIs in the [browser architecture proposal](architecture-redesign.md), with their acceptance criteria in the [roadmap](roadmap.md). Current usage guides should show APIs present in the checkout and identify their backend and profile requirements.

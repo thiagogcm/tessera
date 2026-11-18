@@ -1,5 +1,0 @@
-{
-  "entry": "index.html",
-  "bootstrap": "bootstrap.js",
-  "launchers": ["tessera-demo.js", "tessera-second.js"]
-}

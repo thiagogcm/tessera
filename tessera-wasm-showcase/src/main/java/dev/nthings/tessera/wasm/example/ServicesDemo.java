@@ -3,18 +3,18 @@ package dev.nthings.tessera.wasm.example;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.FocusReturn;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
 import java.time.Duration;
-import org.graalvm.webimage.api.JS;
 import org.jspecify.annotations.Nullable;
 
-/// Host-service evidence: focus restoration, selection, dialog, popover and media state across
-/// updates and disposal, using only element references.
-public final class ServicesDemo {
+/// Browser services through element references: focus return, text selection, dialogs, popovers,
+/// media, timers and text requests, each surviving updates and released when the root closes.
+final class ServicesDemo {
   private final ElementRef draft = ElementRef.scoped("draft");
   private final ElementRef dialog = ElementRef.scoped("dialog");
   private final ElementRef opener = ElementRef.scoped("opener");
@@ -28,7 +28,7 @@ public final class ServicesDemo {
 
   private ServicesDemo() {}
 
-  public static BrowserRoot mount(String host) {
+  static BrowserRoot mount(String host) {
     return BrowserRoot.mount(host, new ServicesDemo()::view);
   }
 
@@ -43,10 +43,10 @@ public final class ServicesDemo {
     var rebuilt = Modal.of("Stale later").id("stale").bodyText("Never opened");
     return LiveElement.of(
             Elements.section()
-                .attr("data-services-status", status)
-                .attr("data-services-renders", Integer.toString(renders))
+                .ariaLabel("Host services")
                 .children(
                     Elements.h2().text("Host services"),
+                    Elements.p().role(Role.STATUS).text(status),
                     Elements.input("text")
                         .id(draft)
                         .ariaLabel("Draft")
@@ -68,9 +68,7 @@ public final class ServicesDemo {
                 .on(
                     "click",
                     _ -> {
-                      var saved = host.rememberFocus();
-                      focus = saved;
-                      exposeRestoration(() -> saved.restore(opener));
+                      focus = host.rememberFocus();
                       host.showModal(dialog);
                     })
                 .key("opener-" + generation),
@@ -78,10 +76,7 @@ public final class ServicesDemo {
                     Elements.dialog()
                         .id(dialog)
                         .ariaLabel("Services dialog")
-                        .child(
-                            Elements.p()
-                                .attr("data-dialog-renders", "")
-                                .text("Renders: " + renders)))
+                        .child(Elements.p().text("Renders: " + renders)))
                 .children(
                     Ui.button("Re-render inside dialog", root.update(() -> {})),
                     Ui.button(
@@ -99,7 +94,7 @@ public final class ServicesDemo {
                           host.afterRender(this::restoreFocus);
                         })),
             Ui.button("Toggle menu", () -> host.togglePopover(menu)))
-        .child(Elements.div().id(menu).attr("popover", "auto").text("Menu"))
+        .child(Elements.div().id(menu).attr("popover", "manual").text("Menu"))
         .child(Elements.audio().id(audio).attr("src", "/tone.wav").boolAttr("loop"))
         .children(
             Ui.button(
@@ -121,26 +116,32 @@ public final class ServicesDemo {
         .child(rebuilt)
         .children(
             Ui.button(
-                "Open overlay later",
+                "Remind me in 5 seconds",
                 root.update(
-                    () -> host.timeout(Duration.ofMillis(100), () -> host.showModal(confirm)))),
+                    () -> host.timeout(Duration.ofSeconds(5), () -> host.showModal(confirm)))),
+            // A reference created by a render that later renders replace: wrong on purpose.
             Ui.button(
-                "Open stale overlay later",
+                "Remind me through a stale reference",
                 root.update(() -> {
                   var stale = rebuilt.dialogRef();
-                  host.timeout(Duration.ofMillis(100), () -> host.showModal(stale));
+                  host.timeout(Duration.ofSeconds(5), () -> host.showModal(stale));
                 })),
-            Ui.button("Focus unbound reference", () -> host.focus(ElementRef.scoped("missing"))),
-            Ui.button("Close services root", root::close))
-        .child(Elements.p().text(status));
+            Ui.button(
+                "Load greeting",
+                () ->
+                    host.fetchText(
+                        "/text",
+                        body -> status = "Loaded: " + body,
+                        failure -> status = "Failed with HTTP " + failure.status())),
+            Ui.button(
+                "Load missing page",
+                () ->
+                    host.fetchText(
+                        "/missing",
+                        body -> status = "Loaded: " + body,
+                        failure -> status = "Failed with HTTP " + failure.status())),
+            Ui.button("Close services root", root::close));
   }
-
-  /// Browser acceptance probe for a retained focus token after consumption or root disposal.
-  @JS.Coerce
-  @JS(
-      args = {"restore"},
-      value = "globalThis.restoreSavedFocus = () => restore();")
-  private static native void exposeRestoration(Runnable restore);
 
   private void restoreFocus() {
     var saved = focus;

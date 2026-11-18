@@ -2,6 +2,7 @@ package dev.nthings.tessera.wasm.example;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.Lifetime;
 import dev.nthings.tessera.wasm.Live;
@@ -9,37 +10,42 @@ import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import org.jspecify.annotations.Nullable;
 
-/// Lifetime evidence: keyed effects, root cleanup, requests and transient UI on close.
-///
-/// The control root outlives the lifetime root, so it can show what disposal did.
-public final class LifetimeDemo {
-  private final List<String> log = new ArrayList<>();
-  private @Nullable BrowserRoot control;
-  private final MountedRoot lifetimeRoot = new MountedRoot("lifetime view");
+/// A panel with an auto-refresh timer, a slow report request and a cancellable preview, plus a
+/// toolbar root that reopens the panel after it closes. What the panel starts and stops is listed
+/// in the shared [ActivityLog].
+final class LifetimeDemo {
+  private final ActivityLog activity;
+  private final MountedRoot panel = new MountedRoot("lifetime panel");
+  private final ElementRef settings = ElementRef.scoped("settings");
   private String host = "lifetime";
-  private final ElementRef dialog = ElementRef.scoped("dialog");
   private int ticks;
-  private boolean timer;
+  private boolean refreshing;
   private int generation;
-  private String request = "idle";
+  private boolean preview;
 
-  /// Mounts the lifetime view; also used to remount it after it closes.
-  public BrowserRoot mount(String host) {
+  LifetimeDemo(ActivityLog activity) {
+    this.activity = activity;
+  }
+
+  /// Mounts the panel; the toolbar also uses it to reopen the panel after it closes.
+  BrowserRoot mount(String host) {
     var mounted = BrowserRoot.mount(host, this::view);
-    mounted.lifetime().onDispose(() -> record("root disposed"));
+    mounted.lifetime().onDispose(() -> activity.record("panel closed"));
     this.host = host;
-    lifetimeRoot.set(mounted);
+    panel.set(mounted);
     return mounted;
   }
 
-  public BrowserRoot mountControl(String host) {
-    var mounted = BrowserRoot.mount(host, this::control);
-    control = mounted;
-    return mounted;
+  /// Mounts the toolbar, which outlives the panel.
+  BrowserRoot mountToolbar(String host) {
+    return BrowserRoot.mount(
+        host,
+        _ ->
+            LiveElement.of(Elements.nav().ariaLabel("Panel toolbar"))
+                .children(
+                    Ui.button("Reopen panel", () -> mount(this.host)),
+                    Ui.button("Open panel again", () -> BrowserRoot.mount(this.host, this::view))));
   }
 
   private LiveContent view(LiveContext context) {
@@ -47,78 +53,58 @@ public final class LifetimeDemo {
     var current = generation;
     return LiveElement.of(
             Elements.section()
-                .attr("data-lifetime-ticks", Integer.toString(ticks))
-                .child(Elements.h2().text("Lifetime")))
+                .ariaLabel("Panel")
+                .children(
+                    Elements.h2().text("Panel"),
+                    Elements.p().role(Role.STATUS).text("Refreshed " + ticks + " times")))
         .children(
-            timer
-                ? Live.effect("ticker-" + current, lifetime -> tick(lifetime, current))
+            refreshing
+                ? Live.effect("refresh-" + current, lifetime -> refresh(lifetime, current))
                 : Live.fragment(),
-            Ui.button("Start timer", root.update(() -> timer = true)),
-            Ui.button("Restart timer", root.update(() -> generation++)),
-            Ui.button("Stop timer", root.update(() -> timer = false)),
-            Ui.button("Start request", this::startRequest),
-            Ui.button("Fetch text", () -> fetch("/text")),
-            Ui.button("Fetch missing", () -> fetch("/missing")),
-            Ui.button("Open lifetime dialog", () -> root.host().showModal(dialog)),
+            preview ? Live.effect("preview", this::loadPreview) : Live.fragment(),
+            Ui.button("Start auto-refresh", root.update(() -> refreshing = true)),
+            Ui.button("Restart auto-refresh", root.update(() -> generation++)),
+            Ui.button("Stop auto-refresh", root.update(() -> refreshing = false)),
+            Ui.button("Load preview", root.update(() -> preview = true)),
+            Ui.button("Cancel preview", root.update(() -> preview = false)),
+            Ui.button("Load report", this::loadReport),
+            Ui.button("Open settings", () -> root.host().showModal(settings)),
             LiveElement.of(
                     Elements.dialog()
-                        .id(dialog)
-                        .ariaLabel("Lifetime dialog")
-                        .child(Elements.p().text("Modal inside the lifetime root")))
-                .child(Ui.button("Close from dialog", root::close)))
-        .child(Elements.p().attr("data-lifetime-status", "").text("ticks=" + ticks));
+                        .id(settings)
+                        .ariaLabel("Panel settings")
+                        .child(Elements.p().text("Settings for this panel")))
+                .child(Ui.button("Close panel", root::close)),
+            Ui.button("Close", root::close));
   }
 
-  private void tick(Lifetime lifetime, int current) {
-    record("start " + current);
-    lifetimeRoot.get().host().within(lifetime).interval(Duration.ofMillis(20), () -> ticks++);
-    lifetime.onDispose(() -> record("stop " + current));
+  private void refresh(Lifetime lifetime, int current) {
+    activity.record("auto-refresh " + current + " started");
+    panel.get().host().within(lifetime).interval(Duration.ofSeconds(1), () -> ticks++);
+    lifetime.onDispose(() -> activity.record("auto-refresh " + current + " stopped"));
   }
 
-  /// `/slow` never completes before the root closes; closing aborts it and no callback runs.
-  private void startRequest() {
-    setRequest("pending");
-    fetch("/slow");
+  /// The preview request belongs to its effect: removing the effect aborts it.
+  private void loadPreview(Lifetime lifetime) {
+    panel
+        .get()
+        .host()
+        .within(lifetime)
+        .fetchText(
+            "/slow",
+            _ -> activity.record("preview loaded"),
+            failure -> activity.record("preview failed " + failure.status()));
   }
 
-  private void fetch(String url) {
-    lifetimeRoot
+  /// The report request belongs to the panel: closing the panel aborts it.
+  private void loadReport() {
+    activity.record("report requested");
+    panel
         .get()
         .host()
         .fetchText(
-            url,
-            body -> setRequest("text " + body),
-            failure -> setRequest("http " + failure.status()));
-  }
-
-  private LiveContent control(LiveContext context) {
-    var entries = String.join(",", log);
-    return LiveElement.of(
-            Elements.section()
-                .attr("data-lifetime-log", entries)
-                .attr("data-lifetime-request", request)
-                .child(Elements.h2().text("Lifetime control")))
-        .children(
-            Ui.button("Close lifetime root", () -> lifetimeRoot.get().close()),
-            Ui.button("Remount lifetime root", () -> mount(host)),
-            Ui.button("Mount lifetime twice", () -> BrowserRoot.mount(host, this::view)))
-        .child(Elements.p().text("log=" + entries + "; request=" + request));
-  }
-
-  private void record(String entry) {
-    log.add(entry);
-    refreshControl();
-  }
-
-  private void setRequest(String status) {
-    request = status;
-    refreshControl();
-  }
-
-  private void refreshControl() {
-    var mounted = control;
-    if (mounted != null) {
-      mounted.invalidate();
-    }
+            "/slow",
+            _ -> activity.record("report loaded"),
+            failure -> activity.record("report failed " + failure.status()));
   }
 }

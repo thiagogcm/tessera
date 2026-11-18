@@ -1,8 +1,6 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.EventOptions;
 import dev.nthings.tessera.wasm.LiveContent;
@@ -10,109 +8,95 @@ import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import org.graalvm.webimage.api.JS;
 
-/// Event contract evidence: phases, options, typed data, default prevention and activation.
-public final class EventsDemo {
+/// Native event handling: a capture-phase guard on a toolbar, synchronous default prevention,
+/// keyboard data and a one-shot listener, each reported in a visible event log.
+final class EventsDemo {
   private final List<String> log = new ArrayList<>();
-  private final ElementRef dialog = ElementRef.scoped("dialog");
-  private boolean stopInCapture;
+  private boolean readOnly;
   private boolean rearming;
-  private int onceCount;
+  private boolean claimed;
+  private int rewards;
 
-  private EventsDemo() {}
-
-  public static BrowserRoot mount(String host) {
+  static BrowserRoot mount(String host) {
     return BrowserRoot.mount(host, new EventsDemo()::view);
   }
 
   private LiveContent view(LiveContext context) {
     var root = context.root();
-    // One render without the once listener re-arms it on the next.
-    var bindOnce = !rearming;
+    // One render without the one-shot listener arms it again on the next.
+    var armed = !rearming;
     if (rearming) {
       rearming = false;
       root.invalidate();
     }
-    var once = LiveElement.of(Elements.button().attr("data-once", "").text("Once"));
-    if (bindOnce) {
-      once.on("click", EventOptions.DEFAULT.withOnce(), _ -> log(root, "once " + ++onceCount));
+    // While it is being offered again the button has no listener; once claimed, the spent
+    // listener stays bound until the reward is offered again.
+    var reward =
+        LiveElement.of(
+            Elements.button()
+                .onlyIf(!armed, button -> button.boolAttr("disabled"))
+                .text(!armed ? "Preparing reward" : claimed ? "Reward claimed" : "Claim reward"));
+    if (armed) {
+      reward.on(
+          "click",
+          EventOptions.DEFAULT.withOnce(),
+          _ ->
+              root.update(
+                      () -> {
+                        claimed = true;
+                        log.add("reward " + ++rewards);
+                      })
+                  .run());
     }
+    var entries = Elements.ol().ariaLabel("Event log");
+    log.forEach(entry -> entries.child(Elements.li().text(entry)));
     return LiveElement.of(
-            Elements.section()
-                .attr("data-events-log", String.join(",", log))
-                .child(Elements.h2().text("Events")))
+            Elements.section().ariaLabel("Events").child(Elements.h2().text("Events")))
         .child(
-            LiveElement.of(Elements.div().attr("data-phases", ""))
+            LiveElement.of(Elements.div().ariaLabel("Toolbar"))
                 .on(
                     "click",
                     EventOptions.DEFAULT.withCapture(),
                     event -> {
-                      log(root, "capture");
-                      if (stopInCapture) {
+                      if (readOnly) {
                         event.stopPropagation();
+                        log(root, "blocked");
                       }
                     })
-                .on("click", _ -> log(root, "bubble"))
-                .on("click capture", _ -> log(root, "custom"))
-                .child(
-                    LiveElement.of(Elements.button().text("Phase target"))
-                        .on("click", event -> log(root, "target " + event.pointer().button()))))
+                .child(Ui.button("Delete", () -> log(root, "deleted"))))
         .children(
-            Ui.button("Stop in capture", root.update(() -> stopInCapture = !stopInCapture)),
-            checkbox("Prevented", EventOptions.DEFAULT, root),
-            checkbox("Passive", EventOptions.DEFAULT.withPassive(), root),
-            once,
-            Ui.button("Re-arm once", root.update(() -> rearming = true)),
-            LiveElement.of(Elements.input("text").ariaLabel("Keys"))
+            LiveElement.of(Elements.label())
+                .child(
+                    LiveElement.of(Elements.input("checkbox"))
+                        .on("change", _ -> root.update(() -> readOnly = !readOnly).run()))
+                .text("Read-only"),
+            LiveElement.of(Elements.label())
+                .child(
+                    LiveElement.of(Elements.input("checkbox"))
+                        .on(
+                            "click",
+                            event -> {
+                              event.preventDefault();
+                              log(root, "terms must be read first");
+                            }))
+                .text("Accept terms"),
+            LiveElement.of(Elements.input("text").ariaLabel("Shortcut"))
                 .on(
                     "keydown",
                     event -> {
                       var key = event.keyboard();
-                      log(root, "key " + key.key() + " shift=" + key.shiftKey());
+                      log(root, (key.shiftKey() ? "Shift+" : "") + key.key());
                     }),
-            LiveElement.of(Elements.button().text("Keyboard data on click"))
-                .on("click", BrowserEvent::keyboard),
-            LiveElement.of(Elements.button().text("Open events dialog"))
-                .on(
-                    "click",
-                    _ -> {
-                      log(root, "activation " + userActivation());
-                      root.host().showModal(dialog);
-                    }))
-        .child(
-            Elements.dialog()
-                .id(dialog)
-                .ariaLabel("Events dialog")
-                .child(Elements.button().boolAttr("autofocus").text("Dismiss")))
-        .child(Ui.button("Clear events", root.update(log::clear)))
-        .child(Elements.p().text(String.join(",", log)));
+            reward,
+            Ui.button(
+                "Offer another reward",
+                root.update(() -> {
+                  rearming = true;
+                  claimed = false;
+                })))
+        .child(entries);
   }
-
-  private LiveContent checkbox(String label, EventOptions options, BrowserRoot root) {
-    return LiveElement.of(Elements.label())
-        .child(
-            LiveElement.of(Elements.input("checkbox").ariaLabel(label))
-                .on(
-                    "click",
-                    options,
-                    event -> {
-                      event.preventDefault();
-                      log(
-                          root,
-                          label.toLowerCase(Locale.ROOT)
-                              + " prevented="
-                              + event.defaultPrevented());
-                    }))
-        .child(Elements.span().text(label));
-  }
-
-  /// Test probe: `true` while the event's user activation is active, or `unsupported`.
-  @JS.Coerce
-  @JS(
-      "return navigator.userActivation ? String(navigator.userActivation.isActive) : 'unsupported';")
-  private static native String userActivation();
 
   private void log(BrowserRoot root, String entry) {
     root.update(() -> log.add(entry)).run();

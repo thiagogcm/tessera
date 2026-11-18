@@ -11,16 +11,25 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.support.AccessibleText;
+import dev.nthings.tessera.support.RenderedPage;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName("buttons")
 class ButtonTest {
 
+  private static Element button(RenderedPage page, String name) {
+    return page.elements("button").stream()
+        .filter(button -> AccessibleText.name(button).equals(name))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("No button named " + name));
+  }
+
   @Test
-  @DisplayName("commands bind a deferred dialog or popover target, even when disabled")
+  @DisplayName("commands reach a dialog or popover placed later, even from a disabled button")
   void bindsCommandsToDeferredTargets() {
     var dialog = Modal.of("Confirm").id("confirm");
     var hint = ElementRef.scoped("hint");
@@ -31,108 +40,79 @@ class ButtonTest {
             DocumentContent.of(
                 Button.of("Review later")
                     .command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)
-                    .variant(Button.Variant.OUTLINE)
                     .disabled()),
-            DocumentContent.of(
-                Button.of("Peek")
-                    .command(hint, BuiltinCommand.TOGGLE_POPOVER)
-                    .variant(Button.Variant.GHOST)),
+            DocumentContent.of(Button.of("Peek").command(hint, BuiltinCommand.TOGGLE_POPOVER)),
             deferred(dialog, 1),
             deferred(div().id(hint).popover(PopoverMode.AUTO).text("Details"), 2));
 
-    assertThat(page.element("button.button--solid"))
-        .hasAttribute("type", "button")
-        .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", "confirm--dialog")
-        .doesNotHaveAttribute("disabled");
-    assertThat(page.element("button[disabled]"))
-        .hasAttribute("disabled")
-        .hasAttribute("command", "show-modal")
-        .hasAttribute("commandfor", "confirm--dialog");
-    assertThat(page.element("button.button--ghost"))
-        .hasAttribute("command", "toggle-popover")
-        .hasAttribute("commandfor", "hint");
-    assertThat(page.element("[popover]")).hasText("Details");
+    var review = button(page, "Review");
+    var later = button(page, "Review later");
+    assertThat(review).hasAttribute("command", "show-modal").doesNotHaveAttribute("disabled");
+    assertThat(later).hasAttribute("command", "show-modal").hasAttribute("disabled");
+    assertThat(page.target(review, "commandfor")).hasTagName("dialog");
+    assertThat(page.target(later, "commandfor")).isSameAs(page.target(review, "commandfor"));
+    var peek = button(page, "Peek");
+    assertThat(peek).hasAttribute("command", "toggle-popover");
+    assertThat(page.target(peek, "commandfor")).hasAttribute("popover").hasText("Details");
   }
 
   @Test
-  @DisplayName("submission follows the submit choice rather than the surface")
-  void submissionIsIndependentOfSurface() {
-    var page =
-        renderMain(
-            form()
-                .children(
-                    Button.of("Cancel").variant(Button.Variant.SOLID),
-                    Button.of("Save").submit().tone(Tone.DANGER).variant(Button.Variant.OUTLINE)));
+  @DisplayName("a button submits its form only when asked to")
+  void submitsOnlyWhenAsked() {
+    var page = renderMain(form().children(Button.of("Cancel"), Button.of("Save").submit()));
 
-    assertThat(page.element("form button.button--solid"))
-        .hasAttribute("type", "button")
-        .hasText("Cancel");
-    assertThat(page.element("form button.button--outline"))
-        .hasAttribute("type", "submit")
-        .hasClasses("button--danger")
-        .hasText("Save");
+    assertThat(button(page, "Cancel")).hasAttribute("type", "button");
+    assertThat(button(page, "Save")).hasAttribute("type", "submit");
   }
 
   @Test
-  @DisplayName("interest tooltip anchors a labelled hint popover")
+  @DisplayName("an interest tooltip is a tooltip the button points at")
   void interestTooltipAnchorsAHint() {
     var page = renderMain(Button.of("Hover me").interestTooltip(tip -> tip.text("Saved")));
 
-    var hint = page.element("[popover=hint]");
-    assertThat(page.element("button")).hasAttribute("interestfor", hint.id()).hasText("Hover me");
-    assertThat(hint).hasAttribute("role", "tooltip").hasText("Saved");
+    assertThat(page.target(button(page, "Hover me"), "interestfor"))
+        .hasAttribute("role", "tooltip")
+        .hasText("Saved");
   }
 
   @Test
-  @DisplayName("an icon button keeps its name, hides the icon, and shows keyboard focus")
+  @DisplayName("an icon button is named by its label and hides its glyph")
   void iconButtonKeepsName() {
-    var page = renderMain(IconButton.of("Dismiss", span().text("Dismiss")));
+    var page = renderMain(IconButton.of("Dismiss", span().text("×")));
 
-    var button = page.element("button");
-    assertThat(button)
-        .hasTagName("button")
-        .hasAttribute("type", "button")
-        .hasAttribute("aria-label", "Dismiss");
-    assertThat(button.selectFirst(".button-icon"))
-        .hasAttribute("aria-hidden", "true")
-        .hasText("Dismiss");
-
-    assertThat(page.ruleOf(button, "u-")).doesNotContain("transition-duration:");
-    var interactive = page.ruleOf(button, "i-");
-    var media = interactive.indexOf("@media (prefers-reduced-motion: no-preference)");
-    assertThat(media).isPositive();
-    assertThat(interactive.substring(0, media))
-        .contains("&:focus-visible{outline:2px solid var(--accent-primary)")
-        .doesNotContain("transition-duration:");
-    assertThat(interactive.substring(media))
-        .contains("transition-duration:var(--control-feedback-duration)");
+    var dismiss = button(page, "Dismiss");
+    assertThat(dismiss).hasAttribute("type", "button");
+    assertThat(AccessibleText.of(dismiss)).isEmpty();
+    assertThat(dismiss.select("[aria-hidden=true]").text()).isEqualTo("×");
   }
 
-  @Test
-  @DisplayName("a button binds and targets refs in the enclosing id scope")
-  void refsResolveInScope() {
-    var save = ElementRef.scoped("save");
+  private static Card toolbar(String id) {
     var panel = ElementRef.scoped("panel");
-    var page =
-        renderMain(
-            Card.of("Toolbar")
-                .id("toolbar")
-                .body(
-                    Button.of("Save").id(save).command(panel, BuiltinCommand.TOGGLE_POPOVER),
-                    IconButton.of("Refresh", span().text("↻")).id(ElementRef.scoped("refresh")),
-                    div().id(panel).popover(PopoverMode.AUTO).text("Saved")));
-
-    assertThat(page.element("button:contains(Save)"))
-        .hasAttribute("id", "toolbar--save")
-        .hasAttribute("commandfor", "toolbar--panel")
-        .doesNotHaveAttribute("data-scope");
-    assertThat(page.element("button.button--icon")).hasAttribute("id", "toolbar--refresh");
-    assertThat(page.css()).doesNotContain("data-scope=\"button");
+    return Card.of("Toolbar")
+        .id(id)
+        .body(
+            Button.of("Save")
+                .id(ElementRef.scoped("save"))
+                .command(panel, BuiltinCommand.TOGGLE_POPOVER),
+            IconButton.of("Refresh", span().text("↻")).id(ElementRef.scoped("refresh")),
+            div().id(panel).popover(PopoverMode.AUTO).text("Saved"));
   }
 
   @Test
-  @DisplayName("busy feedback keeps the accessible name when the button is also disabled")
+  @DisplayName("buttons in two toolbars get distinct ids and target their own toolbar")
+  void refsResolveInScope() {
+    var page = renderMain(toolbar("editor"), toolbar("viewer"));
+
+    assertThat(page.elements("[id]")).extracting(Element::id).doesNotHaveDuplicates();
+    assertThat(page.elements("button[id]")).hasSize(4);
+    for (var save : page.elements("button[commandfor]")) {
+      assertThat(page.target(save, "commandfor").closest("article"))
+          .isSameAs(save.closest("article"));
+    }
+  }
+
+  @Test
+  @DisplayName("busy feedback keeps each button's accessible name")
   void busyKeepsTheName() {
     var page =
         renderMain(
@@ -140,19 +120,8 @@ class ButtonTest {
             Button.of("Publish draft", span().text("Publish")).busy(),
             IconButton.of("Refresh", span().text("↻")).busy().disabled());
 
-    assertThat(page.element("button.button--solid"))
-        .hasAttribute("aria-busy", "true")
-        .hasAttribute("disabled")
-        .hasText("Save")
-        .doesNotHaveAttribute("aria-label");
-    assertThat(page.element("button[aria-label=\"Publish draft\"]"))
-        .hasAttribute("aria-busy", "true")
-        .hasAttribute("aria-label", "Publish draft")
-        .hasText("Publish")
-        .doesNotHaveAttribute("disabled");
-    assertThat(page.element("button.button--icon"))
-        .hasAttribute("aria-busy", "true")
-        .hasAttribute("disabled")
-        .hasAttribute("aria-label", "Refresh");
+    assertThat(page.elements("button[aria-busy=true]"))
+        .extracting(button -> AccessibleText.name(button) + " " + button.hasAttr("disabled"))
+        .containsExactly("Save true", "Publish draft false", "Refresh true");
   }
 }

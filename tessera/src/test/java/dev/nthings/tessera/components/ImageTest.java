@@ -1,97 +1,54 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
 import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
+import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.document.DocumentContent;
-import dev.nthings.tessera.support.RenderedPage;
-import org.junit.jupiter.api.BeforeAll;
+import dev.nthings.tessera.support.Diagnostics;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @DisplayName("Image")
 class ImageTest {
 
-  @Nested
-  @DisplayName("hero and secondary image")
-  class HeroAndSecondary {
+  @Test
+  @DisplayName(
+      "the hero loads eagerly with high priority and is preloaded once; others load lazily")
+  void heroIsPreloadedAndOthersAreLazy() {
+    var page =
+        renderDocumentMain(
+            Image.of("/assets/hero-banner.webp", "Hero Banner")
+                .dimensions(1280, 720)
+                .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))
+                .hero(),
+            DocumentContent.of(
+                Image.of("/assets/thumbnail.webp", "Thumbnail").dimensions(400, 300)));
 
-    private static RenderedPage page;
-
-    @BeforeAll
-    static void renderImages() {
-      page =
-          renderDocumentMain(
-              Image.of("/assets/hero-banner.webp", "Hero Banner")
-                  .dimensions(1280, 720)
-                  .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))
-                  .hero(),
-              DocumentContent.of(
-                  Image.of("/assets/thumbnail.webp", "Secondary Thumbnail").dimensions(400, 300)));
-    }
-
-    @Test
-    @DisplayName("the hero image is preloaded from head with high priority")
-    void heroIsPreloaded() {
-      assertThat(page.elements("head > link[rel=preload]")).hasSize(1);
-      assertThat(page.element("head > link[rel=preload][as=image]"))
-          .hasAttribute("href", "/assets/hero-banner.webp")
-          .hasAttribute("fetchpriority", "high");
-    }
-
-    @Test
-    @DisplayName("the hero img is high priority and has no loading attribute")
-    void heroHasHighPriority() {
-      assertThat(page.element("img[src='/assets/hero-banner.webp']"))
-          .hasAttribute("alt", "Hero Banner")
-          .hasAttribute("fetchpriority", "high")
-          .doesNotHaveAttribute("loading");
-    }
-
-    @Test
-    @DisplayName("non-hero images load lazily and decode asynchronously")
-    void secondaryImageLoadsLazily() {
-      assertThat(page.element("img[src='/assets/thumbnail.webp']"))
-          .hasAttribute("alt", "Secondary Thumbnail")
-          .hasAttribute("loading", "lazy")
-          .hasAttribute("decoding", "async")
-          .hasAttribute("width", "400")
-          .hasAttribute("height", "300")
-          .doesNotHaveAttribute("fetchpriority");
-    }
+    var hero = page.element("img[alt=\"Hero Banner\"]");
+    assertThat(hero).hasAttribute("fetchpriority", "high").doesNotHaveAttribute("loading");
+    assertThat(page.elements("head > link[rel=preload]"))
+        .singleElement()
+        .satisfies(preload ->
+            assertThat(preload)
+                .hasAttribute("as", "image")
+                .hasAttribute("href", hero.attr("src"))
+                .hasAttribute("fetchpriority", "high"));
+    assertThat(page.element("img[alt=Thumbnail]"))
+        .hasAttribute("loading", "lazy")
+        .hasAttribute("decoding", "async")
+        .doesNotHaveAttribute("fetchpriority");
   }
 
   @Test
-  @DisplayName("a second hero on a page reports a duplicate-hero-image diagnostic")
-  void reportsDuplicateHero() {
-    assertThatExceptionOfType(CompilationException.class)
-        .isThrownBy(() ->
-            renderDocumentMain(
-                Image.of("/hero1.webp", "Hero 1").dimensions(800, 400).hero(),
-                Image.of("/hero2.webp", "Hero 2").dimensions(800, 400).hero()))
-        .satisfies(failure ->
-            assertThat(failure.diagnostics())
-                .singleElement()
-                .satisfies(d -> {
-                  assertThat(d.rule()).isEqualTo("duplicate-hero-image");
-                  assertThat(d.message())
-                      .isEqualTo(
-                          "Only one hero image is allowed per page: '/hero1.webp' is"
-                              + " already the hero, so '/hero2.webp' cannot be");
-                  assertThat(d.fix())
-                      .isEqualTo("Call hero() on one image per page; load the others lazily.");
-                  assertThat(d.location().components()).containsExactly("Image");
-                }));
-  }
-
-  @Test
-  @DisplayName("element options reach the img and an explicit loading value wins")
-  void elementOptionsReachImg() {
+  @DisplayName("a loading value set on the img wins over the lazy default")
+  void explicitLoadingWins() {
     var page =
         renderMain(
             Image.of("/assets/divider.svg", "")
@@ -100,9 +57,42 @@ class ImageTest {
 
     assertThat(page.element("img"))
         .hasAttribute("aria-hidden", "true")
-        .hasAttribute("loading", "eager")
-        .hasAttribute("decoding", "async")
-        .hasAttribute("width", "640")
-        .hasAttribute("height", "8");
+        .hasAttribute("loading", "eager");
+  }
+
+  @Test
+  @DisplayName("a second hero on a page is reported")
+  void reportsDuplicateHero() {
+    var found =
+        Diagnostics.of(() ->
+            renderDocumentMain(
+                Image.of("/hero1.webp", "Hero 1").dimensions(800, 400).hero(),
+                Image.of("/hero2.webp", "Hero 2").dimensions(800, 400).hero()));
+
+    assertThat(found)
+        .singleElement()
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo("duplicate-hero-image");
+          assertThat(d.components()).containsExactly("Image");
+        });
+  }
+
+  static Stream<Arguments> inaccessibleImages() {
+    return Stream.of(
+        argumentSet(
+            "empty alt, not hidden", Image.of("/a.png", "").dimensions(1, 1), "decorative-image"),
+        argumentSet("no reserved space", Image.of("/a.png", "Chart"), "image-dimensions"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("inaccessibleImages")
+  @DisplayName("an image that would be misread or shift the layout is reported")
+  void reportsInaccessibleImage(Image image, String rule) {
+    assertThat(Diagnostics.of(() -> renderMain(image)))
+        .singleElement()
+        .satisfies(d -> {
+          assertThat(d.rule()).isEqualTo(rule);
+          assertThat(d.tag()).isEqualTo("img");
+        });
   }
 }

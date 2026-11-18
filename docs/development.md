@@ -57,22 +57,29 @@ Read related tests before changing test setup or adding coverage. Prefer scenari
 
 ## Browser verification
 
-The showcase suite compiles through `Compiler`, writes through `SiteWriter`, and serves the resulting files over HTTP. It reuses a browser per test class and creates a fresh context per test.
+The showcase browser tests check what a visitor sees and does on the published site. Once per JVM, `PublishedSite` compiles the showcase through `Compiler`, writes it through `SiteWriter`, and serves the files over HTTP. Small fixture sites for cases the showcase pages do not cover, such as right-to-left content or two search palettes on one page, are served under `/fixtures/<name>/`.
 
-| Coverage | Checks |
+A scenario is a `@BrowserTest` method. It runs in Chromium and Firefox unless it names one engine, which scenarios do when they depend on a feature only that engine implements, such as cross-document view transitions or `::scroll-button()`. `cases` names a method that supplies the values of a parameterized scenario. Each run gets a fresh `Session`: a browser context at 1440 by 900 pixels and an `open(path)` helper that returns once the page's custom elements are defined. The session fails the run when the page reports an uncaught error, a `console.error`, a failed request, or a same-origin error response, whatever the scenario asserts.
+
+| Class | Behavior |
 | --- | --- |
-| Documentation routes and component cases | Desktop/narrow layouts, headings, CSS, images, HTTP failures, horizontal overflow |
-| Interactive components | Keyboard flows, focus, and native control behavior |
-| Accessibility | axe-core WCAG A/AA audits, forced colors, reduced motion, 200% zoom, and text spacing |
-
-Component cases use `/stories/{case}/{variant}/{appearance}/{density}/`. Appearance is `light` or `dark`; density is `regular` or `compact`. For example, `/stories/modal/open/dark/compact/` shows an open modal with compact spacing. Window width sets the viewport; the compiled case declares its initial state.
+| `SiteSmokeIT` | Every route loads completely and fits the window at 390 and 1440 pixels, and at 320 pixels with WCAG text spacing |
+| `AccessibilityIT` | axe-core WCAG A/AA audits in light and dark mode, with each overlay open, and state that survives forced colors |
+| `NavigationIT` | Navigation, table of contents, pager, sticky header, footnotes, fragment links, history, and view transitions |
+| `SearchIT` | Filtering, keyboard selection, the Alt+K shortcut, and independent palettes |
+| `OverlaysIT` | Modals, drawers, popovers, the Pages menu, the inspector, and tooltips |
+| `DisclosureIT` | Tabs, accordions, and carousels, including right-to-left content |
+| `FormsIT` | Validation, switches, selects, the growing textarea, and choice cards |
+| `DataIT` | Stacked and scrolling tables and code blocks |
+| `LayoutIT` | Grids, cards, prose, density, and container queries |
+| `MotionIT` | Reduced motion, scroll progress, and reveal animations |
 
 Inspect failures in these locations:
 
 | Output | Path |
 | --- | --- |
 | Failsafe reports | `tessera-showcase/target/failsafe-reports/` |
-| Traces and failure screenshots | `tessera-showcase/target/playwright/{chromium,firefox}/` |
+| Traces and screenshots of failed runs | `tessera-showcase/target/playwright/{chromium,firefox}/<class>/` |
 | CI diagnostics artifact | `playwright-diagnostics` |
 
 See [Browser support](browser-support.md) for the supported engines and the distinction between the support target and pinned test builds.

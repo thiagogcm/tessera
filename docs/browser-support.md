@@ -12,8 +12,13 @@ Some visual enhancements depend on engine support:
 | --- | --- |
 | Carousel scroll buttons and markers | Browser-native scrolling remains available |
 | `appearance: base-select` | The browser's native select presentation applies |
-| Scroll-state container queries | Rules within unsupported queries do not apply |
-| Interest-invoker tooltips | The bundled tooltip module supplies Firefox behavior |
+| Scroll-state container queries | Rules within unsupported queries do not apply; the sticky header keeps its plain surface |
+| `:target-current` | The table of contents does not highlight the section in view |
+| Cross-document view transitions | Pages change without the cross-fade and morph |
+| Scroll-triggered animations (`animation-trigger`) | Reveal-once tiles are shown without their entry animation |
+| Interest-invoker tooltips | The bundled tooltip module shows and anchors the tooltip on hover and focus |
+
+At the pinned test builds, Firefox lacks the first six of these; both engines lack native interest invokers. Scroll-driven animations, `field-sizing`, `sibling-index()`, anchor positioning, `@starting-style`, and invoker commands work in both engines.
 
 Check the rendered result in both supported engines when relying on these features. The [verification suite](development.md#browser-verification) exercises generated pages, responsive layout, interactions, and accessibility.
 
@@ -24,10 +29,11 @@ Built-in portable widgets declare their bundled module, and static output contri
 | Component | Module responsibility |
 | --- | --- |
 | `ContentTabs` | Select panels through `aria-controls`; move focus with Arrow Left, Arrow Right, Home, and End |
-| `SearchPalette` | Filter rendered result links and manage result selection |
-| Interest tooltip | Supply hover and focus handling in Firefox; Chromium uses the native interest invoker |
+| `SearchPalette` | Filter rendered result links, manage result selection, and open the first palette on Alt+K in every browser |
+| `Dropdown` with command items | Return focus to the menu button when a dialog opened from the menu closes |
+| Interest tooltip | Supply hover and focus handling where the browser has no native interest invoker, anchored to the trigger |
 
-The search module defines a customized native dialog. The tabs module defines an autonomous `tessera-tabs` element. Search listeners use an `AbortSignal` and are released when the component disconnects. Native dialog controls handle opening, focus trapping, and dismissal.
+The search module defines a customized native dialog. The tabs and menu modules define autonomous `tessera-tabs` and `tessera-menu` elements. Component listeners use an `AbortSignal` and are released when the component disconnects. Native dialog controls handle opening, focus trapping, and dismissal.
 
 Custom components can [contribute their own scripts](consumer-guide.md#contribute-a-page-script).
 

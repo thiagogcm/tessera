@@ -23,7 +23,8 @@ if (!("interestForElement" in HTMLElement.prototype)) {
     if (!target) return;
     if (active && active !== target) active.hidePopover?.();
     active = target;
-    if (!target.matches(":popover-open")) target.showPopover();
+    // The source makes the trigger the implicit anchor that positions the hint next to it.
+    if (!target.matches(":popover-open")) target.showPopover({ source: trigger });
   };
 
   const hide = (event) => {

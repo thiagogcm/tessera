@@ -32,6 +32,8 @@ import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Translation;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -48,6 +50,10 @@ import org.jspecify.annotations.Nullable;
 ///     .item(Dropdown.Item.command("open", inspector, BuiltinCommand.SHOW_MODAL, "Inspect"));
 /// ```
 ///
+/// When a command item opens a modal dialog, closing the dialog returns focus to the menu's
+/// trigger: a static document then emits the menu as a `tessera-menu` element and loads its script
+/// once.
+///
 /// The trigger, panel and command item ids are prefixed with its [#id(String)]. Without an id, the
 /// compiler numbers instances `dropdown-<n>`.
 public final class Dropdown extends BuiltinScope<Dropdown> {
@@ -59,16 +65,19 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
     private final Supplier<TagElement> control;
     private final String label;
     private final @Nullable String shortcut;
+    private final boolean command;
 
-    private Item(Supplier<TagElement> control, String label, @Nullable String shortcut) {
+    private Item(
+        Supplier<TagElement> control, String label, @Nullable String shortcut, boolean command) {
       this.control = control;
       this.label = label;
       this.shortcut = shortcut;
+      this.command = command;
     }
 
     /// A link to `href` showing `label`.
     public static Item link(String href, String label) {
-      return new Item(() -> a(href).attr("class", ITEM_CLASS), label, null);
+      return new Item(() -> a(href).attr("class", ITEM_CLASS), label, null, false);
     }
 
     /// A button showing `label` that runs `command` on `target`, under the rules of
@@ -82,13 +91,14 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
                   .attr("class", ITEM_CLASS)
                   .command(target, command),
           label,
-          null);
+          null,
+          true);
     }
 
     /// The same item with `hint`, such as `G F`, shown at its end. The hint is visual only and is
     /// hidden from assistive technology.
     public Item shortcut(String hint) {
-      return new Item(control, label, hint);
+      return new Item(control, label, hint, command);
     }
 
     TagElement toElement() {
@@ -104,6 +114,7 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
 
   private final String label;
   private final List<Element> items = new ArrayList<>();
+  private boolean hasCommands;
   private ElementRef panel = ElementRef.scoped("panel");
 
   private Dropdown(String label) {
@@ -118,6 +129,7 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
   /// Adds a link or command item built with [Item#link] or [Item#command].
   public Dropdown item(Item item) {
     items.add(item.toElement());
+    hasCommands |= item.command;
     return this;
   }
 
@@ -265,6 +277,11 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
     var itemsWrapper = div().attr("class", "dropdown-panel-items");
     itemsWrapper.children(items);
 
-    return div().children(trigger, div().id(panel).popover(PopoverMode.AUTO).child(itemsWrapper));
+    var root = div();
+    if (hasCommands) {
+      // The bundled behavior emits the host as `<tessera-menu>`.
+      AuthoringAccess.tag(root).behavior = BundledBehavior.MENU;
+    }
+    return root.children(trigger, div().id(panel).popover(PopoverMode.AUTO).child(itemsWrapper));
   }
 }

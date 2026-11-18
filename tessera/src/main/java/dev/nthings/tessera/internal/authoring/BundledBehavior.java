@@ -15,6 +15,10 @@ public enum BundledBehavior {
   /// Panel selection and keyboard focus for `components.ContentTabs`, whose host becomes the
   /// autonomous `tessera-tabs` element.
   TABS("tessera-tabs", "/dev/nthings/tessera/components/tessera-tabs.js", false),
+  /// Focus return for the command items of `components.Dropdown`, whose host becomes the autonomous
+  /// `tessera-menu` element: a dialog opened from the hidden menu gives focus back to the menu's
+  /// button.
+  MENU("tessera-menu", "/dev/nthings/tessera/components/tessera-menu.js", false),
   /// Result filtering and selection for `components.SearchPalette`, whose host `<dialog>` becomes
   /// the customized built-in `is="tessera-search"`.
   SEARCH("tessera-search", "/dev/nthings/tessera/components/search-palette.js", true);

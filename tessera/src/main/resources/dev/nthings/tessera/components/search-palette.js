@@ -75,3 +75,20 @@ class TesseraSearch extends HTMLDialogElement {
 }
 
 customElements.define("tessera-search", TesseraSearch, { extends: "dialog" });
+
+// Trigger buttons advertise Alt+K, but browsers map their accesskey to different chords (Firefox
+// uses Alt+Shift+K), so the advertised chord opens the first palette here in every browser.
+document.addEventListener("keydown", (event) => {
+  if (
+    event.defaultPrevented || event.isComposing || event.code !== "KeyK" ||
+    !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+  ) return;
+  for (const trigger of document.querySelectorAll('button[aria-keyshortcuts="Alt+K"][commandfor]')) {
+    const dialog = document.getElementById(trigger.getAttribute("commandfor"));
+    if (!(dialog instanceof TesseraSearch)) continue;
+    event.preventDefault();
+    // Like the button itself, the chord does nothing while a modal dialog covers the page.
+    if (!document.querySelector("dialog:modal")) trigger.click();
+    return;
+  }
+});

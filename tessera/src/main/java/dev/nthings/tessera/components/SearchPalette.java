@@ -129,10 +129,9 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
   }
 
   /// Creates a button that opens the palette with `command="show-modal"`, showing the trigger label
-  /// and an Alt K hint. The button's `accesskey` is `k`, but the browser chooses the chord that
-  /// activates it, which differs by browser and operating system. The visible hint and
-  /// `aria-keyshortcuts="Alt+K"` may therefore not match the chord that works. Returns a plain
-  /// [TagElement].
+  /// and an Alt K hint. In a static document the palette's script opens the first such palette on
+  /// Alt+K in every browser; the button's `accesskey` of `k` remains for pages without the script,
+  /// where the browser picks the chord. Returns a plain [TagElement].
   public TagElement triggerButton() {
     return button()
         .command(dialog, BuiltinCommand.SHOW_MODAL)

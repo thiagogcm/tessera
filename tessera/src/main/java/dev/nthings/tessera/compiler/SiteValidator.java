@@ -95,6 +95,7 @@ final class SiteValidator {
           }
           if (fragment != null
               && !fragment.isEmpty()
+              && !fragment.equalsIgnoreCase("top")
               && !targetPage.registeredDomIds().contains(fragment)) {
             diagnostics.add(
                 new Diagnostic(

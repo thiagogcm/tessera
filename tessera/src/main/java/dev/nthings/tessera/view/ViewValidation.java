@@ -92,7 +92,8 @@ public final class ViewValidation {
         && urlAttribute.equals("href")
         && url.length() > 1
         && url.startsWith("#")
-        && !registeredDomIds.contains(reference.getFragment())) {
+        && !registeredDomIds.contains(reference.getFragment())
+        && !"top".equalsIgnoreCase(reference.getFragment())) {
       report(
           tag.location(),
           "missing-fragment",

@@ -1,9 +1,10 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
@@ -33,8 +34,8 @@ abstract class BuiltinScope<B extends BuiltinScope<B>> implements IntoElement, F
   /// Adds the component's scoped styles.
   void configureScope(ScopeStyle scope) {}
 
-  /// Builds the component's content; called by the compiler for each placement.
-  abstract IntoElement expand(DocumentContext context);
+  /// Builds the component's host element; called for each placement.
+  abstract TagElement expand(ViewContext context);
 
   @Override
   public Element intoElement() {
@@ -59,7 +60,7 @@ abstract class BuiltinScope<B extends BuiltinScope<B>> implements IntoElement, F
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return component.expand(context);
     }
   }

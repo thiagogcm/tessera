@@ -2,7 +2,6 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.Lifetime;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;

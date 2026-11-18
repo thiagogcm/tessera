@@ -1,9 +1,9 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.SourceBoundary;
-import dev.nthings.tessera.core.SourceCapture;
 import dev.nthings.tessera.core.SourceLocation;
-import dev.nthings.tessera.core.SourceProvenance;
+import dev.nthings.tessera.internal.authoring.SourceBoundary;
+import dev.nthings.tessera.internal.authoring.SourceCapture;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import java.security.CodeSource;
 import java.util.Objects;
 import java.util.Optional;

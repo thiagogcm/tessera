@@ -1,13 +1,6 @@
 package dev.nthings.tessera.wasm;
 
-import dev.nthings.tessera.core.BrowserEvent;
-import dev.nthings.tessera.core.ControlProperties;
-import dev.nthings.tessera.core.ControlState;
-import dev.nthings.tessera.core.EventListener;
-import dev.nthings.tessera.core.EventOptions;
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.KeyboardData;
-import dev.nthings.tessera.core.PointerData;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -82,7 +75,7 @@ final class DomReconciler {
   /// queued for [#retire], and no application callback runs during the phase. The caller settles a
   /// failure or closure: the closing root has already released the created instances, and a native
   /// failure closes the root, whose teardown releases the committed tree and the acquisitions.
-  Commit apply(ViewSnapshot snapshot) {
+  Commit apply(ViewSnapshot<LiveBehavior> snapshot) {
     starting.clear();
     disposalFailures.clear();
     created.clear();
@@ -147,7 +140,8 @@ final class DomReconciler {
       }
       var lifetime = instance.lifetime;
       if (lifetime != null && !lifetime.disposed()) {
-        var effect = ((ViewSnapshot.Effect) instance.view).effect();
+        var placement = (ViewSnapshot.Special<LiveBehavior>) instance.view;
+        var effect = ((LiveBehavior.Reaction) placement.payload()).effect();
         Failures.attempt(started, () -> effect.start(lifetime));
       }
     }
@@ -224,7 +218,7 @@ final class DomReconciler {
   private List<Mounted> reconcile(
       JSObject parent,
       List<Mounted> previous,
-      List<ViewSnapshot.Node> next,
+      List<ViewSnapshot.Node<LiveBehavior>> next,
       @Nullable JSObject end) {
     if (previous.isEmpty() && next.isEmpty()) {
       return List.of();
@@ -352,20 +346,20 @@ final class DomReconciler {
   /// earliest unmatched sibling of its kind (tag name, text, effect or group definition), so a
   /// conditional sibling of another kind does not shift the match. Equal identities are always
   /// compatible, so a matched node is patched and an unmatched one replaced.
-  private static Object identity(ViewSnapshot.Node node) {
+  private static Object identity(ViewSnapshot.Node<LiveBehavior> node) {
     return switch (node) {
-      case ViewSnapshot.Group group -> {
+      case ViewSnapshot.Group<LiveBehavior> group -> {
         var key = group.key();
         yield key != null ? new KeyedGroup(key, group.definition()) : group.definition();
       }
-      case ViewSnapshot.Effect _ -> EFFECT;
-      case ViewSnapshot.Tag tag -> tag.tag();
-      case ViewSnapshot.Text _ -> TEXT;
-      case ViewSnapshot.Raw _ -> throw rawHtml();
+      case ViewSnapshot.Special<LiveBehavior> _ -> EFFECT;
+      case ViewSnapshot.Tag<LiveBehavior> tag -> tag.tag();
+      case ViewSnapshot.Text<LiveBehavior> _ -> TEXT;
     };
   }
 
-  private Mounted create(JSObject parent, ViewSnapshot.Node view, @Nullable JSObject before) {
+  private Mounted create(
+      JSObject parent, ViewSnapshot.Node<LiveBehavior> view, @Nullable JSObject before) {
     return switch (view) {
       case ViewSnapshot.Text(var text) -> {
         var node = Dom.text(text);
@@ -374,21 +368,22 @@ final class DomReconciler {
         created.add(instance);
         yield instance;
       }
-      case ViewSnapshot.Tag tag -> {
-        var node = Dom.element(tag.tag().tagName());
+      case ViewSnapshot.Tag<LiveBehavior> tag -> {
+        var node = Dom.element(tag.tag().namespace().uri(), tag.tag().tagName());
         var instance = new Mounted(view, node, node);
         // Registered before any acquisition, so a failure or closure releases this subtree.
         created.add(instance);
         attributes(node, Map.of(), tag.attributes());
         liveProperties(node, Map.of(), tag.liveProperties());
         composition(instance, tag);
-        events(instance, tag.events());
+        var bindings = LiveBehavior.bindings(tag);
+        events(instance, bindings.events());
         instance.children = reconcile(node, List.of(), tag.children(), null);
         Dom.insert(parent, node, before);
-        controls(instance, tag.controlProperties());
+        controls(instance, bindings.controls());
         yield instance;
       }
-      case ViewSnapshot.Group group -> {
+      case ViewSnapshot.Group<LiveBehavior> group -> {
         var first = Dom.marker();
         var last = Dom.marker();
         Dom.insert(parent, first, before);
@@ -398,7 +393,7 @@ final class DomReconciler {
         instance.children = reconcile(parent, List.of(), group.children(), last);
         yield instance;
       }
-      case ViewSnapshot.Effect _ -> {
+      case ViewSnapshot.Special<LiveBehavior> _ -> {
         var anchor = Dom.marker();
         Dom.insert(parent, anchor, before);
         var instance = new Mounted(view, anchor, anchor);
@@ -407,40 +402,35 @@ final class DomReconciler {
         starting.add(instance);
         yield instance;
       }
-      case ViewSnapshot.Raw _ -> throw rawHtml();
     };
   }
 
-  private void patch(JSObject parent, Mounted instance, ViewSnapshot.Node next) {
+  private void patch(JSObject parent, Mounted instance, ViewSnapshot.Node<LiveBehavior> next) {
     switch (next) {
       case ViewSnapshot.Text(var text) -> {
-        if (!((ViewSnapshot.Text) instance.view).content().equals(text)) {
+        if (!((ViewSnapshot.Text<LiveBehavior>) instance.view).content().equals(text)) {
           Dom.textValue(instance.first, text);
         }
       }
-      case ViewSnapshot.Tag tag -> {
-        var previous = (ViewSnapshot.Tag) instance.view;
+      case ViewSnapshot.Tag<LiveBehavior> tag -> {
+        var previous = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
         attributes(instance.first, previous.attributes(), tag.attributes());
         liveProperties(instance.first, previous.liveProperties(), tag.liveProperties());
-        events(instance, tag.events());
+        var bindings = LiveBehavior.bindings(tag);
+        events(instance, bindings.events());
         instance.children = reconcile(instance.first, instance.children, tag.children(), null);
-        controls(instance, tag.controlProperties());
+        controls(instance, bindings.controls());
       }
-      case ViewSnapshot.Group group -> {
+      case ViewSnapshot.Group<LiveBehavior> group -> {
         instance.children = reconcile(parent, instance.children, group.children(), instance.last);
       }
-      case ViewSnapshot.Effect _ -> {}
-      case ViewSnapshot.Raw _ -> throw rawHtml();
+      case ViewSnapshot.Special<LiveBehavior> _ -> {}
     }
     instance.view = next;
   }
 
-  /// `ViewRenderer.render` reports raw HTML as `native-raw-html` before a snapshot exists.
-  private static IllegalStateException rawHtml() {
-    return new IllegalStateException("Native snapshots never contain raw HTML");
-  }
-
-  private void composition(Mounted instance, ViewSnapshot.Tag tag) {
+  /// Tracks provisional text so controlled values can wait until composition ends.
+  private void composition(Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag) {
     if (tag.tag() != HtmlTag.INPUT && tag.tag() != HtmlTag.TEXTAREA) {
       return;
     }
@@ -453,7 +443,10 @@ final class DomReconciler {
                 _ -> {
                   instance.composing = false;
                   // Only a controlled value skipped writes during composition.
-                  if (((ViewSnapshot.Tag) instance.view).controlProperties().value() != null) {
+                  if (LiveBehavior.bindings((ViewSnapshot.Tag<LiveBehavior>) instance.view)
+                          .controls()
+                          .value()
+                      != null) {
                     invalidate.run();
                   }
                 }));
@@ -546,7 +539,7 @@ final class DomReconciler {
   }
 
   private static final class Mounted {
-    private ViewSnapshot.Node view;
+    private ViewSnapshot.Node<LiveBehavior> view;
 
     /// Fixed for the node's life: a node is only patched with a view of the same identity.
     private final Object identity;
@@ -566,7 +559,7 @@ final class DomReconciler {
     /// Set when this instance's resources are released, so each releases once.
     private boolean released;
 
-    private Mounted(ViewSnapshot.Node view, JSObject first, JSObject last) {
+    private Mounted(ViewSnapshot.Node<LiveBehavior> view, JSObject first, JSObject last) {
       this.view = view;
       this.identity = identity(view);
       this.first = first;
@@ -610,7 +603,7 @@ final class DomReconciler {
   private record NativeEvent(JSObject event, Mounted target) implements BrowserEvent {
     @Override
     public ControlState control() {
-      var tag = ((ViewSnapshot.Tag) target.view).tag();
+      var tag = ((ViewSnapshot.Tag<LiveBehavior>) target.view).tag();
       if (tag != HtmlTag.INPUT && tag != HtmlTag.TEXTAREA && tag != HtmlTag.SELECT) {
         throw new IllegalStateException(
             "Form state requires an input, textarea or select current target");

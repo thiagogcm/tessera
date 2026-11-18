@@ -1,13 +1,17 @@
 package dev.nthings.tessera.css;
 
-/// The element or builder a style trait writes its declarations to. [Styled] exposes both methods.
-///
-/// @param <SELF> concrete element or style builder type
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+
+/// The receivers of the CSS traits. Writes go to declarations kept by each builder.
 interface StyleTarget<SELF extends StyleTarget<SELF>> {
 
-  /// Returns this target, typed as `SELF`, so style methods chain.
   SELF self();
 
-  /// The declarations this target's style methods write to.
-  Declarations style();
+  static Declarations declarations(StyleTarget<?> target) {
+    return switch ((Styled<?>) target) {
+      case Declarations declarations -> declarations;
+      case TagElement element -> AuthoringAccess.tag(element).style;
+    };
+  }
 }

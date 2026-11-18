@@ -4,10 +4,11 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h3;
 import static dev.nthings.tessera.core.Elements.p;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
@@ -215,7 +216,7 @@ public final class Carousel extends BuiltinScope<Carousel> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var track = div().role(Role.REGION).ariaLabel(label).tabIndex(0);
     for (var slide : slides) {
       track.child(

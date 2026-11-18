@@ -1,7 +1,11 @@
 package dev.nthings.tessera.core;
 
-/// Anything placeable as a child: an [Element], a [Component], a [Scope], or a built-in component.
-/// Expand callbacks return it too, so a component can return another component directly.
+import dev.nthings.tessera.internal.authoring.PortableNode;
+
+/// Portable content, placeable as a child of any portable builder: an [Element], a [Component], a
+/// [Scope], or a built-in component. Expand callbacks return it too, so a component can return
+/// another component directly. Document and live builders accept it as well; it never accepts their
+/// content in return.
 @FunctionalInterface
 public interface IntoElement {
 
@@ -19,6 +23,6 @@ public interface IntoElement {
   /// distinct key, or the page fails with `duplicate-key`. Calling `key` again replaces the key.
   /// Throws IllegalArgumentException if `key` is blank.
   default Element key(String key) {
-    return new KeyedElement(key, intoElement());
+    return new PortableNode.Keyed(key, intoElement());
   }
 }

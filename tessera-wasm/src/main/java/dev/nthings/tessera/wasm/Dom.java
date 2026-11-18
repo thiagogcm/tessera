@@ -28,6 +28,13 @@ final class Dom {
       value = "return document.createElement(tag);")
   static native JSObject element(String tag);
 
+  /// Creates an element named `tag` in the namespace `uri`, so SVG children get SVG behavior.
+  @JS.Coerce
+  @JS(
+      args = {"uri", "tag"},
+      value = "return document.createElementNS(uri, tag);")
+  static native JSObject element(String uri, String tag);
+
   @JS.Coerce
   @JS(
       args = {"text"},

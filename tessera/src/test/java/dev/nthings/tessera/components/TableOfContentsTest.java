@@ -4,11 +4,15 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.compiler.CompilationException;
-import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentHeading;
+import dev.nthings.tessera.document.components.DocLayout;
+import dev.nthings.tessera.document.components.TableOfContents;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +37,9 @@ class TableOfContentsTest {
                       new DocumentHeading(intro, "Introduction", 2),
                       new DocumentHeading(sub, "Details", 3)));
 
-      var page = renderMain(div().id(intro), div().id(sub), toc);
+      var page =
+          renderDocumentMain(
+              DocumentContent.of(div().id(intro)), DocumentContent.of(div().id(sub)), toc);
 
       assertThat(page.elements("nav[aria-label=On This Page] details ol > li > a"))
           .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())
@@ -49,7 +55,7 @@ class TableOfContentsTest {
                   List.of(new DocumentHeading(ElementRef.page("missing-section"), "Missing", 2)));
 
       assertThatExceptionOfType(CompilationException.class)
-          .isThrownBy(() -> renderMain(brokenToc))
+          .isThrownBy(() -> renderDocumentMain(brokenToc))
           .satisfies(failure ->
               assertThat(failure.diagnostics())
                   .singleElement()
@@ -71,10 +77,10 @@ class TableOfContentsTest {
     @DisplayName("lists sections registered after it")
     void listsFollowingSections() {
       var page =
-          renderMain(
+          renderDocumentMain(
               TableOfContents.of("On this page"),
-              Section.of("intro", "Introduction").child(p().text("a")),
-              Section.of("usage", "Usage").level(3).child(p().text("b")));
+              DocumentContent.of(Section.of("intro", "Introduction").child(p().text("a"))),
+              DocumentContent.of(Section.of("usage", "Usage").level(3).child(p().text("b"))));
 
       assertThat(page.elements("nav.toc-container a"))
           .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())
@@ -107,7 +113,7 @@ class TableOfContentsTest {
                 Section.of("telemetry", "Telemetry").surface(Section.Surface.HIGHLIGHT).level(3))
             .tocTitle("Table of Contents");
 
-    var page = renderMain(layout);
+    var page = renderDocumentMain(layout);
 
     assertThat(page.elements(".doc-toc-rail nav a"))
         .extracting(a -> a.attr("href") + "@" + a.attr("data-level") + ":" + a.text())

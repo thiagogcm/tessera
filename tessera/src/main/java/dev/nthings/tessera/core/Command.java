@@ -22,8 +22,10 @@ public sealed interface Command permits BuiltinCommand, CustomCommand {
   }
 
   /// Creates a custom command as [#custom(String, String)] does, with `payload` attributes set on
-  /// the invoker, such as `data-sku`. Throws IllegalArgumentException if a part is empty or a
-  /// payload key is `id`, `role` or `aria-*`.
+  /// the invoker, such as `data-sku`. Payload keys follow the rules of [TagElement#attr(String,
+  /// String)]: plain ASCII attribute names other than `id`, `role`, `aria-*`, inline event handlers
+  /// (`on*`) and `srcdoc`, in any letter case. Throws IllegalArgumentException if a part is empty
+  /// or a payload key breaks those rules.
   static Command custom(String namespace, String name, Map<String, String> payload) {
     return new CustomCommand(namespace, name, payload);
   }

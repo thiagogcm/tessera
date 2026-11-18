@@ -5,8 +5,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.view.Diagnostic;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

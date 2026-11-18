@@ -1,9 +1,8 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.foundation.FluentBuilder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.FragmentData;
 
 /// Transparent group of siblings that emits no wrapper markup, created by [Elements#fragment()].
 /// Use it to return several roots, or to keep children as direct children of the surrounding
@@ -11,7 +10,13 @@ import java.util.List;
 public final class FragmentElement
     implements Element, ParentElement<FragmentElement>, FluentBuilder<FragmentElement> {
 
-  private final List<Element> children = new ArrayList<>();
+  static {
+    AuthoringAccess.registerFragment(fragment -> fragment.data);
+  }
+
+  private final FragmentData data = new FragmentData();
+
+  FragmentElement() {}
 
   @Override
   public FragmentElement self() {
@@ -19,20 +24,16 @@ public final class FragmentElement
   }
 
   @Override
-  public void appendChild(Element child) {
-    children.add(child);
-  }
-
-  /// Compiler-facing: a read-only view of the children, in order.
-  public List<Element> childrenList() {
-    return Collections.unmodifiableList(children);
+  public FragmentElement child(IntoElement child) {
+    data.children.add(child.intoElement());
+    return this;
   }
 
   /// A copy of this group whose children are also copies.
   FragmentElement copy() {
     var copy = new FragmentElement();
-    for (var child : children) {
-      copy.appendChild(TagElement.detach(child));
+    for (var child : data.children) {
+      copy.data.children.add(TagElement.detach(child));
     }
     return copy;
   }

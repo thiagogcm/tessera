@@ -113,25 +113,24 @@ public record PageTree(List<Node> head, List<Node> body) {
     return oneLine.length() <= 60 ? oneLine : oneLine.substring(0, 57) + "...";
   }
 
-  static PageTree of(List<ViewSnapshot.Node> head, List<ViewSnapshot.Node> body) {
+  static PageTree of(List<ViewSnapshot.Node<String>> head, List<ViewSnapshot.Node<String>> body) {
     return new PageTree(convert(head), convert(body));
   }
 
-  private static List<Node> convert(List<ViewSnapshot.Node> nodes) {
+  private static List<Node> convert(List<ViewSnapshot.Node<String>> nodes) {
     var converted = new ArrayList<Node>(nodes.size());
     convert(nodes, converted);
     return converted;
   }
 
   /// Converts `nodes` into `converted`, emitting each group's children in its place.
-  private static void convert(List<ViewSnapshot.Node> nodes, List<Node> converted) {
+  private static void convert(List<ViewSnapshot.Node<String>> nodes, List<Node> converted) {
     for (var node : nodes) {
       switch (node) {
-        case ViewSnapshot.Group group -> convert(group.children(), converted);
-        case ViewSnapshot.Effect _ -> throw new IllegalStateException("Effect in a document tree");
+        case ViewSnapshot.Group<String> group -> convert(group.children(), converted);
         case ViewSnapshot.Text(var content) -> converted.add(new Text(content));
-        case ViewSnapshot.Raw(var html) -> converted.add(new Raw(html.length()));
-        case ViewSnapshot.Tag tag -> {
+        case ViewSnapshot.Special<String> raw -> converted.add(new Raw(raw.payload().length()));
+        case ViewSnapshot.Tag<String> tag -> {
           var location = tag.location();
           converted.add(
               new Tag(

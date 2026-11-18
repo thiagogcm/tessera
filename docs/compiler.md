@@ -32,7 +32,8 @@ sequenceDiagram
 
 | Owner | Responsibility |
 | --- | --- |
-| `DocumentPass` | Static backend for deferred priorities, late slots, document contributions, and unsupported live features |
+| `DocumentPass` | Orders deferred priorities, late slots, and document contributions |
+| `DocumentExpansion` | Lowers document placements and contributes scripts declared by portable widgets |
 | `ViewExpansion` | Expand components/scopes, require one element host per scope, allocate identities, collect styles and outline headings, and preserve origins |
 | `ViewState` | Shared reference bindings, DOM IDs, generated counters, transition identities, and expansion diagnostics |
 | `ReferenceLinker` | Resolve symbolic references and late slots, check sibling keys, splice transparent wrappers, and place tooltip companions |
@@ -44,13 +45,13 @@ sequenceDiagram
 
 Deferred content expands in its lexical scope and is emitted in priority/sequence order. Late callbacks resolve before document-end sections and head contributions. Contribution processing allows end sections to register more end sections and head contributions to register more head content.
 
-A scope root must be one element. `ViewExpansion` walks component boundaries and keyed wrappers to that element and stamps `data-scope` and `data-scope-id`. Another scope, a fragment, text, raw HTML, late or deferred content, or nothing reports `scope-root`. Expansion does not insert a `div` or replace an inner scope's host. `Scope.expand` still returns `IntoElement`; the host check is runtime validation.
+A scope's host is the element its `expand` returns: a `TagElement` for a portable scope and a `DocumentElement` for a document scope. `ViewExpansion` stamps `data-scope` and `data-scope-id` on it. Expansion does not insert a `div` or replace an inner scope's host. Page bodies, document components, late callbacks, and end sections lower to `DocumentNode`s; live nodes never reach the compiler.
 
 `ReferenceLinker` converts `ViewNode` values to `ViewSnapshot.Node` values. Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. A scope boundary links as an ordinary group whose definition is the stable `scopeName()`. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
 
 Heading metadata is read from the element during expansion and resolved by `DocumentPass` after linking. An unbound outline target reports `unbound-reference`.
 
-Linked tags, text, raw HTML, and transparent groups reach document validation, inspection, and emission. Groups retain keys and authoring definitions for browser reconciliation; static writers flatten their children. Effects and controlled/event-bearing elements are rejected by the document backend. Their attributes and child lists are compiler-owned copies. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
+Linked tags, text, raw HTML, and transparent groups reach document validation, inspection, and emission. Groups retain keys and authoring definitions for browser reconciliation; static writers flatten their children. Linked tags own copies of their attributes and child lists. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
 
 ### Validation and preparation
 
@@ -104,6 +105,6 @@ Diagnostics and locations live in `view` so both backends use the same model. `C
 
 `Location` records optional route, page, component path, element tag, DOM ID, and source. Contribution records pair head, end-section, and heading content with the registering location. ViewExpansion and linking carry that location through deferred and late content.
 
-`SourceProvenance` captures locations through the `SourceCapture` contract in `core`. The JVM implementation, `SourceTracking`, lives in `compiler` and uses stack walking. Code-source classification distinguishes platform/library frames from application frames, including applications using Tessera-like package names. Elements built during component expansion inherit the component placement origin.
+`SourceProvenance` captures locations through the `SourceCapture` contract in `internal.authoring`. The JVM implementation, `SourceTracking`, lives in `compiler` and uses stack walking. Code-source classification distinguishes platform/library frames from application frames, including applications using Tessera-like package names. Elements built during component expansion inherit the component placement origin.
 
 Tracking is off by default and is propagated to site virtual threads when enabled. Public usage and inspection commands are in [Diagnostics](diagnostics.md#trace-elements-to-java-source).

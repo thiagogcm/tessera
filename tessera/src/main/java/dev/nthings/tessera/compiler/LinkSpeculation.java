@@ -1,9 +1,7 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.Documents;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -29,13 +27,10 @@ public enum LinkSpeculation {
   }
 
   /// Site-wide `<head>` content: the rules element, or nothing for [#NONE].
-  List<Element> headElements() {
+  List<DocumentContent> headElements() {
     if (rulesJson == null) {
       return List.of();
     }
-    return List.of(
-        new TagElement(HtmlTag.SCRIPT)
-            .attr("type", "speculationrules")
-            .child(Elements.rawHtml(rulesJson)));
+    return List.of(Documents.script("speculationrules", rulesJson));
   }
 }

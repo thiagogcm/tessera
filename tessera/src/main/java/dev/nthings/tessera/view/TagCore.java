@@ -1,24 +1,19 @@
 package dev.nthings.tessera.view;
 
-import dev.nthings.tessera.core.ControlProperties;
-import dev.nthings.tessera.core.EventListener;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.jspecify.annotations.Nullable;
 
 /// The parts of an element that linking passes through unchanged, shared by the expanded
 /// [ViewNode.Tag] and the linked [ViewSnapshot.Tag] it becomes.
-record TagCore(
-    TagName tag,
-    Location location,
-    Map<EventListener.Key, EventListener> events,
-    ControlProperties controlProperties,
-    Map<String, String> liveProperties) {
+record TagCore<M>(
+    TagName tag, Location location, @Nullable M payload, Map<String, String> liveProperties) {
 
   TagCore {
-    events = readOnly(events);
     liveProperties = readOnly(liveProperties);
   }
 

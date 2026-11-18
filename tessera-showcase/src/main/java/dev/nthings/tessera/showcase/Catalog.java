@@ -1,6 +1,5 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.span;
 
@@ -19,6 +18,9 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.Documents;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -137,9 +139,9 @@ public final class Catalog {
         List.of(
             "var modal = Modal.of(\"Publish release?\").id(\"publish\").closeLabel(\"Got it\");",
             "Button.of(\"Open modal\").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL);",
-            "Elements.deferred(modal, 10);"),
+            "Documents.deferred(modal, 10);"),
         List.of(
-            variant("closed", "Closed", true, Catalog::closedModal),
+            documentVariant("closed", "Closed", true, Catalog::closedModal),
             variant("open", "Open", false, Catalog::openModal)));
   }
 
@@ -187,7 +189,13 @@ public final class Catalog {
   }
 
   private static Story.Variant variant(
-      String name, String label, boolean inDocs, Supplier<IntoElement> content) {
+      String name, String label, boolean inDocs, Supplier<? extends IntoElement> content) {
+    return new Story.Variant(name, label, inDocs, () -> DocumentContent.of(content.get()));
+  }
+
+  /// A variant whose content needs document placement, such as a deferred dialog.
+  private static Story.Variant documentVariant(
+      String name, String label, boolean inDocs, Supplier<DocumentContent> content) {
     return new Story.Variant(name, label, inDocs, content);
   }
 
@@ -211,7 +219,7 @@ public final class Catalog {
     return IconButton.of("Refresh", span().text("↻"));
   }
 
-  private static IntoElement closedModal() {
+  private static DocumentContent closedModal() {
     var modal =
         Modal.of("Publish release?")
             .id("publish")
@@ -219,11 +227,14 @@ public final class Catalog {
             .bodyText(
                 "Press Escape or click the backdrop to dismiss — closedby=\"any\" handles both.")
             .closeLabel("Got it");
-    return div()
-        .layout(FlexLayout.row(CssLength.rem(0.75), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
-        .children(
-            Button.of("Open modal").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL),
-            deferred(modal, 10));
+    return DocumentElement.of(
+            div()
+                .layout(
+                    FlexLayout.row(
+                        CssLength.rem(0.75), FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
+                .child(
+                    Button.of("Open modal").command(modal.dialogRef(), BuiltinCommand.SHOW_MODAL)))
+        .child(Documents.deferred(modal, 10));
   }
 
   private static IntoElement openModal() {

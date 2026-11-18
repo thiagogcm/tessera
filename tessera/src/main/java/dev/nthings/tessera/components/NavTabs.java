@@ -6,8 +6,8 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ul;
 
 import dev.nthings.tessera.core.AriaCurrent;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -94,7 +94,7 @@ public final class NavTabs extends BuiltinScope<NavTabs> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var list = ul();
     for (var item : links) {
       var isActive = item.href().equals(active);

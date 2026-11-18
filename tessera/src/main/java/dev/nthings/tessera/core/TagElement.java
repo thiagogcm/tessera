@@ -8,12 +8,12 @@ import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.foundation.Decimals;
 import dev.nthings.tessera.foundation.FluentBuilder;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.IdReference;
+import dev.nthings.tessera.internal.authoring.PortableNode;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
+import dev.nthings.tessera.internal.authoring.TagData;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
@@ -36,70 +36,51 @@ import org.jspecify.annotations.Nullable;
 /// named ref bound before or after them gives the element its id, and every ref names the same
 /// element. Two named refs asking for different ids report `conflicting-element-id`.
 ///
-/// Live backends add Java event handlers ([#onEvent(String, Consumer)]), controlled form properties
-/// ([#value(String)], [#checked(boolean)], [#selectedValues(List)]) and continuously changing
-/// styles ([#live(StyleBlock)]). Static compilation rejects handlers and controlled properties with
-/// `native-event-handlers` and `native-control-properties`, and compiles live styles as ordinary
-/// declarations.
+/// An element is portable: it holds nothing that only one backend executes. Continuously changing
+/// styles ([#live(StyleBlock)]) compile to ordinary declarations in a document and to one stable
+/// rule in a browser root. A built-in widget's bundled behavior (such as tabs) is loaded by
+/// document output only. Event handlers and controlled form properties belong to the browser
+/// module's live elements, which wrap a portable element without changing it.
 public final class TagElement
     implements Element, Styled<TagElement>, ParentElement<TagElement>, FluentBuilder<TagElement> {
 
-  private final TagName tag;
-  private final Declarations style = new Declarations();
-  private final Map<String, String> attributes = new LinkedHashMap<>();
-  private final Map<String, IdReference> idReferences = new LinkedHashMap<>();
-  private final List<Element> children = new ArrayList<>();
-  private final List<ElementRef> refs = new ArrayList<>(1);
+  static {
+    AuthoringAccess.registerTag(element -> element.data);
+  }
 
-  /// Allocated on the first handler: most elements bind none.
-  private Map<EventListener.Key, EventListener> events = Map.of();
+  private final TagData data;
 
-  private ControlProperties controlProperties = ControlProperties.UNCONTROLLED;
-  private @Nullable Declarations live;
-  private @Nullable TagElement interestTooltip;
-  private boolean anchorSelf;
-  private @Nullable ElementRef anchorTarget;
-  private @Nullable TransitionKey transitionKey;
-  private @Nullable DocumentHeading navigationHeading;
-  private final @Nullable SourceLocation source;
-
-  /// Creates an element for `tag`. Authors normally use the [Elements] factories.
-  public TagElement(TagName tag) {
+  TagElement(TagName tag) {
     this(tag, SourceProvenance.capture());
   }
 
   private TagElement(TagName tag, @Nullable SourceLocation source) {
-    this.tag = tag;
-    this.source = source;
+    data = new TagData(tag, source);
   }
 
   /// Copies this builder and every descendant element, so expansion can wire the copy without
   /// writing the builder the caller still holds. [ElementRef] handles are the same objects: a ref
   /// is an identity, not configuration. Component and scope instances nested in the tree are
-  /// shared. Event handlers and controlled properties are copied; live styles are a new declaration
-  /// set.
+  /// shared. Live styles are a new declaration set.
   public TagElement copy() {
-    var copy = new TagElement(tag, source);
-    copy.style.mergeFrom(style);
-    copy.attributes.putAll(attributes);
-    copy.idReferences.putAll(idReferences);
-    for (var child : children) {
-      copy.children.add(detach(child));
+    var copy = new TagElement(data.tag, data.source);
+    copy.data.style.mergeFrom(data.style);
+    copy.data.attributes.putAll(data.attributes);
+    copy.data.idReferences.putAll(data.idReferences);
+    for (var child : data.children) {
+      copy.data.children.add(detach(child));
     }
-    copy.refs.addAll(refs);
-    if (!events.isEmpty()) {
-      copy.events = new LinkedHashMap<>(events);
-    }
-    copy.controlProperties = controlProperties;
-    var liveStyle = live;
+    copy.data.refs.addAll(data.refs);
+    var liveStyle = data.live;
     if (liveStyle != null) {
-      copy.live = new Declarations().mergeFrom(liveStyle);
+      copy.data.live = new Declarations().mergeFrom(liveStyle);
     }
-    copy.interestTooltip = interestTooltip == null ? null : interestTooltip.copy();
-    copy.anchorSelf = anchorSelf;
-    copy.anchorTarget = anchorTarget;
-    copy.transitionKey = transitionKey;
-    copy.navigationHeading = navigationHeading;
+    copy.data.interestTooltip = data.interestTooltip == null ? null : data.interestTooltip.copy();
+    copy.data.anchorSelf = data.anchorSelf;
+    copy.data.anchorTarget = data.anchorTarget;
+    copy.data.transitionKey = data.transitionKey;
+    copy.data.navigationHeading = data.navigationHeading;
+    copy.data.behavior = data.behavior;
     return copy;
   }
 
@@ -108,9 +89,7 @@ public final class TagElement
     return switch (element) {
       case TagElement tag -> tag.copy();
       case FragmentElement fragment -> fragment.copy();
-      case KeyedElement keyed -> new KeyedElement(keyed.key(), detach(keyed.content()));
-      case DeferredElement deferred ->
-          new DeferredElement(detach(deferred.child()), deferred.priority());
+      case PortableNode.Keyed keyed -> new PortableNode.Keyed(keyed.key(), detach(keyed.content()));
       default -> element;
     };
   }
@@ -120,47 +99,19 @@ public final class TagElement
     return this;
   }
 
-  /// Compiler-facing: the authoring call site, present only while source tracking is active.
-  public @Nullable SourceLocation source() {
-    return source;
-  }
-
-  /// Compiler-facing: the emitted tag name.
-  public TagName tag() {
-    return tag;
-  }
-
-  @Override
-  public Declarations style() {
-    return style;
-  }
-
-  /// Compiler-facing: a read-only view of the attributes, in the order they were first set. The id
-  /// comes from bound refs and generated style classes are appended to `class` at compile time, so
-  /// neither is in this map; slots of [#idReferences()] hold an empty placeholder.
-  public Map<String, String> attributes() {
-    return Collections.unmodifiableMap(attributes);
-  }
-
-  /// Compiler-facing: a read-only view of the attributes whose values are DOM ids of [ElementRef]
-  /// targets, resolved by the compiler.
-  public Map<String, IdReference> idReferences() {
-    return Collections.unmodifiableMap(idReferences);
-  }
-
-  /// Compiler-facing: a read-only view of the child elements in the order they were added.
-  public List<Element> childrenList() {
-    return Collections.unmodifiableList(children);
-  }
-
   // --- Attributes -------------------------------------------------------------------------------
 
-  /// Sets an arbitrary attribute. `id` ([#id(ElementRef)]), `role` and `aria-*` have typed methods
-  /// and are refused here with IllegalArgumentException.
+  /// Sets an arbitrary attribute. An HTML element stores the name in lowercase, since HTML names
+  /// are case-insensitive; SVG names keep their case. The name must start with an ASCII letter, `_`
+  /// or `:` and contain only ASCII letters, digits, `-`, `_`, `.` and `:`, or
+  /// IllegalArgumentException is thrown. `id` ([#id(ElementRef)]), `role` and `aria-*` have typed
+  /// methods and are refused here with IllegalArgumentException. So are the attributes that embed
+  /// script or markup, inline event handlers (`on*`) and `srcdoc`: a portable element runs no
+  /// script of its own, and expansion reports a `javascript:` URL as `script-url`.
   public TagElement attr(String name, String value) {
-    Attributes.requireGeneric(name);
-    attributes.put(name, value);
-    idReferences.remove(name);
+    name = Attributes.generic(data.tag, name);
+    data.attributes.put(name, value);
+    data.idReferences.remove(name);
     return this;
   }
 
@@ -168,26 +119,27 @@ public final class TagElement
   /// `onlyIf(condition, el -> el.boolAttr(name))` to set it conditionally. Refuses `id`, `role` and
   /// `aria-*` as [#attr(String, String)] does.
   public TagElement boolAttr(String name) {
-    Attributes.requireGeneric(name);
-    attributes.put(name, "");
-    idReferences.remove(name);
+    name = Attributes.generic(data.tag, name);
+    data.attributes.put(name, "");
+    data.idReferences.remove(name);
     return this;
   }
 
   /// Removes the attribute `name`, including one set through [#idRef], so it is not emitted. Does
   /// nothing if it is not set. Refuses `id`, `role` and `aria-*` as [#attr(String, String)] does.
   public TagElement removeAttr(String name) {
-    Attributes.requireGeneric(name);
-    attributes.remove(name);
-    idReferences.remove(name);
+    name = Attributes.generic(data.tag, name);
+    data.attributes.remove(name);
+    data.idReferences.remove(name);
     return this;
   }
 
   /// Sets `attribute` to the DOM ids of `targets` once they are bound on the page. Throws
-  /// IllegalArgumentException if no target is given, or for `id`, `role` and `aria-*`.
+  /// IllegalArgumentException if no target is given, for a name [#attr(String, String)] refuses, or
+  /// for a URL-valued attribute such as `href` or `src`; link to an element with
+  /// [#href(ElementRef)].
   public TagElement idRef(String attribute, ElementRef... targets) {
-    Attributes.requireGeneric(attribute);
-    return reference(attribute, new IdReference("", List.of(targets)));
+    return reference(Attributes.idList(data.tag, attribute), new IdReference("", List.of(targets)));
   }
 
   /// Sets `for` to the DOM id of `control`, on a `<label>`.
@@ -354,26 +306,25 @@ public final class TagElement
   }
 
   private TagElement aria(String attribute, String value) {
-    attributes.put(attribute, value);
+    data.attributes.put(attribute, value);
     return this;
   }
 
   private TagElement reference(String attribute, IdReference reference) {
     // Reserve the slot so resolved ids keep declaration order.
-    attributes.putIfAbsent(attribute, "");
-    idReferences.put(attribute, reference);
+    data.attributes.putIfAbsent(attribute, "");
+    data.idReferences.put(attribute, reference);
     return this;
   }
 
   /// Appends `child`. Throws IllegalStateException if this is a void element, which cannot have
   /// children.
   @Override
-  public void appendChild(Element child) {
-    if (tag.isVoid()) {
-      throw new IllegalStateException(
-          "HTML5 void element <" + tag.tagName() + "> cannot have children");
-    }
-    children.add(child);
+  public TagElement child(IntoElement child) {
+    var node = child.intoElement();
+    data.requireChildren();
+    data.children.add(node);
+    return this;
   }
 
   /// Binds `elementRef` to this element, so its DOM id is resolved on the page and other elements
@@ -382,27 +333,22 @@ public final class TagElement
   /// generated as `<tag>-<n>`. Two named refs asking for different ids report
   /// `conflicting-element-id`. Binding the same ref twice on one element has no further effect.
   public TagElement id(ElementRef elementRef) {
-    for (var bound : refs) {
+    for (var bound : data.refs) {
       if (bound == elementRef) {
         return this;
       }
     }
-    refs.add(elementRef);
+    data.refs.add(elementRef);
     return this;
   }
 
   /// Returns a ref to this element: the first one bound, or a new anonymous ref bound now. Pass it
   /// to `command`, `labelFor`, `aria*` or `href` on other elements.
   public ElementRef ref() {
-    if (refs.isEmpty()) {
-      refs.add(ElementRef.anonymous());
+    if (data.refs.isEmpty()) {
+      data.refs.add(ElementRef.anonymous());
     }
-    return refs.getFirst();
-  }
-
-  /// Compiler-facing: the refs bound to this element, in binding order.
-  public List<ElementRef> boundRefs() {
-    return Collections.unmodifiableList(refs);
+    return data.refs.getFirst();
   }
 
   /// Adds a hint tooltip that this element's `interestfor` points at, shown on hover or focus. The
@@ -420,40 +366,16 @@ public final class TagElement
             .positionTryFallbacks(
                 PositionTry.flip(PositionTry.Flip.BLOCK), PositionTry.flip(PositionTry.Flip.INLINE))
             .m(CssLength.rem(0.25));
-    this.interestTooltip = tooltipBuilder.apply(base);
+    data.interestTooltip = tooltipBuilder.apply(base);
     return this;
-  }
-
-  /// Compiler-facing: the tooltip element, or `null` if none was added.
-  public @Nullable TagElement interestTooltip() {
-    return interestTooltip;
-  }
-
-  /// Marks this element as a document-outline heading. Expansion collects `heading` when the
-  /// element is expanded. The first heading for a target is kept. Ordinary headings leave this
-  /// unset, so dialog titles, footnote chrome, and other interface headings stay out of the
-  /// outline. Heading components set it when the author opts in.
-  public TagElement navigationHeading(DocumentHeading heading) {
-    this.navigationHeading = heading;
-    return this;
-  }
-
-  /// The outline heading carried by this element, or `null`.
-  public @Nullable DocumentHeading navigationHeading() {
-    return navigationHeading;
   }
 
   /// Declares an anchor named after this element's DOM id, so [#anchoredTo] elements can position
   /// against it. Binds an anonymous ref when this element has none.
   public TagElement anchorName() {
     ref();
-    this.anchorSelf = true;
+    data.anchorSelf = true;
     return this;
-  }
-
-  /// Compiler-facing: whether [#anchorName()] was called.
-  public boolean isAnchor() {
-    return anchorSelf;
   }
 
   /// Positions this element against `anchor`, with `area` and the given fallbacks. The anchor must
@@ -461,52 +383,16 @@ public final class TagElement
   /// nothing, and no error is reported. An unbound `anchor` is reported as `unbound-reference`.
   public TagElement anchoredTo(
       ElementRef anchor, PositionArea area, PositionTry firstFallback, PositionTry... fallbacks) {
-    this.anchorTarget = anchor;
+    data.anchorTarget = anchor;
     return positionArea(area).positionTryFallbacks(firstFallback, fallbacks);
-  }
-
-  /// Compiler-facing: the element this one is positioned against, or `null`.
-  public @Nullable ElementRef anchorTarget() {
-    return anchorTarget;
   }
 
   /// Emits `view-transition-name` (and class) for a cross-document transition. Keys are checked per
   /// page (`duplicate-transition-key`) and across the site (`unshared-transition-key`). See
   /// [TransitionKey].
   public TagElement transitionKey(TransitionKey key) {
-    this.transitionKey = key;
+    data.transitionKey = key;
     return this;
-  }
-
-  /// Compiler-facing: the transition key, or `null` if none was set.
-  public @Nullable TransitionKey transitionKey() {
-    return transitionKey;
-  }
-
-  /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input` or
-  /// `keydown`) to this element in a live backend, bubble phase. A handler for the same type and
-  /// phase replaces the previous one. Re-rendering rebinds the current handler, so it may capture
-  /// the state of the render that created it. Static compilation reports `native-event-handlers`.
-  /// Throws IllegalArgumentException if `event` is blank.
-  public TagElement onEvent(String event, Consumer<BrowserEvent> handler) {
-    return onEvent(event, EventOptions.DEFAULT, handler);
-  }
-
-  /// Runs `handler` for `event` with native listener `options`: capture phase, passive, or once. A
-  /// handler for the same type and phase replaces the previous one. Throws IllegalArgumentException
-  /// if `event` is blank.
-  public TagElement onEvent(String event, EventOptions options, Consumer<BrowserEvent> handler) {
-    var listener = new EventListener(event, options, handler);
-    if (events.isEmpty()) {
-      events = new LinkedHashMap<>();
-    }
-    events.put(listener.key(), listener);
-    return this;
-  }
-
-  /// Backend-facing: the bound handlers, keyed by [EventListener#key()].
-  public Map<EventListener.Key, EventListener> events() {
-    return events.isEmpty() ? events : Collections.unmodifiableMap(events);
   }
 
   /// Writes styles that change continuously, such as an animated size or a progress width, through
@@ -515,54 +401,12 @@ public final class TagElement
   /// ordinary declarations. Calling again extends the same live styles. Only plain declarations are
   /// live: write state and media rules with `on(...)`.
   public TagElement live(StyleBlock styles) {
-    var target = live;
+    var target = data.live;
     if (target == null) {
       target = new Declarations();
-      live = target;
+      data.live = target;
     }
     styles.configure(target);
     return this;
-  }
-
-  /// Backend-facing: the live styles, or `null` when [#live(StyleBlock)] was never called.
-  public @Nullable Declarations liveStyle() {
-    return live;
-  }
-
-  /// Controls the live `value` of an input, textarea or single select in a live backend: each
-  /// render writes it to the control unless the user is composing text with an input method. The
-  /// initial `value` attribute is unaffected. A host other than those (a file input, a multiple
-  /// select, any other element) reports `control-value`; static compilation reports
-  /// `native-control-properties`.
-  public TagElement value(String value) {
-    controlProperties = controlProperties.withValue(value);
-    return this;
-  }
-
-  /// Controls the live checked state of a checkbox or radio input in a live backend. Another host
-  /// reports `control-checked`; static compilation reports `native-control-properties`.
-  public TagElement checked(boolean checked) {
-    controlProperties = controlProperties.withChecked(checked);
-    return this;
-  }
-
-  /// Controls the selected options of a multiple select in a live backend; an empty list deselects
-  /// every option. Another host reports `control-selection`; static compilation reports
-  /// `native-control-properties`.
-  public TagElement selectedValues(List<String> values) {
-    controlProperties = controlProperties.withSelectedValues(values);
-    return this;
-  }
-
-  /// Stops controlling the live form properties, leaving the browser's current values and the
-  /// initial attributes as they are.
-  public TagElement uncontrolled() {
-    controlProperties = ControlProperties.UNCONTROLLED;
-    return this;
-  }
-
-  /// Backend-facing: the controlled form properties.
-  public ControlProperties controlProperties() {
-    return controlProperties;
   }
 }

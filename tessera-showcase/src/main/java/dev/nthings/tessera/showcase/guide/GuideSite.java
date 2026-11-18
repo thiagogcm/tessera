@@ -16,12 +16,11 @@ import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.Section;
-import dev.nthings.tessera.components.TableOfContents;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -30,7 +29,13 @@ import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.Documents;
+import dev.nthings.tessera.document.components.TableOfContents;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /// Runnable two-page site example using only public library APIs.
 public final class GuideSite {
@@ -67,36 +72,56 @@ public final class GuideSite {
                     "Guide",
                     page(
                         "Guide",
-                        TableOfContents.of("On this page"),
-                        Section.of("installation", "Installation")
-                            .child(p().text("Build with JDK 25 and Maven.")),
-                        Section.of("publishing", "Publishing")
-                            .child(p().text("Upload the generated directory to a static host."))))))
+                        List.of(
+                            TableOfContents.of("On this page"),
+                            DocumentContent.of(
+                                Section.of("installation", "Installation")
+                                    .child(p().text("Build with JDK 25 and Maven."))),
+                            DocumentContent.of(
+                                Section.of("publishing", "Publishing")
+                                    .child(
+                                        p().text(
+                                                "Upload the generated directory to a static host."))))))))
         .build();
   }
 
-  private static Element page(String title, IntoElement... body) {
+  private static DocumentContent page(String title, IntoElement... body) {
+    var content = new ArrayList<DocumentContent>();
+    for (var item : body) {
+      content.add(DocumentContent.of(item));
+    }
+    return page(title, content);
+  }
+
+  private static DocumentContent page(String title, List<DocumentContent> body) {
     var search =
         SearchPalette.of()
             .id("guide-search")
             .item("Pages", "Home", "/")
             .item("Guide", "Installation", "/guide/#installation")
             .item("Guide", "Publishing", "/guide/#publishing");
-    return Elements.main()
-        .p(Tokens.SPACE_8)
-        .children(
-            nav()
-                .layout(
-                    FlexLayout.row(Tokens.SPACE_4, FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
-                .ariaLabel("Site navigation")
-                .children(a("/").text("Home"), a("/guide/").text("Guide"), search.triggerButton()),
-            h1().text(title),
-            div()
-                .layout(
-                    FlexLayout.column(
-                        Tokens.SPACE_4, FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP))
-                .children(body),
-            Elements.deferred(search, 10));
+    return DocumentElement.of(
+            Elements.main()
+                .p(Tokens.SPACE_8)
+                .children(
+                    nav()
+                        .layout(
+                            FlexLayout.row(
+                                Tokens.SPACE_4, FlexLayout.Align.CENTER, FlexLayout.Wrap.WRAP))
+                        .ariaLabel("Site navigation")
+                        .children(
+                            a("/").text("Home"),
+                            a("/guide/").text("Guide"),
+                            search.triggerButton()),
+                    h1().text(title)))
+        .child(
+            DocumentElement.of(
+                    div()
+                        .layout(
+                            FlexLayout.column(
+                                Tokens.SPACE_4, FlexLayout.Align.STRETCH, FlexLayout.Wrap.NOWRAP)))
+                .children(body))
+        .child(Documents.deferred(search, 10));
   }
 
   /// Scoped component with a stable id, styled through shared tokens.
@@ -116,7 +141,7 @@ public final class GuideSite {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return div().children(h2().text(title), p().text(value));
     }
   }

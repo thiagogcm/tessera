@@ -41,7 +41,9 @@ The compiler collects independent authoring errors within each validation stage.
 | Page preparation | Identity, references, images, markup, accessibility, and URL syntax; site page failures are collected in route declaration order |
 | Site validation | Cross-route targets and fragments, transition keys, and generated stylesheet/module path collisions; runs after every page prepares successfully |
 
-Ambiguous duplicate bindings and unresolved references are excluded from target-dependent checks to avoid misleading secondary errors. Cross-route diagnostics retain the first location where an outgoing URL appears on a page. Page preparation reports `scope-root` when a scope's root is not one element host. See [compiler internals](compiler.md) for the validation flow.
+Markup checks include `svg-namespace`: an SVG shape must sit inside an `svg` element, and HTML elements cannot sit inside one, because an HTML parser and a browser root would otherwise place the element in different namespaces. Deferred content is checked against the end of the body, where it is placed. `script-url` reports a `javascript:` URL in `href`, `xlink:href`, `src`, `action`, `formaction`, `poster`, or `data`, and an iframe `src` holding an inline `data:` document: portable markup runs no script of its own. HTML attribute names are stored in lowercase, so every check sees `HREF` as `href`. Browser roots apply the same shared checks before publishing a render.
+
+Ambiguous duplicate bindings and unresolved references are excluded from target-dependent checks to avoid misleading secondary errors. Cross-route diagnostics retain the first location where an outgoing URL appears on a page. See [compiler internals](compiler.md) for the validation flow.
 
 Exceptions thrown by application expansion, styling, late, or document-end callbacks propagate unchanged. A suppressed `CompilationException` adds component context. Trusted raw HTML remains opaque to validation.
 

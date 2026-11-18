@@ -2,7 +2,6 @@ package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.view.ViewSnapshot.Raw;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.util.ArrayList;
@@ -33,18 +32,18 @@ final class AccessibilityRules {
     this.state = state;
   }
 
-  private record Landmark(Tag tag, @Nullable String name) {}
+  private record Landmark(Tag<?> tag, @Nullable String name) {}
 
-  private record Heading(Tag tag, int level) {}
+  private record Heading(Tag<?> tag, int level) {}
 
   /// Checks the body of a document or mounted root; `<head>` content has no accessibility tree.
-  static void check(List<ViewSnapshot.Node> body, ViewValidation state) {
+  static void check(List<? extends ViewSnapshot.Node<?>> body, ViewValidation state) {
     var rules = new AccessibilityRules(state);
     visit(body, Context.ROOT, rules::checkTag);
   }
 
   /// Checks the landmark and heading structure of a whole document's body.
-  static void checkDocument(List<ViewSnapshot.Node> body, ViewValidation state) {
+  static void checkDocument(List<? extends ViewSnapshot.Node<?>> body, ViewValidation state) {
     var rules = new AccessibilityRules(state);
     visit(
         body,
@@ -67,13 +66,14 @@ final class AccessibilityRules {
 
   /// Runs `check` on each element of `nodes`, in document order, with its context.
   private static void visit(
-      List<ViewSnapshot.Node> nodes, Context context, BiConsumer<Tag, Context> check) {
+      List<? extends ViewSnapshot.Node<?>> nodes,
+      Context context,
+      BiConsumer<Tag<?>, Context> check) {
     for (var node : nodes) {
       switch (node) {
-        case Text _, Raw _ -> {}
-        case ViewSnapshot.Effect _ -> {}
-        case ViewSnapshot.Group group -> visit(group.children(), context, check);
-        case Tag tag -> {
+        case Text<?> _, ViewSnapshot.Special<?> _ -> {}
+        case ViewSnapshot.Group<?> group -> visit(group.children(), context, check);
+        case Tag<?> tag -> {
           check.accept(tag, context);
           var inner =
               new Context(
@@ -85,14 +85,14 @@ final class AccessibilityRules {
     }
   }
 
-  private static boolean isUnexposed(Tag tag) {
+  private static boolean isUnexposed(Tag<?> tag) {
     var attrs = tag.attributes();
     return tag.tag() == HtmlTag.DIALOG
         || attrs.containsKey("popover")
         || "true".equals(attrs.get("aria-hidden"));
   }
 
-  private void checkTag(Tag tag, Context context) {
+  private void checkTag(Tag<?> tag, Context context) {
     var attrs = tag.attributes();
     checkTabIndex(tag);
     if (tag.tag() == HtmlTag.LABEL) {
@@ -118,7 +118,7 @@ final class AccessibilityRules {
 
   // --- Declared roles ---
 
-  private void checkDeclaredRole(Tag tag, Role role, Context context) {
+  private void checkDeclaredRole(Tag<?> tag, Role role, Context context) {
     var attrs = tag.attributes();
 
     var supported = role.supportedAria();
@@ -167,11 +167,11 @@ final class AccessibilityRules {
     }
   }
 
-  private static String describe(Tag tag, Role role) {
+  private static String describe(Tag<?> tag, Role role) {
     return "<" + tag.tag().tagName() + "> with role=\"" + role.wireValue() + "\"";
   }
 
-  private void reportMissingName(Tag tag, Role role) {
+  private void reportMissingName(Tag<?> tag, Role role) {
     state.report(
         tag.location(),
         "role-name-required",
@@ -182,7 +182,7 @@ final class AccessibilityRules {
   }
 
   /// Whether `tag` has an accessible name from an author label, native label, or content.
-  private boolean hasName(Tag tag, @Nullable Role role, Context context) {
+  private boolean hasName(Tag<?> tag, @Nullable Role role, Context context) {
     if (ViewValidation.hasAuthorName(tag)) {
       return true;
     }
@@ -207,41 +207,41 @@ final class AccessibilityRules {
     return type.equals("button") || type.equals("submit") || type.equals("reset");
   }
 
-  private static boolean ownsAny(Tag tag, Set<Role> roles) {
+  private static boolean ownsAny(Tag<?> tag, Set<Role> roles) {
     return ownsAny(tag.children(), roles);
   }
 
-  private static boolean ownsAny(List<ViewSnapshot.Node> children, Set<Role> roles) {
+  private static boolean ownsAny(List<? extends ViewSnapshot.Node<?>> children, Set<Role> roles) {
     for (var child : children) {
-      if (child instanceof ViewSnapshot.Group group && ownsAny(group.children(), roles)) {
+      if (child instanceof ViewSnapshot.Group<?> group && ownsAny(group.children(), roles)) {
         return true;
       }
-      if (child instanceof Tag nested && hasOrOwnsAny(nested, roles)) {
+      if (child instanceof Tag<?> nested && hasOrOwnsAny(nested, roles)) {
         return true;
       }
     }
     return false;
   }
 
-  private static boolean hasOrOwnsAny(Tag tag, Set<Role> roles) {
+  private static boolean hasOrOwnsAny(Tag<?> tag, Set<Role> roles) {
     var role = effectiveRole(tag);
     return (role != null && roles.contains(role)) || ownsAny(tag, roles);
   }
 
   // --- Roles, explicit and implicit ---
 
-  private static @Nullable Role explicitRole(Tag tag) {
+  private static @Nullable Role explicitRole(Tag<?> tag) {
     var declared = tag.attributes().get("role");
     return declared == null ? null : Role.fromWireValue(declared);
   }
 
-  private static @Nullable Role effectiveRole(Tag tag) {
+  private static @Nullable Role effectiveRole(Tag<?> tag) {
     var explicit = explicitRole(tag);
     return explicit != null ? explicit : implicitRole(tag);
   }
 
   /// Implicit role of a native element, for elements whose semantics are unconditional.
-  private static @Nullable Role implicitRole(Tag tag) {
+  private static @Nullable Role implicitRole(Tag<?> tag) {
     var attrs = tag.attributes();
     return switch (tag.tag()) {
       case HtmlTag.MAIN -> Role.MAIN;
@@ -281,7 +281,7 @@ final class AccessibilityRules {
 
   // --- Document structure ---
 
-  private void recordStructure(Tag tag, Role role) {
+  private void recordStructure(Tag<?> tag, Role role) {
     if (role == Role.MAIN) {
       if (++mainLandmarks == 2) {
         state.report(
@@ -303,7 +303,7 @@ final class AccessibilityRules {
     }
   }
 
-  private static int ariaLevel(Tag tag) {
+  private static int ariaLevel(Tag<?> tag) {
     var declared = tag.attributes().get("aria-level");
     // Only TagElement.ariaLevel writes it, already checked to be 1-6.
     return declared == null ? 0 : Integer.parseInt(declared);
@@ -319,7 +319,7 @@ final class AccessibilityRules {
 
   /// Comparable form of the author-supplied name: label text, or the text of the elements that
   /// label it; `null` when there is none.
-  private @Nullable String nameKey(Tag tag) {
+  private @Nullable String nameKey(Tag<?> tag) {
     var label = tag.attributes().get("aria-label");
     if (label != null && !label.isBlank()) {
       return label.strip();
@@ -339,16 +339,16 @@ final class AccessibilityRules {
     return joined.isEmpty() ? labelledBy.strip() : joined;
   }
 
-  private static String textOf(ViewSnapshot.Node node) {
+  private static String textOf(ViewSnapshot.Node<?> node) {
     return switch (node) {
       case Text(var content) -> content;
-      case Tag tag -> textOf(tag.children());
-      case ViewSnapshot.Group group -> textOf(group.children());
+      case Tag<?> tag -> textOf(tag.children());
+      case ViewSnapshot.Group<?> group -> textOf(group.children());
       default -> "";
     };
   }
 
-  private static String textOf(List<ViewSnapshot.Node> children) {
+  private static String textOf(List<? extends ViewSnapshot.Node<?>> children) {
     var text = new StringBuilder();
     children.forEach(child -> text.append(textOf(child)));
     return text.toString();
@@ -410,7 +410,7 @@ final class AccessibilityRules {
     }
   }
 
-  private void checkHeadingText(Tag tag) {
+  private void checkHeadingText(Tag<?> tag) {
     // A declared heading role is named under role-name-required instead.
     if (!ViewValidation.declaresRole(tag) && !hasHeadingText(tag)) {
       state.report(
@@ -421,13 +421,13 @@ final class AccessibilityRules {
     }
   }
 
-  private static boolean hasHeadingText(Tag tag) {
+  private static boolean hasHeadingText(Tag<?> tag) {
     return ViewValidation.hasAriaName(tag) || ViewValidation.containsReadableText(tag.children());
   }
 
   // --- Focus and labels ---
 
-  private void checkTabIndex(Tag tag) {
+  private void checkTabIndex(Tag<?> tag) {
     var declared = tag.attributes().get("tabindex");
     if (declared != null && tabIndex(declared) > 0) {
       state.report(
@@ -447,7 +447,7 @@ final class AccessibilityRules {
     return parseIntOr(declared, Integer.MIN_VALUE);
   }
 
-  private void checkLabelTarget(Tag label) {
+  private void checkLabelTarget(Tag<?> label) {
     var targetId = label.attributes().get("for");
     var target = targetId == null ? null : state.elementsById.get(targetId);
     if (target != null && !isLabelable(target)) {
@@ -464,7 +464,7 @@ final class AccessibilityRules {
     }
   }
 
-  private static boolean isLabelable(Tag tag) {
+  private static boolean isLabelable(Tag<?> tag) {
     return switch (tag.tag()) {
       case HtmlTag.BUTTON, HtmlTag.SELECT, HtmlTag.TEXTAREA, HtmlTag.OUTPUT -> true;
       case HtmlTag.INPUT -> !"hidden".equals(tag.attributes().get("type"));
@@ -472,7 +472,7 @@ final class AccessibilityRules {
     };
   }
 
-  private void checkHiddenFocus(Tag hidden) {
+  private void checkHiddenFocus(Tag<?> hidden) {
     var focusable = firstFocusable(hidden);
     if (focusable != null) {
       state.report(
@@ -488,21 +488,21 @@ final class AccessibilityRules {
     }
   }
 
-  private static @Nullable Tag firstFocusable(Tag tag) {
+  private static @Nullable Tag<?> firstFocusable(Tag<?> tag) {
     if (isFocusable(tag)) {
       return tag;
     }
     return firstFocusable(tag.children());
   }
 
-  private static @Nullable Tag firstFocusable(List<ViewSnapshot.Node> children) {
+  private static @Nullable Tag<?> firstFocusable(List<? extends ViewSnapshot.Node<?>> children) {
     for (var child : children) {
-      if (child instanceof ViewSnapshot.Group group) {
+      if (child instanceof ViewSnapshot.Group<?> group) {
         var found = firstFocusable(group.children());
         if (found != null) {
           return found;
         }
-      } else if (child instanceof Tag nested && nested.tag() != HtmlTag.DIALOG) {
+      } else if (child instanceof Tag<?> nested && nested.tag() != HtmlTag.DIALOG) {
         var found = firstFocusable(nested);
         if (found != null) {
           return found;
@@ -512,7 +512,7 @@ final class AccessibilityRules {
     return null;
   }
 
-  private static boolean isFocusable(Tag tag) {
+  private static boolean isFocusable(Tag<?> tag) {
     var attrs = tag.attributes();
     if (attrs.containsKey("disabled")) {
       return false;

@@ -6,9 +6,15 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.components.Footnote;
+import dev.nthings.tessera.document.components.Footnotes;
+import dev.nthings.tessera.document.components.TableOfContents;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,11 +46,12 @@ class HeadingTest {
   void separatesVisibleTitleFromNavLabel() {
     var install = ElementRef.page("install");
     var page =
-        renderMain(
+        renderDocumentMain(
             TableOfContents.of("Contents"),
-            Heading.of(2, "Install", code().text("mvn"), text(" verify"))
-                .id(install)
-                .outline(install));
+            DocumentContent.of(
+                Heading.of(2, "Install", code().text("mvn"), text(" verify"))
+                    .id(install)
+                    .outline(install)));
 
     assertThat(page.elementById("install")).hasTagName("h2").hasText("mvn verify");
     assertThat(page.element("h2 > code")).hasText("mvn");
@@ -59,14 +66,14 @@ class HeadingTest {
   void outlinesOnlyOptedInHeadings() {
     var real = ElementRef.page("real");
     var page =
-        renderMain(
+        renderDocumentMain(
             TableOfContents.of("Contents"),
-            h2().text("Toolbar"),
-            Card.of("Widget").headingLevel(2),
+            DocumentContent.of(h2().text("Toolbar")),
+            DocumentContent.of(Card.of("Widget").headingLevel(2)),
             Footnotes.of().title("Notes"),
-            p().child(Footnote.of("A detail.").reference()),
-            Heading.of(2, "Real").id(real).outline(real),
-            Section.of("sec", "Section"));
+            DocumentElement.of(p()).child(Footnote.of("A detail.").reference()),
+            DocumentContent.of(Heading.of(2, "Real").id(real).outline(real)),
+            DocumentContent.of(Section.of("sec", "Section")));
 
     assertThat(page.elements("nav[aria-label=Contents] a"))
         .extracting(a -> a.attr("href") + ":" + a.text())

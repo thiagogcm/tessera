@@ -5,10 +5,11 @@ import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.header;
 import static dev.nthings.tessera.core.Elements.p;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -26,7 +27,7 @@ import java.util.List;
 
 /// Centered modal `<dialog>` with a title, optional description, body, footer actions and a close
 /// button. It opens and closes without author JavaScript: create one with [#of(String)], place it
-/// on the page (directly or with `Elements.deferred`), and open it with its [#triggerButton] or a
+/// on the page (directly or with `Documents.deferred`), and open it with its [#triggerButton] or a
 /// button that targets its [#dialogRef()]. Escape or a click outside dismisses it.
 ///
 /// The dialog, title and close button ids are prefixed with its [#id(String)], as in
@@ -134,7 +135,7 @@ public final class Modal extends DialogView<Modal> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var titleRef = ElementRef.scoped("title");
     var headerEl =
         header()

@@ -7,6 +7,8 @@ import dev.nthings.tessera.compiler.CompiledSite;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -21,8 +23,18 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     return of(new PageDocument("Test", body));
   }
 
+  /// Compiles a page whose body is document `body`.
+  public static RenderedPage render(DocumentContent body) {
+    return of(new PageDocument("Test", body));
+  }
+
   public static RenderedPage renderMain(IntoElement... content) {
     return render(main().children(content));
+  }
+
+  /// Compiles a page whose `<main>` holds document `content`.
+  public static RenderedPage renderDocumentMain(DocumentContent... content) {
+    return render(DocumentElement.of(main()).children(content));
   }
 
   public static RenderedPage of(PageDocument document) {

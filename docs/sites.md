@@ -109,7 +109,8 @@ var search = SearchPalette.of().id("guide-search")
     .item("Guide", SearchPalette.Item.of("Publishing", "/guide/#publishing")
         .description("Upload the generated site").badge("New"));
 
-Elements.main().children(search.triggerButton(), Elements.deferred(search, 10));
+DocumentElement.of(Elements.main().child(search.triggerButton()))
+    .child(Documents.deferred(search, 10));
 ```
 
 The palette filters its rendered links without fetching an index or calling a search endpoint. Use `.item(group, title, href)` for simple entries, or `SearchPalette.Item` for descriptions and badges. The generated `search-index.json` is a separate artifact for other consumers.

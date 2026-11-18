@@ -5,8 +5,8 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssContent;
@@ -176,7 +176,7 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var wrapper = div().attr("class", "code-block-wrapper");
     if (filename != null || language != null) {
       var header = div().attr("class", "code-header");

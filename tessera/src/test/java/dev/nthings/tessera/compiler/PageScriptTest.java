@@ -2,11 +2,16 @@ package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.main;
+import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 
-import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.PageScript;
+import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.PageScript;
+import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,14 +24,14 @@ class PageScriptTest {
           "test-widget", "customElements.define('test-widget', class extends HTMLElement {});");
 
   private static PageDocument page(PageScript... behaviors) {
-    Component component =
+    DocumentComponent component =
         context -> {
           for (var behavior : behaviors) {
             context.contributeScript(behavior);
           }
-          return custom("test-widget");
+          return DocumentContent.of(custom("test-widget"));
         };
-    return new PageDocument("Behavior", main().child(component));
+    return new PageDocument("Behavior", DocumentElement.of(main()).child(component));
   }
 
   @Test
@@ -44,6 +49,21 @@ class PageScriptTest {
     assertThat(script.data().strip()).isEqualTo(BEHAVIOR.module());
     assertThat(rendered.html()).doesNotContain(duplicate.module());
     assertThat(page.assets()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("a portable element's bundled behavior is contributed once per page")
+  void contributesBundledBehaviorOnce() {
+    var rendered =
+        RenderedPage.render(
+            main()
+                .children(
+                    ContentTabs.of("Example").tab("one", "One", p().text("First")),
+                    ContentTabs.of("Another").tab("two", "Two", p().text("Second"))));
+
+    assertThat(rendered.elements("head > script[type=module]")).hasSize(1);
+    assertThat(rendered.element("head > script[type=module]").data().strip())
+        .isEqualTo(BundledBehavior.TABS.script().module().strip());
   }
 
   @Test

@@ -76,8 +76,11 @@ class FormsTest {
           assertThat(input).doesNotHaveAttribute("aria-errormessage");
         }
       }
-      assertThat(control.idReferences()).isEmpty();
-      assertThat(control.isAnchor()).isFalse();
+      var standalone = RenderedPage.renderMain(control.ariaLabel("Standalone"));
+      assertThat(standalone.element("input"))
+          .doesNotHaveAttribute("aria-describedby")
+          .doesNotHaveAttribute("aria-errormessage");
+      assertThat(standalone.css()).doesNotContain("anchor-name:");
     }
 
     @Test

@@ -1,6 +1,5 @@
 package dev.nthings.tessera.showcase;
 
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.text;
@@ -12,6 +11,8 @@ import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.Documents;
 
 /// Modal dialogs, drawers, popovers, interest tooltips, and the search palette.
 final class OverlaysPage {
@@ -48,16 +49,17 @@ final class OverlaysPage {
         .summary("Edge-docked dialogs that slide in with translate transitions and allow-discrete.")
         .features("transition-behavior: allow-discrete", "overlay", "translate")
         .example(
-            div()
-                .flex()
-                .gap(CssLength.rem(0.75))
-                .children(
-                    Button.of("Open start drawer")
-                        .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
-                    Button.of("Open end drawer")
-                        .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL)),
-            deferred(start, 10),
-            deferred(end, 10))
+            DocumentContent.of(
+                div()
+                    .flex()
+                    .gap(CssLength.rem(0.75))
+                    .children(
+                        Button.of("Open start drawer")
+                            .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
+                        Button.of("Open end drawer")
+                            .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL))),
+            Documents.deferred(start, 10),
+            Documents.deferred(end, 10))
         .code(
             "var drawer = Drawer.of(\"Filters\").side(Drawer.Side.INLINE_START);",
             "Button.of(\"Open drawer\").command(drawer.dialogRef(), BuiltinCommand.SHOW_MODAL);");
@@ -93,6 +95,6 @@ final class OverlaysPage {
         .code(
             "var search = SearchPalette.of().placeholder(\"Search…\").triggerLabel(\"Search\")",
             "    .item(\"Pages\", \"Forms\", \"/forms\");",
-            "header.children(search.triggerButton(), Elements.deferred(search, 30));");
+            "header.children(search.triggerButton(), Documents.deferred(search, 30));");
   }
 }

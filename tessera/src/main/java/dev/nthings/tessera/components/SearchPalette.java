@@ -7,19 +7,16 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.input;
 import static dev.nthings.tessera.core.Elements.kbd;
-import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
 import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClosedBy;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -35,6 +32,9 @@ import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Transition;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.BundledBehavior;
+import dev.nthings.tessera.internal.components.Icons;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,21 +43,12 @@ import org.jspecify.annotations.Nullable;
 
 /// Quick-open search dialog over the links you add with [#item]. Create one with [#of()], place its
 /// [#triggerButton()] where users open it, and place the palette itself, usually with
-/// `Elements.deferred`. The palette's script is contributed once per document, shared by every
-/// palette on the page.
+/// `Documents.deferred`. A static document loads the palette's script once, shared by every palette
+/// on the page; without it, the dialog opens and closes and lists every link unfiltered.
 ///
 /// The dialog and input ids are prefixed with its [#id(String)], as in `<id>--dialog`. Without an
 /// id, the compiler numbers instances `search-palette-<n>`.
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
-
-  private static final PageScript SEARCH_SCRIPT =
-      PageScript.fromResource("tessera-search", SearchPalette.class, "search-palette.js");
-
-  private static final String SEARCH_ICON_SVG =
-      "<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\""
-          + " stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\""
-          + " aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><line x1=\"21\" y1=\"21\""
-          + " x2=\"16.65\" y2=\"16.65\"/></svg>";
 
   /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is
   /// immutable: [#description(String)] and [#badge(String)] return a new one.
@@ -155,7 +146,7 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                 .flex()
                 .itemsCenter()
                 .gap(Tokens.SPACE_2)
-                .child(rawHtml(SEARCH_ICON_SVG))
+                .child(Icons.search())
                 .child(span().text(triggerLabel)))
         .child(
             div()
@@ -197,13 +188,12 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
-    context.contributeScript(SEARCH_SCRIPT);
+  TagElement expand(ViewContext context) {
 
     var headerEl =
         Elements.search()
             .attr("class", "palette-header")
-            .child(rawHtml(SEARCH_ICON_SVG))
+            .child(Icons.search())
             .child(
                 input("search")
                     .id(ElementRef.scoped("input"))
@@ -281,14 +271,17 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                     .child(kbd().attr("class", "palette-hint-kbd").text("esc"))
                     .child(span().text("close")));
 
-    return Elements.dialog()
-        .id(dialog)
-        .attr("is", "tessera-search")
-        .closedBy(ClosedBy.ANY)
-        .ariaLabel("Quick open command palette")
-        .child(headerEl)
-        .child(resultsContainer)
-        .child(footerEl);
+    var root =
+        Elements.dialog()
+            .id(dialog)
+            .attr("is", "tessera-search")
+            .closedBy(ClosedBy.ANY)
+            .ariaLabel("Quick open command palette")
+            .child(headerEl)
+            .child(resultsContainer)
+            .child(footerEl);
+    AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    return root;
   }
 
   @Override

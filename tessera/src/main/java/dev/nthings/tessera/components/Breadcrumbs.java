@@ -6,8 +6,8 @@ import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.ol;
 
 import dev.nthings.tessera.core.AriaCurrent;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -85,7 +85,7 @@ public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var list = ol();
     for (var i = 0; i < links.size(); i++) {
       var isCurrent = i == links.size() - 1;

@@ -1,10 +1,8 @@
 package dev.nthings.tessera.view;
 
-import dev.nthings.tessera.core.ControlProperties;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.EventListener;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
-import dev.nthings.tessera.css.StyleSheet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +21,9 @@ import org.jspecify.annotations.Nullable;
 ///   committed element of a ref.
 /// - `ids`: every DOM id the tree renders, generated or explicit, so a backend can detect
 ///   collisions with other roots.
-public record ViewSnapshot(
-    List<Node> roots,
-    List<StyleSheet.EmbeddedRule> styleRules,
+public record ViewSnapshot<M>(
+    List<Node<M>> roots,
+    List<EmbeddedRule> styleRules,
     Map<ElementRef, String> references,
     Set<String> ids) {
 
@@ -38,7 +36,7 @@ public record ViewSnapshot(
   }
 
   /// A linked node.
-  public sealed interface Node permits Tag, Text, Raw, Group, Effect {}
+  public sealed interface Node<M> permits Tag, Text, Group, Special {}
 
   /// The content of a component, scope, fragment or keyed child, with no element wrapper. A live
   /// backend keeps its complete DOM range together and matches it by `key`, or by `definition`
@@ -46,8 +44,8 @@ public record ViewSnapshot(
   /// component or keyed child, the [dev.nthings.tessera.core.Scope#scopeName()] of a scope, or
   /// [dev.nthings.tessera.core.FragmentElement]'s class for a fragment. A scope name is a stable
   /// value, not a scope instance allocated for that render.
-  public record Group(@Nullable String key, Object definition, List<Node> children)
-      implements Node {
+  public record Group<M>(@Nullable String key, Object definition, List<Node<M>> children)
+      implements Node<M> {
     public Group {
       children = List.copyOf(children);
     }
@@ -57,17 +55,17 @@ public record ViewSnapshot(
   /// reported missing or ambiguous, so validators skip secondary errors for them. `liveProperties`
   /// are the custom properties a live backend sets on the element for its live styles. Only linking
   /// builds one, reusing the expanded element's collections.
-  public static final class Tag implements Node {
-    private final TagCore core;
+  public static final class Tag<M> implements Node<M> {
+    private final TagCore<M> core;
     private final Map<String, String> attributes;
     private final Set<String> unresolvedAttributes;
-    private final List<Node> children;
+    private final List<Node<M>> children;
 
     Tag(
-        TagCore core,
+        TagCore<M> core,
         Map<String, String> attributes,
         Set<String> unresolvedAttributes,
-        List<Node> children) {
+        List<Node<M>> children) {
       this.core = core;
       this.attributes = TagCore.readOnly(attributes);
       this.unresolvedAttributes = TagCore.readOnly(unresolvedAttributes);
@@ -94,14 +92,9 @@ public record ViewSnapshot(
       return unresolvedAttributes;
     }
 
-    /// The bound event handlers, keyed by [EventListener#key()].
-    public Map<EventListener.Key, EventListener> events() {
-      return core.events();
-    }
-
-    /// The controlled form properties.
-    public ControlProperties controlProperties() {
-      return core.controlProperties();
+    /// Metadata attached by the backend, such as a browser host's bindings.
+    public @Nullable M payload() {
+      return core.payload();
     }
 
     /// The custom properties to set on the element for its live styles.
@@ -110,19 +103,14 @@ public record ViewSnapshot(
     }
 
     /// The linked children.
-    public List<Node> children() {
+    public List<Node<M>> children() {
       return children;
     }
   }
 
   /// Text content, HTML-escaped when emitted.
-  public record Text(String content) implements Node, ViewNode {}
+  public record Text<M>(String content) implements Node<M>, ViewNode<M> {}
 
-  /// An effect a live backend starts after commit and disposes with its position. Its identity is
-  /// the key of the [Group] that [dev.nthings.tessera.core.Elements#effect] places it in.
-  public record Effect(dev.nthings.tessera.core.Effect effect, Location location)
-      implements Node, ViewNode {}
-
-  /// Trusted HTML for document output; live renders reject it.
-  public record Raw(String trustedHtml) implements Node, ViewNode {}
+  /// A backend-owned leaf. The structural passes only need to know if it supplies readable text.
+  public record Special<M>(M payload, boolean readable) implements Node<M>, ViewNode<M> {}
 }

@@ -1,15 +1,17 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
-import dev.nthings.tessera.core.BrowserEvent;
-import dev.nthings.tessera.core.ControlState;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.ControlState;
+import dev.nthings.tessera.wasm.Live;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -37,21 +39,23 @@ public final class ControlledFormDemo {
     return BrowserRoot.mount(host, new ControlledFormDemo()::view);
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
-    return Elements.section()
-        .attr("data-form-revision", Integer.toString(revision))
-        .attr("data-form-turn", Integer.toString(++renders))
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-form-revision", Integer.toString(revision))
+                .attr("data-form-turn", Integer.toString(++renders))
+                .child(Elements.h2().text("Controlled form")))
         .children(
-            Elements.h2().text("Controlled form"),
-            Button.of("Reset form").onClick(root.update(this::reset)),
-            Button.of("Refresh form").onClick(root.update(() -> revision++)),
-            Button.of("Toggle edit acceptance").onClick(root.update(() -> accept = !accept)),
-            Button.of("Toggle controlled form")
-                .onClick(root.update(() -> controlled = !controlled)),
-            Button.of("Reverse options").onClick(root.update(() -> reversed = !reversed)),
-            Button.of("Remove form controls").onClick(root.update(() -> visible = false)),
-            Button.of("Toggle field feedback").onClick(root.update(() -> feedback = !feedback)),
-            Button.of("Unmount form").onClick(root::close),
+            Ui.button("Reset form", root.update(this::reset)),
+            Ui.button("Refresh form", root.update(() -> revision++)),
+            Ui.button("Toggle edit acceptance", root.update(() -> accept = !accept)),
+            Ui.button("Toggle controlled form", root.update(() -> controlled = !controlled)),
+            Ui.button("Reverse options", root.update(() -> reversed = !reversed)),
+            Ui.button("Remove form controls", root.update(() -> visible = false)),
+            Ui.button("Toggle field feedback", root.update(() -> feedback = !feedback)),
+            Ui.button("Unmount form", root::close))
+        .child(
             Elements.p()
                 .attr("data-form-event", "")
                 .text(
@@ -65,51 +69,59 @@ public final class ControlledFormDemo {
                         + "; composing="
                         + captured.composing()
                         + "; events="
-                        + events),
-            visible ? fields(root) : Elements.fragment());
+                        + events))
+        .child(visible ? fields(root) : Live.fragment());
   }
 
-  private IntoElement fields(BrowserRoot root) {
-    var input =
-        Forms.text("controlled-text")
-            .attr("value", "Attribute text")
-            .value(text)
-            .onEvent("input", record("text", root, state -> text = state.value()))
-            .onEvent("compositionstart", record("start", root, _ -> {}))
-            .onEvent("compositionend", record("end", root, _ -> {}));
-    var textarea =
-        Elements.textarea()
-            .attr("name", "controlled-notes")
-            .text("Default notes")
-            .value(notes)
-            .onEvent("input", record("notes", root, state -> notes = state.value()));
-    var checkbox =
-        Elements.input("checkbox")
-            .attr("name", "controlled-check")
-            .boolAttr("checked")
-            .checked(checked)
-            .onEvent("change", record("check", root, state -> checked = state.checked()));
-    var select =
-        options(false)
-            .value(choice)
-            .onEvent("change", record("choice", root, state -> choice = state.value()));
-    var multiple =
-        options(true)
-            .selectedValues(choices)
-            .onEvent("change", record("choices", root, state -> choices = state.selectedValues()));
-    if (!controlled) {
-      for (var control : List.of(input, textarea, checkbox, select, multiple)) {
-        control.uncontrolled();
-      }
+  private LiveContent fields(BrowserRoot root) {
+    var input = Forms.text("controlled-text").attr("value", "Attribute text");
+    var text =
+        LiveElement.of(input)
+            .on("input", record("text", root, state -> this.text = state.value()))
+            .on("compositionstart", record("start", root, _ -> {}))
+            .on("compositionend", record("end", root, _ -> {}));
+    var textarea = Elements.textarea().attr("name", "controlled-notes").text("Default notes");
+    var notes =
+        LiveElement.of(textarea)
+            .on("input", record("notes", root, state -> this.notes = state.value()));
+    var checkbox = Elements.input("checkbox").attr("name", "controlled-check").boolAttr("checked");
+    var check =
+        LiveElement.of(checkbox)
+            .on("change", record("check", root, state -> checked = state.checked()));
+    var select = options(false);
+    var choice =
+        LiveElement.of(select)
+            .on("change", record("choice", root, state -> this.choice = state.value()));
+    var multiple = options(true);
+    var choices =
+        LiveElement.of(multiple)
+            .on("change", record("choices", root, state -> this.choices = state.selectedValues()));
+    // Without control, the browser keeps each control's current state.
+    if (controlled) {
+      text.value(this.text);
+      notes.value(this.notes);
+      check.checked(checked);
+      choice.value(this.choice);
+      choices.selectedValues(this.choices);
     }
-    return Elements.fragment()
-        .children(
-            Field.of("Controlled text", input),
-            Field.of("Controlled notes", textarea),
-            Field.of("Controlled check", checkbox),
-            Field.of("Controlled choice", select).id("controlled-choice"),
-            Field.of("Controlled choices", multiple).id("controlled-choices"),
-            browserText());
+    return Live.fragment(
+        field("Controlled text", input, text),
+        field("Controlled notes", textarea, notes),
+        field("Controlled check", checkbox, check),
+        field("Controlled choice", select, choice),
+        field("Controlled choices", multiple, choices),
+        LiveContent.of(browserText()));
+  }
+
+  /// A labelled field around a live `control` wrapping `host`.
+  private static LiveContent field(String label, TagElement host, LiveElement control) {
+    return LiveElement.of(
+            Elements.div()
+                .flex()
+                .flexCol()
+                .gap(Tokens.SPACE_1)
+                .child(Elements.label().labelFor(host.ref()).text(label)))
+        .child(control);
   }
 
   /// An uncontrolled field whose hint and error come and go around its retained control.

@@ -1,11 +1,11 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.ContainerQuery;
 import dev.nthings.tessera.css.CssLength;
@@ -60,8 +60,9 @@ public final class Grid extends BuiltinComponent implements ParentElement<Grid> 
   }
 
   @Override
-  public void appendChild(Element child) {
-    items.add(child);
+  public Grid child(IntoElement child) {
+    items.add(child.intoElement());
+    return this;
   }
 
   /// Sets the row and column gap. The default is [Tokens#SPACE_4].
@@ -71,7 +72,7 @@ public final class Grid extends BuiltinComponent implements ParentElement<Grid> 
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  IntoElement expand(ViewContext context) {
     var grid = Elements.div().grid();
     if (collapseOnNarrow) {
       grid.gridColumns(TrackList.of(GridTrack.flexible()))

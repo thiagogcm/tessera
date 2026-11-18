@@ -1,6 +1,7 @@
 package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.FragmentElement;
+import dev.nthings.tessera.core.Location;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -9,11 +10,11 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Turns expanded [ViewNode]s into [ViewSnapshot] nodes once every identity of the expansion is
+/// Turns expanded `ViewNode<M>`s into [ViewSnapshot] nodes once every identity of the expansion is
 /// bound, checking sibling keys on the way. Component boundaries, scope boundaries and fragments
 /// become [ViewSnapshot.Group]s, each its own key namespace. A scope group keeps the scope name
 /// passed in as its definition.
-final class ReferenceLinker {
+final class ReferenceLinker<M> {
   private final ViewState state;
 
   ReferenceLinker(ViewState state) {
@@ -21,12 +22,12 @@ final class ReferenceLinker {
   }
 
   /// Substitutes late slots, places tooltip companions after their invoker and folds
-  /// [dev.nthings.tessera.core.IdReference]s into attributes.
-  List<ViewSnapshot.Node> link(ViewNode node) {
+  /// [dev.nthings.tessera.internal.authoring.IdReference]s into attributes.
+  List<ViewSnapshot.Node<M>> link(ViewNode<M> node) {
     return linkChildren(List.of(node));
   }
 
-  private List<ViewSnapshot.Node> linkChildren(List<ViewNode> nodes) {
+  private List<ViewSnapshot.Node<M>> linkChildren(List<ViewNode<M>> nodes) {
     if (nodes.isEmpty()) {
       return List.of();
     }
@@ -37,29 +38,28 @@ final class ReferenceLinker {
 
   /// One sibling list being linked, with its key namespace.
   private final class Siblings {
-    private final List<ViewSnapshot.Node> out;
+    private final List<ViewSnapshot.Node<M>> out;
 
     /// Created at the first key: most sibling lists have none.
     private @Nullable Set<String> keys;
 
-    private Siblings(List<ViewSnapshot.Node> out) {
+    private Siblings(List<ViewSnapshot.Node<M>> out) {
       this.out = out;
     }
 
-    private void link(ViewNode node) {
+    private void link(ViewNode<M> node) {
       switch (node) {
-        case ViewNode.Slot slot -> link(slot.content());
-        case ViewNode.Empty _ -> {}
-        case ViewSnapshot.Effect effect -> out.add(effect);
-        case ViewSnapshot.Text text -> out.add(text);
-        case ViewSnapshot.Raw raw -> out.add(raw);
-        case ViewNode.Boundary boundary ->
+        case ViewNode.Slot<M> slot -> link(slot.content());
+        case ViewNode.Empty<M> _ -> {}
+        case ViewSnapshot.Special<M> special -> out.add(special);
+        case ViewSnapshot.Text<M> text -> out.add(text);
+        case ViewNode.Boundary<M> boundary ->
             group(boundary.key(), boundary.definition(), boundary.location(), boundary.children());
-        case ViewNode.ScopeBoundary boundary ->
+        case ViewNode.ScopeBoundary<M> boundary ->
             group(boundary.key(), boundary.definition(), boundary.location(), boundary.children());
-        case ViewNode.Fragment fragment ->
+        case ViewNode.Fragment<M> fragment ->
             group(fragment.key(), FragmentElement.class, fragment.location(), fragment.children());
-        case ViewNode.Tag tag -> {
+        case ViewNode.Tag<M> tag -> {
           out.add(linkTag(tag));
           var companion = tag.companion();
           if (companion != null) {
@@ -70,7 +70,7 @@ final class ReferenceLinker {
     }
 
     private void group(
-        @Nullable String key, Object definition, Location location, List<ViewNode> children) {
+        @Nullable String key, Object definition, Location location, List<ViewNode<M>> children) {
       if (key != null && !claim(key)) {
         state.report(
             location,
@@ -78,7 +78,7 @@ final class ReferenceLinker {
             "Duplicate sibling key '" + key + "'",
             "Give each child in this parent a distinct stable key.");
       }
-      out.add(new ViewSnapshot.Group(key, definition, linkChildren(children)));
+      out.add(new ViewSnapshot.Group<>(key, definition, linkChildren(children)));
     }
 
     /// Whether `key` is new among these siblings.
@@ -92,7 +92,7 @@ final class ReferenceLinker {
     }
   }
 
-  private ViewSnapshot.Tag linkTag(ViewNode.Tag tag) {
+  private ViewSnapshot.Tag<M> linkTag(ViewNode.Tag<M> tag) {
     var attrs = tag.attributes();
     Set<String> unresolved = Set.of();
     if (!tag.references().isEmpty()) {
@@ -119,6 +119,6 @@ final class ReferenceLinker {
       attrs = linked;
       unresolved = missing;
     }
-    return new ViewSnapshot.Tag(tag.core(), attrs, unresolved, linkChildren(tag.children()));
+    return new ViewSnapshot.Tag<>(tag.core(), attrs, unresolved, linkChildren(tag.children()));
   }
 }

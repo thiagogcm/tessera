@@ -58,6 +58,8 @@ Add these settings to your application's POM:
 
 The compiler plugin version matches the repository build and supports the `release` setting.
 
+If your application declares a Java module, add `requires dev.nthings.tessera;` to its `module-info.java` and put your application classes in a named package. Use the fully qualified main class name when running the example below.
+
 ## Build your first site
 
 Save this class as `src/main/java/BuildSite.java` in your application:

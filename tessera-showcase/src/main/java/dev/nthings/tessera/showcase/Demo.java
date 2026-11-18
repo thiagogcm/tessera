@@ -5,28 +5,29 @@ import static dev.nthings.tessera.core.Elements.div;
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Section;
-import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// One showcase section: description, platform features, live example and its Java source.
-final class Demo implements Component {
+final class Demo implements DocumentComponent {
 
   private final String id;
   private final String title;
   private String summary = "";
   private List<String> features = List.of();
-  private final List<Element> examples = new ArrayList<>();
-  private @Nullable Supplier<List<IntoElement>> stage;
+  private final List<DocumentContent> examples = new ArrayList<>();
+  private @Nullable Supplier<List<DocumentContent>> stage;
   private List<String> code = List.of();
   private Section.Surface surface = Section.Surface.CARD;
 
@@ -51,13 +52,19 @@ final class Demo implements Component {
 
   Demo example(IntoElement... content) {
     for (var item : content) {
-      examples.add(item.intoElement());
+      examples.add(DocumentContent.of(item));
     }
     return this;
   }
 
+  /// Adds document examples, such as deferred dialogs or paragraphs with footnotes.
+  Demo example(DocumentContent... content) {
+    examples.addAll(List.of(content));
+    return this;
+  }
+
   /// Called on each render, so every compilation gets fresh elements.
-  Demo stage(Supplier<List<IntoElement>> content) {
+  Demo stage(Supplier<List<DocumentContent>> content) {
     this.stage = content;
     return this;
   }
@@ -92,8 +99,8 @@ final class Demo implements Component {
   }
 
   @Override
-  public Element expand(DocumentContext context) {
-    var stageItems = new ArrayList<IntoElement>(examples);
+  public DocumentContent expand(DocumentContext context) {
+    var stageItems = new ArrayList<DocumentContent>(examples);
     var fresh = stage;
     if (fresh != null) {
       stageItems.addAll(fresh.get());
@@ -109,21 +116,24 @@ final class Demo implements Component {
               .gap(CssLength.rem(0.375))
               .children(features.stream().map(Formatting::inlineCode)));
     }
-    section.child(
-        div()
-            .attr("class", "demo-stage")
-            .flex()
-            .flexCol()
-            .gap(CssLength.rem(1))
-            .p(CssLength.rem(1.25))
-            .rounded(CssLength.rem(0.75))
-            .bg(Tokens.SURFACE_CANVAS)
-            .border(Border.hairline(Tokens.BORDER_SUBTLE))
-            .children(stageItems));
-    if (!code.isEmpty()) {
-      section.child(
-          CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java"));
+    var stageElement =
+        DocumentElement.of(
+                div()
+                    .attr("class", "demo-stage")
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(1))
+                    .p(CssLength.rem(1.25))
+                    .rounded(CssLength.rem(0.75))
+                    .bg(Tokens.SURFACE_CANVAS)
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE)))
+            .children(stageItems);
+    if (code.isEmpty()) {
+      return section.withDocument(stageElement);
     }
-    return section.intoElement();
+    return section.withDocument(
+        stageElement,
+        DocumentContent.of(
+            CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java")));
   }
 }

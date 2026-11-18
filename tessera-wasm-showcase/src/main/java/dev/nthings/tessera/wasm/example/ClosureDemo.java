@@ -1,10 +1,11 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.components.Button;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Live;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -35,36 +36,37 @@ public final class ClosureDemo {
     return mounted;
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
     if (closeWhileRendering) {
       // Closing during expansion: the candidate this view returns must never publish.
       root.close();
     }
-    var children = new ArrayList<IntoElement>();
-    children.add(Elements.h2().text("Closure"));
+    var children = new ArrayList<LiveContent>();
+    children.add(LiveContent.of(Elements.h2().text("Closure")));
     if (closeWhileRendering) {
-      children.add(Elements.p().attr("data-never-published", "").text("Never published"));
+      children.add(
+          LiveContent.of(Elements.p().attr("data-never-published", "").text("Never published")));
     }
     // Removing this effect retires it after publication, and its cleanup closes the root
     // mid-retire while the commit still owns what it acquired.
     if (guard) {
-      children.add(Elements.effect("guard", lifetime -> lifetime.onDispose(root::close)));
+      children.add(Live.effect("guard", lifetime -> lifetime.onDispose(root::close)));
     }
     if (startupBatch) {
       children.add(
-          Elements.effect(
+          Live.effect(
               "closing-start",
               lifetime -> {
                 record("started closing-start");
                 lifetime.onDispose(() -> record("disposed closing-start"));
                 root.close();
               }));
-      children.add(
-          Elements.effect("observing-start", lifetime -> record("started observing-start")));
+      children.add(Live.effect("observing-start", lifetime -> record("started observing-start")));
     }
     if (failStart) {
       children.add(
-          Elements.effect(
+          Live.effect(
               "failing",
               lifetime -> {
                 lifetime.onDispose(() -> record("disposed failing"));
@@ -73,7 +75,7 @@ public final class ClosureDemo {
     }
     if (failingCleanups) {
       children.add(
-          Elements.effect(
+          Live.effect(
               "victim",
               lifetime ->
                   lifetime.onDispose(() -> {
@@ -81,28 +83,26 @@ public final class ClosureDemo {
                     throw new IllegalStateException("Simulated cleanup failure");
                   })));
       children.add(
-          Elements.effect(
+          Live.effect(
               "survivor", lifetime -> lifetime.onDispose(() -> record("disposed survivor"))));
     }
     // Keyed, so replacing it creates a new node the same commit owns until publication.
     children.add(
-        Elements.fragment()
-            .children(
-                Button.of("Action " + action).onClick(() -> record("clicked action " + action)))
+        Live.fragment(Ui.button("Action " + action, () -> record("clicked action " + action)))
             .key("action-" + action));
     children.add(
-        Button.of("Replace action")
-            .onClick(
-                root.update(() -> {
-                  guard = false;
-                  action++;
-                })));
+        Ui.button(
+            "Replace action",
+            root.update(() -> {
+              guard = false;
+              action++;
+            })));
+    children.add(Ui.button("Close during render", root.update(() -> closeWhileRendering = true)));
+    children.add(Ui.button("Close during startup", root.update(() -> startupBatch = true)));
     children.add(
-        Button.of("Close during render").onClick(root.update(() -> closeWhileRendering = true)));
-    children.add(Button.of("Close during startup").onClick(root.update(() -> startupBatch = true)));
-    children.add(
-        Button.of("Close in after-render")
-            .onClick(() -> {
+        Ui.button(
+            "Close in after-render",
+            () -> {
               root.host()
                   .afterRender(() -> {
                     record("after-render first");
@@ -110,20 +110,19 @@ public final class ClosureDemo {
                   });
               root.host().afterRender(() -> record("after-render second"));
             }));
-    children.add(Button.of("Fail effect start").onClick(root.update(() -> failStart = true)));
-    children.add(
-        Button.of("Add failing cleanups").onClick(root.update(() -> failingCleanups = true)));
-    children.add(
-        Button.of("Remove failing cleanups").onClick(root.update(() -> failingCleanups = false)));
-    children.add(Button.of("Close closure root").onClick(root::close));
-    return Elements.section().attr("data-closure", "").children(children);
+    children.add(Ui.button("Fail effect start", root.update(() -> failStart = true)));
+    children.add(Ui.button("Add failing cleanups", root.update(() -> failingCleanups = true)));
+    children.add(Ui.button("Remove failing cleanups", root.update(() -> failingCleanups = false)));
+    children.add(Ui.button("Close closure root", root::close));
+    return LiveElement.of(Elements.section().attr("data-closure", "")).children(children);
   }
 
-  private IntoElement control(BrowserRoot control, DocumentContext context) {
+  private LiveContent control(LiveContext context) {
     var entries = String.join(",", log);
-    return Elements.section()
-        .attr("data-closure-log", entries)
-        .children(Elements.h2().text("Closure control"), Elements.p().text("log=" + entries));
+    return LiveContent.of(
+        Elements.section()
+            .attr("data-closure-log", entries)
+            .children(Elements.h2().text("Closure control"), Elements.p().text("log=" + entries)));
   }
 
   private void record(String entry) {

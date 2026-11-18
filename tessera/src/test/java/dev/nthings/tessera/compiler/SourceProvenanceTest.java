@@ -9,9 +9,9 @@ import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.SourceLocation;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class SourceProvenanceTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public Element expand(ViewContext context) {
       elementLine = here() + 1;
       return div().child(p().text(text));
     }
@@ -46,7 +46,6 @@ class SourceProvenanceTest {
     var tag = div();
     var page = RenderedPage.render(main().child(tag));
 
-    assertThat(tag.source()).isNull();
     assertThat(page.html()).doesNotContain("data-src");
   }
 
@@ -55,8 +54,6 @@ class SourceProvenanceTest {
   void elementCarriesItsCallSite() {
     var built = SourceTracking.enabled(() -> div().text("hello"));
     var line = here() - 1;
-
-    assertThat(built.source()).isEqualTo(sourceAt(line));
 
     var page = RenderedPage.render(main().child(built));
     assertThat(page.element("div").attr("data-src")).isEqualTo(THIS_FILE + ":" + line);

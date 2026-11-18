@@ -6,10 +6,11 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.DocumentKey;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
@@ -36,8 +37,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /// the compiler numbers instances `accordion-<n>` and the group gets a page-unique name.
 public final class Accordion extends BuiltinScope<Accordion> {
 
-  private static final DocumentKey<AtomicInteger> GROUPS =
-      DocumentKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
+  private static final ViewKey<AtomicInteger> GROUPS =
+      ViewKey.of("accordion-groups", AtomicInteger.class, AtomicInteger::new);
 
   private record Item(String title, Element content, boolean open) {}
 
@@ -151,7 +152,7 @@ public final class Accordion extends BuiltinScope<Accordion> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var root = div();
     var group = exclusive ? groupName(context) : null;
     for (var item : items) {
@@ -170,10 +171,10 @@ public final class Accordion extends BuiltinScope<Accordion> {
     return root;
   }
 
-  private String groupName(DocumentContext context) {
+  private String groupName(ViewContext context) {
     var explicit = id;
     return explicit != null
         ? Fnv1a64.sanitizeLocalId(explicit)
-        : "accordion-" + context.document(GROUPS).incrementAndGet();
+        : "accordion-" + context.state(GROUPS).incrementAndGet();
   }
 }

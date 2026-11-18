@@ -63,7 +63,7 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
   }
 
   /// Returns the ref bound to the `<dialog>`, for invokers placed elsewhere. The dialog must still
-  /// be placed on the page, directly or through `Elements.deferred`, or the invoker reports
+  /// be placed on the page, directly or through `Documents.deferred`, or the invoker reports
   /// `unbound-reference`.
   public ElementRef dialogRef() {
     return dialog;

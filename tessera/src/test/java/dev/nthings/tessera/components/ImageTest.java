@@ -2,10 +2,12 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.css.AspectRatio;
+import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -24,12 +26,13 @@ class ImageTest {
     @BeforeAll
     static void renderImages() {
       page =
-          renderMain(
+          renderDocumentMain(
               Image.of("/assets/hero-banner.webp", "Hero Banner")
-                  .hero()
                   .dimensions(1280, 720)
-                  .element(img -> img.aspectRatio(AspectRatio.of(16, 9))),
-              Image.of("/assets/thumbnail.webp", "Secondary Thumbnail").dimensions(400, 300));
+                  .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))
+                  .hero(),
+              DocumentContent.of(
+                  Image.of("/assets/thumbnail.webp", "Secondary Thumbnail").dimensions(400, 300)));
     }
 
     @Test
@@ -68,9 +71,9 @@ class ImageTest {
   void reportsDuplicateHero() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() ->
-            renderMain(
-                Image.of("/hero1.webp", "Hero 1").hero().dimensions(800, 400),
-                Image.of("/hero2.webp", "Hero 2").hero().dimensions(800, 400)))
+            renderDocumentMain(
+                Image.of("/hero1.webp", "Hero 1").dimensions(800, 400).hero(),
+                Image.of("/hero2.webp", "Hero 2").dimensions(800, 400).hero()))
         .satisfies(failure ->
             assertThat(failure.diagnostics())
                 .singleElement()

@@ -2,7 +2,6 @@ package dev.nthings.tessera.wasm;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.nthings.tessera.core.ControlState;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -2,23 +2,25 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.aside;
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.internal.components.Icons;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Admonition rendered as an `<aside role="note">` with a colored icon, a title, and a tinted
@@ -34,32 +36,63 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
     NOTE(
         "Note",
         Tone.INFO,
-        "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"8\" cy=\"8\" r=\"7\"/><line x1=\"8\" y1=\"8\" x2=\"8\" y2=\"12\"/><line x1=\"8\" y1=\"4.5\" x2=\"8\" y2=\"5\"/></svg>"),
+        () ->
+            Icons.stroked(
+                16,
+                16,
+                1.75,
+                Icons.circle(8, 8, 7),
+                Icons.line(8, 8, 8, 12),
+                Icons.line(8, 4.5, 8, 5))),
     TIP(
         "Tip",
         Tone.SUCCESS,
-        "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 1.8 1.1 3.4 2.5 4.1v1.9h4v-1.9c1.4-.7 2.5-2.3 2.5-4.1A4.5 4.5 0 0 0 8 1.5z\"/><line x1=\"6\" y1=\"14.5\" x2=\"10\" y2=\"14.5\"/></svg>"),
+        () ->
+            Icons.stroked(
+                16,
+                16,
+                1.75,
+                Icons.path(
+                    "M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 1.8 1.1 3.4 2.5 4.1v1.9h4v-1.9c1.4-.7 2.5-2.3"
+                        + " 2.5-4.1A4.5 4.5 0 0 0 8 1.5z"),
+                Icons.line(6, 14.5, 10, 14.5))),
     IMPORTANT(
         "Important",
         Tone.ACCENT,
-        "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 2h10l-2 5 2 5H3z\"/><line x1=\"3\" y1=\"2\" x2=\"3\" y2=\"15\"/></svg>"),
+        () ->
+            Icons.stroked(
+                16, 16, 1.75, Icons.path("M3 2h10l-2 5 2 5H3z"), Icons.line(3, 2, 3, 15))),
     WARNING(
         "Warning",
         Tone.WARNING,
-        "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 1.5l6.5 12H1.5L8 1.5z\"/><line x1=\"8\" y1=\"6\" x2=\"8\" y2=\"9.5\"/><line x1=\"8\" y1=\"11.5\" x2=\"8\" y2=\"12\"/></svg>"),
+        () ->
+            Icons.stroked(
+                16,
+                16,
+                1.75,
+                Icons.path("M8 1.5l6.5 12H1.5L8 1.5z"),
+                Icons.line(8, 6, 8, 9.5),
+                Icons.line(8, 11.5, 8, 12))),
     CAUTION(
         "Caution",
         Tone.DANGER,
-        "<svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><polygon points=\"5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5\"/><line x1=\"8\" y1=\"5\" x2=\"8\" y2=\"9\"/><line x1=\"8\" y1=\"11\" x2=\"8\" y2=\"11.5\"/></svg>");
+        () ->
+            Icons.stroked(
+                16,
+                16,
+                1.75,
+                Icons.polygon("5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5"),
+                Icons.line(8, 5, 8, 9),
+                Icons.line(8, 11, 8, 11.5)));
 
     private final String defaultTitle;
     private final Tone tone;
-    private final String iconSvg;
+    private final Supplier<TagElement> icon;
 
-    Kind(String defaultTitle, Tone tone, String iconSvg) {
+    Kind(String defaultTitle, Tone tone, Supplier<TagElement> icon) {
       this.defaultTitle = defaultTitle;
       this.tone = tone;
-      this.iconSvg = iconSvg;
+      this.icon = icon;
     }
   }
 
@@ -93,8 +126,9 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
   }
 
   @Override
-  public void appendChild(Element child) {
-    children.add(child);
+  public Callout child(IntoElement child) {
+    children.add(child.intoElement());
+    return this;
   }
 
   @Override
@@ -138,7 +172,7 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var displayTitle = customTitle != null ? customTitle : kind.defaultTitle;
     var header =
         div()
@@ -147,7 +181,7 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
                 span()
                     .attr("class", "callout-icon")
                     .textColor(kind.tone.color())
-                    .child(rawHtml(kind.iconSvg)),
+                    .child(kind.icon.get()),
                 span().attr("class", "callout-title").text(displayTitle));
 
     var content = div().attr("class", "callout-content").children(children);

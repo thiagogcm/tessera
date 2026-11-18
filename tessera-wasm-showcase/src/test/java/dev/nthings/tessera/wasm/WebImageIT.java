@@ -192,9 +192,9 @@ class WebImageIT {
                           "section => Array.from(section.children).map(node => node.tagName)"))
               .isEqualTo(
                   List.of(
-                      "DIV", "LABEL", "INPUT", "SPAN", "BUTTON", "LABEL", "INPUT", "SPAN", "BUTTON",
-                      "LABEL", "INPUT", "SPAN", "BUTTON", "LABEL", "INPUT", "SPAN", "BUTTON", "P",
-                      "P"));
+                      "DIV", "ASIDE", "LABEL", "INPUT", "SPAN", "BUTTON", "LABEL", "INPUT", "SPAN",
+                      "BUTTON", "LABEL", "INPUT", "SPAN", "BUTTON", "LABEL", "INPUT", "SPAN",
+                      "BUTTON", "P", "P"));
 
           button(page, "Remove first entry").click();
           assertOrder(page, List.of("b", "a", "item-4"));
@@ -309,7 +309,9 @@ class WebImageIT {
   }
 
   @BothEngines
-  @DisplayName("static and live keyed content have matching semantic DOM and computed styles")
+  @DisplayName(
+      "static and live keyed content, including a bundled SVG icon, have matching semantic DOM"
+          + " and computed styles")
   void staticAndLiveKeyedContentHaveMatchingSemanticDomAndComputedStyles(String engine) {
     withPage(
         engine,
@@ -326,6 +328,14 @@ class WebImageIT {
                 .isEqualTo(staticPage.locator("[data-entries]").evaluate(SEMANTICS));
             Assertions.assertThat(page.locator("[data-entries]").evaluate(STYLES))
                 .isEqualTo(staticPage.locator("[data-entries]").evaluate(STYLES));
+            // The bundled callout icon is structured SVG, created in its namespace by both.
+            for (var output : List.of(page, staticPage)) {
+              var icon = output.locator("[data-entries] svg circle");
+              Assertions.assertThat(icon.evaluate("node => node.namespaceURI"))
+                  .isEqualTo("http://www.w3.org/2000/svg");
+              Assertions.assertThat(icon.evaluate("node => node.getBBox().width > 0"))
+                  .isEqualTo(true);
+            }
           }
         });
   }
@@ -705,8 +715,11 @@ class WebImageIT {
   }
 
   @BothEngines
-  @DisplayName("rejected candidates preserve the committed scheduling tree and allow recovery")
-  void rejectedCandidatesPreserveTheCommittedSchedulingTreeAndAllowRecovery(String engine) {
+  @DisplayName(
+      "rejected candidates preserve the committed tree, keep no expansion state, start no effect"
+          + " and allow recovery")
+  void rejectedCandidatesPreserveTheCommittedTreeKeepNoStateStartNoEffectAndAllowRecovery(
+      String engine) {
     withPage(
         engine,
         (page, url, failures) -> {
@@ -727,6 +740,9 @@ class WebImageIT {
           page.waitForFunction(
               "before => Number(document.querySelector('[data-schedule-renders]').dataset.scheduleRenders) > before",
               beforeRenders);
+          assertThat(page.locator("[data-schedule-tally]"))
+              .hasAttribute("data-schedule-tally", "1");
+          assertThat(renders).hasAttribute("data-schedule-rejected-effects", "0");
           Assertions.assertThat(failures).hasSize(1);
         });
   }
@@ -1784,9 +1800,7 @@ class WebImageIT {
                       new PageDocument(
                           "Keyed entries",
                           Elements.main()
-                              .child(
-                                  KeyedListDemo.content(
-                                      List.of("a", "b", "c"), true, false, null))))
+                              .child(KeyedListDemo.content(List.of("a", "b", "c"), true, false))))
                   .html();
           respond(exchange, "text/html; charset=utf-8", html.getBytes(StandardCharsets.UTF_8));
         });

@@ -2,10 +2,11 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
@@ -38,8 +39,9 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
   }
 
   @Override
-  public void appendChild(Element child) {
-    children.add(child);
+  public Prose child(IntoElement child) {
+    children.add(child.intoElement());
+    return this;
   }
 
   /// Sets the maximum line length of the container. The default is 75ch.
@@ -54,7 +56,7 @@ public final class Prose extends BuiltinScope<Prose> implements ParentElement<Pr
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var container = div().attr("class", "prose-canvas").flex().flexCol().gap(Tokens.SPACE_10);
     container.children(children);
     return container;

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.view;
 
-import dev.nthings.tessera.core.PageScript;
+import dev.nthings.tessera.document.PageScript;
 
 /// Document-level fallback for interest invokers when the browser has no native `interestfor`.
 final class TooltipScript {

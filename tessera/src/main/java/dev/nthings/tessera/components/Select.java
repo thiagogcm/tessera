@@ -5,10 +5,9 @@ import static dev.nthings.tessera.core.Elements.label;
 import static dev.nthings.tessera.core.Elements.selectedcontent;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Appearance;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -119,7 +118,7 @@ public final class Select extends BuiltinScope<Select> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     return select;
   }
 

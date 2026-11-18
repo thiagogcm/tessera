@@ -1,11 +1,12 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.RenderedPage.renderMain;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.document.DocumentContent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,12 +32,12 @@ class ModalTest {
     var preview = Modal.of("Preview").bodyText("Shown before the page is published.").opened();
 
     var page =
-        renderMain(
-            modal.triggerButton("Open Modal"),
-            drawer.triggerButton("Open Drawer"),
+        renderDocumentMain(
+            DocumentContent.of(modal.triggerButton("Open Modal")),
+            DocumentContent.of(drawer.triggerButton("Open Drawer")),
             deferred(modal, 10),
             deferred(drawer, 20),
-            preview);
+            DocumentContent.of(preview));
 
     assertThat(page.elements("dialog[closedby=any]"))
         .extracting(e -> e.id())

@@ -2,18 +2,19 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
-import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatExceptionOfType;
-import static dev.nthings.tessera.support.RenderedPage.renderMain;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
 import dev.nthings.tessera.compiler.CompilationException;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.DocumentScope;
+import dev.nthings.tessera.document.components.Footnote;
+import dev.nthings.tessera.document.components.Footnotes;
 import dev.nthings.tessera.support.RenderedPage;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class FootnotesTest {
 
   /// An author scope that hosts one region of the page.
-  private record Region(String id, IntoElement content) implements Scope {
+  private record Region(String id, DocumentContent content) implements DocumentScope {
     @Override
     public String scopeId() {
       return id;
@@ -37,8 +38,8 @@ class FootnotesTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
-      return div().child(content);
+    public DocumentElement expand(DocumentContext context) {
+      return DocumentElement.of(div()).child(content);
     }
   }
 
@@ -51,11 +52,11 @@ class FootnotesTest {
     @BeforeAll
     static void renderProse() {
       page =
-          renderMain(
-              p().children(
-                      Footnote.of("First footnote.").id("first").reference(),
-                      text(" and "),
-                      Footnote.of("Second footnote.").id("second").reference()));
+          renderDocumentMain(
+              DocumentElement.of(p())
+                  .child(Footnote.of("First footnote.").id("first").reference())
+                  .text(" and ")
+                  .child(Footnote.of("Second footnote.").id("second").reference()));
     }
 
     @Test
@@ -112,10 +113,10 @@ class FootnotesTest {
   @DisplayName("an explicit section placed before references lists each note once")
   void explicitSectionListsOnce() {
     var page =
-        renderMain(
+        renderDocumentMain(
             Footnotes.of().title("Notes"),
-            p().child(Footnote.of("First note").reference()),
-            p().child(Footnote.of("Second note").reference()));
+            DocumentElement.of(p()).child(Footnote.of("First note").reference()),
+            DocumentElement.of(p()).child(Footnote.of("Second note").reference()));
 
     assertThat(page.elements("aside[role=doc-endnotes]")).hasSize(1);
     assertThat(page.elements("aside[role=doc-endnotes] li"))
@@ -133,10 +134,10 @@ class FootnotesTest {
         Footnote.of(Elements.p().id(ElementRef.page("cited")).text("Cited once."))
             .preview("Short form");
     var page =
-        renderMain(
+        renderDocumentMain(
             Footnotes.of(),
-            new Region("left", p().child(note.reference())),
-            new Region("right", p().child(note.reference())));
+            new Region("left", DocumentElement.of(p()).child(note.reference())),
+            new Region("right", DocumentElement.of(p()).child(note.reference())));
 
     assertThat(page.elements("a[role=doc-noteref]"))
         .extracting(a -> a.text())
@@ -164,7 +165,9 @@ class FootnotesTest {
     var later = Footnote.of("Same").id("term-2");
     var earlier = Footnote.of("Same").id("term");
     var page =
-        renderMain(p().children(earlier.reference(), earlier.reference(), later.reference()));
+        renderDocumentMain(
+            DocumentElement.of(p())
+                .children(earlier.reference(), earlier.reference(), later.reference()));
 
     assertThat(page.elements("a[role=doc-noteref]"))
         .extracting(link -> link.text())
@@ -180,8 +183,8 @@ class FootnotesTest {
   @DisplayName("compiling the same definition again starts numbering over")
   void numbersOncePerCompilation() {
     var note = Footnote.of("Again");
-    var first = renderMain(note.reference(), note.reference());
-    var second = renderMain(note.reference(), note.reference());
+    var first = renderDocumentMain(note.reference(), note.reference());
+    var second = renderDocumentMain(note.reference(), note.reference());
 
     for (var page : List.of(first, second)) {
       assertThat(page.elements("a[role=doc-noteref]"))
@@ -197,7 +200,7 @@ class FootnotesTest {
   void rejectsDuplicateIds() {
     assertThatExceptionOfType(CompilationException.class)
         .isThrownBy(() ->
-            renderMain(
+            renderDocumentMain(
                 Footnote.of("One").id("n").reference(), Footnote.of("Two").id("n").reference()))
         .satisfies(failure -> {
           assertThat(failure.diagnostics())

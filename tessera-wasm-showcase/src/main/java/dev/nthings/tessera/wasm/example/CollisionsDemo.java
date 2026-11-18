@@ -1,11 +1,12 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.components.Button;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
 
 /// Cross-root identity evidence: explicit ids already used by another entry's root, by the host
 /// page, or by the mount host itself reject the candidate instead of producing ambiguous
@@ -27,23 +28,31 @@ public final class CollisionsDemo {
     return BrowserRoot.mount(host, new CollisionsDemo(host)::view);
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
     renders++;
-    return Elements.section()
-        .attr("data-collisions-renders", Integer.toString(renders))
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-collisions-renders", Integer.toString(renders))
+                .child(Elements.h2().text("Collisions")))
         .children(
-            Elements.h2().text("Collisions"),
-            Button.of("Claim shared id").onClick(root.update(() -> claimShared = true)),
-            Button.of("Claim page id").onClick(root.update(() -> claimPage = true)),
-            Button.of("Claim host id").onClick(root.update(() -> claimHost = true)),
-            Button.of("Release ids")
-                .onClick(
-                    root.update(() -> {
-                      claimShared = false;
-                      claimPage = false;
-                      claimHost = false;
-                    })),
-            Button.of("Toggle note").onClick(root.update(() -> showNote = !showNote)),
+            Ui.button("Claim shared id", root.update(() -> claimShared = true)),
+            Ui.button("Claim page id", root.update(() -> claimPage = true)),
+            Ui.button("Claim host id", root.update(() -> claimHost = true)),
+            Ui.button(
+                "Release ids",
+                root.update(() -> {
+                  claimShared = false;
+                  claimPage = false;
+                  claimHost = false;
+                })),
+            Ui.button("Toggle note", root.update(() -> showNote = !showNote)))
+        .child(notes());
+  }
+
+  private IntoElement notes() {
+    return Elements.fragment()
+        .children(
             showNote
                 ? Elements.p().id(ElementRef.page("collisions-note")).text("Owned")
                 : Elements.empty(),

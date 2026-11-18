@@ -1,10 +1,11 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -38,8 +39,9 @@ public final class CardGrid extends BuiltinScope<CardGrid> implements ParentElem
   }
 
   @Override
-  public void appendChild(Element child) {
-    cards.add(child);
+  public CardGrid child(IntoElement child) {
+    cards.add(child.intoElement());
+    return this;
   }
 
   /// Sets the row and column gap. The default is [Tokens#SPACE_4].
@@ -67,7 +69,7 @@ public final class CardGrid extends BuiltinScope<CardGrid> implements ParentElem
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     return Elements.section().children(cards);
   }
 }

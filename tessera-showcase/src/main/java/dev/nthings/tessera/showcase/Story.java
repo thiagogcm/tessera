@@ -4,6 +4,7 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.document.DocumentContent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -18,8 +19,8 @@ record Story(
     List<Variant> variants) {
 
   /// Named state of this case; `content` runs on every render.
-  record Variant(String name, String label, boolean inDocs, Supplier<IntoElement> content) {
-    IntoElement create() {
+  record Variant(String name, String label, boolean inDocs, Supplier<DocumentContent> content) {
+    DocumentContent create() {
       return content.get();
     }
   }
@@ -36,11 +37,11 @@ record Story(
         .stage(this::documented);
   }
 
-  private List<IntoElement> documented() {
-    var items = new ArrayList<IntoElement>();
+  private List<DocumentContent> documented() {
+    var items = new ArrayList<DocumentContent>();
     for (var variant : variants) {
       if (variant.inDocs()) {
-        items.add(caseLink(variant));
+        items.add(DocumentContent.of(caseLink(variant)));
         items.add(variant.create());
       }
     }

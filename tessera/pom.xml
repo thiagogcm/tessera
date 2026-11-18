@@ -12,6 +12,11 @@
     <artifactId>tessera</artifactId>
     <name>Tessera Library</name>
 
+    <properties>
+        <!-- The qualified export targets the optional browser module, compiled after this one. -->
+        <tessera.javac.lint>all,-module</tessera.javac.lint>
+    </properties>
+
     <dependencies>
         <!-- Nullability contract for public API and NullAway verification -->
         <dependency>

@@ -1,7 +1,6 @@
 package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h1;
@@ -14,11 +13,8 @@ import static dev.nthings.tessera.core.Elements.span;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClosedBy;
 import dev.nthings.tessera.core.Command;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
@@ -26,11 +22,15 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.DocumentScope;
+import dev.nthings.tessera.document.Documents;
 import java.util.Map;
 
 /// Exercises scoped ids, invokers, interest tooltips, custom commands, container queries and
 /// portals in one scope. [CompilerTest] asserts each feature separately.
-record WorkspacePanelView(String workspaceSlug) implements Scope {
+record WorkspacePanelView(String workspaceSlug) implements DocumentScope {
 
   private static final Container METRIC_CARD =
       Container.named("metric-card", Container.Type.INLINE_SIZE);
@@ -54,7 +54,7 @@ record WorkspacePanelView(String workspaceSlug) implements Scope {
   }
 
   @Override
-  public Element expand(DocumentContext context) {
+  public DocumentElement expand(DocumentContext context) {
     var confirmRef = ElementRef.scoped("confirm-archive");
     var confirmModal =
         dialog()
@@ -105,17 +105,18 @@ record WorkspacePanelView(String workspaceSlug) implements Scope {
                 Command.custom("workspace", "archive", Map.of("data-project-id", workspaceSlug)))
             .text("Quick Archive");
 
-    return main()
-        .flex()
-        .flexCol()
-        .gap(CssLength.rem(1.5))
-        .children(
-            h1().textWrap(TextWrap.BALANCE).text("Workspace: " + workspaceSlug),
-            metricCard("P99 Latency", "14.2 ms"),
-            div()
+    return DocumentElement.of(
+            main()
                 .flex()
-                .gap(CssLength.rem(1))
-                .children(openModalTrigger, dispatchCustomBtn, customActionTarget),
-            deferred(confirmModal, 10));
+                .flexCol()
+                .gap(CssLength.rem(1.5))
+                .children(
+                    h1().textWrap(TextWrap.BALANCE).text("Workspace: " + workspaceSlug),
+                    metricCard("P99 Latency", "14.2 ms"),
+                    div()
+                        .flex()
+                        .gap(CssLength.rem(1))
+                        .children(openModalTrigger, dispatchCustomBtn, customActionTarget)))
+        .child(Documents.deferred(confirmModal, 10));
   }
 }

@@ -20,16 +20,45 @@ Elements.ul().child(Elements.fragment().children(
     Elements.li().text("Two")));
 ```
 
-Use `Elements.el(HtmlTag.TIME)` for a built-in tag without a dedicated factory. `Elements.custom("my-widget")` creates an autonomous custom element; its name must be lowercase and contain a hyphen. Check any additional naming requirements against the HTML standard. Register a [page script](#contribute-a-page-script) to define its browser behavior.
+Use `Elements.el(HtmlTag.TIME)` for a built-in tag without a dedicated factory. `Elements.custom("my-widget")` creates an autonomous custom element; its name must start with a lowercase ASCII letter, contain a hyphen, and use only lowercase ASCII letters, digits, `.`, `_`, and `-`. Check any additional naming requirements against the HTML standard. Generic attribute names are likewise limited to ASCII letters, digits, `-`, `_`, `.`, and `:`. Contribute its defining module from a document component, as described in [page scripts](#contribute-a-page-script). `Elements.svgIcon(width, height)` and `Elements.svg(SvgTag.PATH)` build inline SVG as structured nodes, which render the same in static pages and browser roots. Place SVG shapes inside an `svg` root; anything else reports `svg-namespace`.
 
-`Elements.rawHtml(trustedHtml)` emits content verbatim. Its IDs, links, and accessibility semantics are outside compiler validation. Pass only trusted, pre-sanitized content; use `text(...)` for user-controlled text.
+## Separate portable and document content
+
+Import portable authoring from `dev.nthings.tessera.core` and portable widgets from `dev.nthings.tessera.components`. Document placement and assembly live in `dev.nthings.tessera.document`. Import `DocLayout`, `Footnote`, `Footnotes`, and `TableOfContents` from `dev.nthings.tessera.document.components`.
+
+Everything above is portable: `IntoElement` content renders in a static page and in a [browser root](browser-rendering.md) alike. Content that needs document assembly is `DocumentContent` instead. Portable builders and components never accept it, so a reusable portable value stays valid for both outputs.
+
+| Need | Document API |
+| --- | --- |
+| Trusted HTML emitted verbatim | `Documents.rawHtml(trustedHtml)` |
+| A `<script>` element with trusted source | `Documents.script(type, source)` |
+| Content moved to the end of `<body>` | `Documents.deferred(content, priority)` |
+| Content resolved after the body | `Documents.late(context -> ...)` |
+| Markup with document children | `DocumentElement.of(tag).child(...)` |
+| A component that uses document operations | `DocumentComponent` or `DocumentScope`, which receive a `DocumentContext` |
+| Portable content in a document position | `DocumentContent.of(content)`; document builders also accept `IntoElement` directly |
+
+Scripts are document assembly. Portable elements have no `script` tag, refuse inline event-handler (`on*`) and `srcdoc` attributes in any letter case, and report `javascript:` URLs as `script-url`. `Documents.rawHtml(...)` bypasses compiler validation of its IDs, links, and accessibility semantics. Pass only trusted, pre-sanitized content; use `text(...)` for user-controlled text. Page bodies accept either family: `new PageDocument(title, content)`.
+
+```java
+var engine = Footnote.of("latest Chromium and Firefox.");
+var body = DocumentElement.of(Elements.main().child(Elements.h1().text("Guide")))
+    .child(DocumentElement.of(Elements.p().text("Supported engines")).child(engine.reference()))
+    .child(Documents.deferred(Modal.of("Help").id("help"), 10));
+```
+
+A portable layout component that takes caller-supplied children accepts only portable children. `Section.withDocument(...)` is the exception for document pages: it returns document content that continues the section body with paragraphs holding footnotes or other document content.
 
 ## Choose a component contract
 
-| Contract | Use it for | Expansion result |
-| --- | --- | --- |
-| `Component` | Reusable composition within the caller's identity scope | Any `IntoElement` |
-| `Scope` | A component with its own identity namespace and scoped CSS | One element host. A fragment, text, raw HTML, another scope, or nothing reports `scope-root` |
+| Contract | Use it for | Context | Expansion result |
+| --- | --- | --- | --- |
+| `Component` | Portable composition within the caller's identity scope | `ViewContext` | Any `IntoElement` |
+| `Scope` | A portable component with its own identity namespace and scoped CSS | `ViewContext` | One `TagElement` host |
+| `DocumentComponent` | Composition that needs [document operations](#contribute-document-content) | `DocumentContext` | `DocumentContent` |
+| `DocumentScope` | A styled scope whose host holds document content | `DocumentContext` | One `DocumentElement` host |
+
+Browser roots add `LiveComponent` and `LiveScope`; see [browser rendering](browser-rendering.md).
 
 A component can be a lambda:
 
@@ -53,13 +82,13 @@ public record MetricCard(String id, String title, String value) implements Scope
   }
 
   @Override
-  public IntoElement expand(DocumentContext context) {
+  public TagElement expand(ViewContext context) {
     return Elements.div().children(Elements.h2().text(title), Elements.p().text(value));
   }
 }
 ```
 
-Place it with `parent.child(new MetricCard("builds", "Successful builds", "128"))`. Return one element host. A list scope returns `ul` or `ol`, and a row scope returns `tr`, so that host can sit in its parent's content model:
+Place it with `parent.child(new MetricCard("builds", "Successful builds", "128"))`. `expand` returns the scope's one element host. A list scope returns `ul` or `ol`, and a row scope returns `tr`, so that host can sit in its parent's content model:
 
 ```java
 public record ItemList(String id) implements Scope {
@@ -69,7 +98,7 @@ public record ItemList(String id) implements Scope {
   }
 
   @Override
-  public IntoElement expand(DocumentContext context) {
+  public TagElement expand(ViewContext context) {
     return Elements.ul().children(
         Elements.li().text("One"),
         Elements.li().text("Two"));
@@ -77,15 +106,13 @@ public record ItemList(String id) implements Scope {
 }
 ```
 
-`Elements.main().child(new ItemList("items"))` emits the `ul` with `data-scope` and `data-scope-id`. A component that resolves to one element is a valid host. Returning another scope reports `scope-root` and leaves that scope's host alone. A fragment, text, raw HTML, late or deferred content, or nothing also reports `scope-root`. Expansion does not insert a wrapper.
+`Elements.main().child(new ItemList("items"))` emits the `ul` with `data-scope` and `data-scope-id`. The host type rules out a fragment, text, another scope, or nothing at compile time, and expansion never inserts a wrapper. Place nested scopes inside the host; each keeps its own markers.
 
 `scopeName()` defaults to the kebab-cased class name, such as `metric-card`. It identifies the component's `data-scope` attribute and CSS scope. Override it for anonymous implementations, which otherwise report `unstable-scope-name`. The root also carries `data-scope-id`; scope styles stop at nested scopes.
 
-Use an authored tag as the host when nesting scopes. `Scope.expand` still returns `IntoElement`; the compile-time host API is [explicit scope roots](design/authoring.md#require-explicit-scope-roots).
-
 `scopeId()` identifies an instance within its enclosing scope. Give repeated instances distinct IDs. The default, `null`, assigns `<scopeName>-<n>` in encounter order. Use explicit IDs when links must stay stable or the scope contains [keyed items](#key-list-items-that-move).
 
-Keep expansion free of shared mutable application state: site compilation expands pages concurrently. The supplied `DocumentContext` belongs to the callback; do not retain it for asynchronous work. Browser roots receive the same context with [backend-specific capability limits](browser-rendering.md).
+Keep expansion free of shared mutable application state: site compilation expands pages concurrently. The supplied context belongs to the callback; do not retain it for asynchronous work. `ViewContext.state(ViewKey)` keeps state for one expansion, which is one compiled page or one attempted browser render; a rejected render discards it. `report(rule, message, fix)` adds a located diagnostic that fails the expansion.
 
 ## Use the built-in components
 
@@ -93,11 +120,13 @@ Built-in components are final classes with factories for required arguments and 
 
 ```java
 var modal = Modal.of("Publish release?").id("publish").bodyText("Publish this version.");
-Elements.main().children(
-    Badge.of("Ready").tone(Tone.SUCCESS).pill().dot(),
-    modal.triggerButton("Publish"),
-    Elements.deferred(modal, 10));
+DocumentElement.of(Elements.main().children(
+        Badge.of("Ready").tone(Tone.SUCCESS).pill().dot(),
+        modal.triggerButton("Publish")))
+    .child(Documents.deferred(modal, 10));
 ```
+
+Most built-in components are portable. `Footnote.reference()`, `Footnotes`, `TableOfContents`, `DocLayout`, `Image.hero()` and `Section.withDocument(...)` are document content, because they number, collect, or preload across the page. Bundled icons are structured SVG; `Badge.icon(...)` takes portable content such as `Elements.svgIcon(...)`.
 
 | Purpose | Components |
 | --- | --- |
@@ -220,7 +249,9 @@ var close = IconButton.of("Close", Elements.span().text("x"))
 | `Modal.opened()` | Emits the dialog in its non-modal `open` state |
 | `closedBy(ClosedBy.ANY)` | Allows light dismissal; `CLOSE_REQUEST` and `NONE` restrict dismissal |
 
-`ContentTabs.of(label).tab(key, label, content)` uses the author key in its tab and panel IDs. Blank keys throw `IllegalArgumentException`; repeated keys report `duplicate-tab`. Its module updates panel selection and keyboard focus.
+`ContentTabs.of(label).tab(key, label, content)` uses the author key in its tab and panel IDs. Blank keys throw `IllegalArgumentException`; repeated keys report `duplicate-tab`. In a static page its module updates panel selection and keyboard focus. Without the module, as in a browser root, the tab bar is hidden and every panel stays visible.
+
+Buttons are portable and carry no Java handlers. In a browser root, wrap `button.element()` in a `LiveElement` to bind one.
 
 ## Declare roles and states
 
@@ -234,18 +265,20 @@ Name repeated landmarks with methods such as `Breadcrumbs.label(...)` and `DocPa
 
 ## Contribute document content
 
-Components receive `DocumentContext` during expansion. It supports these document-level tasks:
+Document callbacks receive `DocumentContext`, which extends `ViewContext` with these document-level tasks:
 
 | Task | API and behavior |
 | --- | --- |
-| Keep page-local component state | `document(DocumentKey<T>)` creates state on first use |
-| Add head content | `contributeHead(element)` preserves registration order; use page-local state if it must be deduplicated |
+| Keep page-local component state | `state(ViewKey<T>)` creates state on first use |
+| Add head content | `contributeHead(content)` preserves registration order; use page-local state if it must be deduplicated |
 | Add an end-of-body section | `atDocumentEnd(owner, callback)` keeps the first registration for each owner |
-| Outline a heading | `Heading.outline(target)` or `Section.of(id, title)` collects the heading; bind the target on the page |
+| Add a page script | `contributeScript(script)` emits each script ID once |
 | Read collected headings | `headings()` returns a snapshot; a late callback sees headings collected from the body |
 | Report an authoring error | `report(rule, message, fix)` adds a located diagnostic that fails compilation |
 
-`Elements.deferred(content, priority)` moves content to the end of the body while retaining its lexical identity scope. Lower priorities come first; equal priorities retain placement order. `Elements.late(context -> ...)` resolves after body expansion, before document-end sections and head contributions. Use it for content such as a table of contents that depends on headings collected later in the body.
+Outlining a heading is portable: `Heading.outline(target)` or `Section.of(id, title)` records it on the element, and the document collects it. Bind the target on the page.
+
+`Documents.deferred(content, priority)` moves content to the end of the body while retaining its lexical identity scope. Lower priorities come first; equal priorities retain placement order. `Documents.late(context -> ...)` resolves after body expansion, before document-end sections and head contributions. Use it for content such as a table of contents that depends on headings collected later in the body.
 
 ## Outline a heading
 
@@ -266,13 +299,12 @@ Heading.of(2, "Install", Elements.code().text("mvn"), Elements.text(" verify"))
 
 ## Place footnotes
 
-A `Footnote` is one definition. `reference()` places one occurrence. The first reference on the page numbers the note. Every reference gets its own marker and backlink, and the body is expanded once, in the `Footnotes` list.
+A `Footnote` is one definition. `reference()` places one occurrence as document content. The first reference on the page numbers the note. Every reference gets its own marker and backlink, and the body is expanded once, in the `Footnotes` list.
 
 ```java
 var engine = Footnote.of("latest Chromium and Firefox.").id("engine");
-Elements.p().children(
-    Elements.text("Tessera targets current browsers"),
-    engine.reference());
+DocumentElement.of(Elements.p().text("Tessera targets current browsers"))
+    .child(engine.reference());
 Footnotes.of().title("Notes");
 ```
 
@@ -282,12 +314,15 @@ The list may precede the references. Without `Footnotes.of()`, the list is appen
 
 ## Contribute a page script
 
-A `PageScript` is an ES module with a stable ID:
+A `PageScript` is an ES module with a stable ID. Scripts are document assembly, so a document component contributes them:
 
 ```java
-context.contributeScript(new PageScript("my-widget", moduleSource));
+DocumentComponent widget = context -> {
+  context.contributeScript(new PageScript("my-widget", moduleSource));
+  return DocumentContent.of(Elements.custom("my-widget"));
+};
 ```
 
-The first registration of an ID wins; each page emits that module once. Keep the source consistent for every use of an ID. [Output modes](sites.md#choose-an-output-mode) determine whether it is embedded or published as a file. [Browser support](browser-support.md#component-scripts) lists the modules supplied by built-in components.
+The first registration of an ID wins; each page emits that module once. Built-in portable widgets such as `ContentTabs` and `SearchPalette` declare their bundled module on their markup instead; document output loads it, and a browser root renders the markup without it. Keep the source consistent for every use of an ID. [Output modes](sites.md#choose-an-output-mode) determine whether it is embedded or published as a file. [Browser support](browser-support.md#component-scripts) lists the modules supplied by built-in components.
 
 For complete application concerns, continue with [Styling](styling.md), [Sites](sites.md), [Kotlin](kotlin.md), or [Browser rendering](browser-rendering.md).

@@ -49,6 +49,7 @@
         <maven.compiler.release>25</maven.compiler.release>
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
+        <tessera.javac.lint>all</tessera.javac.lint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -157,7 +158,7 @@
                                 <arg>-XDcompilePolicy=simple</arg>
                                 <arg>--should-stop=ifError=FLOW</arg>
                                 <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
-                                <arg>-Xlint:all</arg>
+                                <arg>-Xlint:${tessera.javac.lint}</arg>
                                 <arg>-Xdoclint:all/protected,-missing</arg>
                                 <arg>-Werror</arg>
                                 <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR
@@ -187,6 +188,8 @@
                     <execution>
                         <id>default-testCompile</id>
                         <configuration>
+                            <!-- White-box tests use the classpath. Consumer fixtures invoke javac on the module path. -->
+                            <useModulePath>false</useModulePath>
                             <compilerArgs>
                                 <arg>-Xlint:all</arg>
                                 <arg>-Werror</arg>
@@ -222,6 +225,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>

@@ -1,10 +1,11 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssContent;
@@ -230,7 +231,7 @@ public final class Card extends BuiltinScope<Card> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var current = interaction;
     var root =
         current instanceof Choice choice

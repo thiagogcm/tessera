@@ -2,12 +2,10 @@ package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.el;
 import static dev.nthings.tessera.core.Elements.img;
-import static dev.nthings.tessera.core.Elements.late;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
@@ -15,17 +13,20 @@ import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.BuiltinCommand;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.DocumentKey;
-import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.core.Scope;
-import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewKey;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.DocumentScope;
+import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.RenderedPage;
-import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -65,15 +66,24 @@ class AccessibilityRulesTest {
             "img"));
   }
 
-  record Panel(String id, Element content) implements Scope {
+  record Panel(String id, DocumentContent content) implements DocumentScope {
+    Panel(String id, IntoElement content) {
+      this(id, DocumentContent.of(content));
+    }
+
     @Override
     public String scopeId() {
       return id;
     }
 
     @Override
-    public Element expand(DocumentContext context) {
-      return div().child(content);
+    public String scopeName() {
+      return "panel";
+    }
+
+    @Override
+    public DocumentElement expand(DocumentContext context) {
+      return DocumentElement.of(div()).child(content);
     }
   }
 
@@ -86,22 +96,25 @@ class AccessibilityRulesTest {
             "Settings",
             new Panel(
                 "settings",
-                div()
+                DocumentElement.of(div())
                     .children(
                         new Panel("profile", img("/avatar.png", "Profile photo")),
                         new Panel(
                             "actions",
-                            div()
+                            DocumentElement.of(div())
                                 .children(
-                                    late(_ ->
-                                        button()
-                                            .id(ElementRef.scoped("save"))
-                                            .command(missing, BuiltinCommand.SHOW_MODAL)
-                                            .text("Save")),
-                                    a("#details%ZZ")
-                                        .id(ElementRef.scoped("details"))
-                                        .text("Details"),
-                                    deferred(button().id(ElementRef.scoped("cancel")), 10))))));
+                                    Documents.late(_ ->
+                                        DocumentContent.of(
+                                            button()
+                                                .id(ElementRef.scoped("save"))
+                                                .command(missing, BuiltinCommand.SHOW_MODAL)
+                                                .text("Save"))),
+                                    DocumentContent.of(
+                                        a("#details%ZZ")
+                                            .id(ElementRef.scoped("details"))
+                                            .text("Details")),
+                                    Documents.deferred(
+                                        button().id(ElementRef.scoped("cancel")), 10))))));
 
     var failure =
         catchThrowableOfType(CompilationException.class, () -> Compiler.compile(document));
@@ -142,9 +155,9 @@ class AccessibilityRulesTest {
         .contains("Settings", "settings--actions--save", "Fix:", ".id(ref)");
   }
 
-  record DocumentExtras() implements Scope {
-    private static final DocumentKey<Object> ACTIONS =
-        DocumentKey.of("extra-actions", Object.class, Object::new);
+  record DocumentExtras() implements DocumentScope {
+    private static final ViewKey<Object> ACTIONS =
+        ViewKey.of("extra-actions", Object.class, Object::new);
 
     @Override
     public String scopeId() {
@@ -152,19 +165,19 @@ class AccessibilityRulesTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public DocumentElement expand(DocumentContext context) {
       context.contributeHead(
           el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
-      context.atDocumentEnd(ACTIONS, _ -> button().id(ElementRef.scoped("subscribe")));
-      return div();
+      context.atDocumentEnd(
+          ACTIONS, _ -> DocumentContent.of(button().id(ElementRef.scoped("subscribe"))));
+      return DocumentElement.of(div());
     }
   }
 
   @Test
   @DisplayName("head and end-of-document errors identify the component that registered the content")
   void reportsContributionOrigins() {
-    var document =
-        new PageDocument("Settings", new Panel("settings", new DocumentExtras().intoElement()));
+    var document = new PageDocument("Settings", new Panel("settings", new DocumentExtras()));
 
     var failure =
         catchThrowableOfType(CompilationException.class, () -> Compiler.compile(document));
@@ -258,10 +271,9 @@ class AccessibilityRulesTest {
         RenderedPage.of(
             new PageDocument(
                 "Commands",
-                main()
-                    .children(
-                        button().command(compatible.ref(), command).text("Run"),
-                        deferred(compatible, 10))));
+                DocumentElement.of(main())
+                    .child(button().command(compatible.ref(), command).text("Run"))
+                    .child(Documents.deferred(compatible, 10))));
 
     assertThat(page.element("main > button"))
         .hasAttribute("commandfor", "target")
@@ -308,7 +320,7 @@ class AccessibilityRulesTest {
                         img("/deco.svg", "").role(Role.PRESENTATION).dimensions(100, 100),
                         a("/home")
                             .ariaLabel("Home page")
-                            .child(new TagElement(HtmlTag.SPAN).ariaHidden(true)))));
+                            .child(Elements.span().ariaHidden(true)))));
 
     assertThat(page.element("div > img"))
         .hasAttribute("src", "/deco.svg")

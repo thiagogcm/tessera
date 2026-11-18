@@ -1,8 +1,8 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.view.Diagnostic;
-import dev.nthings.tessera.view.Location;
 import dev.nthings.tessera.view.ViewExpansion;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,7 +22,7 @@ final class CompilationState {
   private final String pageTitle;
 
   /// Starts from a linked expansion: its identities, transitions and diagnostics.
-  CompilationState(String pageTitle, ViewExpansion expansion) {
+  CompilationState(String pageTitle, ViewExpansion<?> expansion) {
     this.pageTitle = pageTitle;
     this.registeredDomIds = Collections.unmodifiableSet(expansion.ids());
     this.ambiguousDomIds = Collections.unmodifiableSet(expansion.ambiguousIds());

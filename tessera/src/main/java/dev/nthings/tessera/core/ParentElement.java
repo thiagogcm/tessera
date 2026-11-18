@@ -12,25 +12,18 @@ public interface ParentElement<SELF extends ParentElement<SELF>> {
 
   SELF self();
 
-  /// Appends an already lowered child. Every child method below goes through it.
-  void appendChild(Element child);
-
-  /// Adds `child`, lowered now through [IntoElement#intoElement()], as the next child.
-  default SELF child(IntoElement child) {
-    appendChild(child.intoElement());
-    return self();
-  }
+  /// Adds the next child, lowered at placement.
+  SELF child(IntoElement child);
 
   /// Adds a text child. Its content is escaped on output.
   default SELF text(String text) {
-    appendChild(new TextElement(text));
-    return self();
+    return child(Elements.text(text));
   }
 
   /// Adds each child in order.
   default SELF children(IntoElement... children) {
     for (var child : children) {
-      appendChild(child.intoElement());
+      child(child);
     }
     return self();
   }
@@ -38,14 +31,14 @@ public interface ParentElement<SELF extends ParentElement<SELF>> {
   /// Adds each child in iteration order.
   default SELF children(Collection<? extends IntoElement> children) {
     for (var child : children) {
-      appendChild(child.intoElement());
+      child(child);
     }
     return self();
   }
 
   /// Adds each child from `stream` in order. The stream is consumed.
   default SELF children(Stream<? extends IntoElement> stream) {
-    stream.forEach(c -> appendChild(c.intoElement()));
+    stream.forEach(this::child);
     return self();
   }
 }

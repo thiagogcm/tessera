@@ -1,11 +1,13 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.deferred;
+import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +30,7 @@ class DropdownTest {
             .item(
                 Dropdown.Item.command(
                     "open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now"));
-    page = renderMain(dropdown, deferred(modal, 10));
+    page = renderDocumentMain(DocumentContent.of(dropdown), deferred(modal, 10));
   }
 
   @Test

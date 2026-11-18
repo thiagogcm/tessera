@@ -1,16 +1,18 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.form;
 import static dev.nthings.tessera.core.Elements.span;
+import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.document.DocumentContent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,15 +25,18 @@ class ButtonTest {
     var dialog = Modal.of("Confirm").id("confirm");
     var hint = ElementRef.scoped("hint");
     var page =
-        renderMain(
-            Button.of("Review").command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL),
-            Button.of("Review later")
-                .command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)
-                .variant(Button.Variant.OUTLINE)
-                .disabled(),
-            Button.of("Peek")
-                .command(hint, BuiltinCommand.TOGGLE_POPOVER)
-                .variant(Button.Variant.GHOST),
+        renderDocumentMain(
+            DocumentContent.of(
+                Button.of("Review").command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)),
+            DocumentContent.of(
+                Button.of("Review later")
+                    .command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)
+                    .variant(Button.Variant.OUTLINE)
+                    .disabled()),
+            DocumentContent.of(
+                Button.of("Peek")
+                    .command(hint, BuiltinCommand.TOGGLE_POPOVER)
+                    .variant(Button.Variant.GHOST)),
             deferred(dialog, 1),
             deferred(div().id(hint).popover(PopoverMode.AUTO).text("Details"), 2));
 

@@ -1,9 +1,10 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.deferred;
+import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
-import static dev.nthings.tessera.support.RenderedPage.renderMain;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
+import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +31,7 @@ class SearchPaletteTest {
                 SearchPalette.Item.of("Toggle Dark Mode", "/theme")
                     .description("Switch themes")
                     .badge("Action"));
-    page = renderMain(palette.triggerButton(), deferred(palette, 50));
+    page = renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50));
   }
 
   @Nested

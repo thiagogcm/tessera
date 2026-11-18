@@ -1,14 +1,11 @@
 package dev.nthings.tessera.wasm;
 
-import dev.nthings.tessera.core.DocumentContext;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.Lifetime;
-import dev.nthings.tessera.css.StyleSheet;
+import dev.nthings.tessera.core.Location;
+import dev.nthings.tessera.core.ViewException;
 import dev.nthings.tessera.css.Theme;
-import dev.nthings.tessera.view.Diagnostic;
-import dev.nthings.tessera.view.Location;
-import dev.nthings.tessera.view.ViewException;
+import dev.nthings.tessera.view.EmbeddedStyles;
 import dev.nthings.tessera.view.ViewRenderer;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayList;
@@ -16,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.function.BiFunction;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
@@ -58,7 +54,7 @@ public final class BrowserRoot implements AutoCloseable {
 
   private final DomReconciler renderer;
   private final JSObject hostElement;
-  private @Nullable BiFunction<BrowserRoot, DocumentContext, ? extends IntoElement> view;
+  private @Nullable LiveComponent view;
   private final LifetimeScope lifetime = new LifetimeScope();
   private final Host services;
   private Map<ElementRef, String> committedReferences = Map.of();
@@ -77,10 +73,7 @@ public final class BrowserRoot implements AutoCloseable {
   private int selfInvalidations;
   private boolean closed;
 
-  private BrowserRoot(
-      String hostId,
-      Scheduling scheduling,
-      BiFunction<BrowserRoot, DocumentContext, ? extends IntoElement> view) {
+  private BrowserRoot(String hostId, Scheduling scheduling, LiveComponent view) {
     this.hostId = hostId;
     this.scheduling = scheduling;
     this.hostElement = Dom.host(hostId);
@@ -91,22 +84,19 @@ public final class BrowserRoot implements AutoCloseable {
 
   /// Mounts with the default scheduling limits.
   ///
-  /// The callback receives its invalidation handle and an explicit expansion context.
-  public static BrowserRoot mount(
-      String hostId, BiFunction<BrowserRoot, DocumentContext, ? extends IntoElement> view) {
+  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
+  public static BrowserRoot mount(String hostId, LiveComponent view) {
     return mount(hostId, Scheduling.DEFAULT, view);
   }
 
-  /// The callback receives its invalidation handle and an explicit expansion context.
+  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root, and returns live
+  /// content; wrap portable content with [LiveContent#of].
   ///
   /// The first render runs synchronously. A rejected candidate keeps the host's fallback content,
   /// and a later invalidation retries. Other roots mount independently.
-  public static BrowserRoot mount(
-      String hostId,
-      Scheduling scheduling,
-      BiFunction<BrowserRoot, DocumentContext, ? extends IntoElement> view) {
+  public static BrowserRoot mount(String hostId, Scheduling scheduling, LiveComponent view) {
     var root = new BrowserRoot(hostId, scheduling, view);
-    var conflict = Dom.mountConflict(root.hostElement, StyleSheet.ROOT_ATTRIBUTE);
+    var conflict = Dom.mountConflict(root.hostElement, EmbeddedStyles.ROOT_ATTRIBUTE);
     if (conflict != null) {
       throw new IllegalStateException(
           "Cannot mount a browser root on '"
@@ -115,8 +105,9 @@ public final class BrowserRoot implements AutoCloseable {
               + conflict
               + ". Close that root first, or mount on a separate host outside every root.");
     }
-    Dom.attribute(root.hostElement, StyleSheet.ROOT_ATTRIBUTE, "");
-    Dom.attribute(root.hostElement, StyleSheet.THEME_ATTRIBUTE, StyleSheet.themeKey(root.theme));
+    Dom.attribute(root.hostElement, EmbeddedStyles.ROOT_ATTRIBUTE, "");
+    Dom.attribute(
+        root.hostElement, EmbeddedStyles.THEME_ATTRIBUTE, EmbeddedStyles.themeKey(root.theme));
     root.styles.mount();
     root.turn();
     if (root.dirty && !root.closed) {
@@ -245,9 +236,14 @@ public final class BrowserRoot implements AutoCloseable {
       if (content == null) {
         return;
       }
-      ViewSnapshot snapshot;
+      ViewSnapshot<LiveBehavior> snapshot;
       try {
-        snapshot = ViewRenderer.render(context -> content.apply(this, context), hostId);
+        snapshot =
+            ViewRenderer.render(
+                context -> LivePlacement.capture(content.expand((LiveContext) context)),
+                hostId,
+                base -> new RootContext(base, this),
+                LiveBehavior::validate);
       } catch (RuntimeException rejected) {
         reject(
             rejected instanceof ViewException
@@ -322,7 +318,7 @@ public final class BrowserRoot implements AutoCloseable {
     }
     return introduced.length() == 0
         ? null
-        : Dom.foreignId(hostElement, introduced.toString(), StyleSheet.ROOT_ATTRIBUTE);
+        : Dom.foreignId(hostElement, introduced.toString(), EmbeddedStyles.ROOT_ATTRIBUTE);
   }
 
   /// Rejects the candidate: the committed tree is unchanged and a later invalidation retries.
@@ -371,8 +367,8 @@ public final class BrowserRoot implements AutoCloseable {
     renderer.close(failures);
     lifetime.dispose(failures);
     styles.close();
-    Dom.removeAttribute(hostElement, StyleSheet.ROOT_ATTRIBUTE);
-    Dom.removeAttribute(hostElement, StyleSheet.THEME_ATTRIBUTE);
+    Dom.removeAttribute(hostElement, EmbeddedStyles.ROOT_ATTRIBUTE);
+    Dom.removeAttribute(hostElement, EmbeddedStyles.THEME_ATTRIBUTE);
     Failures.reportAll("Cleanup failed while closing browser root '" + hostId + "'", failures);
   }
 }

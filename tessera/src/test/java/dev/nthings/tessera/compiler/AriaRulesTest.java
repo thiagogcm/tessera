@@ -21,11 +21,11 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.AriaChecked;
 import dev.nthings.tessera.core.AriaCurrent;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.support.RenderedPage;
-import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -383,8 +383,9 @@ class AriaRulesTest {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> div().boolAttr("aria-hidden"))
         .withMessageContaining("attribute 'aria-hidden'");
-    assertThat(div().role(Role.NOTE).attributes()).containsEntry("role", "note");
-    assertThat(div().ariaCurrent(AriaCurrent.PAGE).attributes())
-        .containsEntry("aria-current", "page");
+    var page = RenderedPage.renderMain(div().role(Role.NOTE).ariaCurrent(AriaCurrent.PAGE));
+    assertThat(page.element("main > div"))
+        .hasAttribute("role", "note")
+        .hasAttribute("aria-current", "page");
   }
 }

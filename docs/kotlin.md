@@ -8,11 +8,12 @@ Tessera exposes a Java API that Kotlin can call directly. Follow [Getting starte
 import dev.nthings.tessera.compiler.Compiler
 import dev.nthings.tessera.compiler.PageDocument
 import dev.nthings.tessera.core.Component
-import dev.nthings.tessera.core.DocumentContext
 import dev.nthings.tessera.core.Elements
 import dev.nthings.tessera.core.Elements.*
 import dev.nthings.tessera.core.IntoElement
 import dev.nthings.tessera.core.Scope
+import dev.nthings.tessera.core.TagElement
+import dev.nthings.tessera.core.ViewContext
 import dev.nthings.tessera.css.ScopeStyle
 import dev.nthings.tessera.css.Tokens
 
@@ -23,7 +24,7 @@ data class MetricCard(val title: String, val value: String) : Scope {
         scope.root { it.p(Tokens.SPACE_5).rounded(Tokens.RADIUS_XL) }
     }
 
-    override fun expand(context: DocumentContext): IntoElement =
+    override fun expand(context: ViewContext): TagElement =
         div().children(h2().text(title), p().text(value))
 }
 

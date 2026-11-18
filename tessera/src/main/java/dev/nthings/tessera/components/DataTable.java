@@ -2,12 +2,11 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.components.TableGrid.Anchor;
 import dev.nthings.tessera.components.TableGrid.Kind;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
@@ -153,7 +152,7 @@ public final class DataTable extends BuiltinScope<DataTable> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var captionRef = ElementRef.scoped("caption");
     var references = new HashMap<Anchor, ElementRef>();
     var table = Elements.table().child(Elements.caption().id(captionRef).text(caption));

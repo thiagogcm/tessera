@@ -84,8 +84,7 @@ public enum HtmlTag implements TagName {
   HR,
   META,
   LINK,
-  STYLE,
-  SCRIPT;
+  STYLE;
 
   private final String tagName = name().toLowerCase(Locale.ROOT);
 

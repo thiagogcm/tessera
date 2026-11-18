@@ -10,38 +10,38 @@ interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF
   /// A transition that moves an element belongs inside `on(Media.MOTION_SAFE, ...)`, with its
   /// visible end state kept outside that block.
   default SELF transition(Transition transition) {
-    transition.writeTo(style());
+    transition.writeTo(StyleTarget.declarations(this));
     return self();
   }
 
   /// Plays `animation`, under `prefers-reduced-motion: no-preference` only, and registers its
   /// keyframes in the stylesheet. A later animation on the same style replaces it.
   default SELF animation(Animation animation) {
-    style().animate(animation);
+    StyleTarget.declarations(this).animate(animation);
     return self();
   }
 
   /// `transform`.
   default SELF transform(Transform transform) {
-    style().put(CssProperty.TRANSFORM, transform);
+    StyleTarget.declarations(this).put(CssProperty.TRANSFORM, transform);
     return self();
   }
 
   /// Uses the independent `translate` property, not `transform`.
   default SELF translate(Translation translation) {
-    style().put(CssProperty.TRANSLATE, translation);
+    StyleTarget.declarations(this).put(CssProperty.TRANSLATE, translation);
     return self();
   }
 
   /// `backdrop-filter`, applied to what shows through a translucent background.
   default SELF backdropFilter(CssFilter filter) {
-    style().put(CssProperty.BACKDROP_FILTER, filter);
+    StyleTarget.declarations(this).put(CssProperty.BACKDROP_FILTER, filter);
     return self();
   }
 
   /// `cursor`, the pointer shown over the element.
   default SELF cursor(Cursor cursor) {
-    style().put(CssProperty.CURSOR, cursor);
+    StyleTarget.declarations(this).put(CssProperty.CURSOR, cursor);
     return self();
   }
 }

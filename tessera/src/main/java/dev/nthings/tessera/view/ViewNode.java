@@ -1,34 +1,32 @@
 package dev.nthings.tessera.view;
 
-import dev.nthings.tessera.core.ControlProperties;
-import dev.nthings.tessera.core.EventListener;
-import dev.nthings.tessera.core.IdReference;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
+import dev.nthings.tessera.internal.authoring.IdReference;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: expanded content before linking. Component boundaries, scope boundaries,
 /// fragments, late slots and tooltip companions exist only here; [ViewExpansion] links them into
-/// [ViewSnapshot] nodes. Text, raw HTML and effects need no linking, so they are the snapshot
-/// records themselves.
-public sealed interface ViewNode
+/// [ViewSnapshot] nodes. Text and backend-specific leaves need no linking and share their snapshot
+/// records.
+public sealed interface ViewNode<M>
     permits ViewNode.Tag,
         ViewSnapshot.Text,
-        ViewSnapshot.Raw,
         ViewNode.Boundary,
         ViewNode.ScopeBoundary,
         ViewNode.Fragment,
         ViewNode.Slot,
-        ViewSnapshot.Effect,
+        ViewSnapshot.Special,
         ViewNode.Empty {
 
   /// The content of a component or keyed child, emitted without a wrapper. A scope looks through
   /// this wrapper for its element host. `definition` identifies it among unkeyed siblings, as
   /// [ViewSnapshot.Group#definition()] describes, and `key` is the sibling key, if any.
-  record Boundary(
-      @Nullable String key, Object definition, Location location, List<ViewNode> children)
-      implements ViewNode {
+  record Boundary<M>(
+      @Nullable String key, Object definition, Location location, List<ViewNode<M>> children)
+      implements ViewNode<M> {
     public Boundary {
       children = List.copyOf(children);
     }
@@ -37,9 +35,9 @@ public sealed interface ViewNode
   /// A scope's own sibling namespace, emitted without a wrapper. An enclosing scope does not look
   /// through it or replace its host. `definition` is [dev.nthings.tessera.core.Scope#scopeName()],
   /// stable across renders, and `key` is the sibling key when the scope itself is keyed.
-  record ScopeBoundary(
-      @Nullable String key, String definition, Location location, List<ViewNode> children)
-      implements ViewNode {
+  record ScopeBoundary<M>(
+      @Nullable String key, String definition, Location location, List<ViewNode<M>> children)
+      implements ViewNode<M> {
     public ScopeBoundary {
       children = List.copyOf(children);
     }
@@ -47,8 +45,8 @@ public sealed interface ViewNode
 
   /// The children of a fragment, emitted without a wrapper; `key` is the sibling key, if any.
   /// Unlike a [Boundary], a scope never looks through a fragment for its root element.
-  record Fragment(@Nullable String key, Location location, List<ViewNode> children)
-      implements ViewNode {
+  record Fragment<M>(@Nullable String key, Location location, List<ViewNode<M>> children)
+      implements ViewNode<M> {
     public Fragment {
       children = List.copyOf(children);
     }
@@ -56,19 +54,19 @@ public sealed interface ViewNode
 
   /// An expanded element. Only expansion builds one, handing over collections it no longer touches,
   /// so linking reuses them without copying.
-  final class Tag implements ViewNode {
-    private final TagCore core;
+  final class Tag<M> implements ViewNode<M> {
+    private final TagCore<M> core;
     private final Map<String, String> attributes;
     private final Map<String, IdReference> references;
-    private final List<ViewNode> children;
-    private final @Nullable Tag companion;
+    private final List<ViewNode<M>> children;
+    private final @Nullable Tag<M> companion;
 
     Tag(
-        TagCore core,
+        TagCore<M> core,
         Map<String, String> attributes,
         Map<String, IdReference> references,
-        List<ViewNode> children,
-        @Nullable Tag companion) {
+        List<ViewNode<M>> children,
+        @Nullable Tag<M> companion) {
       this.core = core;
       this.attributes = TagCore.readOnly(attributes);
       this.references = TagCore.readOnly(references);
@@ -96,50 +94,35 @@ public sealed interface ViewNode
       return references;
     }
 
-    /// The bound event handlers, keyed by [EventListener#key()].
-    public Map<EventListener.Key, EventListener> events() {
-      return core.events();
-    }
-
-    /// The controlled form properties.
-    public ControlProperties controlProperties() {
-      return core.controlProperties();
-    }
-
-    /// The custom properties a live backend sets on the element for its live styles.
-    public Map<String, String> liveProperties() {
-      return core.liveProperties();
-    }
-
     /// The expanded children.
-    public List<ViewNode> children() {
+    public List<ViewNode<M>> children() {
       return children;
     }
 
     /// The tooltip emitted as this element's next sibling, if any.
-    public @Nullable Tag companion() {
+    public @Nullable Tag<M> companion() {
       return companion;
     }
 
-    TagCore core() {
+    TagCore<M> core() {
       return core;
     }
 
-    Tag withAttributes(Map<String, String> attributes) {
-      return new Tag(core, attributes, references, children, companion);
+    Tag<M> withAttributes(Map<String, String> attributes) {
+      return new Tag<>(core, attributes, references, children, companion);
     }
   }
 
   /// Placeholder for a late element, filled by the backend that placed it.
-  final class Slot implements ViewNode {
-    private @Nullable ViewNode content;
+  final class Slot<M> implements ViewNode<M> {
+    private @Nullable ViewNode<M> content;
 
     /// Fills the slot with its late content, once the main flow is expanded.
-    public void fill(ViewNode content) {
+    public void fill(ViewNode<M> content) {
       this.content = content;
     }
 
-    ViewNode content() {
+    ViewNode<M> content() {
       var filled = content;
       if (filled == null) {
         throw new IllegalStateException("Late element was linked before it was laid out");
@@ -149,7 +132,5 @@ public sealed interface ViewNode
   }
 
   /// Content that emits nothing.
-  enum Empty implements ViewNode {
-    INSTANCE
-  }
+  record Empty<M>() implements ViewNode<M> {}
 }

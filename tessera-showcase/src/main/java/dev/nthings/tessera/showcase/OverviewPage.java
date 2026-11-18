@@ -24,6 +24,7 @@ import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentContent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +43,7 @@ final class OverviewPage {
         "Tessera compiles Java component trees into static HTML and one layered stylesheet. "
             + "Interactivity comes from the platform — dialogs, popovers, invoker commands, anchor "
             + "positioning, scroll-driven CSS — with automatically bundled search behavior.",
-        () -> content(ShowcaseSite.pages()));
+        () -> DocumentContent.of(content(ShowcaseSite.pages())));
   }
 
   private static Element content(List<Page> pages) {

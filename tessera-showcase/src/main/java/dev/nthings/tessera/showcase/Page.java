@@ -1,8 +1,7 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.components.DocLayout;
-import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.components.DocLayout;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -14,7 +13,7 @@ record Page(
     String title,
     String summary,
     List<Demo> demos,
-    Supplier<? extends IntoElement> body) {
+    Supplier<? extends DocumentContent> body) {
 
   static Page ofDemos(String path, String navLabel, String title, String summary, Demo... demos) {
     var sections = List.of(demos);
@@ -26,16 +25,16 @@ record Page(
       String navLabel,
       String title,
       String summary,
-      Supplier<? extends IntoElement> content) {
+      Supplier<? extends DocumentContent> content) {
     return new Page(path, navLabel, title, summary, List.of(), content);
   }
 
-  Element content() {
-    return body.get().intoElement();
+  DocumentContent content() {
+    return body.get();
   }
 
-  static Element docLayout(List<? extends IntoElement> sections) {
-    return DocLayout.of().children(sections).intoElement();
+  static DocumentContent docLayout(List<? extends DocumentContent> sections) {
+    return DocLayout.of().children(sections);
   }
 
   /// Fragment link to a demo section, by its page-level id.

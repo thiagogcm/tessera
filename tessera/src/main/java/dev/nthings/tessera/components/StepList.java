@@ -1,9 +1,10 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Counter;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
@@ -89,7 +90,7 @@ public final class StepList extends BuiltinScope<StepList> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     return Elements.ol().children(ListItems.wrap(steps));
   }
 }

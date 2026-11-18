@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import dev.nthings.tessera.internal.css.CssAccess;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,10 @@ import org.jspecify.annotations.Nullable;
 public final class Theme {
 
   private record Entry(DesignToken<?> token, CssValue value) {}
+
+  static {
+    CssAccess.register(new CssCollection());
+  }
 
   private static final Theme DEFAULTS = defaultTheme();
 

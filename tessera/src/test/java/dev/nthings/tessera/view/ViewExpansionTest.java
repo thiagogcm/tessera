@@ -13,40 +13,49 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
-import static org.assertj.core.api.Assertions.tuple;
 
 import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.components.Button;
+import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.Field;
-import dev.nthings.tessera.components.Footnote;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.components.Select;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.DocumentHeading;
-import dev.nthings.tessera.core.DocumentKey;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.TransitionKey;
+import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.core.ViewException;
+import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.ScopeStyle;
-import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.DocumentHeading;
+import dev.nthings.tessera.document.Documents;
+import dev.nthings.tessera.document.components.Footnote;
+import dev.nthings.tessera.internal.css.StyleSheet;
+import dev.nthings.tessera.support.Snapshots;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -62,7 +71,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Shared view expansion")
 class ViewExpansionTest {
-  private static final DocumentKey<Object> END = DocumentKey.of("end", Object.class, Object::new);
+  private static final ViewKey<AtomicInteger> COUNTER =
+      ViewKey.of("counter", AtomicInteger.class, AtomicInteger::new);
 
   @Test
   @DisplayName("static and live expansion preserve component semantics and styles")
@@ -153,38 +163,6 @@ class ViewExpansionTest {
   }
 
   @Test
-  @DisplayName("live renders report document-only contributions as diagnostics")
-  void liveRendersReportDocumentOnlyContributionsAsDiagnostics() {
-    Component documentOnly =
-        context -> {
-          context.contributeHead(Elements.el(HtmlTag.META).attr("name", "x"));
-          context.atDocumentEnd(END, _ -> p());
-          context.contributeScript(new PageScript("widget", "export {}"));
-          return div()
-              .children(
-                  Elements.late(_ -> p()),
-                  Elements.deferred(p()),
-                  Elements.rawHtml("<b>raw</b>"),
-                  Button.of("Help").interestTooltip(tooltip -> tooltip.text("More")));
-        };
-
-    var failure = catchThrowableOfType(ViewException.class, () -> render(documentOnly));
-
-    assertThat(failure.diagnostics())
-        .extracting(Diagnostic::rule)
-        .containsExactlyInAnyOrder(
-            "native-head-contribution",
-            "native-document-end",
-            "native-page-script",
-            "native-document-placement",
-            "native-document-placement",
-            "native-raw-html",
-            "native-page-script");
-    assertThat(failure.diagnostics())
-        .allSatisfy(diagnostic -> assertThat(diagnostic.location().components()).isNotEmpty());
-  }
-
-  @Test
   @DisplayName("repeated fields drop hints and errors without mutating the shared control")
   void repeatedFieldsDropHintsAndErrorsWithoutMutatingTheSharedControl() {
     var control = Forms.text("name");
@@ -213,8 +191,10 @@ class ViewExpansionTest {
       assertThat(Jsoup.parse(page.html()).select("input").attr("aria-describedby"))
           .isEqualTo(input.attr("aria-describedby"));
     }
-    assertThat(control.idReferences()).isEmpty();
-    assertThat(control.isAnchor()).isFalse();
+    var standalone = render(control.ariaLabel("Standalone"));
+    assertThat(dom(standalone).select("input").hasAttr("aria-describedby")).isFalse();
+    assertThat(styleRules(standalone))
+        .noneSatisfy(rule -> assertThat(rule).contains("anchor-name:"));
   }
 
   @Test
@@ -237,8 +217,8 @@ class ViewExpansionTest {
   @DisplayName("independent renders keep reference scopes separate")
   void independentRendersKeepReferenceScopesSeparate() {
     var field = Field.of("Name", Forms.text("name")).hint("Full name");
-    var left = dom(ViewRenderer.render(_ -> field, "left"));
-    var right = dom(ViewRenderer.render(_ -> field, "right"));
+    var left = dom(render(field, "left"));
+    var right = dom(render(field, "right"));
 
     assertThat(left.select("input").attr("id")).startsWith("left--");
     assertThat(right.select("input").attr("id"))
@@ -249,13 +229,12 @@ class ViewExpansionTest {
   }
 
   @Test
-  @DisplayName("live document rejection does not leak footnote registrations into compilations")
-  void liveDocumentRejectionDoesNotLeakFootnoteRegistrationsIntoCompilations() {
-    var content = main().child(p().child(Footnote.of("Reference text").reference()));
+  @DisplayName("footnote registrations do not leak between compilations")
+  void footnoteRegistrationsDoNotLeakBetweenCompilations() {
+    var content =
+        DocumentElement.of(main())
+            .child(DocumentElement.of(p()).child(Footnote.of("Reference text").reference()));
 
-    assertThatThrownBy(() -> render(content))
-        .isInstanceOf(ViewException.class)
-        .hasMessageContaining("native-document-end");
     for (var turn = 0; turn < 2; turn++) {
       var page = Jsoup.parse(Compiler.compile(new PageDocument("Notes", content)).html());
       assertThat(page.select("[role=doc-noteref]").text()).isEqualTo("[1]");
@@ -318,7 +297,7 @@ class ViewExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       if (failRender) {
         throw new IllegalStateException("Callback failed");
       }
@@ -372,23 +351,6 @@ class ViewExpansionTest {
   }
 
   @Test
-  @DisplayName("keyed groups carry their key and the definition of their content")
-  void keyedGroupsCarryTheirKeyAndTheDefinitionOfTheirContent() {
-    var snapshot =
-        render(
-            main()
-                .children(
-                    Field.of("Name", Forms.text("name")).key("field"),
-                    fragment().children(p().text("A"), p().text("B")).key("pair")));
-    var root = (ViewSnapshot.Tag) snapshot.roots().getFirst();
-
-    assertThat(root.children())
-        .extracting(node -> (ViewSnapshot.Group) node)
-        .extracting(ViewSnapshot.Group::key, ViewSnapshot.Group::definition)
-        .containsExactly(tuple("field", "form-field"), tuple("pair", FragmentElement.class));
-  }
-
-  @Test
   @DisplayName("keyed fragments preserve direct children in static and live output")
   void keyedFragmentsPreserveDirectChildrenInStaticAndLiveOutput() {
     var content =
@@ -412,40 +374,6 @@ class ViewExpansionTest {
     var container = main();
     names.forEach(name -> container.child(Field.of("Field " + name, Forms.text(name)).key(name)));
     return container;
-  }
-
-  private record Children(FragmentElement children) implements Scope {
-    @Override
-    public String scopeId() {
-      return "notes";
-    }
-
-    @Override
-    public IntoElement expand(DocumentContext context) {
-      return children;
-    }
-  }
-
-  @Test
-  @DisplayName("a fragment scope root reports scope-root in static and live expansion")
-  void fragmentScopeRootReportsScopeRoot() {
-    var content = main().child(new Children(fragment().child(p().text("Only"))));
-
-    assertThat(
-            rules(catchThrowableOfType(ViewException.class, () -> render(content)).diagnostics()))
-        .containsExactly("scope-root");
-    assertThat(rules(compileFailure(content).diagnostics())).containsExactly("scope-root");
-  }
-
-  @Test
-  @DisplayName("direct scope delegation reports scope-root")
-  void directScopeDelegationReportsScopeRoot() {
-    var content = main().child(new OuterScope(new InnerScope()));
-
-    assertThat(
-            rules(catchThrowableOfType(ViewException.class, () -> render(content)).diagnostics()))
-        .containsExactly("scope-root");
-    assertThat(rules(compileFailure(content).diagnostics())).containsExactly("scope-root");
   }
 
   @Test
@@ -476,55 +404,175 @@ class ViewExpansionTest {
   }
 
   @Test
-  @DisplayName("a keyed element is the scope host and the scope group keeps its name")
-  void keyedElementIsScopeHostWithStableScopeName() {
-    var content = main().child(new KeyedHost("cards"));
-    var first = scopeGroup(render(content));
-    var second = scopeGroup(render(content));
+  @DisplayName("a keyed scope keeps its host markers")
+  void keyedScopeKeepsItsHostMarkers() {
+    var content = main().child(new KeyedHost("cards").key("a"));
     var live = dom(render(content));
     var page = Jsoup.parse(Compiler.compile(new PageDocument("Keyed", content)).html());
 
-    assertThat(first.definition()).isEqualTo("keyed").isEqualTo(second.definition());
-    assertThat(first.key()).isNull();
-    assertThat(first.children()).singleElement().isInstanceOf(ViewSnapshot.Group.class);
-    var keyed = (ViewSnapshot.Group) first.children().getFirst();
-    assertThat(keyed.key()).isEqualTo("a");
-    assertThat(keyed.definition()).isEqualTo(TagElement.class);
     for (var document : List.of(live, page)) {
       var host = document.selectFirst("main > article");
       assertThat(host).isNotNull();
       assertThat(host.attr("data-scope")).isEqualTo("keyed");
-      assertThat(host.attr("data-scope-id")).isEqualTo("cards");
+      assertThat(host.attr("data-scope-id")).isEqualTo("key-0061--cards");
       assertThat(host.selectFirst("p").text()).isEqualTo("Body");
       assertThat(document.select("main > div")).isEmpty();
     }
   }
 
   @Test
-  @DisplayName("a generated scope id does not turn a keyed host into scope-root")
-  void generatedScopeIdDoesNotRejectKeyedHost() {
-    var content = main().child(new KeyedHost(null));
-
-    assertThat(
-            rules(catchThrowableOfType(ViewException.class, () -> render(content)).diagnostics()))
-        .containsExactly("generated-scope-id");
-    assertThat(rules(compileFailure(content).diagnostics())).containsExactly("generated-scope-id");
-  }
-
-  @Test
-  @DisplayName("static and live expansion collect the same outline metadata")
-  void outlineMetadataMatchesAcrossBackends() {
+  @DisplayName("an outline heading renders alike in both backends and feeds the document outline")
+  void outlineHeadingRendersAlikeAndFeedsTheDocumentOutline() {
     var target = ElementRef.page("intro");
-    var content =
-        main().children(Heading.of(2, "Intro").id(target).outline(target), new OutlineEcho());
-    var live = dom(render(content));
-    var page = Jsoup.parse(Compiler.compile(new PageDocument("Outline", content)).html());
+    var heading = Heading.of(2, "Intro").id(target).outline(target);
+    var live = dom(render(main().child(heading)));
+    var page =
+        Jsoup.parse(
+            Compiler.compile(
+                    new PageDocument(
+                        "Outline",
+                        DocumentElement.of(main()).child(heading).child(new OutlineEcho())))
+                .html());
 
     for (var document : List.of(live, page)) {
       assertThat(document.select("h2").text()).isEqualTo("Intro");
       assertThat(document.select("h2").attr("id")).isEqualTo("intro");
-      assertThat(document.select("p").text()).isEqualTo("Intro");
     }
+    assertThat(page.select("p").text()).isEqualTo("Intro");
+  }
+
+  /// A portable component that numbers itself through expansion state.
+  private record Numbered() implements Component {
+    @Override
+    public IntoElement expand(ViewContext context) {
+      return p().text(Integer.toString(context.state(COUNTER).incrementAndGet()));
+    }
+  }
+
+  @Test
+  @DisplayName("a portable component with expansion state renders alike in a page and a live view")
+  void portableComponentWithStateRendersAlikeInBothBackends() {
+    var content = main().children(new Numbered(), new Numbered());
+    var page = Jsoup.parse(Compiler.compile(new PageDocument("Numbers", content)).html());
+
+    for (var turn = 0; turn < 2; turn++) {
+      var live = dom(render(content));
+      assertThat(live.select("p").eachText()).containsExactly("1", "2");
+      assertThat(semantics(live)).isEqualTo(semantics(page));
+    }
+  }
+
+  @Test
+  @DisplayName("a rejected render discards its expansion state")
+  void rejectedRenderDiscardsItsExpansionState() {
+    var rejected = main().children(new Numbered().key("a"), new Numbered().key("a"));
+    assertThatThrownBy(() -> render(rejected)).isInstanceOf(ViewException.class);
+
+    var next = dom(render(main().child(new Numbered())));
+    assertThat(next.select("p").text()).isEqualTo("1");
+  }
+
+  @Test
+  @DisplayName("bundled icons render as structured SVG in static and live output")
+  void bundledIconsRenderAsStructuredSvg() {
+    var content = main().child(Callout.of(Callout.Kind.NOTE, "Read this"));
+    var page = Jsoup.parse(Compiler.compile(new PageDocument("Icons", content)).html());
+    var snapshot = render(content);
+
+    assertThat(page.select("aside svg > circle")).hasSize(1);
+    assertThat(page.select("aside svg > line")).hasSize(2);
+    var svg =
+        Snapshots.tags(snapshot.roots())
+            .filter(tag -> tag.tag().tagName().equals("svg"))
+            .findFirst()
+            .orElseThrow();
+    assertThat(svg.tag().namespace()).isEqualTo(TagName.Namespace.SVG);
+    assertThat(svg.attributes()).containsEntry("viewBox", "0 0 16 16");
+    assertThat(svg.children())
+        .allSatisfy(child ->
+            assertThat(((ViewSnapshot.Tag<?>) child).tag().namespace())
+                .isEqualTo(TagName.Namespace.SVG));
+    assertThat(dom(snapshot).select("aside svg > *").eachAttr("x1"))
+        .isEqualTo(page.select("aside svg > *").eachAttr("x1"));
+  }
+
+  @Test
+  @DisplayName("SVG shapes outside an svg root, and HTML inside one, are rejected by both backends")
+  void svgNamespaceTransitionsAreValidatedInBothBackends() {
+    var shapeInHtml = main().child(div().child(Elements.svg(SvgTag.CIRCLE)));
+    var htmlInSvg = main().child(Elements.svgIcon(16, 16).child(div()));
+    var valid = main().child(Elements.svgIcon(16, 16).child(Elements.svg(SvgTag.CIRCLE)));
+
+    for (var content : List.of(shapeInHtml, htmlInSvg)) {
+      assertThat(rules(compileFailure(content).diagnostics())).containsExactly("svg-namespace");
+      assertThatThrownBy(() -> render(content))
+          .isInstanceOf(ViewException.class)
+          .hasMessageContaining("svg-namespace");
+    }
+    Compiler.compile(new PageDocument("Valid", valid));
+    render(valid);
+  }
+
+  @Test
+  @DisplayName("javascript: URLs are rejected by both backends")
+  void javascriptUrlsAreRejectedByBothBackends() {
+    for (var url :
+        List.of("javascript:alert(1)", "  JavaScript:alert(1)", "java\tscript:void(0)")) {
+      var content =
+          main()
+              .children(
+                  Elements.a(url).text("Run"),
+                  Elements.el(HtmlTag.A).attr("HREF", url).text("Run uppercase"));
+      assertThat(rules(compileFailure(content).diagnostics()))
+          .filteredOn("script-url"::equals)
+          .hasSize(2);
+      assertThatThrownBy(() -> render(content))
+          .isInstanceOf(ViewException.class)
+          .hasMessageContaining("script-url");
+    }
+    Compiler.compile(
+        new PageDocument("Links", main().child(Elements.a("/javascript:guide").text("Guide"))));
+  }
+
+  @Test
+  @DisplayName("an iframe with an inline data: document is rejected by both backends")
+  void iframeDataDocumentsAreRejectedByBothBackends() {
+    var content =
+        main()
+            .child(
+                Elements.iframe()
+                    .attr("title", "Inline")
+                    .attr("SRC", "data:text/html,%3Cscript%3Ealert(1)%3C/script%3E"));
+    assertThat(rules(compileFailure(content).diagnostics())).contains("script-url");
+    assertThatThrownBy(() -> render(content))
+        .isInstanceOf(ViewException.class)
+        .hasMessageContaining("script-url");
+  }
+
+  @Test
+  @DisplayName("mixed-case HTML attribute names are ordinary links to every check")
+  void mixedCaseHtmlAttributeNamesAreOrdinaryLinks() {
+    var content = main().child(Elements.el(HtmlTag.A).attr("HREF", "#missing").text("Jump"));
+    assertThat(rules(compileFailure(content).diagnostics())).contains("missing-fragment");
+  }
+
+  @Test
+  @DisplayName("deferred content is checked against the body it moves to, not its SVG parent")
+  void deferredContentIsCheckedAgainstTheBodyItMovesTo() {
+    var deferredShape =
+        DocumentElement.of(Elements.svgIcon(16, 16))
+            .child(Documents.deferred(Elements.svg(SvgTag.PATH).attr("d", "M0 0")));
+    var deferredHtml =
+        DocumentElement.of(Elements.svgIcon(16, 16))
+            .child(Documents.deferred(p().text("Moved to the body")));
+
+    var failure =
+        catchThrowableOfType(
+            CompilationException.class,
+            () -> Compiler.compile(new PageDocument("Shape", deferredShape)));
+    assertThat(rules(failure.diagnostics())).containsExactly("svg-namespace");
+    var page = Jsoup.parse(Compiler.compile(new PageDocument("Html", deferredHtml)).html());
+    assertThat(page.select("body > p").text()).isEqualTo("Moved to the body");
   }
 
   @Test
@@ -547,11 +595,6 @@ class ViewExpansionTest {
         CompilationException.class, () -> Compiler.compile(new PageDocument("Scopes", content)));
   }
 
-  private static ViewSnapshot.Group scopeGroup(ViewSnapshot snapshot) {
-    var root = (ViewSnapshot.Tag) snapshot.roots().getFirst();
-    return (ViewSnapshot.Group) root.children().getFirst();
-  }
-
   private static void assertScopeIsolation(String css, Document document) {
     var outer = document.selectFirst("[data-scope-id=outer]").attr("data-scope");
     var inner = document.selectFirst("[data-scope-id=outer--inner]").attr("data-scope");
@@ -568,8 +611,8 @@ class ViewExpansionTest {
     return "@scope ([data-scope=\"" + scope + "\"]) to (:scope [data-scope] > *)";
   }
 
-  /// A scope whose root is the supplied content, styled so its selector differs from its child.
-  private record OuterScope(IntoElement content) implements Scope {
+  /// A scope whose host is the supplied element, styled so its selector differs from its child.
+  private record OuterScope(TagElement content) implements Scope {
     @Override
     public String scopeId() {
       return "outer";
@@ -586,7 +629,7 @@ class ViewExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return content;
     }
   }
@@ -609,20 +652,12 @@ class ViewExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return p().text("Inside");
     }
   }
 
-  /// A component whose result is one list element.
-  private record Listed() implements Component {
-    @Override
-    public IntoElement expand(DocumentContext context) {
-      return ul().children(li().text("One"), li().text("Two"));
-    }
-  }
-
-  /// A scope that delegates to one unscoped list component.
+  /// A scope whose host is an authored list.
   private record ItemList() implements Scope {
     @Override
     public String scopeId() {
@@ -635,12 +670,12 @@ class ViewExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
-      return new Listed();
+    public TagElement expand(ViewContext context) {
+      return ul().children(li().text("One"), li().text("Two"));
     }
   }
 
-  /// A scope whose host is the keyed element itself. A null id is generated.
+  /// A scope with an article host. A null id is generated.
   private record KeyedHost(@Nullable String id) implements Scope {
     @Override
     public String scopeId() {
@@ -653,17 +688,17 @@ class ViewExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
-      return article().child(p().text("Body")).key("a");
+    public TagElement expand(ViewContext context) {
+      return article().child(p().text("Body"));
     }
   }
 
   /// Renders the titles collected before this component expands.
-  private static final class OutlineEcho implements Component {
+  private static final class OutlineEcho implements DocumentComponent {
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public DocumentContent expand(DocumentContext context) {
       var titles = context.headings().stream().map(DocumentHeading::title).toList();
-      return p().text(String.join(",", titles));
+      return DocumentContent.of(p().text(String.join(",", titles)));
     }
   }
 
@@ -671,11 +706,17 @@ class ViewExpansionTest {
   @DisplayName("late keyed fields retain their separate parent identity scopes")
   void lateKeyedFieldsRetainTheirSeparateParentIdentityScopes() {
     var content =
-        main()
+        DocumentElement.of(main())
             .children(
-                div().child(Elements.late(_ -> Field.of("Left", Forms.text("left")).key("same"))),
-                div()
-                    .child(Elements.late(_ -> Field.of("Right", Forms.text("right")).key("same"))));
+                DocumentElement.of(div())
+                    .child(
+                        Documents.late(_ ->
+                            DocumentContent.of(Field.of("Left", Forms.text("left")).key("same")))),
+                DocumentElement.of(div())
+                    .child(
+                        Documents.late(_ ->
+                            DocumentContent.of(
+                                Field.of("Right", Forms.text("right")).key("same")))));
     var page = Jsoup.parse(Compiler.compile(new PageDocument("Editor", content)).html());
 
     assertThat(page.select("input").eachAttr("id")).hasSize(2).doesNotHaveDuplicates();
@@ -701,24 +742,23 @@ class ViewExpansionTest {
         .toList();
   }
 
-  private static Document dom(ViewSnapshot snapshot) {
+  private static Document dom(ViewSnapshot<?> snapshot) {
     var document = Document.createShell("");
     append(document.body(), snapshot.roots());
     return document;
   }
 
-  private static void append(Element parent, List<ViewSnapshot.Node> nodes) {
+  private static void append(Element parent, List<? extends ViewSnapshot.Node<?>> nodes) {
     for (var node : nodes) {
       switch (node) {
-        case ViewSnapshot.Tag tag -> {
+        case ViewSnapshot.Tag<?> tag -> {
           var element = parent.appendElement(tag.tag().tagName());
           tag.attributes().forEach(element::attr);
           append(element, tag.children());
         }
         case ViewSnapshot.Text(var text) -> parent.appendChild(new TextNode(text));
-        case ViewSnapshot.Raw(var html) -> parent.append(html);
-        case ViewSnapshot.Group group -> append(parent, group.children());
-        case ViewSnapshot.Effect _ -> {}
+        case ViewSnapshot.Group<?> group -> append(parent, group.children());
+        case ViewSnapshot.Special<?> _ -> {}
       }
     }
   }

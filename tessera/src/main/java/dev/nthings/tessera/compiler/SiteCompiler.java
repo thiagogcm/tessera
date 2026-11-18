@@ -3,12 +3,12 @@ package dev.nthings.tessera.compiler;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
-import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.PageScript;
-import dev.nthings.tessera.core.SourceProvenance;
-import dev.nthings.tessera.css.StyleSheet;
-import dev.nthings.tessera.view.Diagnostic;
-import dev.nthings.tessera.view.Location;
+import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.Location;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.PageScript;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
+import dev.nthings.tessera.internal.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -154,7 +154,8 @@ final class SiteCompiler {
 
   private record Failed(List<Diagnostic> diagnostics) implements Preparation {}
 
-  private static List<PreparedPage> preparePages(SiteDefinition site, List<Element> siteHead) {
+  private static List<PreparedPage> preparePages(
+      SiteDefinition site, List<DocumentContent> siteHead) {
     List<Preparation> preparations =
         parallelMap(
             site.routes(),

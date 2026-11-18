@@ -62,7 +62,7 @@ class ElementSurfaceTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return ul().children(li().text("One"), li().text("Two"));
     }
   }
@@ -74,7 +74,7 @@ class ElementSurfaceTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return tr().child(td().text("Cell"));
     }
   }

@@ -33,6 +33,8 @@ import dev.nthings.tessera.css.CssNumber;
 import dev.nthings.tessera.css.FontStack;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.showcase.Catalog;
 import dev.nthings.tessera.showcase.ShowcaseSite;
 import java.io.IOException;
@@ -153,16 +155,24 @@ abstract class ShowcaseBrowserSupport {
                     "/",
                     new PageDocument(
                         "Search examples",
-                        Elements.main()
+                        DocumentElement.of(
+                                Elements.main()
+                                    .children(
+                                        firstSearch.triggerButton(),
+                                        secondSearch.triggerButton(),
+                                        Elements.h2()
+                                            .id(ElementRef.page("cafe"))
+                                            .text("Café guide"),
+                                        Elements.h2().id(ElementRef.page("tea")).text("Tea notes"),
+                                        Elements.h2()
+                                            .id(ElementRef.page("layout"))
+                                            .text("Layout guide"),
+                                        Elements.h2()
+                                            .id(ElementRef.page("forms"))
+                                            .text("Forms guide")))
                             .children(
-                                firstSearch.triggerButton(),
-                                secondSearch.triggerButton(),
-                                Elements.h2().id(ElementRef.page("cafe")).text("Café guide"),
-                                Elements.h2().id(ElementRef.page("tea")).text("Tea notes"),
-                                Elements.h2().id(ElementRef.page("layout")).text("Layout guide"),
-                                Elements.h2().id(ElementRef.page("forms")).text("Forms guide"),
-                                Elements.deferred(firstSearch, 10),
-                                Elements.deferred(secondSearch, 20)))))
+                                Documents.deferred(firstSearch, 10),
+                                Documents.deferred(secondSearch, 20)))))
             .build();
     SiteWriter.writeToDirectory(Compiler.compile(searchPage), publishedSite.resolve("search"));
     server =

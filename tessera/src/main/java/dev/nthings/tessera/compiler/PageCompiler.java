@@ -1,8 +1,8 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.css.StyleSheet;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.view.ViewValidation;
 import java.util.List;
 
@@ -21,7 +21,7 @@ final class PageCompiler {
   /// Lays out and validates `document` without emitting HTML. `siteHead` goes in `<head>` before
   /// the page's own head contributions, so a site can share it across pages. Throws
   /// [CompilationException] if the document has authoring errors.
-  static PreparedPage prepare(PageDocument document, List<? extends IntoElement> siteHead) {
+  static PreparedPage prepare(PageDocument document, List<DocumentContent> siteHead) {
     var styles = new StyleSheet();
     var layout = DocumentPass.layout(document, siteHead, styles);
     var state = layout.compilation();

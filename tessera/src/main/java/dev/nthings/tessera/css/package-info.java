@@ -14,7 +14,7 @@
 /// category is accepted; an immutable [Theme] sets their values with type-checked
 /// `Theme.defaults().with(token, value)`. CSS limited to an id scope goes through [ScopeStyle] in
 /// `Scope#configureScope`. Value factories that take constrained input validate it eagerly and
-/// throw IllegalArgumentException. [StyleSheet] is the compiler-facing stylesheet builder.
+/// throw IllegalArgumentException. `StyleSheet` is the compiler-facing stylesheet builder.
 @NullMarked
 package dev.nthings.tessera.css;
 

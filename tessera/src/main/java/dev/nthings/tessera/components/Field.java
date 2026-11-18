@@ -3,12 +3,11 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
@@ -87,7 +86,7 @@ public final class Field extends BuiltinScope<Field> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var wrapper = select;
     var control = this.control.copy();
     var ctrl = control.ref();

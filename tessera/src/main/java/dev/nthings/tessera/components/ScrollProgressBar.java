@@ -1,8 +1,8 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animation;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
@@ -53,7 +53,7 @@ public final class ScrollProgressBar extends BuiltinComponent {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  IntoElement expand(ViewContext context) {
     return Elements.div()
         .ariaHidden(true)
         .fixed()

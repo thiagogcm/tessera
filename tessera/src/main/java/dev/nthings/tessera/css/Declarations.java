@@ -45,11 +45,6 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     return this;
   }
 
-  @Override
-  public Declarations style() {
-    return this;
-  }
-
   /// Every declaration goes through here, so a shorthand removes the longhands it covers.
   Declarations put(CssProperty property, String value) {
     property.longhands().forEach(declarations::remove);
@@ -173,7 +168,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   /// null, `view-transition-class`. Authors attach a `TransitionKey` to the element instead; the
   /// compiler passes that key's name and class, which the key has already validated, so they are
   /// emitted as given.
-  public Declarations viewTransition(String name, @Nullable String transitionClass) {
+  Declarations viewTransition(String name, @Nullable String transitionClass) {
     put(CssProperty.VIEW_TRANSITION_NAME, name);
     if (transitionClass != null) {
       put(CssProperty.VIEW_TRANSITION_CLASS, transitionClass);
@@ -213,7 +208,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
 
   /// Compiler-facing: whether an `aspect-ratio` is declared, which reserves an image's layout space
   /// in place of `width` and `height` attributes.
-  public boolean hasAspectRatio() {
+  boolean hasAspectRatio() {
     return declarations.containsKey(CssProperty.ASPECT_RATIO);
   }
 

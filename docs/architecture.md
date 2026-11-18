@@ -6,7 +6,7 @@ This document helps maintainers locate responsibilities in the current implement
 
 ## Rendering paths
 
-Static compilation produces complete documents and assets. Browser rendering produces a linked snapshot for one mounted root, then reconciles it with native DOM. Both paths use the same authoring model, but currently reject unsupported capabilities during expansion.
+Static compilation produces complete documents and assets. Browser rendering produces a linked snapshot for one mounted root, then reconciles it with native DOM. Both paths expand the same portable content; document content reaches only the compiler and live content only a browser root, and the placement types enforce that split at compile time.
 
 ```mermaid
 flowchart LR
@@ -23,87 +23,58 @@ flowchart LR
 
 ## Package boundaries
 
-All shared library packages belong to `dev.nthings:tessera`. The separate `tessera-showcase` module consumes its public API. The opt-in `tessera-wasm` runtime consumes shared view operations, and `tessera-wasm-showcase` builds its images and acceptance application.
+The default artifact, `dev.nthings:tessera`, declares the Java module `dev.nthings.tessera`. The optional `dev.nthings:tessera-wasm` artifact declares `dev.nthings.tessera.wasm` and exposes the shared authoring API transitively. Each showcase is a separate Maven project.
 
-| Package or module | Direct project dependencies | Responsibility |
-| --- | --- | --- |
-| `foundation` | None | Fluent composition, Kotlin callback marker, deterministic hashing and identifiers |
-| `css` | `foundation` | Typed values, tokens, style authoring, collection, and serialization |
-| `core` | `foundation`, `css` | Elements, component contracts, identities, document contributions, and current event/effect/control types |
-| `view` | `foundation`, `css`, `core` | Shared expansion, linking, validation, snapshots, and diagnostic model |
-| `compiler` | `foundation`, `css`, `core`, `view` | Page/site compilation, diagnostics, resources, filesystem and preview adapters |
-| `components` | `foundation`, `css`, `core` | Reusable UI |
-| `navigation` | `components`, `compiler` | Route-derived search palettes and pagers |
-| `tessera-wasm` | `core`, `css`, `view`, Web Image interoperability SDK | Browser roots, reconciliation, events, lifetimes, and host services |
-| `tessera-showcase` | `components`, `compiler`, `core`, `css`, `navigation` | Static examples and browser verification |
-| `tessera-wasm-showcase` | `tessera-wasm`, shared library | Image building, browser examples, and real-image acceptance |
+| Package or artifact | Access and responsibility |
+| --- | --- |
+| `foundation` | Public fluent composition, Kotlin callback marker, deterministic hashing and identifiers |
+| `css` | Public CSS values, tokens, declarations, and style callbacks. Serialization stays package-private |
+| `core` | Public portable elements, components, contexts, identities, and diagnostics |
+| `document` and `document.components` | Public document placement, assembly contracts, and document-only components |
+| `components` | Public portable widgets and document decorators for those widgets |
+| `compiler` | Public static compilation, resource, filesystem, and preview APIs. Coordination stays package-private |
+| `navigation` | Public route-derived navigation |
+| `internal.authoring`, `internal.css`, `internal.components` | Unexported builder data, CSS collection, and shared component implementation |
+| `view` | Shared backend operations and linked snapshots, exported only to `dev.nthings.tessera.wasm` |
+| `tessera-wasm` | Public live authoring and host services. Reconciliation, live payloads, and the native DOM bridge stay package-private |
+| `tessera-showcase`, `tessera-wasm-showcase` | Public API examples and browser tests served over HTTP |
 
-Components and the shared view layer are sibling consumers of the element/CSS model. The compiler and browser runtime consume shared view operations. Neither imports the other. Navigation connects the site model to UI. Page and site compilation share one package so their intermediate types and coordination APIs can remain package-private.
-
-The parent POM owns common build policies. Runtime dependencies belong to their modules; Playwright stays test-scoped in the showcases. The `wasm` profile adds the browser modules without invoking their toolchain in the default build. See the [repository layout](development.md#repository-layout).
-
-These are package and Maven artifact boundaries. There are no Java Platform Module System (JPMS) descriptors yet. Backend-facing types are public where cross-package or cross-artifact access requires it; they are not protected by qualified exports.
+On the module path, consumer applications require the artifact's Java module and use its public packages. The default build has no browser runtime dependency. The `wasm` profile builds both browser entry points with the same library classes on the Web Image classpath. Classpath execution does not enforce JPMS exports. See the [repository layout](development.md#repository-layout).
 
 ## Authoring model
 
-`IntoElement` is the placement contract. Components convert to wrappers that the compiler expands; the sealed `Element` hierarchy supports exhaustive dispatch. The diagram shows the relevant subset:
+Content belongs to one of three placement families. The contracts determine where applications can attach children, including through callbacks and collections.
 
-```mermaid
-classDiagram
-    accTitle: Current authoring and component wrappers
-    accDescr: Elements, components, and scopes share IntoElement. Component and scope records defer expansion.
-    direction TB
-    class IntoElement {
-        <<interface>>
-        +intoElement() Element
-    }
-    class Element {
-        <<interface>>
-    }
-    class Component {
-        <<interface>>
-        +expand(DocumentContext) IntoElement
-    }
-    class Scope {
-        <<interface>>
-        +expand(DocumentContext) IntoElement
-        +scopeId() String
-        +configureScope(ScopeStyle) void
-    }
-    class TagElement
-    class ComponentElement
-    class ScopeElement
+| Family | Placement contract | Components | Context |
+| --- | --- | --- | --- |
+| Portable | `IntoElement` | `Component`, `Scope` | `ViewContext` |
+| Document | `DocumentContent` | `DocumentComponent`, `DocumentScope` | `DocumentContext` |
+| Live | `LiveContent` | `LiveComponent`, `LiveScope` | `LiveContext` |
 
-    IntoElement <|-- Element
-    IntoElement <|-- Component
-    IntoElement <|-- Scope
-    Element <|.. TagElement
-    Element <|.. ComponentElement
-    Element <|.. ScopeElement
-    ComponentElement --> Component : wraps
-    ScopeElement --> Scope : wraps
-```
+`Element` is the sealed portable tree. Its concrete tag and fragment builders expose authoring operations. They register accessors for their data in `internal.authoring`, where text, keyed, component, and scope placements also live. During expansion each backend reads this data through the accessors and captures the attributes and children it needs.
 
-`TagElement` holds private attributes, references, children, and declarations. Compiler-facing getters expose read-only views; typed methods enforce identity and ARIA guards. `FragmentElement` groups siblings without markup. Other element variants represent text, trusted raw HTML, deferred placement, late callbacks, keyed content, and effects. Event handlers and live control properties are currently stored on `TagElement`.
+A `DocumentElement` or `LiveElement` wraps a portable host and appends its family's children. Document lowering captures raw HTML, deferred and late content, and document callbacks. Live lowering captures live callbacks, bindings, and effects. The two entry points feed the same expansion and linking operations. One type parameter carries backend-owned data through the linked tree. Document leaves carry trusted HTML. Live hosts carry browser bindings, and live leaves carry effects.
 
-These wrapper records are public for backend access across packages. They are backend-facing representations; application composition uses the [component contracts](consumer-guide.md#choose-a-component-contract).
+The portable `live(...)` style callback compiles to declarations in a document and to a stable custom-property rule in a browser root. Built-in widgets can contribute a library script during document lowering. Application scripts go through `DocumentContext` or `Documents.script(...)`. Portable builders refuse inline event handlers and `srcdoc`. Shared expansion reports `script-url` for script URLs and `svg-namespace` for invalid SVG or HTML placement.
 
-A scope root must be one element host. Expansion stamps `data-scope` on that host. It does not insert a `div`, and it does not retarget an inner scope's host. `Scope.expand` still returns `IntoElement`; the host check is runtime validation. A compile-time host API remains the target in [explicit scope roots](design/authoring.md#require-explicit-scope-roots).
+Each scope family returns one explicit host: `Scope.expand` a `TagElement`, `DocumentScope.expand` a `DocumentElement`, and `LiveScope.expand` a `LiveElement`. Expansion stamps `data-scope` on that host. It does not insert a `div`, and it does not retarget an inner scope's host. `ScopeDefinition` holds the identity and styles the three families share.
 
 `Styled`, `ParentElement`, and `FluentBuilder` share authoring operations without unchecked self casts. `StyleBlock`, `ScopeBlock`, and `ElementBlock` carry the `KotlinReceiver` marker for optional [Kotlin receiver lambdas](kotlin.md#enable-receiver-lambdas).
 
 ## Built-in components
 
-Public built-in types expose factories and fluent configuration. Their expansion methods remain internal through two package-private bases:
+Built-in portable components expose factories and fluent configuration. Two package-private bases handle their placements.
 
 | Base | Expansion boundary |
 | --- | --- |
-| `BuiltinComponent` | Wraps a component without opening a new identity scope; uses its class name in diagnostics |
-| `BuiltinScope<B>` | Uses a private `Scope` adapter for the instance ID, stable scope name, styles, and expansion |
+| `BuiltinComponent` | Wraps a portable component without opening a new identity scope; uses its class name in diagnostics |
+| `BuiltinScope<B>` | Uses a private `Scope` adapter for the instance ID, stable scope name, styles, and host expansion |
 
-`Modal` and `Drawer` share a `DialogView` base. `Button` and `IconButton` are scope-free: their references resolve in the caller's namespace. Components that own a tag, such as `Image`, expose an `ElementBlock` configuration callback.
+Components that number, collect, or preload across a page are document content: footnotes, the table of contents, the documentation layout, and the hero decorator returned by `Image.hero()`. `Section.withDocument(...)` returns a document section whose body continues with document content. Other built-in components are portable. An internal `Icons` helper builds structured SVG shared by portable and document widgets. `ContentTabs` and `SearchPalette` declare their bundled behaviors (`BundledBehavior.TABS`, `SEARCH`), and their markup stays readable without the scripts.
 
-`TagName` represents built-in `HtmlTag` values and authored `CustomElement` names. `Command` represents checked built-in commands and custom commands with application-supplied payloads.
+`Modal` and `Drawer` share a `DialogView` base. `Button` and `IconButton` are scope-free: their references resolve in the caller's namespace. They carry no handlers; `element()` returns their `<button>` for a browser `LiveElement` to wrap. Components that own a tag, such as `Image`, expose an `ElementBlock` configuration callback.
+
+`TagName` represents built-in `HtmlTag` values, authored `CustomElement` names, and `SvgTag` values with their namespace. `Command` represents checked built-in commands and custom commands with application-supplied payloads.
 
 ## Identity model
 
@@ -113,15 +84,21 @@ Package-private `view.ViewScope` values qualify scoped names. Generated counters
 
 `ViewScope` preserves whether an ancestor prefix was generated through both ordinary and keyed extensions. An explicit child scope does not make a generated parent stable. Expansion reports keyed content within any such prefix. See [identity references](consumer-guide.md#link-elements-with-identity-references) and [list keys](consumer-guide.md#key-list-items-that-move) for the authoring rules and fixes.
 
-## Document state
+## Expansion state and contexts
 
-`DocumentContext` exposes authoring capabilities while package-private `view.ViewContext` carries the current identity scope, component path, stylesheet, and origin. Derived contexts share page state without changing their parent's location or namespace.
+Every callback receives a context derived from the package-private `view.ExpansionContext`, which carries the current identity scope, component path, stylesheet, and origin. Derived contexts share expansion state without changing their parent's location or namespace.
 
-`view.DocumentRegistry` owns component state and headings for one page compilation or one live render. `compiler.DocumentState` owns head contributions, document-end sections, and scripts for static output. `DocumentKey<T>` retains state without exposing its concrete type to the backend. `Image.hero()` uses this mechanism to detect a second hero image.
+| Context | Implemented by | Adds |
+| --- | --- | --- |
+| `ViewContext` | `view.ExpansionContext` | `state(ViewKey)` and `report(...)`, for portable callbacks in both backends |
+| `DocumentContext` | `view.DocumentView` over the compiler's document backend | Head contributions, document-end sections, page scripts, and collected headings |
+| `LiveContext` | `tessera-wasm` over the root's expansion context | The owning `BrowserRoot` |
 
-`DocumentHeading` is component-independent metadata collected from an element during expansion, not a context side effect. `Heading` carries an optional `DocumentHeading`. `ViewExpansion` records it, and `DocumentContext` does not register headings. Linking resolves the reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
+A portable callback always receives the portable context, even inside document or live content, so it cannot reach another family's operations.
 
-Browser callbacks currently receive `DocumentContext` too. Their state and headings last one attempted render, while head contributions, end sections, scripts, raw HTML, and late/deferred placement produce diagnostics. Static compilation rejects live event handlers, effects, and controlled properties. The proposed `ViewContext` is a public capability contract; it is distinct from today's package-private implementation class with that name.
+`view.ExpansionRegistry` owns `ViewKey` state and headings for one expansion: one page compilation or one attempted live render. A rejected render discards it with the expansion. `compiler.DocumentState` owns head contributions, document-end sections, and scripts for static output. The hero decorator of `Image.hero()` uses expansion state to detect a second hero image.
+
+`DocumentHeading` is component-independent metadata collected from an element during expansion, not a context side effect. `Heading` carries an optional `DocumentHeading`. `ViewExpansion` records it in either backend, and no context registers headings. Linking resolves the reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
 
 ## Stylesheet assembly
 
@@ -129,7 +106,7 @@ Browser callbacks currently receive `DocumentContext` too. Their state and headi
 
 `Declarations` accepts property writes from the CSS package and applies consistent shorthand/longhand replacement. It also retains conditional groups, starting styles, and referenced keyframes. [Styling](styling.md) defines the author-facing operations and precedence rules.
 
-`StyleSheet` accepts typed declarations, scope callbacks, and validated transition names. It deduplicates rules and returns class names or scope keys to the compiler. The cascade layer order is:
+The CSS package constructs and serializes scoped styles and supplies rule data through an internal accessor. `internal.css.StyleSheet` aggregates and deduplicates those rules for documents and mounted roots. The browser uses embedded rules from the qualified `view` package. The cascade follows this layer order.
 
 ```css
 @layer reset, base, theme, components, utilities, interactive, container;
@@ -150,9 +127,9 @@ Design tokens are sealed by category. `Theme.with` preserves those categories, a
 
 `Compiler` is the public entry point. Inputs include `PageDocument`, `SiteDefinition`, `SiteRoute`, `Asset`, and `OutputMode`. Results are `CompiledPage`, `CompiledSite`, and the inspection result `PageTree`. [Sites](sites.md) defines their publication contracts.
 
-`PageCompiler` coordinates document placement and output through the shared `ViewExpansion`, `ReferenceLinker`, and `ViewValidation`. Backend-facing representations are public for cross-package access; document coordination stays package-private. `PreparedPage` exposes metadata snapshots while retaining ownership of its stylesheet and linked tree. Emission uses prepared content without rerunning callbacks. See [compiler internals](compiler.md).
+`PageCompiler` coordinates document placement and output. `DocumentExpansion` lowers document and portable placements into shared nodes, and the compiler's `DocumentPass` orders page contributions. Linking and semantic validation run before emission. `PreparedPage` holds the linked tree, stylesheet, and metadata until emission. See [compiler internals](compiler.md).
 
-`ViewRenderer` produces a linked `ViewSnapshot` for one mounted render. The browser runtime reconciles its groups, events, controls, and effects against native DOM. See [browser internals](browser-internals.md) for identity, lifetimes, failure handling, and scheduling.
+`ViewRenderer` lowers live content into a linked `ViewSnapshot` and collects semantic diagnostics before publication. The browser runtime reconciles groups and handles the bindings and effects it supplied. See [browser internals](browser-internals.md).
 
 `HtmlWriter` owns context-sensitive encoding and the HTML envelope. `SiteArtifacts` serializes search JSON and sitemap XML. `SiteWriter` owns output paths and file writes; `SitePreviewServer` serves compiled results. Compilation itself writes no files. `Asset.file(...)` is explicit input I/O.
 
@@ -168,14 +145,12 @@ Styles are shared by roots within one compiled entry. `StyleSink` manages the co
 
 ## Current limits
 
-These constraints affect current use and define the repairs required before broader API migration. They are not guarantees of the proposed design.
+These constraints affect current use and define the work that remains. They are not guarantees of the proposed design.
 
 | Boundary | Current limitation | Required work |
 | --- | --- | --- |
-| Direct scope delegation | An outer scope that returns another scope reports `scope-root` and preserves the inner scope boundary. `Scope.expand` still returns `IntoElement` | [Compile-time scope hosts](design/authoring.md#require-explicit-scope-roots) |
-| Non-element scope roots | A fragment, text, raw HTML, late or deferred content, or an empty root reports `scope-root`. Expansion inserts no host | [Compile-time scope hosts](design/authoring.md#require-explicit-scope-roots) |
-| Portable placement | One `IntoElement` surface accepts features that only one backend can execute | [Placement families](design/authoring.md#separate-capabilities-from-placement) |
-| Public internals | Wrappers, inspection getters, stylesheet collection, and shared backend types are accessible to consumers | [Internal access](architecture-redesign.md#package-and-module-boundaries) |
-| Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#f2-bundle-publication) |
+| Control state | Portable controls have no typed initial state; live bindings on `LiveElement` are the only typed control state | [R3: Initial state and live bindings](roadmap.md#r3-unify-initial-control-state-and-separate-live-bindings) |
+| Widget behavior in browser roots | Portable widgets with static behavior scripts, such as `ContentTabs` and the interest-tooltip fallback, render their structure without that behavior | [F1: Adaptive widgets](roadmap.md#feature-delivery-after-the-refactor) |
+| Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#feature-delivery-after-the-refactor) |
 
-For current applications, return one authored element from a scope. Runtime expansion reports `scope-root` when that host is missing; it does not insert a wrapper or replace an inner scope. Each mount host's ID is reserved: a child claiming it is rejected before publication. The remaining scope-host gap is the compile-time API in [explicit scope roots](design/authoring.md#require-explicit-scope-roots).
+Each mount host's ID is reserved: a child claiming it is rejected before publication.

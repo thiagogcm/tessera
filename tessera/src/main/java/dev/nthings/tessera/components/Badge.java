@@ -1,11 +1,12 @@
 package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
-import static dev.nthings.tessera.core.Elements.rawHtml;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
+import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -38,7 +39,7 @@ public final class Badge extends BuiltinScope<Badge> {
   private Size size = Size.MD;
   private boolean pill;
   private boolean dot;
-  private @Nullable String iconSvg;
+  private @Nullable Element icon;
   private @Nullable String href;
 
   private Badge(String text) {
@@ -85,10 +86,10 @@ public final class Badge extends BuiltinScope<Badge> {
     return this;
   }
 
-  /// Adds an icon from trusted SVG markup, inserted unescaped in an `aria-hidden` span. Never pass
-  /// user input.
-  public Badge icon(String iconSvg) {
-    this.iconSvg = iconSvg;
+  /// Adds `icon`, such as structured SVG from `Elements.svg`, in an `aria-hidden` span before the
+  /// text.
+  public Badge icon(IntoElement icon) {
+    this.icon = icon.intoElement();
     return this;
   }
 
@@ -180,7 +181,7 @@ public final class Badge extends BuiltinScope<Badge> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var cls =
         "badge badge--"
             + CssNames.of(tone)
@@ -196,8 +197,8 @@ public final class Badge extends BuiltinScope<Badge> {
       el.child(span().attr("class", "badge-dot").ariaHidden(true));
     }
 
-    if (iconSvg != null) {
-      el.child(span().attr("class", "badge-icon").ariaHidden(true).child(rawHtml(iconSvg)));
+    if (icon != null) {
+      el.child(span().attr("class", "badge-icon").ariaHidden(true).child(icon));
     }
 
     el.child(span().attr("class", "badge-label").text(text));

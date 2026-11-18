@@ -2,18 +2,17 @@ package dev.nthings.tessera.showcase;
 
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
-import static dev.nthings.tessera.core.Elements.text;
 
-import dev.nthings.tessera.components.Footnote;
-import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.StepList;
-import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.components.Footnote;
+import dev.nthings.tessera.document.components.Footnotes;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,19 +35,20 @@ final class DocsPage {
         () -> content(demos));
   }
 
-  private static Element content(List<Demo> demos) {
+  private static DocumentContent content(List<Demo> demos) {
     var hero =
         Image.of(Art.DOCS_BANNER, "Tessera documentation banner")
-            .hero()
             .dimensions(1200, 480)
             .element(img ->
                 img.transitionKey(OverviewPage.DOCS_HERO)
                     .inlineSize(CssLength.pct(100))
                     .rounded(CssLength.rem(0.75))
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE)));
-    var sections = new ArrayList<IntoElement>(demos);
+                    .border(Border.hairline(Tokens.BORDER_SUBTLE)))
+            .hero();
+    var sections = new ArrayList<DocumentContent>(demos);
     sections.add(Footnotes.of().title("Notes"));
-    return div().flex().flexCol().gap(CssLength.rem(2)).children(hero, Page.docLayout(sections));
+    return DocumentElement.of(div().flex().flexCol().gap(CssLength.rem(2)))
+        .children(hero, Page.docLayout(sections));
   }
 
   private static Demo heroImage() {
@@ -64,8 +64,9 @@ final class DocsPage {
                     "Images must declare dimensions or an aspect-ratio — the compiler rejects "
                         + "images that would cause layout shift. One hero per page is enforced."))
         .code(
-            "Image.of(src, \"Docs banner\").hero().dimensions(1200, 480)",
-            "    .element(img -> img.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\")));");
+            "Image.of(src, \"Docs banner\").dimensions(1200, 480)",
+            "    .element(img -> img.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\")))",
+            "    .hero(); // document content: preloads the page's one hero image");
   }
 
   private static Demo tableOfContents() {
@@ -95,26 +96,26 @@ final class DocsPage {
         .example(footnoteExample())
         .code(
             "var engine = Footnote.of(\"latest Chromium and Firefox.\").id(\"engine\");",
-            "p().children(text(\"Tessera targets the latest Chromium and Firefox\"),",
-            "    engine.reference(), text(\". The same policy applies to examples\"), engine.reference());",
+            "DocumentElement.of(p().text(\"Tessera targets the latest Chromium and Firefox\"))",
+            "    .child(engine.reference()).text(\". Examples follow it too\")",
+            "    .child(engine.reference());",
             "Footnotes.of().title(\"Notes\"); // optional: placement of the list");
   }
 
-  private static Element footnoteExample() {
+  private static DocumentContent footnoteExample() {
     var engine = Footnote.of("latest Chromium and Firefox; no polyfills are shipped.").id("engine");
     var zeroJs =
         Footnote.of(
                 "Search includes its JavaScript module; speculation rules are declarative JSON.")
             .id("zero-js");
-    return p().textWrap(TextWrap.PRETTY)
-        .children(
-            text("Tessera targets the latest Chromium and Firefox"),
-            engine.reference(),
-            text(" and provides script-free native controls"),
-            zeroJs.reference(),
-            text(". The same browser requirements apply to the embedded examples"),
-            engine.reference(),
-            text("."));
+    return DocumentElement.of(p().textWrap(TextWrap.PRETTY))
+        .text("Tessera targets the latest Chromium and Firefox")
+        .child(engine.reference())
+        .text(" and provides script-free native controls")
+        .child(zeroJs.reference())
+        .text(". The same browser requirements apply to the embedded examples")
+        .child(engine.reference())
+        .text(".");
   }
 
   private static Demo steps() {

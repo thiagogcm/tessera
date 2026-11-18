@@ -4,12 +4,12 @@ import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.custom;
 import static dev.nthings.tessera.core.Elements.div;
 
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.PageScript;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -20,6 +20,8 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -27,17 +29,15 @@ import java.util.List;
 /// In-page tabs that switch between panels of content, following the ARIA tabs pattern. Create one
 /// with [#of(String)] and add tabs with [#tab(String, String, IntoElement)]; the first tab starts
 /// selected. All panels are in the page. Arrow, Home and End keys move between tabs, which HTML
-/// does not do on its own, so the component contributes the `tessera-tabs` page script. Until that
-/// script loads, the tab bar is hidden and every panel is visible. Tabs without any tab report
-/// `empty-content-tabs`. Two tabs with the same key report `duplicate-tab`.
+/// does not do on its own, so a static document loads the `tessera-tabs` page script. Until that
+/// script loads, and in a browser root, which does not load it, the tab bar is hidden and every
+/// panel is visible. Tabs without any tab report `empty-content-tabs`. Two tabs with the same key
+/// report `duplicate-tab`.
 ///
 /// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting a
 /// tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-`. Without an
 /// [#id(String)], the compiler numbers instances `content-tabs-<n>`.
 public final class ContentTabs extends BuiltinScope<ContentTabs> {
-
-  private static final PageScript TABS_SCRIPT =
-      PageScript.fromResource("tessera-tabs", ContentTabs.class, "tessera-tabs.js");
 
   /// The selected tab's anchor; each bar's underline is positioned inside its own tab bar.
   private static final Anchor ACTIVE = Anchor.named("tessera-active-tab");
@@ -127,8 +127,7 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
-    context.contributeScript(TABS_SCRIPT);
+  TagElement expand(ViewContext context) {
     if (panels.isEmpty()) {
       context.report(
           "empty-content-tabs",
@@ -138,6 +137,7 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
 
     var tabBar = div().attr("class", "tab-bar").role(Role.TABLIST).ariaLabel(label);
     var root = custom("tessera-tabs").child(tabBar);
+    AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
     var seen = new HashSet<String>();
 
     for (var i = 0; i < panels.size(); i++) {

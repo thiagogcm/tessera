@@ -9,10 +9,10 @@ import static dev.nthings.tessera.support.HtmlAssertions.catchThrowableOfType;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.view.Diagnostic;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

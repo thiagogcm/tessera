@@ -1,16 +1,23 @@
 package dev.nthings.tessera.compiler;
 
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.RenderedPage.render;
 
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.CssBlocks;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
@@ -139,12 +146,11 @@ class CompilerTest {
   void ordersDeferredPortals() {
     var page =
         render(
-            div()
+            DocumentElement.of(div())
                 .children(
                     deferred(
-                        div()
-                            .id(ElementRef.scoped("toast-high-1"))
-                            .text("High 1")
+                        DocumentElement.of(
+                                div().id(ElementRef.scoped("toast-high-1")).text("High 1"))
                             .child(
                                 deferred(div().id(ElementRef.scoped("nested")).text("Nested"), 20)),
                         20),
@@ -193,5 +199,47 @@ class CompilerTest {
     assertThatIllegalArgumentException()
         .isThrownBy(() -> OutputMode.external(base))
         .withMessage("External asset base must be an absolute path such as /assets: " + base);
+  }
+
+  @Test
+  @DisplayName("head content and end sections may register each other in either order")
+  void headContentAndEndSectionsMayRegisterEachOther() {
+    var sectionOwner = ViewKey.of("section", Object.class, Object::new);
+    var headOwner = ViewKey.of("head", Object.class, Object::new);
+    DocumentComponent head =
+        context -> {
+          context.atDocumentEnd(
+              sectionOwner,
+              end -> {
+                end.contributeHead(Elements.el(HtmlTag.META).attr("name", "from-section"));
+                return DocumentContent.of(p().attr("data-from-head", "").text("End section"));
+              });
+          return DocumentContent.of(Elements.el(HtmlTag.META).attr("name", "from-head"));
+        };
+    DocumentComponent body =
+        context -> {
+          context.contributeHead(head);
+          context.atDocumentEnd(headOwner, _ -> DocumentContent.of(Elements.empty()));
+          return DocumentContent.of(main().child(p().text("Body")));
+        };
+
+    var rendered = RenderedPage.of(Compiler.compile(new PageDocument("Order", body)));
+
+    assertThat(rendered.elements("head > meta[name=from-head]")).hasSize(1);
+    assertThat(rendered.elements("head > meta[name=from-section]")).hasSize(1);
+    assertThat(rendered.elements("body > p[data-from-head]")).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("a document script keeps its trusted body inside one script element")
+  void documentScriptKeepsItsBodyInsideOneScriptElement() {
+    var rendered =
+        RenderedPage.render(
+            DocumentElement.of(main().child(p().text("Body")))
+                .child(Documents.script("application/json", "{\"end\":\"</script><b>x</b>\"}")));
+
+    var script = rendered.element("main > script[type=application/json]");
+    assertThat(script.data()).isEqualTo("{\"end\":\"<\\/script><b>x</b>\"}");
+    assertThat(rendered.elements("main > b")).isEmpty();
   }
 }

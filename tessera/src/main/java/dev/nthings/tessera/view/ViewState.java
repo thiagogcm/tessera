@@ -1,8 +1,11 @@
 package dev.nthings.tessera.view;
 
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,11 +85,12 @@ final class ViewState {
     String id = null;
     ElementRef named = null;
     for (var ref : refs) {
-      var name = ref.name();
+      var data = AuthoringAccess.reference(ref);
+      var name = data.name();
       if (name == null) {
         continue;
       }
-      var candidate = ref.pageLevel() ? name : scope.qualify(name);
+      var candidate = data.pageLevel() ? name : scope.qualify(name);
       if (id == null) {
         named = ref;
         id = candidate;
@@ -115,7 +119,8 @@ final class ViewState {
     for (var ref : refs) {
       references.put(ref, id);
     }
-    var scopedInKeyedContent = scope.keyed() && (named == null || !named.pageLevel());
+    var scopedInKeyedContent =
+        scope.keyed() && (named == null || !AuthoringAccess.reference(named).pageLevel());
     registerId(
         id,
         location.withDomId(id),

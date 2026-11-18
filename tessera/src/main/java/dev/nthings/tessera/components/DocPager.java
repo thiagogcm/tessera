@@ -4,8 +4,8 @@ import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.nav;
 import static dev.nthings.tessera.core.Elements.span;
 
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
@@ -22,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 /// Previous and next page cards in a `<nav>`. Create one with [#of()] and set the sides that exist
 /// with [#previous(Link)] and [#next(Link)]: `DocPager.of().previous(intro).next(setup)`. Each card
 /// shows "← Previous" or "Next →" above the link label; those hints are fixed English. The cards
-/// sit side by side when the nearest ancestor container, such as the one [DocLayout] sets, is 36rem
+/// sit side by side when the nearest ancestor container, such as the one `DocLayout` sets, is 36rem
 /// or wider. Otherwise they stack.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
@@ -114,7 +114,7 @@ public final class DocPager extends BuiltinScope<DocPager> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var navEl = nav().ariaLabel(label).attr("class", "doc-pager");
 
     if (previous != null) {

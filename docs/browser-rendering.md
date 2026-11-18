@@ -2,7 +2,9 @@
 
 The opt-in `tessera-wasm` module mounts the same components in a page as Java compiled to WebAssembly with GraalVM Web Image. A mounted view re-renders from application state, and the backend reconciles the native DOM so focus, selection and form values survive updates. The separate `tessera-wasm-showcase` module builds the runnable images and runs browser acceptance. The [roadmap](roadmap.md) describes planned capability and module boundaries.
 
-A browser root receives the same `DocumentContext` and expands components exactly like the compiler. It has no document, so head contributions, document-end sections, page scripts (including the interest-tooltip fallback), deferred and late elements, and raw HTML are reported as `native-*` diagnostics; the render is rejected and the committed view stays. Per-page state from `context.document(key)` and headings last one render. The other way round, static compilation rejects the live-only features below with `native-event-handlers`, `native-control-properties` and `native-effect`, so a component that uses them belongs in a browser mount.
+A browser root renders `LiveContent`: portable content plus the live-only features below. Portable components expand exactly as the compiler expands them and receive the same portable `ViewContext`. Live content cannot be placed in portable or document content, and document content (raw HTML, deferred and late content, document components) cannot be placed in a root; both mistakes are compile errors. Expansion state from `context.state(key)` lasts one attempted render. A root loads no page scripts, so portable widgets with a bundled script, such as `ContentTabs` or the interest-tooltip fallback, render their structure without it.
+
+Import live contracts, `BrowserEvent`, `EventOptions`, `Effect`, and `Lifetime` from `dev.nthings.tessera.wasm`. A named Java application can use `requires dev.nthings.tessera.wasm;` in its module descriptor. This also makes the shared authoring packages available. The showcase's Web Image build uses the classpath.
 
 ## Build and verify
 
@@ -32,7 +34,7 @@ Declare each mount on its host, with fallback content for browsers that cannot s
 <script defer src="bootstrap.js"></script>
 ```
 
-The entry's `main` mounts every host the page declares for it. The view callback receives the root and the render context:
+The entry's `main` mounts every host the page declares for it. The view is a `LiveComponent`: it receives a `LiveContext`, whose `root()` is the mounted root, and returns live content:
 
 ```java
 public final class Editor {
@@ -44,18 +46,21 @@ public final class Editor {
     BrowserEntry.start(args, Map.of("editor", host -> BrowserRoot.mount(host, editor::view)));
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
-    return Elements.main().children(
-        Field.of("Name", Forms.text("name").value(name)
-            .onEvent("input", event -> {
-              name = event.control().value();
-              root.invalidate();
-            })),
-        Button.of("Save").onClick(root.update(() -> saved = true)),
-        Elements.p().text(saved ? "Saved " + name : "Not saved"));
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
+    var input = Forms.text("name");
+    return LiveElement.of(Elements.main().child(Elements.label().labelFor(input.ref()).text("Name")))
+        .child(LiveElement.of(input).value(name).on("input", event -> {
+          name = event.control().value();
+          root.invalidate();
+        }))
+        .child(LiveElement.of(Button.of("Save").element()).onClick(root.update(() -> saved = true)))
+        .child(Elements.p().text(saved ? "Saved " + name : "Not saved"));
   }
 }
 ```
+
+`LiveElement.of(tag)` wraps a portable element without changing it, so the same `TagElement` or component markup stays valid in a static page. Portable content is accepted directly as a child of live content; `LiveContent.of(content)` converts it where a `LiveContent` value is required. `LiveComponent` and `LiveScope` are the live counterparts of `Component` and `Scope`. Buttons expose `element()` so a `LiveElement` can bind their handlers.
 
 Several entries can share a page; each launcher loads once however many hosts it serves. The first committed render replaces fallback content. A rejected candidate keeps it and a later invalidation retries; a native commit failure can clear it. `root.close()` empties the host, which can then be mounted again.
 
@@ -75,13 +80,13 @@ var root = BrowserRoot.mount("app", new BrowserRoot.Scheduling(8, 32), state::vi
 
 ## Handle events
 
-`onEvent(type, handler)` binds a Java handler on any element; `onEvent(type, options, handler)` adds native listener options, and `Button.onClick(runnable)` covers the common case:
+`LiveElement.on(type, handler)` binds a Java handler on the wrapped element; `on(type, options, handler)` adds native listener options, and `onClick(runnable)` covers the common case:
 
 ```java
-Elements.div()
-    .onEvent("click", EventOptions.DEFAULT.withCapture(), event -> audit())
-    .onEvent("wheel", EventOptions.DEFAULT.withPassive(), event -> zoom(event.pointer()))
-    .child(Elements.a("/help").text("Help").onEvent("click", event -> {
+LiveElement.of(Elements.div())
+    .on("click", EventOptions.DEFAULT.withCapture(), event -> audit())
+    .on("wheel", EventOptions.DEFAULT.withPassive(), event -> zoom(event.pointer()))
+    .child(LiveElement.of(Elements.a("/help").text("Help")).on("click", event -> {
       event.preventDefault();
       openHelp();
     }));
@@ -91,16 +96,16 @@ Handlers run synchronously within the browser's dispatch and user activation, so
 
 ## Bind form values
 
-Initial HTML and live state are separate. `value(String)`, `checked(boolean)` and `selectedValues(List<String>)` control the current value, checked state or multiple-select selection; attributes such as `value`, `checked` and `selected` still describe the initial markup.
+Initial HTML and live state are separate. `LiveElement.value(String)`, `checked(boolean)` and `selectedValues(List<String>)` control the current value, checked state or multiple-select selection; attributes such as `value`, `checked` and `selected` on the portable element still describe the initial markup.
 
 ```java
-var enabled = Elements.input("checkbox").checked(state.enabled)
-    .onEvent("change", event -> {
+var enabled = LiveElement.of(Elements.input("checkbox")).checked(state.enabled)
+    .on("change", event -> {
       state.enabled = event.control().checked();
       root.invalidate();
     });
-var picks = Elements.select().boolAttr("multiple").selectedValues(state.picks)
-    .onEvent("change", event -> {
+var picks = LiveElement.of(Elements.select().boolAttr("multiple")).selectedValues(state.picks)
+    .on("change", event -> {
       state.picks = event.control().selectedValues();
       root.invalidate();
     });
@@ -112,18 +117,18 @@ var picks = Elements.select().boolAttr("multiple").selectedValues(state.picks)
 | `checked(boolean)` | Checkbox or radio input | `ControlState.checked()` |
 | `selectedValues(List<String>)` | Multiple select | `ControlState.selectedValues()` |
 
-Another host reports `control-value`, `control-checked` or `control-selection`. Each render compares the desired value with the control's actual state: equal values are not written, so caret, selection and focus survive unrelated updates, and different values are written even when Java state did not change, which restores an edit the application rejected. While an input method composes text (`ControlState.composing()`), value writes wait for the composition to end. `uncontrolled()` hands the control back to the browser without changing its initial attributes.
+Another host reports `control-value`, `control-checked` or `control-selection`. Each render compares the desired value with the control's actual state: equal values are not written, so caret, selection and focus survive unrelated updates, and different values are written even when Java state did not change, which restores an edit the application rejected. While an input method composes text (`ControlState.composing()`), value writes wait for the composition to end. A render that leaves a binding off hands the control back to the browser without changing its initial attributes.
 
 ## Give children stable identities
 
 Call `.key(...)` on an element, component or fragment whose position can change. Keys are exact strings, compared among the children of one parent.
 
 ```java
-var entries = Elements.div();
+var entries = LiveElement.of(Elements.div());
 for (var item : items) {
-  entries.child(Elements.fragment().children(
-      Field.of(item.label(), Forms.text(item.id())),
-      Button.of("Choose " + item.label()))
+  entries.child(Live.fragment(
+          LiveContent.of(Field.of(item.label(), Forms.text(item.id()))),
+          LiveElement.of(Button.of("Choose " + item.label()).element()).onClick(() -> choose(item)))
       .key(item.id()));
 }
 ```
@@ -135,7 +140,7 @@ A keyed child keeps its DOM, focus and form state while siblings are inserted, r
 Place an effect where work should live, and register its cleanup on its `Lifetime`:
 
 ```java
-var ticker = Elements.effect("ticker-" + intervalMillis, lifetime -> {
+var ticker = Live.effect("ticker-" + intervalMillis, lifetime -> {
   var timer = startTimer(intervalMillis, lifetime.guard(root.update(() -> ticks++)));
   lifetime.onDispose(timer::cancel);
 });
@@ -155,18 +160,19 @@ final class Discard {
   String saved = "";
   RequestFailure error;
 
-  IntoElement view(BrowserRoot root, DocumentContext context) {
-    var host = root.host();
-    return Elements.main().children(
-        Elements.input("text").id(draft).ariaLabel("Draft"),
-        Modal.of("Discard changes?").dialogRef(confirm),
-        Button.of("Discard").onClick(() -> {
-          returnFocus = host.rememberFocus();
-          host.showModal(confirm);
-        }),
-        Button.of("Select draft").onClick(() -> host.selectAll(draft)),
-        Button.of("Autosave").onClick(() ->
-            host.fetchText("/save", body -> saved = body, failure -> error = failure)));
+  LiveContent view(LiveContext context) {
+    var host = context.root().host();
+    return LiveElement.of(Elements.main().children(
+            Elements.input("text").id(draft).ariaLabel("Draft"),
+            Modal.of("Discard changes?").dialogRef(confirm)))
+        .children(
+            LiveElement.of(Button.of("Discard").element()).onClick(() -> {
+              returnFocus = host.rememberFocus();
+              host.showModal(confirm);
+            }),
+            LiveElement.of(Button.of("Select draft").element()).onClick(() -> host.selectAll(draft)),
+            LiveElement.of(Button.of("Autosave").element()).onClick(() ->
+                host.fetchText("/save", body -> saved = body, failure -> error = failure)));
   }
 }
 ```

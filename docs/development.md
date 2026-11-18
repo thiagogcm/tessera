@@ -35,7 +35,7 @@ The default reactor builds the library and static showcase. The `wasm` profile a
 | Print tool versions | `just doctor` |
 | Remove build output | `just clean` |
 
-`just verify` runs `./mvnw -B -ntp clean verify`. Surefire runs unit tests during `test`; Failsafe runs browser integration tests during `integration-test` and checks their results at `verify`. Install browsers once and after Playwright upgrades.
+`just verify` runs `./mvnw -B -ntp clean verify`. Surefire runs unit tests on the classpath during `test`. The placement tests invoke javac on the module path to verify consumer access. Failsafe runs browser integration tests during `integration-test` and checks their results at `verify`. Install browsers once and after Playwright upgrades.
 
 CI also checks warning suppressions and builds both example sites. Run `just site` for the showcase and `just guide` for the smaller example. [Getting started](getting-started.md) covers previewing their files.
 

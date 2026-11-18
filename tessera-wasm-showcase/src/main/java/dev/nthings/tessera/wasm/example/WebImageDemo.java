@@ -8,13 +8,13 @@ import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
@@ -22,6 +22,9 @@ import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.wasm.BrowserEntry;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.Host;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
 import java.util.Map;
 import org.graalvm.webimage.api.JS;
 
@@ -49,16 +52,18 @@ public final class WebImageDemo {
             Map.entry(
                 "broken",
                 host ->
-                    BrowserRoot.mount(host, (_, _) -> Elements.section().child(new BrokenPanel()))),
+                    BrowserRoot.mount(
+                        host, _ -> LiveContent.of(Elements.section().child(new BrokenPanel())))),
             Map.entry("app", host -> BrowserRoot.mount(host, demo::view)),
             Map.entry(
                 "secondary",
                 host ->
                     BrowserRoot.mount(
                         host,
-                        (_, _) ->
-                            Field.of("Notes", Forms.text("notes"))
-                                .hint("An independent mounted root"))),
+                        _ ->
+                            LiveContent.of(
+                                Field.of("Notes", Forms.text("notes"))
+                                    .hint("An independent mounted root")))),
             Map.entry("list", KeyedListDemo::mount),
             Map.entry("controls", ControlledFormDemo::mount),
             Map.entry("schedule", scheduling::mount),
@@ -72,35 +77,39 @@ public final class WebImageDemo {
             Map.entry("closure-control", closure::mountControl)));
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
-    return Elements.main()
-        .flex()
-        .flexCol()
-        .gap(Tokens.SPACE_4)
-        .p(Tokens.SPACE_6)
-        .maxInlineSize(CssLength.rem(36))
-        .children(
-            h1().text("Java in the browser"),
-            count % 2 == 0
-                ? Field.of("Name", name).hint("Rendered by shared Java components")
-                : Field.of("Name", name).error("Enter a name"),
-            new Counter(count),
-            badge ? Badge.of("Saved").tone(Tone.SUCCESS) : Elements.empty(),
-            Button.of("Increment").onClick(root.update(() -> count++)),
-            Button.of("Show badge").onClick(root.update(() -> badge = true)),
-            // A value that changes on every render, producing a new atomic rule each time.
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
+    return LiveElement.of(
+            Elements.main()
+                .flex()
+                .flexCol()
+                .gap(Tokens.SPACE_4)
+                .p(Tokens.SPACE_6)
+                .maxInlineSize(CssLength.rem(36))
+                .children(
+                    h1().text("Java in the browser"),
+                    count % 2 == 0
+                        ? Field.of("Name", name).hint("Rendered by shared Java components")
+                        : Field.of("Name", name).error("Enter a name"),
+                    new Counter(count),
+                    badge ? Badge.of("Saved").tone(Tone.SUCCESS) : Elements.empty()))
+        .child(Ui.button("Increment", root.update(() -> count++)))
+        .child(Ui.button("Show badge", root.update(() -> badge = true)))
+        // A value that changes on every render, producing a new atomic rule each time.
+        .child(
             Elements.div()
                 .attr("data-meter", "")
                 .inlineSize(CssLength.px(meter))
-                .blockSize(CssLength.px(4)),
-            Button.of("Advance meter").onClick(root.update(() -> meter++)),
-            // The same kind of value, declared live: one rule however it changes.
+                .blockSize(CssLength.px(4)))
+        .child(Ui.button("Advance meter", root.update(() -> meter++)))
+        // The same kind of value, declared live: one rule however it changes.
+        .child(
             Elements.div()
                 .attr("data-live-meter", "")
                 .live(style -> style.inlineSize(CssLength.px(liveMeter)))
-                .blockSize(CssLength.px(4)),
-            Button.of("Animate live meter").onClick(() -> animate(root.host(), 120)),
-            Button.of("Unmount").variant(Button.Variant.OUTLINE).onClick(root::close));
+                .blockSize(CssLength.px(4)))
+        .child(Ui.button("Animate live meter", () -> animate(root.host(), 120)))
+        .child(Ui.button(Button.of("Unmount").variant(Button.Variant.OUTLINE), root::close));
   }
 
   /// Advances the live meter once per frame for `frames` frames.
@@ -119,7 +128,7 @@ public final class WebImageDemo {
 
   private record BrokenPanel() implements Component {
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public IntoElement expand(ViewContext context) {
       if (failMount()) {
         throw new IllegalStateException("Simulated initial render failure");
       }
@@ -134,7 +143,7 @@ public final class WebImageDemo {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return p().id(ElementRef.scoped("value")).role(Role.STATUS).text("Count: " + value);
     }
   }

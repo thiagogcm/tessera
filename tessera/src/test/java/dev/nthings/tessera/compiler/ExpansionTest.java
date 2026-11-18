@@ -1,17 +1,12 @@
 package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.article;
-import static dev.nthings.tessera.core.Elements.deferred;
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.empty;
 import static dev.nthings.tessera.core.Elements.fragment;
 import static dev.nthings.tessera.core.Elements.h2;
-import static dev.nthings.tessera.core.Elements.late;
 import static dev.nthings.tessera.core.Elements.li;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
-import static dev.nthings.tessera.core.Elements.rawHtml;
-import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.core.Elements.ul;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -23,17 +18,23 @@ import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.KeyedElement;
 import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.DocumentScope;
+import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.RenderedPage;
-import dev.nthings.tessera.view.Diagnostic;
 import java.util.List;
 import java.util.stream.Stream;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,14 +56,32 @@ class ExpansionTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return div().child(content);
+    }
+  }
+
+  /// A document scope around document `content`; without a `name`, its id is generated.
+  private record DocBox(@Nullable String name, DocumentContent content) implements DocumentScope {
+    @Override
+    public @Nullable String scopeId() {
+      return name;
+    }
+
+    @Override
+    public String scopeName() {
+      return "doc-box";
+    }
+
+    @Override
+    public DocumentElement expand(DocumentContext context) {
+      return DocumentElement.of(div()).child(content);
     }
   }
 
   private record Exploding() implements Component {
     @Override
-    public Element expand(DocumentContext context) {
+    public Element expand(ViewContext context) {
       throw new IllegalStateException("Broken render");
     }
   }
@@ -124,7 +143,11 @@ class ExpansionTest {
         catchThrowable(() ->
             Compiler.compile(
                 new PageDocument(
-                    "Late page", main().child(new Box("outer", Elements.late(_ -> broken))))));
+                    "Late page",
+                    DocumentElement.of(main())
+                        .child(
+                            new DocBox(
+                                "outer", Documents.late(_ -> DocumentContent.of(broken)))))));
 
     assertThat(failure).isInstanceOf(IllegalStateException.class).hasMessage("Broken conversion");
     assertThat(failure.getSuppressed())
@@ -134,14 +157,14 @@ class ExpansionTest {
                 .hasMessageContaining(
                     "[callback-failure]",
                     "page \"Late page\"",
-                    "box[outer]",
+                    "doc-box[outer]",
                     "Late callback failed: Broken conversion"));
   }
 
   /// A component that returns another component, with no `.intoElement()` in between.
   private record Wrapper(String text) implements Component {
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public IntoElement expand(ViewContext context) {
       return (Component) _ -> p().text(text);
     }
   }
@@ -159,7 +182,7 @@ class ExpansionTest {
     var anonymous =
         new Scope() {
           @Override
-          public IntoElement expand(DocumentContext context) {
+          public TagElement expand(ViewContext context) {
             return p().text("anonymous");
           }
         };
@@ -202,7 +225,7 @@ class ExpansionTest {
           }
 
           @Override
-          public IntoElement expand(DocumentContext context) {
+          public TagElement expand(ViewContext context) {
             return p().text("named");
           }
         };
@@ -353,14 +376,18 @@ class ExpansionTest {
   void allowsSameKeyAcrossParents() {
     var page =
         RenderedPage.render(
-            main()
-                .children(
-                    div().child(Field.of("Left", Forms.text("left")).key("same")),
-                    div()
+            DocumentElement.of(main())
+                .child(div().child(Field.of("Left", Forms.text("left")).key("same")))
+                .child(
+                    DocumentElement.of(div())
                         .child(
-                            Elements.late(_ -> Field.of("Right", Forms.text("right")).key("same"))),
+                            Documents.late(_ ->
+                                DocumentContent.of(
+                                    Field.of("Right", Forms.text("right")).key("same")))))
+                .child(
                     ul().id(ElementRef.scoped("first"))
-                        .child(li().id(ElementRef.scoped("item")).key("same")),
+                        .child(li().id(ElementRef.scoped("item")).key("same")))
+                .child(
                     ul().id(ElementRef.scoped("second"))
                         .child(li().id(ElementRef.scoped("item")).key("same"))));
 
@@ -432,18 +459,20 @@ class ExpansionTest {
   @Test
   @DisplayName("a blank key is rejected and a later key replaces an earlier one")
   void rejectsBlankKeyAndUsesLast() {
-    var content = p().text("Item");
+    var content = p().id(ElementRef.scoped("item")).text("Item");
 
     assertThatIllegalArgumentException()
         .isThrownBy(() -> content.key(" "))
         .withMessage("A sibling key must not be blank");
-    assertThat(content.key("first").key("second")).isEqualTo(new KeyedElement("second", content));
+    var twice = RenderedPage.renderMain(content.key("first").key("second")).element("p").id();
+    var last = RenderedPage.renderMain(content.key("second")).element("p").id();
+    assertThat(twice).isEqualTo(last);
   }
 
   /// A component whose scoped ref and diagnostic show which scope and path it renders in.
   private record Note(String text) implements Component {
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public IntoElement expand(ViewContext context) {
       context.report("note-rendered", "Rendered " + text, "Nothing to fix.");
       return p().id(ElementRef.scoped("note")).text(text);
     }
@@ -488,23 +517,15 @@ class ExpansionTest {
   /// A scope that leaves `scopeId` unset, so the compiler numbers it.
   private record Open(IntoElement content) implements Scope {
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return div().child(content);
-    }
-  }
-
-  /// A scope whose expand result is the keyed element, with nothing wrapped around the key.
-  private record KeyedOpen() implements Scope {
-    @Override
-    public Element expand(DocumentContext context) {
-      return article().key("a");
     }
   }
 
   /// A component whose expand result is keyed.
   private record KeyedNote() implements Component {
     @Override
-    public Element expand(DocumentContext context) {
+    public Element expand(ViewContext context) {
       return p().key("a");
     }
   }
@@ -513,41 +534,37 @@ class ExpansionTest {
     return Stream.of(
         argumentSet(
             "keyed content inside a scope without scopeId reports generated-scope-id",
-            main().child(new Open(p().key("a"))),
+            DocumentContent.of(main().child(new Open(p().key("a")))),
             "open-1",
             List.of("open[open-1]", "[key=a]")),
         argumentSet(
             "keyed content in a later generated scope reports its own counter",
-            main().children(new Open(p().text("First")), new Open(p().key("a"))),
+            DocumentContent.of(
+                main().children(new Open(p().text("First")), new Open(p().key("a")))),
             "open-2",
             List.of("open[open-2]", "[key=a]")),
         argumentSet(
             "a generated parent id still flags keyed content in an explicit child scope",
-            main().child(new Open(new Box("inner", p().key("a")))),
+            DocumentContent.of(main().child(new Open(new Box("inner", p().key("a"))))),
             "open-1--inner",
             List.of("open[open-1]", "box[open-1--inner]", "[key=a]")),
         argumentSet(
-            "a generated scope whose expand result is keyed reports generated-scope-id",
-            main().child(new KeyedOpen()),
-            "keyed-open-1",
-            List.of("keyed-open[keyed-open-1]", "[key=a]")),
-        argumentSet(
             "a component that returns keyed content inside a generated scope is reported",
-            main().child(new Open(new KeyedNote())),
+            DocumentContent.of(main().child(new Open(new KeyedNote()))),
             "open-1",
             List.of("open[open-1]", "KeyedNote", "[key=a]")),
         argumentSet(
             "deferred keyed content inside a generated scope is reported",
-            main().child(new Open(Elements.deferred(p().key("a")))),
-            "open-1",
-            List.of("open[open-1]", "[key=a]")));
+            DocumentElement.of(main()).child(new DocBox(null, Documents.deferred(p().key("a")))),
+            "doc-box-1",
+            List.of("doc-box[doc-box-1]", "[key=a]")));
   }
 
   @ParameterizedTest
   @MethodSource("keyedContentInGeneratedScope")
   @DisplayName("keyed content in a generated id scope reports generated-scope-id")
   void reportsKeyedContentInGeneratedScope(
-      Element body, String generatedScopeId, List<String> components) {
+      DocumentContent body, String generatedScopeId, List<String> components) {
     var failure =
         catchThrowableOfType(
             CompilationException.class, () -> Compiler.compile(new PageDocument("Keys", body)));
@@ -609,25 +626,7 @@ class ExpansionTest {
         .containsExactly("open-1--inner--p-1", "open-1--inner--p-2");
   }
 
-  /// A scope whose root is whatever the test supplies.
-  private record Host(IntoElement content) implements Scope {
-    @Override
-    public String scopeId() {
-      return "host";
-    }
-
-    @Override
-    public String scopeName() {
-      return "host";
-    }
-
-    @Override
-    public IntoElement expand(DocumentContext context) {
-      return content;
-    }
-  }
-
-  /// A scope that returns another scope as its root.
+  /// A scope whose host holds another scope.
   private record Outer() implements Scope {
     @Override
     public String scopeId() {
@@ -635,36 +634,12 @@ class ExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
-      return new Box("inner", p().text("Inside"));
+    public TagElement expand(ViewContext context) {
+      return div().child(new Box("inner", p().text("Inside")));
     }
   }
 
-  /// A component whose result is a fragment.
-  private record FragmentNote() implements Component {
-    @Override
-    public IntoElement expand(DocumentContext context) {
-      return fragment().children(p().text("One"), p().text("Two"));
-    }
-  }
-
-  /// A component whose result is a scope.
-  private record NestedScope() implements Component {
-    @Override
-    public IntoElement expand(DocumentContext context) {
-      return new Box("inner", p().text("Inside"));
-    }
-  }
-
-  /// A component whose result is one list element.
-  private record Listed() implements Component {
-    @Override
-    public Element expand(DocumentContext context) {
-      return ul().children(li().text("One"), li().text("Two"));
-    }
-  }
-
-  /// A scope that delegates to one unscoped list component.
+  /// A scope whose host is an authored list element.
   private record ItemList() implements Scope {
     @Override
     public String scopeId() {
@@ -677,67 +652,28 @@ class ExpansionTest {
     }
 
     @Override
-    public IntoElement expand(DocumentContext context) {
-      return new Listed();
+    public TagElement expand(ViewContext context) {
+      return ul().children(li().text("One"), li().text("Two"));
     }
-  }
-
-  /// A scope whose host is the keyed element itself.
-  private record KeyedHost() implements Scope {
-    @Override
-    public String scopeId() {
-      return "cards";
-    }
-
-    @Override
-    public String scopeName() {
-      return "keyed";
-    }
-
-    @Override
-    public Element expand(DocumentContext context) {
-      return article().child(p().text("Body")).key("a");
-    }
-  }
-
-  static Stream<Arguments> invalidScopeRoots() {
-    return Stream.of(
-        argumentSet("empty fragment", new Host(fragment())),
-        argumentSet("one-child fragment", new Host(fragment().child(p().text("Only")))),
-        argumentSet(
-            "two-child fragment", new Host(fragment().children(p().text("One"), p().text("Two")))),
-        argumentSet("text", new Host(text("Loose"))),
-        argumentSet("raw HTML", new Host(rawHtml("<p>Hi</p>"))),
-        argumentSet("nothing", new Host(empty())),
-        argumentSet("deferred content", new Host(deferred(p().text("Moved")))),
-        argumentSet("late content", new Host(late(_ -> p().text("Later")))),
-        argumentSet("another scope", new Outer()),
-        argumentSet("a component that returns a fragment", new Host(new FragmentNote())),
-        argumentSet("a component that returns a scope", new Host(new NestedScope())));
-  }
-
-  @ParameterizedTest
-  @MethodSource("invalidScopeRoots")
-  @DisplayName("a scope root that is not one element host reports scope-root")
-  void rejectsNonHostScopeRoot(Scope scope) {
-    var failure =
-        catchThrowableOfType(
-            CompilationException.class,
-            () -> Compiler.compile(new PageDocument("Scopes", main().child(scope))));
-
-    assertThat(failure.diagnostics())
-        .singleElement()
-        .satisfies(d -> {
-          assertThat(d.rule()).isEqualTo("scope-root");
-          assertThat(d.fix()).isNotBlank();
-          assertThat(d.location().page()).isEqualTo("Scopes");
-          assertThat(d.location().components()).isNotEmpty();
-        });
   }
 
   @Test
-  @DisplayName("a component that returns one element is the scope host")
-  void componentDelegationStampsReturnedElement() {
+  @DisplayName("a nested scope keeps its own markers inside the outer host, with no wrapper added")
+  void nestedScopeKeepsItsOwnMarkers() {
+    var page = RenderedPage.render(main().child(new Outer()));
+
+    var outer = page.element("main > div");
+    assertThat(outer.attr("data-scope-id")).isEqualTo("outer");
+    var inner = outer.selectFirst("> div");
+    assertThat(inner).isNotNull();
+    assertThat(inner.attr("data-scope")).isEqualTo("box");
+    assertThat(inner.attr("data-scope-id")).isEqualTo("outer--inner");
+    assertThat(inner.selectFirst("> p").text()).isEqualTo("Inside");
+  }
+
+  @Test
+  @DisplayName("an authored list element is the scope host")
+  void listElementIsTheScopeHost() {
     var page = RenderedPage.render(main().child(new ItemList()));
     var list = page.element("main > ul");
 
@@ -748,14 +684,13 @@ class ExpansionTest {
   }
 
   @Test
-  @DisplayName("a keyed element can be the scope host")
-  void keyedElementCarriesScope() {
-    var page = RenderedPage.render(main().child(new KeyedHost()));
-    var host = page.element("main > article");
+  @DisplayName("a keyed scope keeps its markers on its host")
+  void keyedScopeCarriesItsMarkers() {
+    var page = RenderedPage.render(main().child(new ItemList().key("a")));
+    var host = page.element("main > ul");
 
-    assertThat(host.attr("data-scope")).isEqualTo("keyed");
-    assertThat(host.attr("data-scope-id")).isEqualTo("cards");
-    assertThat(host.selectFirst("p").text()).isEqualTo("Body");
-    assertThat(page.elements("main > div")).isEmpty();
+    assertThat(host.attr("data-scope")).isEqualTo("items");
+    // The key scopes the ids inside the keyed scope.
+    assertThat(host.attr("data-scope-id")).isEqualTo("key-0061--items");
   }
 }

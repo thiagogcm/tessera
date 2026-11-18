@@ -3,9 +3,12 @@ package dev.nthings.tessera.components;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.components.TableOfContents;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,9 +44,10 @@ class SectionTest {
   @DisplayName("keeps its page id on the section and outlines that id")
   void keepsPageIdOnTheSection() {
     var page =
-        renderMain(
+        renderDocumentMain(
             TableOfContents.of("Contents"),
-            Prose.of(Section.of("install", "Install").child(p().text("Run it."))).id("docs"));
+            DocumentContent.of(
+                Prose.of(Section.of("install", "Install").child(p().text("Run it."))).id("docs")));
 
     assertThat(page.elementById("install")).hasTagName("section");
     assertThat(page.element("#install h2")).hasText("Install").doesNotHaveAttribute("id");

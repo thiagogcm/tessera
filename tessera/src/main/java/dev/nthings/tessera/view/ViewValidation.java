@@ -2,10 +2,11 @@ package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.internal.css.CssAccess;
 import dev.nthings.tessera.view.ViewExpansion.Reporter;
-import dev.nthings.tessera.view.ViewSnapshot.Raw;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.net.URI;
@@ -23,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 public final class ViewValidation {
   final Set<String> registeredDomIds;
   final Set<String> ambiguousDomIds;
-  final Map<String, Tag> elementsById = new HashMap<>();
+  final Map<String, Tag<?>> elementsById = new HashMap<>();
   final Set<String> labelledControlIds = new HashSet<>();
   private final Reporter reporter;
 
@@ -36,8 +37,8 @@ public final class ViewValidation {
   /// Checks linked content, document or mounted, with the shared element, reference and
   /// accessibility rules. The result runs [#checkDocument] on the same content.
   public static ViewValidation check(
-      List<ViewSnapshot.Node> body,
-      List<ViewSnapshot.Node> head,
+      List<? extends ViewSnapshot.Node<?>> body,
+      List<? extends ViewSnapshot.Node<?>> head,
       Set<String> ids,
       Set<String> ambiguousIds,
       Reporter reporter) {
@@ -54,7 +55,7 @@ public final class ViewValidation {
   /// not have: literal fragment targets, landmark names and heading order. Returns the first
   /// location of each outgoing URL.
   public Map<String, Location> checkDocument(
-      List<ViewSnapshot.Node> body, List<ViewSnapshot.Node> head) {
+      List<? extends ViewSnapshot.Node<?>> body, List<? extends ViewSnapshot.Node<?>> head) {
     var links = new LinkedHashMap<String, Location>();
     checkLinks(body, links);
     checkLinks(head, links);
@@ -62,11 +63,11 @@ public final class ViewValidation {
     return Collections.unmodifiableMap(links);
   }
 
-  private void checkLinks(List<ViewSnapshot.Node> nodes, Map<String, Location> links) {
+  private void checkLinks(List<? extends ViewSnapshot.Node<?>> nodes, Map<String, Location> links) {
     for (var node : nodes) {
-      if (node instanceof ViewSnapshot.Group group) {
+      if (node instanceof ViewSnapshot.Group<?> group) {
         checkLinks(group.children(), links);
-      } else if (node instanceof Tag tag) {
+      } else if (node instanceof Tag<?> tag) {
         for (var urlAttribute : URL_ATTRIBUTES) {
           var url = tag.attributes().get(urlAttribute);
           if (url != null && !url.isBlank()) {
@@ -78,7 +79,7 @@ public final class ViewValidation {
     }
   }
 
-  private void checkLink(Tag tag, String urlAttribute, String url, Map<String, Location> links) {
+  private void checkLink(Tag<?> tag, String urlAttribute, String url, Map<String, Location> links) {
     URI reference;
     try {
       reference = new URI(url);
@@ -105,12 +106,65 @@ public final class ViewValidation {
 
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
-  /// Image contracts checked while the expanded element still carries authored declarations.
-  static void checkElement(ViewNode.Tag tag, Declarations style, Reporter reporter) {
+  /// Attributes whose URL a browser navigates to or loads, and so would run as script.
+  private static final List<String> SCRIPTABLE_URL_ATTRIBUTES =
+      List.of("href", "xlink:href", "src", "action", "formaction", "poster", "data");
+
+  /// Element contracts checked while the expanded element still carries authored declarations:
+  /// image contracts, and URLs that would run script outside document assembly. HTML attribute
+  /// names are already lowercase: the builder normalizes them.
+  static void checkElement(ViewNode.Tag<?> tag, Declarations style, Reporter reporter) {
     var location = tag.location();
     if (tag.tag() == HtmlTag.IMG) {
       validateImage(tag.attributes(), style, reporter, location);
     }
+    for (var attribute : tag.attributes().entrySet()) {
+      var name = attribute.getKey();
+      if (!SCRIPTABLE_URL_ATTRIBUTES.contains(name)) {
+        continue;
+      }
+      var scheme = scheme(attribute.getValue());
+      if (scheme.equals("javascript")) {
+        reporter.report(
+            location,
+            "script-url",
+            "Attribute " + name + " holds a javascript: URL, which runs script from markup",
+            "Bind a Java handler with the browser module's LiveElement, or contribute a page script"
+                + " from document content.");
+      } else if (tag.tag() == HtmlTag.IFRAME && name.equals("src") && scheme.equals("data")) {
+        reporter.report(
+            location,
+            "script-url",
+            "An iframe src holds a data: URL, an inline document that can run script",
+            "Load the frame from a published URL instead of embedding its document.");
+      }
+    }
+  }
+
+  /// The scheme of `url` in lowercase, as a browser parses it: ignoring surrounding whitespace and
+  /// control characters and embedded tabs and newlines, or an empty string for a relative URL.
+  private static String scheme(String url) {
+    var scheme = new StringBuilder();
+    for (var index = 0; index < url.length(); index++) {
+      var character = url.charAt(index);
+      if (character == ':') {
+        return scheme.toString();
+      }
+      if (character <= ' ') {
+        if (scheme.isEmpty() || character == '\t' || character == '\n' || character == '\r') {
+          continue;
+        }
+        return "";
+      }
+      if (!(Character.isLetterOrDigit(character)
+          || character == '+'
+          || character == '-'
+          || character == '.')) {
+        return "";
+      }
+      scheme.append(Character.toLowerCase(character));
+    }
+    return "";
   }
 
   /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
@@ -135,7 +189,7 @@ public final class ViewValidation {
           "Add role=\"presentation\" or aria-hidden=\"true\", or provide descriptive alt text.");
     }
     var hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
-    if (!hasWidthAndHeight && !style.hasAspectRatio()) {
+    if (!hasWidthAndHeight && !CssAccess.get().hasAspectRatio(style)) {
       reporter.report(
           location,
           "image-dimensions",
@@ -148,11 +202,11 @@ public final class ViewValidation {
   }
 
   /// Indexes the linked elements checks look up: by id and labelled control ids.
-  static void index(List<ViewSnapshot.Node> nodes, ViewValidation state) {
+  static void index(List<? extends ViewSnapshot.Node<?>> nodes, ViewValidation state) {
     for (var node : nodes) {
-      if (node instanceof ViewSnapshot.Group group) {
+      if (node instanceof ViewSnapshot.Group<?> group) {
         index(group.children(), state);
-      } else if (node instanceof Tag tag) {
+      } else if (node instanceof Tag<?> tag) {
         var id = tag.attributes().get("id");
         if (id != null) {
           state.elementsById.putIfAbsent(id, tag);
@@ -166,13 +220,12 @@ public final class ViewValidation {
     }
   }
 
-  static void validateNodeTree(ViewSnapshot.Node node, ViewValidation state) {
+  static void validateNodeTree(ViewSnapshot.Node<?> node, ViewValidation state) {
     switch (node) {
-      case Text _, Raw _ -> {}
-      case ViewSnapshot.Effect _ -> {}
-      case ViewSnapshot.Group group ->
+      case Text<?> _, ViewSnapshot.Special<?> _ -> {}
+      case ViewSnapshot.Group<?> group ->
           group.children().forEach(child -> validateNodeTree(child, state));
-      case Tag tag -> {
+      case Tag<?> tag -> {
         validateTagAccessibility(tag, state);
         for (var child : tag.children()) {
           validateNodeTree(child, state);
@@ -181,7 +234,7 @@ public final class ViewValidation {
     }
   }
 
-  private static void validateTagAccessibility(Tag tag, ViewValidation state) {
+  private static void validateTagAccessibility(Tag<?> tag, ViewValidation state) {
     var attrs = tag.attributes();
     var registeredDomIds = state.registeredDomIds;
 
@@ -247,7 +300,7 @@ public final class ViewValidation {
     }
   }
 
-  private static void validateCommandTarget(Tag source, Tag target, ViewValidation state) {
+  private static void validateCommandTarget(Tag<?> source, Tag<?> target, ViewValidation state) {
     var command = source.attributes().get("command");
     if (command == null) {
       return;
@@ -285,37 +338,36 @@ public final class ViewValidation {
   }
 
   /// Whether `tag` declares a role that the accessibility rules model.
-  static boolean declaresRole(Tag tag) {
+  static boolean declaresRole(Tag<?> tag) {
     var role = tag.attributes().get("role");
     return role != null && Role.fromWireValue(role) != null;
   }
 
-  private static boolean hasAccessibleLabel(Tag tag) {
+  private static boolean hasAccessibleLabel(Tag<?> tag) {
     return hasAuthorName(tag) || containsReadableText(tag.children());
   }
 
   /// Whether `tag` carries an author-supplied name: `aria-label`, `aria-labelledby`, or `title`.
-  static boolean hasAuthorName(Tag tag) {
+  static boolean hasAuthorName(Tag<?> tag) {
     return hasAriaName(tag) || isNonBlank(tag.attributes().get("title"));
   }
 
   /// Whether `tag` is named through `aria-label` or `aria-labelledby`.
-  static boolean hasAriaName(Tag tag) {
+  static boolean hasAriaName(Tag<?> tag) {
     var attrs = tag.attributes();
     return tag.unresolvedAttributes().contains("aria-labelledby")
         || isNonBlank(attrs.get("aria-label"))
         || isNonBlank(attrs.get("aria-labelledby"));
   }
 
-  static boolean containsReadableText(List<ViewSnapshot.Node> children) {
+  static boolean containsReadableText(List<? extends ViewSnapshot.Node<?>> children) {
     for (var child : children) {
       var found =
           switch (child) {
             case Text(var text) -> !text.isBlank();
-            case Raw(var raw) -> !raw.isBlank();
-            case ViewSnapshot.Group group -> containsReadableText(group.children());
-            case ViewSnapshot.Effect _ -> false;
-            case Tag nested ->
+            case ViewSnapshot.Special<?> special -> special.readable();
+            case ViewSnapshot.Group<?> group -> containsReadableText(group.children());
+            case Tag<?> nested ->
                 (nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))
                     || isNonBlank(nested.attributes().get("aria-label"))
                     || containsReadableText(nested.children());

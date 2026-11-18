@@ -1,15 +1,24 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Live;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /// Scheduling evidence: coalescing, budgeted paint yields, runaway diagnostics and stale results.
 public final class SchedulingDemo {
   private static final int CHAIN = 5;
+
+  /// Counts tallies within one expansion; a rejected render's count must not carry over.
+  private static final ViewKey<AtomicInteger> TALLY =
+      ViewKey.of("schedule-tally", AtomicInteger.class, AtomicInteger::new);
 
   private final MountedRoot schedule = new MountedRoot("schedule view");
   private int renders;
@@ -18,6 +27,7 @@ public final class SchedulingDemo {
   private boolean reject;
   private boolean fail;
   private String completion = "idle";
+  private int rejectedStarts;
 
   public BrowserRoot mount(String host) {
     var mounted = BrowserRoot.mount(host, new BrowserRoot.Scheduling(2, 8), this::view);
@@ -29,7 +39,8 @@ public final class SchedulingDemo {
     return BrowserRoot.mount(host, this::control);
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
     renders++;
     if (remaining > 0) {
       remaining--;
@@ -42,31 +53,38 @@ public final class SchedulingDemo {
     }
     if (fail) {
       fail = false;
-      return Elements.section().child(new FailingPanel());
+      return LiveContent.of(Elements.section().child(new FailingPanel()));
     }
     if (reject) {
       reject = false;
-      return Elements.section()
-          .children(Elements.div().key("duplicate"), Elements.div().key("duplicate"));
+      // Rejected for its duplicate keys: its tallies and effect must leave no trace.
+      return LiveElement.of(Elements.section().children(new Tally(), new Tally()))
+          .child(Live.effect("rejected", _ -> rejectedStarts++))
+          .children(
+              LiveContent.of(Elements.div().key("duplicate")),
+              LiveContent.of(Elements.div().key("duplicate")));
     }
-    return Elements.section()
-        .attr("data-schedule-renders", Integer.toString(renders))
-        .attr("data-schedule-remaining", Integer.toString(remaining))
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-schedule-renders", Integer.toString(renders))
+                .attr("data-schedule-remaining", Integer.toString(remaining))
+                .attr("data-schedule-rejected-effects", Integer.toString(rejectedStarts))
+                .children(Elements.h2().text("Scheduling"), new Tally()))
         .children(
-            Elements.h2().text("Scheduling"),
-            Button.of("Burst invalidations")
-                .onClick(
-                    root.update(() -> {
-                      for (var index = 0; index < 5; index++) {
-                        root.invalidate();
-                      }
-                    })),
-            Button.of("Start render chain").onClick(root.update(() -> remaining = CHAIN)),
-            Button.of("Start runaway").onClick(root.update(() -> runaway = true)),
-            Button.of("Stop runaway").onClick(root.update(() -> runaway = false)),
-            Button.of("Reject next render").onClick(root.update(() -> reject = true)),
-            Button.of("Fail next render").onClick(root.update(() -> fail = true)),
-            Button.of("Refresh schedule").onClick(root.update(() -> {})),
+            Ui.button(
+                "Burst invalidations",
+                root.update(() -> {
+                  for (var index = 0; index < 5; index++) {
+                    root.invalidate();
+                  }
+                })),
+            Ui.button("Start render chain", root.update(() -> remaining = CHAIN)),
+            Ui.button("Start runaway", root.update(() -> runaway = true)),
+            Ui.button("Stop runaway", root.update(() -> runaway = false)),
+            Ui.button("Reject next render", root.update(() -> reject = true)),
+            Ui.button("Fail next render", root.update(() -> fail = true)),
+            Ui.button("Refresh schedule", root.update(() -> {})))
+        .child(
             Elements.p()
                 .attr("data-schedule-status", "")
                 .text(
@@ -78,24 +96,36 @@ public final class SchedulingDemo {
                         + completion));
   }
 
-  private IntoElement control(BrowserRoot root, DocumentContext context) {
-    return Elements.section()
-        .attr("data-control-completion", completion)
+  private LiveContent control(LiveContext context) {
+    var root = context.root();
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-control-completion", completion)
+                .child(Elements.h2().text("Scheduling control")))
         .children(
-            Elements.h2().text("Scheduling control"),
-            Button.of("Complete current update").onClick(root.update(() -> complete("current"))),
-            Button.of("Close schedule root").onClick(root.update(() -> schedule.get().close())),
-            Button.of("Complete stale update").onClick(root.update(() -> complete("stale"))),
-            Button.of("Throw from handler")
-                .onClick(() -> {
+            Ui.button("Complete current update", root.update(() -> complete("current"))),
+            Ui.button("Close schedule root", root.update(() -> schedule.get().close())),
+            Ui.button("Complete stale update", root.update(() -> complete("stale"))),
+            Ui.button(
+                "Throw from handler",
+                () -> {
                   throw new IllegalStateException("Simulated handler failure");
-                }),
-            Elements.p().attr("data-control-status", "").text(completion));
+                }))
+        .child(Elements.p().attr("data-control-status", "").text(completion));
+  }
+
+  /// Shows how many tallies this expansion has counted so far.
+  private record Tally() implements Component {
+    @Override
+    public IntoElement expand(ViewContext context) {
+      var count = context.state(TALLY).incrementAndGet();
+      return Elements.span().attr("data-schedule-tally", Integer.toString(count));
+    }
   }
 
   private record FailingPanel() implements Component {
     @Override
-    public IntoElement expand(DocumentContext context) {
+    public IntoElement expand(ViewContext context) {
       throw new IllegalStateException("Simulated render failure");
     }
   }

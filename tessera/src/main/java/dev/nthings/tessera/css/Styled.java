@@ -1,5 +1,7 @@
 package dev.nthings.tessera.css;
 
+import dev.nthings.tessera.core.TagElement;
+
 /// Fluent, typed styling shared by element builders and [Declarations]. Each method writes one
 /// declaration (or a small fixed group) and returns the receiver; it takes the value category its
 /// property accepts ([CssLength], [CssColor], [Border], ...), so a color cannot be passed where a
@@ -33,18 +35,19 @@ package dev.nthings.tessera.css;
 /// (`listStyleNone()`, `tabularNums()`).
 ///
 /// @param <SELF> concrete element or style builder type
-public interface Styled<SELF extends Styled<SELF>>
+public sealed interface Styled<SELF extends Styled<SELF>>
     extends LayoutStyled<SELF>,
         BoxStyled<SELF>,
         TextStyled<SELF>,
         EffectStyled<SELF>,
         ScrollStyled<SELF>,
-        AnchorStyled<SELF> {
+        AnchorStyled<SELF>
+    permits Declarations, TagElement {
 
   /// Runs `preset` on this target's declarations, so one [StyleBlock] can be shared by elements,
   /// [ScopeStyle#select(String, StyleBlock)] rules, and state callbacks.
   default SELF styles(StyleBlock preset) {
-    preset.configure(style());
+    preset.configure(StyleTarget.declarations(this));
     return self();
   }
 
@@ -58,7 +61,7 @@ public interface Styled<SELF extends Styled<SELF>>
   /// [ScopeStyle] rule they nest in that rule. States are emitted in [State] order whatever the
   /// call order, so `ACTIVE` beats `HOVER`.
   default SELF on(Condition condition, StyleBlock styles) {
-    styles.configure(style().nested(condition));
+    styles.configure(StyleTarget.declarations(this).nested(condition));
     return self();
   }
 

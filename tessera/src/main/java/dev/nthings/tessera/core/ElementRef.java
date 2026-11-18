@@ -1,6 +1,8 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess.Ref;
 import org.jspecify.annotations.Nullable;
 
 /// Identity handle for an element's DOM id, resolved by the compiler once the page is expanded. It
@@ -18,12 +20,14 @@ import org.jspecify.annotations.Nullable;
 /// collapse to one. Page names are kept as written. An empty name throws IllegalArgumentException.
 public final class ElementRef {
 
-  private final @Nullable String name;
-  private final boolean pageLevel;
+  static {
+    AuthoringAccess.registerRef(ref -> ref.data);
+  }
+
+  private final Ref data;
 
   private ElementRef(@Nullable String name, boolean pageLevel) {
-    this.name = name;
-    this.pageLevel = pageLevel;
+    data = new Ref(name, pageLevel);
   }
 
   /// Creates a ref whose DOM id is `name` prefixed by the bind site's id scope. Inside an id scope
@@ -52,21 +56,12 @@ public final class ElementRef {
     return new ElementRef(null, false);
   }
 
-  /// Compiler-facing: the name (sanitized when scoped), or `null` for an anonymous ref.
-  public @Nullable String name() {
-    return name;
-  }
-
-  /// Compiler-facing: whether the name is used as is, without the id scope prefix.
-  public boolean pageLevel() {
-    return pageLevel;
-  }
-
   @Override
   public String toString() {
+    var name = data.name();
     if (name == null) {
       return "ElementRef(anonymous)";
     }
-    return pageLevel ? "ElementRef.page(" + name + ")" : "ElementRef.scoped(" + name + ")";
+    return data.pageLevel() ? "ElementRef.page(" + name + ")" : "ElementRef.scoped(" + name + ")";
   }
 }

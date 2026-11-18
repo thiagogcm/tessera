@@ -1,9 +1,8 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.PageScript;
+import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.view.ViewSnapshot;
-import dev.nthings.tessera.view.ViewSnapshot.Raw;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.util.ArrayList;
@@ -69,8 +68,8 @@ final class HtmlWriter {
   /// `behaviors` are linked at the paths of `resources`' assets.
   static String emit(
       PageDocument doc,
-      List<ViewSnapshot.Node> bodyNodes,
-      List<ViewSnapshot.Node> headNodes,
+      List<ViewSnapshot.Node<String>> bodyNodes,
+      List<ViewSnapshot.Node<String>> headNodes,
       Resources resources,
       List<PageScript> behaviors) {
     var out = new StringBuilder(4096);
@@ -140,13 +139,13 @@ final class HtmlWriter {
     return SCRIPT_CLOSE.matcher(module).replaceAll(ignored -> "<\\/script");
   }
 
-  private static void writeNode(ViewSnapshot.Node node, StringBuilder out) {
+  private static void writeNode(ViewSnapshot.Node<String> node, StringBuilder out) {
     switch (node) {
-      case ViewSnapshot.Group group -> group.children().forEach(child -> writeNode(child, out));
-      case ViewSnapshot.Effect _ -> throw new IllegalStateException("Effect in a document tree");
+      case ViewSnapshot.Group<String> group ->
+          group.children().forEach(child -> writeNode(child, out));
       case Text(var content) -> out.append(Encode.forHtmlContent(content));
-      case Raw(var trustedHtml) -> out.append(trustedHtml);
-      case Tag tag -> {
+      case ViewSnapshot.Special<String> raw -> out.append(raw.payload());
+      case Tag<String> tag -> {
         out.append('<').append(tag.tag().tagName());
         for (var attr : tag.attributes().entrySet()) {
           var value = attr.getValue();

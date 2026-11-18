@@ -16,5 +16,5 @@
 @SourceBoundary
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.core.SourceBoundary;
+import dev.nthings.tessera.internal.authoring.SourceBoundary;
 import org.jspecify.annotations.NullMarked;

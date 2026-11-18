@@ -13,7 +13,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.compiler.CompilationException;
-import dev.nthings.tessera.view.Diagnostic;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,7 @@ class ElementRefTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return div().child(content);
     }
   }

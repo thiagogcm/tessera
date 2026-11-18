@@ -18,7 +18,6 @@ public final class ScopeStyle {
   private final Map<String, Declarations> selectorRules = new LinkedHashMap<>();
   private final Map<Condition.Query, ScopeStyle> queryBlocks = new LinkedHashMap<>();
 
-  /// Created by [StyleSheet#registerScope(String, ScopeBlock)].
   ScopeStyle() {}
 
   /// Styles the scope's root element, `:scope`.

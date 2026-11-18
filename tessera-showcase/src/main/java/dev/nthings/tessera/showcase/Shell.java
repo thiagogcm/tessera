@@ -24,9 +24,6 @@ import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.StickyHeader;
 import dev.nthings.tessera.components.TableGrid;
 import dev.nthings.tessera.core.BuiltinCommand;
-import dev.nthings.tessera.core.Component;
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Border;
@@ -35,17 +32,22 @@ import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.Documents;
 
 /// Chrome shared by every route: header, search, quick actions, inspector, heading, pager and
 /// footer.
-record Shell(Page page) implements Component {
+record Shell(Page page) implements DocumentComponent {
 
   static final CssLength MAX_WIDTH = CssLength.rem(76);
   static final CssLength PAD_X =
       CssLength.fluid(CssLength.rem(1), CssLength.cqi(3), CssLength.rem(2));
 
   @Override
-  public Element expand(DocumentContext context) {
+  public DocumentContent expand(DocumentContext context) {
     var pages = ShowcaseSite.pages();
     var inspector =
         Drawer.of("Compiler & Cascade Inspector")
@@ -141,9 +143,7 @@ record Shell(Page page) implements Component {
                                     .children(
                                         search.triggerButton(),
                                         quickActions,
-                                        inspector.triggerButton("Inspector"),
-                                        Elements.deferred(inspector, 20),
-                                        Elements.deferred(search, 30))),
+                                        inspector.triggerButton("Inspector"))),
                         div().overflowX(Overflow.AUTO).child(nav)))
             .id("site-header");
 
@@ -178,20 +178,22 @@ record Shell(Page page) implements Component {
                     .textWrap(TextWrap.PRETTY)
                     .text(page.summary()));
 
-    return div()
-        .overflowAnchorNone()
-        .children(
-            ScrollProgressBar.of(),
-            header,
-            Elements.main()
-                .maxInlineSize(MAX_WIDTH)
-                .mx(CssLength.auto())
-                .px(PAD_X)
-                .py(CssLength.rem(2))
-                .flex()
-                .flexCol()
-                .gap(CssLength.rem(2.5))
-                .children(heading, page.content(), pager),
+    var main =
+        DocumentElement.of(
+                Elements.main()
+                    .maxInlineSize(MAX_WIDTH)
+                    .mx(CssLength.auto())
+                    .px(PAD_X)
+                    .py(CssLength.rem(2))
+                    .flex()
+                    .flexCol()
+                    .gap(CssLength.rem(2.5))
+                    .child(heading))
+            .child(page.content())
+            .child(pager);
+    return DocumentElement.of(div().overflowAnchorNone().children(ScrollProgressBar.of(), header))
+        .child(main)
+        .child(
             footer()
                 .maxInlineSize(MAX_WIDTH)
                 .mx(CssLength.auto())
@@ -203,7 +205,10 @@ record Shell(Page page) implements Component {
                 .text(
                     "Compiled by Tessera on JDK 25 into static HTML and CSS for the latest Chromium"
                         + " and Firefox. Behaviors ship automatically; controls use native HTML and"
-                        + " CSS."));
+                        + " CSS."))
+        // The dialogs sit outside the header's content model; their triggers stay in it.
+        .child(Documents.deferred(inspector, 20))
+        .child(Documents.deferred(search, 30));
   }
 
   private static Link link(Page target) {

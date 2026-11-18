@@ -1,7 +1,5 @@
 package dev.nthings.tessera.components;
 
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.DocumentHeading;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -9,6 +7,9 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.document.DocumentHeading;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
@@ -75,18 +76,19 @@ public final class Heading extends BuiltinComponent implements ParentElement<Hea
   }
 
   @Override
-  public void appendChild(Element child) {
-    children.add(child);
+  public Heading child(IntoElement child) {
+    children.add(child.intoElement());
+    return this;
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  IntoElement expand(ViewContext context) {
     var tag = Elements.el(HtmlTag.heading(level));
     if (anchor != null) {
       tag.id(anchor);
     }
     if (outlineTarget != null) {
-      tag.navigationHeading(new DocumentHeading(outlineTarget, label, level));
+      AuthoringAccess.tag(tag).navigationHeading = new DocumentHeading(outlineTarget, label, level);
     }
     var styled = presentation == null ? tag : presentation.apply(tag);
     return styled.children(children);

@@ -1,0 +1,15 @@
+package dev.nthings.tessera.document;
+
+import dev.nthings.tessera.core.ElementRef;
+
+/// Navigation and search metadata for one heading: the element bound to `target`, its plain label,
+/// and its level. The compiler collects this from an element that opts into the document outline.
+/// Table-of-contents components link to `target`. The first heading for a target is kept. Throws
+/// IllegalArgumentException if `level` is outside 1 through 6.
+public record DocumentHeading(ElementRef target, String title, int level) {
+  public DocumentHeading {
+    if (level < 1 || level > 6) {
+      throw new IllegalArgumentException("Heading level must be between 1 and 6");
+    }
+  }
+}

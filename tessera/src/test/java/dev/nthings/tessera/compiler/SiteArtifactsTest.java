@@ -7,11 +7,12 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import dev.nthings.tessera.components.Card;
-import dev.nthings.tessera.components.Footnote;
-import dev.nthings.tessera.components.Footnotes;
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.components.Footnote;
+import dev.nthings.tessera.document.components.Footnotes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -77,19 +78,22 @@ class SiteArtifactsTest {
                       "/",
                       new PageDocument(
                           "Custom",
-                          main()
+                          DocumentElement.of(
+                                  main()
+                                      .children(
+                                          Heading.of(
+                                                  2,
+                                                  "Custom section",
+                                                  Elements.code().text("mvn"),
+                                                  Elements.text(" install"))
+                                              .id(target)
+                                              .outline(target),
+                                          h2().text("Toolbar"),
+                                          Card.of("Widget").headingLevel(2)))
                               .children(
-                                  Heading.of(
-                                          2,
-                                          "Custom section",
-                                          Elements.code().text("mvn"),
-                                          Elements.text(" install"))
-                                      .id(target)
-                                      .outline(target),
-                                  h2().text("Toolbar"),
-                                  Card.of("Widget").headingLevel(2),
                                   Footnotes.of().title("Notes"),
-                                  p().child(Footnote.of("A detail.").reference()))))));
+                                  DocumentElement.of(p())
+                                      .child(Footnote.of("A detail.").reference()))))));
 
       assertThat(compact(compiled.searchIndexJson()))
           .contains("{\"id\":\"custom\",\"title\":\"Custom section\",\"level\":2}")

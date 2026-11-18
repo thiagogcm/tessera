@@ -8,9 +8,9 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import dev.nthings.tessera.core.DocumentContext;
-import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Scope;
+import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.support.CssBlocks;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -175,6 +175,25 @@ class ConditionalStylingTest {
   }
 
   @Test
+  @DisplayName(
+      "distinct keyframes keep registration order when their offsets round to the same CSS")
+  void keyframesKeepRegistrationOrderAcrossRoundedOffsets() {
+    var first = Keyframes.named("pulse").at(10.0001, step -> step.opacity(0));
+    var middle = Keyframes.named("pulse").at(20, step -> step.opacity(1));
+    var last = Keyframes.named("pulse").at(10.0002, step -> step.opacity(0));
+    var page =
+        renderMain(
+            div().animation(Animation.of(first, CssDuration.ms(800), Easing.ease())),
+            new PulseView(middle),
+            div().animation(Animation.of(last, CssDuration.ms(800), Easing.ease())));
+
+    assertThat(page.css())
+        .containsSubsequence(
+            "@keyframes pulse{10%{opacity:0}}",
+            "@keyframes pulse{20%{opacity:1}}", "@keyframes pulse{10%{opacity:0}}");
+  }
+
+  @Test
   @DisplayName("animations and keyframes validate their input")
   void animationValidation() {
     assertThatIllegalArgumentException()
@@ -196,7 +215,7 @@ class ConditionalStylingTest {
     }
 
     @Override
-    public Element expand(DocumentContext context) {
+    public TagElement expand(ViewContext context) {
       return div().text("pulsing");
     }
   }

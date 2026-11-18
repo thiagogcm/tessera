@@ -1,12 +1,13 @@
 package dev.nthings.tessera.wasm.example;
 
-import dev.nthings.tessera.components.Button;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.core.Lifetime;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Lifetime;
+import dev.nthings.tessera.wasm.Live;
+import dev.nthings.tessera.wasm.LiveContent;
+import dev.nthings.tessera.wasm.LiveContext;
+import dev.nthings.tessera.wasm.LiveElement;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,29 +42,31 @@ public final class LifetimeDemo {
     return mounted;
   }
 
-  private IntoElement view(BrowserRoot root, DocumentContext context) {
+  private LiveContent view(LiveContext context) {
+    var root = context.root();
     var current = generation;
-    return Elements.section()
-        .attr("data-lifetime-ticks", Integer.toString(ticks))
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-lifetime-ticks", Integer.toString(ticks))
+                .child(Elements.h2().text("Lifetime")))
         .children(
-            Elements.h2().text("Lifetime"),
             timer
-                ? Elements.effect("ticker-" + current, lifetime -> tick(lifetime, current))
-                : Elements.empty(),
-            Button.of("Start timer").onClick(root.update(() -> timer = true)),
-            Button.of("Restart timer").onClick(root.update(() -> generation++)),
-            Button.of("Stop timer").onClick(root.update(() -> timer = false)),
-            Button.of("Start request").onClick(this::startRequest),
-            Button.of("Fetch text").onClick(() -> fetch("/text")),
-            Button.of("Fetch missing").onClick(() -> fetch("/missing")),
-            Button.of("Open lifetime dialog").onClick(() -> root.host().showModal(dialog)),
-            Elements.dialog()
-                .id(dialog)
-                .ariaLabel("Lifetime dialog")
-                .children(
-                    Elements.p().text("Modal inside the lifetime root"),
-                    Button.of("Close from dialog").onClick(root::close)),
-            Elements.p().attr("data-lifetime-status", "").text("ticks=" + ticks));
+                ? Live.effect("ticker-" + current, lifetime -> tick(lifetime, current))
+                : Live.fragment(),
+            Ui.button("Start timer", root.update(() -> timer = true)),
+            Ui.button("Restart timer", root.update(() -> generation++)),
+            Ui.button("Stop timer", root.update(() -> timer = false)),
+            Ui.button("Start request", this::startRequest),
+            Ui.button("Fetch text", () -> fetch("/text")),
+            Ui.button("Fetch missing", () -> fetch("/missing")),
+            Ui.button("Open lifetime dialog", () -> root.host().showModal(dialog)),
+            LiveElement.of(
+                    Elements.dialog()
+                        .id(dialog)
+                        .ariaLabel("Lifetime dialog")
+                        .child(Elements.p().text("Modal inside the lifetime root")))
+                .child(Ui.button("Close from dialog", root::close)))
+        .child(Elements.p().attr("data-lifetime-status", "").text("ticks=" + ticks));
   }
 
   private void tick(Lifetime lifetime, int current) {
@@ -88,17 +91,18 @@ public final class LifetimeDemo {
             failure -> setRequest("http " + failure.status()));
   }
 
-  private IntoElement control(BrowserRoot control, DocumentContext context) {
+  private LiveContent control(LiveContext context) {
     var entries = String.join(",", log);
-    return Elements.section()
-        .attr("data-lifetime-log", entries)
-        .attr("data-lifetime-request", request)
+    return LiveElement.of(
+            Elements.section()
+                .attr("data-lifetime-log", entries)
+                .attr("data-lifetime-request", request)
+                .child(Elements.h2().text("Lifetime control")))
         .children(
-            Elements.h2().text("Lifetime control"),
-            Button.of("Close lifetime root").onClick(() -> lifetimeRoot.get().close()),
-            Button.of("Remount lifetime root").onClick(() -> mount(host)),
-            Button.of("Mount lifetime twice").onClick(() -> BrowserRoot.mount(host, this::view)),
-            Elements.p().text("log=" + entries + "; request=" + request));
+            Ui.button("Close lifetime root", () -> lifetimeRoot.get().close()),
+            Ui.button("Remount lifetime root", () -> mount(host)),
+            Ui.button("Mount lifetime twice", () -> BrowserRoot.mount(host, this::view)))
+        .child(Elements.p().text("log=" + entries + "; request=" + request));
   }
 
   private void record(String entry) {

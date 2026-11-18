@@ -9,12 +9,12 @@ import static dev.nthings.tessera.core.Elements.span;
 import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Command;
-import dev.nthings.tessera.core.DocumentContext;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
@@ -253,7 +253,7 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
   }
 
   @Override
-  IntoElement expand(DocumentContext context) {
+  TagElement expand(ViewContext context) {
     var trigger =
         button()
             .id(ElementRef.scoped("trigger"))

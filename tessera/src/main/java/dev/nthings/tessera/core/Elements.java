@@ -1,25 +1,27 @@
 package dev.nthings.tessera.core;
 
-import java.util.function.Function;
+import dev.nthings.tessera.internal.authoring.PortableNode;
 
-/// Static factories for element trees, usually imported statically. Most [HtmlTag] values have a
-/// factory returning a mutable [TagElement]; tags without one, such as `time`, are built with
-/// [#el(TagName)]. Also [#fragment()], and [#text], [#custom], [#rawHtml], [#empty], [#deferred],
-/// [#late] and [#effect], which return a plain [Element].
+/// Static factories for portable element trees, usually imported statically. Most [HtmlTag] values
+/// have a factory returning a mutable [TagElement]; tags without one, such as `time`, are built
+/// with [#el(TagName)]. Also [#fragment()], [#custom], [#svg(SvgTag)], and [#text] and [#empty],
+/// which return a plain [Element]. Content that only a static document places comes from
+/// `Documents`.
 public final class Elements {
 
   private Elements() {}
 
   /// Creates an element for any tag, including those without a factory here, such as
-  /// `HtmlTag.TIME`. Text children are HTML-escaped, so `script` and `style` content needs
-  /// [#rawHtml].
+  /// `HtmlTag.TIME`. Text children are HTML-escaped. Scripts are document content: create them with
+  /// `Documents.script`.
   public static TagElement el(TagName tag) {
     return new TagElement(tag);
   }
 
   /// Creates an autonomous custom element, such as `<my-widget>`. Throws IllegalArgumentException
-  /// unless the name is lowercase and contains a hyphen. Pair it with a [PageScript] registered
-  /// through [DocumentContext#contributeScript].
+  /// unless the name starts with a lowercase ASCII letter, contains a hyphen, and uses only
+  /// lowercase ASCII letters, digits, `.`, `_` and `-`. Contribute the module that defines it from
+  /// a `DocumentComponent` with `DocumentContext.contributeScript`.
   public static TagElement custom(String name) {
     return new TagElement(new CustomElement(name));
   }
@@ -356,53 +358,29 @@ public final class Elements {
 
   /// Creates a text node. Its content is HTML-escaped.
   public static Element text(String content) {
-    return new TextElement(content);
-  }
-
-  /// Creates a node for pre-sanitized HTML or inline SVG, emitted verbatim without escaping,
-  /// parsing or validation. Ids, links and ARIA inside it are not checked by `duplicate-id`,
-  /// `missing-fragment`, site link validation or the accessibility rules, so never pass
-  /// user-controlled text.
-  public static Element rawHtml(String trustedHtml) {
-    return new RawHtmlElement(trustedHtml);
+    return new PortableNode.Text(content);
   }
 
   /// Returns an element that emits no markup.
   public static Element empty() {
-    return EmptyElement.INSTANCE;
+    return PortableNode.Empty.INSTANCE;
   }
 
-  /// Moves `child` to the end of `<body>` at priority 0, for content that cannot sit in its
-  /// parent's content model, such as a dialog or popover inside a parent that does not allow it.
-  /// The child keeps its id scope and DOM ids.
-  public static Element deferred(IntoElement child) {
-    return new DeferredElement(child.intoElement(), 0);
+  /// Creates an element in the SVG namespace, such as `svg` or `path`. Static output writes it as
+  /// inline SVG and a browser root creates it with its namespace, so bundled icons render the same
+  /// in both. Set geometry with [TagElement#attr(String, String)], such as `viewBox` or `d`.
+  public static TagElement svg(SvgTag tag) {
+    return new TagElement(tag);
   }
 
-  /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
-  /// equal priorities keep placement order. The child keeps its id scope and DOM ids.
-  public static Element deferred(IntoElement child, int priority) {
-    return new DeferredElement(child.intoElement(), priority);
-  }
-
-  /// Creates an element resolved after the rest of the page body is expanded, in the context where
-  /// it appears. Use it to read what other elements register, such as [DocumentContext#headings()].
-  /// Late elements resolve first in, first out, before document-end sections and head
-  /// contributions.
-  public static Element late(Function<DocumentContext, ? extends IntoElement> content) {
-    return new LateElement(content);
-  }
-
-  /// Places `effect` at this position of a live tree, keyed by `key` like
-  /// [IntoElement#key(String)]. A browser mount starts it after the first commit that contains it
-  /// and keeps it running while later renders place an effect with the same `key` here; a different
-  /// key disposes it and starts the new one, so the key names the effect's dependencies. Removing
-  /// it, or closing the root, disposes it. The effect emits no markup. The key shares its parent's
-  /// sibling namespace with keyed children, so it must differ from every other effect and keyed
-  /// sibling of that parent (`duplicate-key`). Static compilation reports `native-effect`, since a
-  /// document has no lifetime to bind it to. Throws IllegalArgumentException if `key` is blank.
-  public static Element effect(String key, Effect effect) {
-    return new EffectElement(effect).key(key);
+  /// Creates an `<svg>` root with `viewBox="0 0 <width> <height>"` and `width` and `height` set,
+  /// hidden from assistive technology. Name a meaningful graphic with
+  /// [TagElement#ariaHidden(boolean)] `false` plus a [TagElement#role(Role)] and label.
+  public static TagElement svgIcon(int width, int height) {
+    return new TagElement(SvgTag.SVG)
+        .attr("viewBox", "0 0 " + width + " " + height)
+        .dimensions(width, height)
+        .ariaHidden(true);
   }
 
   public static TagElement link() {

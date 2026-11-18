@@ -40,11 +40,11 @@ Implement [content families and contexts](design/authoring.md#separate-capabilit
 
 | Work | Completion evidence |
 | --- | --- |
-| Introduce portable, document, and live output families | A portable component reused in a static page and browser root compiles and behaves correctly |
-| Restrict every child path, including callbacks and collections | Representative consumer snippets cannot place document or live content inside portable content, including through a wrapper accepting caller-supplied children |
-| Separate expansion state from persistent application state | A rejected render does not retain expansion-local values or start external work |
-| Migrate the [component inventory](design/authoring.md#assign-existing-components-to-a-family) and placement factories | Document components and browser adapters use their own contracts; bundled icons render as structured SVG in both outputs; obsolete universal factories and setters are removed |
-| Preserve shared passes | Both backends use the same identity, reference, CSS, and semantic validation operations |
+| Introduce portable, document, and live output families | Done: a portable component with expansion state renders identically in a compiled page and in live renders, and the keyed-list fixture's portable structure has matching semantic DOM and computed styles statically and in a browser root |
+| Restrict every child path, including callbacks and collections | Done: compiled consumer snippets fail to place document or live content in portable content, including through `Callout`, `Card`, and `Prose` children and component callbacks, and fail to mix document and live content |
+| Separate expansion state from persistent application state | Done: `ViewKey` state lasts one expansion; a candidate rejected in the browser leaves no expansion state behind and never starts its effect |
+| Migrate the [component inventory](design/authoring.md#assign-existing-components-to-a-family) and placement factories | Done: footnotes, table of contents, documentation layout, and the hero decorator are document components; browser bindings wrap portable elements through `LiveElement`; the bundled callout icon is structured SVG in both outputs' DOM; universal raw, deferred, late, effect, event, and control factories and setters are removed |
+| Preserve shared passes | Done: both backends run the same `ViewExpansion`, reference linking, CSS collection, and semantic validation |
 
 ### R2: Restrict internal access and module exports
 
@@ -52,11 +52,11 @@ Implement the [module and accessor design](architecture-redesign.md#package-and-
 
 | Work | Completion evidence |
 | --- | --- |
-| Introduce narrowly scoped authoring and CSS accessors | Expansion and CSS collection work without public inspection getters or reflective access |
-| Hide wrappers, collection plumbing, and linked representations | Ordinary modular consumers compile using public APIs and need no export overrides |
-| Qualify the shared backend export | The browser module builds against `view`; authoring modules have no browser-runtime dependency |
-| Preserve toolchain reachability | Both real Web Image entry points build and mount with the new module/source layout |
-| Remove obsolete hooks and aliases | No backend policy exists solely to reject capabilities excluded by the new placement types |
+| Introduce narrowly scoped authoring and CSS accessors | Done: builder accessors supply expansion data, and the CSS accessor keeps serialization and scope construction in the CSS package |
+| Hide wrappers, collection plumbing, and linked representations | Done: named-module fixtures compile public static and live authoring, and javac rejects internal imports and removed inspection APIs |
+| Qualify the shared backend export | Done: `view` is exported only to `dev.nthings.tessera.wasm`, and a named static application compiles and renders without the browser runtime |
+| Preserve toolchain reachability | Done: both Web Images build and mount in the HTTP-served Chromium and Firefox suite, and the static showcase browser tests pass |
+| Remove obsolete hooks and aliases | Done: document and live lowering feed one typed linked tree. The compiler receives HTML payloads, and the browser receives its own bindings and effects |
 
 ### R3: Unify initial control state and separate live bindings
 

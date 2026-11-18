@@ -167,14 +167,7 @@ public final class Carousel extends BuiltinComponent implements FluentBuilder<Ca
                     .blockSize(CssLength.pct(100))
                     .rounded(Tokens.RADIUS_XL)
                     .bg(Tokens.SURFACE_CARD)
-                    .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE))
-                    .transition(
-                        Transition.of(
-                            CssDuration.ms(250),
-                            Easing.ease(),
-                            Animatable.BORDER_COLOR,
-                            Animatable.BOX_SHADOW,
-                            Animatable.TRANSFORM)))
+                    .border(Border.solid(CssLength.px(2), Tokens.BORDER_SUBTLE)))
         .select(
             ":scope::scroll-marker-group",
             s -> s.flex().itemsCenter().justifyCenter().gap(Tokens.SPACE_2).pt(Tokens.SPACE_3))
@@ -191,13 +184,7 @@ public final class Carousel extends BuiltinComponent implements FluentBuilder<Ca
                     .rounded(Tokens.RADIUS_FULL)
                     .bg(Tokens.BORDER_SUBTLE)
                     .border(Border.none())
-                    .cursor(Cursor.POINTER)
-                    .transition(
-                        Transition.of(
-                            CssDuration.ms(200),
-                            Easing.ease(),
-                            Animatable.INLINE_SIZE,
-                            Animatable.BACKGROUND_COLOR)))
+                    .cursor(Cursor.POINTER))
         .select(
             ":scope > .carousel-item::scroll-marker:target-current",
             s -> s.bg(Tokens.ACCENT_PRIMARY).inlineSize(CssLength.rem(1.5)))
@@ -241,6 +228,25 @@ public final class Carousel extends BuiltinComponent implements FluentBuilder<Ca
             Media.MOTION_SAFE,
             m ->
                 m.select(":scope", s -> s.scrollBehaviorSmooth())
+                    .select(
+                        ":scope > .carousel-item > .carousel-card",
+                        s ->
+                            s.transition(
+                                Transition.of(
+                                    CssDuration.ms(250),
+                                    Easing.ease(),
+                                    Animatable.BORDER_COLOR,
+                                    Animatable.BOX_SHADOW,
+                                    Animatable.TRANSFORM)))
+                    .select(
+                        ":scope > .carousel-item::scroll-marker",
+                        s ->
+                            s.transition(
+                                Transition.of(
+                                    CssDuration.ms(200),
+                                    Easing.ease(),
+                                    Animatable.INLINE_SIZE,
+                                    Animatable.BACKGROUND_COLOR)))
                     .on(
                         ITEM.snapped(Container.Axis.X),
                         c ->

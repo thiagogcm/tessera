@@ -18,6 +18,7 @@ import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Cursor;
 import dev.nthings.tessera.css.Easing;
+import dev.nthings.tessera.css.Media;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
@@ -124,22 +125,26 @@ public final class TableOfContents implements DocumentComponent {
                       .fontSize(Tokens.FONT_SIZE_XS)
                       .fontWeight(700)
                       .on(State.HOVER, h -> h.textColor(Tokens.TEXT_PRIMARY)))
-          .select(
-              ":scope .toc-chevron",
-              s ->
-                  s.transition(
-                      Transition.of(CssDuration.ms(200), Easing.ease(), Animatable.TRANSFORM)))
           .select(":scope details:open .toc-chevron", s -> s.transform(Transform.rotate(90)))
-          .select(
-              ":scope details::details-content",
-              s ->
-                  s.transition(
-                      Transition.of(
-                              CssDuration.ms(300),
-                              Easing.ease(),
-                              Animatable.BLOCK_SIZE,
-                              Animatable.CONTENT_VISIBILITY)
-                          .allowingDiscrete()))
+          .on(
+              Media.MOTION_SAFE,
+              m ->
+                  m.select(
+                          ":scope .toc-chevron",
+                          s ->
+                              s.transition(
+                                  Transition.of(
+                                      CssDuration.ms(200), Easing.ease(), Animatable.TRANSFORM)))
+                      .select(
+                          ":scope details::details-content",
+                          s ->
+                              s.transition(
+                                  Transition.of(
+                                          CssDuration.ms(300),
+                                          Easing.ease(),
+                                          Animatable.BLOCK_SIZE,
+                                          Animatable.CONTENT_VISIBILITY)
+                                      .allowingDiscrete())))
           .select(
               ":scope .toc-collapsible-wrapper",
               s ->

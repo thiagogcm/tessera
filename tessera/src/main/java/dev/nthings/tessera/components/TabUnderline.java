@@ -2,6 +2,7 @@ package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssDuration;
 import dev.nthings.tessera.css.CssLength;
@@ -29,8 +30,9 @@ final class TabUnderline {
                         CssLength.anchor(CssLength.AnchorSide.BOTTOM).minus(CssLength.px(2)))
                     .insetInlineStart(CssLength.anchor(CssLength.AnchorSide.LEFT))
                     .insetInlineEnd(CssLength.anchor(CssLength.AnchorSide.RIGHT))
-                    .blockSize(CssLength.px(2))
-                    .bg(Tokens.ACCENT_PRIMARY))
+                    // A border rather than a background, so forced colors keep the line.
+                    .blockSize(CssLength.px(0))
+                    .borderBlockStart(Border.solid(CssLength.px(2), Tokens.ACCENT_PRIMARY)))
         .on(
             Media.MOTION_SAFE,
             m ->

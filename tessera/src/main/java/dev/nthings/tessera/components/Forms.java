@@ -88,8 +88,9 @@ public final class Forms {
   /// thumb.
   ///
   /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
-  /// background layer that slides when checked. It starts off; add `initialChecked(true)` to start
-  /// it on. Use [#switchField(String, String)] to add a label.
+  /// background layer that slides when checked. In forced colors, which would hide that drawing, it
+  /// renders as the native checkbox. It starts off; add `initialChecked(true)` to start it on. Use
+  /// [#switchField(String, String)] to add a label.
   public static TagElement switchInput(String name) {
     return Elements.input("checkbox")
         .attr("name", name)
@@ -106,7 +107,14 @@ public final class Forms {
             s -> s.background(switchTrack(CssLength.pct(100), Tokens.ACCENT_PRIMARY)))
         .on(
             Media.MOTION_SAFE,
-            s -> s.transition(Transition.controlFeedback().properties(Animatable.BACKGROUND)));
+            s -> s.transition(Transition.controlFeedback().properties(Animatable.BACKGROUND)))
+        // Forced colors drop the drawn track and thumb, so fall back to the native checkbox.
+        .on(
+            Media.FORCED_COLORS,
+            s ->
+                s.appearance(Appearance.AUTO)
+                    .inlineSize(CssLength.auto())
+                    .blockSize(CssLength.auto()));
   }
 
   private static Background switchTrack(CssLength thumbX, DesignToken.Color trackColor) {

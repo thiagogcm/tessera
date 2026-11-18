@@ -417,9 +417,15 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                     .textColor(Tokens.TEXT_PRIMARY)
                     .textDecorationNone()
                     .cursor(Cursor.POINTER))
+        .select(":scope .palette-item:hover", s -> s.bg(Tokens.SURFACE_SUBTLE))
+        // The transparent outline is invisible until forced colors paint it, where the
+        // background tint that marks focus is dropped.
         .select(
-            ":scope .palette-item:hover, :scope .palette-item:focus-visible",
-            s -> s.bg(Tokens.SURFACE_SUBTLE).outline(Border.none()))
+            ":scope .palette-item:focus-visible",
+            s ->
+                s.bg(Tokens.SURFACE_SUBTLE)
+                    .outline(Border.solid(CssLength.px(2), CssColor.transparent()))
+                    .outlineOffset(CssLength.px(-2)))
         .select(":scope .palette-item-main", s -> s.flex().flexCol().gap(CssLength.rem(0.15)))
         .select(":scope .palette-item-title", s -> s.fontSize(Tokens.FONT_SIZE_SM).fontWeight(500))
         .select(

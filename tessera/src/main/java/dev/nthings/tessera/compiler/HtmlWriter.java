@@ -1,6 +1,7 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.compiler.BundlePublication.File;
+import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.view.ViewSnapshot;
@@ -11,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import org.owasp.encoder.Encode;
@@ -19,6 +21,7 @@ import org.owasp.encoder.Encode;
 final class HtmlWriter {
 
   private static final Pattern SCRIPT_CLOSE = Pattern.compile("</script", Pattern.CASE_INSENSITIVE);
+  private static final Pattern STYLE_CLOSE = Pattern.compile("</style", Pattern.CASE_INSENSITIVE);
 
   private HtmlWriter() {}
 
@@ -151,7 +154,7 @@ final class HtmlWriter {
 
   /// Keeps a module containing a literal end tag from closing the script element.
   private static String inlineModule(String module) {
-    return SCRIPT_CLOSE.matcher(module).replaceAll(ignored -> "<\\/script");
+    return SCRIPT_CLOSE.matcher(module).replaceAll(Matcher.quoteReplacement("<\\/script"));
   }
 
   private static void writeNode(ViewSnapshot.Node<String> node, StringBuilder out) {
@@ -179,17 +182,52 @@ final class HtmlWriter {
         out.append('>');
 
         if (!tag.tag().isVoid()) {
-          // HTML consumes one leading line feed after a textarea start tag.
-          if (tag.defaults().text()
-              && tag.children().getFirst() instanceof Text<String> text
+          // HTML consumes one leading line feed after a pre or textarea start tag.
+          if ((tag.defaults().text() || tag.tag() == HtmlTag.PRE)
+              && firstText(tag.children()) instanceof Text<String> text
               && text.content().startsWith("\n")) {
             out.append('\n');
           }
-          for (var child : tag.children()) {
-            writeNode(child, out);
+          if (tag.tag() == HtmlTag.STYLE) {
+            writeRawText(tag.children(), STYLE_CLOSE, "<\\/style", out);
+          } else {
+            for (var child : tag.children()) {
+              writeNode(child, out);
+            }
           }
           out.append("</").append(tag.tag().tagName()).append('>');
         }
+      }
+    }
+  }
+
+  /// The first node holding content, looking through groups, or null if there is none.
+  private static ViewSnapshot.@Nullable Node<String> firstText(
+      List<ViewSnapshot.Node<String>> nodes) {
+    for (var node : nodes) {
+      if (node instanceof ViewSnapshot.Group<String> group) {
+        var first = firstText(group.children());
+        if (first != null) {
+          return first;
+        }
+      } else {
+        return node;
+      }
+    }
+    return null;
+  }
+
+  /// Writes the text of a raw-text element such as `<style>` unencoded, escaping only a literal end
+  /// tag that would close the element.
+  private static void writeRawText(
+      List<ViewSnapshot.Node<String>> nodes, Pattern close, String escaped, StringBuilder out) {
+    for (var node : nodes) {
+      switch (node) {
+        case Text(var content) ->
+            out.append(close.matcher(content).replaceAll(Matcher.quoteReplacement(escaped)));
+        case ViewSnapshot.Group<String> group ->
+            writeRawText(group.children(), close, escaped, out);
+        default -> writeNode(node, out);
       }
     }
   }

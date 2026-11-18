@@ -362,7 +362,7 @@ public abstract sealed class ViewExpansion<M>
     children.addAll(extra.apply(childContext));
     var node =
         new ViewNode.Tag<>(
-            new TagCore<>(element.tag, location, payload, live),
+            new TagCore<>(element.tag, location, payload, live, element.initial),
             attrs,
             references.isEmpty() ? Map.of() : new LinkedHashMap<>(references),
             children,

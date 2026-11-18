@@ -119,6 +119,13 @@ final class ReferenceLinker<M> {
       attrs = linked;
       unresolved = missing;
     }
-    return new ViewSnapshot.Tag<>(tag.core(), attrs, unresolved, linkChildren(tag.children()));
+    var linked =
+        new ViewSnapshot.Tag<>(
+            tag.core(),
+            attrs,
+            unresolved,
+            linkChildren(tag.children()),
+            ViewSnapshot.Defaults.NONE);
+    return ControlLowering.lower(linked, tag.core().initial(), state::report);
   }
 }

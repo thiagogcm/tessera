@@ -34,7 +34,7 @@ sealed interface LiveBehavior {
       Location location,
       Reporter reporter) {
     if (payload instanceof Bindings binding) {
-      binding.controls().validate(tag, attributes, location, reporter);
+      binding.controls().validate(tag, attributes, location, reporter, binding.events().values());
     }
   }
 }

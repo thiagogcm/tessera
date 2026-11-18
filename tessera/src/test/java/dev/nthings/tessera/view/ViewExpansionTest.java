@@ -200,7 +200,8 @@ class ViewExpansionTest {
   @Test
   @DisplayName("repeated select fields preserve options and link their descriptions")
   void repeatedSelectFieldsPreserveOptionsAndLinkTheirDescriptions() {
-    var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
+    var select =
+        Select.of("size").initialValue("large").option("small", "Small").option("large", "Large");
     var field = Field.of("Size", select).hint("Choose a size");
 
     for (var turn = 0; turn < 3; turn++) {
@@ -494,6 +495,78 @@ class ViewExpansionTest {
                 .isEqualTo(TagName.Namespace.SVG));
     assertThat(dom(snapshot).select("aside svg > *").eachAttr("x1"))
         .isEqualTo(page.select("aside svg > *").eachAttr("x1"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("invalidControlDefaults")
+  @DisplayName(
+      "both outputs report invalid or conflicting control defaults at the authored control")
+  void validatesControlDefaults(TagElement control, String rule, String tag) {
+    var content = main().child(control);
+    var document = compileFailure(content);
+    var live = catchThrowableOfType(ViewException.class, () -> render(content));
+    for (var diagnostics : List.of(document.diagnostics(), live.diagnostics())) {
+      assertThat(diagnostics)
+          .singleElement()
+          .satisfies(diagnostic -> {
+            assertThat(diagnostic.rule()).isEqualTo(rule);
+            assertThat(diagnostic.location().tag()).isEqualTo(tag);
+            assertThat(diagnostic.fix()).isNotBlank();
+          });
+    }
+  }
+
+  private static Stream<Arguments> invalidControlDefaults() {
+    return Stream.of(
+        Arguments.of(Elements.input("FILE").initialValue("x"), "initial-value", "input"),
+        Arguments.of(div().initialValue("x"), "initial-value", "div"),
+        Arguments.of(Elements.input("text").initialChecked(false), "initial-checked", "input"),
+        Arguments.of(
+            Elements.select().boolAttr("multiple").initialValue("x"), "initial-value", "select"),
+        Arguments.of(
+            Elements.select().initialSelectedValues(List.of("x")), "initial-selection", "select"),
+        Arguments.of(
+            Elements.input("text").attr("VALUE", "x").initialValue("x"),
+            "initial-control-conflict",
+            "input"),
+        Arguments.of(
+            Elements.input("checkbox").initialChecked(false).boolAttr("CHECKED"),
+            "initial-control-conflict",
+            "input"),
+        Arguments.of(
+            Elements.textarea().child(fragment().text("Old")).initialValue("New"),
+            "initial-control-conflict",
+            "textarea"),
+        Arguments.of(
+            Elements.select()
+                .initialValue("x")
+                .child(
+                    fragment()
+                        .child(
+                            Elements.optgroup("Group")
+                                .child(Elements.option("x", "X").boolAttr("selected").key("x")))),
+            "initial-control-conflict",
+            "option"));
+  }
+
+  @Test
+  @DisplayName("a document default matches options produced by late callbacks")
+  void matchesLateOptions() {
+    var select =
+        DocumentElement.of(Elements.select().initialValue("Blue sky"))
+            .child(
+                Documents.late(_ ->
+                    DocumentContent.of(
+                        fragment()
+                            .children(
+                                Elements.option("red", "Red"),
+                                Elements.optgroup("Group")
+                                    .child(Elements.option().text("  Blue\t sky  ")),
+                                Elements.option("Blue sky", "Duplicate")))));
+    var page =
+        Compiler.compile(new PageDocument("Select", DocumentElement.of(main()).child(select)));
+    assertThat(Jsoup.parse(page.html()).select("select option[selected]").eachText())
+        .containsExactly("Blue sky");
   }
 
   @Test

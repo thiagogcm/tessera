@@ -64,11 +64,11 @@ Implement the [control ownership model](design/authoring.md#distinguish-initial-
 
 | Work | Completion evidence |
 | --- | --- |
-| Lower portable initial state | Input, textarea, checkbox/radio, and select examples have equivalent initial values in static and live output |
-| Preserve browser-owned changes | Unrelated renders retain edits, selection, focus, and native reset behavior |
-| Apply explicit live bindings | Accepted and rejected edits, binding removal, and application-driven reset follow the declared owner |
-| Preserve composition behavior | Existing real input and IME cases pass without equal-value writes that reset caret or selection |
-| Diagnose conflicting configuration | Unsupported hosts and conflicting initial declarations produce actionable authoring errors |
+| Lower portable initial state | Done: the same portable form has matching current and reset values in static and live output in Chromium and Firefox |
+| Preserve browser-owned changes | Done: browser edits, caret selection, focus, and option selection survive renders and reordering. Native reset restores the insertion defaults, and keyed replacement applies new defaults |
+| Apply explicit live bindings | Done: tests cover accepted and rejected edits, native and application resets, and binding removal during markup and radio-group changes |
+| Preserve composition behavior | Done: real input and IME scenarios pass in both engines, including restoration of caret and selection when a retained textarea gains a typed default |
+| Diagnose conflicting configuration | Done: both outputs report located errors for unsupported hosts, invalid select multiplicity, and conflicts with generic attributes or textarea children |
 
 ## Feature delivery after the refactor
 

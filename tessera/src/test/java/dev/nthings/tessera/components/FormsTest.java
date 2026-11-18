@@ -86,7 +86,8 @@ class FormsTest {
     @Test
     @DisplayName("a select field keeps its options, selected value, and hint link across renders")
     void selectFieldKeepsOptions() {
-      var select = Select.of("size").option("small", "Small").selectedOption("large", "Large");
+      var select =
+          Select.of("size").initialValue("large").option("small", "Small").option("large", "Large");
       var field = Field.of("Size", select).hint("Choose a size");
 
       for (var turn = 0; turn < 2; turn++) {
@@ -116,8 +117,9 @@ class FormsTest {
       page =
           renderMain(
               Select.of("theme_mode")
+                  .initialValue("dark")
                   .option("light", "Light Mode")
-                  .selectedOption("dark", "Dark Mode")
+                  .option("dark", "Dark Mode")
                   .option("system", "System Default"));
     }
 
@@ -145,11 +147,12 @@ class FormsTest {
       var grouped =
           renderMain(
               Select.of("region")
+                  .initialValue("ams")
                   .optgroup(
                       "Europe",
                       List.of(
                           Select.Option.of("fra", "Frankfurt"),
-                          Select.Option.selected("ams", "Amsterdam"))));
+                          Select.Option.of("ams", "Amsterdam"))));
 
       assertThat(grouped.elements("optgroup[label=Europe] option[selected]"))
           .extracting(o -> o.attr("value"))

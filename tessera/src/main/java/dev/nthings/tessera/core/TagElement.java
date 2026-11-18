@@ -81,6 +81,7 @@ public final class TagElement
     copy.data.transitionKey = data.transitionKey;
     copy.data.navigationHeading = data.navigationHeading;
     copy.data.behavior = data.behavior;
+    copy.data.initial = data.initial;
     return copy;
   }
 
@@ -112,6 +113,30 @@ public final class TagElement
     name = Attributes.generic(data.tag, name);
     data.attributes.put(name, value);
     data.idReferences.remove(name);
+    return this;
+  }
+
+  /// Sets the initial value and native form-reset default of an input other than file, a textarea,
+  /// or a single select. A select uses the first option with the matching value, or the browser's
+  /// default selection if none matches. Use [#initialSelectedValues(List)] for a multiple select.
+  /// Leave the corresponding generic attributes and textarea children unset. A retained control
+  /// keeps its original default across browser renders; to initialize it again, change its key.
+  public TagElement initialValue(String value) {
+    data.initial = data.initial.withValue(value);
+    return this;
+  }
+
+  /// Sets the initial checked state and native form-reset default of a checkbox or radio input.
+  /// Leave the generic `checked` attribute unset.
+  public TagElement initialChecked(boolean checked) {
+    data.initial = data.initial.withChecked(checked);
+    return this;
+  }
+
+  /// Sets the initial selection and native form-reset default of a multiple select. Each matching
+  /// option starts selected. Leave the options' generic `selected` attributes unset.
+  public TagElement initialSelectedValues(List<String> values) {
+    data.initial = data.initial.withSelectedValues(values);
     return this;
   }
 

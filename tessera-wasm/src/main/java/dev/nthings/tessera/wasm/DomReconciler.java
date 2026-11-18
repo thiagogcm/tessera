@@ -1,16 +1,19 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
@@ -58,6 +61,19 @@ final class DomReconciler {
   /// Effects the active commit placed; started by [#activate] while the root remains open.
   private final List<Mounted> starting = new ArrayList<>();
 
+  /// Native state of bindings already on the DOM, read before any sibling mutates their values.
+  private final Map<Mounted, JSObject> previousControls = new IdentityHashMap<>();
+
+  private List<Mounted> boundControls = List.of();
+  private final List<ControlUpdate> controlUpdates = new ArrayList<>();
+
+  private record ControlUpdate(
+      Mounted instance,
+      ControlProperties bindings,
+      @Nullable JSObject retained,
+      boolean restoreValue,
+      boolean restoreChecked) {}
+
   private final List<RuntimeException> disposalFailures = new ArrayList<>();
   private boolean mounted;
 
@@ -80,11 +96,17 @@ final class DomReconciler {
     disposalFailures.clear();
     created.clear();
     retiring.clear();
+    previousControls.clear();
+    controlUpdates.clear();
+    for (var control : boundControls) {
+      requireOpen();
+      previousControls.put(control, Dom.captureControl(control.first));
+    }
     var parent = host;
     if (!mounted) {
       parent = Dom.element("div");
     }
-    return new Commit(reconcile(parent, roots, snapshot.roots(), null));
+    return new Commit(reconcile(parent, roots, snapshot.roots(), null, false));
   }
 
   /// Publishes a prepared commit: installs its tree as the committed tree, replacing fallback
@@ -110,6 +132,8 @@ final class DomReconciler {
       }
       mounted = true;
     }
+    finishControls();
+    requireOpen();
     roots = commit.tree();
     created.clear();
   }
@@ -158,6 +182,8 @@ final class DomReconciler {
     created.clear();
     starting.clear();
     retiring.clear();
+    previousControls.clear();
+    controlUpdates.clear();
   }
 
   private void report(String what, List<RuntimeException> failures) {
@@ -181,6 +207,9 @@ final class DomReconciler {
     }
     created.clear();
     starting.clear();
+    previousControls.clear();
+    boundControls = List.of();
+    controlUpdates.clear();
     if (mounted) {
       Dom.closeTransient(host);
       Dom.clear(host);
@@ -219,7 +248,8 @@ final class DomReconciler {
       JSObject parent,
       List<Mounted> previous,
       List<ViewSnapshot.Node<LiveBehavior>> next,
-      @Nullable JSObject end) {
+      @Nullable JSObject end,
+      boolean retainOptionDefaults) {
     if (previous.isEmpty() && next.isEmpty()) {
       return List.of();
     }
@@ -281,10 +311,10 @@ final class DomReconciler {
       requireOpen();
       var old = matched[index];
       if (old != null) {
-        patch(parent, old, next.get(index));
+        patch(parent, old, next.get(index), retainOptionDefaults);
         result.add(old);
       } else {
-        result.add(create(parent, next.get(index), anchors[index]));
+        result.add(create(parent, next.get(index), anchors[index], retainOptionDefaults));
       }
     }
     for (var index = 0; index < previous.size(); index++) {
@@ -359,7 +389,10 @@ final class DomReconciler {
   }
 
   private Mounted create(
-      JSObject parent, ViewSnapshot.Node<LiveBehavior> view, @Nullable JSObject before) {
+      JSObject parent,
+      ViewSnapshot.Node<LiveBehavior> view,
+      @Nullable JSObject before,
+      boolean retainOptionDefaults) {
     return switch (view) {
       case ViewSnapshot.Text(var text) -> {
         var node = Dom.text(text);
@@ -373,14 +406,27 @@ final class DomReconciler {
         var instance = new Mounted(view, node, node);
         // Registered before any acquisition, so a failure or closure releases this subtree.
         created.add(instance);
-        attributes(node, Map.of(), tag.attributes());
+        attributes(
+            node,
+            Map.of(),
+            tag.attributes(),
+            ViewSnapshot.Defaults.NONE,
+            retainOptionDefaults && tag.tag() == HtmlTag.OPTION);
         liveProperties(node, Map.of(), tag.liveProperties());
         composition(instance, tag);
         var bindings = LiveBehavior.bindings(tag);
         events(instance, bindings.events());
-        instance.children = reconcile(node, List.of(), tag.children(), null);
+        instance.children =
+            reconcile(
+                node,
+                List.of(),
+                tag.children(),
+                null,
+                retainOptionDefaults && isOptionContainer(tag.tag()));
         Dom.insert(parent, node, before);
-        controls(instance, bindings.controls());
+        if (bindings.controls().isControlled()) {
+          controlUpdates.add(new ControlUpdate(instance, bindings.controls(), null, false, false));
+        }
         yield instance;
       }
       case ViewSnapshot.Group<LiveBehavior> group -> {
@@ -390,7 +436,8 @@ final class DomReconciler {
         Dom.insert(parent, last, before);
         var instance = new Mounted(view, first, last);
         created.add(instance);
-        instance.children = reconcile(parent, List.of(), group.children(), last);
+        instance.children =
+            reconcile(parent, List.of(), group.children(), last, retainOptionDefaults);
         yield instance;
       }
       case ViewSnapshot.Special<LiveBehavior> _ -> {
@@ -405,7 +452,11 @@ final class DomReconciler {
     };
   }
 
-  private void patch(JSObject parent, Mounted instance, ViewSnapshot.Node<LiveBehavior> next) {
+  private void patch(
+      JSObject parent,
+      Mounted instance,
+      ViewSnapshot.Node<LiveBehavior> next,
+      boolean retainOptionDefaults) {
     switch (next) {
       case ViewSnapshot.Text(var text) -> {
         if (!((ViewSnapshot.Text<LiveBehavior>) instance.view).content().equals(text)) {
@@ -413,20 +464,117 @@ final class DomReconciler {
         }
       }
       case ViewSnapshot.Tag<LiveBehavior> tag -> {
-        var previous = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
-        attributes(instance.first, previous.attributes(), tag.attributes());
-        liveProperties(instance.first, previous.liveProperties(), tag.liveProperties());
-        var bindings = LiveBehavior.bindings(tag);
-        events(instance, bindings.events());
-        instance.children = reconcile(instance.first, instance.children, tag.children(), null);
-        controls(instance, bindings.controls());
+        patchTag(instance, tag, retainOptionDefaults);
       }
       case ViewSnapshot.Group<LiveBehavior> group -> {
-        instance.children = reconcile(parent, instance.children, group.children(), instance.last);
+        instance.children =
+            reconcile(
+                parent, instance.children, group.children(), instance.last, retainOptionDefaults);
       }
       case ViewSnapshot.Special<LiveBehavior> _ -> {}
     }
     instance.view = next;
+  }
+
+  private void patchTag(
+      Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag, boolean retainOptionDefaults) {
+    var previous = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
+    var hadTextDefault = instance.defaults.text();
+    var defaults = instance.keepDefaults(tag.defaults());
+    var node = instance.first;
+    var bindings = LiveBehavior.bindings(tag);
+    var preserveText = defaults.text() && !hadTextDefault && !instance.children.isEmpty();
+    queueRetainedControl(instance, previous, tag, defaults, bindings.controls(), preserveText);
+
+    attributes(
+        node,
+        previous.attributes(),
+        tag.attributes(),
+        defaults,
+        retainOptionDefaults && tag.tag() == HtmlTag.OPTION);
+    liveProperties(node, previous.liveProperties(), tag.liveProperties());
+    events(instance, bindings.events());
+    if (!defaults.text()) {
+      instance.children =
+          reconcile(
+              node,
+              instance.children,
+              tag.children(),
+              null,
+              defaults.selection() || (retainOptionDefaults && isOptionContainer(tag.tag())));
+    } else if (preserveText) {
+      // Keep the native default but release any previously mounted logical children.
+      var text = Dom.defaultText(node);
+      instance.children = reconcile(node, instance.children, List.of(), null, false);
+      Dom.defaultText(node, text);
+    }
+  }
+
+  private static boolean isOptionContainer(TagName tag) {
+    return tag != HtmlTag.SELECT
+        && tag != HtmlTag.DATALIST
+        && tag != HtmlTag.TEMPLATE
+        && tag != HtmlTag.OPTION
+        && tag != HtmlTag.HR;
+  }
+
+  private void queueRetainedControl(
+      Mounted instance,
+      ViewSnapshot.Tag<LiveBehavior> previous,
+      ViewSnapshot.Tag<LiveBehavior> tag,
+      ViewSnapshot.Defaults defaults,
+      ControlProperties next,
+      boolean preserveText) {
+    var old = LiveBehavior.bindings(previous).controls();
+    var handoff = previousControls.get(instance);
+    var attributes = tag.attributes();
+    var restoreValue =
+        preserveText
+            || (old.value() != null
+                && next.value() == null
+                && ControlProperties.supportsValue(tag.tag(), attributes));
+    var restoreChecked =
+        old.checked() != null
+            && next.checked() == null
+            && ControlProperties.supportsChecked(tag.tag(), attributes);
+    var restoreSelection =
+        tag.tag() == HtmlTag.SELECT
+            && next.value() == null
+            && next.selectedValues() == null
+            && (defaults.selection() || handoff != null);
+    if ((restoreSelection || restoreValue) && handoff == null) {
+      handoff = Dom.captureControl(instance.first);
+    }
+    var retained = restoreValue || restoreChecked || restoreSelection ? handoff : null;
+    if (retained != null || next.isControlled()) {
+      controlUpdates.add(new ControlUpdate(instance, next, retained, restoreValue, restoreChecked));
+    }
+  }
+
+  /// Restore browser-owned state before applying bindings. Connected siblings (including radios)
+  /// are in their final positions, and each live property is compared with the actual DOM.
+  private void finishControls() {
+    for (var index = 0; index < controlUpdates.size(); index++) {
+      requireOpen();
+      var update = controlUpdates.get(index);
+      var retained = update.retained();
+      if (retained != null) {
+        Dom.restoreControl(
+            update.instance().first, retained, update.restoreValue(), update.restoreChecked());
+      }
+    }
+    var bound = new ArrayList<Mounted>();
+    for (var index = 0; index < controlUpdates.size(); index++) {
+      requireOpen();
+      var update = controlUpdates.get(index);
+      if (update.bindings().isControlled()) {
+        controls(update.instance(), update.bindings());
+        bound.add(update.instance());
+      }
+    }
+    boundControls = List.copyOf(bound);
+    previousControls.clear();
+    controlUpdates.clear();
   }
 
   /// Tracks provisional text so controlled values can wait until composition ends.
@@ -469,15 +617,28 @@ final class DomReconciler {
   }
 
   private static void attributes(
-      JSObject node, Map<String, String> previous, Map<String, String> next) {
-    diff(node, previous, next, Dom::removeAttribute, Dom::attribute);
+      JSObject node,
+      Map<String, String> previous,
+      Map<String, String> next,
+      ViewSnapshot.Defaults defaults,
+      boolean retainSelected) {
+    diff(
+        node,
+        previous,
+        next,
+        Dom::removeAttribute,
+        Dom::attribute,
+        name ->
+            !(defaults.value() && "value".equals(name))
+                && !(defaults.checked() && "checked".equals(name))
+                && !(retainSelected && "selected".equals(name)));
   }
 
   /// Sets changed live custom properties through CSSOM, which a `style-src` policy without
   /// `'unsafe-inline'` allows, and removes those no longer declared.
   private static void liveProperties(
       JSObject node, Map<String, String> previous, Map<String, String> next) {
-    diff(node, previous, next, Dom::removeStyleProperty, Dom::setStyleProperty);
+    diff(node, previous, next, Dom::removeStyleProperty, Dom::setStyleProperty, _ -> true);
   }
 
   private static void diff(
@@ -485,14 +646,15 @@ final class DomReconciler {
       Map<String, String> previous,
       Map<String, String> next,
       BiConsumer<JSObject, String> remove,
-      NamedSetter set) {
+      NamedSetter set,
+      Predicate<String> canWrite) {
     for (var name : previous.keySet()) {
-      if (!next.containsKey(name)) {
+      if (!next.containsKey(name) && canWrite.test(name)) {
         remove.accept(node, name);
       }
     }
     next.forEach((name, value) -> {
-      if (!value.equals(previous.get(name))) {
+      if (!value.equals(previous.get(name)) && canWrite.test(name)) {
         set.apply(node, name, value);
       }
     });
@@ -548,6 +710,7 @@ final class DomReconciler {
     private final JSObject last;
     private List<Mounted> children = List.of();
     private int slot;
+    private ViewSnapshot.Defaults defaults;
 
     /// Allocated on first use: most nodes bind no listeners.
     private Map<EventListener.Key, Binding> events = Map.of();
@@ -564,6 +727,24 @@ final class DomReconciler {
       this.identity = identity(view);
       this.first = first;
       this.last = last;
+      this.defaults =
+          view instanceof ViewSnapshot.Tag<LiveBehavior> tag
+              ? tag.defaults()
+              : ViewSnapshot.Defaults.NONE;
+    }
+
+    /// A typed declaration introduced on a retained control also leaves its DOM baseline in place.
+    private ViewSnapshot.Defaults keepDefaults(ViewSnapshot.Defaults next) {
+      if (next == ViewSnapshot.Defaults.NONE || next.equals(defaults)) {
+        return defaults;
+      }
+      defaults =
+          new ViewSnapshot.Defaults(
+              defaults.value() || next.value(),
+              defaults.checked() || next.checked(),
+              defaults.text() || next.text(),
+              defaults.selection() || next.selection());
+      return defaults;
     }
   }
 

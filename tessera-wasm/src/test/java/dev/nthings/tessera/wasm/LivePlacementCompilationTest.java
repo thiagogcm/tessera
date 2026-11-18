@@ -90,7 +90,10 @@ class LivePlacementCompilationTest {
                 """
                 LiveComponent app = context ->
                     LiveElement.of(button().text("Go")).on("click", event -> {});
-                LiveScope shell = _ -> LiveElement.of(main());
+                LiveScope shell = _ -> LiveElement.of(main()).child(
+                    LiveElement.of(input("text").initialValue("Initial"))
+                        .bindValue("Current")
+                        .onValueChange(value -> {}));
                 """))
         .isEmpty();
   }

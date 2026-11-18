@@ -333,6 +333,65 @@ final class Dom {
           """)
   static native void selectValues(JSObject node, String values);
 
+  /// Reads actual state before DOM operations can change a control's value or selection.
+  @JS(
+      args = {"node"},
+      value =
+          """
+          if (node.localName === 'select') {
+            return {count: node.options.length, selected: new Set(node.selectedOptions)};
+          }
+          return {value: node.value, checked: node.checked,
+                  start: node.selectionStart, end: node.selectionEnd, direction: node.selectionDirection};
+          """)
+  static native JSObject captureControl(JSObject node);
+
+  /// Restores only properties that become browser-owned. Selection follows option identity across
+  /// moves. When a selected single option is removed, the browser chooses its usual fallback.
+  @JS.Coerce
+  @JS(
+      args = {"node", "state", "keepValue", "keepChecked"},
+      value =
+          """
+          if (state.selected) {
+            const options = Array.from(node.options);
+            if (node.multiple) {
+              for (const option of options) {
+                const selected = state.selected.has(option);
+                if (option.selected !== selected) option.selected = selected;
+              }
+            } else {
+              const index = options.findIndex(option => state.selected.has(option));
+              if ((index >= 0 || (state.count > 0 && state.selected.size === 0))
+                  && node.selectedIndex !== index) {
+                node.selectedIndex = index;
+              }
+            }
+            return;
+          }
+          if (keepChecked && node.checked !== state.checked) node.checked = state.checked;
+          if (keepValue && node.value !== state.value) node.value = state.value;
+          if (keepValue && state.start != null && node.selectionStart != null
+              && (node.selectionStart !== state.start || node.selectionEnd !== state.end
+                  || node.selectionDirection !== state.direction)) {
+            node.setSelectionRange(state.start, state.end, state.direction);
+          }
+          """)
+  static native void restoreControl(
+      JSObject node, JSObject state, boolean keepValue, boolean keepChecked);
+
+  @JS.Coerce
+  @JS(
+      args = {"node"},
+      value = "return node.defaultValue;")
+  static native String defaultText(JSObject node);
+
+  @JS.Coerce
+  @JS(
+      args = {"node", "value"},
+      value = "node.defaultValue = value;")
+  static native void defaultText(JSObject node, String value);
+
   // --- Host services ------------------------------------------------------------------------
 
   /// The element with `id` beneath `host`, or `null`; never an element of another root. Ids are

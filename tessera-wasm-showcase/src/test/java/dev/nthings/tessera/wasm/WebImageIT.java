@@ -17,6 +17,7 @@ import com.sun.net.httpserver.SimpleFileServer;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.wasm.example.ControlledFormDemo;
 import dev.nthings.tessera.wasm.example.KeyedListDemo;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
@@ -341,6 +342,170 @@ class WebImageIT {
   }
 
   @BothEngines
+  @DisplayName("portable form defaults match static output and survive live edits until reset")
+  void portableDefaultsMatchStaticAndSurviveLiveEdits(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url + "/control-defaults");
+          var form = page.locator("[data-initial-form]");
+          assertThat(form).isVisible();
+          var staticState = controlDefaults(form);
+          Assertions.assertThat(staticState)
+              .isEqualTo(
+                  List.of(
+                      List.of("a\r\nb\rc d", "a\r\nb\rc d"),
+                      List.of("Portable <value>", "Portable <value>"),
+                      List.of("\nPortable & notes", "\nPortable & notes"),
+                      List.of(true, true),
+                      List.of(true, true),
+                      List.of(false, false),
+                      List.of(List.of("b"), List.of("b")),
+                      List.of(List.of("a", "c"), List.of("a", "c"))));
+
+          page.navigate(url);
+          assertThat(form).isVisible();
+          Assertions.assertThat(controlDefaults(form)).isEqualTo(staticState);
+
+          var text = form.getByLabel("Default text");
+          var notes = form.getByLabel("Default notes");
+          var check = form.getByLabel("Default check");
+          var radio = form.getByLabel("Default radio two");
+          var choice =
+              form.getByLabel("Default choice", new Locator.GetByLabelOptions().setExact(true));
+          var choices =
+              form.getByLabel("Default choices", new Locator.GetByLabelOptions().setExact(true));
+          var request = page.locator("[data-requested-default-change]");
+          text.fill("Browser edit");
+          assertThat(request).hasText("value:Browser edit");
+          notes.fill("Edited notes");
+          check.uncheck();
+          assertThat(request).hasText("checked:false");
+          radio.check();
+          choice.selectOption("a");
+          choices.selectOption(new String[] {"b"});
+          assertThat(request).hasText("selected:b");
+
+          form.evaluate(
+              """
+              form => {
+                window.changedDefaults = 0;
+                new MutationObserver(records => window.changedDefaults += records.length)
+                    .observe(form, {subtree: true, attributes: true,
+                                    attributeFilter: ['value', 'checked', 'selected']});
+              }
+              """);
+          text.focus();
+          text.evaluate("node => node.setSelectionRange(1, 4, 'backward')");
+          button(page, "Change initial defaults").dispatchEvent("click");
+          assertThat(page.locator("[data-defaults-version]"))
+              .hasAttribute("data-defaults-version", "0:true:false");
+          button(page, "Reverse options").dispatchEvent("click");
+          assertThat(page.locator("[data-defaults-version]"))
+              .hasAttribute("data-defaults-version", "0:true:true");
+          assertThat(text).hasValue("Browser edit");
+          assertThat(text).isFocused();
+          Assertions.assertThat(
+                  text.evaluate(
+                      "node => [node.selectionStart, node.selectionEnd, node.selectionDirection]"))
+              .isEqualTo(List.of(1, 4, "backward"));
+          assertThat(notes).hasValue("Edited notes");
+          assertThat(check).not().isChecked();
+          assertThat(radio).isChecked();
+          assertThat(choice).hasValue("a");
+          assertSelection(choices, List.of("b"));
+
+          Assertions.assertThat(page.evaluate("window.changedDefaults")).isEqualTo(0);
+
+          button(page, "Reset browser defaults").click();
+          assertThat(text).hasValue("Portable <value>");
+          assertThat(notes).hasValue("\nPortable & notes");
+          assertThat(check).isChecked();
+          assertThat(radio).not().isChecked();
+          assertThat(choice).hasValue("b");
+          assertSelection(choices, List.of("c", "a"));
+
+          button(page, "Replace initial form").click();
+          assertThat(page.locator("[data-defaults-version]"))
+              .hasAttribute("data-defaults-version", "1:true:true");
+          assertThat(text).hasValue("Replacement");
+          assertThat(notes).hasValue("Replacement notes");
+          assertThat(check).not().isChecked();
+          assertThat(radio).isChecked();
+          assertThat(choice).hasValue("c");
+          assertSelection(choices, List.of("b"));
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  private static Object controlDefaults(Locator form) {
+    return form.evaluate(
+        """
+        form => Array.from(form.elements).filter(control => control.localName !== 'button')
+            .map(control => {
+              if (control.localName === 'select') {
+                const options = Array.from(control.options);
+                return [options.filter(o => o.selected).map(o => o.value),
+                        options.filter(o => o.defaultSelected).map(o => o.value)];
+              }
+              return control.type === 'checkbox' || control.type === 'radio'
+                  ? [control.checked, control.defaultChecked]
+                  : [control.value, control.defaultValue];
+            })
+        """);
+  }
+
+  @BothEngines
+  @DisplayName("connected radio groups apply bindings and hand off controls before native mutation")
+  void preservesValuesAcrossRadioInsertionAndControlHandoff(String engine) {
+    withPage(
+        engine,
+        (page, url, failures) -> {
+          page.navigate(url);
+          var first = page.getByLabel("First bound radio");
+          var second = page.getByLabel("Second bound radio");
+          var text = page.getByLabel("Legacy bound text");
+          var check = page.getByLabel("Legacy bound check");
+          var notes = page.getByLabel("Legacy notes");
+          assertThat(first).isChecked();
+          assertThat(second).not().isChecked();
+          assertThat(text).hasValue("Legacy start");
+          assertThat(check).isChecked();
+          text.focus();
+          text.evaluate("node => node.setSelectionRange(1, 4, 'backward')");
+
+          notes.focus();
+          notes.evaluate("node => node.setSelectionRange(2, 6, 'backward')");
+          button(page, "Hand off controls").dispatchEvent("click");
+          assertThat(text).hasAttribute("value", "Legacy changed");
+          assertThat(text).hasValue("Legacy start");
+          assertThat(notes).isFocused();
+          assertThat(notes).hasValue("Original notes");
+          Assertions.assertThat(
+                  notes.evaluate(
+                      "node => [node.selectionStart, node.selectionEnd, node.selectionDirection]"))
+              .isEqualTo(List.of(2, 6, "backward"));
+          Assertions.assertThat(
+                  text.evaluate(
+                      "node => [node.selectionStart, node.selectionEnd, node.selectionDirection]"))
+              .isEqualTo(List.of(1, 4, "backward"));
+          assertThat(check).not().hasAttribute("checked", "");
+          assertThat(check).isChecked();
+          assertThat(first).isChecked();
+          assertThat(second).not().isChecked();
+          assertThat(page.getByLabel("New bound radio")).not().isChecked();
+
+          button(page, "Reset native controlled form").click();
+          assertThat(text).hasValue("Legacy changed");
+          assertThat(notes).hasValue("Original notes");
+          assertThat(check).not().isChecked();
+          assertThat(first).not().isChecked();
+          assertThat(second).isChecked();
+          Assertions.assertThat(failures).isEmpty();
+        });
+  }
+
+  @BothEngines
   @DisplayName("controlled form events round trip to Java and resets update live properties")
   void controlledFormEventsRoundTripToJavaAndResetsUpdateLiveProperties(String engine) {
     withPage(
@@ -389,6 +554,19 @@ class WebImageIT {
           assertThat(check).hasAttribute("checked", "");
           Assertions.assertThat(text.evaluate("node => node === formText")).isEqualTo(true);
           assertThat(page.locator("[data-form-event]")).hasText(captured);
+
+          button(page, "Reset native controlled form").click();
+          assertThat(text).hasValue("Attribute text");
+          assertThat(notes).hasValue("Default notes");
+          assertThat(check).isChecked();
+          assertThat(choice).hasValue("a");
+          assertSelection(choices, List.of("b"));
+          button(page, "Refresh form").click();
+          assertThat(text).hasValue("");
+          assertThat(notes).hasValue("");
+          assertThat(check).not().isChecked();
+          assertThat(choice).hasValue("c");
+          assertSelection(choices, List.of());
         });
   }
 
@@ -1804,6 +1982,17 @@ class WebImageIT {
                   .html();
           respond(exchange, "text/html; charset=utf-8", html.getBytes(StandardCharsets.UTF_8));
         });
+    var formHtml =
+        Compiler.compile(
+                new PageDocument(
+                    "Portable controls",
+                    Elements.main().child(ControlledFormDemo.nativeDefaults())))
+            .html();
+    server.createContext(
+        "/control-defaults",
+        exchange ->
+            respond(
+                exchange, "text/html; charset=utf-8", formHtml.getBytes(StandardCharsets.UTF_8)));
     server.createContext(
         "/slow",
         exchange -> {

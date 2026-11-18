@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 ///
 /// ```java
 /// LiveElement.of(Button.of("Save").element()).onClick(root.update(this::save));
-/// LiveElement.of(Forms.text("name")).value(name).on("input", e -> name = e.control().value());
+/// LiveElement.of(Forms.text("name")).bindValue(name).onValueChange(value -> name = value);
 /// ```
 public final class LiveElement implements LiveContent {
 
@@ -48,7 +48,10 @@ public final class LiveElement implements LiveContent {
   /// handler for the same type and phase replaces the previous one. Throws IllegalArgumentException
   /// if `event` is blank.
   public LiveElement on(String event, EventOptions options, Consumer<BrowserEvent> handler) {
-    var listener = new EventListener(event, options, handler);
+    return listen(new EventListener(event, options, handler, null));
+  }
+
+  private LiveElement listen(EventListener listener) {
     events.put(listener.key(), listener);
     return this;
   }
@@ -59,27 +62,57 @@ public final class LiveElement implements LiveContent {
     return on("click", _ -> handler.run());
   }
 
-  /// Controls the live `value` of an input, textarea or single select: each render writes it to the
-  /// control unless the user is composing text with an input method. The initial `value` attribute
-  /// is unaffected. Another host (a file input, a multiple select, any other element) reports
-  /// `control-value`.
-  public LiveElement value(String value) {
+  /// Binds the current value of a value-editable input, textarea or single select to application
+  /// state. Renders apply changes after attributes and children, and text writes wait for IME
+  /// composition to finish. The native reset default remains the one set at insertion.
+  public LiveElement bindValue(String value) {
     controls = controls.withValue(value);
     return this;
   }
 
   /// Controls the live checked state of a checkbox or radio input. Another host reports
   /// `control-checked`.
-  public LiveElement checked(boolean checked) {
+  public LiveElement bindChecked(boolean checked) {
     controls = controls.withChecked(checked);
     return this;
   }
 
   /// Controls the selected options of a multiple select; an empty list deselects every option.
   /// Another host reports `control-selection`.
-  public LiveElement selectedValues(List<String> values) {
+  public LiveElement bindSelectedValues(List<String> values) {
     controls = controls.withSelectedValues(values);
     return this;
+  }
+
+  /// Reports the requested value on a native `input` event. The application can update its state
+  /// and trigger a render to accept the edit.
+  public LiveElement onValueChange(Consumer<String> handler) {
+    return listen(
+        new EventListener(
+            "input",
+            EventOptions.DEFAULT,
+            event -> handler.accept(event.control().value()),
+            ControlProperties.Kind.VALUE));
+  }
+
+  /// Reports the checked state on a native `change` event from a checkbox or radio.
+  public LiveElement onCheckedChange(Consumer<Boolean> handler) {
+    return listen(
+        new EventListener(
+            "change",
+            EventOptions.DEFAULT,
+            event -> handler.accept(event.control().checked()),
+            ControlProperties.Kind.CHECKED));
+  }
+
+  /// Reports the selected values of a multiple select in option order on a native `input` event.
+  public LiveElement onSelectedValuesChange(Consumer<List<String>> handler) {
+    return listen(
+        new EventListener(
+            "input",
+            EventOptions.DEFAULT,
+            event -> handler.accept(event.control().selectedValues()),
+            ControlProperties.Kind.SELECTION));
   }
 
   /// Adds portable `child` as the next child. Throws IllegalStateException for a void host.

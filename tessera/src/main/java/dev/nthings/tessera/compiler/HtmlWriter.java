@@ -151,7 +151,10 @@ final class HtmlWriter {
           var value = attr.getValue();
           out.append(' ').append(attr.getKey());
           if (!value.isEmpty()) {
-            out.append("=\"").append(Encode.forHtmlAttribute(value)).append('"');
+            // Character references survive HTML's line-ending normalization.
+            out.append("=\"")
+                .append(Encode.forHtmlAttribute(value).replace("\r", "&#13;"))
+                .append('"');
           }
         }
         var source = tag.location().source();
@@ -161,6 +164,12 @@ final class HtmlWriter {
         out.append('>');
 
         if (!tag.tag().isVoid()) {
+          // HTML consumes one leading line feed after a textarea start tag.
+          if (tag.defaults().text()
+              && tag.children().getFirst() instanceof Text<String> text
+              && text.content().startsWith("\n")) {
+            out.append('\n');
+          }
           for (var child : tag.children()) {
             writeNode(child, out);
           }

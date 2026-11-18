@@ -166,9 +166,9 @@ class LiveContentTest {
   @Test
   @DisplayName("a live value keeps the initial attribute of the wrapped portable control")
   void liveValueKeepsTheInitialAttributeOfTheWrappedPortableControl() {
-    var control = Forms.text("name").attr("value", "Initial");
+    var control = Forms.text("name").initialValue("Initial");
     for (var turn = 0; turn < 3; turn++) {
-      var input = firstTag(LiveElement.of(control).value("Live " + turn));
+      var input = firstTag(LiveElement.of(control).bindValue("Live " + turn));
       assertThat(input.attributes()).containsEntry("value", "Initial");
       assertThat(LiveBehavior.bindings(input).controls().value()).isEqualTo("Live " + turn);
     }
@@ -182,14 +182,14 @@ class LiveContentTest {
   @DisplayName("selection bindings and event data copy their selected values")
   void selectionBindingsAndEventDataCopyTheirSelectedValues() {
     var values = new ArrayList<>(List.of("a", "b"));
-    var select = LiveElement.of(Elements.select().boolAttr("multiple")).selectedValues(values);
+    var select = LiveElement.of(Elements.select().boolAttr("multiple")).bindSelectedValues(values);
     var event = new ControlState("a", false, values, true);
     values.clear();
 
     assertThat(LiveBehavior.bindings(firstTag(select)).controls().selectedValues())
         .containsExactly("a", "b");
     assertThat(event.selectedValues()).containsExactly("a", "b");
-    select.selectedValues(List.of());
+    select.bindSelectedValues(List.of());
     assertThat(LiveBehavior.bindings(firstTag(select)).controls())
         .isEqualTo(new ControlProperties(null, null, List.of()));
   }
@@ -200,17 +200,22 @@ class LiveContentTest {
   void controlledPropertiesRejectIncompatibleNativeHosts(LiveElement control) {
     assertThatThrownBy(() -> render(control))
         .isInstanceOf(ViewException.class)
-        .hasMessageMatching("(?s).*[Cc]ontrolled.*");
+        .hasMessageContaining("[control-");
   }
 
   private static Stream<LiveElement> invalidHosts() {
     return Stream.of(
-        LiveElement.of(Elements.div()).value("text"),
-        LiveElement.of(Elements.input("file")).value("path"),
-        LiveElement.of(Elements.input("text")).checked(true),
-        LiveElement.of(Elements.textarea()).checked(false),
-        LiveElement.of(Elements.select()).selectedValues(List.of()),
-        LiveElement.of(Elements.select().boolAttr("multiple")).value("a"));
+        LiveElement.of(Elements.div()).bindValue("text"),
+        LiveElement.of(Elements.input("file")).bindValue("path"),
+        LiveElement.of(Elements.input("text")).bindChecked(true),
+        LiveElement.of(Elements.textarea()).bindChecked(false),
+        LiveElement.of(Elements.select()).bindSelectedValues(List.of()),
+        LiveElement.of(Elements.select().boolAttr("multiple")).bindValue("a"),
+        LiveElement.of(Elements.input("checkbox")).bindValue("submission data"),
+        LiveElement.of(Elements.input("hidden")).bindValue("attribute-backed"),
+        LiveElement.of(Elements.div()).onValueChange(_ -> {}),
+        LiveElement.of(Elements.input("text")).onCheckedChange(_ -> {}),
+        LiveElement.of(Elements.select()).onSelectedValuesChange(_ -> {}));
   }
 
   @ParameterizedTest
@@ -223,11 +228,11 @@ class LiveContentTest {
   private static Stream<LiveElement> controlledHosts() {
     TagElement multiple = Elements.select().boolAttr("multiple");
     return Stream.of(
-        LiveElement.of(Elements.input("text")).value(""),
-        LiveElement.of(Elements.textarea()).value("Notes"),
-        LiveElement.of(Elements.input("checkbox")).checked(false),
-        LiveElement.of(Elements.input("radio")).checked(true),
-        LiveElement.of(Elements.select()).value("a"),
-        LiveElement.of(multiple).selectedValues(List.of()));
+        LiveElement.of(Elements.input("text")).bindValue(""),
+        LiveElement.of(Elements.textarea()).bindValue("Notes"),
+        LiveElement.of(Elements.input("checkbox")).bindChecked(false),
+        LiveElement.of(Elements.input("radio")).bindChecked(true),
+        LiveElement.of(Elements.select()).bindValue("a"),
+        LiveElement.of(multiple).bindSelectedValues(List.of()));
   }
 }

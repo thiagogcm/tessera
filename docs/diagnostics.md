@@ -47,6 +47,18 @@ Ambiguous duplicate bindings and unresolved references are excluded from target-
 
 Exceptions thrown by application expansion, styling, late, or document-end callbacks propagate unchanged. A suppressed `CompilationException` adds component context. Trusted raw HTML remains opaque to validation.
 
+## Form control rules
+
+| Rule | Reported when |
+| --- | --- |
+| `initial-value` | An initial value is declared on an unsupported host, such as a file input or a multiple select |
+| `initial-checked` | A typed checked default is declared outside a checkbox or radio input |
+| `initial-selection` | Selected values are declared outside a multiple select, or raw HTML prevents option matching |
+| `initial-control-conflict` | A typed default overlaps with a generic control attribute, authored textarea children, or an option's explicit `selected` attribute |
+| `control-value`, `control-checked`, `control-selection` | A live binding or typed change callback is attached to an incompatible host |
+
+Use [portable defaults](consumer-guide.md#set-form-defaults) for initial values and [live bindings](browser-rendering.md#bind-form-values) for application state.
+
 ## Accessibility rules
 
 Use [typed roles and states](consumer-guide.md#declare-roles-and-states) to declare semantics. Role-specific checks apply to explicitly declared roles; native semantics are checked where the compiler recognizes them.

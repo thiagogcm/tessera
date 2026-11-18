@@ -51,6 +51,11 @@ public record ViewSnapshot<M>(
     }
   }
 
+  /// The parts of a native control's markup supplied by typed initial declarations.
+  public record Defaults(boolean value, boolean checked, boolean text, boolean selection) {
+    public static final Defaults NONE = new Defaults(false, false, false, false);
+  }
+
   /// A linked element. `unresolvedAttributes` names reference attributes whose targets were
   /// reported missing or ambiguous, so validators skip secondary errors for them. `liveProperties`
   /// are the custom properties a live backend sets on the element for its live styles. Only linking
@@ -60,16 +65,19 @@ public record ViewSnapshot<M>(
     private final Map<String, String> attributes;
     private final Set<String> unresolvedAttributes;
     private final List<Node<M>> children;
+    private final Defaults defaults;
 
     Tag(
         TagCore<M> core,
         Map<String, String> attributes,
         Set<String> unresolvedAttributes,
-        List<Node<M>> children) {
+        List<Node<M>> children,
+        Defaults defaults) {
       this.core = core;
       this.attributes = TagCore.readOnly(attributes);
       this.unresolvedAttributes = TagCore.readOnly(unresolvedAttributes);
       this.children = TagCore.readOnly(children);
+      this.defaults = defaults;
     }
 
     /// The element's tag.
@@ -100,6 +108,16 @@ public record ViewSnapshot<M>(
     /// The custom properties to set on the element for its live styles.
     public Map<String, String> liveProperties() {
       return core.liveProperties();
+    }
+
+    /// The control markup that is applied only when the element is inserted.
+    public Defaults defaults() {
+      return defaults;
+    }
+
+    Tag<M> withControlMarkup(
+        Map<String, String> attributes, List<Node<M>> children, Defaults defaults) {
+      return new Tag<>(core, attributes, unresolvedAttributes, children, defaults);
     }
 
     /// The linked children.

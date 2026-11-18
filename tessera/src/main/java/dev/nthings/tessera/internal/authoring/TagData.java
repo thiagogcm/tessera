@@ -24,6 +24,7 @@ public final class TagData {
   public final List<Element> children = new ArrayList<>();
   public final List<ElementRef> refs = new ArrayList<>(1);
 
+  public InitialControl initial = InitialControl.NONE;
   public @Nullable Declarations live;
   public @Nullable BundledBehavior behavior;
   public @Nullable TagElement interestTooltip;

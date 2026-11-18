@@ -141,9 +141,30 @@ Most built-in components are portable. `Footnote.reference()`, `Footnotes`, `Tab
 
 Factories describe the required shape, such as `Grid.autoFit(minWidth, ...)`, `Grid.columns(count, ...)`, `CodeBlock.of(source)`, and `CodeBlock.ofLines(...)`. Optional content uses methods such as `description(...)`, `previous(link)`, or `next(link)`.
 
-Initial state uses named methods: `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)`, `Select.selectedOption(value, label)`, and `Forms.checkedSwitchField(label, name)`. Apply an option conditionally with `onlyIf(condition, x -> x.checked())`, or `ifPresent(value, (x, v) -> ...)` for a nullable value.
+Component configuration includes `Card.radio(name, value).checked()`, `Accordion.openItem(title, content)`, `Select.initialValue(value)`, and `Forms.checkedSwitchField(label, name)`. Apply an option conditionally with `onlyIf(condition, x -> x.checked())`, or `ifPresent(value, (x, v) -> ...)` for a nullable value.
 
 Components share `Tone` for semantic color, `Size` (`SM`, `MD`, `LG`) for buttons and badges, and `Link(href, label)` for navigation items. A `label` is an accessible name; a `title` is a visible heading; a `description` is secondary text; `actions(...)` supplies footer actions. [Styling](styling.md) covers their appearance.
+
+## Set form defaults
+
+Declare initial form state on portable elements. The same declarations initialize static pages and mounted browser roots. Native form reset returns a control to its defaults.
+
+```java
+var name = Forms.text("name").initialValue("Ada");
+var notes = Forms.textarea("notes", 3).initialValue("Draft notes");
+var updates = Forms.switchInput("updates").initialChecked(true);
+var region = Select.of("region")
+    .initialValue("br")
+    .option("br", "Brazil")
+    .option("ca", "Canada");
+var languages = Elements.select().boolAttr("multiple")
+    .initialSelectedValues(List.of("en", "pt"))
+    .children(Elements.option("en", "English"), Elements.option("pt", "Portuguese"));
+```
+
+A single select takes the first matching option in document order. A multiple select selects every match. Options without a `value` attribute use their text with HTML whitespace collapsed. Unmatched values leave the browser's native fallback in effect. Use structured options when setting typed defaults and supply each default in one place. For example, remove `selected` from the options when setting a default on their select, and supply textarea content through `initialValue`.
+
+In a browser root, retained controls keep their defaults when the view re-renders. Change a control's key to create a fresh one with new defaults. Use [live bindings](browser-rendering.md#bind-form-values) when the application's state should control a value across renders.
 
 ## Build tables with a logical grid
 

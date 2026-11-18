@@ -137,6 +137,8 @@ Authored raw HTML, selectors, and script source remain trusted inputs. [Diagnost
 
 ## Browser ownership
 
+Shared linking lowers typed form defaults into native markup. Browser roots apply that markup on insertion, preserve reset defaults on retained controls, and reconcile live bindings against the current native properties. The same portable form can be published as a static page or mounted into a browser root. See [form ownership](browser-rendering.md#bind-form-values).
+
 `BrowserRoot` owns the view callback, committed references and IDs, scheduling, root lifetime, and styles. `DomReconciler` retains native nodes, logical ranges, listeners, and effect lifetimes. `Host` binds asynchronous work to a root or effect lifetime. The package-private `Dom` bridge contains Web Image interoperability code.
 
 Each render prepares and validates a candidate before DOM mutation. A commit owns what it acquires: it reconciles while registering every created instance before that instance acquires listeners or an effect lifetime, publishes the tree, references and IDs at one boundary, retires replaced resources with their cleanups, then starts new effects. Closure requested at any phase settles there and releases everything once, following the [runtime design](design/runtime.md#own-resources-before-exposing-callbacks).
@@ -149,7 +151,6 @@ These constraints affect current use and define the work that remains. They are 
 
 | Boundary | Current limitation | Required work |
 | --- | --- | --- |
-| Control state | Portable controls have no typed initial state; live bindings on `LiveElement` are the only typed control state | [R3: Initial state and live bindings](roadmap.md#r3-unify-initial-control-state-and-separate-live-bindings) |
 | Widget behavior in browser roots | Portable widgets with static behavior scripts, such as `ContentTabs` and the interest-tooltip fallback, render their structure without that behavior | [F1: Adaptive widgets](roadmap.md#feature-delivery-after-the-refactor) |
 | Deployment evidence | Browser acceptance exercises `style-src 'self'`, not the complete deployment policy | [F2: Bundle publication](roadmap.md#feature-delivery-after-the-refactor) |
 

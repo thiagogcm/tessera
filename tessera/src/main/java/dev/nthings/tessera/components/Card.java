@@ -241,7 +241,7 @@ public final class Card extends BuiltinScope<Card> {
                     Elements.input(choice.multiSelect() ? "checkbox" : "radio")
                         .attr("name", choice.name())
                         .attr("value", choice.value())
-                        .onlyIf(checked, input -> input.boolAttr("checked")))
+                        .initialChecked(checked))
             : Elements.article();
 
     // Region 1: media, never wrapped for img/picture.

@@ -27,6 +27,10 @@ public final class ControlledFormDemo {
   private boolean reversed;
   private boolean visible = true;
   private boolean feedback;
+  private boolean alternateDefaults;
+  private boolean handoff;
+  private int initialFormKey;
+  private String requested = "none";
   private int revision;
   private int renders;
   private String last = "none";
@@ -54,6 +58,11 @@ public final class ControlledFormDemo {
             Ui.button("Reverse options", root.update(() -> reversed = !reversed)),
             Ui.button("Remove form controls", root.update(() -> visible = false)),
             Ui.button("Toggle field feedback", root.update(() -> feedback = !feedback)),
+            Ui.button(
+                "Change initial defaults",
+                root.update(() -> alternateDefaults = !alternateDefaults)),
+            Ui.button("Replace initial form", root.update(() -> initialFormKey++)),
+            Ui.button("Hand off controls", root.update(() -> handoff = true)),
             Ui.button("Unmount form", root::close))
         .child(
             Elements.p()
@@ -70,47 +79,194 @@ public final class ControlledFormDemo {
                         + captured.composing()
                         + "; events="
                         + events))
-        .child(visible ? fields(root) : Live.fragment());
+        .child(visible ? fields(root) : Live.fragment())
+        .child(
+            LiveElement.of(
+                    Elements.div()
+                        .attr(
+                            "data-defaults-version",
+                            Integer.toString(initialFormKey)
+                                + ":"
+                                + alternateDefaults
+                                + ":"
+                                + reversed))
+                .child(Elements.p().attr("data-requested-default-change", "").text(requested))
+                .child(initialForm(root).key(Integer.toString(initialFormKey))));
   }
 
   private LiveContent fields(BrowserRoot root) {
-    var input = Forms.text("controlled-text").attr("value", "Attribute text");
+    var input = Forms.text("controlled-text").initialValue("Attribute text");
     var text =
         LiveElement.of(input)
             .on("input", record("text", root, state -> this.text = state.value()))
             .on("compositionstart", record("start", root, _ -> {}))
             .on("compositionend", record("end", root, _ -> {}));
-    var textarea = Elements.textarea().attr("name", "controlled-notes").text("Default notes");
+    var textarea =
+        Elements.textarea().attr("name", "controlled-notes").initialValue("Default notes");
     var notes =
         LiveElement.of(textarea)
             .on("input", record("notes", root, state -> this.notes = state.value()));
-    var checkbox = Elements.input("checkbox").attr("name", "controlled-check").boolAttr("checked");
+    var checkbox = Elements.input("checkbox").attr("name", "controlled-check").initialChecked(true);
     var check =
         LiveElement.of(checkbox)
             .on("change", record("check", root, state -> checked = state.checked()));
-    var select = options(false);
+    var select = options(false, reversed).initialValue("a");
     var choice =
         LiveElement.of(select)
             .on("change", record("choice", root, state -> this.choice = state.value()));
-    var multiple = options(true);
+    var multiple = options(true, reversed).initialSelectedValues(List.of("b"));
     var choices =
         LiveElement.of(multiple)
             .on("change", record("choices", root, state -> this.choices = state.selectedValues()));
     // Without control, the browser keeps each control's current state.
     if (controlled) {
-      text.value(this.text);
-      notes.value(this.notes);
-      check.checked(checked);
-      choice.value(this.choice);
-      choices.selectedValues(this.choices);
+      text.bindValue(this.text);
+      notes.bindValue(this.notes);
+      check.bindChecked(checked);
+      choice.bindValue(this.choice);
+      choices.bindSelectedValues(this.choices);
     }
-    return Live.fragment(
-        field("Controlled text", input, text),
-        field("Controlled notes", textarea, notes),
-        field("Controlled check", checkbox, check),
-        field("Controlled choice", select, choice),
-        field("Controlled choices", multiple, choices),
-        LiveContent.of(browserText()));
+    return LiveElement.of(Elements.form().attr("data-controlled-fields", ""))
+        .child(Elements.button().attr("type", "reset").text("Reset native controlled form"))
+        .children(
+            field("Controlled text", input, text),
+            field("Controlled notes", textarea, notes),
+            field("Controlled check", checkbox, check),
+            field("Controlled choice", select, choice),
+            field("Controlled choices", multiple, choices),
+            LiveContent.of(browserText()),
+            ownershipProbe());
+  }
+
+  /// A later sibling's default can change a group's native state before Java applies bindings.
+  private LiveContent ownershipProbe() {
+    var legacyText =
+        LiveElement.of(
+            Forms.text("legacy-text")
+                .ariaLabel("Legacy bound text")
+                .attr("value", handoff ? "Legacy changed" : "Legacy start"));
+    var legacyNotes = Forms.textarea("legacy-notes", 2).ariaLabel("Legacy notes");
+    if (handoff) {
+      legacyNotes.initialValue("New notes default");
+    } else {
+      legacyNotes.text("Original notes");
+    }
+    var legacyCheck =
+        LiveElement.of(
+            Elements.input("checkbox")
+                .ariaLabel("Legacy bound check")
+                .onlyIf(!handoff, element -> element.boolAttr("checked")));
+    var first =
+        LiveElement.of(
+            Elements.input("radio")
+                .attr("name", "bound-radio")
+                .ariaLabel("First bound radio")
+                .initialChecked(false));
+    if (!handoff) {
+      legacyText.bindValue("Legacy start");
+      legacyCheck.bindChecked(true);
+      first.bindChecked(true);
+    }
+    var second =
+        LiveElement.of(
+                Elements.input("radio")
+                    .attr("name", "bound-radio")
+                    .ariaLabel("Second bound radio")
+                    .initialChecked(true))
+            .bindChecked(false);
+    var leading =
+        LiveElement.of(
+                Elements.input("radio")
+                    .attr("name", "bound-radio")
+                    .ariaLabel("New bound radio")
+                    .initialChecked(true))
+            .bindChecked(false);
+    return LiveElement.of(Elements.fieldset())
+        .children(
+            legacyText,
+            LiveContent.of(legacyNotes),
+            legacyCheck,
+            handoff ? leading.key("new") : Live.fragment(),
+            first.key("first"),
+            second.key("second"));
+  }
+
+  /// The same portable form is mounted live and compiled on the showcase's static test route.
+  public static TagElement nativeDefaults() {
+    var fields = initialControls(false, false);
+    return nativeForm()
+        .children(
+            fields.text(),
+            fields.notes(),
+            fields.check(),
+            fields.firstRadio(),
+            fields.secondRadio(),
+            fields.choice(),
+            fields.choices());
+  }
+
+  private LiveContent initialForm(BrowserRoot root) {
+    var controls = initialControls(alternateDefaults, reversed);
+    return LiveElement.of(nativeForm())
+        .children(
+            LiveElement.of(controls.text())
+                .onValueChange(value -> recordRequest(root, "value:" + value)),
+            LiveContent.of(controls.notes()),
+            LiveElement.of(controls.check())
+                .onCheckedChange(value -> recordRequest(root, "checked:" + value)),
+            LiveContent.of(controls.firstRadio()),
+            LiveContent.of(controls.secondRadio()),
+            LiveContent.of(controls.choice()),
+            LiveElement.of(controls.choices())
+                .onSelectedValuesChange(
+                    values -> recordRequest(root, "selected:" + String.join(",", values))));
+  }
+
+  private void recordRequest(BrowserRoot root, String change) {
+    requested = change;
+    root.invalidate();
+  }
+
+  private static TagElement nativeForm() {
+    return Elements.form()
+        .attr("data-initial-form", "")
+        .child(
+            Elements.input("hidden")
+                .attr("name", "serialized")
+                .initialValue("a\r\nb\rc" + (char) 0 + "d"))
+        .child(Elements.button().attr("type", "reset").text("Reset browser defaults"));
+  }
+
+  private record InitialFields(
+      TagElement text,
+      TagElement notes,
+      TagElement check,
+      TagElement firstRadio,
+      TagElement secondRadio,
+      TagElement choice,
+      TagElement choices) {}
+
+  private static InitialFields initialControls(boolean alternate, boolean reverse) {
+    return new InitialFields(
+        Forms.text("initial-text")
+            .ariaLabel("Default text")
+            .initialValue(alternate ? "Replacement" : "Portable <value>"),
+        Forms.textarea("initial-notes", 2)
+            .ariaLabel("Default notes")
+            .initialValue(alternate ? "Replacement notes" : "\r\nPortable & notes"),
+        Elements.input("checkbox").ariaLabel("Default check").initialChecked(!alternate),
+        Elements.input("radio")
+            .attr("name", "default-radio")
+            .ariaLabel("Default radio one")
+            .initialChecked(!alternate),
+        Elements.input("radio")
+            .attr("name", "default-radio")
+            .ariaLabel("Default radio two")
+            .initialChecked(alternate),
+        options(false, reverse).ariaLabel("Default choice").initialValue(alternate ? "c" : "b"),
+        options(true, reverse)
+            .ariaLabel("Default choices")
+            .initialSelectedValues(alternate ? List.of("b") : List.of("a", "c")));
   }
 
   /// A labelled field around a live `control` wrapping `host`.
@@ -127,13 +283,13 @@ public final class ControlledFormDemo {
   /// An uncontrolled field whose hint and error come and go around its retained control.
   private Field browserText() {
     var field =
-        Field.of("Browser text", Forms.text("browser-text").attr("value", "Browser default"));
+        Field.of("Browser text", Forms.text("browser-text").initialValue("Browser default"));
     return feedback
         ? field.hint("Shown before the control").error("Shown after the control")
         : field;
   }
 
-  private TagElement options(boolean multiple) {
+  private static TagElement options(boolean multiple, boolean reversed) {
     var select =
         Elements.select()
             .attr("name", multiple ? "choices" : "choice")

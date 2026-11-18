@@ -1,10 +1,13 @@
 package dev.nthings.tessera.wasm;
 
+import dev.nthings.tessera.wasm.ControlProperties.Kind;
 import java.util.function.Consumer;
+import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: a Java event handler bound with the browser module's `LiveElement.on`, with its
 /// native options. Throws IllegalArgumentException if `type` is blank.
-record EventListener(String type, EventOptions options, Consumer<BrowserEvent> handler) {
+record EventListener(
+    String type, EventOptions options, Consumer<BrowserEvent> handler, @Nullable Kind observed) {
 
   public EventListener {
     if (type.isBlank()) {

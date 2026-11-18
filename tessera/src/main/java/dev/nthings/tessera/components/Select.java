@@ -26,29 +26,20 @@ import java.util.List;
 /// Without an [#id(String)], the compiler numbers instances `custom-select-<n>`.
 public final class Select extends BuiltinScope<Select> {
 
-  /// One option for [Select#optgroup(String, List)]: the submitted `value`, the visible `label`,
-  /// and whether it starts selected. Create one with [#of(String, String)] or [#selected(String,
-  /// String)].
+  /// An option's submitted value and visible label for [Select#optgroup(String, List)].
   public static final class Option {
 
     private final String value;
     private final String label;
-    private final boolean selected;
 
-    private Option(String value, String label, boolean selected) {
+    private Option(String value, String label) {
       this.value = value;
       this.label = label;
-      this.selected = selected;
     }
 
     /// An option submitting `value` and showing `label`.
     public static Option of(String value, String label) {
-      return new Option(value, label, false);
-    }
-
-    /// An option submitting `value` and showing `label`, selected on load.
-    public static Option selected(String value, String label) {
-      return new Option(value, label, true);
+      return new Option(value, label);
     }
   }
 
@@ -75,22 +66,23 @@ public final class Select extends BuiltinScope<Select> {
     return new Select(name);
   }
 
-  /// Adds an option submitting `value` and showing `label`.
-  public Select option(String value, String label) {
-    select.child(optionElement(Option.of(value, label)));
+  /// Selects the first option whose value matches on insertion and native form reset. Use ordinary
+  /// options with this default so there is one source of initial selection.
+  public Select initialValue(String value) {
+    select.initialValue(value);
     return this;
   }
 
-  /// Adds an option submitting `value` and showing `label`, selected on load.
-  public Select selectedOption(String value, String label) {
-    select.child(optionElement(Option.selected(value, label)));
+  /// Adds an option submitting `value` and showing `label`.
+  public Select option(String value, String label) {
+    select.child(Elements.option(value, label));
     return this;
   }
 
   /// Adds an `<optgroup>` labelled `label` holding `options`.
   public Select optgroup(String label, List<Option> options) {
     var group = Elements.optgroup(label);
-    options.forEach(option -> group.child(optionElement(option)));
+    options.forEach(option -> group.child(Elements.option(option.value, option.label)));
     select.child(group);
     return this;
   }
@@ -155,10 +147,5 @@ public final class Select extends BuiltinScope<Select> {
                     .on(State.HOVER, h -> h.bg(Tokens.SURFACE_SUBTLE)))
         .select(":scope option::checkmark", s -> s.textColor(Tokens.ACCENT_PRIMARY))
         .select(":scope::picker-icon", s -> s.textColor(Tokens.TEXT_MUTED));
-  }
-
-  private static TagElement optionElement(Option option) {
-    return Elements.option(option.value, option.label)
-        .onlyIf(option.selected, el -> el.boolAttr("selected"));
   }
 }

@@ -96,28 +96,28 @@ Handlers run synchronously within the browser's dispatch and user activation, so
 
 ## Bind form values
 
-Initial HTML and live state are separate. `LiveElement.value(String)`, `checked(boolean)` and `selectedValues(List<String>)` control the current value, checked state or multiple-select selection; attributes such as `value`, `checked` and `selected` on the portable element still describe the initial markup.
+Set native defaults on the portable host with `initialValue`, `initialChecked`, or `initialSelectedValues`. Use `bindValue`, `bindChecked`, or `bindSelectedValues` on the live wrapper to apply application state. The binding sets the current property from the first mount onward. The portable default stays the baseline for native form reset.
 
 ```java
-var enabled = LiveElement.of(Elements.input("checkbox")).checked(state.enabled)
-    .on("change", event -> {
-      state.enabled = event.control().checked();
-      root.invalidate();
-    });
-var picks = LiveElement.of(Elements.select().boolAttr("multiple")).selectedValues(state.picks)
-    .on("change", event -> {
-      state.picks = event.control().selectedValues();
-      root.invalidate();
-    });
+var enabled = LiveElement.of(Elements.input("checkbox").initialChecked(true))
+    .bindChecked(state.enabled)
+    .onCheckedChange(checked -> root.update(() -> state.enabled = checked).run());
+var picks = LiveElement.of(Elements.select().boolAttr("multiple")
+        .initialSelectedValues(List.of("en"))
+        .children(Elements.option("en", "English"), Elements.option("pt", "Portuguese")))
+    .bindSelectedValues(state.picks)
+    .onSelectedValuesChange(values -> root.update(() -> state.picks = values).run());
 ```
 
-| Binding | Accepted hosts | Event data |
+| Binding | Accepted hosts | Change callback |
 | --- | --- | --- |
-| `value(String)` | Input other than file, textarea, single select | `ControlState.value()` |
-| `checked(boolean)` | Checkbox or radio input | `ControlState.checked()` |
-| `selectedValues(List<String>)` | Multiple select | `ControlState.selectedValues()` |
+| `bindValue(String)` | Input with an editable value, textarea, single select | `onValueChange` reports the value on `input` |
+| `bindChecked(boolean)` | Checkbox or radio input | `onCheckedChange` reports checked state on `change` |
+| `bindSelectedValues(List<String>)` | Multiple select | `onSelectedValuesChange` reports the selected values in option order on `input` |
 
-Another host reports `control-value`, `control-checked` or `control-selection`. Each render compares the desired value with the control's actual state: equal values are not written, so caret, selection and focus survive unrelated updates, and different values are written even when Java state did not change, which restores an edit the application rejected. While an input method composes text (`ControlState.composing()`), value writes wait for the composition to end. A render that leaves a binding off hands the control back to the browser without changing its initial attributes.
+Each callback observes the user's edit. Update application state and trigger a render to accept it. A render reapplies an unchanged binding if the user edited the control. Removing a binding hands the current state back to the browser. While an input method composes text, value writes wait for composition to finish.
+
+Native form reset restores the insertion defaults. A later render reapplies any live bindings, so an application that wants reset to update both needs to update its state in the form's `reset` handler as well. Change the control's key when the application needs new native defaults.
 
 ## Give children stable identities
 

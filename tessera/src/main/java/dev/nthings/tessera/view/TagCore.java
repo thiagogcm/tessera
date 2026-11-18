@@ -2,6 +2,7 @@ package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
+import dev.nthings.tessera.internal.authoring.InitialControl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,11 @@ import org.jspecify.annotations.Nullable;
 /// The parts of an element that linking passes through unchanged, shared by the expanded
 /// [ViewNode.Tag] and the linked [ViewSnapshot.Tag] it becomes.
 record TagCore<M>(
-    TagName tag, Location location, @Nullable M payload, Map<String, String> liveProperties) {
+    TagName tag,
+    Location location,
+    @Nullable M payload,
+    Map<String, String> liveProperties,
+    InitialControl initial) {
 
   TagCore {
     liveProperties = readOnly(liveProperties);

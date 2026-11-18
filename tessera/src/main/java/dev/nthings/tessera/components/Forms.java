@@ -87,7 +87,7 @@ public final class Forms {
   /// thumb.
   ///
   /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
-  /// background layer that slides when checked. It starts off; add `boolAttr("checked")` to start
+  /// background layer that slides when checked. It starts off; add `initialChecked(true)` to start
   /// it on. Use [#switchField(String, String)] to add a label.
   public static TagElement switchInput(String name) {
     return Elements.input("checkbox")
@@ -128,7 +128,7 @@ public final class Forms {
   /// Labelled switch row that is on (checked) on load; otherwise the same as [#switchField(String,
   /// String)].
   public static TagElement checkedSwitchField(String label, String name) {
-    return switchRow(label, name, switchInput(name).boolAttr("checked"));
+    return switchRow(label, name, switchInput(name).initialChecked(true));
   }
 
   private static TagElement switchRow(String label, String name, TagElement input) {

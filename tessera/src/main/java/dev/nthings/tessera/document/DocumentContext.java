@@ -1,6 +1,7 @@
 package dev.nthings.tessera.document;
 
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
 import java.util.List;
@@ -35,5 +36,5 @@ public interface DocumentContext extends ViewContext {
   /// Headings collected so far on this page, in collection order. A late callback sees every
   /// heading collected from the body. The first heading for a target is kept. An unbound target
   /// reports `unbound-reference` when the document is linked.
-  List<DocumentHeading> headings();
+  List<OutlineHeading> headings();
 }

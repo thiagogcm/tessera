@@ -4,7 +4,7 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.view.ControlLowering;
-import dev.nthings.tessera.view.ViewExpansion.Reporter;
+import dev.nthings.tessera.view.DiagnosticReporter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +54,7 @@ record ControlProperties(
       TagName tag,
       Map<String, String> attributes,
       Location location,
-      Reporter reporter,
+      DiagnosticReporter reporter,
       Collection<EventListener> listeners) {
     var multiple = attributes.containsKey("multiple");
     if ((value != null || observes(listeners, Kind.VALUE))

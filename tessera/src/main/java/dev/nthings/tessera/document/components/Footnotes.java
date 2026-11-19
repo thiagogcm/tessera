@@ -17,6 +17,7 @@ import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ import java.util.Map;
 /// still cover every one. Its heading is an `<h2>` and is not a document-outline heading. Link
 /// names such as "Back to reference 1" are fixed English. A second list on the page repeats every
 /// note and reports `duplicate-id`.
-public final class Footnotes implements DocumentComponent {
+public final class Footnotes implements DocumentComponent, FluentBuilder<Footnotes> {
 
   /// One definition on the page, numbered by its first reference, with every later occurrence.
   static final class Entry {
@@ -79,6 +80,11 @@ public final class Footnotes implements DocumentComponent {
   /// Creates an endnotes list titled "Footnotes". Use one per page.
   public static Footnotes of() {
     return new Footnotes();
+  }
+
+  @Override
+  public Footnotes self() {
+    return this;
   }
 
   /// Sets the visible heading, which also names the list. The default is `Footnotes`.

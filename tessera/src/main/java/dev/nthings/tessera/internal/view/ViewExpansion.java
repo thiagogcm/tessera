@@ -1,4 +1,4 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Element;
@@ -11,16 +11,17 @@ import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.core.ViewException;
 import dev.nthings.tessera.css.Anchor;
 import dev.nthings.tessera.css.Declarations;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.ClassNames;
 import dev.nthings.tessera.internal.authoring.PortableNode;
 import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.css.CssAccess;
 import dev.nthings.tessera.internal.css.StyleSheet;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
+import dev.nthings.tessera.view.DiagnosticReporter;
+import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,21 +35,11 @@ import org.jspecify.annotations.Nullable;
 /// Shared expansion for one page or one live render. It expands portable authoring, establishes
 /// component and ID scopes, collects styles, and links the result. Each backend lowers its own
 /// placements using the same operations.
-public abstract sealed class ViewExpansion<M>
-    permits DocumentExpansion, ViewRenderer.LiveExpansion {
-
-  /// Backend-facing: where expansion and validation report what they find wrong, as a [Diagnostic]
-  /// of the expansion.
-  @FunctionalInterface
-  public interface Reporter {
-
-    /// Reports `rule` at `location`.
-    void report(Location location, String rule, String message, String fix);
-  }
+public abstract class ViewExpansion<M> {
 
   /// A component placement of any family: its authoring class, diagnostic name, call site and the
   /// expansion of its body in the component's context.
-  record Placement<M>(
+  public record Placement<M>(
       Class<?> type,
       @Nullable SourceLocation source,
       Function<ExpansionContext, ViewNode<M>> body) {
@@ -58,52 +49,57 @@ public abstract sealed class ViewExpansion<M>
   }
 
   private final ViewState state = new ViewState();
-  private final Reporter reporter = state::report;
+  private final DiagnosticReporter reporter =
+      (location, rule, message, fix) -> state.report(location, rule, message, fix);
   private final ExpansionRegistry registry = new ExpansionRegistry();
-  final ExpansionContext root;
-  final StyleSheet styles;
+  protected final ExpansionContext root;
+  protected final StyleSheet styles;
 
-  ViewExpansion(StyleSheet styles, ViewScope scope) {
+  protected ViewExpansion(StyleSheet styles, ViewScope scope) {
     this.styles = styles;
     root = new ExpansionContext(scope, this, List.of(), null, null, TagName.Namespace.HTML);
   }
 
-  final ViewNode<M> expandPortable(Element node, ExpansionContext context) {
+  protected final ViewNode<M> expandPortable(Element node, ExpansionContext context) {
     return switch (node) {
-      case PortableNode.Empty _ -> new ViewNode.Empty<>();
-      case PortableNode.Text(var text) -> new ViewSnapshot.Text<>(text);
       case FragmentElement fragment ->
           new ViewNode.Fragment<>(
               null,
               context.location(),
               children(AuthoringAccess.fragment(fragment), context, this::expandPortable));
-      case PortableNode.Keyed(var key, var content) ->
-          keyed(
-              key,
-              content.getClass(),
-              portablePlacement(content),
-              context,
-              child -> expandPortable(content, child));
       case TagElement tag -> tag(tag, null, _ -> List.of(), null, context);
-      case PortableNode.ScopePlacement(var scope, var source) ->
-          scope(
-              scope,
-              source,
-              context,
-              child ->
-                  tag(
-                      callback(child, "Expand", () -> scope.expand(child)),
-                      null,
-                      _ -> List.of(),
-                      null,
-                      child));
-      case PortableNode.ComponentPlacement component ->
-          component(portablePlacement(component), context);
+      default ->
+          switch (AuthoringAccess.portable(node)) {
+            case PortableNode.Empty _ -> new ViewNode.Empty<>();
+            case PortableNode.Text(var text) -> new ViewNode.Text<>(text);
+            case PortableNode.Keyed(var key, var content) ->
+                keyed(
+                    key,
+                    content.getClass(),
+                    portablePlacement(content),
+                    context,
+                    child -> expandPortable(content, child));
+            case PortableNode.ScopePlacement(var scope, var source) ->
+                scope(
+                    scope,
+                    source,
+                    context,
+                    child ->
+                        tag(
+                            callback(child, "Expand", () -> scope.expand(child)),
+                            null,
+                            _ -> List.of(),
+                            null,
+                            child));
+            case PortableNode.ComponentPlacement component ->
+                component(portablePlacement(component), context);
+          };
     };
   }
 
-  final @Nullable Placement<M> portablePlacement(Element node) {
-    return node instanceof PortableNode.ComponentPlacement component
+  protected final @Nullable Placement<M> portablePlacement(Element node) {
+    return !(node instanceof TagElement || node instanceof FragmentElement)
+            && AuthoringAccess.portable(node) instanceof PortableNode.ComponentPlacement component
         ? portablePlacement(component)
         : null;
   }
@@ -118,25 +114,23 @@ public abstract sealed class ViewExpansion<M>
                 child));
   }
 
-  final ViewNode<M> component(Placement<M> placement, ExpansionContext context) {
+  protected final ViewNode<M> component(Placement<M> placement, ExpansionContext context) {
     var child = context.withComponent(placement.name(), placement.source());
     return boundary(null, placement.type(), child, placement.body().apply(child));
   }
 
-  RuntimeException failureContext(Diagnostic diagnostic) {
-    return new ViewException(List.of(diagnostic));
-  }
+  protected abstract RuntimeException failureContext(Diagnostic diagnostic);
 
   /// Compiles the values of this element's live declarations for this backend.
-  abstract Map<String, String> liveDeclarations(Declarations live, Declarations into);
+  protected abstract Map<String, String> liveDeclarations(Declarations live, Declarations into);
 
   /// Validates a host's backend-specific bindings while its authoring location is available.
-  void validateHost(
+  protected void validateHost(
       @Nullable M payload, TagName tag, Map<String, String> attributes, Location location) {}
 
   /// Opens the id scope of `scope`, registers its styles and marks the explicit host that `host`
   /// expands in the scope's context with `data-scope` and `data-scope-id`.
-  final ViewNode<M> scope(
+  protected final ViewNode<M> scope(
       ScopeDefinition scope,
       @Nullable SourceLocation source,
       ExpansionContext context,
@@ -194,11 +188,8 @@ public abstract sealed class ViewExpansion<M>
     return encoded.toString();
   }
 
-  /// Expands keyed `content` in the context [#keyedContext] made for it. A generated enclosing id
-  /// scope reports `generated-scope-id` once for this key, then expansion continues. A component or
-  /// fragment keeps its own boundary and takes the key on it; anything else is wrapped so the key
-  /// still names one sibling.
-  final ViewNode<M> keyed(
+  /// Expands keyed `content` in the context [#keyedContext] made for it.
+  protected final ViewNode<M> keyed(
       String key,
       Class<?> definition,
       @Nullable Placement<M> component,
@@ -231,15 +222,6 @@ public abstract sealed class ViewExpansion<M>
     };
   }
 
-  /// The context of keyed content and a component path entry naming the key. A keyed component
-  /// takes the key on its own entry instead of gaining another.
-  ///
-  /// Its slug depends only on the enclosing id scope, the [ExpansionContext#keyOwner()] and the
-  /// key, never on a sibling index. A generated id anywhere in that enclosing scope is reported as
-  /// `generated-scope-id`, because that counter does change when siblings move: `key-<hex key>`
-  /// without an owner and `<owner>-key-<hex key>` with one. The key's hexadecimal UTF-16 units
-  /// contain no `-`, so the slug splits back at its last `-key-` and distinct keys or owner slugs
-  /// never share a scope.
   private static ExpansionContext keyedContext(
       String key, @Nullable Placement<?> component, ExpansionContext context) {
     var owner = context.keyOwner();
@@ -259,7 +241,7 @@ public abstract sealed class ViewExpansion<M>
 
   /// Runs an authoring callback; a failure keeps its type and gains the component path as a
   /// suppressed diagnostic from the backend.
-  final <T> T callback(ExpansionContext context, String phase, Supplier<T> work) {
+  protected final <T> T callback(ExpansionContext context, String phase, Supplier<T> work) {
     try {
       return work.get();
     } catch (RuntimeException failure) {
@@ -275,7 +257,7 @@ public abstract sealed class ViewExpansion<M>
   }
 
   /// Lays out `nodes` in order, dropping those that emit nothing.
-  final <N> List<ViewNode<M>> children(
+  protected final <N> List<ViewNode<M>> children(
       List<N> nodes,
       ExpansionContext context,
       BiFunction<N, ExpansionContext, ViewNode<M>> expand) {
@@ -290,7 +272,7 @@ public abstract sealed class ViewExpansion<M>
   }
 
   /// Expands a portable host, then any additional children its backend contributes.
-  ViewNode.Tag<M> tag(
+  protected ViewNode.Tag<M> tag(
       TagElement host,
       @Nullable String forcedId,
       Function<ExpansionContext, List<ViewNode<M>>> extra,
@@ -318,7 +300,7 @@ public abstract sealed class ViewExpansion<M>
     }
     if (domId != null) {
       attrs.put("id", domId);
-      location = location.withDomId(domId);
+      location = ViewState.withDomId(location, domId);
     }
     validateHost(payload, tagName, attrs, location);
     validateNamespace(tagName, context.namespace(), location);
@@ -327,7 +309,6 @@ public abstract sealed class ViewExpansion<M>
     Map<String, String> live = Map.of();
     var liveStyle = element.live;
     if (liveStyle != null) {
-      // identityStyles returns the builder's own declarations or a fresh copy.
       if (style == element.style) {
         style = new Declarations().mergeFrom(style);
       }
@@ -382,9 +363,6 @@ public abstract sealed class ViewExpansion<M>
     return node;
   }
 
-  /// An element must belong to the namespace its parent establishes, or an HTML parser and a DOM
-  /// backend would put it in different namespaces: SVG content needs an `svg` root, and HTML
-  /// content cannot sit inside SVG.
   private void validateNamespace(TagName tag, TagName.Namespace parent, Location location) {
     if (tag.namespace() == parent || tag == SvgTag.SVG) {
       return;
@@ -404,7 +382,6 @@ public abstract sealed class ViewExpansion<M>
     }
   }
 
-  /// Adds declarations derived from identity: anchor names and view-transition keys.
   private Declarations identityStyles(TagData element, @Nullable String domId, Location location) {
     var anchor = element.anchorTarget;
     var transition = element.transitionKey;
@@ -428,9 +405,6 @@ public abstract sealed class ViewExpansion<M>
     return style;
   }
 
-  /// Pairs `anchor-name` on the anchor with `position-anchor` on the elements anchored to it. A
-  /// page-level id may hold characters a dashed ident cannot, such as `.` or `ü`: those are
-  /// replaced and a hash of the id keeps distinct ids apart.
   private static Anchor anchorIdent(String domId) {
     var sanitized = Fnv1a64.sanitizeIdentifier(domId);
     if (sanitized.equals(domId)) {
@@ -440,9 +414,6 @@ public abstract sealed class ViewExpansion<M>
     return Anchor.named("anchor-" + sanitized + "-" + hash);
   }
 
-  /// The name keyed descendants of an element bound to `refs` are told apart by: its first named
-  /// ref's name, without leading or trailing `-` so it never forms the `--` scope separator, or
-  /// `null` when no ref is named.
   private static @Nullable String keyOwner(List<ElementRef> refs) {
     for (var ref : refs) {
       var name = AuthoringAccess.reference(ref).name();
@@ -454,8 +425,7 @@ public abstract sealed class ViewExpansion<M>
     return null;
   }
 
-  /// Resolves references, late slots and tooltip companions of `node` into linked nodes. Call it
-  /// once every element of the expansion is expanded, so every ref is bound.
+  /// Resolves references, late slots and tooltip companions of `node` into linked nodes.
   public List<ViewSnapshot.Node<M>> link(ViewNode<M> node) {
     return new ReferenceLinker<M>(state).link(node);
   }
@@ -471,7 +441,7 @@ public abstract sealed class ViewExpansion<M>
     return registry;
   }
 
-  Reporter reporter() {
+  public DiagnosticReporter reporter() {
     return reporter;
   }
 
@@ -495,7 +465,7 @@ public abstract sealed class ViewExpansion<M>
     return state.transitions();
   }
 
-  Map<ElementRef, String> references() {
+  public Map<ElementRef, String> references() {
     return state.references();
   }
 }

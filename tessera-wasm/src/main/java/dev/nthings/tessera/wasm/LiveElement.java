@@ -3,6 +3,7 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.view.LiveNode;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /// A portable host element with live behavior: Java event handlers, controlled form properties and
@@ -21,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 /// LiveElement.of(Button.of("Save").element()).onClick(root.update(this::save));
 /// LiveElement.of(Forms.text("name")).bindValue(name).onValueChange(value -> name = value);
 /// ```
-public final class LiveElement implements LiveContent {
+public final class LiveElement implements LiveContent, FluentBuilder<LiveElement> {
 
   private final TagElement host;
   private final Map<EventListener.Key, EventListener> events = new LinkedHashMap<>();
@@ -36,6 +38,11 @@ public final class LiveElement implements LiveContent {
   /// Wraps `host`, whose attributes, styles and children are read on each render.
   public static LiveElement of(TagElement host) {
     return new LiveElement(host);
+  }
+
+  @Override
+  public LiveElement self() {
+    return this;
   }
 
   /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input` or
@@ -139,6 +146,15 @@ public final class LiveElement implements LiveContent {
     return child(Elements.text(text));
   }
 
+  /// Adds portable children in order.
+  public LiveElement children(IntoElement first, IntoElement... rest) {
+    child(first);
+    for (var child : rest) {
+      child(child);
+    }
+    return this;
+  }
+
   /// Adds each live child in order.
   public LiveElement children(LiveContent... children) {
     for (var child : children) {
@@ -152,6 +168,12 @@ public final class LiveElement implements LiveContent {
     for (var child : children) {
       append(LivePlacement.capture(child));
     }
+    return this;
+  }
+
+  /// Adds each live child from `stream` in order. The stream is consumed.
+  public LiveElement children(Stream<? extends LiveContent> stream) {
+    stream.forEach(this::child);
     return this;
   }
 

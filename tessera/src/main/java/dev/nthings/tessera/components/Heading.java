@@ -5,10 +5,11 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.document.DocumentHeading;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,8 @@ import org.jspecify.annotations.Nullable;
 /// outline, aimed at `target`. Dialog titles, footnote chrome, and other interface headings leave
 /// the outline unset. [#id(ElementRef)] binds an anchor on the heading element itself; a section
 /// can aim the outline at the section instead.
-public final class Heading extends BuiltinComponent implements ParentElement<Heading> {
+public final class Heading extends BuiltinComponent
+    implements ParentElement<Heading>, FluentBuilder<Heading> {
 
   private final int level;
   private final String label;
@@ -88,7 +90,7 @@ public final class Heading extends BuiltinComponent implements ParentElement<Hea
       tag.id(anchor);
     }
     if (outlineTarget != null) {
-      AuthoringAccess.tag(tag).navigationHeading = new DocumentHeading(outlineTarget, label, level);
+      AuthoringAccess.tag(tag).navigationHeading = new OutlineHeading(outlineTarget, label, level);
     }
     var styled = presentation == null ? tag : presentation.apply(tag);
     return styled.children(children);

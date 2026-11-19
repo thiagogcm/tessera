@@ -5,6 +5,7 @@ import dev.nthings.tessera.components.Drawer;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.view.WidgetAccess;
 import java.util.ArrayDeque;
 import java.util.function.Function;
@@ -12,7 +13,7 @@ import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
 /// Adapts a native dialog or drawer to browser-owned or application-owned open state.
-public final class LiveDialog implements LiveComponent {
+public final class LiveDialog extends BuiltinLiveComponent implements FluentBuilder<LiveDialog> {
 
   /// The native operation used to open the dialog.
   public enum Mode {
@@ -41,6 +42,11 @@ public final class LiveDialog implements LiveComponent {
   /// Adapts the portable drawer.
   public static LiveDialog of(Drawer drawer) {
     return new LiveDialog(drawer, drawer::triggerButton);
+  }
+
+  @Override
+  public LiveDialog self() {
+    return this;
   }
 
   /// Chooses modal or non-modal openings. Defaults to modal for a closed portable dialog.
@@ -81,7 +87,7 @@ public final class LiveDialog implements LiveComponent {
   }
 
   @Override
-  public LiveContent expand(LiveContext context) {
+  LiveContent expand(LiveContext context) {
     return new WidgetScope(
         WidgetAccess.scope(dialog),
         scope -> {

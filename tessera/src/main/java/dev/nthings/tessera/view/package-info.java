@@ -1,7 +1,6 @@
-/// Shared rendering internals. [ViewExpansion] expands portable content and scopes, collects CSS,
-/// and links references. [DocumentExpansion] lowers static placements and [ViewRenderer] lowers
-/// live placements. [ViewValidation] checks linked element, reference and accessibility semantics.
-/// The module exports this package only to the browser backend.
+/// Live-rendering facade exported only to the browser backend (`dev.nthings.tessera.wasm`).
+/// [ViewRenderer] expands live placements into linked [ViewSnapshot] trees with [EmbeddedRule]s;
+/// [WidgetAccess] and [ControlLowering] expose portable widget structure and control semantics.
 @NullMarked
 @SourceBoundary
 package dev.nthings.tessera.view;

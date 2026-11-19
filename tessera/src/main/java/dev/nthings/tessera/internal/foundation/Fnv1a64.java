@@ -1,4 +1,4 @@
-package dev.nthings.tessera.foundation;
+package dev.nthings.tessera.internal.foundation;
 
 /// Compiler-facing: deterministic 64-bit FNV-1a hashing, and the identifier sanitization used for
 /// DOM ids, transition names and group names. Hashes are the same on every JVM run.

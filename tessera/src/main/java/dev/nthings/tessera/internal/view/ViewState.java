@@ -1,11 +1,11 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TransitionKey;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,7 +96,7 @@ final class ViewState {
         id = candidate;
       } else if (!candidate.equals(id)) {
         report(
-            location.withDomId(id),
+            withDomId(location, id),
             "conflicting-element-id",
             "<"
                 + location.tag()
@@ -123,9 +123,19 @@ final class ViewState {
         scope.keyed() && (named == null || !AuthoringAccess.reference(named).pageLevel());
     registerId(
         id,
-        location.withDomId(id),
+        withDomId(location, id),
         scopedInKeyedContent ? DUPLICATE_KEYED_ID_FIX : DUPLICATE_ID_FIX);
     return id;
+  }
+
+  static Location withDomId(Location location, String domId) {
+    return new Location(
+        location.route(),
+        location.page(),
+        location.components(),
+        location.tag(),
+        domId,
+        location.source());
   }
 
   /// DOM id bound to `ref`, or `null` when ambiguous or unbound (unbound is reported).

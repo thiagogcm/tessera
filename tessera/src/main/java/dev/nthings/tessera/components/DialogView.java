@@ -15,8 +15,8 @@ import dev.nthings.tessera.css.CssFilter;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Tone;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.DialogParts;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.DialogParts;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
   static {
-    WidgetAccess.registerDialog((source, context) -> {
+    WidgetBridge.registerDialog((source, context) -> {
       var view = (DialogView<?>) source;
       return new DialogParts(view.closedDialog(context), view.opened);
     });

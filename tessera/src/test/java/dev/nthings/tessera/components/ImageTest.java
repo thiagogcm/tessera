@@ -7,6 +7,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.components.HeroImage;
 import dev.nthings.tessera.support.Diagnostics;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
@@ -24,10 +25,10 @@ class ImageTest {
   void heroIsPreloadedAndOthersAreLazy() {
     var page =
         renderDocumentMain(
-            Image.of("/assets/hero-banner.webp", "Hero Banner")
-                .dimensions(1280, 720)
-                .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))
-                .hero(),
+            HeroImage.of(
+                Image.of("/assets/hero-banner.webp", "Hero Banner")
+                    .dimensions(1280, 720)
+                    .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))),
             DocumentContent.of(
                 Image.of("/assets/thumbnail.webp", "Thumbnail").dimensions(400, 300)));
 
@@ -66,14 +67,14 @@ class ImageTest {
     var found =
         Diagnostics.of(() ->
             renderDocumentMain(
-                Image.of("/hero1.webp", "Hero 1").dimensions(800, 400).hero(),
-                Image.of("/hero2.webp", "Hero 2").dimensions(800, 400).hero()));
+                HeroImage.of(Image.of("/hero1.webp", "Hero 1").dimensions(800, 400)),
+                HeroImage.of(Image.of("/hero2.webp", "Hero 2").dimensions(800, 400))));
 
     assertThat(found)
         .singleElement()
         .satisfies(d -> {
           assertThat(d.rule()).isEqualTo("duplicate-hero-image");
-          assertThat(d.components()).containsExactly("Image");
+          assertThat(d.components()).containsExactly("HeroImage");
         });
   }
 

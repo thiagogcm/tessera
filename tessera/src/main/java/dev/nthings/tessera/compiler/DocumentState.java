@@ -6,7 +6,7 @@ import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.PageScript;
-import dev.nthings.tessera.internal.authoring.DocumentNode;
+import dev.nthings.tessera.internal.document.DocumentNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -17,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 
 /// The document side of one page compilation: head contributions, client behaviors and end-of-body
 /// sections, as the [DocumentPass] backend receives them. Expansion state and headings live in the
-/// expansion's [dev.nthings.tessera.view.ExpansionRegistry], as in every backend.
+/// expansion's `ExpansionRegistry`, as in every backend.
 final class DocumentState {
 
   private final List<Contribution<DocumentNode>> headElements = new ArrayList<>();

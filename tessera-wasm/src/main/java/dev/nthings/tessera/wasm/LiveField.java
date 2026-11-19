@@ -2,12 +2,13 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Field.Validation;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.view.WidgetAccess;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /// A portable field whose control supports live bindings and application-supplied validation.
-public final class LiveField implements LiveComponent {
+public final class LiveField extends BuiltinLiveComponent implements FluentBuilder<LiveField> {
 
   private final Field field;
   private final Consumer<LiveElement> bindControl;
@@ -24,6 +25,11 @@ public final class LiveField implements LiveComponent {
     return new LiveField(field, bindControl);
   }
 
+  @Override
+  public LiveField self() {
+    return this;
+  }
+
   /// Supplies the current validation state. Set `invalid` to false to clear the error.
   public LiveField validation(boolean invalid, @Nullable String message) {
     validation = new Validation(invalid, message);
@@ -31,7 +37,7 @@ public final class LiveField implements LiveComponent {
   }
 
   @Override
-  public LiveContent expand(LiveContext context) {
+  LiveContent expand(LiveContext context) {
     return new WidgetScope(
         WidgetAccess.scope(field),
         _ -> {

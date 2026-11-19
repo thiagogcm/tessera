@@ -1,5 +1,6 @@
 package dev.nthings.tessera.css;
 
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -13,12 +14,17 @@ import java.util.Set;
 /// and a starting style ([Declarations#startingStyle(StyleBlock)]), which nest inside that rule.
 /// [#on(Condition.Query, ScopeBlock)] groups whole rules under a media feature or a container
 /// query.
-public final class ScopeStyle {
+public final class ScopeStyle implements FluentBuilder<ScopeStyle> {
 
   private final Map<String, Declarations> selectorRules = new LinkedHashMap<>();
   private final Map<Condition.Query, ScopeStyle> queryBlocks = new LinkedHashMap<>();
 
   ScopeStyle() {}
+
+  @Override
+  public ScopeStyle self() {
+    return this;
+  }
 
   /// Styles the scope's root element, `:scope`.
   public ScopeStyle root(StyleBlock styles) {

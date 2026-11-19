@@ -1,6 +1,7 @@
 package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.internal.authoring.PortableNode;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
 
 /// Portable stateless component, typically a record or a lambda, for composition without an id
 /// scope of its own: the ids it binds live in the enclosing scope. It receives only a [ViewContext]
@@ -16,6 +17,7 @@ public interface Component extends IntoElement {
 
   @Override
   default Element intoElement() {
-    return PortableNode.component(getClass(), this);
+    return new PortablePlacement(
+        new PortableNode.ComponentPlacement(this, getClass(), SourceProvenance.capture()));
   }
 }

@@ -2,12 +2,12 @@ package dev.nthings.tessera.internal.authoring;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Declarations;
-import dev.nthings.tessera.document.DocumentHeading;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +37,7 @@ public final class TagData {
   public boolean anchorSelf;
   public @Nullable ElementRef anchorTarget;
   public @Nullable TransitionKey transitionKey;
-  public @Nullable DocumentHeading navigationHeading;
+  public @Nullable OutlineHeading navigationHeading;
 
   public TagData(TagName tag, @Nullable SourceLocation source) {
     this.tag = tag;

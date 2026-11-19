@@ -16,6 +16,6 @@ public interface Scope extends ScopeDefinition, IntoElement {
 
   @Override
   default Element intoElement() {
-    return new PortableNode.ScopePlacement(this, SourceProvenance.capture());
+    return new PortablePlacement(new PortableNode.ScopePlacement(this, SourceProvenance.capture()));
   }
 }

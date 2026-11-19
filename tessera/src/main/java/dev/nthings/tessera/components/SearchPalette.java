@@ -35,10 +35,10 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
 import dev.nthings.tessera.internal.components.Icons;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.SearchLink;
-import dev.nthings.tessera.view.WidgetAccess.SearchParts;
-import dev.nthings.tessera.view.WidgetAccess.SearchResult;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchLink;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchParts;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchResult;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,7 +56,7 @@ import org.jspecify.annotations.Nullable;
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   static {
-    WidgetAccess.registerSearch((palette, _) -> palette.render());
+    WidgetBridge.registerSearch((palette, _) -> palette.render());
   }
 
   /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is

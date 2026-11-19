@@ -3,9 +3,9 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Location;
-import dev.nthings.tessera.core.ViewException;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.view.EmbeddedStyles;
+import dev.nthings.tessera.view.ViewException;
 import dev.nthings.tessera.view.ViewRenderer;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayList;
@@ -63,8 +63,8 @@ public final class BrowserRoot implements AutoCloseable {
   private Set<String> committedIds = Set.of();
 
   private final List<Runnable> afterRender = new ArrayList<>();
-  private final Theme theme = Theme.defaults();
-  private final StyleSink.Root styles = StyleSink.shared().root(theme);
+  private final Theme theme;
+  private final StyleSink.Root styles;
   private final String hostId;
   private final Scheduling scheduling;
   private @Nullable JSObject pending;
@@ -73,8 +73,10 @@ public final class BrowserRoot implements AutoCloseable {
   private int selfInvalidations;
   private boolean closed;
 
-  private BrowserRoot(String hostId, Scheduling scheduling, LiveComponent view) {
+  private BrowserRoot(String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
     this.hostId = hostId;
+    this.theme = theme;
+    this.styles = StyleSink.shared().root(theme);
     this.scheduling = scheduling;
     this.hostElement = Dom.host(hostId);
     this.renderer = new DomReconciler(hostElement, hostId, this::invalidate, () -> !closed);
@@ -82,11 +84,25 @@ public final class BrowserRoot implements AutoCloseable {
     this.services = new Host(this, lifetime);
   }
 
-  /// Mounts with the default scheduling limits.
+  /// Mounts with [Theme#defaults()] and the default scheduling limits.
   ///
   /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
   public static BrowserRoot mount(String hostId, LiveComponent view) {
-    return mount(hostId, Scheduling.DEFAULT, view);
+    return mount(hostId, Theme.defaults(), Scheduling.DEFAULT, view);
+  }
+
+  /// Mounts with `theme` and the default scheduling limits.
+  ///
+  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
+  public static BrowserRoot mount(String hostId, Theme theme, LiveComponent view) {
+    return mount(hostId, theme, Scheduling.DEFAULT, view);
+  }
+
+  /// Mounts with [Theme#defaults()] and `scheduling`.
+  ///
+  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
+  public static BrowserRoot mount(String hostId, Scheduling scheduling, LiveComponent view) {
+    return mount(hostId, Theme.defaults(), scheduling, view);
   }
 
   /// The view receives a [LiveContext] whose [LiveContext#root()] is this root, and returns live
@@ -94,8 +110,9 @@ public final class BrowserRoot implements AutoCloseable {
   ///
   /// The first render runs synchronously. A rejected candidate keeps the host's fallback content,
   /// and a later invalidation retries. Other roots mount independently.
-  public static BrowserRoot mount(String hostId, Scheduling scheduling, LiveComponent view) {
-    var root = new BrowserRoot(hostId, scheduling, view);
+  public static BrowserRoot mount(
+      String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
+    var root = new BrowserRoot(hostId, theme, scheduling, view);
     var conflict = Dom.mountConflict(root.hostElement, EmbeddedStyles.ROOT_ATTRIBUTE);
     if (conflict != null) {
       throw new IllegalStateException(

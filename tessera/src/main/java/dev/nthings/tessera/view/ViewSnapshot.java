@@ -14,9 +14,9 @@ import org.jspecify.annotations.Nullable;
 /// is final output; a document backend links the same [Node]s without a snapshot.
 ///
 /// - `roots`: the top-level nodes.
-/// - `styleRules`: this render's self-contained embedded rules (`StyleSheet#embeddedRules()`), each
-///   with a short key that identifies its text; an embedder may insert each one independently,
-///   deduplicate them across roots and keep them, by key, for later renders.
+/// - `styleRules`: this render's self-contained embedded rules, each with a short key that
+///   identifies its text; an embedder may insert each one independently, deduplicate them across
+///   roots and keep them, by key, for later renders.
 /// - `references`: each element ref bound in this tree and its DOM id, so a backend can find the
 ///   committed element of a ref.
 /// - `ids`: every DOM id the tree renders, generated or explicit, so a backend can detect
@@ -58,36 +58,56 @@ public record ViewSnapshot<M>(
 
   /// A linked element. `unresolvedAttributes` names reference attributes whose targets were
   /// reported missing or ambiguous, so validators skip secondary errors for them. `liveProperties`
-  /// are the custom properties a live backend sets on the element for its live styles. Only linking
-  /// builds one, reusing the expanded element's collections.
+  /// are the custom properties a live backend sets on the element for its live styles.
   public static final class Tag<M> implements Node<M> {
-    private final TagCore<M> core;
+    private final TagName tag;
+    private final Location location;
+    private final @Nullable M payload;
+    private final Map<String, String> liveProperties;
     private final Map<String, String> attributes;
     private final Set<String> unresolvedAttributes;
     private final List<Node<M>> children;
     private final Defaults defaults;
 
-    Tag(
-        TagCore<M> core,
+    public Tag(
+        TagName tag,
+        Location location,
+        @Nullable M payload,
+        Map<String, String> liveProperties,
         Map<String, String> attributes,
         Set<String> unresolvedAttributes,
         List<Node<M>> children,
         Defaults defaults) {
-      this.core = core;
-      this.attributes = TagCore.readOnly(attributes);
-      this.unresolvedAttributes = TagCore.readOnly(unresolvedAttributes);
-      this.children = TagCore.readOnly(children);
+      this.tag = tag;
+      this.location = location;
+      this.payload = payload;
+      this.liveProperties = readOnly(liveProperties);
+      this.attributes = readOnly(attributes);
+      this.unresolvedAttributes = readOnly(unresolvedAttributes);
+      this.children = readOnly(children);
       this.defaults = defaults;
+    }
+
+    private static <K, V> Map<K, V> readOnly(Map<K, V> map) {
+      return map.isEmpty() ? Map.of() : Collections.unmodifiableMap(map);
+    }
+
+    private static <T> List<T> readOnly(List<T> list) {
+      return list.isEmpty() ? List.of() : Collections.unmodifiableList(list);
+    }
+
+    private static <T> Set<T> readOnly(Set<T> set) {
+      return set.isEmpty() ? Set.of() : Collections.unmodifiableSet(set);
     }
 
     /// The element's tag.
     public TagName tag() {
-      return core.tag();
+      return tag;
     }
 
     /// Where the element was built.
     public Location location() {
-      return core.location();
+      return location;
     }
 
     /// The attributes, reference attributes resolved.
@@ -102,12 +122,12 @@ public record ViewSnapshot<M>(
 
     /// Metadata attached by the backend, such as a browser host's bindings.
     public @Nullable M payload() {
-      return core.payload();
+      return payload;
     }
 
     /// The custom properties to set on the element for its live styles.
     public Map<String, String> liveProperties() {
-      return core.liveProperties();
+      return liveProperties;
     }
 
     /// The control markup that is applied only when the element is inserted.
@@ -115,9 +135,18 @@ public record ViewSnapshot<M>(
       return defaults;
     }
 
-    Tag<M> withControlMarkup(
+    /// Copies this tag with lowered control markup.
+    public Tag<M> withControlMarkup(
         Map<String, String> attributes, List<Node<M>> children, Defaults defaults) {
-      return new Tag<>(core, attributes, unresolvedAttributes, children, defaults);
+      return new Tag<>(
+          tag,
+          location,
+          payload,
+          liveProperties,
+          attributes,
+          unresolvedAttributes,
+          children,
+          defaults);
     }
 
     /// The linked children.
@@ -127,8 +156,8 @@ public record ViewSnapshot<M>(
   }
 
   /// Text content, HTML-escaped when emitted.
-  public record Text<M>(String content) implements Node<M>, ViewNode<M> {}
+  public record Text<M>(String content) implements Node<M> {}
 
   /// A backend-owned leaf. The structural passes only need to know if it supplies readable text.
-  public record Special<M>(M payload, boolean readable) implements Node<M>, ViewNode<M> {}
+  public record Special<M>(M payload, boolean readable) implements Node<M> {}
 }

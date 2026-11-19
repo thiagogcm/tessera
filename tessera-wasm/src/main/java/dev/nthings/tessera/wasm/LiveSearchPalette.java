@@ -19,7 +19,7 @@ import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
 /// Search palette with a browser-owned query, matching results and keyboard navigation.
-public final class LiveSearchPalette implements LiveComponent {
+public final class LiveSearchPalette extends BuiltinLiveComponent {
   private static final Pattern MARKS = Pattern.compile("\\p{M}+");
   private static final Pattern SPACE = Pattern.compile("(?U)\\s+");
 
@@ -40,7 +40,7 @@ public final class LiveSearchPalette implements LiveComponent {
   }
 
   @Override
-  public LiveContent expand(LiveContext context) {
+  LiveContent expand(LiveContext context) {
     return new WidgetScope(
         WidgetAccess.scope(palette),
         scope -> {

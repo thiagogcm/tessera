@@ -1,4 +1,4 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;

@@ -13,6 +13,7 @@ import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.document.components.Footnotes;
+import dev.nthings.tessera.document.components.HeroImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,14 +38,14 @@ final class DocsPage {
 
   private static DocumentContent content(List<Demo> demos) {
     var hero =
-        Image.of(Art.DOCS_BANNER, "Tessera documentation banner")
-            .dimensions(1200, 480)
-            .element(img ->
-                img.transitionKey(OverviewPage.DOCS_HERO)
-                    .inlineSize(CssLength.pct(100))
-                    .rounded(CssLength.rem(0.75))
-                    .border(Border.hairline(Tokens.BORDER_SUBTLE)))
-            .hero();
+        HeroImage.of(
+            Image.of(Art.DOCS_BANNER, "Tessera documentation banner")
+                .dimensions(1200, 480)
+                .element(img ->
+                    img.transitionKey(OverviewPage.DOCS_HERO)
+                        .inlineSize(CssLength.pct(100))
+                        .rounded(CssLength.rem(0.75))
+                        .border(Border.hairline(Tokens.BORDER_SUBTLE))));
     var sections = new ArrayList<DocumentContent>(demos);
     sections.add(Footnotes.of().title("Notes"));
     return DocumentElement.of(div().flex().flexCol().gap(CssLength.rem(2)))
@@ -64,9 +65,8 @@ final class DocsPage {
                     "Images must declare dimensions or an aspect-ratio — the compiler rejects "
                         + "images that would cause layout shift. One hero per page is enforced."))
         .code(
-            "Image.of(src, \"Docs banner\").dimensions(1200, 480)",
-            "    .element(img -> img.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\")))",
-            "    .hero(); // document content: preloads the page's one hero image");
+            "HeroImage.of(Image.of(src, \"Docs banner\").dimensions(1200, 480)",
+            "    .element(img -> img.transitionKey(TransitionKey.of(\"docs-hero\", \"hero-morph\"))));");
   }
 
   private static Demo tableOfContents() {

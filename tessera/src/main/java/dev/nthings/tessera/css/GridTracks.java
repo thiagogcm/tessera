@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.foundation.Decimals;
+import dev.nthings.tessera.internal.foundation.Decimals;
 import java.util.List;
 
 /// The [GridTrack] implementations, built only through its static factories and [TrackList].

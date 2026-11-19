@@ -2,7 +2,7 @@ package dev.nthings.tessera.document;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.internal.authoring.DocumentNode;
+import dev.nthings.tessera.internal.document.DocumentNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,7 +23,7 @@ public final class Documents {
   /// `missing-fragment`, site link validation or the accessibility rules, so never pass
   /// user-controlled text. Browser roots do not accept raw HTML.
   public static DocumentContent rawHtml(String trustedHtml) {
-    return new DocumentNode.Raw(trustedHtml);
+    return new DocumentPlacement(new DocumentNode.Raw(trustedHtml));
   }
 
   /// Creates a `<script>` element of `type`, such as `module` or `speculationrules`, whose body is
@@ -63,7 +63,7 @@ public final class Documents {
 
   /// Moves document `child` to the end of `<body>` with `priority`.
   public static DocumentContent deferred(DocumentContent child, int priority) {
-    return new DocumentNode.Deferred(DocumentNode.capture(child), priority);
+    return new DocumentPlacement(new DocumentNode.Deferred(DocumentNode.capture(child), priority));
   }
 
   /// Creates content resolved after the rest of the page body is expanded, in the context where it
@@ -71,7 +71,7 @@ public final class Documents {
   /// Late content resolves first in, first out, before document-end sections and head
   /// contributions.
   public static DocumentContent late(Function<DocumentContext, ? extends DocumentContent> content) {
-    return new DocumentNode.Late(content);
+    return new DocumentPlacement(new DocumentNode.Late(content));
   }
 
   /// Declares a host for `view` from an already built `bundle`. The compiler validates and
@@ -86,8 +86,8 @@ public final class Documents {
     if (view.isBlank() || view.indexOf(0) >= 0) {
       throw new IllegalArgumentException("A Wasm mount needs a nonblank view name");
     }
-    return new DocumentNode.Mount(
-        ElementRef.page(id), view, bundle, DocumentNode.capture(fallback));
+    return new DocumentPlacement(
+        new DocumentNode.Mount(ElementRef.page(id), view, bundle, DocumentNode.capture(fallback)));
   }
 
   /// Declares a Wasm host with portable fallback content.
@@ -107,6 +107,6 @@ public final class Documents {
     for (var child : children) {
       nodes.add(DocumentNode.capture(child));
     }
-    return new DocumentNode.Fragment(nodes);
+    return new DocumentPlacement(new DocumentNode.Fragment(nodes));
   }
 }

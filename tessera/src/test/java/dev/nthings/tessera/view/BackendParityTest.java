@@ -26,6 +26,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
@@ -39,7 +40,6 @@ import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
-import dev.nthings.tessera.document.DocumentHeading;
 import dev.nthings.tessera.support.Diagnostics;
 import java.util.ArrayList;
 import java.util.List;
@@ -228,7 +228,7 @@ class BackendParityTest {
   private static final class OutlineEcho implements DocumentComponent {
     @Override
     public DocumentContent expand(DocumentContext context) {
-      var titles = context.headings().stream().map(DocumentHeading::title).toList();
+      var titles = context.headings().stream().map(OutlineHeading::title).toList();
       return DocumentContent.of(p().text(String.join(",", titles)));
     }
   }

@@ -27,15 +27,15 @@ The default artifact, `dev.nthings:tessera`, declares the Java module `dev.nthin
 
 | Package or artifact | Access and responsibility |
 | --- | --- |
-| `foundation` | Public fluent composition, Kotlin callback marker, deterministic hashing and identifiers |
+| `foundation` | Public fluent composition and Kotlin callback marker |
 | `css` | Public CSS values, tokens, declarations, and style callbacks. Serialization stays package-private |
-| `core` | Public portable elements, components, contexts, identities, and diagnostics |
-| `document` and `document.components` | Public document placement, assembly contracts, and document-only components |
-| `components` | Public portable widgets and document decorators for those widgets |
-| `compiler` | Public static compilation, resource, filesystem, and preview APIs. Coordination stays package-private |
+| `core` | Public portable elements, components, contexts, identities, outline headings, and diagnostics |
+| `document` and `document.components` | Public document placement, assembly contracts, `WasmBundle`/`GraalWebImage`, and document-only components |
+| `components` | Public portable widgets |
+| `compiler` | Public static compilation, resource, filesystem, and preview APIs. Coordination and document expansion stay package-private |
 | `navigation` | Public route-derived navigation |
-| `internal.authoring`, `internal.css`, `internal.components` | Unexported builder data, CSS collection, and shared component implementation |
-| `view` | Shared backend operations and linked snapshots, exported only to `dev.nthings.tessera.wasm` |
+| `internal.*` | Unexported builder data, document nodes, CSS collection, shared view engine, component bridges, and hashing/formatting utilities |
+| `view` | Live-rendering facade and linked snapshots, exported only to `dev.nthings.tessera.wasm` |
 | `tessera-wasm` | Public live authoring and host services. Reconciliation, live payloads, and the native DOM bridge stay package-private |
 | `tessera-showcase`, `tessera-wasm-showcase` | Public API examples and browser tests served over HTTP |
 
@@ -70,7 +70,7 @@ Built-in portable components expose factories and fluent configuration. Two pack
 | `BuiltinComponent` | Wraps a portable component without opening a new identity scope; uses its class name in diagnostics |
 | `BuiltinScope<B>` | Uses a private `Scope` adapter for the instance ID, stable scope name, styles, and host expansion |
 
-Components that number, collect, or preload across a page are document content: footnotes, the table of contents, the documentation layout, and the hero decorator returned by `Image.hero()`. `Section.withDocument(...)` returns a document section whose body continues with document content. Other built-in components are portable. An internal `Icons` helper builds structured SVG shared by portable and document widgets. `ContentTabs` and `SearchPalette` declare their bundled behaviors (`BundledBehavior.TABS`, `SEARCH`), and their markup stays readable without the scripts.
+Components that number, collect, or preload across a page live in `document.components`: `Footnote`, `Footnotes`, `TableOfContents`, `DocLayout`, `HeroImage.of(Image)`, and `DocumentSection.of(Section, ...)`. Other built-in components in `components` are strictly portable and have no dependency on `document`. An internal `Icons` helper builds structured SVG shared by portable and document widgets. `ContentTabs` and `SearchPalette` declare their bundled behaviors (`BundledBehavior.TABS`, `SEARCH`), and their markup stays readable without the scripts.
 
 `Modal` and `Drawer` share a `DialogView` base. `Button` and `IconButton` are scope-free: their references resolve in the caller's namespace. They carry no handlers; `element()` returns their `<button>` for a browser `LiveElement` to wrap. Components that own a tag, such as `Image`, expose an `ElementBlock` configuration callback.
 
@@ -96,9 +96,9 @@ Every callback receives a context derived from the package-private `view.Expansi
 
 A portable callback always receives the portable context, even inside document or live content, so it cannot reach another family's operations.
 
-`view.ExpansionRegistry` owns `ViewKey` state and headings for one expansion: one page compilation or one attempted live render. A rejected render discards it with the expansion. `compiler.DocumentState` owns head contributions, document-end sections, and scripts for static output. The hero decorator of `Image.hero()` uses expansion state to detect a second hero image.
+`internal.view.ExpansionRegistry` owns `ViewKey` state and headings for one expansion: one page compilation or one attempted live render. A rejected render discards it with the expansion. `compiler.DocumentState` owns head contributions, document-end sections, and scripts for static output. `HeroImage` uses expansion state to detect a second hero image.
 
-`DocumentHeading` is component-independent metadata collected from an element during expansion, not a context side effect. `Heading` carries an optional `DocumentHeading`. `ViewExpansion` records it in either backend, and no context registers headings. Linking resolves the reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
+`OutlineHeading` is component-independent metadata collected from an element during expansion, not a context side effect. `Heading` carries an optional `OutlineHeading`. `ViewExpansion` records it in either backend, and no context registers headings. Linking resolves the reference to a DOM ID for navigation and search. Search generation reads prepared heading metadata; it does not depend on a table-of-contents component. Other component registries remain local to their owners. Public contribution behavior is described in the [component guide](consumer-guide.md#contribute-document-content).
 
 ## Stylesheet assembly
 

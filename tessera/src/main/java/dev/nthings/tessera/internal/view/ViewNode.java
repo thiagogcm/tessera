@@ -1,4 +1,4 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
@@ -7,23 +7,27 @@ import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
-/// Backend-facing: expanded content before linking. Component boundaries, scope boundaries,
-/// fragments, late slots and tooltip companions exist only here; [ViewExpansion] links them into
-/// [ViewSnapshot] nodes. Text and backend-specific leaves need no linking and share their snapshot
-/// records.
+/// Expanded content before linking. Component boundaries, scope boundaries, fragments, late slots
+/// and tooltip companions exist only here; [ViewExpansion] links them into
+/// [dev.nthings.tessera.view.ViewSnapshot] nodes.
 public sealed interface ViewNode<M>
     permits ViewNode.Tag,
-        ViewSnapshot.Text,
+        ViewNode.Text,
         ViewNode.Boundary,
         ViewNode.ScopeBoundary,
         ViewNode.Fragment,
         ViewNode.Slot,
-        ViewSnapshot.Special,
+        ViewNode.Special,
         ViewNode.Empty {
 
+  /// Text content, HTML-escaped when emitted.
+  record Text<M>(String content) implements ViewNode<M> {}
+
+  /// A backend-owned leaf. The structural passes only need to know if it supplies readable text.
+  record Special<M>(M payload, boolean readable) implements ViewNode<M> {}
+
   /// The content of a component or keyed child, emitted without a wrapper. A scope looks through
-  /// this wrapper for its element host. `definition` identifies it among unkeyed siblings, as
-  /// [ViewSnapshot.Group#definition()] describes, and `key` is the sibling key, if any.
+  /// this wrapper for its element host.
   record Boundary<M>(
       @Nullable String key, Object definition, Location location, List<ViewNode<M>> children)
       implements ViewNode<M> {
@@ -33,8 +37,7 @@ public sealed interface ViewNode<M>
   }
 
   /// A scope's own sibling namespace, emitted without a wrapper. An enclosing scope does not look
-  /// through it or replace its host. `definition` is [dev.nthings.tessera.core.Scope#scopeName()],
-  /// stable across renders, and `key` is the sibling key when the scope itself is keyed.
+  /// through it or replace its host.
   record ScopeBoundary<M>(
       @Nullable String key, String definition, Location location, List<ViewNode<M>> children)
       implements ViewNode<M> {
@@ -44,7 +47,6 @@ public sealed interface ViewNode<M>
   }
 
   /// The children of a fragment, emitted without a wrapper; `key` is the sibling key, if any.
-  /// Unlike a [Boundary], a scope never looks through a fragment for its root element.
   record Fragment<M>(@Nullable String key, Location location, List<ViewNode<M>> children)
       implements ViewNode<M> {
     public Fragment {
@@ -74,32 +76,26 @@ public sealed interface ViewNode<M>
       this.companion = companion;
     }
 
-    /// The element's tag.
     public TagName tag() {
       return core.tag();
     }
 
-    /// Where the element was built.
     public Location location() {
       return core.location();
     }
 
-    /// The attributes, before reference attributes are resolved.
     public Map<String, String> attributes() {
       return attributes;
     }
 
-    /// Reference attributes, resolved to DOM ids when linked.
     public Map<String, IdReference> references() {
       return references;
     }
 
-    /// The expanded children.
     public List<ViewNode<M>> children() {
       return children;
     }
 
-    /// The tooltip emitted as this element's next sibling, if any.
     public @Nullable Tag<M> companion() {
       return companion;
     }
@@ -117,7 +113,6 @@ public sealed interface ViewNode<M>
   final class Slot<M> implements ViewNode<M> {
     private @Nullable ViewNode<M> content;
 
-    /// Fills the slot with its late content, once the main flow is expanded.
     public void fill(ViewNode<M> content) {
       this.content = content;
     }

@@ -10,6 +10,12 @@ import java.nio.charset.StandardCharsets;
 /// `<script type="module">`.
 public record PageScript(String id, String module) {
 
+  public PageScript {
+    if (id.isBlank()) {
+      throw new IllegalArgumentException("Page script id cannot be blank");
+    }
+  }
+
   /// Loads the module source bundled as `resource`, resolved relative to the package of `anchor`.
   /// Throws IllegalArgumentException if the resource is missing.
   public static PageScript fromResource(String id, Class<?> anchor, String resource) {

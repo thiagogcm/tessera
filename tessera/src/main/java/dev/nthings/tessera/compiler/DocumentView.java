@@ -1,11 +1,12 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
-import dev.nthings.tessera.document.DocumentHeading;
 import dev.nthings.tessera.document.PageScript;
-import dev.nthings.tessera.internal.authoring.DocumentNode;
+import dev.nthings.tessera.internal.document.DocumentNode;
+import dev.nthings.tessera.internal.view.ExpansionContext;
 import java.util.List;
 import java.util.function.Function;
 
@@ -49,7 +50,7 @@ final class DocumentView implements DocumentContext {
   }
 
   @Override
-  public List<DocumentHeading> headings() {
+  public List<OutlineHeading> headings() {
     return context.expansion().registry().headings();
   }
 }

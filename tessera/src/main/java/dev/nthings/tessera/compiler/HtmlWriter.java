@@ -3,7 +3,7 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.compiler.BundlePublication.File;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.document.PageScript;
-import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import dev.nthings.tessera.view.ViewSnapshot;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;

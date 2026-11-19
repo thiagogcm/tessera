@@ -1,4 +1,4 @@
-package dev.nthings.tessera.internal.authoring;
+package dev.nthings.tessera.internal.document;
 
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
@@ -10,16 +10,22 @@ import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
 import dev.nthings.tessera.document.WasmBundle;
+import dev.nthings.tessera.internal.authoring.PortableNode;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
 /// Static placements captured when content is added to a document builder.
-public sealed interface DocumentNode extends DocumentContent {
+public sealed interface DocumentNode {
+
+  default DocumentNode withKey(String key) {
+    return new Keyed(key, this);
+  }
 
   record Portable(Element element) implements DocumentNode {
     @Override
-    public DocumentContent key(String key) {
+    public DocumentNode withKey(String key) {
       return new Portable(element.key(key));
     }
   }
@@ -52,7 +58,7 @@ public sealed interface DocumentNode extends DocumentContent {
     }
 
     @Override
-    public DocumentContent key(String key) {
+    public DocumentNode withKey(String key) {
       return new Keyed(key, content);
     }
   }
@@ -66,24 +72,19 @@ public sealed interface DocumentNode extends DocumentContent {
   record ScopePlacement(DocumentScope scope, @Nullable SourceLocation source)
       implements DocumentNode {}
 
-  /// A built-in decorator with the diagnostic name of the type it decorates.
-  record NamedComponent(Class<?> type, DocumentComponent body) implements DocumentComponent {
-    @Override
-    public DocumentContent expand(DocumentContext context) {
-      return body.expand(context);
-    }
+  static DocumentContent namedComponent(Class<?> type, DocumentComponent body) {
+    return DocumentAccess.wrap(
+        new ComponentPlacement(type, SourceProvenance.capture(), body::expand));
   }
 
   static DocumentNode capture(DocumentContent content) {
     return switch (content) {
-      case DocumentNode node -> node;
-      case DocumentElement element -> AuthoringAccess.documentHost(element);
-      case NamedComponent(var type, var body) ->
-          new ComponentPlacement(type, SourceProvenance.capture(), body::expand);
+      case DocumentElement element -> DocumentAccess.host(element);
       case DocumentScope scope -> new ScopePlacement(scope, SourceProvenance.capture());
       case DocumentComponent component ->
           new ComponentPlacement(
               component.getClass(), SourceProvenance.capture(), component::expand);
+      default -> DocumentAccess.unwrap(content);
     };
   }
 }

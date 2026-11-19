@@ -14,6 +14,7 @@ import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.components.DocumentSection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -129,9 +130,10 @@ final class Demo implements DocumentComponent {
                     .border(Border.hairline(Tokens.BORDER_SUBTLE)))
             .children(stageItems);
     if (code.isEmpty()) {
-      return section.withDocument(stageElement);
+      return DocumentSection.of(section, stageElement);
     }
-    return section.withDocument(
+    return DocumentSection.of(
+        section,
         stageElement,
         DocumentContent.of(
             CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java")));

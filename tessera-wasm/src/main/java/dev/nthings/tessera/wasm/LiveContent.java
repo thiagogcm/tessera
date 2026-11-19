@@ -6,7 +6,8 @@ import dev.nthings.tessera.view.LiveNode;
 /// Content that only a browser root places: elements with Java event handlers or controlled form
 /// properties ([LiveElement]), effects ([Live#effect]), live components and scopes, and portable
 /// content converted with [#of(IntoElement)].
-public sealed interface LiveContent permits LiveComponent, LiveScope, LiveElement, LivePlacement {
+public sealed interface LiveContent
+    permits LiveComponent, LiveScope, LiveElement, LivePlacement, BuiltinLiveComponent {
 
   /// Portable `content` placed as live content. It is lowered when this method is called.
   static LiveContent of(IntoElement content) {

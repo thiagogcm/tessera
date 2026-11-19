@@ -21,6 +21,7 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Transition;
+import dev.nthings.tessera.css.Typography;
 
 /// Form control functions: styled text-like inputs, a textarea and a switch, returned as plain
 /// elements you can refine further. The controls are bare: wrap one with [Field#of(String,
@@ -151,7 +152,7 @@ public final class Forms {
         .child(
             Elements.label()
                 .labelFor(sw.ref())
-                .typography(Roles.LABEL)
+                .typography(Typography.LABEL)
                 .textColor(Tokens.CONTROL_FG)
                 .cursor(Cursor.POINTER)
                 .text(label))

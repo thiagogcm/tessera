@@ -10,22 +10,36 @@ import java.util.List;
 /// Navigation components derived from a [SiteDefinition]'s routes.
 public final class SiteNavigation {
 
+  private static final String DEFAULT_SEARCH_GROUP = "Pages & Guides";
+
   private SiteNavigation() {}
 
   /// `SearchPalette` listing every route of the given [SiteDefinition]; see [#searchPalette(List)].
   public static SearchPalette searchPalette(SiteDefinition site) {
-    return searchPalette(site.routes());
+    return searchPalette(site.routes(), DEFAULT_SEARCH_GROUP);
   }
 
-  /// `SearchPalette` over the given routes, under a "Pages & Guides" group. Each route is a link to
-  /// its path, with its description and path shown beside it. Set an id or other options on the
-  /// returned palette.
+  /// `SearchPalette` listing every route of `site` under `group`.
+  public static SearchPalette searchPalette(SiteDefinition site, String group) {
+    return searchPalette(site.routes(), group);
+  }
+
+  /// `SearchPalette` over the given routes, under a "Pages & Guides" group. Each route links to its
+  /// published URL ([SiteRoute#documentUri()]), with its description and path shown beside it. Set
+  /// an id or other options on the returned palette.
   public static SearchPalette searchPalette(List<SiteRoute> routes) {
+    return searchPalette(routes, DEFAULT_SEARCH_GROUP);
+  }
+
+  /// `SearchPalette` over `routes` under `group`. Each route links to its published URL
+  /// ([SiteRoute#documentUri()]).
+  public static SearchPalette searchPalette(List<SiteRoute> routes, String group) {
     var palette = SearchPalette.of();
     for (var route : routes) {
-      var item = SearchPalette.Item.of(route.displayTitle(), route.path()).badge(route.path());
+      var href = route.documentUri().toASCIIString();
+      var item = SearchPalette.Item.of(route.displayTitle(), href).badge(route.path());
       var description = route.description();
-      palette.item("Pages & Guides", description != null ? item.description(description) : item);
+      palette.item(group, description != null ? item.description(description) : item);
     }
     return palette;
   }
@@ -34,12 +48,23 @@ public final class SiteNavigation {
   /// previous link and the last has no next link. The path is normalized like a route path, so a
   /// trailing `/` is accepted. Throws IllegalArgumentException if no route is registered at it.
   public static DocPager docPager(SiteDefinition site, String currentPath) {
-    var current =
-        site.route(currentPath)
-            .orElseThrow(
-                () -> new IllegalArgumentException("No route registered at " + currentPath));
-    var routes = site.routes();
-    var index = routes.indexOf(current);
+    return docPager(site.routes(), currentPath);
+  }
+
+  /// Previous/next pager for `currentPath` in `routes` declaration order. Throws
+  /// IllegalArgumentException if no route matches `currentPath`.
+  public static DocPager docPager(List<SiteRoute> routes, String currentPath) {
+    var target = normalize(currentPath);
+    var index = -1;
+    for (var i = 0; i < routes.size(); i++) {
+      if (routes.get(i).path().equals(target)) {
+        index = i;
+        break;
+      }
+    }
+    if (index < 0) {
+      throw new IllegalArgumentException("No route registered at " + currentPath);
+    }
     var pager = DocPager.of();
     if (index > 0) {
       pager.previous(link(routes.get(index - 1)));
@@ -50,7 +75,21 @@ public final class SiteNavigation {
     return pager;
   }
 
+  private static String normalize(String rawPath) {
+    if (rawPath.isBlank()) {
+      throw new IllegalArgumentException("Route path cannot be blank");
+    }
+    var p = rawPath.trim();
+    if (!p.startsWith("/")) {
+      p = "/" + p;
+    }
+    if (p.length() > 1 && p.endsWith("/")) {
+      p = p.substring(0, p.length() - 1);
+    }
+    return p;
+  }
+
   private static Link link(SiteRoute route) {
-    return new Link(route.path(), route.displayTitle());
+    return new Link(route.documentUri().toASCIIString(), route.displayTitle());
   }
 }

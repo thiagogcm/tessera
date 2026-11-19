@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import dev.nthings.tessera.foundation.Decimals;
+import dev.nthings.tessera.internal.foundation.Decimals;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import org.jspecify.annotations.Nullable;

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.internal.authoring;
 
-import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 
 /// Compiler-facing: the class-derived names of components and scopes, computed once per class. A
 /// class has no stable name when it is anonymous, or a lambda or other hidden or synthetic class:

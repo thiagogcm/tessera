@@ -16,8 +16,9 @@ import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.FieldParts;
+import dev.nthings.tessera.css.Typography;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.FieldParts;
 import java.util.ArrayList;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +32,7 @@ import org.jspecify.annotations.Nullable;
 public final class Field extends BuiltinScope<Field> {
 
   static {
-    WidgetAccess.registerField(Field::parts);
+    WidgetBridge.registerField(Field::parts);
   }
 
   /// Application-supplied validity. An invalid control may have a visible error message.
@@ -171,7 +172,7 @@ public final class Field extends BuiltinScope<Field> {
         container,
         before,
         control,
-        select == null ? null : WidgetAccess.scope(select.around(control)),
+        select == null ? null : WidgetBridge.scope(select.around(control)),
         after);
   }
 
@@ -179,7 +180,8 @@ public final class Field extends BuiltinScope<Field> {
   void configureScope(ScopeStyle scope) {
     scope
         .root(s -> s.flex().flexCol().gap(Tokens.SPACE_1).relative())
-        .select(":scope .field-label", s -> s.typography(Roles.LABEL).textColor(Tokens.CONTROL_FG))
+        .select(
+            ":scope .field-label", s -> s.typography(Typography.LABEL).textColor(Tokens.CONTROL_FG))
         .select(
             ":scope .field-hint",
             s -> s.fontSize(Tokens.FONT_SIZE_XS).textColor(Tokens.TEXT_MUTED).m(CssLength.px(0)))

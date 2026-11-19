@@ -7,8 +7,8 @@ import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
 import dev.nthings.tessera.components.Section;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.document.DocumentContent;
-import dev.nthings.tessera.document.DocumentHeading;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.RenderedPage;
 import java.util.List;
@@ -40,8 +40,8 @@ class TableOfContentsTest {
         TableOfContents.of("On This Page")
             .headings(
                 List.of(
-                    new DocumentHeading(intro, "Introduction", 2),
-                    new DocumentHeading(sub, "Details", 3)));
+                    new OutlineHeading(intro, "Introduction", 2),
+                    new OutlineHeading(sub, "Details", 3)));
 
     var page =
         renderDocumentMain(
@@ -59,7 +59,7 @@ class TableOfContentsTest {
     var brokenToc =
         TableOfContents.of("Contents")
             .headings(
-                List.of(new DocumentHeading(ElementRef.page("missing-section"), "Missing", 2)));
+                List.of(new OutlineHeading(ElementRef.page("missing-section"), "Missing", 2)));
 
     assertThat(Diagnostics.of(() -> renderDocumentMain(brokenToc)))
         .singleElement()

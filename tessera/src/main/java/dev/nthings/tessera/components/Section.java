@@ -10,17 +10,15 @@ import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ParentElement;
-import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
-import dev.nthings.tessera.document.DocumentContext;
-import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.foundation.FluentBuilder;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.SectionParts;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -32,7 +30,15 @@ import org.jspecify.annotations.Nullable;
 /// that same id. Two sections with one id on a page report `duplicate-id`, and placing one instance
 /// twice on a page reports `duplicate-reference-binding`. The heading is a [Heading]. Levels are 2
 /// through 4. Use [Heading] directly for levels 1 through 6 or a rich title.
-public final class Section extends BuiltinComponent implements ParentElement<Section> {
+///
+/// To append document-only children such as footnotes to a section, wrap it with
+/// `DocumentSection.of(section, ...)` from `dev.nthings.tessera.document.components`.
+public final class Section extends BuiltinComponent
+    implements ParentElement<Section>, FluentBuilder<Section> {
+
+  static {
+    WidgetBridge.registerSection(Section::render);
+  }
 
   /// Visual surface of a [Section].
   public enum Surface {
@@ -104,42 +110,13 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
     return this;
   }
 
-  /// Places this section with document `content` after its portable children, such as a paragraph
-  /// holding footnote references. Footnotes and other document content need document assembly, so
-  /// the result is document content. The section is read when the page is expanded, so later
-  /// configuration still applies.
-  public DocumentContent withDocument(DocumentContent... content) {
-    return new DocumentSection(this, List.of(content));
-  }
-
   @Override
   IntoElement expand(ViewContext context) {
     var parts = render();
     return parts.section().child(parts.body());
   }
 
-  /// The `<section>` with its header, and the body container that follows the header.
-  private record Parts(TagElement section, TagElement body) {}
-
-  /// The section of [#withDocument], whose body continues with document content.
-  private static final class DocumentSection implements DocumentComponent {
-    private final Section section;
-    private final List<DocumentContent> content;
-
-    DocumentSection(Section section, List<DocumentContent> content) {
-      this.section = section;
-      this.content = content;
-    }
-
-    @Override
-    public DocumentContent expand(DocumentContext context) {
-      var parts = section.render();
-      return DocumentElement.of(parts.section())
-          .child(DocumentElement.of(parts.body()).children(content));
-    }
-  }
-
-  private Parts render() {
+  private SectionParts render() {
     var heading =
         Heading.of(level, title)
             .outline(target)
@@ -211,6 +188,6 @@ public final class Section extends BuiltinComponent implements ParentElement<Sec
               .border(Border.hairline(Tokens.ACCENT_PRIMARY));
     }
 
-    return new Parts(sectionEl.child(headerEl), bodyContainer);
+    return new SectionParts(sectionEl.child(headerEl), bodyContainer);
   }
 }

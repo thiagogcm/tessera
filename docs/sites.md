@@ -63,7 +63,7 @@ builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
 
 `Asset.file(...)` reads the input file explicitly. Byte-backed assets travel through compilation and publishing together.
 
-Use `Image.of(src, alt).dimensions(width, height)` to reserve layout space and provide an accessible description. Images load lazily and decode asynchronously. `hero()` changes the main image to eager loading, sets `fetchpriority="high"`, and contributes a head preload. A second hero on one page reports `duplicate-hero-image`.
+Use `Image.of(src, alt).dimensions(width, height)` to reserve layout space and provide an accessible description. Images load lazily and decode asynchronously. `HeroImage.of(image)` (from `dev.nthings.tessera.document.components`) places the main image with eager loading, `fetchpriority="high"`, and a head preload. A second hero on one page reports `duplicate-hero-image`.
 
 Configure the underlying image through `element(...)` for styles, an aspect ratio, ARIA, references, or transition keys:
 

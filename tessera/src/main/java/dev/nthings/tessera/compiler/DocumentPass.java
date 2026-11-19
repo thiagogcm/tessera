@@ -7,10 +7,9 @@ import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.PageScript;
-import dev.nthings.tessera.internal.authoring.DocumentNode;
 import dev.nthings.tessera.internal.css.StyleSheet;
-import dev.nthings.tessera.view.DocumentExpansion;
-import dev.nthings.tessera.view.ViewNode;
+import dev.nthings.tessera.internal.document.DocumentNode;
+import dev.nthings.tessera.internal.view.ViewNode;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -134,7 +133,7 @@ final class DocumentPass implements DocumentExpansion.Assembly {
 
   @Override
   public RuntimeException failureContext(Diagnostic diagnostic) {
-    return new CompilationException(List.of(diagnostic.atPage(pageTitle)));
+    return new CompilationException(List.of(CompilationState.atPage(diagnostic, pageTitle)));
   }
 
   @Override

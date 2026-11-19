@@ -1,7 +1,8 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.Location;
+import dev.nthings.tessera.view.ViewSnapshot;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -52,8 +53,9 @@ final class ReferenceLinker<M> {
       switch (node) {
         case ViewNode.Slot<M> slot -> link(slot.content());
         case ViewNode.Empty<M> _ -> {}
-        case ViewSnapshot.Special<M> special -> out.add(special);
-        case ViewSnapshot.Text<M> text -> out.add(text);
+        case ViewNode.Special<M> special ->
+            out.add(new ViewSnapshot.Special<>(special.payload(), special.readable()));
+        case ViewNode.Text<M> text -> out.add(new ViewSnapshot.Text<>(text.content()));
         case ViewNode.Boundary<M> boundary ->
             group(boundary.key(), boundary.definition(), boundary.location(), boundary.children());
         case ViewNode.ScopeBoundary<M> boundary ->
@@ -125,14 +127,18 @@ final class ReferenceLinker<M> {
       attrs = linked;
       unresolved = missing;
     }
+    var core = tag.core();
     var linked =
         new ViewSnapshot.Tag<>(
-            tag.core(),
+            core.tag(),
+            core.location(),
+            core.payload(),
+            core.liveProperties(),
             attrs,
             unresolved,
             linkChildren(tag.children()),
             ViewSnapshot.Defaults.NONE);
-    return ControlLowering.lower(linked, tag.core().initial(), state::report);
+    return ControlLowerer.lower(linked, core.initial(), state::report);
   }
 
   /// `id` as a URL fragment: characters a fragment may not hold, `%` and non-ASCII characters are

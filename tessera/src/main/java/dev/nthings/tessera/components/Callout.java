@@ -17,6 +17,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.css.Typography;
 import dev.nthings.tessera.internal.components.Icons;
 import java.util.ArrayList;
 import java.util.List;
@@ -154,7 +155,7 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
                 s.flex()
                     .itemsCenter()
                     .gap(Tokens.SPACE_2)
-                    .typography(Roles.LABEL)
+                    .typography(Typography.LABEL)
                     .textColor(Tokens.CONTROL_FG))
         .select(
             ":scope > .callout-header > .callout-icon",

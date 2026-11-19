@@ -1,6 +1,6 @@
 package dev.nthings.tessera.css;
 
-import dev.nthings.tessera.foundation.Decimals;
+import dev.nthings.tessera.internal.foundation.Decimals;
 
 /// The [Easing] implementations, built only through its static factories.
 final class Easings {

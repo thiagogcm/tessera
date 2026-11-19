@@ -4,7 +4,7 @@ import static dev.nthings.tessera.core.Elements.svg;
 
 import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.foundation.Decimals;
+import dev.nthings.tessera.internal.foundation.Decimals;
 
 /// The bundled line icons, built as structured SVG so they render the same in static output and in
 /// a browser root. Each icon is decorative: hidden from assistive technology and drawn with

@@ -11,29 +11,18 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.IdReference;
-import dev.nthings.tessera.internal.authoring.PortableNode;
+import dev.nthings.tessera.internal.components.WidgetBridge;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import org.jspecify.annotations.Nullable;
 
-/// Shared authoring paths for the built-in browser widget adapters. Each adapter receives its
+/// Read-only authoring bridge for the built-in browser widget adapters. Each adapter receives its
 /// component's host together with a typed model of the parts it drives, bound to [ElementRef]s, so
 /// a browser controller never rediscovers structure from class names, attributes or child order.
 public final class WidgetAccess {
-  private static @Nullable TabsRenderer tabs;
-  private static @Nullable BiFunction<Field, @Nullable Validation, FieldParts> fields;
-  private static @Nullable BiFunction<SearchPalette, ViewContext, SearchParts> search;
-  private static @Nullable BiFunction<IntoElement, ViewContext, DialogParts> dialogs;
 
   private WidgetAccess() {}
-
-  @FunctionalInterface
-  public interface TabsRenderer {
-    TabsParts render(
-        ContentTabs tabs, ViewContext context, boolean controlled, @Nullable String selection);
-  }
 
   public record FieldParts(
       TagElement host,
@@ -70,46 +59,52 @@ public final class WidgetAccess {
   /// A dialog's host without `open`, and whether the portable dialog was authored open.
   public record DialogParts(TagElement host, boolean opened) {}
 
-  public static void registerTabs(TabsRenderer renderer) {
-    tabs = renderer;
-  }
-
   public static TabsParts tabs(
       ContentTabs source, ViewContext context, boolean controlled, @Nullable String selection) {
-    var parts = Objects.requireNonNull(tabs).render(source, context, controlled, selection);
-    supplyBehavior(parts.host());
-    return parts;
-  }
-
-  public static void registerField(BiFunction<Field, @Nullable Validation, FieldParts> renderer) {
-    fields = renderer;
+    var raw = WidgetBridge.tabs(source, context, controlled, selection);
+    supplyBehavior(raw.host());
+    return new TabsParts(
+        raw.host(),
+        raw.tabs().stream()
+            .map(t -> new TabPart(t.key(), t.enabled(), t.tab(), t.panel()))
+            .toList(),
+        raw.selected(),
+        raw.manual());
   }
 
   public static FieldParts field(Field source, @Nullable Validation validation) {
-    return Objects.requireNonNull(fields).apply(source, validation);
+    var raw = WidgetBridge.field(source, validation);
+    return new FieldParts(raw.host(), raw.before(), raw.control(), raw.controlScope(), raw.after());
   }
 
   public static Scope scope(IntoElement source) {
-    return ((PortableNode.ScopePlacement) source.intoElement()).scope();
-  }
-
-  public static void registerDialog(BiFunction<IntoElement, ViewContext, DialogParts> renderer) {
-    dialogs = renderer;
+    return WidgetBridge.scope(source);
   }
 
   /// The parts of a portable `Modal` or `Drawer`.
   public static DialogParts dialog(IntoElement source, ViewContext context) {
-    return Objects.requireNonNull(dialogs).apply(source, context);
-  }
-
-  public static void registerSearch(BiFunction<SearchPalette, ViewContext, SearchParts> renderer) {
-    search = renderer;
+    var raw = WidgetBridge.dialog(source, context);
+    return new DialogParts(raw.host(), raw.opened());
   }
 
   public static SearchParts search(SearchPalette palette, ViewContext context) {
-    var parts = Objects.requireNonNull(search).apply(palette, context);
-    supplyBehavior(parts.host());
-    return parts;
+    var raw = WidgetBridge.search(palette, context);
+    supplyBehavior(raw.host());
+    return new SearchParts(
+        raw.host(),
+        raw.input(),
+        raw.empty(),
+        raw.results().stream()
+            .map(r ->
+                new SearchResult(
+                    r.ref(),
+                    new SearchLink(
+                        r.link().group(),
+                        r.link().title(),
+                        r.link().href(),
+                        r.link().description(),
+                        r.link().badge())))
+            .toList());
   }
 
   /// Clears the bundled behavior of a host whose adapter supplies it, so the host renders as its

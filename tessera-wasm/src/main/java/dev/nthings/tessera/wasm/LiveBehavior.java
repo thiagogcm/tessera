@@ -2,7 +2,7 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
-import dev.nthings.tessera.view.ViewExpansion.Reporter;
+import dev.nthings.tessera.view.DiagnosticReporter;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ sealed interface LiveBehavior {
       TagName tag,
       Map<String, String> attributes,
       Location location,
-      Reporter reporter) {
+      DiagnosticReporter reporter) {
     if (payload instanceof Bindings binding) {
       binding.controls().validate(tag, attributes, location, reporter, binding.events().values());
     }

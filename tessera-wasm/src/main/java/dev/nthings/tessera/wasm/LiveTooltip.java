@@ -7,7 +7,7 @@ import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
 /// A live interest tooltip associated with its portable trigger.
-public final class LiveTooltip implements LiveComponent {
+public final class LiveTooltip extends BuiltinLiveComponent {
   private static final int POINTER_LEAVE_DELAY = 120;
 
   private final TagElement source;
@@ -22,7 +22,7 @@ public final class LiveTooltip implements LiveComponent {
   }
 
   @Override
-  public LiveContent expand(LiveContext context) {
+  LiveContent expand(LiveContext context) {
     var parts = WidgetAccess.tooltip(source);
     return Live.fragment(
         LiveElement.of(parts.trigger()).widget(new Binding(parts.popupRef())),

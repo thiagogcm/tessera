@@ -19,12 +19,12 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
-import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.TabPart;
-import dev.nthings.tessera.view.WidgetAccess.TabsParts;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.TabPart;
+import dev.nthings.tessera.internal.components.WidgetBridge.TabsParts;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +48,7 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
   private static final Anchor ACTIVE = Anchor.named("tessera-active-tab");
 
   static {
-    WidgetAccess.registerTabs(ContentTabs::parts);
+    WidgetBridge.registerTabs(ContentTabs::parts);
   }
 
   /// Whether navigating to a tab also selects it. In manual mode, Enter or Space selects it.

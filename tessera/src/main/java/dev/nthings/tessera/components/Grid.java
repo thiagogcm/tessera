@@ -12,6 +12,7 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,8 @@ import java.util.List;
 /// minimum width) or [#columns] (a fixed count), and add more items as children. A `columns` grid
 /// stacks into one column while it is narrower than 36rem. Wrap an item in [#cell] to span columns
 /// or rows; spans apply only when the grid is 36rem or wider.
-public final class Grid extends BuiltinComponent implements ParentElement<Grid> {
+public final class Grid extends BuiltinComponent
+    implements ParentElement<Grid>, FluentBuilder<Grid> {
 
   private static final Container GRID_CONTAINER =
       Container.named("tessera-grid", Container.Type.INLINE_SIZE);

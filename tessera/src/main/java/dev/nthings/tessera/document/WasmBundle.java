@@ -3,13 +3,16 @@ package dev.nthings.tessera.document;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /// A closed set of resources for an already built browser entry. The classic launcher exports
 /// `globalThis.GraalVM` with `Config` and `run(args, config)`. It consumes the verified primary
@@ -66,6 +69,36 @@ public final class WasmBundle {
     @Override
     public byte[] content() {
       return content.clone();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object other) {
+      return other instanceof Resource resource
+          && name.equals(resource.name)
+          && kind == resource.kind
+          && integrity.equals(resource.integrity)
+          && references.equals(resource.references)
+          && Arrays.equals(content, resource.content);
+    }
+
+    @Override
+    public int hashCode() {
+      return 31 * Objects.hash(name, kind, integrity, references) + Arrays.hashCode(content);
+    }
+
+    @Override
+    public String toString() {
+      return "Resource[name="
+          + name
+          + ", kind="
+          + kind
+          + ", bytes="
+          + content.length
+          + ", integrity="
+          + integrity
+          + ", references="
+          + references
+          + "]";
     }
   }
 
@@ -130,6 +163,30 @@ public final class WasmBundle {
 
   public Map<String, Resource> resources() {
     return resources;
+  }
+
+  @Override
+  public boolean equals(@Nullable Object other) {
+    return other instanceof WasmBundle bundle
+        && launcher.equals(bundle.launcher)
+        && image.equals(bundle.image)
+        && resources.equals(bundle.resources);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(launcher, image, resources);
+  }
+
+  @Override
+  public String toString() {
+    return "WasmBundle[launcher="
+        + launcher
+        + ", image="
+        + image
+        + ", resources="
+        + resources.keySet()
+        + "]";
   }
 
   private static boolean hasWasmHeader(byte[] bytes) {

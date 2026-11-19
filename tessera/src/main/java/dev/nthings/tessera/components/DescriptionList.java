@@ -8,12 +8,14 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
 /// Description list: each term is a `<dt>` and each description a `<dd>`, laid out in two columns.
 /// Create one with [#of()] and add terms.
-public final class DescriptionList extends BuiltinComponent {
+public final class DescriptionList extends BuiltinComponent
+    implements FluentBuilder<DescriptionList> {
 
   private record Term(String term, Element description) {}
 
@@ -24,6 +26,11 @@ public final class DescriptionList extends BuiltinComponent {
   /// Creates an empty description list.
   public static DescriptionList of() {
     return new DescriptionList();
+  }
+
+  @Override
+  public DescriptionList self() {
+    return this;
   }
 
   /// Adds `term` described by the plain text `description`.

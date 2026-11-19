@@ -370,9 +370,11 @@ class AuthoringDiagnosticsTest {
         .containsExactly(tuple("incompatible-command-target", "button"));
 
     var compatible =
-        switch (command.target()) {
-          case DIALOG -> dialog().id(ElementRef.scoped("target")).ariaLabel("Target");
-          case POPOVER -> div().id(ElementRef.scoped("target")).popover(PopoverMode.AUTO);
+        switch (command) {
+          case SHOW_MODAL, CLOSE, REQUEST_CLOSE ->
+              dialog().id(ElementRef.scoped("target")).ariaLabel("Target");
+          case TOGGLE_POPOVER, SHOW_POPOVER, HIDE_POPOVER ->
+              div().id(ElementRef.scoped("target")).popover(PopoverMode.AUTO);
         };
     var page =
         RenderedPage.of(

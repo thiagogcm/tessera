@@ -23,6 +23,6 @@ public interface IntoElement {
   /// distinct key, or the page fails with `duplicate-key`. Calling `key` again replaces the key.
   /// Throws IllegalArgumentException if `key` is blank.
   default Element key(String key) {
-    return new PortableNode.Keyed(key, intoElement());
+    return new PortablePlacement(new PortableNode.Keyed(key, intoElement()));
   }
 }

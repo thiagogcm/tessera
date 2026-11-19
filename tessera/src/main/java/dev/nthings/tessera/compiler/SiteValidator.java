@@ -38,7 +38,7 @@ final class SiteValidator {
           .forEach((key, location) ->
               locationsByKey
                   .computeIfAbsent(key, _ -> new ArrayList<>())
-                  .add(location.atRoute(route)));
+                  .add(CompilationState.atRoute(location, route)));
     }
     for (var entry : locationsByKey.entrySet()) {
       var key = entry.getKey();
@@ -75,7 +75,7 @@ final class SiteValidator {
 
       for (var link : sourcePage.outgoingLinks().entrySet()) {
         var href = link.getKey();
-        var location = link.getValue().atRoute(sourceRoute);
+        var location = CompilationState.atRoute(link.getValue(), sourceRoute);
         var reference = URI.create(href);
         if (!reference.isAbsolute() && reference.getRawAuthority() == null) {
           // Empty path (query or fragment only) means the current document.

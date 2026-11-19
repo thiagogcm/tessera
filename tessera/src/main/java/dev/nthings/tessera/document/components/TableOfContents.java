@@ -8,6 +8,7 @@ import static dev.nthings.tessera.core.Elements.ol;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
@@ -28,8 +29,8 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
-import dev.nthings.tessera.document.DocumentHeading;
 import dev.nthings.tessera.document.Documents;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.components.Icons;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -40,11 +41,11 @@ import org.jspecify.annotations.Nullable;
 /// layout, so it may appear before the sections it lists. Headings that do not opt into the
 /// outline, including dialog titles and the footnotes heading, are omitted. [#headings(List)] lists
 /// a fixed set instead. [DocLayout] places one beside its sections.
-public final class TableOfContents implements DocumentComponent {
+public final class TableOfContents implements DocumentComponent, FluentBuilder<TableOfContents> {
 
   private final String title;
   private @Nullable String id;
-  private @Nullable List<DocumentHeading> headings;
+  private @Nullable List<OutlineHeading> headings;
 
   private TableOfContents(String title) {
     this.title = title;
@@ -55,6 +56,11 @@ public final class TableOfContents implements DocumentComponent {
     return new TableOfContents(title);
   }
 
+  @Override
+  public TableOfContents self() {
+    return this;
+  }
+
   /// Names this instance in the enclosing id scope. Without it, the compiler assigns
   /// `table-of-contents-<n>`.
   public TableOfContents id(String id) {
@@ -63,7 +69,7 @@ public final class TableOfContents implements DocumentComponent {
   }
 
   /// Lists `headings`, in order, instead of the headings registered on the page.
-  public TableOfContents headings(List<DocumentHeading> headings) {
+  public TableOfContents headings(List<OutlineHeading> headings) {
     this.headings = List.copyOf(headings);
     return this;
   }
@@ -83,9 +89,9 @@ public final class TableOfContents implements DocumentComponent {
 
     private final String title;
     private final @Nullable String id;
-    private final List<DocumentHeading> items;
+    private final List<OutlineHeading> items;
 
-    Links(String title, @Nullable String id, List<DocumentHeading> items) {
+    Links(String title, @Nullable String id, List<OutlineHeading> items) {
       this.title = title;
       this.id = id;
       this.items = items;

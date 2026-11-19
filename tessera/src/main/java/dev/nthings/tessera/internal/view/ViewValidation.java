@@ -1,13 +1,13 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Location;
-import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.css.CssAccess;
-import dev.nthings.tessera.view.ViewExpansion.Reporter;
+import dev.nthings.tessera.view.DiagnosticReporter;
+import dev.nthings.tessera.view.ViewSnapshot;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.net.URI;
@@ -17,19 +17,27 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /// Shared element, reference and accessibility checks for linked document or mounted content.
 public final class ViewValidation {
+  private static final Map<String, BuiltinCommand> BUILTIN_COMMANDS =
+      Stream.of(BuiltinCommand.values())
+          .collect(Collectors.toUnmodifiableMap(BuiltinCommand::wireValue, Function.identity()));
+
   final Set<String> registeredDomIds;
   final Set<String> ambiguousDomIds;
   final Map<String, Tag<?>> elementsById = new HashMap<>();
   final Set<String> labelledControlIds = new HashSet<>();
-  private final Reporter reporter;
+  private final DiagnosticReporter reporter;
 
-  private ViewValidation(Set<String> ids, Set<String> ambiguousIds, Reporter reporter) {
+  private ViewValidation(Set<String> ids, Set<String> ambiguousIds, DiagnosticReporter reporter) {
     this.registeredDomIds = ids;
     this.ambiguousDomIds = ambiguousIds;
     this.reporter = reporter;
@@ -42,7 +50,7 @@ public final class ViewValidation {
       List<? extends ViewSnapshot.Node<?>> head,
       Set<String> ids,
       Set<String> ambiguousIds,
-      Reporter reporter) {
+      DiagnosticReporter reporter) {
     var state = new ViewValidation(ids, ambiguousIds, reporter);
     index(body, state);
     index(head, state);
@@ -108,10 +116,8 @@ public final class ViewValidation {
 
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
-  /// Element contracts checked while the expanded element still carries authored declarations:
-  /// image contracts, and URLs that would run script outside document assembly. HTML attribute
-  /// names are already lowercase: the builder normalizes them.
-  static void checkElement(ViewNode.Tag<?> tag, Declarations style, Reporter reporter) {
+  /// Element contracts checked while the expanded element still carries authored declarations.
+  static void checkElement(ViewNode.Tag<?> tag, Declarations style, DiagnosticReporter reporter) {
     var location = tag.location();
     if (tag.tag() == HtmlTag.IMG) {
       validateImage(tag.attributes(), style, reporter, location);
@@ -139,8 +145,6 @@ public final class ViewValidation {
     }
   }
 
-  /// The scheme of `url` in lowercase, as a browser parses it: ignoring surrounding whitespace and
-  /// control characters and embedded tabs and newlines, or an empty string for a relative URL.
   private static String scheme(String url) {
     var scheme = new StringBuilder();
     for (var index = 0; index < url.length(); index++) {
@@ -165,9 +169,11 @@ public final class ViewValidation {
     return "";
   }
 
-  /// `<img>` contracts checkable from the element alone: alt text, then CLS-safe dimensions.
   private static void validateImage(
-      Map<String, String> attrs, Declarations style, Reporter reporter, Location location) {
+      Map<String, String> attrs,
+      Declarations style,
+      DiagnosticReporter reporter,
+      Location location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       reporter.report(
@@ -199,7 +205,6 @@ public final class ViewValidation {
     }
   }
 
-  /// Indexes the linked elements checks look up: by id and labelled control ids.
   static void index(List<? extends ViewSnapshot.Node<?>> nodes, ViewValidation state) {
     for (var node : nodes) {
       if (node instanceof ViewSnapshot.Group<?> group) {
@@ -236,7 +241,6 @@ public final class ViewValidation {
     var attrs = tag.attributes();
     var registeredDomIds = state.registeredDomIds;
 
-    // A declared role hands naming to AccessibilityRules' role-name-required.
     if ((tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) && !declaresRole(tag)) {
       if (!hasAccessibleLabel(tag)) {
         state.report(
@@ -303,14 +307,15 @@ public final class ViewValidation {
     if (command == null) {
       return;
     }
-    var builtin = BuiltinCommand.fromWireValue(command);
+    var builtin = BUILTIN_COMMANDS.get(command.toLowerCase(Locale.ROOT));
     if (builtin == null) {
       return; // Custom and platform commands are outside Tessera's built-in set.
     }
     var requirement =
-        switch (builtin.target()) {
-          case DIALOG -> target.tag() == HtmlTag.DIALOG ? null : "a <dialog> element";
-          case POPOVER ->
+        switch (builtin) {
+          case SHOW_MODAL, CLOSE, REQUEST_CLOSE ->
+              target.tag() == HtmlTag.DIALOG ? null : "a <dialog> element";
+          case TOGGLE_POPOVER, SHOW_POPOVER, HIDE_POPOVER ->
               target.attributes().containsKey("popover")
                   ? null
                   : "an element with a popover attribute";
@@ -335,22 +340,19 @@ public final class ViewValidation {
     }
   }
 
-  /// Whether `tag` declares a role that the accessibility rules model.
   static boolean declaresRole(Tag<?> tag) {
     var role = tag.attributes().get("role");
-    return role != null && Role.fromWireValue(role) != null;
+    return role != null && AccessibilityRules.roleFromWireValue(role) != null;
   }
 
   private static boolean hasAccessibleLabel(Tag<?> tag) {
     return hasAuthorName(tag) || containsReadableText(tag.children());
   }
 
-  /// Whether `tag` carries an author-supplied name: `aria-label`, `aria-labelledby`, or `title`.
   static boolean hasAuthorName(Tag<?> tag) {
     return hasAriaName(tag) || isNonBlank(tag.attributes().get("title"));
   }
 
-  /// Whether `tag` is named through `aria-label` or `aria-labelledby`.
   static boolean hasAriaName(Tag<?> tag) {
     var attrs = tag.attributes();
     return tag.unresolvedAttributes().contains("aria-labelledby")
@@ -378,7 +380,6 @@ public final class ViewValidation {
     return false;
   }
 
-  /// Whether `tag`'s subtree is left out of the accessible name: `aria-hidden="true"` or `hidden`.
   private static boolean hiddenFromAssistiveTechnology(Tag<?> tag) {
     var attrs = tag.attributes();
     return "true".equals(attrs.get("aria-hidden")) || attrs.containsKey("hidden");

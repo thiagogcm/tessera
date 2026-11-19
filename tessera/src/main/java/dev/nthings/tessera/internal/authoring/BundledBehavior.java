@@ -1,8 +1,6 @@
 package dev.nthings.tessera.internal.authoring;
 
 import dev.nthings.tessera.core.CustomElement;
-import dev.nthings.tessera.document.PageScript;
-import org.jspecify.annotations.Nullable;
 
 /// Backend-facing: the static behaviors bundled with the library's portable widgets, declared by
 /// the widget on its host. Every backend emits the host as the custom element the behavior's script
@@ -26,8 +24,6 @@ public enum BundledBehavior {
   private final CustomElement element;
   private final String resource;
   private final boolean builtIn;
-  // Loaded on first use: only documents need the script, and a browser image does not bundle it.
-  private volatile @Nullable PageScript script;
 
   BundledBehavior(String element, String resource, boolean builtIn) {
     this.element = new CustomElement(element);
@@ -35,14 +31,9 @@ public enum BundledBehavior {
     this.builtIn = builtIn;
   }
 
-  /// The page script a document contributes for this behavior.
-  public PageScript script() {
-    var loaded = script;
-    if (loaded == null) {
-      loaded = PageScript.fromResource(element.tagName(), BundledBehavior.class, resource);
-      script = loaded;
-    }
-    return loaded;
+  /// Classpath resource path of the client module for this behavior.
+  public String resource() {
+    return resource;
   }
 
   /// The custom element the script defines.

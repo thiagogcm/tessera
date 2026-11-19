@@ -4,7 +4,6 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Diagnostic;
-import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -150,7 +149,7 @@ final class SiteCompiler {
                 "duplicate-route",
                 "Route path \"" + path + "\" is declared more than once",
                 "Give each route a distinct path, or remove the duplicate route.",
-                Location.site(path, title)));
+                CompilationState.siteLocation(path, title)));
         return;
       }
       var output = SiteRoute.outputUrlPathFor(path);
@@ -161,7 +160,7 @@ final class SiteCompiler {
                 "file-path-collision",
                 "Route \"" + path + "\" is written to " + output + ", like route \"" + other + "\"",
                 "Publish one of the routes at a different path.",
-                Location.site(path, title)));
+                CompilationState.siteLocation(path, title)));
       }
     }
   }
@@ -194,7 +193,7 @@ final class SiteCompiler {
               "file-path-collision",
               kind + " \"" + path + "\" has the same path as a route",
               "Publish the file or the route at a different path.",
-              Location.site(path, title)));
+              CompilationState.siteLocation(path, title)));
       return true;
     }
     var page = routes.routesByOutput.get(path);
@@ -204,7 +203,7 @@ final class SiteCompiler {
               "file-path-collision",
               kind + " \"" + path + "\" is written over the page of route \"" + page + "\"",
               "Publish the file or the route at a different path.",
-              Location.site(page, routes.titles.get(page))));
+              CompilationState.siteLocation(page, routes.titles.get(page))));
       return true;
     }
     if (files.containsKey(path)) {
@@ -213,7 +212,7 @@ final class SiteCompiler {
               "file-path-collision",
               kind + " \"" + path + "\" has the same path as another file",
               "Register each file at a distinct path.",
-              Location.site(null, null)));
+              CompilationState.siteLocation(null, null)));
       return true;
     }
     return false;
@@ -234,7 +233,9 @@ final class SiteCompiler {
                 return new Prepared(PageCompiler.prepare(route.document(), bundles));
               } catch (CompilationException failure) {
                 return new Failed(
-                    failure.diagnostics().stream().map(d -> d.atRoute(route.path())).toList());
+                    failure.diagnostics().stream()
+                        .map(d -> CompilationState.atRoute(d, route.path()))
+                        .toList());
               }
             });
     var pages = new ArrayList<PreparedPage>(preparations.size());

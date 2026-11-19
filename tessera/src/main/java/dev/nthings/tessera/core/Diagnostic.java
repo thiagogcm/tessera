@@ -12,14 +12,4 @@ public record Diagnostic(String rule, String message, String fix, Location locat
     var where = location.describe();
     return "[" + rule + "] " + (where.isEmpty() ? "" : where + ": ") + message + "\n  Fix: " + fix;
   }
-
-  /// Attaches the page that contains this error.
-  public Diagnostic atPage(String title) {
-    return new Diagnostic(rule, message, fix, location.atPage(title));
-  }
-
-  /// Attaches the site route that contains this error.
-  public Diagnostic atRoute(String path) {
-    return new Diagnostic(rule, message, fix, location.atRoute(path));
-  }
 }

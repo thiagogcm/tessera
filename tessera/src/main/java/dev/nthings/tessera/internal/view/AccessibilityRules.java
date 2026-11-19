@@ -1,16 +1,21 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
+import dev.nthings.tessera.view.ViewSnapshot;
 import dev.nthings.tessera.view.ViewSnapshot.Tag;
 import dev.nthings.tessera.view.ViewSnapshot.Text;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /// Accessibility contracts on the linked tree: role requirements, landmark and heading structure,
@@ -19,6 +24,89 @@ import org.jspecify.annotations.Nullable;
 /// Role rules apply to elements that declare a role; native elements are checked where their
 /// semantics are unambiguous (`<dialog>`, headings, landmarks, `<label for>`).
 final class AccessibilityRules {
+
+  private static final Map<String, Role> ROLES_BY_WIRE =
+      Stream.of(Role.values())
+          .collect(Collectors.toUnmodifiableMap(Role::wireValue, Function.identity()));
+
+  private static final Set<String> GLOBAL_ARIA =
+      Set.of(
+          "aria-atomic",
+          "aria-busy",
+          "aria-controls",
+          "aria-current",
+          "aria-describedby",
+          "aria-details",
+          "aria-disabled",
+          "aria-errormessage",
+          "aria-flowto",
+          "aria-haspopup",
+          "aria-hidden",
+          "aria-invalid",
+          "aria-keyshortcuts",
+          "aria-label",
+          "aria-labelledby",
+          "aria-live",
+          "aria-owns",
+          "aria-relevant",
+          "aria-roledescription");
+
+  private static final Set<Role> NAME_REQUIRED =
+      EnumSet.of(
+          Role.FORM,
+          Role.REGION,
+          Role.BUTTON,
+          Role.CHECKBOX,
+          Role.COMBOBOX,
+          Role.LINK,
+          Role.LISTBOX,
+          Role.MENUITEM,
+          Role.MENUITEMCHECKBOX,
+          Role.MENUITEMRADIO,
+          Role.OPTION,
+          Role.PROGRESSBAR,
+          Role.RADIO,
+          Role.SEARCHBOX,
+          Role.SLIDER,
+          Role.SPINBUTTON,
+          Role.SWITCH,
+          Role.TAB,
+          Role.TEXTBOX,
+          Role.TREE,
+          Role.TREEITEM,
+          Role.HEADING,
+          Role.IMG,
+          Role.ALERTDIALOG,
+          Role.DIALOG,
+          Role.DOC_BACKLINK,
+          Role.DOC_NOTEREF);
+
+  private static final Set<Role> NAMED_FROM_CONTENT =
+      EnumSet.of(
+          Role.BUTTON,
+          Role.CHECKBOX,
+          Role.LINK,
+          Role.MENUITEM,
+          Role.MENUITEMCHECKBOX,
+          Role.MENUITEMRADIO,
+          Role.OPTION,
+          Role.RADIO,
+          Role.SWITCH,
+          Role.TAB,
+          Role.TREEITEM,
+          Role.HEADING,
+          Role.TOOLTIP,
+          Role.DOC_BACKLINK,
+          Role.DOC_NOTEREF);
+
+  private static final List<Set<String>> SUPPORTED_ARIA =
+      Stream.of(Role.values())
+          .map(role -> {
+            var supported = new HashSet<>(GLOBAL_ARIA);
+            supported.addAll(specificAria(role));
+            return Set.copyOf(supported);
+          })
+          .toList();
 
   private static final Set<Role> NAMED_LANDMARKS =
       Set.of(Role.NAVIGATION, Role.COMPLEMENTARY, Role.SEARCH, Role.FORM, Role.REGION);
@@ -121,23 +209,21 @@ final class AccessibilityRules {
   private void checkDeclaredRole(Tag<?> tag, Role role, Context context) {
     var attrs = tag.attributes();
 
-    var supported = role.supportedAria();
+    var supported = supportedAria(role);
     for (var name : attrs.keySet()) {
       if (name.startsWith("aria-") && !supported.contains(name)) {
         state.report(
             tag.location(),
             "aria-attribute-not-allowed",
             describe(tag, role) + " does not support " + name,
-            "Remove "
-                + name
-                + ", or use a role that supports it (see Role#supportedAria for the role).");
+            "Remove " + name + ", or use a role that supports it.");
       }
     }
 
     var implicit = implicitRole(tag);
-    for (var required : role.requiredAria()) {
+    for (var required : requiredAria(role)) {
       // A native element whose own role requires the state already exposes it.
-      var exposedNatively = implicit != null && implicit.requiredAria().contains(required);
+      var exposedNatively = implicit != null && requiredAria(implicit).contains(required);
       if (!attrs.containsKey(required) && !exposedNatively) {
         state.report(
             tag.location(),
@@ -149,7 +235,7 @@ final class AccessibilityRules {
       }
     }
 
-    var children = role.requiredChildren();
+    var children = requiredChildren(role);
     if (!children.isEmpty() && !ownsAny(tag, children)) {
       state.report(
           tag.location(),
@@ -160,9 +246,7 @@ final class AccessibilityRules {
           "Add the required child elements, or choose a role that does not require them.");
     }
 
-    if (role.naming() == Role.Naming.REQUIRED
-        && !context.unexposed()
-        && !hasName(tag, role, context)) {
+    if (NAME_REQUIRED.contains(role) && !context.unexposed() && !hasName(tag, role, context)) {
       reportMissingName(tag, role);
     }
   }
@@ -177,7 +261,7 @@ final class AccessibilityRules {
         "role-name-required",
         describe(tag, role) + " has no accessible name",
         "Add .ariaLabel(...) or .ariaLabelledBy(...)"
-            + (role.namedFromContent() ? ", or readable content" : "")
+            + (NAMED_FROM_CONTENT.contains(role) ? ", or readable content" : "")
             + ".");
   }
 
@@ -197,7 +281,7 @@ final class AccessibilityRules {
       }
       default ->
           role != null
-              && role.namedFromContent()
+              && NAMED_FROM_CONTENT.contains(role)
               && ViewValidation.containsReadableText(tag.children());
     };
   }
@@ -230,9 +314,123 @@ final class AccessibilityRules {
 
   // --- Roles, explicit and implicit ---
 
+  static @Nullable Role roleFromWireValue(String value) {
+    return ROLES_BY_WIRE.get(value);
+  }
+
+  private static Set<Role> requiredChildren(Role role) {
+    return switch (role) {
+      case LIST -> EnumSet.of(Role.LISTITEM);
+      case TABLIST -> EnumSet.of(Role.TAB);
+      case LISTBOX -> EnumSet.of(Role.OPTION);
+      case MENU, MENUBAR -> EnumSet.of(Role.MENUITEM, Role.MENUITEMCHECKBOX, Role.MENUITEMRADIO);
+      case RADIOGROUP -> EnumSet.of(Role.RADIO);
+      case TREE -> EnumSet.of(Role.TREEITEM);
+      default -> Set.of();
+    };
+  }
+
+  private static Set<String> requiredAria(Role role) {
+    return switch (role) {
+      case CHECKBOX, SWITCH, RADIO, MENUITEMCHECKBOX, MENUITEMRADIO -> Set.of("aria-checked");
+      case HEADING -> Set.of("aria-level");
+      case SLIDER, SPINBUTTON -> Set.of("aria-valuenow");
+      case TAB, OPTION -> Set.of("aria-selected");
+      default -> Set.of();
+    };
+  }
+
+  private static Set<String> supportedAria(Role role) {
+    return SUPPORTED_ARIA.get(role.ordinal());
+  }
+
+  private static Set<String> specificAria(Role role) {
+    return switch (role) {
+      case CHECKBOX, SWITCH -> Set.of("aria-checked", "aria-readonly", "aria-required");
+      case MENUITEMCHECKBOX, MENUITEMRADIO ->
+          Set.of("aria-checked", "aria-expanded", "aria-posinset", "aria-setsize");
+      case RADIO -> Set.of("aria-checked", "aria-posinset", "aria-setsize");
+      case BUTTON -> Set.of("aria-expanded", "aria-pressed");
+      case LINK, DOC_BACKLINK, DOC_NOTEREF -> Set.of("aria-expanded");
+      case COMBOBOX ->
+          Set.of(
+              "aria-activedescendant",
+              "aria-autocomplete",
+              "aria-expanded",
+              "aria-readonly",
+              "aria-required");
+      case LISTBOX ->
+          Set.of(
+              "aria-activedescendant",
+              "aria-expanded",
+              "aria-multiselectable",
+              "aria-orientation",
+              "aria-readonly",
+              "aria-required");
+      case OPTION -> Set.of("aria-checked", "aria-posinset", "aria-selected", "aria-setsize");
+      case TAB -> Set.of("aria-expanded", "aria-posinset", "aria-selected", "aria-setsize");
+      case TABLIST ->
+          Set.of("aria-activedescendant", "aria-multiselectable", "aria-orientation", "aria-level");
+      case MENU, MENUBAR -> Set.of("aria-activedescendant", "aria-expanded", "aria-orientation");
+      case MENUITEM -> Set.of("aria-expanded", "aria-posinset", "aria-setsize");
+      case SLIDER ->
+          Set.of(
+              "aria-orientation",
+              "aria-readonly",
+              "aria-valuemax",
+              "aria-valuemin",
+              "aria-valuenow",
+              "aria-valuetext");
+      case SPINBUTTON ->
+          Set.of(
+              "aria-activedescendant",
+              "aria-readonly",
+              "aria-required",
+              "aria-valuemax",
+              "aria-valuemin",
+              "aria-valuenow",
+              "aria-valuetext");
+      case PROGRESSBAR ->
+          Set.of("aria-valuemax", "aria-valuemin", "aria-valuenow", "aria-valuetext");
+      case TEXTBOX, SEARCHBOX ->
+          Set.of(
+              "aria-activedescendant",
+              "aria-autocomplete",
+              "aria-multiline",
+              "aria-placeholder",
+              "aria-readonly",
+              "aria-required");
+      case HEADING -> Set.of("aria-level");
+      case DIALOG, ALERTDIALOG -> Set.of("aria-modal");
+      case TREE ->
+          Set.of(
+              "aria-activedescendant", "aria-multiselectable", "aria-orientation", "aria-required");
+      case TREEITEM ->
+          Set.of(
+              "aria-checked",
+              "aria-expanded",
+              "aria-level",
+              "aria-posinset",
+              "aria-selected",
+              "aria-setsize");
+      case LISTITEM -> Set.of("aria-level", "aria-posinset", "aria-setsize");
+      case ARTICLE -> Set.of("aria-posinset", "aria-setsize");
+      case GROUP, RADIOGROUP -> Set.of("aria-activedescendant", "aria-readonly", "aria-required");
+      case SEPARATOR ->
+          Set.of(
+              "aria-orientation",
+              "aria-valuemax",
+              "aria-valuemin",
+              "aria-valuenow",
+              "aria-valuetext");
+      case TABLE -> Set.of("aria-colcount", "aria-rowcount");
+      default -> Set.of();
+    };
+  }
+
   private static @Nullable Role explicitRole(Tag<?> tag) {
     var declared = tag.attributes().get("role");
-    return declared == null ? null : Role.fromWireValue(declared);
+    return declared == null ? null : roleFromWireValue(declared);
   }
 
   private static @Nullable Role effectiveRole(Tag<?> tag) {

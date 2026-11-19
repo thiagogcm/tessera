@@ -12,6 +12,7 @@ import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
+import java.util.List;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.DisplayName;
@@ -89,5 +90,25 @@ class SiteNavigationTest {
     var withNavigation = builder.build();
 
     assertThatNoException().isThrownBy(() -> Compiler.compile(withNavigation));
+  }
+
+  @Test
+  @DisplayName("links use published document URIs with trailing slashes and percent-encoding")
+  void linksUsePublishedDocumentUris() {
+    var routes =
+        List.of(
+            new SiteRoute("/", new PageDocument("Home", main().text("Home"))),
+            new SiteRoute("/guides/café", new PageDocument("Café", main().text("Café"))),
+            new SiteRoute("/about.html", new PageDocument("About", main().text("About"))));
+
+    var paletteLinks = renderMain(SiteNavigation.searchPalette(routes, "Docs")).elements("a[href]");
+    assertThat(paletteLinks)
+        .extracting(link -> link.attr("href"))
+        .containsExactly("/", "/guides/caf%C3%A9/", "/about.html");
+
+    var pagerLinks = renderMain(SiteNavigation.docPager(routes, "/guides/café")).elements("nav a");
+    assertThat(pagerLinks)
+        .extracting(link -> link.attr("href"))
+        .containsExactly("/", "/about.html");
   }
 }

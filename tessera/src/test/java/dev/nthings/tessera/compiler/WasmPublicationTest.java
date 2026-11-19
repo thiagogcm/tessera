@@ -85,6 +85,15 @@ class WasmPublicationTest {
     assertThatIllegalArgumentException().isThrownBy(creation);
   }
 
+  @Test
+  @DisplayName("independently constructed bundles with identical resources are equal")
+  void bundlesCompareByValue() {
+    var first = bundle();
+    var second = bundle();
+
+    assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
+  }
+
   private static String sha384(byte[] content) throws NoSuchAlgorithmException {
     return "sha384-"
         + Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-384").digest(content));

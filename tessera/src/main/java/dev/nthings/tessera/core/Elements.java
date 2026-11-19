@@ -358,12 +358,12 @@ public final class Elements {
 
   /// Creates a text node. Its content is HTML-escaped.
   public static Element text(String content) {
-    return new PortableNode.Text(content);
+    return new PortablePlacement(new PortableNode.Text(content));
   }
 
   /// Returns an element that emits no markup.
   public static Element empty() {
-    return PortableNode.Empty.INSTANCE;
+    return new PortablePlacement(PortableNode.Empty.INSTANCE);
   }
 
   /// Creates an element in the SVG namespace, such as `svg` or `path`. Static output writes it as

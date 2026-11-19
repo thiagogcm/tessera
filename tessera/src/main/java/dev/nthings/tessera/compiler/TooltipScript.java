@@ -1,4 +1,4 @@
-package dev.nthings.tessera.view;
+package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.document.PageScript;
 

@@ -7,7 +7,7 @@ import dev.nthings.tessera.core.SourceLocation;
 import org.jspecify.annotations.Nullable;
 
 /// Closed portable placements that do not expose a builder API.
-public sealed interface PortableNode extends Element {
+public sealed interface PortableNode {
 
   enum Empty implements PortableNode {
     INSTANCE
@@ -19,21 +19,12 @@ public sealed interface PortableNode extends Element {
     public Keyed {
       requireKey(key);
     }
-
-    @Override
-    public Element key(String key) {
-      return new Keyed(key, content);
-    }
   }
 
   record ComponentPlacement(Component component, Class<?> type, @Nullable SourceLocation source)
       implements PortableNode {}
 
   record ScopePlacement(Scope scope, @Nullable SourceLocation source) implements PortableNode {}
-
-  static Element component(Class<?> type, Component component) {
-    return new ComponentPlacement(component, type, SourceProvenance.capture());
-  }
 
   static void requireKey(String key) {
     if (key.isBlank()) {

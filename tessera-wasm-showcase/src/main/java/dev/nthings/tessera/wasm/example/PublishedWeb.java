@@ -19,8 +19,8 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
+import dev.nthings.tessera.document.GraalWebImage;
 import dev.nthings.tessera.document.WasmBundle;
-import dev.nthings.tessera.wasm.GraalWebImage;
 import java.nio.file.Path;
 import java.util.List;
 

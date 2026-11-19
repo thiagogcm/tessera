@@ -1,6 +1,5 @@
-package dev.nthings.tessera.wasm;
+package dev.nthings.tessera.document;
 
-import dev.nthings.tessera.document.WasmBundle;
 import dev.nthings.tessera.document.WasmBundle.Kind;
 import dev.nthings.tessera.document.WasmBundle.Resource;
 import java.io.IOException;

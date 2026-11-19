@@ -1,4 +1,4 @@
-package dev.nthings.tessera.foundation;
+package dev.nthings.tessera.internal.foundation;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

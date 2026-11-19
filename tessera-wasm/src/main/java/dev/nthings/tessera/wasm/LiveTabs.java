@@ -1,6 +1,7 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.components.ContentTabs;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.view.WidgetAccess;
 import dev.nthings.tessera.view.WidgetAccess.TabsParts;
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 
 /// Adaptive tabs with retained selection and focus. Give the portable tabs an explicit scope id so
 /// their keyed tabs and panels keep their identity across edits.
-public final class LiveTabs implements LiveComponent {
+public final class LiveTabs extends BuiltinLiveComponent implements FluentBuilder<LiveTabs> {
   private final ContentTabs tabs;
   private boolean controlled;
   private @Nullable String selected;
@@ -26,6 +27,11 @@ public final class LiveTabs implements LiveComponent {
   /// Adapts the portable labels, panels, enabled state and activation mode.
   public static LiveTabs of(ContentTabs tabs) {
     return new LiveTabs(tabs);
+  }
+
+  @Override
+  public LiveTabs self() {
+    return this;
   }
 
   /// Binds selection to an enabled key, or empty when there are no enabled tabs. An invalid
@@ -44,7 +50,7 @@ public final class LiveTabs implements LiveComponent {
   }
 
   @Override
-  public LiveContent expand(LiveContext context) {
+  LiveContent expand(LiveContext context) {
     var controlled = this.controlled;
     var selection = selected;
     var request = this.request;

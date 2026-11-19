@@ -141,11 +141,9 @@ class FootnotesTest {
     var page =
         renderDocumentMain(
             TableOfContents.of("Contents"),
-            Section.of("install", "Install")
-                .withDocument(
-                    DocumentElement.of(p())
-                        .text("Run it")
-                        .child(Footnote.of("Twice.").reference())));
+            DocumentSection.of(
+                Section.of("install", "Install"),
+                DocumentElement.of(p()).text("Run it").child(Footnote.of("Twice.").reference())));
 
     var reference = page.element("#install a[role=doc-noteref]");
     assertThat(reference).hasText("[1]");

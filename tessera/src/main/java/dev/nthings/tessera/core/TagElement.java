@@ -6,13 +6,13 @@ import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleBlock;
 import dev.nthings.tessera.css.Styled;
-import dev.nthings.tessera.foundation.Decimals;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.IdReference;
 import dev.nthings.tessera.internal.authoring.PortableNode;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.authoring.TagData;
+import dev.nthings.tessera.internal.foundation.Decimals;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
@@ -90,8 +90,9 @@ public final class TagElement
     return switch (element) {
       case TagElement tag -> tag.copy();
       case FragmentElement fragment -> fragment.copy();
-      case PortableNode.Keyed keyed -> new PortableNode.Keyed(keyed.key(), detach(keyed.content()));
-      default -> element;
+      case PortablePlacement(PortableNode.Keyed keyed) ->
+          new PortablePlacement(new PortableNode.Keyed(keyed.key(), detach(keyed.content())));
+      case PortablePlacement _ -> element;
     };
   }
 

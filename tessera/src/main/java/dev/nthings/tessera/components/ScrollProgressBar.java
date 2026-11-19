@@ -9,12 +9,14 @@ import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.TimelineAxis;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.foundation.FluentBuilder;
 
 /// Thin bar fixed to the top of the viewport that fills from its inline-start edge as the page
 /// scrolls. It is decorative and hidden from assistive technology. When the user prefers reduced
 /// motion, it stays a static, full-width bar. Create one with [#of()]; it is accent-colored,
 /// 0.25rem thick, and follows block-axis scrolling unless changed.
-public final class ScrollProgressBar extends BuiltinComponent {
+public final class ScrollProgressBar extends BuiltinComponent
+    implements FluentBuilder<ScrollProgressBar> {
 
   // Growing the inline size fills the bar from its inline-start edge in either direction; a
   // scaleX transform would grow it from the centre.
@@ -33,6 +35,11 @@ public final class ScrollProgressBar extends BuiltinComponent {
   /// text.
   public static ScrollProgressBar of() {
     return new ScrollProgressBar();
+  }
+
+  @Override
+  public ScrollProgressBar self() {
+    return this;
   }
 
   /// Sets the bar color. The default is [Tokens#ACCENT_PRIMARY].

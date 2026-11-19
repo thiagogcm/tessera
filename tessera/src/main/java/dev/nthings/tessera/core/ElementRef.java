@@ -1,8 +1,8 @@
 package dev.nthings.tessera.core;
 
-import dev.nthings.tessera.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess.Ref;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import org.jspecify.annotations.Nullable;
 
 /// Identity handle for an element's DOM id, resolved by the compiler once the page is expanded. It

@@ -3,7 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.internal.authoring.PortableNode;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 
 /// Base of the built-in components that need no id scope. Placing one wraps its
 /// [#expand(ViewContext)] in a [dev.nthings.tessera.core.Component], so expansion stays off the
@@ -15,6 +15,6 @@ abstract class BuiltinComponent implements IntoElement {
 
   @Override
   public Element intoElement() {
-    return PortableNode.component(getClass(), this::expand);
+    return AuthoringAccess.component(getClass(), this::expand);
   }
 }

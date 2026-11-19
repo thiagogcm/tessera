@@ -16,6 +16,7 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
+import dev.nthings.tessera.css.Typography;
 import dev.nthings.tessera.css.WhiteSpace;
 
 /// Shared face of [Button] and [IconButton]: the `<button>` element with its attributes and its
@@ -69,7 +70,7 @@ final class ButtonFace {
         .itemsCenter()
         .justifyCenter()
         .gap(Tokens.SPACE_2)
-        .typography(Roles.LABEL)
+        .typography(Typography.LABEL)
         .cursor(model.busy ? Cursor.PROGRESS : Cursor.POINTER)
         .rounded(Tokens.RADIUS_MD)
         .border(Border.hairline(CssColor.transparent()))

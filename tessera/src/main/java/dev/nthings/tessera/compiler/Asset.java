@@ -5,7 +5,10 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /// A file published at `path`: a static file registered on a site, or a stylesheet or client page
 /// script produced under [OutputMode#external(String)].
@@ -57,6 +60,30 @@ public record Asset(String path, String contentType, byte[] content) {
   /// The content decoded as UTF-8, for text assets such as stylesheets and modules.
   public String textContent() {
     return new String(content, StandardCharsets.UTF_8);
+  }
+
+  @Override
+  public boolean equals(@Nullable Object other) {
+    return other instanceof Asset asset
+        && path.equals(asset.path)
+        && contentType.equals(asset.contentType)
+        && Arrays.equals(content, asset.content);
+  }
+
+  @Override
+  public int hashCode() {
+    return 31 * Objects.hash(path, contentType) + Arrays.hashCode(content);
+  }
+
+  @Override
+  public String toString() {
+    return "Asset[path="
+        + path
+        + ", contentType="
+        + contentType
+        + ", bytes="
+        + content.length
+        + "]";
   }
 
   /// Owned bytes, not a defensive copy.

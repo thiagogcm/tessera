@@ -2,7 +2,7 @@ package dev.nthings.tessera.support;
 
 import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.core.Diagnostic;
-import dev.nthings.tessera.core.ViewException;
+import dev.nthings.tessera.view.ViewException;
 import java.util.List;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.jspecify.annotations.Nullable;

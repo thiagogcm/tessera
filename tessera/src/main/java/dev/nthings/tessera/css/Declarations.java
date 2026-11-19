@@ -1,7 +1,7 @@
 package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.FluentBuilder;
-import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;

@@ -9,6 +9,11 @@ record LivePlacement(LiveNode<LiveBehavior> node) implements LiveContent {
     return switch (content) {
       case LivePlacement placement -> placement.node();
       case LiveElement element -> element.capture();
+      case BuiltinLiveComponent component ->
+          new LiveNode.ComponentPlacement<>(
+              component.getClass(),
+              LiveNode.captureSource(),
+              context -> capture(component.expand((LiveContext) context)));
       case LiveComponent component ->
           new LiveNode.ComponentPlacement<>(
               component.getClass(),

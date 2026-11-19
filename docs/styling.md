@@ -33,7 +33,7 @@ Token names accept `[A-Za-z0-9_-]` and cannot start with `-`. Invalid names thro
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | 0.25, 0.375, 0.5, 0.75 rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light/dark OKLCH colors |
 
-`Roles.LABEL` combines the control typography tokens. Field labels and callout titles use this role and `CONTROL_FG`. Replacing `CONTROL_FONT_SIZE` changes their size directly; replacing `FONT_SIZE_SM` changes it while the control token still refers to that scale value.
+`Typography.LABEL` combines the control typography tokens. Field labels and callout titles use this role and `CONTROL_FG`. Replacing `CONTROL_FONT_SIZE` changes their size directly; replacing `FONT_SIZE_SM` changes it while the control token still refers to that scale value.
 
 `Tone` provides semantic colors (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components decide how each tone paints their surfaces. `Callout.Kind` also chooses the notice's icon and title.
 

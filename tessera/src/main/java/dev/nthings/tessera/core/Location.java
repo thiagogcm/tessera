@@ -30,26 +30,6 @@ public record Location(
     this(null, null, components, tag, domId, source);
   }
 
-  /// A site-level problem without an element or component.
-  public static Location site(@Nullable String route, @Nullable String page) {
-    return new Location(route, page, List.of(), "", null, null);
-  }
-
-  /// This location in a page.
-  public Location atPage(String title) {
-    return new Location(route, title, components, tag, domId, source);
-  }
-
-  /// This location at a site route.
-  public Location atRoute(String path) {
-    return new Location(path, page, components, tag, domId, source);
-  }
-
-  /// This location with its bound DOM id.
-  public Location withDomId(String id) {
-    return new Location(route, page, components, tag, id, source);
-  }
-
   /// The route, page, component path, element and source, omitting absent context.
   public String describe() {
     var head = new StringJoiner(", ");

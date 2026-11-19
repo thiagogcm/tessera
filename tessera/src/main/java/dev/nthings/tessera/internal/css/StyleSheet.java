@@ -4,8 +4,7 @@ import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.ScopeBlock;
 import dev.nthings.tessera.css.Theme;
-import dev.nthings.tessera.foundation.Fnv1a64;
-import dev.nthings.tessera.view.EmbeddedRule;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -41,6 +40,18 @@ public final class StyleSheet {
   /// rule it inserts.
   public static final String LAYER_ORDER =
       "@layer reset, base, theme, components, utilities, container, interactive;";
+
+  /// One self-contained rule emitted by this stylesheet before layer wrapping.
+  public record Rule(
+      String key, @Nullable String layer, String prefix, String body, String suffix) {
+    public Rule(String key, @Nullable String layer, String rule) {
+      this(key, layer, "", rule, "");
+    }
+
+    public void appendRule(StringBuilder into) {
+      into.append(prefix).append(body).append(suffix);
+    }
+  }
 
   private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
 
@@ -196,11 +207,11 @@ public final class StyleSheet {
   /// embedder can insert, deduplicate and retain them individually across renders and roots.
   /// Cross-document navigation transitions are omitted; live property registrations come as
   /// `@property` rules.
-  public List<EmbeddedRule> embeddedRules() {
-    var rules = new ArrayList<EmbeddedRule>();
+  public List<Rule> embeddedRules() {
+    var rules = new ArrayList<Rule>();
     for (var cls : transitionClasses) {
       rules.add(
-          new EmbeddedRule(
+          new Rule(
               "::view-transition-group(*." + cls + ")",
               "base",
               MOTION_SAFE,
@@ -214,29 +225,27 @@ public final class StyleSheet {
   /// Every rule registered here except transition timings, which each output places itself, in
   /// emission order: keyframes, live property registrations (unlayered), then the component,
   /// utility, interactive and container rules.
-  private void registeredRules(Consumer<EmbeddedRule> sink) {
+  private void registeredRules(Consumer<Rule> sink) {
     var css = CssAccess.get();
     keyframes.forEach(keyframesRule -> {
       var rule = css.keyframesRule(keyframesRule);
-      sink.accept(new EmbeddedRule(rule, "base", rule));
+      sink.accept(new Rule(rule, "base", rule));
     });
     liveProperties.forEach(name ->
-        sink.accept(
-            new EmbeddedRule(name, null, "@property ", name, "{syntax:\"*\";inherits:false}")));
+        sink.accept(new Rule(name, null, "@property ", name, "{syntax:\"*\";inherits:false}")));
     scopeBodies.forEach((key, body) -> {
       var selector = "[data-scope=\"" + key + "\"]";
       sink.accept(
-          new EmbeddedRule(
+          new Rule(
               selector,
               "components",
               "@scope (" + selector + ") to (:scope [data-scope] > *){",
               body,
               "}"));
     });
-    utilityRules.forEach((key, rule) -> sink.accept(new EmbeddedRule(key, "utilities", rule)));
-    interactiveRules.forEach(
-        (key, rule) -> sink.accept(new EmbeddedRule(key, "interactive", rule)));
-    containerRules.forEach((key, rule) -> sink.accept(new EmbeddedRule(key, "container", rule)));
+    utilityRules.forEach((key, rule) -> sink.accept(new Rule(key, "utilities", rule)));
+    interactiveRules.forEach((key, rule) -> sink.accept(new Rule(key, "interactive", rule)));
+    containerRules.forEach((key, rule) -> sink.accept(new Rule(key, "container", rule)));
   }
 
   /// The reset rules beneath `host`, an embedded root's selector, or of the whole document when

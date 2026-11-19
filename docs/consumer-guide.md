@@ -24,7 +24,7 @@ Use `Elements.el(HtmlTag.TIME)` for a built-in tag without a dedicated factory. 
 
 ## Separate portable and document content
 
-Import portable authoring from `dev.nthings.tessera.core` and portable widgets from `dev.nthings.tessera.components`. Document placement and assembly live in `dev.nthings.tessera.document`. Import `DocLayout`, `Footnote`, `Footnotes`, and `TableOfContents` from `dev.nthings.tessera.document.components`.
+Import portable authoring from `dev.nthings.tessera.core` and portable widgets from `dev.nthings.tessera.components`. Document placement and assembly live in `dev.nthings.tessera.document`. Import `DocLayout`, `DocumentSection`, `Footnote`, `Footnotes`, `HeroImage`, and `TableOfContents` from `dev.nthings.tessera.document.components`.
 
 Everything above is portable: `IntoElement` content renders in a static page and in a [browser root](browser-rendering.md) alike. Content that needs document assembly is `DocumentContent` instead. Portable builders and components never accept it, so a reusable portable value stays valid for both outputs.
 
@@ -47,7 +47,7 @@ var body = DocumentElement.of(Elements.main().child(Elements.h1().text("Guide"))
     .child(Documents.deferred(Modal.of("Help").id("help"), 10));
 ```
 
-A portable layout component that takes caller-supplied children accepts only portable children. `Section.withDocument(...)` is the exception for document pages: it returns document content that continues the section body with paragraphs holding footnotes or other document content.
+A portable layout component that takes caller-supplied children accepts only portable children. To continue a section body with paragraphs holding footnotes or other document content on a document page, wrap the `Section` with `DocumentSection.of(section, ...)`.
 
 ## Choose a component contract
 
@@ -126,7 +126,7 @@ DocumentElement.of(Elements.main().children(
     .child(Documents.deferred(modal, 10));
 ```
 
-Most built-in components are portable. `Footnote.reference()`, `Footnotes`, `TableOfContents`, `DocLayout`, `Image.hero()` and `Section.withDocument(...)` are document content, because they number, collect, or preload across the page. Bundled icons are structured SVG; `Badge.icon(...)` takes portable content such as `Elements.svgIcon(...)`.
+Most built-in components are portable. `Footnote.reference()`, `Footnotes`, `TableOfContents`, `DocLayout`, `HeroImage.of(...)` and `DocumentSection.of(...)` are document content, because they number, collect, or preload across the page. Bundled icons are structured SVG; `Badge.icon(...)` takes portable content such as `Elements.svgIcon(...)`.
 
 | Purpose | Components |
 | --- | --- |

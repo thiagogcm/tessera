@@ -17,7 +17,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.core.ViewException;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.document.DocumentElement;

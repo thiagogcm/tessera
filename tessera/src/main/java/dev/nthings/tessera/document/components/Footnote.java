@@ -10,6 +10,7 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
 
 /// One footnote definition: its body, an optional identity, and an optional preview. Place
@@ -24,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 /// (`fn-<id>`). Without it, the number is used. Reusing an id for two definitions reports
 /// `duplicate-id`. Link names such as "Footnote 1" are fixed English. This registry is a document
 /// contribution, not a portable component.
-public final class Footnote {
+public final class Footnote implements FluentBuilder<Footnote> {
 
   private final Element body;
   private final @Nullable String plainText;
@@ -46,6 +47,11 @@ public final class Footnote {
   /// [#preview(String)] or [#preview(IntoElement)].
   public static Footnote of(IntoElement body) {
     return new Footnote(body.intoElement(), null);
+  }
+
+  @Override
+  public Footnote self() {
+    return this;
   }
 
   /// Names the endnote `fn-<id>` inside the footnotes scope. Characters outside `[A-Za-z0-9_-]`

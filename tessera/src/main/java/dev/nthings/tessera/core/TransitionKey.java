@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-import dev.nthings.tessera.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;

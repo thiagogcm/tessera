@@ -203,16 +203,17 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
         "Supply an enabled tab key, or an empty selection when every tab is disabled or absent.");
   }
 
-  /// Lays out the tabs with `initial` selected, or the first enabled tab when it is `null`. Keyed
-  /// content is id-scoped by its key, so only a live root, which needs tabs and panels to keep
-  /// their DOM across edits, keys them: documents keep the `<id>--tab-<key>` ids.
-  private TabsParts render(ViewContext context, @Nullable String initial, boolean keyed) {
+  /// Lays out the tabs with `initial` selected, or the first enabled tab when it is `null`. `live`
+  /// is set for a live adapter. Keyed content is id-scoped by its key, so only a live root, which
+  /// needs tabs and panels to keep their DOM across edits, keys them: documents keep the
+  /// `<id>--tab-<key>` ids.
+  private TabsParts render(ViewContext context, @Nullable String initial, boolean live) {
     var enabled = enabledKeys();
     var active = initial != null ? initial : enabled.isEmpty() ? null : enabled.getFirst();
     var selection = enabled.contains(active) ? active : null;
     var manual = activation == Activation.MANUAL;
     var root = div().onlyIf(manual, el -> el.attr("data-activation", "manual"));
-    if (!keyed) {
+    if (!live) {
       // Portable expansion emits `<tessera-tabs>` so static pages upgrade it and raw browser
       // placement keeps the `:not(:defined)` readable fallback. Live adapters own the behavior.
       AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
@@ -255,8 +256,8 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
               .tabIndex(0)
               .onlyIf(!isSelected, el -> el.boolAttr("hidden"))
               .child(panel.content());
-      tabBar.child(keyed ? tab.key(panel.key()) : tab);
-      root.child(keyed ? contents.key(panel.key()) : contents);
+      tabBar.child(live ? tab.key(panel.key()) : tab);
+      root.child(live ? contents.key(panel.key()) : contents);
       parts.add(new TabPart(panel.key(), !panel.disabled(), tabRef, panelRef));
     }
     return new TabsParts(root, parts, selection, manual);

@@ -2,8 +2,8 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
-import dev.nthings.tessera.view.DiagnosticReporter;
-import dev.nthings.tessera.view.ViewSnapshot;
+import dev.nthings.tessera.internal.view.DiagnosticSink;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,7 +27,7 @@ sealed interface LiveBehavior {
 
   record Reaction(Effect effect) implements LiveBehavior {}
 
-  static Bindings bindings(ViewSnapshot.Tag<LiveBehavior> tag) {
+  static Bindings bindings(LinkedNode.Tag<LiveBehavior> tag) {
     return tag.payload() instanceof Bindings binding ? binding : Bindings.NONE;
   }
 
@@ -36,7 +36,7 @@ sealed interface LiveBehavior {
       TagName tag,
       Map<String, String> attributes,
       Location location,
-      DiagnosticReporter reporter) {
+      DiagnosticSink reporter) {
     if (payload instanceof Bindings binding) {
       binding.controls().validate(tag, attributes, location, reporter, binding.events().values());
     }

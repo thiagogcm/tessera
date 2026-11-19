@@ -12,7 +12,8 @@ import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.State;
-import dev.nthings.tessera.view.EmbeddedRule;
+import dev.nthings.tessera.internal.css.StyleSheet;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.view.ViewException;
 import dev.nthings.tessera.view.ViewRenderer;
 import dev.nthings.tessera.view.ViewSnapshot;
@@ -37,11 +38,11 @@ class LiveBindingsTest {
   }
 
   private static List<String> styleRules(ViewSnapshot<LiveBehavior> snapshot) {
-    return snapshot.styleRules().stream().map(EmbeddedRule::css).toList();
+    return snapshot.styleRules().stream().map(StyleSheet.Rule::css).toList();
   }
 
-  private static ViewSnapshot.Tag<LiveBehavior> firstTag(LiveContent content) {
-    return (ViewSnapshot.Tag<LiveBehavior>) render(content).roots().getFirst();
+  private static LinkedNode.Tag<LiveBehavior> firstTag(LiveContent content) {
+    return (LinkedNode.Tag<LiveBehavior>) render(content).roots().getFirst();
   }
 
   /// The rules a render of `content` reports; fails if it renders.
@@ -87,7 +88,7 @@ class LiveBindingsTest {
     assertThat(separate.children())
         .hasSize(2)
         .allSatisfy(
-            child -> assertThat(((ViewSnapshot.Tag<LiveBehavior>) child).children()).hasSize(1));
+            child -> assertThat(((LinkedNode.Tag<LiveBehavior>) child).children()).hasSize(1));
   }
 
   @Test
@@ -99,7 +100,7 @@ class LiveBindingsTest {
 
     assertThat(LiveBehavior.bindings(bound).events()).hasSize(1);
     assertThat(LiveBehavior.bindings(plain).events()).isEmpty();
-    assertThat(plain.children()).containsExactly(new ViewSnapshot.Text<>("Save"));
+    assertThat(plain.children()).containsExactly(new LinkedNode.Text<>("Save"));
   }
 
   @Test
@@ -109,7 +110,7 @@ class LiveBindingsTest {
     for (var width = 1; width <= 3; width++) {
       var size = CssLength.px(width);
       var snapshot = render(LiveContent.of(div().live(style -> style.inlineSize(size))));
-      var tag = (ViewSnapshot.Tag<LiveBehavior>) snapshot.roots().getFirst();
+      var tag = (LinkedNode.Tag<LiveBehavior>) snapshot.roots().getFirst();
 
       assertThat(tag.liveProperties()).containsExactly(entry("--tl-inline-size", width + "px"));
       classes.add(tag.attributes().get("class"));

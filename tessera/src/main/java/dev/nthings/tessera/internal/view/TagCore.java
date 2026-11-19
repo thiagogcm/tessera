@@ -10,7 +10,7 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// The parts of an element that linking passes through unchanged, shared by the expanded
-/// [ViewNode.Tag] and the linked [ViewSnapshot.Tag] it becomes.
+/// [ViewNode.Tag] and the [LinkedNode.Tag] it becomes.
 record TagCore<M>(
     TagName tag,
     Location location,

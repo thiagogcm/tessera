@@ -52,9 +52,8 @@ final class ReferenceLinker<M> {
       switch (node) {
         case ViewNode.Slot<M> slot -> link(slot.content());
         case ViewNode.Empty<M> _ -> {}
-        case ViewNode.Special<M> special ->
-            out.add(new LinkedNode.Special<>(special.payload(), special.readable()));
-        case ViewNode.Text<M> text -> out.add(new LinkedNode.Text<>(text.content()));
+        case LinkedNode.Special<M> special -> out.add(special);
+        case LinkedNode.Text<M> text -> out.add(text);
         case ViewNode.Boundary<M> boundary ->
             group(boundary.key(), boundary.definition(), boundary.location(), boundary.children());
         case ViewNode.ScopeBoundary<M> boundary ->

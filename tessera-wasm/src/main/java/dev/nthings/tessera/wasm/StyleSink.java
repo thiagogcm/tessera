@@ -1,8 +1,7 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.css.Theme;
-import dev.nthings.tessera.view.EmbeddedRule;
-import dev.nthings.tessera.view.EmbeddedStyles;
+import dev.nthings.tessera.internal.css.StyleSheet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,7 +28,7 @@ final class StyleSink {
   private final Map<String, JSObject> inserted = new HashMap<>();
 
   private StyleSink() {
-    Dom.insertRule(sheet, EmbeddedStyles.LAYER_ORDER);
+    Dom.insertRule(sheet, StyleSheet.LAYER_ORDER);
   }
 
   static StyleSink shared() {
@@ -43,7 +42,7 @@ final class StyleSink {
 
   /// A root owns its base rules until close and its render rules until the next successful commit.
   Root root(Theme theme) {
-    return new Root(EmbeddedStyles.baseRules(theme));
+    return new Root(StyleSheet.embeddedBaseRules(theme));
   }
 
   final class Root implements AutoCloseable {
@@ -68,7 +67,7 @@ final class StyleSink {
 
     /// Acquires styles before native mutation and releases old styles after a successful commit.
     /// Rules are compared by key, so a rule this root holds is neither rebuilt nor rehashed.
-    void update(List<EmbeddedRule> rules, Runnable commit) {
+    void update(List<StyleSheet.Rule> rules, Runnable commit) {
       var keys = new HashSet<String>(rules.size() * 2);
       var added = new ArrayList<String>();
       for (var rule : rules) {

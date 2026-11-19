@@ -31,8 +31,8 @@ Tessera ships three runtime modules: `dev.nthings:tessera` (`dev.nthings.tessera
 | `tessera`: `css` | Public CSS values, tokens, declarations, and style callbacks. Serialization stays package-private |
 | `tessera`: `core` | Public portable elements, component contracts, contexts, identities, outline headings, and diagnostics |
 | `tessera`: `components` | Public portable widgets |
-| `tessera`: `internal.*` | Builder data, CSS collection, shared view engine (`LinkedNode`, expansion, linking, validation), component bridges, and hashing/formatting utilities, qualified-exported only to `dev.nthings.tessera.compiler` |
-| `tessera`: `view` | Live-rendering facade and linked snapshots, qualified-exported only to `dev.nthings.tessera.wasm` |
+| `tessera`: `internal.*` | Builder data, CSS collection, shared view engine (`LinkedNode`, expansion, linking, validation), component bridges, and hashing/formatting utilities, qualified-exported to `dev.nthings.tessera.compiler`; `internal.view`, `internal.css` and `internal.components` are also exported to `dev.nthings.tessera.wasm` |
+| `tessera`: `view` | Live rendering (`ViewRenderer`, `LiveNode`, `ViewSnapshot` over `LinkedNode`s), qualified-exported only to `dev.nthings.tessera.wasm` |
 | `tessera-compiler`: `document` and `document.components` | Public document placement (`DocumentContent`/`DocumentTree`), assembly contracts, `WasmBundle`, and document-only components |
 | `tessera-compiler`: `compiler` | Public static compilation, `GraalWebImage`, resource, filesystem, and preview APIs. Coordination and document expansion stay package-private |
 | `tessera-compiler`: `navigation` | Public route-derived navigation |
@@ -107,7 +107,7 @@ A portable callback always receives the portable context, even inside document o
 
 `Declarations` accepts property writes from the CSS package and applies consistent shorthand/longhand replacement. It also retains conditional groups, starting styles, and referenced keyframes. [Styling](styling.md) defines the author-facing operations and precedence rules.
 
-The CSS package constructs and serializes scoped styles and supplies rule data through an internal accessor. `internal.css.StyleSheet` aggregates and deduplicates those rules for documents and mounted roots. The browser uses embedded rules from the qualified `view` package. The cascade follows this layer order.
+The CSS package constructs and serializes scoped styles and supplies rule data through an internal accessor. `internal.css.StyleSheet` aggregates and deduplicates those rules for documents and mounted roots. The browser inserts its embedded `StyleSheet.Rule`s from each `ViewSnapshot`. The cascade follows this layer order.
 
 ```css
 @layer reset, base, theme, components, utilities, container, interactive;

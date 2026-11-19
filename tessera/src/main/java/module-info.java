@@ -10,13 +10,16 @@ module dev.nthings.tessera {
   exports dev.nthings.tessera.internal.authoring to
       dev.nthings.tessera.compiler;
   exports dev.nthings.tessera.internal.components to
-      dev.nthings.tessera.compiler;
+      dev.nthings.tessera.compiler,
+      dev.nthings.tessera.wasm;
   exports dev.nthings.tessera.internal.css to
-      dev.nthings.tessera.compiler;
+      dev.nthings.tessera.compiler,
+      dev.nthings.tessera.wasm;
   exports dev.nthings.tessera.internal.foundation to
       dev.nthings.tessera.compiler;
   exports dev.nthings.tessera.internal.view to
-      dev.nthings.tessera.compiler;
+      dev.nthings.tessera.compiler,
+      dev.nthings.tessera.wasm;
   exports dev.nthings.tessera.view to
       dev.nthings.tessera.wasm;
 }

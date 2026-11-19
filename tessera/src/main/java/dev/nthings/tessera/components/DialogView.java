@@ -29,10 +29,7 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
   static {
     WidgetBridge.registerDialog((source, context) -> {
-      if (!(source instanceof DialogView<?> view)) {
-        throw new IllegalArgumentException(
-            "Expected a Modal or Drawer dialog, got " + source.getClass().getSimpleName());
-      }
+      var view = (DialogView<?>) source;
       return new DialogParts(view.closedDialog(context), view.opened);
     });
   }

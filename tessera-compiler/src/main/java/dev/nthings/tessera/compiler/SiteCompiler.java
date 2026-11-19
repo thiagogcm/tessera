@@ -4,6 +4,7 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -213,7 +214,7 @@ final class SiteCompiler {
               "file-path-collision",
               kind + " \"" + path + "\" has the same path as another file",
               "Register each file at a distinct path.",
-              CompilationState.siteLocation(null, null)));
+              Location.ROOT));
       return true;
     }
     return false;

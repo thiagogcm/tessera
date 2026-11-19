@@ -3,7 +3,7 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Field.Validation;
 import dev.nthings.tessera.foundation.FluentBuilder;
-import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.internal.components.WidgetBridge;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
@@ -39,9 +39,9 @@ public final class LiveField extends BuiltinLiveComponent implements FluentBuild
   @Override
   LiveContent expand(LiveContext context) {
     return new WidgetScope(
-        WidgetAccess.scope(field),
+        WidgetBridge.scope(field),
         _ -> {
-          var parts = WidgetAccess.field(field, validation);
+          var parts = WidgetBridge.field(field, validation);
           var host = LiveElement.of(parts.host());
           parts.before().forEach(host::child);
           var control = LiveElement.of(parts.control());

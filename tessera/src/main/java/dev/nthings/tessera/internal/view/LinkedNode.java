@@ -2,7 +2,6 @@ package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,7 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 /// Linked view nodes shared by static compilation and live rendering. Linking has resolved element
 /// references, late slots, control defaults and tooltip companions, so every node is ready for
-/// validation, HTML emission or snapshot projection.
+/// validation, HTML emission or DOM reconciliation.
 public sealed interface LinkedNode<M>
     permits LinkedNode.Tag, LinkedNode.Text, LinkedNode.Group, LinkedNode.Special {
 
@@ -54,23 +53,11 @@ public sealed interface LinkedNode<M>
       this.tag = tag;
       this.location = location;
       this.payload = payload;
-      this.liveProperties = readOnly(liveProperties);
-      this.attributes = readOnly(attributes);
-      this.unresolvedAttributes = readOnly(unresolvedAttributes);
-      this.children = readOnly(children);
+      this.liveProperties = TagCore.readOnly(liveProperties);
+      this.attributes = TagCore.readOnly(attributes);
+      this.unresolvedAttributes = TagCore.readOnly(unresolvedAttributes);
+      this.children = TagCore.readOnly(children);
       this.defaults = defaults;
-    }
-
-    private static <K, V> Map<K, V> readOnly(Map<K, V> map) {
-      return map.isEmpty() ? Map.of() : Collections.unmodifiableMap(map);
-    }
-
-    private static <T> List<T> readOnly(List<T> list) {
-      return list.isEmpty() ? List.of() : Collections.unmodifiableList(list);
-    }
-
-    private static <T> Set<T> readOnly(Set<T> set) {
-      return set.isEmpty() ? Set.of() : Collections.unmodifiableSet(set);
     }
 
     /// The element's tag.
@@ -128,9 +115,10 @@ public sealed interface LinkedNode<M>
     }
   }
 
-  /// Text content, HTML-escaped when emitted.
-  record Text<M>(String content) implements LinkedNode<M> {}
+  /// Text content, HTML-escaped when emitted. Expansion produces it already linked.
+  record Text<M>(String content) implements LinkedNode<M>, ViewNode<M> {}
 
   /// A backend-owned leaf. The structural passes only need to know if it supplies readable text.
-  record Special<M>(M payload, boolean readable) implements LinkedNode<M> {}
+  /// Expansion produces it already linked.
+  record Special<M>(M payload, boolean readable) implements LinkedNode<M>, ViewNode<M> {}
 }

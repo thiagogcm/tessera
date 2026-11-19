@@ -2,8 +2,8 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.foundation.FluentBuilder;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.TabsParts;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.TabsParts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -55,9 +55,9 @@ public final class LiveTabs extends BuiltinLiveComponent implements FluentBuilde
     var selection = selected;
     var request = this.request;
     return new WidgetScope(
-        WidgetAccess.scope(tabs),
+        WidgetBridge.scope(tabs),
         scope -> {
-          var parts = WidgetAccess.tabs(tabs, scope, controlled, selection);
+          var parts = WidgetBridge.tabs(tabs, scope, controlled, selection);
           return LiveElement.of(parts.host())
               .widget(new Binding(parts, controlled, selection, request));
         });

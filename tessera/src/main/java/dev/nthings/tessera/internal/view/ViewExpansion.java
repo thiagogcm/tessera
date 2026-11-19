@@ -47,6 +47,8 @@ public abstract class ViewExpansion<M> {
   }
 
   private final ViewState state = new ViewState();
+  // A lambda rather than `state::report`, whose receiver null check SpotBugs reads as a constructor
+  // throw.
   private final DiagnosticSink reporter =
       (location, rule, message, fix) -> state.report(location, rule, message, fix);
   private final ExpansionRegistry registry = new ExpansionRegistry();
@@ -80,7 +82,7 @@ public abstract class ViewExpansion<M> {
       default ->
           switch (AuthoringAccess.portable(node)) {
             case PortableNode.Empty _ -> new ViewNode.Empty<>();
-            case PortableNode.Text(var text) -> new ViewNode.Text<>(text);
+            case PortableNode.Text(var text) -> new LinkedNode.Text<>(text);
             case PortableNode.Keyed(var key, var content) ->
                 keyed(
                     key,

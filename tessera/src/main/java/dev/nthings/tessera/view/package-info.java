@@ -1,6 +1,7 @@
-/// Live-rendering facade exported only to the browser backend (`dev.nthings.tessera.wasm`).
-/// [ViewRenderer] expands live placements into linked [ViewSnapshot] trees with [EmbeddedRule]s;
-/// [WidgetAccess] and [ControlLowering] expose portable widget structure and control semantics.
+/// Live rendering exported only to the browser backend (`dev.nthings.tessera.wasm`). [ViewRenderer]
+/// expands [LiveNode] placements into a [ViewSnapshot]: the linked `internal.view.LinkedNode` tree
+/// and its embedded `internal.css.StyleSheet.Rule`s. The backend reads widget structure, control
+/// semantics and embedded-style constants from the internal packages exported to it.
 @NullMarked
 @SourceBoundary
 package dev.nthings.tessera.view;

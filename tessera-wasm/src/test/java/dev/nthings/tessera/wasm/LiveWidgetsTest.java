@@ -8,8 +8,8 @@ import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.view.ViewRenderer;
-import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Live widgets")
 class LiveWidgetsTest {
 
-  private static List<ViewSnapshot.Tag<LiveBehavior>> render(LiveContent content) {
+  private static List<LinkedNode.Tag<LiveBehavior>> render(LiveContent content) {
     var snapshot =
         ViewRenderer.render(
             _ -> LivePlacement.capture(content), "", Detached::new, LiveBehavior::validate);
@@ -45,27 +45,26 @@ class LiveWidgetsTest {
     }
   }
 
-  private static Stream<ViewSnapshot.Tag<LiveBehavior>> tags(
-      List<ViewSnapshot.Node<LiveBehavior>> nodes) {
+  private static Stream<LinkedNode.Tag<LiveBehavior>> tags(List<LinkedNode<LiveBehavior>> nodes) {
     return nodes.stream()
         .flatMap(node ->
             switch (node) {
-              case ViewSnapshot.Tag<LiveBehavior> tag ->
+              case LinkedNode.Tag<LiveBehavior> tag ->
                   Stream.concat(Stream.of(tag), tags(tag.children()));
-              case ViewSnapshot.Group<LiveBehavior> group -> tags(group.children());
-              case ViewSnapshot.Text<LiveBehavior> _, ViewSnapshot.Special<LiveBehavior> _ ->
+              case LinkedNode.Group<LiveBehavior> group -> tags(group.children());
+              case LinkedNode.Text<LiveBehavior> _, LinkedNode.Special<LiveBehavior> _ ->
                   Stream.empty();
             });
   }
 
-  private static String text(ViewSnapshot.Tag<LiveBehavior> tag) {
+  private static String text(LinkedNode.Tag<LiveBehavior> tag) {
     return tag.children().stream()
-        .map(child -> child instanceof ViewSnapshot.Text<LiveBehavior>(var text) ? text : "")
+        .map(child -> child instanceof LinkedNode.Text<LiveBehavior>(var text) ? text : "")
         .collect(Collectors.joining());
   }
 
-  private static List<ViewSnapshot.Tag<LiveBehavior>> withRole(
-      List<ViewSnapshot.Tag<LiveBehavior>> tags, String role) {
+  private static List<LinkedNode.Tag<LiveBehavior>> withRole(
+      List<LinkedNode.Tag<LiveBehavior>> tags, String role) {
     return tags.stream().filter(tag -> role.equals(tag.attributes().get("role"))).toList();
   }
 

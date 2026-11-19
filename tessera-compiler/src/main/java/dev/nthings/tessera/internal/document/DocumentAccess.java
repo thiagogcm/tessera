@@ -3,56 +3,40 @@ package dev.nthings.tessera.internal.document;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentTree;
 import dev.nthings.tessera.document.Documents;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
+import dev.nthings.tessera.internal.foundation.Registration;
 import java.util.function.Function;
-import org.jspecify.annotations.Nullable;
 
 /// Access to document builder data across packages in this module.
 public final class DocumentAccess {
-  private static final AtomicReference<@Nullable Function<DocumentElement, DocumentNode.Host>>
-      HOSTS = new AtomicReference<>();
-  private static final AtomicReference<@Nullable Function<DocumentTree, DocumentNode>> UNWRAP =
-      new AtomicReference<>();
-  private static final AtomicReference<@Nullable Function<DocumentNode, DocumentTree>> WRAP =
-      new AtomicReference<>();
+  private static final Registration<Function<DocumentElement, DocumentNode.Host>> HOSTS =
+      new Registration<>("Document host accessor");
+  private static final Registration<Function<DocumentTree, DocumentNode>> UNWRAP =
+      new Registration<>("Document placement accessor");
+  // Wrapping is the first use of a document placement, so it initializes DocumentPlacement.
+  private static final Registration<Function<DocumentNode, DocumentTree>> WRAP =
+      new Registration<>("Document placement accessor", () -> Documents.rawHtml(""));
 
   private DocumentAccess() {}
 
   public static void registerHost(Function<DocumentElement, DocumentNode.Host> accessor) {
-    if (!HOSTS.compareAndSet(null, accessor)) {
-      throw new IllegalStateException("Document host accessor already registered");
-    }
+    HOSTS.register(accessor);
   }
 
   public static DocumentNode.Host host(DocumentElement element) {
-    return Objects.requireNonNull(HOSTS.get()).apply(element);
+    return HOSTS.get().apply(element);
   }
 
   public static void registerPlacement(
       Function<DocumentTree, DocumentNode> unwrap, Function<DocumentNode, DocumentTree> wrap) {
-    if (!UNWRAP.compareAndSet(null, unwrap) || !WRAP.compareAndSet(null, wrap)) {
-      throw new IllegalStateException("Document placement accessor already registered");
-    }
+    UNWRAP.register(unwrap);
+    WRAP.register(wrap);
   }
 
   public static DocumentNode unwrap(DocumentTree placement) {
-    return Objects.requireNonNull(UNWRAP.get()).apply(placement);
+    return UNWRAP.get().apply(placement);
   }
 
   public static DocumentTree wrap(DocumentNode node) {
-    return Holder.WRAP.apply(node);
-  }
-
-  private static final class Holder {
-    static final Function<DocumentNode, DocumentTree> WRAP = load();
-
-    private static Function<DocumentNode, DocumentTree> load() {
-      // Trigger DocumentPlacement class initialization on first wrap.
-      var seed = Documents.rawHtml("");
-      return Objects.requireNonNull(
-          DocumentAccess.WRAP.get(),
-          () -> "No document placement accessor registered for " + seed.getClass().getSimpleName());
-    }
+    return WRAP.get().apply(node);
   }
 }

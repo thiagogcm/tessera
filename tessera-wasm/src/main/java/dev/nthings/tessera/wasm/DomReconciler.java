@@ -1,7 +1,8 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.view.ControlLowering;
+import dev.nthings.tessera.internal.view.ControlSemantics;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -109,7 +110,7 @@ final class DomReconciler {
     for (var control : boundControls) {
       requireOpen();
       // Other controls are captured lazily, before their own patch can change them.
-      if (sharesNativeState((ViewSnapshot.Tag<LiveBehavior>) control.view)) {
+      if (sharesNativeState((LinkedNode.Tag<LiveBehavior>) control.view)) {
         previousControls.put(control, Dom.captureControl(control.first));
       }
     }
@@ -178,7 +179,7 @@ final class DomReconciler {
     var retained = new ArrayList<Mounted>();
     for (var instance : pending) {
       requireOpen();
-      var tag = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
+      var tag = (LinkedNode.Tag<LiveBehavior>) instance.view;
       var binding = LiveBehavior.bindings(tag).widget();
       var controller = instance.widget;
       if (controller != null && (binding == null || instance.widgetKind != binding.getClass())) {
@@ -213,7 +214,7 @@ final class DomReconciler {
       }
       var lifetime = instance.lifetime;
       if (lifetime != null && !lifetime.disposed()) {
-        var placement = (ViewSnapshot.Special<LiveBehavior>) instance.view;
+        var placement = (LinkedNode.Special<LiveBehavior>) instance.view;
         var effect = ((LiveBehavior.Reaction) placement.payload()).effect();
         Failures.attempt(started, () -> effect.start(lifetime));
       }
@@ -243,10 +244,10 @@ final class DomReconciler {
 
   /// Whether siblings can change this control's state before its own patch: a radio unchecked by
   /// its group, or a select whose options change.
-  private static boolean sharesNativeState(ViewSnapshot.Tag<LiveBehavior> tag) {
+  private static boolean sharesNativeState(LinkedNode.Tag<LiveBehavior> tag) {
     return tag.tag() == HtmlTag.SELECT
-        || (ControlLowering.isCheckable(tag.tag(), tag.attributes())
-            && "radio".equals(ControlLowering.inputType(tag.attributes())));
+        || (ControlSemantics.isCheckable(tag.tag(), tag.attributes())
+            && "radio".equals(ControlSemantics.inputType(tag.attributes())));
   }
 
   private void report(String what, List<RuntimeException> failures) {
@@ -314,7 +315,7 @@ final class DomReconciler {
   private List<Mounted> reconcile(
       JSObject parent,
       List<Mounted> previous,
-      List<ViewSnapshot.Node<LiveBehavior>> next,
+      List<LinkedNode<LiveBehavior>> next,
       @Nullable JSObject end,
       boolean retainOptionDefaults) {
     if (previous.isEmpty() && next.isEmpty()) {
@@ -443,15 +444,15 @@ final class DomReconciler {
   /// earliest unmatched sibling of its kind (tag name, text, effect or group definition), so a
   /// conditional sibling of another kind does not shift the match. Equal identities are always
   /// compatible, so a matched node is patched and an unmatched one replaced.
-  private static Object identity(ViewSnapshot.Node<LiveBehavior> node) {
+  private static Object identity(LinkedNode<LiveBehavior> node) {
     return switch (node) {
-      case ViewSnapshot.Group<LiveBehavior> group -> {
+      case LinkedNode.Group<LiveBehavior> group -> {
         var key = group.key();
         yield key != null ? new KeyedGroup(key, group.definition()) : group.definition();
       }
-      case ViewSnapshot.Special<LiveBehavior> _ -> EFFECT;
-      case ViewSnapshot.Tag<LiveBehavior> tag -> tag.tag();
-      case ViewSnapshot.Text<LiveBehavior> _ -> TEXT;
+      case LinkedNode.Special<LiveBehavior> _ -> EFFECT;
+      case LinkedNode.Tag<LiveBehavior> tag -> tag.tag();
+      case LinkedNode.Text<LiveBehavior> _ -> TEXT;
     };
   }
 
@@ -459,17 +460,17 @@ final class DomReconciler {
   /// default even inside a retained select, so options that arrive in a later render apply the
   /// select's initial value; a choice the user already made is restored after the patch.
   private Mounted create(
-      JSObject parent, ViewSnapshot.Node<LiveBehavior> view, @Nullable JSObject before) {
+      JSObject parent, LinkedNode<LiveBehavior> view, @Nullable JSObject before) {
     return switch (view) {
-      case ViewSnapshot.Text(var text) -> {
+      case LinkedNode.Text(var text) -> {
         var node = Dom.text(text);
         Dom.insert(parent, node, before);
         yield track(view, node, node);
       }
-      case ViewSnapshot.Tag<LiveBehavior> tag -> {
+      case LinkedNode.Tag<LiveBehavior> tag -> {
         var node = Dom.element(tag.tag().namespace().uri(), tag.tag().tagName());
         var instance = track(view, node, node);
-        attributes(node, Map.of(), tag.attributes(), ViewSnapshot.Defaults.NONE, false);
+        attributes(node, Map.of(), tag.attributes(), LinkedNode.Defaults.NONE, false);
         liveProperties(node, Map.of(), tag.liveProperties());
         formListeners(instance, tag);
         var bindings = LiveBehavior.bindings(tag);
@@ -484,7 +485,7 @@ final class DomReconciler {
         }
         yield instance;
       }
-      case ViewSnapshot.Group<LiveBehavior> group -> {
+      case LinkedNode.Group<LiveBehavior> group -> {
         var first = Dom.marker();
         var last = Dom.marker();
         Dom.insert(parent, first, before);
@@ -493,7 +494,7 @@ final class DomReconciler {
         instance.children = reconcile(parent, List.of(), group.children(), last, false);
         yield instance;
       }
-      case ViewSnapshot.Special<LiveBehavior> _ -> {
+      case LinkedNode.Special<LiveBehavior> _ -> {
         var anchor = Dom.marker();
         Dom.insert(parent, anchor, before);
         var instance = track(view, anchor, anchor);
@@ -505,7 +506,7 @@ final class DomReconciler {
   }
 
   /// Registers a new instance before it acquires anything, so a failure or closure releases it.
-  private Mounted track(ViewSnapshot.Node<LiveBehavior> view, JSObject first, JSObject last) {
+  private Mounted track(LinkedNode<LiveBehavior> view, JSObject first, JSObject last) {
     var instance = new Mounted(view, first, last);
     created.add(instance);
     return instance;
@@ -514,30 +515,30 @@ final class DomReconciler {
   private void patch(
       JSObject parent,
       Mounted instance,
-      ViewSnapshot.Node<LiveBehavior> next,
+      LinkedNode<LiveBehavior> next,
       boolean retainOptionDefaults) {
     switch (next) {
-      case ViewSnapshot.Text(var text) -> {
-        if (!((ViewSnapshot.Text<LiveBehavior>) instance.view).content().equals(text)) {
+      case LinkedNode.Text(var text) -> {
+        if (!((LinkedNode.Text<LiveBehavior>) instance.view).content().equals(text)) {
           Dom.textValue(instance.first, text);
         }
       }
-      case ViewSnapshot.Tag<LiveBehavior> tag -> {
+      case LinkedNode.Tag<LiveBehavior> tag -> {
         patchTag(instance, tag, retainOptionDefaults);
       }
-      case ViewSnapshot.Group<LiveBehavior> group -> {
+      case LinkedNode.Group<LiveBehavior> group -> {
         instance.children =
             reconcile(
                 parent, instance.children, group.children(), instance.last, retainOptionDefaults);
       }
-      case ViewSnapshot.Special<LiveBehavior> _ -> {}
+      case LinkedNode.Special<LiveBehavior> _ -> {}
     }
     instance.view = next;
   }
 
   private void patchTag(
-      Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag, boolean retainOptionDefaults) {
-    var previous = (ViewSnapshot.Tag<LiveBehavior>) instance.view;
+      Mounted instance, LinkedNode.Tag<LiveBehavior> tag, boolean retainOptionDefaults) {
+    var previous = (LinkedNode.Tag<LiveBehavior>) instance.view;
     var hadTextDefault = instance.defaults.text();
     var defaults = instance.keepDefaults(tag.defaults());
     var node = instance.first;
@@ -564,7 +565,7 @@ final class DomReconciler {
               tag.children(),
               null,
               defaults.selection()
-                  || (retainOptionDefaults && ControlLowering.mayContainOptions(tag.tag())));
+                  || (retainOptionDefaults && ControlSemantics.mayContainOptions(tag.tag())));
     } else if (preserveText) {
       // Keep the native default but release any previously mounted logical children.
       var text = Dom.defaultText(node);
@@ -575,9 +576,9 @@ final class DomReconciler {
 
   private void queueRetainedControl(
       Mounted instance,
-      ViewSnapshot.Tag<LiveBehavior> previous,
-      ViewSnapshot.Tag<LiveBehavior> tag,
-      ViewSnapshot.Defaults defaults,
+      LinkedNode.Tag<LiveBehavior> previous,
+      LinkedNode.Tag<LiveBehavior> tag,
+      LinkedNode.Defaults defaults,
       ControlProperties next,
       boolean preserveText) {
     var old = LiveBehavior.bindings(previous).controls();
@@ -587,11 +588,11 @@ final class DomReconciler {
         preserveText
             || (old.value() != null
                 && next.value() == null
-                && ControlLowering.hasEditableValue(tag.tag(), attributes));
+                && ControlSemantics.hasEditableValue(tag.tag(), attributes));
     var restoreChecked =
         old.checked() != null
             && next.checked() == null
-            && ControlLowering.isCheckable(tag.tag(), attributes);
+            && ControlSemantics.isCheckable(tag.tag(), attributes);
     var restoreSelection =
         tag.tag() == HtmlTag.SELECT
             && next.value() == null
@@ -636,7 +637,7 @@ final class DomReconciler {
   /// property requests a render: the application may have accepted the edit, and a bound property
   /// it left unchanged reverts the control. Text controls also track IME composition, so a bound
   /// value waits for it to end.
-  private void formListeners(Mounted instance, ViewSnapshot.Tag<LiveBehavior> tag) {
+  private void formListeners(Mounted instance, LinkedNode.Tag<LiveBehavior> tag) {
     var text = tag.tag() == HtmlTag.INPUT || tag.tag() == HtmlTag.TEXTAREA;
     if (!text && tag.tag() != HtmlTag.SELECT) {
       return;
@@ -677,7 +678,7 @@ final class DomReconciler {
   }
 
   private static ControlProperties bindings(Mounted instance) {
-    return LiveBehavior.bindings((ViewSnapshot.Tag<LiveBehavior>) instance.view).controls();
+    return LiveBehavior.bindings((LinkedNode.Tag<LiveBehavior>) instance.view).controls();
   }
 
   private static void controls(Mounted instance, ControlProperties properties) {
@@ -700,7 +701,7 @@ final class DomReconciler {
       JSObject node,
       Map<String, String> previous,
       Map<String, String> next,
-      ViewSnapshot.Defaults defaults,
+      LinkedNode.Defaults defaults,
       boolean retainSelected) {
     diff(
         node,
@@ -781,7 +782,7 @@ final class DomReconciler {
   }
 
   private static final class Mounted {
-    private ViewSnapshot.Node<LiveBehavior> view;
+    private LinkedNode<LiveBehavior> view;
 
     /// Fixed for the node's life: a node is only patched with a view of the same identity.
     private final Object identity;
@@ -790,7 +791,7 @@ final class DomReconciler {
     private final JSObject last;
     private List<Mounted> children = List.of();
     private int slot;
-    private ViewSnapshot.Defaults defaults;
+    private LinkedNode.Defaults defaults;
 
     /// Allocated on first use: most nodes bind no listeners.
     private Map<EventListener.Key, Binding> events = Map.of();
@@ -804,24 +805,24 @@ final class DomReconciler {
     /// Set when this instance's resources are released, so each releases once.
     private boolean released;
 
-    private Mounted(ViewSnapshot.Node<LiveBehavior> view, JSObject first, JSObject last) {
+    private Mounted(LinkedNode<LiveBehavior> view, JSObject first, JSObject last) {
       this.view = view;
       this.identity = identity(view);
       this.first = first;
       this.last = last;
       this.defaults =
-          view instanceof ViewSnapshot.Tag<LiveBehavior> tag
+          view instanceof LinkedNode.Tag<LiveBehavior> tag
               ? tag.defaults()
-              : ViewSnapshot.Defaults.NONE;
+              : LinkedNode.Defaults.NONE;
     }
 
     /// A typed declaration introduced on a retained control also leaves its DOM baseline in place.
-    private ViewSnapshot.Defaults keepDefaults(ViewSnapshot.Defaults next) {
-      if (next == ViewSnapshot.Defaults.NONE || next.equals(defaults)) {
+    private LinkedNode.Defaults keepDefaults(LinkedNode.Defaults next) {
+      if (next == LinkedNode.Defaults.NONE || next.equals(defaults)) {
         return defaults;
       }
       defaults =
-          new ViewSnapshot.Defaults(
+          new LinkedNode.Defaults(
               defaults.value() || next.value(),
               defaults.checked() || next.checked(),
               defaults.text() || next.text(),
@@ -866,7 +867,7 @@ final class DomReconciler {
   private record NativeEvent(JSObject event, Mounted target) implements BrowserEvent {
     @Override
     public ControlState control() {
-      var tag = ((ViewSnapshot.Tag<LiveBehavior>) target.view).tag();
+      var tag = ((LinkedNode.Tag<LiveBehavior>) target.view).tag();
       if (tag != HtmlTag.INPUT && tag != HtmlTag.TEXTAREA && tag != HtmlTag.SELECT) {
         throw new IllegalStateException(
             "Form state requires an input, textarea or select current target");

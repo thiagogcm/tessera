@@ -41,14 +41,24 @@ public final class StyleSheet {
   public static final String LAYER_ORDER =
       "@layer reset, base, theme, components, utilities, container, interactive;";
 
-  /// One self-contained rule emitted by this stylesheet before layer wrapping.
+  /// Backend-facing: one self-contained rule of this stylesheet. Its `key` is short and identifies
+  /// the rule's text (a class name for element rules, and a selector, property name or the rule
+  /// itself for the others), so an embedder can keep the text it built for a key, compare renders
+  /// by key and build [#css()] only for rules it does not hold. The rule is `prefix + body +
+  /// suffix`, joined only when its text is needed.
   public record Rule(
       String key, @Nullable String layer, String prefix, String body, String suffix) {
     public Rule(String key, @Nullable String layer, String rule) {
       this(key, layer, "", rule, "");
     }
 
-    public void appendRule(StringBuilder into) {
+    /// The rule wrapped in its cascade layer; built on each call.
+    public String css() {
+      var rule = prefix + body + suffix;
+      return layer == null ? rule : "@layer " + layer + "{" + rule + "}";
+    }
+
+    void appendRule(StringBuilder into) {
       into.append(prefix).append(body).append(suffix);
     }
   }

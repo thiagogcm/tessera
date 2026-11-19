@@ -8,7 +8,9 @@ import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.foundation.Fnv1a64;
+import dev.nthings.tessera.internal.view.DiagnosticSink;
 import dev.nthings.tessera.internal.view.ExpansionContext;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.internal.view.ViewExpansion;
 import dev.nthings.tessera.internal.view.ViewNode;
 import dev.nthings.tessera.internal.view.ViewScope;
@@ -32,7 +34,7 @@ public final class ViewRenderer {
         TagName tag,
         Map<String, String> attributes,
         Location location,
-        DiagnosticReporter reporter);
+        DiagnosticSink reporter);
   }
 
   /// Renders into a linked snapshot with embedded CSS. Generated and scoped DOM ids are prefixed
@@ -51,12 +53,8 @@ public final class ViewRenderer {
     if (!expansion.diagnostics().isEmpty()) {
       throw new ViewException(expansion.diagnostics());
     }
-    var rules =
-        styles.embeddedRules().stream()
-            .map(r -> new EmbeddedRule(r.key(), r.layer(), r.prefix(), r.body(), r.suffix()))
-            .toList();
     return new ViewSnapshot<>(
-        ViewSnapshot.project(nodes), rules, expansion.references(), expansion.ids());
+        nodes, styles.embeddedRules(), expansion.references(), expansion.ids());
   }
 
   private static final class LiveExpansion<M> extends ViewExpansion<M> {
@@ -107,7 +105,7 @@ public final class ViewRenderer {
                     liveHost(
                         callback(child, "Expand", () -> expand.apply(liveContext.apply(child))),
                         child));
-        case LiveNode.EffectPlacement<M>(var payload) -> new ViewNode.Special<>(payload, false);
+        case LiveNode.EffectPlacement<M>(var payload) -> new LinkedNode.Special<>(payload, false);
       };
     }
 
@@ -163,7 +161,7 @@ public final class ViewRenderer {
     protected void validateHost(
         @Nullable M payload, TagName tag, Map<String, String> attributes, Location location) {
       if (payload != null) {
-        validator.validate(payload, tag, attributes, location, reporter()::report);
+        validator.validate(payload, tag, attributes, location, reporter());
       }
     }
   }

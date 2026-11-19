@@ -10,6 +10,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -98,14 +99,7 @@ final class AccessibilityRules {
           Role.DOC_BACKLINK,
           Role.DOC_NOTEREF);
 
-  private static final List<Set<String>> SUPPORTED_ARIA =
-      Stream.of(Role.values())
-          .map(role -> {
-            var supported = new HashSet<>(GLOBAL_ARIA);
-            supported.addAll(specificAria(role));
-            return Set.copyOf(supported);
-          })
-          .toList();
+  private static final Map<Role, Set<String>> SUPPORTED_ARIA = supportedAriaByRole();
 
   private static final Set<Role> NAMED_LANDMARKS =
       Set.of(Role.NAVIGATION, Role.COMPLEMENTARY, Role.SEARCH, Role.FORM, Role.REGION);
@@ -284,7 +278,7 @@ final class AccessibilityRules {
   }
 
   private static boolean isButtonInput(Map<String, String> attrs) {
-    var type = attrs.getOrDefault("type", "text");
+    var type = ControlSemantics.inputType(attrs);
     return type.equals("button") || type.equals("submit") || type.equals("reset");
   }
 
@@ -338,7 +332,17 @@ final class AccessibilityRules {
   }
 
   private static Set<String> supportedAria(Role role) {
-    return SUPPORTED_ARIA.get(role.ordinal());
+    return Objects.requireNonNull(SUPPORTED_ARIA.get(role));
+  }
+
+  private static Map<Role, Set<String>> supportedAriaByRole() {
+    var byRole = new EnumMap<Role, Set<String>>(Role.class);
+    for (var role : Role.values()) {
+      var supported = new HashSet<>(GLOBAL_ARIA);
+      supported.addAll(specificAria(role));
+      byRole.put(role, Set.copyOf(supported));
+    }
+    return byRole;
   }
 
   private static Set<String> specificAria(Role role) {
@@ -460,7 +464,7 @@ final class AccessibilityRules {
       case HtmlTag.FORM -> ViewValidation.hasAriaName(tag) ? Role.FORM : null;
       case HtmlTag.SECTION -> ViewValidation.hasAriaName(tag) ? Role.REGION : null;
       case HtmlTag.INPUT ->
-          switch (attrs.getOrDefault("type", "text")) {
+          switch (ControlSemantics.inputType(attrs)) {
             case "hidden" -> null;
             case "checkbox" -> Role.CHECKBOX;
             case "radio" -> Role.RADIO;
@@ -662,7 +666,7 @@ final class AccessibilityRules {
   private static boolean isLabelable(Tag<?> tag) {
     return switch (tag.tag()) {
       case HtmlTag.BUTTON, HtmlTag.SELECT, HtmlTag.TEXTAREA, HtmlTag.OUTPUT -> true;
-      case HtmlTag.INPUT -> !"hidden".equals(tag.attributes().get("type"));
+      case HtmlTag.INPUT -> !ControlSemantics.inputType(tag.attributes()).equals("hidden");
       default -> false;
     };
   }
@@ -719,7 +723,7 @@ final class AccessibilityRules {
     return switch (tag.tag()) {
       case HtmlTag.A -> attrs.containsKey("href");
       case HtmlTag.BUTTON, HtmlTag.SELECT, HtmlTag.TEXTAREA, HtmlTag.SUMMARY -> true;
-      case HtmlTag.INPUT -> !"hidden".equals(attrs.get("type"));
+      case HtmlTag.INPUT -> !ControlSemantics.inputType(attrs).equals("hidden");
       default -> false;
     };
   }

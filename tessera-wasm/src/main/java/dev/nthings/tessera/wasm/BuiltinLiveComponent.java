@@ -1,7 +1,5 @@
 package dev.nthings.tessera.wasm;
 
-import dev.nthings.tessera.view.LiveNode;
-
 /// Package-private base for built-in adaptive widgets so `expand` stays off their public API.
 abstract class BuiltinLiveComponent implements LiveContent {
 
@@ -9,10 +7,6 @@ abstract class BuiltinLiveComponent implements LiveContent {
 
   @Override
   public final LiveTree intoLiveTree() {
-    return new LivePlacement(
-        new LiveNode.ComponentPlacement<>(
-            getClass(),
-            LiveNode.captureSource(),
-            context -> LivePlacement.capture(expand((LiveContext) context))));
+    return LivePlacement.component(getClass(), this::expand);
   }
 }

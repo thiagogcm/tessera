@@ -2,10 +2,10 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.view.WidgetAccess;
-import dev.nthings.tessera.view.WidgetAccess.SearchLink;
-import dev.nthings.tessera.view.WidgetAccess.SearchParts;
-import dev.nthings.tessera.view.WidgetAccess.SearchResult;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchLink;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchParts;
+import dev.nthings.tessera.internal.components.WidgetBridge.SearchResult;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,9 +42,9 @@ public final class LiveSearchPalette extends BuiltinLiveComponent {
   @Override
   LiveContent expand(LiveContext context) {
     return new WidgetScope(
-        WidgetAccess.scope(palette),
+        WidgetBridge.scope(palette),
         scope -> {
-          var parts = WidgetAccess.search(palette, scope);
+          var parts = WidgetBridge.search(palette, scope);
           return LiveElement.of(parts.host()).widget(new Binding(parts));
         });
   }

@@ -5,8 +5,10 @@ import dev.nthings.tessera.components.Drawer;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.foundation.FluentBuilder;
-import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.internal.components.WidgetBridge;
+import dev.nthings.tessera.internal.components.WidgetBridge.DialogParts;
 import java.util.ArrayDeque;
 import java.util.function.Function;
 import org.graalvm.webimage.api.JSObject;
@@ -22,6 +24,7 @@ public final class LiveDialog extends BuiltinLiveComponent implements FluentBuil
   }
 
   private final IntoElement dialog;
+  private final Function<ViewContext, DialogParts> parts;
   private final Function<String, Button> trigger;
   private @Nullable Mode mode;
   private @Nullable Boolean open;
@@ -29,19 +32,24 @@ public final class LiveDialog extends BuiltinLiveComponent implements FluentBuil
   private Runnable opening = () -> {};
   private Runnable dismissal = () -> {};
 
-  private LiveDialog(IntoElement dialog, Function<String, Button> trigger) {
+  private LiveDialog(
+      IntoElement dialog,
+      Function<ViewContext, DialogParts> parts,
+      Function<String, Button> trigger) {
     this.dialog = dialog;
+    this.parts = parts;
     this.trigger = trigger;
   }
 
   /// Adapts the portable modal. An authored `opened()` initializes non-modal state.
   public static LiveDialog of(Modal modal) {
-    return new LiveDialog(modal, modal::triggerButton);
+    return new LiveDialog(modal, scope -> WidgetBridge.dialog(modal, scope), modal::triggerButton);
   }
 
   /// Adapts the portable drawer.
   public static LiveDialog of(Drawer drawer) {
-    return new LiveDialog(drawer, drawer::triggerButton);
+    return new LiveDialog(
+        drawer, scope -> WidgetBridge.dialog(drawer, scope), drawer::triggerButton);
   }
 
   @Override
@@ -89,11 +97,11 @@ public final class LiveDialog extends BuiltinLiveComponent implements FluentBuil
   @Override
   LiveContent expand(LiveContext context) {
     return new WidgetScope(
-        WidgetAccess.scope(dialog),
+        WidgetBridge.scope(dialog),
         scope -> {
-          var parts = WidgetAccess.dialog(dialog, scope);
-          return LiveElement.of(parts.host())
-              .widget(new Binding(mode, open, parts.opened(), fallback, opening, dismissal));
+          var dialogParts = parts.apply(scope);
+          return LiveElement.of(dialogParts.host())
+              .widget(new Binding(mode, open, dialogParts.opened(), fallback, opening, dismissal));
         });
   }
 

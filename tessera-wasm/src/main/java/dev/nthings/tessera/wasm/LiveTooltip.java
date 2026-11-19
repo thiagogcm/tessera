@@ -2,7 +2,7 @@ package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.view.WidgetAccess;
+import dev.nthings.tessera.internal.components.WidgetBridge;
 import org.graalvm.webimage.api.JSObject;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +23,7 @@ public final class LiveTooltip extends BuiltinLiveComponent {
 
   @Override
   LiveContent expand(LiveContext context) {
-    var parts = WidgetAccess.tooltip(source);
+    var parts = WidgetBridge.tooltip(source);
     return Live.fragment(
         LiveElement.of(parts.trigger()).widget(new Binding(parts.popupRef())),
         LiveContent.of(parts.popup()));

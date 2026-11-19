@@ -41,6 +41,8 @@ import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.internal.css.StyleSheet;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.support.Diagnostics;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,23 +115,23 @@ class BackendParityTest {
   void embeddedRulesStayUnderTheMountHost() {
     var theme = Theme.defaults();
     var rules = styleRules(render(main().child(Button.of("Save"))));
-    var base = EmbeddedStyles.baseRules(theme);
+    var base = StyleSheet.embeddedBaseRules(theme);
 
     assertThat(rules)
         .isNotEmpty()
         .noneMatch(rule -> rule.startsWith("@layer reset{") || rule.startsWith("@layer theme{"));
     var hosts =
         List.of(
-            "[" + EmbeddedStyles.ROOT_ATTRIBUTE + "]",
-            "[" + EmbeddedStyles.THEME_ATTRIBUTE + "=\"" + EmbeddedStyles.themeKey(theme) + "\"]");
+            "[" + StyleSheet.ROOT_ATTRIBUTE + "]",
+            "[" + StyleSheet.THEME_ATTRIBUTE + "=\"" + StyleSheet.themeKey(theme) + "\"]");
     assertThat(base.stream().flatMap(rule -> selectors(rule).stream()))
         .isNotEmpty()
         .allSatisfy(selector -> assertThat(hosts).anyMatch(selector::startsWith));
     assertThat(String.join("", base)).doesNotContain(":root", "@view-transition");
     var custom = theme.with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
-    assertThat(EmbeddedStyles.themeKey(theme))
-        .isEqualTo(EmbeddedStyles.themeKey(Theme.defaults()))
-        .isNotEqualTo(EmbeddedStyles.themeKey(custom));
+    assertThat(StyleSheet.themeKey(theme))
+        .isEqualTo(StyleSheet.themeKey(Theme.defaults()))
+        .isNotEqualTo(StyleSheet.themeKey(custom));
   }
 
   @Test
@@ -200,7 +202,7 @@ class BackendParityTest {
   void liveDeclarationsCompileDifferentlyPerBackend() {
     var box = div().live(style -> style.inlineSize(CssLength.px(7)));
     var staticCss = Compiler.compile(new PageDocument("Live", main().child(box))).css();
-    var liveTag = (ViewSnapshot.Tag<?>) render(box).roots().getFirst();
+    var liveTag = (LinkedNode.Tag<?>) render(box).roots().getFirst();
 
     assertThat(staticCss).contains("inline-size:7px").doesNotContain("--tl-");
     assertThat(liveTag.liveProperties()).containsEntry("--tl-inline-size", "7px");

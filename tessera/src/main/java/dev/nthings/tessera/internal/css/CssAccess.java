@@ -4,16 +4,17 @@ import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.ScopeBlock;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.internal.foundation.Registration;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /// Collection and lowering operations implemented alongside the package-private CSS serializer.
 public abstract class CssAccess {
-  private static final AtomicReference<@Nullable CssAccess> REGISTERED = new AtomicReference<>();
+  // Initializing Theme installs the CSS package's accessor.
+  private static final Registration<CssAccess> REGISTERED =
+      new Registration<>("CSS accessor", Theme::defaults);
 
   protected CssAccess() {}
 
@@ -61,24 +62,10 @@ public abstract class CssAccess {
       Declarations style, String name, @Nullable String transitionClass);
 
   public static void register(CssAccess access) {
-    if (!REGISTERED.compareAndSet(null, access)) {
-      throw new IllegalStateException("CSS accessor already registered");
-    }
+    REGISTERED.register(access);
   }
 
   public static CssAccess get() {
-    return Holder.ACCESS;
-  }
-
-  private static final class Holder {
-    static final CssAccess ACCESS = load();
-
-    private static CssAccess load() {
-      // Initializing Theme installs the CSS package's accessor.
-      var defaults = Theme.defaults();
-      return Objects.requireNonNull(
-          REGISTERED.get(),
-          () -> "No CSS accessor registered by " + defaults.getClass().getSimpleName());
-    }
+    return REGISTERED.get();
   }
 }

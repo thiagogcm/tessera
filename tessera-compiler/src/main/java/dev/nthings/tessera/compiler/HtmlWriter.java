@@ -30,7 +30,7 @@ final class HtmlWriter {
   /// painted with these resources links.
   static final class Resources {
     private final String css;
-    private final OutputMode outputMode;
+    // Null for inline output.
     private final @Nullable Asset stylesheet;
     private final Map<PageScript, Asset> modules = new LinkedHashMap<>();
 
@@ -38,7 +38,6 @@ final class HtmlWriter {
     /// encoded once.
     Resources(String css, OutputMode outputMode, Iterable<PageScript> behaviors) {
       this.css = css;
-      this.outputMode = outputMode;
       var base = outputMode.assetBase();
       if (base != null) {
         stylesheet = Asset.text(stylesheetPath(base, css), css);
@@ -99,7 +98,8 @@ final class HtmlWriter {
       out.append('\n');
     }
 
-    if (!resources.outputMode.isExternal()) {
+    var stylesheet = resources.stylesheet;
+    if (stylesheet == null) {
       out.append("<style>\n");
       out.append(resources.css);
       out.append("</style>\n");
@@ -110,7 +110,6 @@ final class HtmlWriter {
       }
     } else {
       out.append("<link rel=\"stylesheet\" href=\"");
-      var stylesheet = Objects.requireNonNull(resources.stylesheet);
       out.append(Encode.forHtmlAttribute(stylesheet.path()));
       out.append("\">\n");
       for (var behavior : behaviors) {

@@ -3,8 +3,8 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagName;
-import dev.nthings.tessera.view.ControlLowering;
-import dev.nthings.tessera.view.DiagnosticReporter;
+import dev.nthings.tessera.internal.view.ControlSemantics;
+import dev.nthings.tessera.internal.view.DiagnosticSink;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,11 +54,11 @@ record ControlProperties(
       TagName tag,
       Map<String, String> attributes,
       Location location,
-      DiagnosticReporter reporter,
+      DiagnosticSink reporter,
       Collection<EventListener> listeners) {
     var multiple = attributes.containsKey("multiple");
     if ((value != null || observes(listeners, Kind.VALUE))
-        && !ControlLowering.hasEditableValue(tag, attributes)) {
+        && !ControlSemantics.hasEditableValue(tag, attributes)) {
       reporter.report(
           location,
           "control-value",
@@ -66,7 +66,7 @@ record ControlProperties(
           "Use a compatible input or textarea, or bind selected values on a multiple select.");
     }
     if ((checked != null || observes(listeners, Kind.CHECKED))
-        && !ControlLowering.isCheckable(tag, attributes)) {
+        && !ControlSemantics.isCheckable(tag, attributes)) {
       reporter.report(
           location,
           "control-checked",

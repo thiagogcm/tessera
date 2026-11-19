@@ -364,7 +364,7 @@ public final class Elements {
 
   /// Returns an element that emits no markup.
   public static Element empty() {
-    return new PortablePlacement(PortableNode.Empty.INSTANCE);
+    return PortablePlacement.EMPTY;
   }
 
   /// Creates an element in the SVG namespace, such as `svg` or `path`. Static output writes it as

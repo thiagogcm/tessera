@@ -16,6 +16,7 @@ import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.document.DocumentAccess;
 import dev.nthings.tessera.internal.document.DocumentNode;
 import dev.nthings.tessera.internal.view.ExpansionContext;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.internal.view.ViewExpansion;
 import dev.nthings.tessera.internal.view.ViewNode;
 import dev.nthings.tessera.internal.view.ViewScope;
@@ -84,7 +85,7 @@ final class DocumentExpansion extends ViewExpansion<String> {
   private ViewNode<String> expandDocument(DocumentNode content, ExpansionContext context) {
     return switch (content) {
       case DocumentNode.Portable(var element) -> expandPortable(element, context);
-      case DocumentNode.Raw(var html) -> new ViewNode.Special<>(html, !html.isBlank());
+      case DocumentNode.Raw(var html) -> new LinkedNode.Special<>(html, !html.isBlank());
       case DocumentNode.Deferred deferred ->
           assembly.defer(
               () -> expandDocument(deferred.child(), context.withNamespace(TagName.Namespace.HTML)),

@@ -11,19 +11,13 @@ import org.jspecify.annotations.Nullable;
 /// and tooltip companions exist only here; [ViewExpansion] links them into [LinkedNode]s.
 public sealed interface ViewNode<M>
     permits ViewNode.Tag,
-        ViewNode.Text,
+        LinkedNode.Text,
         ViewNode.Boundary,
         ViewNode.ScopeBoundary,
         ViewNode.Fragment,
         ViewNode.Slot,
-        ViewNode.Special,
+        LinkedNode.Special,
         ViewNode.Empty {
-
-  /// Text content, HTML-escaped when emitted.
-  record Text<M>(String content) implements ViewNode<M> {}
-
-  /// A backend-owned leaf. The structural passes only need to know if it supplies readable text.
-  record Special<M>(M payload, boolean readable) implements ViewNode<M> {}
 
   /// The content of a component or keyed child, emitted without a wrapper. A scope looks through
   /// this wrapper for its element host.

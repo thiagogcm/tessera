@@ -3,7 +3,6 @@ package dev.nthings.tessera.document;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
@@ -71,19 +70,20 @@ public final class WasmBundle {
       return content.clone();
     }
 
+    // The constructor verifies `integrity` against the content, so equal digests stand in for
+    // equal bytes and comparing or hashing a resource never scans its image.
     @Override
     public boolean equals(@Nullable Object other) {
       return other instanceof Resource resource
           && name.equals(resource.name)
           && kind == resource.kind
           && integrity.equals(resource.integrity)
-          && references.equals(resource.references)
-          && Arrays.equals(content, resource.content);
+          && references.equals(resource.references);
     }
 
     @Override
     public int hashCode() {
-      return 31 * Objects.hash(name, kind, integrity, references) + Arrays.hashCode(content);
+      return Objects.hash(name, kind, integrity, references);
     }
 
     @Override

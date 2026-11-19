@@ -4,6 +4,7 @@ import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.internal.view.LinkedNode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -58,17 +59,17 @@ final class LiveDom {
         .toList();
   }
 
-  private static void append(Element parent, List<? extends ViewSnapshot.Node<?>> nodes) {
+  private static void append(Element parent, List<? extends LinkedNode<?>> nodes) {
     for (var node : nodes) {
       switch (node) {
-        case ViewSnapshot.Tag<?> tag -> {
+        case LinkedNode.Tag<?> tag -> {
           var element = parent.appendElement(tag.tag().tagName());
           tag.attributes().forEach(element::attr);
           append(element, tag.children());
         }
-        case ViewSnapshot.Text(var text) -> parent.appendChild(new TextNode(text));
-        case ViewSnapshot.Group<?> group -> append(parent, group.children());
-        case ViewSnapshot.Special<?> _ -> {}
+        case LinkedNode.Text(var text) -> parent.appendChild(new TextNode(text));
+        case LinkedNode.Group<?> group -> append(parent, group.children());
+        case LinkedNode.Special<?> _ -> {}
       }
     }
   }

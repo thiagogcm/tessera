@@ -4,7 +4,7 @@ import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.css.Theme;
-import dev.nthings.tessera.view.EmbeddedStyles;
+import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.view.ViewException;
 import dev.nthings.tessera.view.ViewRenderer;
 import dev.nthings.tessera.view.ViewSnapshot;
@@ -113,7 +113,7 @@ public final class BrowserRoot implements AutoCloseable {
   public static BrowserRoot mount(
       String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
     var root = new BrowserRoot(hostId, theme, scheduling, view);
-    var conflict = Dom.mountConflict(root.hostElement, EmbeddedStyles.ROOT_ATTRIBUTE);
+    var conflict = Dom.mountConflict(root.hostElement, StyleSheet.ROOT_ATTRIBUTE);
     if (conflict != null) {
       throw new IllegalStateException(
           "Cannot mount a browser root on '"
@@ -122,9 +122,8 @@ public final class BrowserRoot implements AutoCloseable {
               + conflict
               + ". Close that root first, or mount on a separate host outside every root.");
     }
-    Dom.attribute(root.hostElement, EmbeddedStyles.ROOT_ATTRIBUTE, "");
-    Dom.attribute(
-        root.hostElement, EmbeddedStyles.THEME_ATTRIBUTE, EmbeddedStyles.themeKey(root.theme));
+    Dom.attribute(root.hostElement, StyleSheet.ROOT_ATTRIBUTE, "");
+    Dom.attribute(root.hostElement, StyleSheet.THEME_ATTRIBUTE, StyleSheet.themeKey(root.theme));
     root.styles.mount();
     root.turn();
     if (root.dirty && !root.closed) {
@@ -341,7 +340,7 @@ public final class BrowserRoot implements AutoCloseable {
     }
     return introduced.length() == 0
         ? null
-        : Dom.foreignId(hostElement, introduced.toString(), EmbeddedStyles.ROOT_ATTRIBUTE);
+        : Dom.foreignId(hostElement, introduced.toString(), StyleSheet.ROOT_ATTRIBUTE);
   }
 
   /// Rejects the candidate: the committed tree is unchanged and a later invalidation retries.
@@ -390,8 +389,8 @@ public final class BrowserRoot implements AutoCloseable {
     renderer.close(failures);
     lifetime.dispose(failures);
     styles.close();
-    Dom.removeAttribute(hostElement, EmbeddedStyles.ROOT_ATTRIBUTE);
-    Dom.removeAttribute(hostElement, EmbeddedStyles.THEME_ATTRIBUTE);
+    Dom.removeAttribute(hostElement, StyleSheet.ROOT_ATTRIBUTE);
+    Dom.removeAttribute(hostElement, StyleSheet.THEME_ATTRIBUTE);
     Failures.reportAll("Cleanup failed while closing browser root '" + hostId + "'", failures);
   }
 }

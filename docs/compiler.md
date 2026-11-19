@@ -47,7 +47,7 @@ Deferred content expands in its lexical scope and is emitted in priority/sequenc
 
 A scope's host is the element its `expand` returns: a `TagElement` for a portable scope and a `DocumentElement` for a document scope. `ViewExpansion` stamps `data-scope` and `data-scope-id` on it. Expansion does not insert a `div` or replace an inner scope's host. Page bodies, document components, late callbacks, and end sections lower to `DocumentNode`s; live nodes never reach the compiler.
 
-`ReferenceLinker` converts `ViewNode` values to `ViewSnapshot.Node` values. Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. A scope boundary links as an ordinary group whose definition is the stable `scopeName()`. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
+`ReferenceLinker` converts `ViewNode` values to `LinkedNode` values in `internal.view` (which the browser facade projects to `ViewSnapshot.Node` values for `tessera-wasm`). Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. A scope boundary links as an ordinary group whose definition is the stable `scopeName()`. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
 
 Heading metadata is read from the element during expansion and resolved by `DocumentPass` after linking. An unbound outline target reports `unbound-reference`.
 
@@ -97,7 +97,7 @@ CSS merges sequentially in route order. The coordinator checks generated stylesh
 
 `HtmlWriter` encodes the linked tree and document envelope using the selected output mode. Its `Resources` object hashes and encodes the final stylesheet once and each distinct page module once per compilation. Every page references those selected resources. Resource paths and returned asset collections follow the [output-mode contract](sites.md#choose-an-output-mode).
 
-Diagnostics and locations live in `view` so both backends use the same model. `CompilationException` reports static failures; `ViewException` reports invalid mounted candidates.
+Diagnostics and locations live in `core` so both backends use the same model. `CompilationException` in `compiler` reports static failures; `ViewException` in `view` reports invalid mounted candidates.
 
 `PreparedPage` is opaque to callers. Emission reads its prepared content without invoking application callbacks again. Trusted raw HTML bypasses parsing and encoding; typed text and attribute output use context-sensitive encoding.
 

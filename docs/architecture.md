@@ -23,23 +23,24 @@ flowchart LR
 
 ## Package boundaries
 
-The default artifact, `dev.nthings:tessera`, declares the Java module `dev.nthings.tessera`. The optional `dev.nthings:tessera-wasm` artifact declares `dev.nthings.tessera.wasm` and exposes the shared authoring API transitively. Each showcase is a separate Maven project.
+Tessera ships three runtime modules: `dev.nthings:tessera` (`dev.nthings.tessera`) for portable authoring and the shared view engine, `dev.nthings:tessera-compiler` (`dev.nthings.tessera.compiler`) for static documents and site compilation, and the optional `dev.nthings:tessera-wasm` (`dev.nthings.tessera.wasm`) for live browser rendering. Both `tessera-compiler` and `tessera-wasm` require `dev.nthings.tessera` transitively and never depend on each other. Each showcase is a separate Maven project.
 
 | Package or artifact | Access and responsibility |
 | --- | --- |
-| `foundation` | Public fluent composition and Kotlin callback marker |
-| `css` | Public CSS values, tokens, declarations, and style callbacks. Serialization stays package-private |
-| `core` | Public portable elements, components, contexts, identities, outline headings, and diagnostics |
-| `document` and `document.components` | Public document placement, assembly contracts, `WasmBundle`/`GraalWebImage`, and document-only components |
-| `components` | Public portable widgets |
-| `compiler` | Public static compilation, resource, filesystem, and preview APIs. Coordination and document expansion stay package-private |
-| `navigation` | Public route-derived navigation |
-| `internal.*` | Unexported builder data, document nodes, CSS collection, shared view engine, component bridges, and hashing/formatting utilities |
-| `view` | Live-rendering facade and linked snapshots, exported only to `dev.nthings.tessera.wasm` |
-| `tessera-wasm` | Public live authoring and host services. Reconciliation, live payloads, and the native DOM bridge stay package-private |
+| `tessera`: `foundation` | Public fluent composition and Kotlin callback marker |
+| `tessera`: `css` | Public CSS values, tokens, declarations, and style callbacks. Serialization stays package-private |
+| `tessera`: `core` | Public portable elements, component contracts, contexts, identities, outline headings, and diagnostics |
+| `tessera`: `components` | Public portable widgets |
+| `tessera`: `internal.*` | Builder data, CSS collection, shared view engine (`LinkedNode`, expansion, linking, validation), component bridges, and hashing/formatting utilities, qualified-exported only to `dev.nthings.tessera.compiler` |
+| `tessera`: `view` | Live-rendering facade and linked snapshots, qualified-exported only to `dev.nthings.tessera.wasm` |
+| `tessera-compiler`: `document` and `document.components` | Public document placement (`DocumentContent`/`DocumentTree`), assembly contracts, `WasmBundle`, and document-only components |
+| `tessera-compiler`: `compiler` | Public static compilation, `GraalWebImage`, resource, filesystem, and preview APIs. Coordination and document expansion stay package-private |
+| `tessera-compiler`: `navigation` | Public route-derived navigation |
+| `tessera-compiler`: `internal.document` | Unexported document node data and cross-package builder access |
+| `tessera-wasm`: `wasm` | Public live authoring (`LiveContent`/`LiveTree`) and host services. Reconciliation, live payloads, and the native DOM bridge stay package-private |
 | `tessera-showcase`, `tessera-wasm-showcase` | Public API examples and browser tests served over HTTP |
 
-On the module path, consumer applications require the artifact's Java module and use its public packages. The default build has no browser runtime dependency. The `wasm` profile builds both browser entry points with the same library classes on the Web Image classpath. Classpath execution does not enforce JPMS exports. See the [repository layout](development.md#repository-layout).
+On the module path, static applications require `dev.nthings.tessera.compiler` and browser applications require `dev.nthings.tessera.wasm`, while portable component libraries require only `dev.nthings.tessera`. The default build has no browser runtime dependency, and `tessera` itself has no `jdk.httpserver` dependency. The `wasm` profile builds both browser entry points with the same library classes on the Web Image classpath. Classpath execution does not enforce JPMS exports. See the [repository layout](development.md#repository-layout).
 
 ## Authoring model
 
@@ -80,18 +81,18 @@ Components that number, collect, or preload across a page live in `document.comp
 
 `ElementRef` carries symbolic identity until linking. The first named reference on an element chooses its DOM ID; anonymous references alias it. A conflicting second named reference becomes a diagnostic. `IdReference` represents attributes that target references.
 
-Package-private `view.ViewScope` values qualify scoped names. Generated counters are local to a scope. Keyed content extends the scope with the key's hexadecimal UTF-16 units and, when present, its nearest named owner. The hexadecimal encoding has no separator ambiguity. A keyed component attaches the key to its component-path entry without adding an extra component wrapper.
+`internal.view.ViewScope` values qualify scoped names. Generated counters are local to a scope. Keyed content extends the scope with the key's hexadecimal UTF-16 units and, when present, its nearest named owner. The hexadecimal encoding has no separator ambiguity. A keyed component attaches the key to its component-path entry without adding an extra component wrapper.
 
 `ViewScope` preserves whether an ancestor prefix was generated through both ordinary and keyed extensions. An explicit child scope does not make a generated parent stable. Expansion reports keyed content within any such prefix. See [identity references](consumer-guide.md#link-elements-with-identity-references) and [list keys](consumer-guide.md#key-list-items-that-move) for the authoring rules and fixes.
 
 ## Expansion state and contexts
 
-Every callback receives a context derived from the package-private `view.ExpansionContext`, which carries the current identity scope, component path, stylesheet, and origin. Derived contexts share expansion state without changing their parent's location or namespace.
+Every callback receives a context derived from `internal.view.ExpansionContext`, which carries the current identity scope, component path, stylesheet, and origin. Derived contexts share expansion state without changing their parent's location or namespace.
 
 | Context | Implemented by | Adds |
 | --- | --- | --- |
-| `ViewContext` | `view.ExpansionContext` | `state(ViewKey)` and `report(...)`, for portable callbacks in both backends |
-| `DocumentContext` | `view.DocumentView` over the compiler's document backend | Head contributions, document-end sections, page scripts, and collected headings |
+| `ViewContext` | `internal.view.ExpansionContext` | `state(ViewKey)` and `report(...)`, for portable callbacks in both backends |
+| `DocumentContext` | `compiler.DocumentView` over the compiler's document backend | Head contributions, document-end sections, page scripts, and collected headings |
 | `LiveContext` | `tessera-wasm` over the root's expansion context | The owning `BrowserRoot` |
 
 A portable callback always receives the portable context, even inside document or live content, so it cannot reach another family's operations.

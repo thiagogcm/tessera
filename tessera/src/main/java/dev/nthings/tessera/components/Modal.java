@@ -59,12 +59,6 @@ public final class Modal extends DialogView<Modal> {
     return this;
   }
 
-  /// Renders the dialog with `open` on load, so it is visible and non-modal.
-  public Modal opened() {
-    opened = true;
-    return this;
-  }
-
   @Override
   public Modal self() {
     return this;

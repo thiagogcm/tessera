@@ -7,7 +7,8 @@ Use JDK 25 and the Maven wrapper. [Just](https://just.systems/) lists and runs t
 ```text
 tessera/
 |-- pom.xml                   Parent and shared build configuration
-|-- tessera/                  Library and unit tests
+|-- tessera/                  Portable authoring library and shared view engine
+|-- tessera-compiler/         Static document authoring, site compiler, and preview server
 |-- tessera-showcase/         Public API examples and browser tests
 |-- tessera-wasm/             Opt-in Java browser runtime
 |-- tessera-wasm-showcase/    Web Image builds and browser acceptance
@@ -17,7 +18,7 @@ tessera/
 `-- .github/workflows/ci.yml  Verification workflow
 ```
 
-The default reactor builds the library and static showcase. The `wasm` profile adds the browser runtime and its showcase; [Browser rendering](browser-rendering.md#build-and-verify) lists the separate prerequisites and commands. The static showcase depends on the library's public API. Playwright is test-scoped there and is excluded from library dependencies. Package responsibilities are defined in [Architecture](architecture.md#package-boundaries).
+The default reactor builds the portable library, static compiler, and static showcase. The `wasm` profile adds the browser runtime and its showcase; [Browser rendering](browser-rendering.md#build-and-verify) lists the separate prerequisites and commands. The static showcase depends on `tessera-compiler` (which exposes `tessera` transitively). Playwright is test-scoped there and is excluded from library dependencies. Package responsibilities are defined in [Architecture](architecture.md#package-boundaries).
 
 ## Build and verify
 

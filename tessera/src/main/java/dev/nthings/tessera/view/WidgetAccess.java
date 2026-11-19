@@ -62,7 +62,6 @@ public final class WidgetAccess {
   public static TabsParts tabs(
       ContentTabs source, ViewContext context, boolean controlled, @Nullable String selection) {
     var raw = WidgetBridge.tabs(source, context, controlled, selection);
-    supplyBehavior(raw.host());
     return new TabsParts(
         raw.host(),
         raw.tabs().stream()
@@ -89,7 +88,6 @@ public final class WidgetAccess {
 
   public static SearchParts search(SearchPalette palette, ViewContext context) {
     var raw = WidgetBridge.search(palette, context);
-    supplyBehavior(raw.host());
     return new SearchParts(
         raw.host(),
         raw.input(),
@@ -105,12 +103,6 @@ public final class WidgetAccess {
                         r.link().description(),
                         r.link().badge())))
             .toList());
-  }
-
-  /// Clears the bundled behavior of a host whose adapter supplies it, so the host renders as its
-  /// plain element instead of an undefined custom element.
-  private static void supplyBehavior(TagElement host) {
-    AuthoringAccess.tag(host).behavior = null;
   }
 
   public static TooltipParts tooltip(TagElement source) {

@@ -32,6 +32,7 @@
 
     <modules>
         <module>tessera</module>
+        <module>tessera-compiler</module>
         <module>tessera-showcase</module>
     </modules>
 

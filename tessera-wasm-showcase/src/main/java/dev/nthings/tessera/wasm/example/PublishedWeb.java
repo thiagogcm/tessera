@@ -6,6 +6,7 @@ import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.compiler.CompiledSite;
 import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.GraalWebImage;
 import dev.nthings.tessera.compiler.OutputMode;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
@@ -19,7 +20,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
-import dev.nthings.tessera.document.GraalWebImage;
 import dev.nthings.tessera.document.WasmBundle;
 import java.nio.file.Path;
 import java.util.List;

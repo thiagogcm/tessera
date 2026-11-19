@@ -20,6 +20,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>dev.nthings</groupId>
+            <artifactId>tessera-compiler</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
         </dependency>

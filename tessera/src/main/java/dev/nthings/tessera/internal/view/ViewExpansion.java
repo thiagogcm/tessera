@@ -20,8 +20,6 @@ import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.css.CssAccess;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.foundation.Fnv1a64;
-import dev.nthings.tessera.view.DiagnosticReporter;
-import dev.nthings.tessera.view.ViewSnapshot;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,15 +47,26 @@ public abstract class ViewExpansion<M> {
   }
 
   private final ViewState state = new ViewState();
-  private final DiagnosticReporter reporter =
+  private final DiagnosticSink reporter =
       (location, rule, message, fix) -> state.report(location, rule, message, fix);
   private final ExpansionRegistry registry = new ExpansionRegistry();
-  protected final ExpansionContext root;
+  private final ViewScope rootScope;
+  private @Nullable ExpansionContext root;
   protected final StyleSheet styles;
 
   protected ViewExpansion(StyleSheet styles, ViewScope scope) {
     this.styles = styles;
-    root = new ExpansionContext(scope, this, List.of(), null, null, TagName.Namespace.HTML);
+    this.rootScope = scope;
+  }
+
+  protected final ExpansionContext root() {
+    var context = root;
+    if (context == null) {
+      context =
+          new ExpansionContext(rootScope, this, List.of(), null, null, TagName.Namespace.HTML);
+      root = context;
+    }
+    return context;
   }
 
   protected final ViewNode<M> expandPortable(Element node, ExpansionContext context) {
@@ -426,7 +435,7 @@ public abstract class ViewExpansion<M> {
   }
 
   /// Resolves references, late slots and tooltip companions of `node` into linked nodes.
-  public List<ViewSnapshot.Node<M>> link(ViewNode<M> node) {
+  public List<LinkedNode<M>> link(ViewNode<M> node) {
     return new ReferenceLinker<M>(state).link(node);
   }
 
@@ -441,7 +450,7 @@ public abstract class ViewExpansion<M> {
     return registry;
   }
 
-  public DiagnosticReporter reporter() {
+  public DiagnosticSink reporter() {
     return reporter;
   }
 

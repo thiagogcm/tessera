@@ -2,13 +2,10 @@ package dev.nthings.tessera.wasm;
 
 import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.div;
-import static dev.nthings.tessera.core.Elements.main;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.compiler.Compiler;
-import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Diagnostic;
@@ -94,19 +91,19 @@ class LiveBindingsTest {
   }
 
   @Test
-  @DisplayName("binding events leaves the portable element valid for static output")
-  void bindingEventsLeavesThePortableElementValidForStaticOutput() {
+  @DisplayName("binding events leaves the wrapped portable element unmodified")
+  void bindingEventsLeavesThePortableElementUnmodified() {
     var save = Button.of("Save").element();
     var bound = firstTag(LiveElement.of(save).onClick(() -> {}));
+    var plain = firstTag(LiveContent.of(save));
 
     assertThat(LiveBehavior.bindings(bound).events()).hasSize(1);
-    assertThat(LiveBehavior.bindings(firstTag(LiveContent.of(save))).events()).isEmpty();
-    assertThat(Compiler.compile(new PageDocument("Static", main().child(save))).html())
-        .contains(">Save</button>");
+    assertThat(LiveBehavior.bindings(plain).events()).isEmpty();
+    assertThat(plain.children()).containsExactly(new ViewSnapshot.Text<>("Save"));
   }
 
   @Test
-  @DisplayName("live declarations keep one rule across values in a mount and compile as values")
+  @DisplayName("live declarations keep one rule across values in a mount")
   void liveDeclarationsKeepOneRule() {
     var classes = new HashSet<String>();
     for (var width = 1; width <= 3; width++) {
@@ -119,13 +116,6 @@ class LiveBindingsTest {
       assertThat(styleRules(snapshot)).noneSatisfy(rule -> assertThat(rule).contains(size.toCss()));
     }
     assertThat(classes).hasSize(1);
-
-    var css =
-        Compiler.compile(
-                new PageDocument(
-                    "Live", main().child(div().live(style -> style.inlineSize(CssLength.px(7))))))
-            .css();
-    assertThat(css).contains("inline-size:7px").doesNotContain("--tl-");
   }
 
   @Test
@@ -158,8 +148,7 @@ class LiveBindingsTest {
       assertThat(input.attributes()).containsEntry("value", "Initial");
       assertThat(LiveBehavior.bindings(input).controls().value()).isEqualTo("Live " + turn);
     }
-    assertThat(Compiler.compile(new PageDocument("Initial", main().child(control))).html())
-        .contains("value=\"Initial\"");
+    assertThat(firstTag(LiveContent.of(control)).attributes()).containsEntry("value", "Initial");
   }
 
   static Stream<Arguments> incompatibleHosts() {

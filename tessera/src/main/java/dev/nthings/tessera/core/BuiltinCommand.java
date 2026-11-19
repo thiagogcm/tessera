@@ -6,7 +6,7 @@ import java.util.Map;
 /// `CLOSE` and `REQUEST_CLOSE` need a `<dialog>` target, and the popover commands need a target
 /// with a `popover` attribute; otherwise the compiler reports `incompatible-command-target`. An
 /// unbound target reports `unbound-reference`.
-public enum BuiltinCommand implements Command, WireToken {
+public enum BuiltinCommand implements Command {
   SHOW_MODAL,
   CLOSE,
   REQUEST_CLOSE,
@@ -17,7 +17,7 @@ public enum BuiltinCommand implements Command, WireToken {
   /// The attribute value, such as `show-modal`.
   @Override
   public String wireValue() {
-    return WireToken.super.wireValue();
+    return WireToken.of(this);
   }
 
   /// Always empty: built-in commands carry no payload.

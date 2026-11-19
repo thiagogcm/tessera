@@ -16,7 +16,7 @@ public enum ClosedBy {
   }
 
   /// The `closedby` attribute value.
-  public String wireValue() {
+  String wireValue() {
     return wireValue;
   }
 }

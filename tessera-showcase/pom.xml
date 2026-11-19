@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>dev.nthings</groupId>
-            <artifactId>tessera</artifactId>
+            <artifactId>tessera-compiler</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

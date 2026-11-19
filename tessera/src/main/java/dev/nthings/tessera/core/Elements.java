@@ -203,7 +203,8 @@ public final class Elements {
   /// Creates an `<img>` with `loading="lazy"` and `decoding="async"`. The compiler requires `alt`
   /// (`image-alt`); an empty `alt` also needs `role="presentation"` or `aria-hidden="true"`
   /// (`decorative-image`). It also requires `width` and `height`, or a CSS aspect ratio
-  /// (`image-dimensions`). For a hero image that needs priority loading, use `components.Image`.
+  /// (`image-dimensions`). For a hero image that needs priority loading, wrap `components.Image`
+  /// with `document.components.HeroImage`.
   public static TagElement img(String src, String alt) {
     return new TagElement(HtmlTag.IMG)
         .attr("src", src)

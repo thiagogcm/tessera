@@ -6,10 +6,8 @@ import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.css.CssAccess;
-import dev.nthings.tessera.view.DiagnosticReporter;
-import dev.nthings.tessera.view.ViewSnapshot;
-import dev.nthings.tessera.view.ViewSnapshot.Tag;
-import dev.nthings.tessera.view.ViewSnapshot.Text;
+import dev.nthings.tessera.internal.view.LinkedNode.Tag;
+import dev.nthings.tessera.internal.view.LinkedNode.Text;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
@@ -35,9 +33,9 @@ public final class ViewValidation {
   final Set<String> ambiguousDomIds;
   final Map<String, Tag<?>> elementsById = new HashMap<>();
   final Set<String> labelledControlIds = new HashSet<>();
-  private final DiagnosticReporter reporter;
+  private final DiagnosticSink reporter;
 
-  private ViewValidation(Set<String> ids, Set<String> ambiguousIds, DiagnosticReporter reporter) {
+  private ViewValidation(Set<String> ids, Set<String> ambiguousIds, DiagnosticSink reporter) {
     this.registeredDomIds = ids;
     this.ambiguousDomIds = ambiguousIds;
     this.reporter = reporter;
@@ -46,11 +44,11 @@ public final class ViewValidation {
   /// Checks linked content, document or mounted, with the shared element, reference and
   /// accessibility rules. The result runs [#checkDocument] on the same content.
   public static ViewValidation check(
-      List<? extends ViewSnapshot.Node<?>> body,
-      List<? extends ViewSnapshot.Node<?>> head,
+      List<? extends LinkedNode<?>> body,
+      List<? extends LinkedNode<?>> head,
       Set<String> ids,
       Set<String> ambiguousIds,
-      DiagnosticReporter reporter) {
+      DiagnosticSink reporter) {
     var state = new ViewValidation(ids, ambiguousIds, reporter);
     index(body, state);
     index(head, state);
@@ -64,7 +62,7 @@ public final class ViewValidation {
   /// not have: literal fragment targets, landmark names and heading order. Returns the first
   /// location of each outgoing URL.
   public Map<String, Location> checkDocument(
-      List<? extends ViewSnapshot.Node<?>> body, List<? extends ViewSnapshot.Node<?>> head) {
+      List<? extends LinkedNode<?>> body, List<? extends LinkedNode<?>> head) {
     var links = new LinkedHashMap<String, Location>();
     checkLinks(body, links);
     checkLinks(head, links);
@@ -72,9 +70,9 @@ public final class ViewValidation {
     return Collections.unmodifiableMap(links);
   }
 
-  private void checkLinks(List<? extends ViewSnapshot.Node<?>> nodes, Map<String, Location> links) {
+  private void checkLinks(List<? extends LinkedNode<?>> nodes, Map<String, Location> links) {
     for (var node : nodes) {
-      if (node instanceof ViewSnapshot.Group<?> group) {
+      if (node instanceof LinkedNode.Group<?> group) {
         checkLinks(group.children(), links);
       } else if (node instanceof Tag<?> tag) {
         for (var urlAttribute : URL_ATTRIBUTES) {
@@ -117,7 +115,7 @@ public final class ViewValidation {
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
   /// Element contracts checked while the expanded element still carries authored declarations.
-  static void checkElement(ViewNode.Tag<?> tag, Declarations style, DiagnosticReporter reporter) {
+  static void checkElement(ViewNode.Tag<?> tag, Declarations style, DiagnosticSink reporter) {
     var location = tag.location();
     if (tag.tag() == HtmlTag.IMG) {
       validateImage(tag.attributes(), style, reporter, location);
@@ -170,10 +168,7 @@ public final class ViewValidation {
   }
 
   private static void validateImage(
-      Map<String, String> attrs,
-      Declarations style,
-      DiagnosticReporter reporter,
-      Location location) {
+      Map<String, String> attrs, Declarations style, DiagnosticSink reporter, Location location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       reporter.report(
@@ -205,9 +200,9 @@ public final class ViewValidation {
     }
   }
 
-  static void index(List<? extends ViewSnapshot.Node<?>> nodes, ViewValidation state) {
+  static void index(List<? extends LinkedNode<?>> nodes, ViewValidation state) {
     for (var node : nodes) {
-      if (node instanceof ViewSnapshot.Group<?> group) {
+      if (node instanceof LinkedNode.Group<?> group) {
         index(group.children(), state);
       } else if (node instanceof Tag<?> tag) {
         var id = tag.attributes().get("id");
@@ -223,10 +218,10 @@ public final class ViewValidation {
     }
   }
 
-  static void validateNodeTree(ViewSnapshot.Node<?> node, ViewValidation state) {
+  static void validateNodeTree(LinkedNode<?> node, ViewValidation state) {
     switch (node) {
-      case Text<?> _, ViewSnapshot.Special<?> _ -> {}
-      case ViewSnapshot.Group<?> group ->
+      case Text<?> _, LinkedNode.Special<?> _ -> {}
+      case LinkedNode.Group<?> group ->
           group.children().forEach(child -> validateNodeTree(child, state));
       case Tag<?> tag -> {
         validateTagAccessibility(tag, state);
@@ -360,13 +355,13 @@ public final class ViewValidation {
         || isNonBlank(attrs.get("aria-labelledby"));
   }
 
-  static boolean containsReadableText(List<? extends ViewSnapshot.Node<?>> children) {
+  static boolean containsReadableText(List<? extends LinkedNode<?>> children) {
     for (var child : children) {
       var found =
           switch (child) {
             case Text(var text) -> !text.isBlank();
-            case ViewSnapshot.Special<?> special -> special.readable();
-            case ViewSnapshot.Group<?> group -> containsReadableText(group.children());
+            case LinkedNode.Special<?> special -> special.readable();
+            case LinkedNode.Group<?> group -> containsReadableText(group.children());
             case Tag<?> nested ->
                 !hiddenFromAssistiveTechnology(nested)
                     && ((nested.tag() == HtmlTag.IMG && isNonBlank(nested.attributes().get("alt")))

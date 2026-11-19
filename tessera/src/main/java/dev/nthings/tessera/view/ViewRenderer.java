@@ -55,7 +55,8 @@ public final class ViewRenderer {
         styles.embeddedRules().stream()
             .map(r -> new EmbeddedRule(r.key(), r.layer(), r.prefix(), r.body(), r.suffix()))
             .toList();
-    return new ViewSnapshot<>(nodes, rules, expansion.references(), expansion.ids());
+    return new ViewSnapshot<>(
+        ViewSnapshot.project(nodes), rules, expansion.references(), expansion.ids());
   }
 
   private static final class LiveExpansion<M> extends ViewExpansion<M> {
@@ -77,6 +78,7 @@ public final class ViewRenderer {
     }
 
     ViewNode<M> expandRoot(Function<ViewContext, LiveNode<M>> content) {
+      var root = root();
       return expandLive(
           callback(root, "Expand", () -> content.apply(liveContext.apply(root))), root);
     }
@@ -161,7 +163,7 @@ public final class ViewRenderer {
     protected void validateHost(
         @Nullable M payload, TagName tag, Map<String, String> attributes, Location location) {
       if (payload != null) {
-        validator.validate(payload, tag, attributes, location, reporter());
+        validator.validate(payload, tag, attributes, location, reporter()::report);
       }
     }
   }

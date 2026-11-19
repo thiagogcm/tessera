@@ -8,8 +8,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /// Expanded content before linking. Component boundaries, scope boundaries, fragments, late slots
-/// and tooltip companions exist only here; [ViewExpansion] links them into
-/// [dev.nthings.tessera.view.ViewSnapshot] nodes.
+/// and tooltip companions exist only here; [ViewExpansion] links them into [LinkedNode]s.
 public sealed interface ViewNode<M>
     permits ViewNode.Tag,
         ViewNode.Text,

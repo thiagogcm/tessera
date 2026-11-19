@@ -2,7 +2,6 @@ package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.FragmentElement;
 import dev.nthings.tessera.core.Location;
-import dev.nthings.tessera.view.ViewSnapshot;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,10 +11,10 @@ import java.util.List;
 import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
-/// Turns expanded `ViewNode<M>`s into [ViewSnapshot] nodes once every identity of the expansion is
-/// bound, checking sibling keys on the way. Component boundaries, scope boundaries and fragments
-/// become [ViewSnapshot.Group]s, each its own key namespace. A scope group keeps the scope name
-/// passed in as its definition.
+/// Turns expanded `ViewNode<M>`s into [LinkedNode]s once every identity of the expansion is bound,
+/// checking sibling keys on the way. Component boundaries, scope boundaries and fragments become
+/// [LinkedNode.Group]s, each its own key namespace. A scope group keeps the scope name passed in as
+/// its definition.
 final class ReferenceLinker<M> {
   private final ViewState state;
 
@@ -25,11 +24,11 @@ final class ReferenceLinker<M> {
 
   /// Substitutes late slots, places tooltip companions after their invoker and folds
   /// [dev.nthings.tessera.internal.authoring.IdReference]s into attributes.
-  List<ViewSnapshot.Node<M>> link(ViewNode<M> node) {
+  List<LinkedNode<M>> link(ViewNode<M> node) {
     return linkChildren(List.of(node));
   }
 
-  private List<ViewSnapshot.Node<M>> linkChildren(List<ViewNode<M>> nodes) {
+  private List<LinkedNode<M>> linkChildren(List<ViewNode<M>> nodes) {
     if (nodes.isEmpty()) {
       return List.of();
     }
@@ -40,12 +39,12 @@ final class ReferenceLinker<M> {
 
   /// One sibling list being linked, with its key namespace.
   private final class Siblings {
-    private final List<ViewSnapshot.Node<M>> out;
+    private final List<LinkedNode<M>> out;
 
     /// Created at the first key: most sibling lists have none.
     private @Nullable Set<String> keys;
 
-    private Siblings(List<ViewSnapshot.Node<M>> out) {
+    private Siblings(List<LinkedNode<M>> out) {
       this.out = out;
     }
 
@@ -54,8 +53,8 @@ final class ReferenceLinker<M> {
         case ViewNode.Slot<M> slot -> link(slot.content());
         case ViewNode.Empty<M> _ -> {}
         case ViewNode.Special<M> special ->
-            out.add(new ViewSnapshot.Special<>(special.payload(), special.readable()));
-        case ViewNode.Text<M> text -> out.add(new ViewSnapshot.Text<>(text.content()));
+            out.add(new LinkedNode.Special<>(special.payload(), special.readable()));
+        case ViewNode.Text<M> text -> out.add(new LinkedNode.Text<>(text.content()));
         case ViewNode.Boundary<M> boundary ->
             group(boundary.key(), boundary.definition(), boundary.location(), boundary.children());
         case ViewNode.ScopeBoundary<M> boundary ->
@@ -81,7 +80,7 @@ final class ReferenceLinker<M> {
             "Duplicate sibling key '" + key + "'",
             "Give each child in this parent a distinct stable key.");
       }
-      out.add(new ViewSnapshot.Group<>(key, definition, linkChildren(children)));
+      out.add(new LinkedNode.Group<>(key, definition, linkChildren(children)));
     }
 
     /// Whether `key` is new among these siblings.
@@ -95,7 +94,7 @@ final class ReferenceLinker<M> {
     }
   }
 
-  private ViewSnapshot.Tag<M> linkTag(ViewNode.Tag<M> tag) {
+  private LinkedNode.Tag<M> linkTag(ViewNode.Tag<M> tag) {
     var attrs = tag.attributes();
     Set<String> unresolved = Set.of();
     if (!tag.references().isEmpty()) {
@@ -129,7 +128,7 @@ final class ReferenceLinker<M> {
     }
     var core = tag.core();
     var linked =
-        new ViewSnapshot.Tag<>(
+        new LinkedNode.Tag<>(
             core.tag(),
             core.location(),
             core.payload(),
@@ -137,7 +136,7 @@ final class ReferenceLinker<M> {
             attrs,
             unresolved,
             linkChildren(tag.children()),
-            ViewSnapshot.Defaults.NONE);
+            LinkedNode.Defaults.NONE);
     return ControlLowerer.lower(linked, core.initial(), state::report);
   }
 

@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 /// LiveElement.of(Button.of("Save").element()).onClick(root.update(this::save));
 /// LiveElement.of(Forms.text("name")).bindValue(name).onValueChange(value -> name = value);
 /// ```
-public final class LiveElement implements LiveContent, FluentBuilder<LiveElement> {
+public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
 
   private final TagElement host;
   private final Map<EventListener.Key, EventListener> events = new LinkedHashMap<>();

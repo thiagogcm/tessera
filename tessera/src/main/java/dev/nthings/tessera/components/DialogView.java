@@ -29,7 +29,10 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
   static {
     WidgetBridge.registerDialog((source, context) -> {
-      var view = (DialogView<?>) source;
+      if (!(source instanceof DialogView<?> view)) {
+        throw new IllegalArgumentException(
+            "Expected a Modal or Drawer dialog, got " + source.getClass().getSimpleName());
+      }
       return new DialogParts(view.closedDialog(context), view.opened);
     });
   }
@@ -56,6 +59,12 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
     for (var child : content) {
       body.add(child.intoElement());
     }
+    return self();
+  }
+
+  /// Renders the dialog with `open` on load, so it is visible and non-modal.
+  public D opened() {
+    opened = true;
     return self();
   }
 

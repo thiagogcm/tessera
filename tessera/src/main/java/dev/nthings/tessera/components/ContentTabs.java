@@ -211,9 +211,12 @@ public final class ContentTabs extends BuiltinScope<ContentTabs> {
     var active = initial != null ? initial : enabled.isEmpty() ? null : enabled.getFirst();
     var selection = enabled.contains(active) ? active : null;
     var manual = activation == Activation.MANUAL;
-    // The bundled behavior emits the host as `<tessera-tabs>`.
     var root = div().onlyIf(manual, el -> el.attr("data-activation", "manual"));
-    AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
+    if (!keyed) {
+      // Portable expansion emits `<tessera-tabs>` so static pages upgrade it and raw browser
+      // placement keeps the `:not(:defined)` readable fallback. Live adapters own the behavior.
+      AuthoringAccess.tag(root).behavior = BundledBehavior.TABS;
+    }
     var parts = new ArrayList<TabPart>(panels.size());
     if (panels.isEmpty()) {
       return new TabsParts(root, parts, selection, manual);

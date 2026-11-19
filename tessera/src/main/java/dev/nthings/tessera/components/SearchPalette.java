@@ -56,7 +56,7 @@ import org.jspecify.annotations.Nullable;
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   static {
-    WidgetBridge.registerSearch((palette, _) -> palette.render());
+    WidgetBridge.registerSearch((palette, _) -> palette.render(false));
   }
 
   /// One link of a [SearchPalette], added with [SearchPalette#item(String, Item)]. The value is
@@ -197,10 +197,10 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   @Override
   TagElement expand(ViewContext context) {
-    return render().host();
+    return render(true).host();
   }
 
-  private SearchParts render() {
+  private SearchParts render(boolean bundled) {
     var input = ElementRef.scoped("input");
     var empty = ElementRef.scoped("empty");
     var results = new ArrayList<SearchResult>();
@@ -301,8 +301,10 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
             .child(headerEl)
             .child(resultsContainer)
             .child(footerEl);
-    // The bundled behavior marks the host `is="tessera-search"`.
-    AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    if (bundled) {
+      // Portable expansion marks the host `is="tessera-search"` so static pages load its script.
+      AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
+    }
     return new SearchParts(root, input, empty, results);
   }
 

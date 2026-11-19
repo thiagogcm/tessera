@@ -2,7 +2,7 @@ package dev.nthings.tessera.core;
 
 /// WAI-ARIA roles an element can declare. The compiler checks each declared role against its
 /// requirements: accessible name, owned descendants, required states and supported `aria-*`.
-public enum Role implements WireToken {
+public enum Role {
   // Landmarks
   BANNER,
   COMPLEMENTARY,
@@ -68,8 +68,7 @@ public enum Role implements WireToken {
   DOC_NOTEREF;
 
   /// The `role` attribute value, such as `doc-noteref`.
-  @Override
   public String wireValue() {
-    return WireToken.super.wireValue();
+    return WireToken.of(this);
   }
 }

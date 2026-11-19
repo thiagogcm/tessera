@@ -23,10 +23,10 @@ The complete source is [GuideSite.java](../tessera-showcase/src/main/java/dev/nt
 
 ## Install the library locally
 
-The current development version is `0.1.0-SNAPSHOT`. Install the library and its parent from this checkout before adding the dependency to a separate application:
+The current development version is `0.1.0-SNAPSHOT`. Install the static compiler, portable library, and parent from this checkout before adding the dependency to a separate application:
 
 ```sh
-./mvnw -pl tessera -am install
+./mvnw -pl tessera-compiler -am install
 ```
 
 Add these settings to your application's POM:
@@ -40,7 +40,7 @@ Add these settings to your application's POM:
 <dependencies>
     <dependency>
         <groupId>dev.nthings</groupId>
-        <artifactId>tessera</artifactId>
+        <artifactId>tessera-compiler</artifactId>
         <version>0.1.0-SNAPSHOT</version>
     </dependency>
 </dependencies>
@@ -58,7 +58,7 @@ Add these settings to your application's POM:
 
 The compiler plugin version matches the repository build and supports the `release` setting.
 
-If your application declares a Java module, add `requires dev.nthings.tessera;` to its `module-info.java` and put your application classes in a named package. Use the fully qualified main class name when running the example below.
+If your application declares a Java module, add `requires dev.nthings.tessera.compiler;` to its `module-info.java` (it exports the portable `dev.nthings.tessera` module transitively) and put your application classes in a named package. Use the fully qualified main class name when running the example below.
 
 ## Build your first site
 

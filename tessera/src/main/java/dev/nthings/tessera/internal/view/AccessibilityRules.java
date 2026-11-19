@@ -2,9 +2,8 @@ package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.view.ViewSnapshot;
-import dev.nthings.tessera.view.ViewSnapshot.Tag;
-import dev.nthings.tessera.view.ViewSnapshot.Text;
+import dev.nthings.tessera.internal.view.LinkedNode.Tag;
+import dev.nthings.tessera.internal.view.LinkedNode.Text;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -125,13 +124,13 @@ final class AccessibilityRules {
   private record Heading(Tag<?> tag, int level) {}
 
   /// Checks the body of a document or mounted root; `<head>` content has no accessibility tree.
-  static void check(List<? extends ViewSnapshot.Node<?>> body, ViewValidation state) {
+  static void check(List<? extends LinkedNode<?>> body, ViewValidation state) {
     var rules = new AccessibilityRules(state);
     visit(body, Context.ROOT, rules::checkTag);
   }
 
   /// Checks the landmark and heading structure of a whole document's body.
-  static void checkDocument(List<? extends ViewSnapshot.Node<?>> body, ViewValidation state) {
+  static void checkDocument(List<? extends LinkedNode<?>> body, ViewValidation state) {
     var rules = new AccessibilityRules(state);
     visit(
         body,
@@ -154,13 +153,11 @@ final class AccessibilityRules {
 
   /// Runs `check` on each element of `nodes`, in document order, with its context.
   private static void visit(
-      List<? extends ViewSnapshot.Node<?>> nodes,
-      Context context,
-      BiConsumer<Tag<?>, Context> check) {
+      List<? extends LinkedNode<?>> nodes, Context context, BiConsumer<Tag<?>, Context> check) {
     for (var node : nodes) {
       switch (node) {
-        case Text<?> _, ViewSnapshot.Special<?> _ -> {}
-        case ViewSnapshot.Group<?> group -> visit(group.children(), context, check);
+        case Text<?> _, LinkedNode.Special<?> _ -> {}
+        case LinkedNode.Group<?> group -> visit(group.children(), context, check);
         case Tag<?> tag -> {
           check.accept(tag, context);
           var inner =
@@ -295,9 +292,9 @@ final class AccessibilityRules {
     return ownsAny(tag.children(), roles);
   }
 
-  private static boolean ownsAny(List<? extends ViewSnapshot.Node<?>> children, Set<Role> roles) {
+  private static boolean ownsAny(List<? extends LinkedNode<?>> children, Set<Role> roles) {
     for (var child : children) {
-      if (child instanceof ViewSnapshot.Group<?> group && ownsAny(group.children(), roles)) {
+      if (child instanceof LinkedNode.Group<?> group && ownsAny(group.children(), roles)) {
         return true;
       }
       if (child instanceof Tag<?> nested && hasOrOwnsAny(nested, roles)) {
@@ -537,16 +534,16 @@ final class AccessibilityRules {
     return joined.isEmpty() ? labelledBy.strip() : joined;
   }
 
-  private static String textOf(ViewSnapshot.Node<?> node) {
+  private static String textOf(LinkedNode<?> node) {
     return switch (node) {
       case Text(var content) -> content;
       case Tag<?> tag -> textOf(tag.children());
-      case ViewSnapshot.Group<?> group -> textOf(group.children());
+      case LinkedNode.Group<?> group -> textOf(group.children());
       default -> "";
     };
   }
 
-  private static String textOf(List<? extends ViewSnapshot.Node<?>> children) {
+  private static String textOf(List<? extends LinkedNode<?>> children) {
     var text = new StringBuilder();
     children.forEach(child -> text.append(textOf(child)));
     return text.toString();
@@ -693,9 +690,9 @@ final class AccessibilityRules {
     return firstFocusable(tag.children());
   }
 
-  private static @Nullable Tag<?> firstFocusable(List<? extends ViewSnapshot.Node<?>> children) {
+  private static @Nullable Tag<?> firstFocusable(List<? extends LinkedNode<?>> children) {
     for (var child : children) {
-      if (child instanceof ViewSnapshot.Group<?> group) {
+      if (child instanceof LinkedNode.Group<?> group) {
         var found = firstFocusable(group.children());
         if (found != null) {
           return found;

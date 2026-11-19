@@ -2,14 +2,11 @@ package dev.nthings.tessera.internal.view;
 
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.internal.authoring.InitialControl;
-import dev.nthings.tessera.view.ControlLowering;
-import dev.nthings.tessera.view.DiagnosticReporter;
-import dev.nthings.tessera.view.ViewSnapshot.Defaults;
-import dev.nthings.tessera.view.ViewSnapshot.Group;
-import dev.nthings.tessera.view.ViewSnapshot.Node;
-import dev.nthings.tessera.view.ViewSnapshot.Special;
-import dev.nthings.tessera.view.ViewSnapshot.Tag;
-import dev.nthings.tessera.view.ViewSnapshot.Text;
+import dev.nthings.tessera.internal.view.LinkedNode.Defaults;
+import dev.nthings.tessera.internal.view.LinkedNode.Group;
+import dev.nthings.tessera.internal.view.LinkedNode.Special;
+import dev.nthings.tessera.internal.view.LinkedNode.Tag;
+import dev.nthings.tessera.internal.view.LinkedNode.Text;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,7 +30,7 @@ final class ControlLowerer {
         .replace("&amp;", "&");
   }
 
-  static <M> Tag<M> lower(Tag<M> tag, InitialControl initial, DiagnosticReporter reporter) {
+  static <M> Tag<M> lower(Tag<M> tag, InitialControl initial, DiagnosticSink reporter) {
     if (initial == InitialControl.NONE) {
       return tag;
     }
@@ -47,7 +44,7 @@ final class ControlLowerer {
     var textarea = false;
     var selection = false;
     if (checked != null) {
-      if (!ControlLowering.isCheckable(tag.tag(), attributes)) {
+      if (!ControlSemantics.isCheckable(tag.tag(), attributes)) {
         reporter.report(
             tag.location(),
             "initial-checked",
@@ -61,7 +58,7 @@ final class ControlLowerer {
       }
     }
     if (value != null && !conflict(tag, attributes, "value", reporter)) {
-      if (tag.tag() == HtmlTag.INPUT && !"file".equals(ControlLowering.inputType(attributes))) {
+      if (tag.tag() == HtmlTag.INPUT && !"file".equals(ControlSemantics.inputType(attributes))) {
         inputValue = true;
         attributes.put("value", htmlText(value));
       } else if (tag.tag() == HtmlTag.TEXTAREA) {
@@ -106,7 +103,7 @@ final class ControlLowerer {
   }
 
   private static boolean conflict(
-      Tag<?> tag, Map<String, String> attributes, String name, DiagnosticReporter reporter) {
+      Tag<?> tag, Map<String, String> attributes, String name, DiagnosticSink reporter) {
     if (!attributes.containsKey(name)) {
       return false;
     }
@@ -118,7 +115,7 @@ final class ControlLowerer {
     return true;
   }
 
-  private static boolean hasContent(List<? extends Node<?>> children) {
+  private static boolean hasContent(List<? extends LinkedNode<?>> children) {
     for (var node : children) {
       if (!(node instanceof Group<?> group) || hasContent(group.children())) {
         return true;
@@ -132,19 +129,19 @@ final class ControlLowerer {
     private final Tag<M> select;
     private final Set<String> values;
     private final boolean multiple;
-    private final DiagnosticReporter reporter;
+    private final DiagnosticSink reporter;
     private boolean matched;
     private boolean opaque;
 
-    Options(Tag<M> select, Set<String> values, boolean multiple, DiagnosticReporter reporter) {
+    Options(Tag<M> select, Set<String> values, boolean multiple, DiagnosticSink reporter) {
       this.select = select;
       this.values = values;
       this.multiple = multiple;
       this.reporter = reporter;
     }
 
-    List<Node<M>> lower(List<Node<M>> children, boolean inOptgroup) {
-      var result = new ArrayList<Node<M>>(children.size());
+    List<LinkedNode<M>> lower(List<LinkedNode<M>> children, boolean inOptgroup) {
+      var result = new ArrayList<LinkedNode<M>>(children.size());
       for (var child : children) {
         result.add(
             switch (child) {
@@ -196,7 +193,7 @@ final class ControlLowerer {
         }
         return tag.withControlMarkup(attributes, tag.children(), tag.defaults());
       }
-      if (!ControlLowering.mayContainOptions(tag.tag())
+      if (!ControlSemantics.mayContainOptions(tag.tag())
           || (tag.tag() == HtmlTag.OPTGROUP && inOptgroup)
           || tag.children().isEmpty()) {
         return tag;
@@ -214,7 +211,7 @@ final class ControlLowerer {
       return start >= end ? "" : collapsed.substring(start, end);
     }
 
-    private void appendOptionText(List<Node<M>> children, StringBuilder text) {
+    private void appendOptionText(List<LinkedNode<M>> children, StringBuilder text) {
       for (var child : children) {
         switch (child) {
           case Text<M> value -> text.append(value.content());

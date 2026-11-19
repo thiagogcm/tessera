@@ -107,7 +107,12 @@ public final class WidgetBridge {
   }
 
   public static DialogParts dialog(IntoElement source, ViewContext context) {
-    return Objects.requireNonNull(DIALOGS.get()).apply(source, context);
+    var renderer = DIALOGS.get();
+    if (renderer == null) {
+      throw new IllegalArgumentException(
+          "Expected a Modal or Drawer dialog, got " + source.getClass().getSimpleName());
+    }
+    return renderer.apply(source, context);
   }
 
   public static void registerSearch(BiFunction<SearchPalette, ViewContext, SearchParts> renderer) {

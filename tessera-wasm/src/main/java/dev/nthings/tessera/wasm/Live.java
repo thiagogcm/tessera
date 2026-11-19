@@ -4,6 +4,7 @@ import dev.nthings.tessera.view.LiveNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 /// Static factories for live content that is not an element: effects and fragments. Wrap elements
 /// in [LiveElement] to bind handlers or controlled properties.
@@ -38,5 +39,10 @@ public final class Live {
     }
     var node = new LiveNode.Fragment<>(nodes);
     return new LivePlacement(node);
+  }
+
+  /// Groups live children from `stream` as siblings without wrapper markup. The stream is consumed.
+  public static LiveContent fragment(Stream<? extends LiveContent> stream) {
+    return fragment(stream.toList());
   }
 }

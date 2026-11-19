@@ -25,7 +25,7 @@ Install the Playwright browsers with `just browsers` before verification. The sh
 
 ## Publish a browser bundle
 
-Build the GraalVM Web Image entry with the pinned toolchain and `-H:-AutoRunVM`. On the JVM, import the generated launcher and image with `dev.nthings.tessera.document.GraalWebImage.read` (no `tessera-wasm` dependency is required to publish a bundle). Add a document-only mount with its host ID, view name, and static fallback. The fallback can contain ordinary links and form controls.
+Build the GraalVM Web Image entry with the pinned toolchain and `-H:-AutoRunVM`. On the JVM, import the generated launcher and image with `dev.nthings.tessera.compiler.GraalWebImage.read` (no `tessera-wasm` dependency is required to publish a bundle). Add a document-only mount with its host ID, view name, and static fallback. The fallback can contain ordinary links and form controls.
 
 ```java
 var bundle = GraalWebImage.read(Path.of("editor.js"), Path.of("editor.js.wasm"));

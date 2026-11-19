@@ -52,12 +52,6 @@ public final class Drawer extends DialogView<Drawer> {
     return this;
   }
 
-  /// Starts visible as a non-modal drawer.
-  public Drawer opened() {
-    opened = true;
-    return this;
-  }
-
   @Override
   public Drawer self() {
     return this;

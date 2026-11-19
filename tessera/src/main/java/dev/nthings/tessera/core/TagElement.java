@@ -197,7 +197,7 @@ public final class TagElement
 
   /// Sets the `popover` attribute to `mode`.
   public TagElement popover(PopoverMode mode) {
-    return attr("popover", mode.wireValue());
+    return attr("popover", WireToken.of(mode));
   }
 
   /// Sets `closedby` on a `<dialog>`, choosing which user actions close it. See [ClosedBy].
@@ -258,7 +258,7 @@ public final class TagElement
   }
 
   public TagElement ariaCurrent(AriaCurrent current) {
-    return aria("aria-current", current.wireValue());
+    return aria("aria-current", WireToken.of(current));
   }
 
   public TagElement ariaExpanded(boolean expanded) {
@@ -266,7 +266,7 @@ public final class TagElement
   }
 
   public TagElement ariaChecked(AriaChecked checked) {
-    return aria("aria-checked", checked.wireValue());
+    return aria("aria-checked", WireToken.of(checked));
   }
 
   public TagElement ariaSelected(boolean selected) {
@@ -298,11 +298,11 @@ public final class TagElement
   }
 
   public TagElement ariaLive(AriaLive live) {
-    return aria("aria-live", live.wireValue());
+    return aria("aria-live", WireToken.of(live));
   }
 
   public TagElement ariaHasPopup(AriaPopup popup) {
-    return aria("aria-haspopup", popup.wireValue());
+    return aria("aria-haspopup", WireToken.of(popup));
   }
 
   /// Sets `aria-level`, the level of a `role="heading"`. Throws IllegalArgumentException outside 1

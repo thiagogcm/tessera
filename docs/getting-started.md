@@ -1,19 +1,19 @@
 # Getting started
 
-Build a two-page site, preview it over HTTP, and use Tessera in your own Maven application. You need JDK 25. The repository includes a Maven wrapper; [Just](https://just.systems/) provides shortcuts for its commands.
+Build a two-page site, preview it over HTTP, and add Tessera to your own Maven application. You need **JDK 25**. The repository includes a Maven wrapper (`./mvnw`), and [Just](https://just.systems/) provides short commands for common tasks.
 
-## Run the example
+## Run the included example
 
-From the repository root:
+From the repository root, build and serve the two-page guide example:
 
 ```sh
 just guide
 jwebserver -b 127.0.0.1 -d target/guide -p 8081
 ```
 
-Open `http://localhost:8081/`. Follow the installation link, then open search and type `publishing`. Press Enter to open the matching section. The example includes a theme, a scoped component, an image asset, and search.
+Open `http://localhost:8081/`. Follow the installation link, then open search, type `publishing`, and press Enter to jump to the matching section. The example uses a custom theme, a scoped component, an SVG asset, a table of contents, and client-side search.
 
-The complete source is [GuideSite.java](../tessera-showcase/src/main/java/dev/nthings/tessera/showcase/guide/GuideSite.java). It uses only public library APIs. To generate the same files without Just:
+The source lives in [GuideSite.java](../tessera-showcase/src/main/java/dev/nthings/tessera/showcase/guide/GuideSite.java) and calls only public library APIs. To run it without Just:
 
 ```sh
 ./mvnw compile exec:java \
@@ -23,13 +23,13 @@ The complete source is [GuideSite.java](../tessera-showcase/src/main/java/dev/nt
 
 ## Install the library locally
 
-The current development version is `0.1.0-SNAPSHOT`. Install the static compiler, portable library, and parent from this checkout before adding the dependency to a separate application:
+The current development version is `0.1.0-SNAPSHOT`. Install the portable library (`tessera`), static compiler (`tessera-compiler`), and parent POM into your local Maven repository:
 
 ```sh
 ./mvnw -pl tessera-compiler -am install
 ```
 
-Add these settings to your application's POM:
+Add the dependency and compiler settings to your application's `pom.xml`:
 
 ```xml
 <properties>
@@ -56,13 +56,13 @@ Add these settings to your application's POM:
 </build>
 ```
 
-The compiler plugin version matches the repository build and supports the `release` setting.
+For a modular Java application, add `requires dev.nthings.tessera.compiler;` to `module-info.java`. That module exports the portable `dev.nthings.tessera` module transitively. Place your application classes in a named package and pass the fully qualified main class name when running Maven.
 
-If your application declares a Java module, add `requires dev.nthings.tessera.compiler;` to its `module-info.java` (it exports the portable `dev.nthings.tessera` module transitively) and put your application classes in a named package. Use the fully qualified main class name when running the example below.
+For portable component libraries that do not compile pages or sites, depend on `dev.nthings:tessera` instead.
 
 ## Build your first site
 
-Save this class as `src/main/java/BuildSite.java` in your application:
+Save this class as `src/main/java/BuildSite.java`:
 
 ```java
 import dev.nthings.tessera.compiler.Compiler;
@@ -75,44 +75,60 @@ import java.nio.file.Path;
 
 public class BuildSite {
   public static void main(String[] args) {
-    var site = SiteDefinition.of(
-        new SiteRoute("/", new PageDocument("Home", Elements.main().children(
-            Elements.h1().text("Home"),
-            Elements.a("/guide/").text("Read the guide")))),
-        new SiteRoute("/guide", new PageDocument("Guide", Elements.main().children(
-            Elements.h1().text("Guide"),
-            Elements.p().text("Upload the generated files to a static host.")))));
+    var site =
+        SiteDefinition.of(
+            new SiteRoute(
+                "/",
+                new PageDocument(
+                    "Home",
+                    Elements.main()
+                        .children(
+                            Elements.h1().text("Home"),
+                            Elements.a("/guide/").text("Read the guide")))),
+            new SiteRoute(
+                "/guide",
+                new PageDocument(
+                    "Guide",
+                    Elements.main()
+                        .children(
+                            Elements.h1().text("Guide"),
+                            Elements.p().text("Upload the generated files to a static host.")))));
 
     SiteWriter.writeToDirectory(Compiler.compile(site), Path.of("target/site"));
   }
 }
 ```
 
-Run it from your application's root with Maven:
+Compile and run the generator from your application root:
 
 ```sh
-mvn compile org.codehaus.mojo:exec-maven-plugin:3.6.4:java -Dexec.mainClass=BuildSite
+mvn compile org.codehaus.mojo:exec-maven-plugin:3.7.0:java -Dexec.mainClass=BuildSite
 ```
 
-You can also run the class from your IDE. Compilation checks both pages and their local links before the writer creates the output directory.
+You can also run `BuildSite` from your IDE. Compilation validates both pages and their local links before `SiteWriter` creates any output files.
 
 ## Preview and publish
 
-Serve the generated directory:
+Serve the generated directory over HTTP:
 
 ```sh
 jwebserver -b 127.0.0.1 -d target/site -p 8082
 ```
 
-Open `http://localhost:8082/`, then follow the guide link. The output contains:
+Open `http://localhost:8082/` and follow the link to the guide page. The output directory contains:
 
-| File                       | Purpose                               |
-| -------------------------- | ------------------------------------- |
-| `index.html`               | Home page                             |
-| `guide/index.html`         | Guide page                            |
-| `assets/styles-<hash>.css` | Shared stylesheet                     |
-| `search-index.json`        | Route and registered-heading metadata |
+| File                       | Purpose                             |
+| -------------------------- | ----------------------------------- |
+| `index.html`               | Home page                           |
+| `guide/index.html`         | Guide page                          |
+| `assets/styles-<hash>.css` | Shared, content-hashed stylesheet   |
+| `search-index.json`        | Route and outlined heading metadata |
 
-Upload the entire directory to your static host. These examples publish at the origin root. Configure directory indexes and a redirect from `/guide` to `/guide/` so relative links resolve consistently. See [Sites](sites.md#publish-and-preview) for output options and preview APIs.
+Upload the entire output directory to your static host. These examples assume hosting at the origin root; enable directory indexes and redirect `/guide` to `/guide/` so relative URLs resolve consistently. See [Sites](sites.md#publish-and-preview) for preview server APIs and hosting details.
 
-Continue with the [component guide](consumer-guide.md) to build reusable UI, or [Styling](styling.md) to change its appearance. Use [Diagnostics](diagnostics.md) when compilation reports an error.
+## Next steps
+
+- Compose reusable UI with [Components](components.md) and [Tables](tables.md).
+- Add static outlines, footnotes, and scripts with [Documents](documents.md).
+- Customize design tokens, layouts, and motion with [Styling](styling.md).
+- Inspect compiler errors and trace elements with [Diagnostics](diagnostics.md).

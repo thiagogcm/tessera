@@ -1,8 +1,10 @@
 # Diagnostics
 
-Use compiler diagnostics to find invalid markup, broken references, or site conflicts before publishing. `Compiler` methods throw `CompilationException` when authoring errors prevent output. Each diagnostic includes a rule, message, suggested fix, and location.
+Tessera validates markup, references, form controls, accessibility semantics, and site links before returning output. Static `Compiler` methods throw `CompilationException` on authoring errors; live browser renders reject invalid candidates with `ViewException` and keep the last valid DOM.
 
 ## Read a diagnostic
+
+Inspect collected errors from `CompilationException.diagnostics()`:
 
 ```java
 try {
@@ -14,7 +16,7 @@ try {
 }
 ```
 
-The exception message also contains the full report:
+The exception message prints the complete formatted report:
 
 ```text
 Compilation failed with 1 error:
@@ -22,91 +24,116 @@ Compilation failed with 1 error:
   Fix: Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.
 ```
 
-| Field | Meaning |
+| Accessor | Meaning |
 | --- | --- |
-| `rule()` | Code identifying the failed check |
-| `message()` | What is wrong |
-| `fix()` | How to correct it |
-| `location()` | Route, page title, component path, element tag, optional DOM ID, and optional source line |
+| `rule()` | Stable rule code identifying the check |
+| `message()` | What failed validation |
+| `fix()` | Actionable correction |
+| `location()` | Optional route, page title, component path, element tag, DOM ID, and Java source line |
 
-A standalone page has no route in its location. A site-level file conflict can have neither route nor page. Deferred content, head contributions, and document-end contributions retain the component path that registered them.
+Standalone pages omit routes from locations, and site-level file collisions can omit both route and page. Deferred, head, and document-end content retains the component path that registered it.
 
-## Understand which errors are collected
+## Understand validation stages
 
-The compiler collects independent authoring errors within each validation stage. It returns no HTML when a stage fails.
+The compiler collects all independent diagnostics within the failing stage and emits no HTML when a stage fails:
 
-| Stage | Checks and ordering |
+| Stage | Scope and ordering |
 | --- | --- |
-| Site paths | Duplicate routes and registered/reserved file collisions; failure stops page preparation |
-| Page preparation | Identity, references, images, markup, accessibility, and URL syntax; site page failures are collected in route declaration order |
-| Site validation | Cross-route targets and fragments, transition keys, and generated stylesheet/module path collisions; runs after every page prepares successfully |
+| 1. Site paths | Checks duplicate routes and registered or reserved file collisions before preparing pages |
+| 2. Page preparation | Checks identity, references, images, markup, controls, widgets, accessibility, and URL syntax; site failures are ordered by route declaration |
+| 3. Site validation | Runs after all pages prepare; checks cross-route links, fragments, shared transition keys, and generated asset collisions |
 
-Markup checks include `svg-namespace`: an SVG shape must sit inside an `svg` element, and HTML elements cannot sit inside one, because an HTML parser and a browser root would otherwise place the element in different namespaces. Deferred content is checked against the end of the body, where it is placed. `script-url` reports a `javascript:` URL in `href`, `xlink:href`, `src`, `action`, `formaction`, `poster`, or `data`, and an iframe `src` holding an inline `data:` document: portable markup runs no script of its own. HTML attribute names are stored in lowercase, so every check sees `HREF` as `href`. Browser roots apply the same shared checks before publishing a render.
+Ambiguous duplicate bindings and unresolved references are excluded from target-dependent checks to prevent cascading noise. Cross-route link diagnostics report the first location where a broken URL appears on a page. See [Compiler internals](compiler.md#coordinate-a-site) for the complete stage machine.
 
-Ambiguous duplicate bindings and unresolved references are excluded from target-dependent checks to avoid misleading secondary errors. Cross-route diagnostics retain the first location where an outgoing URL appears on a page. See [compiler internals](compiler.md) for the validation flow.
+Exceptions thrown inside application callbacks (`expand`, `configureScope`, `late`, `atDocumentEnd`) propagate directly with a suppressed `CompilationException` adding component context. Trusted [`Documents.rawHtml(...)`](documents.md#mix-portable-and-document-content) bypasses validation.
 
-Exceptions thrown by application expansion, styling, late, or document-end callbacks propagate unchanged. A suppressed `CompilationException` adds component context. Trusted raw HTML remains opaque to validation.
+## Rule reference
 
-## Form control rules
+### Identity, markup, and security
 
 | Rule | Reported when |
 | --- | --- |
-| `initial-value` | An initial value is declared on an unsupported host, such as a file input or a multiple select |
-| `initial-checked` | A typed checked default is declared outside a checkbox or radio input |
-| `initial-selection` | Selected values are declared outside a multiple select, or raw HTML prevents option matching |
-| `initial-control-conflict` | A typed default overlaps with a generic control attribute, authored textarea children, or an option's explicit `selected` attribute |
+| `duplicate-id` | Two elements on the same page or root bind the same DOM ID |
+| `conflicting-element-id` | Multiple named `ElementRef` bindings on one element request different DOM IDs |
+| `duplicate-reference-binding` | One `ElementRef` is bound to more than one element |
+| `unbound-reference` | An attribute, command, or outline targets an `ElementRef` that is never bound |
+| `duplicate-key` | Two sibling elements, components, or effects in the same parent share a key |
+| `generated-scope-id` | Keyed content sits inside a scope whose `scopeId()` was generated from encounter order |
+| `unstable-scope-name` | An anonymous `Scope` omits `scopeName()` |
+| `cross-root-id` | A browser root introduces a DOM ID already owned by the host element or external document markup |
+| `svg-namespace` | An SVG shape sits outside `<svg>`, or an HTML element sits inside `<svg>` |
+| `script-url` | A `javascript:` URL appears in `href`, `xlink:href`, `src`, `action`, `formaction`, `poster`, or `data`, or an `<iframe>` `src` holds a `data:` URL (checked case-insensitively) |
+| `invalid-url` | A local URL cannot be parsed |
+| `missing-fragment` | A same-page `#fragment` link does not match any DOM ID on the page |
+| `missing-command-target`, `incompatible-command-target` | A `commandfor` target is missing, or a built-in dialog/popover command targets an incompatible element |
+| `missing-interest-target` | An `interestTooltip` trigger targets a missing ID |
+| `image-alt`, `decorative-image`, `image-dimensions` | An image lacks `alt` text, mixes empty `alt` without decorative ARIA, or lacks dimensions/aspect ratio |
+| `duplicate-hero-image` | More than one `HeroImage` is placed on the same page |
+| `callback-failure` | An expansion or styling callback throws during live rendering |
+
+### Form controls
+
+| Rule | Reported when |
+| --- | --- |
+| `initial-value` | `initialValue` is set on an unsupported host, such as a file input or multiple select |
+| `initial-checked` | `initialChecked` is set outside a checkbox or radio input |
+| `initial-selection` | `initialSelectedValues` is set outside a multiple select, or raw HTML prevents option matching |
+| `initial-control-conflict` | A typed default conflicts with a generic attribute, authored textarea text, or an option's `selected` attribute |
 | `control-value`, `control-checked`, `control-selection` | A live binding or typed change callback is attached to an incompatible host |
 
-Use [portable defaults](consumer-guide.md#set-form-defaults) for initial values and [live bindings](browser-rendering.md#bind-form-values) for application state.
+See [Set form defaults](components.md#set-form-defaults) and [Bind form values](browser-rendering.md#bind-form-values).
 
-## Widget state rules
-
-| Rule | Reported when |
-| --- | --- |
-| `tab-selection` | A static initial selection or live bound selection names an absent or disabled tab, or a live binding is empty while an enabled tab exists |
-
-A browser root keeps its last committed tabs when a candidate has an invalid bound selection. See [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) for updating selection alongside the tab list.
-
-A `wasm-mount-placement` diagnostic identifies a browser mount in the head, inside another mount, or inside a container where the browser cannot create an active host. Place each mount as an independent host in the body.
-
-## Accessibility rules
-
-Use [typed roles and states](consumer-guide.md#declare-roles-and-states) to declare semantics. Role-specific checks apply to explicitly declared roles; native semantics are checked where the compiler recognizes them.
+### Widgets, mounts, and sites
 
 | Rule | Reported when |
 | --- | --- |
-| `role-name-required` | A role that needs an accessible name, or a native dialog, has none from its supported naming sources |
+| `empty-content-tabs` | `ContentTabs` has no tabs |
+| `duplicate-tab` | Two tabs in one `ContentTabs` share a key |
+| `tab-selection` | A static or live tab selection names an absent or disabled tab, or a live binding is empty while an enabled tab exists |
+| `wasm-mount-placement` | A `Documents.wasmMount(...)` sits in `<head>`, inside another mount, or inside a non-host container |
+| `duplicate-route` | Two `SiteRoute` entries declare the same normalized path |
+| `file-path-collision` | Two routes, registered assets, or generated files map to the same URL or output path |
+| `missing-route-or-asset`, `missing-route-fragment` | A local site link targets a missing route, asset, or target-page fragment |
+| `duplicate-transition-key`, `unshared-transition-key` | A `TransitionKey` appears twice on one page or on fewer than two site routes |
+
+### Accessibility rules
+
+Use [typed roles and states](components.md#declare-roles-and-accessibility-states) to declare semantics. Role-specific checks apply to explicit roles and recognized native elements. Closed dialogs, popovers, and `aria-hidden` subtrees are excluded from landmark and heading outline checks.
+
+| Rule | Reported when |
+| --- | --- |
+| `interactive-label` | A native interactive control without an explicit role lacks an accessible name |
+| `role-name-required` | A role requiring an accessible name, a native `<dialog>`, or a heading/link/button with an explicit role has no accessible name |
 | `role-required-children` | A role such as `tablist`, `list`, `listbox`, `menu`, or `tree` lacks required owned roles |
-| `role-required-attribute` | A declared role lacks required state, such as `aria-checked`, `aria-level`, `aria-valuenow`, or `aria-selected`; native hosts exposing that state are exempt |
-| `aria-attribute-not-allowed` | An ARIA attribute is neither global nor supported by the declared role |
-| `landmark-name-unique` | Repeated landmarks of one kind lack distinct names |
-| `multiple-main` | A page contains more than one main landmark |
+| `role-required-attribute` | A declared role lacks a required state (`aria-checked`, `aria-level`, `aria-valuenow`, `aria-selected`) not provided natively |
+| `aria-attribute-not-allowed` | An ARIA attribute is neither global nor valid on the declared role |
+| `landmark-name-unique` | Repeated landmarks of the same kind lack distinct accessible names |
+| `multiple-main` | A page contains more than one `main` landmark |
 | `heading-level-skip` | Heading levels jump by more than one in document order |
-| `empty-heading` | A native heading has no text |
-| `tabindex-positive` | A positive tabindex overrides natural tab order |
-| `label-target` | A label targets an element that cannot be labelled that way |
-| `aria-hidden-focusable` | An ARIA-hidden subtree contains a control in the tab order |
-
-Accessible names can come from ARIA labels, title attributes, native labels, or readable content, as allowed by the role. Declared heading roles use `role-name-required`; declared roles on links and buttons also use it in place of `interactive-label`.
-
-Closed dialogs, popovers, and ARIA-hidden subtrees are excluded from landmark and heading structure checks. Compiler checks complement [browser accessibility verification](development.md#browser-verification).
+| `empty-heading` | A native heading contains no text |
+| `tabindex-positive` | A positive `tabindex` disrupts natural keyboard focus order |
+| `label-target` | A `<label>` targets a non-labellable element |
+| `aria-hidden-focusable` | An `aria-hidden="true"` subtree contains a focusable control in the tab order |
 
 ## Trace elements to Java source
 
-Enable `SourceTracking` around authoring and compilation to capture source locations:
+Wrap authoring and compilation in `SourceTracking.enabled(...)` to record Java file and line origins:
 
 ```java
-var page = SourceTracking.enabled(() -> Compiler.compile(
-    new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))));
+var page =
+    SourceTracking.enabled(
+        () ->
+            Compiler.compile(
+                new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))));
 ```
 
-Tracked HTML carries attributes such as `data-src="Page.java:42"`; diagnostics print the source line too. Elements created inside a built-in component are attributed to the line that placed the component. Site compilation carries tracking onto its virtual threads.
+When enabled, emitted HTML elements carry `data-src="Page.java:42"` attributes and diagnostics include the exact Java source line. Elements constructed inside built-in components attribute themselves to the caller line that placed the component. Site compilation propagates tracking automatically to its virtual threads.
 
-`Compiler.explain(document)` returns a `PageTree` containing tags, IDs, attributes, enclosing components, CSS scopes, and sources. `toText()` renders that tree. For the showcase:
+Inspect a page's linked structure without reading HTML using `Compiler.explain(document)`, which returns a `PageTree` of tags, IDs, attributes, component paths, CSS scopes, and source lines (`toText()` formats it). On the showcase:
 
 ```sh
 just demo
 just explain /overlays/
 ```
 
-`just demo` enables tracking for the preview. Stack capture adds work per element, so leave tracking disabled in production. `SourceTracking.enabledIf(flag, callback)` supports a development flag.
+`just demo` enables source tracking automatically. Stack walking adds per-element overhead, so keep tracking off in production or gate it with `SourceTracking.enabledIf(flag, callback)`.

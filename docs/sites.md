@@ -1,71 +1,98 @@
 # Sites
 
-Define routes and assets, compile them together, then publish the resulting files. The [getting-started example](getting-started.md) provides a complete application. This guide covers the publishing contracts and navigation features.
+Compile routes and static assets together into a validated, publishable site. The [Getting started](getting-started.md) guide walks through a minimal application; this guide covers routing, output modes, assets, link validation, navigation, search, and hosting.
 
 ## Define routes
 
 `SiteDefinition` requires at least one `SiteRoute`. Each route pairs a logical path with a `PageDocument`:
 
 ```java
-var site = SiteDefinition.builder()
-    .route(new SiteRoute("/", new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))))
-    .route(new SiteRoute("/guide", new PageDocument("Guide", Elements.main().child(Elements.h1().text("Guide")))))
-    .build();
+var site =
+    SiteDefinition.builder()
+        .route(
+            new SiteRoute(
+                "/", new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))))
+        .route(
+            new SiteRoute(
+                "/guide",
+                new PageDocument("Guide", Elements.main().child(Elements.h1().text("Guide")))))
+        .build();
 
 var compiled = Compiler.compile(site);
 SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 ```
 
-`PageDocument(lang, title, body)` sets the document language and title. Its two-argument constructor defaults to English. An optional route title changes navigation and search labels; it leaves the document's `<title>` unchanged. Route descriptions feed search metadata.
+`PageDocument(lang, title, body)` sets the document language and `<title>`; the two-argument constructor defaults to English (`en`). An optional route title overrides navigation and search labels without altering `<title>`, and route descriptions populate search metadata.
 
-| Logical route | Public document URL | Generated file     |
-| ------------- | ------------------- | ------------------ |
-| `/`           | `/`                 | `index.html`       |
-| `/guide`      | `/guide/`           | `guide/index.html` |
-| `/about.html` | `/about.html`       | `about.html`       |
+| Logical route | Public document URL (`documentUri()`) | Generated file     |
+| ------------- | ------------------------------------- | ------------------ |
+| `/`           | `/`                                   | `index.html`       |
+| `/guide`      | `/guide/`                             | `guide/index.html` |
+| `/about.html` | `/about.html`                         | `about.html`       |
 
-`route.documentUri()` returns the public URL. `site.route("/guide")` looks up a route as an `Optional`; lookup normalizes paths like route construction does.
+`site.route("/guide")` returns `Optional<SiteRoute>` using the same path normalization as route construction.
 
-The builder accepts a [theme](styling.md#set-a-theme), an output mode, registered assets, a sitemap base URL, and `LinkSpeculation`. Speculation defaults to `PRERENDER`. Pages with the browser bundle deployment policy publish these rules through a response header. Other pages include the rules in the head. Set `baseUrl("https://example.com")` to generate `sitemap.xml`; omit it to omit the sitemap.
+`SiteDefinition.builder()` also accepts:
+
+- `theme(Theme)`: Design tokens shared by every route; see [Styling](styling.md#set-a-theme).
+- `outputMode(OutputMode)`: Controls inline or external packaging for CSS and scripts.
+- `asset(Asset)` / `assets(...)`: Static files published alongside pages.
+- `baseUrl("https://example.com")`: Generates `sitemap.xml` using absolute HTTP(S) URLs. Omit it to skip sitemap generation.
+- `linkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
 ## Choose an output mode
 
-A single page uses inline output by default. A site defaults to `OutputMode.external("/assets")`, sharing one merged stylesheet across routes.
+Standalone `Compiler.compile(document)` defaults to `OutputMode.inline()`. Multi-page `SiteDefinition` defaults to `OutputMode.external("/assets")` so every route shares one content-hashed stylesheet.
 
 | Mode | Stylesheet | Page scripts | Publication contract |
 | --- | --- | --- | --- |
-| `OutputMode.inline()` | Embedded `<style>` | Embedded module scripts | A standalone page has no generated assets |
-| `OutputMode.external("/assets")` | `/assets/styles-<hash>.css` | `/assets/scripts/<sanitized id>-<hash>.js` | Publish every returned asset |
+| `OutputMode.inline()` | Embedded `<style>` | Embedded `<script type="module">` | Standalone pages emit no stylesheet or script assets |
+| `OutputMode.external("/assets")` | `/assets/styles-<hash>.css` | `/assets/scripts/<sanitized-id>-<hash>.js` | Publish every returned asset at its path |
 
-For a standalone page with external resources:
+Compile a standalone page with external assets:
 
 ```java
 var page = Compiler.compile(document, Theme.defaults(), OutputMode.external("/assets"));
 ```
 
-The asset base must be an absolute URL path. Relative paths, `//`, and `..` are rejected. Hashes derive from content, so changing a resource changes its URL.
+Asset base paths must be absolute URL paths; relative paths, `//`, and `..` are rejected. Because filenames include content hashes, changing a resource produces a new URL.
 
-| Result | Accessors |
+### Understand compiled outputs
+
+Compilation returns immutable data structures and performs no output I/O.
+
+```mermaid
+erDiagram
+    accTitle: Site inputs and compiled artifacts
+    accDescr: SiteDefinition combines routes and assets into CompiledSite, which produces HTML pages, shared CSS, generated files, and per-route response headers.
+    SITE_DEFINITION ||--|{ SITE_ROUTE : declares
+    SITE_DEFINITION ||--o{ ASSET : registers
+    SITE_ROUTE ||--|| PAGE_DOCUMENT : wraps
+    SITE_DEFINITION ||--|| COMPILED_SITE : "Compiler.compile()"
+    COMPILED_SITE ||--|{ HTML_PAGE : "pages() in route order"
+    COMPILED_SITE ||--|{ PUBLISHED_FILE : "files(): assets, CSS, JS, wasm, search-index.json, sitemap.xml"
+    COMPILED_SITE ||--o{ PAGE_HEADERS : "pageHeaders() by route"
+```
+
+| Result type | Accessors |
 | --- | --- |
-| `CompiledPage` | `html()`, `css()`, `assets()`, and `responseHeaders()` |
-| `CompiledSite` | `pages()` in route order, `css()`, and `files()` containing registered and generated assets |
-
-Site files include `search-index.json`, optional `sitemap.xml`, external stylesheets and modules, and any [published browser bundles](browser-rendering.md#publish-a-browser-bundle). `CompiledSite.pageHeaders()` maps routes to deployment response headers. Compilation returns data; filesystem writes belong to `SiteWriter`.
+| `CompiledPage` | `html()`, `css()`, `assets()`, `responseHeaders()` |
+| `CompiledSite` | `pages()` (in route order), `css()`, `files()`, `pageHeaders()`, `searchIndexJson()`, `sitemapXml()` |
 
 ## Register assets and images
 
-Use absolute logical paths for files. Site validation recognizes registered files as link and media destinations:
+Register static files with absolute logical paths so site validation recognizes them as valid link and media destinations:
 
 ```java
 builder.asset(Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
 builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
 ```
 
-`Asset.file(...)` reads the input file explicitly. Byte-backed assets travel through compilation and publishing together.
+`Asset.file(...)` reads bytes explicitly at registration time. Byte-backed assets flow through compilation and publishing together.
 
-Use `Image.of(src, alt).dimensions(width, height)` to reserve layout space and provide an accessible description. Images load lazily and decode asynchronously. `HeroImage.of(image)` (from `dev.nthings.tessera.document.components`) places the main image with eager loading, `fetchpriority="high"`, and a head preload. A second hero on one page reports `duplicate-hero-image`.
+Use `Image.of(src, alt).dimensions(width, height)` to reserve layout space and supply accessible text. Images load lazily and decode asynchronously by default. For the primary above-the-fold image, wrap it with [`HeroImage.of(image)`](documents.md#preload-a-hero-image).
 
-Configure the underlying image through `element(...)` for styles, an aspect ratio, ARIA, references, or transition keys:
+Configure styles, aspect ratios, ARIA attributes, or references on the underlying `<img>` through `element(...)`:
 
 ```java
 Image.of("/assets/divider.svg", "")
@@ -73,70 +100,90 @@ Image.of("/assets/divider.svg", "")
     .element(img -> img.ariaHidden(true).inlineSize(CssLength.pct(100)));
 ```
 
-The compiler requires alt text and dimensions or an aspect ratio. Decorative images use empty alt text and either `role(Role.PRESENTATION)` or `ariaHidden(true)`.
+The compiler requires non-empty `alt` text and explicit dimensions or an aspect ratio. Decorative images must use empty `alt` text paired with `role(Role.PRESENTATION)` or `ariaHidden(true)`.
 
 ## Write links as browser URLs
 
-Site compilation resolves local `href`, `src`, and `poster` values from the source route's public document URL. Queries remain in output but do not affect destination lookup. Percent-encoded paths and fragments are decoded for comparison; `+` in a fragment stays a plus sign.
+Site validation resolves local `href`, `src`, and `poster` attributes against the source route's public `documentUri()`:
 
-| Source route | Link | Validated destination |
+- Query strings remain in output but are ignored during target lookup.
+- Percent-encoded paths and fragments are decoded for comparison (`+` in a fragment stays `+`).
+- Explicit `index.html` links are accepted for directory routes.
+- Absolute (`https://...`) and protocol-relative (`//...`) URLs are treated as external and skipped by local validation.
+
+| Source route | Authored link | Validated destination |
 | --- | --- | --- |
-| `/guides/start` | `../install?mode=full#requirements` | `/guides/install`, ID `requirements` |
+| `/guides/start` | `../install?mode=full#requirements` | Route `/guides/install`, ID `requirements` |
 | `/guides/start.html` | `?mode=full#requirements` | Same HTML file, ID `requirements` |
-| `/` | `/guides/caf%C3%A9/#caf%C3%A9%2Bintro` | `/guides/café`, ID `café+intro` |
+| `/` | `/guides/caf%C3%A9/#caf%C3%A9%2Bintro` | Route `/guides/café`, ID `café+intro` |
 | `/guide` | `../assets/manual%20v1.pdf?download=1` | Asset `/assets/manual v1.pdf` |
 
-Define route and asset paths in their logical form, such as `/guides/café`. Escape links as URLs. Explicit `index.html` links are accepted for directory pages. Absolute and protocol-relative URLs are external and are outside local target validation.
+Define route and asset paths in unescaped logical form (such as `/guides/café`) and URL-encode them in links. Duplicate routes, file path collisions, missing targets, missing fragments, and malformed URLs report [compilation diagnostics](diagnostics.md).
 
-Duplicate routes, conflicting file paths, missing local targets, and malformed URLs produce [compilation diagnostics](diagnostics.md).
+## Add navigation and search
 
-## Add headings and navigation
+The compiler builds `search-index.json` automatically from routes and [outlined headings](documents.md#outline-headings-and-build-a-table-of-contents) (`Section` and outlined `Heading` elements), independent of `TableOfContents`.
 
-`Section.of(id, title)` binds a page-level fragment on the `<section>` and outlines that id. Its heading levels are 2 through 4. `Heading.of(level, label, content...)` is an `h1` through `h6`. Call `outline(target)` and bind `target` to include it. The outline uses the plain label; rich phrasing stays in the HTML. Ordinary HTML headings, dialog titles, and the footnotes heading are not indexed.
+`SiteNavigation` (in `dev.nthings.tessera.navigation`) derives navigation components directly from your routes:
 
-`TableOfContents.of(title)` reads the collected outline through a late callback, so it can appear before the sections. `DocLayout.of(sections...)` combines sections with a sticky table of contents. `TableOfContents.headings(list)` uses a fixed list instead. Collection order is heading order.
+- `SiteNavigation.searchPalette(site)` builds a `SearchPalette` pre-populated with every route.
+- `SiteNavigation.docPager(site, currentPath)` builds a previous/next `DocPager` in route declaration order.
 
-The search index reads the same collected headings without depending on `TableOfContents`. `SiteNavigation.searchPalette(site)` derives page entries from routes; `SiteNavigation.docPager(...)` derives page navigation.
-
-## Add search
-
-A `SearchPalette` renders the search input and result links and contributes its module automatically:
+You can also populate `SearchPalette` manually with custom groups, descriptions, and badges:
 
 ```java
-var search = SearchPalette.of().id("guide-search")
-    .placeholder("Search pages and sections...")
-    .item("Guide", "Installation", "/guide/#installation")
-    .item("Guide", SearchPalette.Item.of("Publishing", "/guide/#publishing")
-        .description("Upload the generated site").badge("New"));
+var search =
+    SearchPalette.of()
+        .id("guide-search")
+        .placeholder("Search pages and sections...")
+        .item("Guide", "Installation", "/guide/#installation")
+        .item(
+            "Guide",
+            SearchPalette.Item.of("Publishing", "/guide/#publishing")
+                .description("Upload the generated site")
+                .badge("New"));
 
 DocumentElement.of(Elements.main().child(search.triggerButton()))
     .child(Documents.deferred(search, 10));
 ```
 
-The palette filters its rendered links without fetching an index or calling a search endpoint. Use `.item(group, title, href)` for simple entries, or `SearchPalette.Item` for descriptions and badges. The generated `search-index.json` is a separate artifact for other consumers.
+`SearchPalette` filters its rendered links in the browser without fetching `search-index.json` or calling a backend endpoint. `search-index.json` is emitted separately for external search consumers.
 
-| Action | Result |
+| User action | Behavior |
 | --- | --- |
-| Type words | Filter group, title, and description; matching ignores case and accents |
-| Clear the query | Restore all entries |
-| Use arrow keys | Move focus through matching links |
-| Press Enter in the input | Open the first match |
-| Press Enter on a link | Follow that link |
-| Press Escape | Dismiss the dialog |
+| Press `Alt+K` | Open the first search palette on the page |
+| Type query words | Filter by group, title, and description (case- and accent-insensitive) |
+| Clear query | Restore all entries |
+| Press Up or Down arrow | Move focus through matching links |
+| Press Enter in input | Navigate to the first matching link |
+| Press Enter on a link | Follow the focused link |
+| Press Escape | Close the dialog |
 
-Module packaging follows the [output mode](#choose-an-output-mode). See [Browser support](browser-support.md#component-scripts) for the module's lifecycle and native dialog behavior.
+See [Browser support](browser-support.md#component-scripts) for the bundled module lifecycle.
 
 ## Publish and preview
 
-Write the compiled site with `SiteWriter.writeToDirectory(compiled, output)`, then upload the whole directory. For the origin-root examples, enable directory indexes and redirects from paths such as `/guide` to `/guide/`. Setting an asset base changes resource paths; it does not automatically rebase every route or authored link for a hosting subdirectory.
+Write a compiled site to disk with `SiteWriter.writeToDirectory(compiled, output)` and upload the entire directory to your static host:
 
-To preview the in-memory result, use `SitePreviewServer.start(compiled, port)` and retain the returned server until shutdown. It listens on loopback, serves a fixed snapshot, redirects directory routes while preserving queries, accepts `index.html` aliases, applies the compiled page headers, and sends `Cache-Control: no-store`. Recompile and restart to see changes.
+- Enable directory indexes and redirect extensionless directory paths (such as `/guide`) to trailing slashes (`/guide/`).
+- Apply `compiled.pageHeaders()` on your host for routes that mount [browser bundles](browser-rendering.md#publish-a-browser-bundle).
+- Setting an external asset base relocates generated assets; it does not rewrite route paths or authored links for subdirectory hosting.
 
-To inspect files as they will be uploaded:
+To preview a compiled site in memory with accurate headers and redirects:
+
+```java
+try (var server = SitePreviewServer.start(compiled, 8080)) {
+  // Serves http://127.0.0.1:8080/ until closed
+}
+```
+
+`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`. Recompile and restart the server after changes.
+
+To inspect the written showcase directory as a static host sees it:
 
 ```sh
 just site
 jwebserver -b 127.0.0.1 -d target/site -p 8081
 ```
 
-Use [Diagnostics](diagnostics.md) to locate authoring errors and [Development](development.md) to verify the generated site in browsers.
+Continue with [Diagnostics](diagnostics.md) to troubleshoot errors or [Browser rendering](browser-rendering.md) to embed live Java views.

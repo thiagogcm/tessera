@@ -1,110 +1,129 @@
 # Browser runtime internals
 
-This document describes the experimental `tessera-wasm` runtime. Its [current limits](architecture.md#current-limits) qualify the ownership and identity behavior below; the [runtime proposal](design/runtime.md) specifies the target guarantees. See [Browser rendering](browser-rendering.md) for authoring and setup, and [Architecture](architecture.md) for shared package boundaries.
+This guide documents the implementation contracts of the experimental `tessera-wasm` runtime. See [Browser rendering](browser-rendering.md) for user-facing authoring and setup, and [Architecture](architecture.md) for shared module boundaries.
 
-`ViewRenderer` is a qualified shared entry point for the browser module. It lowers live content, expands portable content, links references, and validates the candidate before reconciliation. The browser derives each live callback's `LiveContext` from the portable expansion context. Portable callbacks receive only `ViewContext`.
+## Live rendering pipeline
 
-The browser module supplies the bindings and effect payloads. Shared expansion carries those payloads through the linked tree and calls the browser's native-host validator for live bindings. The browser runs its own reconciliation and lifecycle code after the shared checks succeed. Expansion state lasts one render.
+`ViewRenderer.render(...)` (qualified-exported from `dev.nthings.tessera.view` only to `dev.nthings.tessera.wasm`) lowers `LiveNode<M>` trees through shared `ViewExpansion`, `ReferenceLinker`, and `ViewValidation` before any DOM mutation occurs. `tessera-wasm` supplies a `LiveContext` wrapper around the shared `ExpansionContext`, while portable callbacks still receive only `ViewContext`.
 
-## Native identity and reconciliation
+The browser module owns the concrete payload type `M` carrying event listeners, `ControlProperties`, widget controllers, and effect descriptors. Shared expansion carries `M` through `LinkedNode` without interpreting browser types and invokes `ViewRenderer.HostValidator` to validate live control bindings alongside shared semantic checks.
 
-Linking keeps components, scopes, fragments and keyed children as `LinkedNode.Group`s carrying an optional sibling key and a definition: the authoring type of a component or of other keyed content, the `scopeName()` of a scope, or `FragmentElement` for a fragment. A scope group's definition is that name, not a scope instance created for the render, so reconciliation keeps the same group across turns. A keyed component, fragment, or scope carries its key on its own group. The DOM reconciler anchors each group with two comment nodes and retains the complete range between them.
+## Commit ownership and root lifecycle
 
-Expansion stamps `data-scope` on the host element each scope family returns: a `TagElement`, `DocumentElement` or `LiveElement`. The types rule out other roots, and expansion inserts no element. An enclosing scope does not replace an inner scope's host.
+Each `BrowserRoot` owns its committed tree and at most one active commit. Every newly acquired native listener, composition tracker, widget controller, style acquisition, and effect lifetime is registered with the active commit as it is acquired, before any application callback can run.
 
-Shared expansion allocates each keyed child's scope from the enclosing id scope, the nearest named ref owner and a lossless encoding of the key, so reordering a keyed child, or inserting and removing other content, does not renumber the surviving child's ids. Duplicate keys are diagnosed within each logical sibling list before native mutation. A generated enclosing scope id still reports `generated-scope-id`.
+```mermaid
+sequenceDiagram
+    accTitle: Browser commit ownership and callback phases
+    accDescr: BrowserRoot expands and validates a candidate, acquires resources and applies DOM patches, publishes references and IDs atomically, retires obsolete work, and starts new effects only if the root remains open.
+    participant Root as BrowserRoot
+    participant Render as ViewRenderer
+    participant Reconcile as DomReconciler
+    participant App as Application callbacks
 
-| Candidate child | Matching rule |
+    Root->>Render: Expand, link, and validate candidate
+    Render-->>Root: ViewSnapshot (tree, embedded CSS, refs, IDs)
+    Root->>Root: Verify introduced DOM IDs against document
+    Root->>Reconcile: Acquire styles and listeners; patch DOM off-callback
+    Reconcile-->>Root: Publish committed tree, references, and owned IDs
+    Root->>Reconcile: Retire replaced resources
+    Reconcile->>App: Run obsolete effect cleanups (newest first)
+    alt close() called during retirement
+        App->>Root: close()
+        Root->>Reconcile: Finish teardown and release all owned resources
+    else Root remains open
+        Root->>App: Start newly committed effects
+        Root->>App: Run queued afterRender tasks while open
+    end
+```
+
+`BrowserRoot` transitions through a strict lifecycle where `Closing` is terminal and idempotent:
+
+```mermaid
+stateDiagram-v2
+    accTitle: BrowserRoot lifecycle states
+    accDescr: An open root prepares and applies renders. Closing from any active state settles at the next safe phase boundary and releases every owned resource once before reaching Closed.
+    [*] --> Open
+    Open --> Preparing: invalidate()
+    Preparing --> Open: Candidate rejected
+    Preparing --> Applying: Candidate accepted
+    Applying --> Open: Publish, retire, and activate callbacks
+    Open --> Closing: close()
+    Preparing --> Closing: close()
+    Applying --> Closing: close() or native DOM failure
+    Closing --> Closed: Release committed, active, and retiring resources
+    Closed --> [*]
+```
+
+No application effect cleanup runs mid-reconciliation. If a native DOM event or callback triggers `close()` during an active phase, the root marks itself closing immediately, disables event dispatch and scheduling, settles at the next phase boundary, never publishes a pending candidate, and runs all remaining cleanups once.
+
+### Failure containment
+
+Failures are surfaced as readable browser `Error` reports naming the host root rather than raw WebAssembly/Java proxy exceptions:
+
+| Failure point | Runtime behavior |
 | --- | --- |
-| Keyed group | Same parent, exact key and same authoring type |
-| Unkeyed group | Earliest unmatched sibling group with the same authoring type |
-| Element | Earliest unmatched sibling element with the same tag name |
-| Text | Earliest unmatched sibling text node |
-| Incompatible child | Create the replacement and dispose the obsolete subtree |
+| Validation diagnostics, `cross-root-id`, or throwing render/style callback | Rejects candidate; committed DOM (or initial fallback) stays untouched; later invalidation retries. Callback failures include component and key path. |
+| Initial mount preparation or pre-publication DOM failure | First mount builds off-host and preserves original fallback nodes until publication succeeds; partial acquisitions are released and other hosts continue mounting. |
+| Unexpected native DOM failure during update of live tree | Enters `Closing`, releases all acquired and committed resources, and reports the error without claiming arbitrary DOM rollback. |
+| Event handler or effect startup failure | Reports error with context; root stays open and interactive unless `close()` was requested. |
+| Cleanup failure during retirement or close | Continues running all remaining cleanups and reports collected failures together once. |
+| Async completion after cancellation or close | Ignored; never invokes application callback or invalidates the root. |
 
-New elements are created in their tag's namespace, so structured SVG such as the bundled icons renders as SVG. The reconciler patches changed text and attributes, removes obsolete attributes, updates event registrations and recursively reconciles children. Retained ranges on the longest run already in sibling order stay in place; only the others move, and new nodes are inserted directly at their final position, so ordinary insertion or removal does not move unchanged sibling ranges. Connected moves use the browser's state-preserving `moveBefore` operation when available.
+## Native identity and DOM reconciliation
 
-Unchanged attributes are not reapplied, so unrelated updates do not overwrite dirty native input values. Matching unkeyed children by kind keeps a field's control when its hint or error appears or disappears beside it; inserting a sibling of the same kind before it still shifts the match, so such lists need keys.
+Linking preserves components, scopes, fragments, and keyed items as `LinkedNode.Group` nodes carrying an optional sibling key and a stable definition (`scopeName()` for scopes, `FragmentElement` for fragments, or the authoring type for components and keyed elements). `DomReconciler` brackets each group between two anchor comment nodes and manages the entire range between them.
 
-Ordinary subtree removal releases its listeners, including callbacks on detached native nodes. The [closure-during-reconciliation limit](architecture.md#current-limits) is an exception.
-
-## Event contract
-
-`LiveElement.on(type, options, handler)` binds an `EventListener` on the wrapped element. `EventOptions` selects `capture`, `passive` and `once`; a listener's identity on its element is its type and phase, as with `addEventListener`. Each element keeps one native listener per identity. A re-render with the same options swaps the Java handler the native listener calls, so the previous callback is no longer referenced; different options re-register it, and removing the listener releases it. A dispatched `once` listener stays spent while later renders keep binding it, and is re-armed only after a render omits it.
-
-Handlers run synchronously on the native dispatch, within the event's user activation, so `preventDefault()`, `stopPropagation()` and `stopImmediatePropagation()` take effect before the browser continues and gesture-gated operations such as `showModal()` succeed. A passive listener's `preventDefault()` is ignored by the browser, which `defaultPrevented()` reports. `BrowserEvent` copies `control()`, `keyboard()` and `pointer()` data; asking for data of the wrong event kind fails, and the failure is reported like any handler failure.
-
-## Form defaults and live properties
-
-Shared linking lowers portable defaults to the same attributes, textarea text, and selected options for both outputs. Option discovery sees transparent groups and late document content. The snapshot identifies each default declaration so the reconciler can apply it at insertion and preserve the reset baseline of a retained node. Retained selects keep their option defaults. When options move, a browser-owned selection follows the retained option identities. The browser chooses its normal fallback when a selected single option disappears. An option a later render adds writes its declared default, so a select whose options arrive after mounting selects its initial value; a retained option the user selected keeps the selection.
-
-`ControlProperties` carries the application's desired value, checked state, or multiple selection. The reconciler applies bindings after the DOM tree is installed, so native radio-group updates settle before application values are written. It captures bound radio and select state before any DOM mutation, and other bound controls just before their own patch, for a render that returns ownership to the browser. It compares the desired property with the live DOM and only writes differences. Each input, textarea and select listens for `input` and `change`: a user edit on a bound control requests a render, which writes back every bound property the application left unchanged. Retained inputs and textareas track IME composition per node. A value write waits for `compositionend`. Browsers dispatch a composition's last `input` event while it is still composing, so `compositionend` runs the element's bubble-phase `input` handler once more with the committed text before it requests a render for a bound value. Typed change callbacks report native events through the same listener machinery as `on(...)`.
-
-## Lifetime and effects
-
-`Live.effect(key, effect)` wraps an effect placement in a keyed live node, so an effect reaches the linked tree as a browser-owned effect payload in a leaf inside a keyed `LinkedNode.Group` and takes its identity from the keyed-group machinery: effect keys share the sibling namespace with keyed children, so an effect and a keyed sibling with the same key are diagnosed as `duplicate-key`. The reconciler anchors the effect with a comment node inside the group's two markers and starts it after the tree is committed. Its `Lifetime` is disposed when a render removes it, when its key changes (the group is replaced and the new effect then starts) or when its root closes; cleanups run newest first and every one runs even if another fails.
-
-`BrowserRoot.lifetime()` scopes cleanup to the root. Requests started through `Host` have individual abort controllers whose cancellation belongs to their lifetime and root. A cleanup registered after disposal runs immediately, and `Lifetime.guard(...)` and `BrowserRoot.update(...)` ignore completions that arrive after disposal.
-
-## Entry points and cross-root identity
-
-A published page declares each mount on its host element (`Documents.wasmMount`): `data-tessera-bundle` marks the host, `data-tessera-entry` and `data-tessera-integrity` name the entry's launcher and its SHA-384 integrity, `data-tessera-image` and `data-tessera-resources` list the image and other resources with theirs, and `data-tessera-view` names the view to mount.
-
-The compiler publishes one bootstrap module with every page that mounts a bundle. It starts downloading every entry's verified resources at once, alongside the capability probe, and loads each distinct launcher once, one at a time. Every Web Image launcher assigns the same `GraalVM` global, so the bootstrap captures each launcher's object as soon as its script runs and restores the previous value; each entry then runs with its own `Config`, with its hosts passed to `main` as `host=view` arguments. `BrowserEntry.start(args, views)` mounts each declared host through the mount function its view names. An undeclared view or a failed mount is reported and leaves that host's fallback content; other hosts and entries still mount. Each entry keeps its own shared stylesheet.
-
-Identity checks read the document, so they cover roots of every compiled entry. A root refuses a host that already holds a root, lies inside one or contains one; closing removes the host's root marker, so the host can be mounted again.
-
-Generated and scoped ids are prefixed with the host id. Before each commit, every DOM id the candidate introduces (an id in `ViewSnapshot.ids()` that the root's last commit did not render) is checked against the document: an id that an element outside the root already uses, in another root or in the host page, rejects the candidate with a `cross-root-id` error naming the owner. The host's own id is reserved, so an id the candidate renders that names the mount host rejects the candidate the same way; a child never duplicates the host's identity. A newly mounting root therefore checks all its ids.
-
-Ids a root has committed are its own and are not checked again, so markup the host page adds later with one of them does not block the root's renders; an id the root stops rendering is released, and rendering it again checks it again.
-
-Sibling matching is separate from this DOM-ID check: a logical group's key and definition identify its retained range.
-
-## Host services
-
-`BrowserRoot.host()` returns a `Host` bound to the root lifetime; `host.within(lifetime)` scopes the same services to an effect, returning one cached `Host` per lifetime so repeated calls register nothing more with it. It covers timeouts, intervals, animation frames and `afterRender` tasks, text requests, focus and focus return, text selection, dialogs, popovers and media playback. Scheduled callbacks and request completions run only while their lifetime and root are active, report failures like event handlers and then invalidate the root; `afterRender` tasks do not invalidate it again. Disposing the lifetime cancels pending callbacks and aborts its requests; a disposed request reports nothing. `fetchText` checks the HTTP status and separates HTTP from network failures.
-
-Element operations take an `ElementRef` and never return native objects. Each commit records the refs its tree binds (`ViewSnapshot.references()`), and an operation resolves its ref to the committed element by DOM id within the root's host, so it cannot reach another root's elements. An unbound ref fails with an `IllegalStateException` explaining the rule below. `showModal` is idempotent for a modal dialog and rejects a dialog already open without a modal; `FocusReturn` restores the remembered element, or a fallback ref when a render replaced it.
-
-Refs resolve against the latest committed render. A handler bound in a render may use refs that render creates, because the handler is replaced with its render. Work that outlives a render (effects, timers, request callbacks, `afterRender` tasks) must use a ref held in application state and passed to the component on every render. Components that own a dialog or popover accept one: `Modal.dialogRef(ref)`, `Drawer.dialogRef(ref)` and `Dropdown.panelRef(ref)`.
-
-## Failure containment
-
-Each turn expands a candidate before touching the DOM. Failures become readable browser `Error` reports naming the root rather than opaque Java proxies:
-
-| Failure | Effect |
+| Candidate node | Matching strategy |
 | --- | --- |
-| Diagnostics or a throwing render/style callback | Candidate rejected; the committed tree is unchanged and a later invalidation retries. Callback failures carry the component and key path. |
-| Initial preparation failure | The host keeps its fallback content and later roots still mount. |
-| Unexpected DOM commit failure | Closes the root and reports the error, releasing what the commit acquired. A first commit builds off the host, so a failure before publication keeps the fallback content. |
-| Java event handler | Reported with the event type and root; the root and its tree stay interactive. |
-| Application cleanup while closing | Remaining application cleanups still run; failures are reported together once. |
+| Keyed group | Exact sibling key and same authoring definition within the same parent |
+| Unkeyed group | Earliest unmatched prior sibling group with the same authoring definition |
+| Element | Earliest unmatched prior sibling element with the same tag name |
+| Text | Earliest unmatched prior sibling text node |
+| Mismatched node | Create replacement node or range; retire the obsolete subtree |
 
-Closing a root is idempotent. It cancels scheduled work, releases listeners, disposes effects innermost first, closes open dialogs and popovers, empties the owned host, disposes the root lifetime, and releases styles. It also drops its view callback.
+- **Minimal movement**: Retained sibling ranges on the longest increasing subsequence stay fixed in the DOM; only out-of-order ranges move, using state-preserving `moveBefore` when the browser supports it. New nodes insert directly at their final positions.
+- **Namespace-aware creation**: Elements are created in their `TagName` namespace, keeping inline SVG nodes valid in the DOM.
+- **Selective patching**: Unchanged attributes are skipped so unrelated updates never clobber dirty native input state.
 
-A commit owns what it acquires. It registers each instance it creates before that instance acquires listeners or an effect lifetime, detaches replaced ranges, publishes the tree, references and IDs at one boundary, retires the replaced resources with their application cleanups, and starts the new effects. No application callback runs while the commit mutates the DOM, so a closure request settles at a phase boundary: closing during expansion discards the candidate, closing during mutation aborts and releases what the commit acquired, and closing from a retirement cleanup, an effect start or an after-render task joins teardown and stops the rest of the batch. A root that has started closing dispatches no handler, so a detached node cannot run application code after teardown.
+## Event dispatch and form property synchronization
 
-## Embedded styles
+- **Listeners**: Listener identity is `(type, capture)`. Re-rendering with unchanged `EventOptions` swaps the Java callback behind the single native listener without re-registering; changed options re-register, and omitted listeners detach immediately. A spent `once` listener stays spent until a render omits it.
+- **Portable defaults**: Shared `ControlLowerer` lowers `initialValue`, `initialChecked`, and `initialSelectedValues` identically for both backends and tags each default declaration in `ViewSnapshot`. On insertion, `DomReconciler` establishes the native reset baseline; on updates to retained controls, user edits survive. Newly added `<option>` elements still apply their declared default on arrival.
+- **Live control bindings**: `ControlProperties` applies bound values, checked flags, and multi-select lists after DOM children are patched so native radio-group updates settle first. Before patching, the reconciler snapshots current native state on bound controls so removing a binding hands control back to the browser seamlessly. Only actual property differences are written.
+- **IME composition**: Inputs and textareas track composition state per native node. Controlled value writes defer until `compositionend`, which also dispatches the bubble-phase `input` handler once more with committed text and `composing() == false` before requesting reconciliation.
 
-Built-in live widget hosts carry their configuration in the linked snapshot. The reconciler retains the controller with its DOM host, captures any required focus before patching, and updates the controller after publishing the new references and retiring replaced ranges. Removing a widget releases its native listeners and any associated timers or open surfaces.
+## Lifetimes, effects, and host services
 
-`StyleSheet.embeddedBaseRules(theme)` emits the reset and base rules under the `data-tessera-root` host and the token values under a content-addressed `data-tessera-theme` key (`StyleSheet.themeKey(theme)`); a root acquires them once at mount, after `StyleSheet.LAYER_ORDER`. Each render's `embeddedRules()` emits one self-contained rule per entry: the same component, utility, interactive and container rules as static output, so only those are diffed between commits. Static and embedded output are written from one source of registered rules, and the reset and base rules take the root they apply beneath. Each embedded rule carries a short key (its `u-`, `i-` or `cq-` class, its `data-scope` selector, or its property name), so a root keeps the rule text it built per key and compares renders by key, wrapping and hashing only rules it does not hold yet. Mounting never restyles `:root`, `body` or the rest of the host page, and document navigation transitions are omitted.
+`Live.effect(key, effect)` lowers into a keyed `LinkedNode.Group` leaf holding an effect payload, anchored by a comment node. Disposing a `Lifetime` executes cleanups newest first; subtrees dispose descendant first. Registering a cleanup on an already-disposed lifetime runs it immediately.
 
-Roots within one compiled entry share a constructed stylesheet adopted into the document. The stylesheet needs no inline `<style>` element and is exercised under `style-src 'self'`. This establishes stylesheet behavior, not the complete proposed deployment policy.
+`BrowserRoot.host()` returns a `Host` bound to `root.lifetime()`. `host.within(lifetime)` caches one scoped `Host` per `Lifetime` so repeated calls register no duplicate cleanups. Pending timers (`timeout`, `interval`, `frame`) and `fetchText` requests own individual native cancellation handles and `AbortController` instances that release automatically upon cancellation, lifetime disposal, or root closure.
 
-`StyleSink.Root` owns each root's base rules from mount to close and its render rules by key, acquires new rules before native mutation, and releases superseded rules after a successful commit. `StyleLedger` reference-counts rules across roots. Up to 512 unused rules stay inserted for later renders and mounts; the least recently released beyond that are deleted. The layer-order statement is pinned first so reinserted rules never change the cascade order.
+Element operations on `Host` resolve `ElementRef` through the latest published `ViewSnapshot.references()` map and look up the element inside the root's own host container, preventing cross-root access and never exposing raw JS objects.
 
-Every distinct style value is a content-addressed rule, so a value that changes on every render would churn rules through that pool. `TagElement.live(...)` avoids that: `StyleSheet.registerLive` compiles each live declaration into the element's stable rule as `property: var(--tl-property)`, and the reconciler sets `--tl-property` on the element through CSSOM `style.setProperty`, which a `style-src 'self'` policy allows. Values stay in the element's cascade layer, so state and container rules still apply, and each `--tl-*` name is registered once with `@property … inherits: false`, so a changing value restyles only its element.
+## Bootstrap protocol and cross-root identity
 
-## Scheduling
+Every page with at least one `Documents.wasmMount` receives one shared `wasm-bootstrap.js` module and host markers (`data-tessera-bundle`, `data-tessera-entry`, `data-tessera-integrity`, `data-tessera-image`, `data-tessera-resources`, `data-tessera-view`).
 
-Each root schedules invalidations into a browser task. Repeated calls before that task runs coalesce into one render, and a render that calls `invalidate()` schedules a later turn instead of recursing. `BrowserRoot.Scheduling` bounds the render turns applied in one flush and the consecutive turns that may request another render. After the work budget, the root waits for an animation frame before the next batch, so the browser can paint.
+1. The bootstrap starts downloading all entries' SHA-384-verified binary resources concurrently while probing WasmGC capability.
+2. Each distinct launcher script loads once, sequentially. Because every GraalVM Web Image launcher assigns the global `GraalVM` object, the bootstrap captures each launcher's instance immediately after load and restores the previous global value.
+3. Each entry runs with its own `Config` (carrying verified bytes in `config.tesseraResources`) and receives its assigned `host=view` pairs as `main(String[] args)`.
 
-| Limit | Default | Effect |
-| --- | --- | --- |
-| `workBudget` | 8 | Render turns applied in one browser task before a paint opportunity |
-| `runawayLimit` | 32 | Consecutive self-invalidating turns before the root reports and stops |
+Cross-root identity checks inspect the live document across all entries:
 
-A root that reaches its runaway limit reports one browser `Error`, leaves the last committed tree in place and stops scheduling until an external invalidation. `BrowserRoot.update(change)` wraps a change so that running it applies the change and invalidates the root; after `close()` the wrapper does nothing.
+- Mounting rejects any host that already holds a root, sits inside an active root, or contains one.
+- Every DOM ID introduced by a candidate (present in `ViewSnapshot.ids()` and absent from the root's previous commit) is checked against the host element and all DOM nodes outside the root's owned descendants. Any match, including the host's own reserved ID, rejects the candidate with `cross-root-id`.
+- Already-committed IDs belong to the root until a later render stops emitting them; reintroducing a released ID checks it again.
 
-The real images are verified in Chromium and Firefox by the browser suite in `tessera-wasm-showcase`. It serves the published showcase with its deployment headers, loads it through the shipped bootstrap, and drives each feature page.
+## Embedded styles and style ledger
+
+All roots within one compiled Web Image entry share one constructed `CSSStyleSheet` adopted into `document.adoptedStyleSheets`, requiring no inline `<style>` element and operating cleanly under the full `style-src 'self'` deployment CSP.
+
+- **Root isolation**: `StyleSheet.embeddedBaseRules(theme)` scopes reset and base rules beneath `[data-tessera-root]` and theme tokens under a content-addressed `data-tessera-theme` key (`StyleSheet.themeKey(theme)`). Mounting never styles `:root`, `body`, or surrounding host markup, and omits cross-document view transitions.
+- **Keyed incremental diffing**: Each rule from `StyleSheet.embeddedRules()` carries a short key (`u-*`, `i-*`, `cq-*`, `data-scope`, or `@property` name). `StyleSink.Root` caches rule text per key, acquires new rules before DOM mutation, and releases retired rules only after publication succeeds.
+- **Bounded retention**: `StyleLedger` reference-counts active rules across roots in the entry and retains up to **512** unused rules in LRU order for reuse across renders. `StyleSheet.LAYER_ORDER` stays pinned at index 0 so reinserted rules never disturb cascade layer order.
+- **Live style values**: `TagElement.live(...)` compiles each dynamic property via `StyleSheet.registerLive` as `property: var(--tl-property)` paired with an `@property` declaration (`inherits: false`). Reconcilers update `--tl-*` via CSSOM `style.setProperty`, avoiding rule churn while keeping values in their proper cascade layer.
+
+## Scheduling internals
+
+`BrowserRoot` schedules flushes into a macrotask queue, coalescing repeated `invalidate()` calls before the flush runs. Each flush applies up to `workBudget` (default `8`) turns before yielding to `requestAnimationFrame` so the browser can paint. If `runawayLimit` (default `32`) consecutive turns each invalidate the root again, scheduling halts with one browser `Error` and preserves the last committed tree until an external event or call invalidates the root.

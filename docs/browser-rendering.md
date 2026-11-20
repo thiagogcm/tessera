@@ -1,51 +1,80 @@
 # Browser rendering (experimental)
 
-The opt-in `tessera-wasm` module mounts the same components in a page as Java compiled to WebAssembly with GraalVM Web Image. A mounted view re-renders from application state, and the backend reconciles the native DOM so focus, selection and form values survive updates. The separate `tessera-wasm-showcase` module builds the runnable images and runs browser acceptance. The [roadmap](roadmap.md) describes planned capability and module boundaries.
+The opt-in `tessera-wasm` module compiles portable Tessera components to WebAssembly through GraalVM Web Image and mounts them as live browser roots. When application state changes, a mounted root re-renders and reconciles the native DOM while preserving focus, selection, and uncontrolled form edits.
 
-A browser root renders `LiveContent`: portable content plus the live-only features below. Portable components expand exactly as the compiler expands them and receive the same portable `ViewContext`. Live content cannot be placed in portable or document content, and document content (raw HTML, deferred and late content, document components) cannot be placed in a root; both mistakes are compile errors. Expansion state from `context.state(key)` lasts one attempted render. A root loads no page scripts. Use the [adaptive widget adapters](#adapt-portable-widgets) for the built-in browser interactions.
+A browser root renders `LiveContent`: portable `IntoElement` content plus live handlers, form bindings, widget adapters, and effects. Placement types enforce separation at compile time: live content cannot enter portable or static document trees, and document-only content (raw HTML, deferred or late nodes, document components) cannot enter a browser root.
 
-Import live contracts, `BrowserEvent`, `EventOptions`, `Effect`, and `Lifetime` from `dev.nthings.tessera.wasm`. A named Java application can use `requires dev.nthings.tessera.wasm;` in its module descriptor. This also makes the shared authoring packages available. The showcase's Web Image build uses the classpath.
+Import live authoring types (`BrowserEntry`, `BrowserRoot`, `Live`, `LiveContent`, `LiveElement`, `LiveComponent`, `LiveScope`, `BrowserEvent`, `EventOptions`, `Effect`, `Lifetime`, `Host`, and live widget adapters) from `dev.nthings.tessera.wasm`. Modular Java applications require `dev.nthings.tessera.wasm`, which exports `dev.nthings.tessera` transitively.
 
-## Build and verify
+## Build and verify the showcase
 
-Use Oracle GraalVM **25.5.5.0.3+1.1**, matching the `webimage-preview` SDK pinned in [tessera-wasm/pom.xml](../tessera-wasm/pom.xml). Install Native Image prerequisites and Binaryen **119 or later** on `PATH`. Set `JAVA_HOME` to that GraalVM distribution. The default JVM build does not invoke these tools.
+The `wasm` profile requires:
+
+- **Oracle GraalVM 25.5.5.0.3+1.1** on `JAVA_HOME`, matching the `webimage-preview` SDK pinned in [tessera-wasm/pom.xml](../tessera-wasm/pom.xml).
+- Native Image build prerequisites for your platform.
+- **Binaryen 119 or later** on `PATH`.
+- Playwright browsers installed once via `just browsers`.
+
+The default JVM build does not invoke Web Image or Binaryen. Use the `wasm` recipes to build and verify:
 
 ```sh
-# Build both entry points and publish the showcase site
+# Build both showcase entries and publish the site under tessera-wasm-showcase/target/published-web
 just wasm
 
-# Serve the published pages over HTTP
+# Serve the published files locally (note: jwebserver does not send CSP headers)
 jwebserver -b 127.0.0.1 -p 8000 -d tessera-wasm-showcase/target/published-web
 
-# Build, publish and exercise the real images in Chromium and Firefox
+# Build, publish, and verify real Wasm images with full CSP headers in Chromium and Firefox
 just wasm-verify
 ```
 
-Install the Playwright browsers with `just browsers` before verification. The showcase publishes a home page, a static guide, and one page per runtime feature, each mounting only that feature's views. The browser suite serves those pages as a deployment would, with their response headers and the full Content Security Policy, and loads them through the shipped bootstrap. It covers bundle loading and fallbacks, form controls and IME composition, keyed lists, adaptive widgets, events, host services, lifecycles, failure recovery, and styles. A plain file server such as `jwebserver` does not send the policy header. See [runtime internals](browser-internals.md) for the implementation contracts.
-
 ## Publish a browser bundle
 
-Build the GraalVM Web Image entry with the pinned toolchain and `-H:-AutoRunVM`. On the JVM, import the generated launcher and image with `dev.nthings.tessera.compiler.GraalWebImage.read` (no `tessera-wasm` dependency is required to publish a bundle). Add a document-only mount with its host ID, view name, and static fallback. The fallback can contain ordinary links and form controls.
+Compile your GraalVM Web Image entry with `-H:-AutoRunVM`. On the JVM side, load the generated launcher and `.wasm` image with `GraalWebImage.read` (in `tessera-compiler`, with no dependency on `tessera-wasm`) and declare a mount point using `Documents.wasmMount`:
 
 ```java
 var bundle = GraalWebImage.read(Path.of("editor.js"), Path.of("editor.js.wasm"));
-var page = Compiler.compile(
-    new PageDocument("Editor", Documents.wasmMount(
-        "editor", "editor", bundle, Elements.a("/edit/").text("Open the static editor"))),
-    Theme.defaults(), OutputMode.external("/assets/editor"));
+var page =
+    Compiler.compile(
+        new PageDocument(
+            "Editor",
+            Documents.wasmMount(
+                "editor", "editor", bundle, Elements.a("/edit/").text("Open the static editor"))),
+        Theme.defaults(),
+        OutputMode.external("/assets/editor"));
 ```
 
-Publish every returned asset at its path and media type, and apply `page.responseHeaders()` to the HTML response. For sites, `SiteWriter` writes the complete output and `CompiledSite.pageHeaders()` carries headers by route. `SitePreviewServer` applies those headers. Configure the same headers on a file-based host. Use an external output mode for the full Content Security Policy. Bundle assets always remain separate files. Inline output puts them under `/assets/wasm/`.
+```mermaid
+sequenceDiagram
+    accTitle: Published page to live root bootstrap
+    accDescr: The browser loads static HTML with fallback markup, runs the shared bootstrap script with integrity checks, fetches and verifies the Wasm image, and mounts the Java view over the host.
+    participant Browser
+    participant HTML as Static HTML + Fallback
+    participant Boot as wasm-bootstrap.js
+    participant Entry as Java BrowserEntry
+    Browser->>HTML: Render page and apply CSP headers
+    HTML->>Boot: Load bootstrap module (SHA-384)
+    Boot->>Boot: Probe WasmGC capability and fetch verified resources
+    alt Load or capability fails
+        Boot-->>Browser: Report error and keep fallback markup
+    else Verification succeeds
+        Boot->>Entry: Run launcher with host=view arguments
+        Entry->>Browser: Mount BrowserRoot and commit initial view
+        Browser-->>Browser: Replace fallback on first successful commit
+    end
+```
 
-The compiler validates the resource graph and publishes content-derived filenames under the chosen asset base. The bootstrap applies SHA-384 integrity to scripts and to binary fetches before starting the entry. It keeps the fallback in place when loading fails. The pinned GraalVM adapter accepts the classic launcher and primary image. A prepared `WasmBundle` can also declare supplementary binary resources. Compatible launchers receive verified bytes by logical name through `config.tesseraResources`.
+Follow these deployment rules when publishing pages with mounts:
 
-`just wasm` publishes the showcase in `tessera-wasm-showcase/target/published-web`. `just wasm-verify` checks that every published reference resolves to a file with matching integrity, and exercises publication at root and nested asset bases in Chromium and Firefox.
+- Publish every asset in `page.assets()` (or `site.files()`) at its path with matching media types (`.wasm` as `application/wasm`).
+- Apply `page.responseHeaders()` (or `site.pageHeaders()`) to the HTML response. External output enables the full Content Security Policy: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'`.
+- Bundle files always publish as external assets; under `OutputMode.inline()`, they default to `/assets/wasm/`.
+- Prepared `WasmBundle` values can also declare supplementary binary resources, which compatible launchers receive by logical name via `config.tesseraResources` after SHA-384 verification.
+- See [Sites](sites.md#publish-and-preview) for `SiteWriter` and `SitePreviewServer`, which apply compiled headers automatically.
 
 ## Mount a view
 
-A [document mount](#publish-a-browser-bundle) declares the host ID and the view to instantiate, and supplies fallback content.
-
-The entry's `main` mounts every host the page declares for it. The view is a `LiveComponent`: it receives a `LiveContext`, whose `root()` is the mounted root, and returns live content:
+In your Web Image entry's `main`, pass a map of view names to mount factories into `BrowserEntry.start(args, views)`. Each view is a `LiveComponent` receiving `LiveContext`:
 
 ```java
 public final class Editor {
@@ -61,133 +90,177 @@ public final class Editor {
     var root = context.root();
     var input = Forms.text("name");
     return LiveElement.of(Elements.main().child(Elements.label().labelFor(input.ref()).text("Name")))
-        .child(LiveElement.of(input).bindValue(name).on("input", event -> {
-          name = event.control().value();
-          root.invalidate();
-        }))
+        .child(
+            LiveElement.of(input)
+                .bindValue(name)
+                .on(
+                    "input",
+                    event -> {
+                      name = event.control().value();
+                      root.invalidate();
+                    }))
         .child(LiveElement.of(Button.of("Save").element()).onClick(root.update(() -> saved = true)))
         .child(Elements.p().text(saved ? "Saved " + name : "Not saved"));
   }
 }
 ```
 
-`LiveElement.of(tag)` wraps a portable element without changing it, so the same `TagElement` or component markup stays valid in a static page. Portable content is accepted directly as a child of live content; `LiveContent.of(content)` converts it where a `LiveContent` value is required. `LiveComponent` and `LiveScope` are the live counterparts of `Component` and `Scope`. Buttons expose `element()` so a `LiveElement` can bind their handlers.
-
-Several entries can share a page; each launcher loads once however many hosts it serves. The first committed render replaces fallback content. A rejected candidate keeps the fallback and a later invalidation retries. A native failure during initial installation restores the fallback nodes. `root.close()` empties the host, which can then be mounted again.
-
-Generated and `ElementRef.scoped` ids use a namespace derived from the host id; an introduced id used outside the host rejects the render with `cross-root-id`. Mounting on a host that already holds a root fails separately.
-
-The check covers ids a render introduces: once a root has committed an id, it owns it, and an element the host page adds later with that id does not reject the root's renders. The host's own ID is reserved: a render claiming it for a child is rejected with `cross-root-id`, and the committed view or fallback stays. Remaining limits are listed under [current limits](architecture.md#current-limits).
+- `LiveElement.of(tag)` wraps a portable `TagElement` without mutating it, so portable subtrees remain safe for static compilation.
+- Portable content is accepted directly as a child of live builders; use `LiveContent.of(...)` where a `LiveContent` return value is required.
+- Multiple entries can share a page; each launcher executes once regardless of how many hosts it mounts.
+- The first committed render replaces the host's static fallback. A rejected render keeps the fallback and retries on a later invalidation. Calling `root.close()` disposes listeners, effects, styles, and DOM children so the host can be mounted again.
+- Generated and `ElementRef.scoped` IDs are prefixed with the host ID. Claiming the host's own ID or an external DOM ID already in use rejects the candidate with `cross-root-id`.
 
 ## Schedule updates
 
-Call `root.invalidate()` after application state changes. Repeated invalidations before the scheduled task coalesce into one render, and a render that calls `invalidate()` schedules a later turn instead of recursing. `root.update(change)` returns a `Runnable` that applies `change` and invalidates the root, the usual shape for click handlers. Wrap an asynchronous completion when its work starts: after `root.close()` the wrapper does nothing, so a late result leaves the disposed root untouched.
+Call `root.invalidate()` after mutating application state. Multiple invalidations before the scheduled task coalesce into one render, and invalidating during a render schedules a later turn instead of recursing.
 
-`BrowserRoot.Scheduling(workBudget, runawayLimit)` configures one root. The default applies eight render turns per browser task, then waits for an animation frame so the browser can paint, and reports a runaway after 32 consecutive turns that each request another render. A runaway root reports one browser error, keeps the last committed tree and accepts a later external invalidation.
+`root.update(Runnable)` wraps a state mutation and invalidates the root. Once `root.close()` runs, the wrapper becomes a no-op so late callbacks never touch a disposed root.
+
+Configure per-root limits with `BrowserRoot.Scheduling(workBudget, runawayLimit)`:
 
 ```java
 var root = BrowserRoot.mount("app", new BrowserRoot.Scheduling(8, 32), state::view);
 ```
 
+| Limit | Default | Behavior |
+| --- | --- | --- |
+| `workBudget` | `8` | Maximum render turns per browser task before yielding to an animation frame for paint |
+| `runawayLimit` | `32` | Maximum consecutive self-invalidating turns before reporting an error and halting until an external invalidation |
+
 ## Handle events
 
-`LiveElement.on(type, handler)` binds a Java handler on the wrapped element; `on(type, options, handler)` adds native listener options, and `onClick(runnable)` covers the common case:
+Attach listeners to a `LiveElement` with `on(type, handler)`, `on(type, options, handler)`, or `onClick(runnable)`:
 
 ```java
 LiveElement.of(Elements.div())
     .on("click", EventOptions.DEFAULT.withCapture(), event -> audit())
     .on("wheel", EventOptions.DEFAULT.withPassive(), event -> zoom(event.pointer()))
-    .child(LiveElement.of(Elements.a("/help").text("Help")).on("click", event -> {
-      event.preventDefault();
-      openHelp();
-    }));
+    .child(
+        LiveElement.of(Elements.a("/help").text("Help"))
+            .on(
+                "click",
+                event -> {
+                  event.preventDefault();
+                  openHelp();
+                }));
 ```
 
-Handlers run synchronously within the browser's dispatch and user activation, so default prevention and propagation calls take effect immediately, and a click handler may open a modal dialog. `event.control()`, `event.keyboard()` and `event.pointer()` copy typed data; asking for the wrong kind fails, and the failure is reported like any handler failure while the root stays interactive. An element keeps one handler per type and phase. Each render rebinds the current handler, so it may capture that render's state. A `once` handler stays spent while later renders keep binding it, and is re-armed after a render omits it.
+- Handlers execute synchronously within native browser dispatch and user activation, so `preventDefault()`, `stopPropagation()`, and gesture-gated operations such as `showModal()` work immediately.
+- `event.control()`, `event.keyboard()`, and `event.pointer()` return typed copies of native event data; calling the wrong accessor fails and reports a handler error while keeping the root interactive.
+- Each element keeps one listener per event type and capture phase. Re-renders update the Java handler in place without re-registering when `EventOptions` match.
+- A `once` listener remains spent across subsequent renders until a render omits it and a later render attaches it again.
 
 ## Bind form values
 
-Set native defaults on the portable host with `initialValue`, `initialChecked`, or `initialSelectedValues`. Use `bindValue`, `bindChecked`, or `bindSelectedValues` on the live wrapper to apply application state. The binding sets the current property from the first mount onward. The portable default stays the baseline for native form reset.
+Declare native reset defaults on portable controls with [`initialValue`, `initialChecked`, or `initialSelectedValues`](components.md#set-form-defaults). Attach live bindings on `LiveElement` when application state should control the current property across renders:
 
 ```java
-var enabled = LiveElement.of(Elements.input("checkbox").initialChecked(true))
-    .bindChecked(state.enabled)
-    .onCheckedChange(checked -> root.update(() -> state.enabled = checked).run());
-var picks = LiveElement.of(Elements.select().boolAttr("multiple")
-        .initialSelectedValues(List.of("en"))
-        .children(Elements.option("en", "English"), Elements.option("pt", "Portuguese")))
-    .bindSelectedValues(state.picks)
-    .onSelectedValuesChange(values -> root.update(() -> state.picks = values).run());
+var enabled =
+    LiveElement.of(Elements.input("checkbox").initialChecked(true))
+        .bindChecked(state.enabled)
+        .onCheckedChange(checked -> root.update(() -> state.enabled = checked).run());
+
+var picks =
+    LiveElement.of(
+            Elements.select()
+                .boolAttr("multiple")
+                .initialSelectedValues(List.of("en"))
+                .children(
+                    Elements.option("en", "English"), Elements.option("pt", "Portuguese")))
+        .bindSelectedValues(state.picks)
+        .onSelectedValuesChange(values -> root.update(() -> state.picks = values).run());
 ```
 
-| Binding | Accepted hosts | Change callback |
+| Live binding | Supported hosts | Typed change callback |
 | --- | --- | --- |
-| `bindValue(String)` | Input with an editable value, textarea, single select | `onValueChange` reports the value on `input` |
-| `bindChecked(boolean)` | Checkbox or radio input | `onCheckedChange` reports checked state on `change` |
-| `bindSelectedValues(List<String>)` | Multiple select | `onSelectedValuesChange` reports the selected values in option order on `input` |
+| `bindValue(String)` | Editable `<input>`, `<textarea>`, single `<select>` | `onValueChange` (on `input`) |
+| `bindChecked(boolean)` | Checkbox or radio `<input>` | `onCheckedChange` (on `change`) |
+| `bindSelectedValues(List<String>)` | Multiple `<select>` | `onSelectedValuesChange` (on `input`, in option order) |
 
-Each callback observes the user's edit. Update application state and trigger a render to accept it. The edit itself requests a render, so a control whose binding the application leaves unchanged reverts at once. Removing a binding hands the current state back to the browser. While an input method composes text, value writes wait for composition to finish. Browsers send a composition's last `input` event while it is still composing, so when the composition ends the element's `input` handler, and `onValueChange`, run once more with the committed text and `composing()` false.
+```mermaid
+stateDiagram-v2
+    accTitle: Form control ownership transitions
+    accDescr: A mounted control is either browser-owned using initial defaults or application-owned through a live binding, with edits reconciling back to application state and binding removal returning ownership to the browser.
+    [*] --> BrowserOwned: Mount with portable defaults
+    [*] --> AppOwned: Mount with live binding
+    BrowserOwned --> BrowserOwned: User edits or native reset
+    BrowserOwned --> AppOwned: Render adds live binding
+    AppOwned --> AppOwned: User edit triggers render and reconciles binding
+    AppOwned --> BrowserOwned: Render removes live binding (keeps current DOM state)
+```
 
-Native form reset restores the insertion defaults. A later render reapplies any live bindings, so an application that wants reset to update both needs to update its state in the form's `reset` handler as well. Change the control's key when the application needs new native defaults.
+- **Controlled reconciliation**: User edits on a bound control always trigger a render. If application state does not accept the edit, the render writes the bound value back to the DOM.
+- **IME composition**: Controlled text writes pause while an input method composes text. When composition ends, the element's bubble-phase `input` handler and `onValueChange` run once more with the committed text and `composing()` set to `false`.
+- **Native form reset**: Reset restores the portable insertion defaults, and the next render reapplies any live bindings. Update application state in the form's `reset` handler when reset should clear bound state too.
 
 ## Adapt portable widgets
 
-The live adapters use the same markup and styles as their portable components. They run their interactions inside the browser root and release native listeners when removed.
+Browser roots do not load static component ES modules. Wrap built-in portable widgets with live adapters to run their interactive behavior in Java while sharing identical markup and CSS:
 
-| Adapter | State and actions |
+| Adapter | Behavior and state ownership |
 | --- | --- |
-| `LiveTabs.of(tabs)` | The browser keeps the selected key while it remains enabled. If it disappears, selection moves to the next enabled tab, then the previous one. With no enabled tabs, none is selected. Use `bindSelection(Optional<String>)` and `onSelectionRequest` to own selection in the application. Give the portable tabs an explicit `id` so keys stay stable. |
-| `LiveField.of(field, bindControl)` | Use the callback to bind the existing input, select, or other control. Set `validation(invalid, message)` to set or clear application-driven validity and the linked error message without resetting the control. |
-| `LiveDialog.of(modalOrDrawer)` | The native dialog keeps its own open state by default. Use `bindOpen`, `onOpenRequest`, and `onDismiss` to own it in the application. Use `mode(Mode.NON_MODAL)` to open without making the page inert. Portable `opened()` starts a browser-owned dialog non-modally. Later invocations use the selected mode. `focusFallback(ref)` supplies a focus target for when the dialog closes and its opener cannot take focus: it was removed or disabled, or nothing had focus when the dialog opened, as when a timer opens it. |
-| `LiveSearchPalette.of(palette)` | Place its `triggerButton()` and the adapter in the root. The browser retains the query and keeps focus on the current result when the list changes. It filters results, moves focus with the arrow keys, and dismisses the palette on Escape or result activation. |
-| `LiveTooltip.of(trigger)` | Adapt a tag configured with `interestTooltip`. Hover and focus reveal the linked tooltip, and Escape dismisses it. |
-
-Tabs use automatic keyboard activation by default. With `ContentTabs.Activation.MANUAL`, the arrow keys, Home and End move focus, and Enter or Space requests selection. A bound key must name an enabled tab. Use `Optional.empty()` when no enabled tabs remain, and update the binding in the same render that removes its selected tab.
-
-A bound dialog reconciles after native dismissal. Set the bound state to false in `onDismiss` to accept a dismissal, or leave it true to keep the dialog open. The adapter requests a render after each callback.
+| `LiveTabs.of(tabs)` | Browser owns selection by default; if the selected tab disappears, selection moves to the next enabled tab, then previous, or none. Use `bindSelection(Optional<String>)` and `onSelectionRequest` for application ownership. Give `ContentTabs` an explicit `id`. |
+| `LiveField.of(field, bindControl)` | Wraps the field's control through `bindControl` and toggles `validation(invalid, message)` without resetting the control. |
+| `LiveDialog.of(modalOrDrawer)` | Browser owns open state by default; use `bindOpen`, `onOpenRequest`, and `onDismiss` for application ownership. Select `mode(Mode.NON_MODAL)` for non-modal opening and `focusFallback(ref)` when the opener may vanish or cannot take focus. |
+| `LiveSearchPalette.of(palette)` | Place `triggerButton()` and the adapter in the root. Preserves query and result focus across list updates, handles arrow keys, and dismisses on Escape or link activation. |
+| `LiveTooltip.of(trigger)` | Adapts a tag configured with `interestTooltip` for hover/focus reveal and Escape dismissal. |
 
 ```java
-var dialog = LiveDialog.of(Modal.of("Discard changes?").body(Elements.p().text("Unsaved changes will be lost.")))
-    .bindOpen(state.confirming)
-    .onOpenRequest(() -> state.confirming = true)
-    .onDismiss(() -> state.confirming = false);
-return LiveElement.of(Elements.div())
-    .child(dialog.triggerButton("Discard"))
-    .child(dialog);
+var dialog =
+    LiveDialog.of(
+            Modal.of("Discard changes?")
+                .body(Elements.p().text("Unsaved changes will be lost.")))
+        .bindOpen(state.confirming)
+        .onOpenRequest(() -> state.confirming = true)
+        .onDismiss(() -> state.confirming = false);
+
+return LiveElement.of(Elements.div()).child(dialog.triggerButton("Discard")).child(dialog);
 ```
 
-## Give children stable identities
+- For `LiveTabs`, automatic activation applies by default; `ContentTabs.Activation.MANUAL` moves focus with arrows, Home, and End, and requests selection on Enter or Space. A bound selection must name an enabled tab (or `Optional.empty()` when none are enabled); update the binding in the same render that removes a selected tab or the candidate is rejected with `tab-selection`.
+- For bound `LiveDialog`, update bound state to `false` in `onDismiss` to accept dismissal, or leave it `true` to keep the dialog open. The adapter invalidates the root after each callback.
 
-Call `.key(...)` on an element, component or fragment whose position can change. Keys are exact strings, compared among the children of one parent.
+## Preserve identity across updates
+
+Call `key(String)` on elements, components, scopes, or `Live.fragment(...)` children whose sibling positions change:
 
 ```java
 var entries = LiveElement.of(Elements.div());
 for (var item : items) {
-  entries.child(Live.fragment(
-          LiveContent.of(Field.of(item.label(), Forms.text(item.id()))),
-          LiveElement.of(Button.of("Choose " + item.label()).element()).onClick(() -> choose(item)))
-      .key(item.id()));
+  entries.child(
+      Live.fragment(
+              LiveContent.of(Field.of(item.label(), Forms.text(item.id()))),
+              LiveElement.of(Button.of("Choose " + item.label()).element())
+                  .onClick(() -> choose(item)))
+          .key(item.id()));
 }
 ```
 
-A keyed child keeps its DOM, focus and form state while siblings are inserted, reordered or removed; changing its tag or component type replaces it. An unkeyed child matches the earliest unmatched previous sibling of its kind (same tag, text, or component type), so a field keeps its control while its hint or error appears beside it; key the children of lists whose same-kind siblings come and go. Ids bound inside keyed content are scoped by the key and the nearest named ref owner, in static output too, so they stay stable when it moves. Two lists in one view that reuse a key need a named ref on each parent, as in [Key list items that move](consumer-guide.md#key-list-items-that-move). Duplicate sibling keys report `duplicate-key`. Static compilation emits keyed content without any wrapper.
+Keyed children retain their DOM nodes, focus, and form state across insertions, removals, and reorders; changing the tag or component type replaces the node. Unkeyed children match the earliest unmatched prior sibling of the same kind (tag, text, or component type), so optional siblings such as a field hint or error message do not reset an adjacent input. Scope ID and duplicate-key rules follow [Key list items that move](components.md#key-list-items-that-move).
 
 ## Bind work to a lifetime
 
-Place an effect where work should live, and register its cleanup on its `Lifetime`:
+Place side effects inside the view tree with `Live.effect(key, effect)` and register teardown on the supplied `Lifetime`:
 
 ```java
-var ticker = Live.effect("ticker-" + intervalMillis, lifetime -> {
-  var timer = startTimer(intervalMillis, lifetime.guard(root.update(() -> ticks++)));
-  lifetime.onDispose(timer::cancel);
-});
+var ticker =
+    Live.effect(
+        "ticker-" + intervalMillis,
+        lifetime -> {
+          var timer = startTimer(intervalMillis, lifetime.guard(root.update(() -> ticks++)));
+          lifetime.onDispose(timer::cancel);
+        });
 ```
 
-The effect starts after its tree is committed and keeps running while renders place the same key there; the key names its dependencies. It is a sibling key like `key(...)`, so it must differ from the keys of the effect's keyed siblings. Removing it, changing its key or closing the root disposes its lifetime, and a key change then starts the new effect. Use `root.lifetime()` for root-wide cleanup. A cleanup that closes its own root settles at the commit boundary: the committed tree is released once, later effects in the same batch do not start, and nothing detached runs application handlers afterwards.
+- An effect starts after its render commits and stays alive as long as subsequent renders place the same key in the same parent. Encode effect dependencies in its key.
+- Effect keys share the sibling key namespace with keyed children, so collisions report `duplicate-key`.
+- Removing the effect, changing its key, or closing the root disposes its `Lifetime` (newest cleanup first); on a key change, the old lifetime disposes before the new effect starts.
+- Use `root.lifetime()` for root-wide cleanup.
 
-## Use browser services
+## Use browser host services
 
-`root.host()` reaches the browser on behalf of a root without handing out native objects. Element operations take an `ElementRef`:
+Access browser APIs through `root.host()` without handling raw JavaScript objects. Element operations resolve an `ElementRef` against the root's committed DOM:
 
 ```java
 final class Discard {
@@ -199,28 +272,41 @@ final class Discard {
 
   LiveContent view(LiveContext context) {
     var host = context.root().host();
-    return LiveElement.of(Elements.main().children(
-            Elements.input("text").id(draft).ariaLabel("Draft"),
-            Modal.of("Discard changes?").dialogRef(confirm)))
+    return LiveElement.of(
+            Elements.main()
+                .children(
+                    Elements.input("text").id(draft).ariaLabel("Draft"),
+                    Modal.of("Discard changes?").dialogRef(confirm)))
         .children(
-            LiveElement.of(Button.of("Discard").element()).onClick(() -> {
-              returnFocus = host.rememberFocus();
-              host.showModal(confirm);
-            }),
+            LiveElement.of(Button.of("Discard").element())
+                .onClick(
+                    () -> {
+                      returnFocus = host.rememberFocus();
+                      host.showModal(confirm);
+                    }),
             LiveElement.of(Button.of("Select draft").element()).onClick(() -> host.selectAll(draft)),
-            LiveElement.of(Button.of("Autosave").element()).onClick(() ->
-                host.fetchText("/save", body -> saved = body, failure -> error = failure)));
+            LiveElement.of(Button.of("Autosave").element())
+                .onClick(
+                    () -> host.fetchText("/save", body -> saved = body, failure -> error = failure)));
   }
 }
 ```
 
-Timers (`timeout`, `interval`, `frame`), `afterRender` tasks and `fetchText` completions run only while the root is open; timers and request completions then re-render the root. Closing the root cancels them and aborts requests. Inside an effect, `host.within(lifetime)` cancels them with the effect instead.
+`Host` covers:
 
-References resolve against the latest committed render. A handler may use references created in the same render. Anything that runs later, such as a timer, request callback, effect or `afterRender` task, needs a reference kept in application state and passed to the component on every render, as `confirm` is above. `Modal.dialogRef(ref)`, `Drawer.dialogRef(ref)` and `Dropdown.panelRef(ref)` accept such references.
+- **Scheduling**: `timeout`, `interval`, `frame`, and `afterRender`. Timers invalidate the root after running; `afterRender` runs once after the next commit without re-invalidating.
+- **Requests**: `fetchText(url, onSuccess, onFailure)` separates HTTP status failures from network errors and aborts automatically when cancelled or disposed.
+- **Focus and selection**: `focus`, `focused`, `rememberFocus`, `selection`, `select`, and `selectAll`.
+- **Dialogs and popovers**: `showModal`, `show`, `close`, `open`, `showPopover`, `hidePopover`, and `togglePopover`.
+- **Media**: `play`, `pause`, `seek`, `muted`, and `media`.
+
+Call `host.within(lifetime)` inside an effect so all timers and requests started through that handle cancel automatically when the effect disposes.
+
+References resolve against the latest committed tree. Synchronous event handlers may use refs created during that render; asynchronous work (timers, requests, effects, `afterRender`) must use a ref stored in application state and passed to the component on every render (such as `Modal.dialogRef(ref)`, `Drawer.dialogRef(ref)`, or `Dropdown.panelRef(ref)`).
 
 ## Animate values without new rules
 
-Every distinct style value becomes its own rule, so a value that changes on every render would keep adding rules. Write such values with `live(...)`:
+Ordinary CSS declarations generate one content-addressed rule per distinct value. For values that change frequently across renders, wrap them in `live(...)`:
 
 ```java
 Elements.div()
@@ -228,4 +314,6 @@ Elements.div()
     .live(style -> style.inlineSize(CssLength.px(progress)));
 ```
 
-In a browser mount the element keeps one style rule however the value changes; the value travels as a custom property set on the element. Static pages compile it like any other declaration. Keep values that rarely change as ordinary declarations.
+In a browser root, `live(...)` keeps one stable CSS rule and updates an element-local custom property through CSSOM, staying compatible with `style-src 'self'`. Static pages compile `live(...)` like ordinary declarations.
+
+See [Browser runtime internals](browser-internals.md) for commit ownership, reconciliation matching, failure containment, and stylesheet ledgers.

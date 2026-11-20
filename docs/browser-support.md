@@ -1,44 +1,44 @@
 # Browser support
 
-Tessera targets current stable Chromium and Firefox. Use JDK 25 to compile and run the Java library. The generated site uses modern HTML and CSS; compatibility with older engines and other browser families is outside the support contract.
+Tessera requires **JDK 25** and targets current stable **Chromium and Firefox**. Generated pages use modern HTML and CSS features; compatibility with older engines or other browser families is outside the support contract.
 
 ## Platform features
 
-Native browser behavior provides dialogs, popovers, focus handling, layout, and navigation. Tessera emits features such as invoker commands, light-dismiss dialogs, cascade layers, scoped CSS, OKLCH colors, subgrid, anchor positioning, and cross-document transitions.
+Built-in components rely on native browser capabilities for dialogs, popovers, focus management, layout, and navigation, including invoker commands, light-dismiss dialogs, CSS cascade layers, `@scope`, OKLCH colors, subgrid, anchor positioning, and cross-document view transitions.
 
-Some visual enhancements depend on engine support:
+Where an enhancement is not yet available in an engine, output degrades to usable native behavior:
 
-| Feature | Behavior when the enhancement is unavailable |
+| Feature | Fallback when unsupported |
 | --- | --- |
-| Carousel scroll buttons and markers | Browser-native scrolling remains available |
-| `appearance: base-select` | The browser's native select presentation applies |
-| Scroll-state container queries | Rules within unsupported queries do not apply; the sticky header keeps its plain surface |
-| `:target-current` | The table of contents does not highlight the section in view |
-| Cross-document view transitions | Pages change without the cross-fade and morph |
-| Scroll-triggered animations (`animation-trigger`) | Reveal-once tiles are shown without their entry animation |
-| Interest-invoker tooltips | The bundled tooltip module shows and anchors the tooltip on hover and focus |
+| Carousel scroll buttons and markers | Native horizontal scrolling remains usable |
+| `appearance: base-select` | Native `<select>` presentation applies |
+| Scroll-state container queries | Rules inside unsupported queries are skipped; sticky headers keep their default surface |
+| `:target-current` | Table of contents remains navigable without active-section highlighting |
+| Cross-document view transitions | Navigation succeeds without cross-fade or morph animation |
+| Scroll-triggered animations (`animation-trigger`) | Reveal-once tiles render immediately without entry motion |
+| Interest-invoker tooltips | Bundled tooltip script shows and anchors tooltips on hover and focus |
 
-At the pinned test builds, Firefox lacks the first six of these; both engines lack native interest invokers. Scroll-driven animations, `field-sizing`, `sibling-index()`, anchor positioning, `@starting-style`, and invoker commands work in both engines.
+At the Playwright browser builds pinned in [pom.xml](../pom.xml), Firefox lacks the first six features above, and both Chromium and Firefox lack native interest invokers. Scroll-driven animations, `field-sizing`, `sibling-index()`, anchor positioning, `@starting-style`, and invoker commands work in both engines.
 
-Check the rendered result in both supported engines when relying on these features. The [verification suite](development.md#browser-verification) exercises generated pages, responsive layout, interactions, and accessibility.
+Verify pages that rely on progressive enhancements in both Chromium and Firefox using the [browser verification suite](development.md#browser-verification).
 
 ## Component scripts
 
-Built-in portable widgets declare their bundled module, and static output contributes it; document components contribute other modules through `DocumentContext`. A page without script contributions receives no component script. Modules are deduplicated per page and packaged according to the [output mode](sites.md#choose-an-output-mode). Browser roots load no component modules. The [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) provide interactions in browser roots while sharing the portable markup and styles.
+Static pages load JavaScript only when a page includes a component that requires a script. Built-in portable widgets declare their bundled ES modules automatically during static compilation; custom components can register additional scripts via [`DocumentContext.contributeScript`](documents.md#contribute-a-page-script).
 
-| Component | Module responsibility |
-| --- | --- |
-| `ContentTabs` | Select panels through `aria-controls`; move focus with Arrow Left, Arrow Right, Home, and End |
-| `SearchPalette` | Filter rendered result links, manage result selection, and open the first palette on Alt+K in every browser |
-| `Dropdown` with command items | Return focus to the menu button when a dialog opened from the menu closes |
-| Interest tooltip | Supply hover and focus handling where the browser has no native interest invoker, anchored to the trigger |
+Modules are deduplicated once per page and packaged according to the page's [output mode](sites.md#choose-an-output-mode). Browser roots do not load static component modules; use [adaptive widget adapters](browser-rendering.md#adapt-portable-widgets) inside live views instead.
 
-The search module defines a customized native dialog. The tabs and menu modules define autonomous `tessera-tabs` and `tessera-menu` elements. Component listeners use an `AbortSignal` and are released when the component disconnects. Native dialog controls handle opening, focus trapping, and dismissal.
+| Component | Bundled ES module | Responsibility |
+| --- | --- | --- |
+| `ContentTabs` | `tessera-tabs.js` (`<tessera-tabs>`) | Sync panel selection through `aria-controls`; manage Arrow Left, Arrow Right, Home, and End focus |
+| `SearchPalette` | `search-palette.js` (customized `<dialog>`) | Filter rendered links, move result focus, and open the first palette on `Alt+K` |
+| `Dropdown` with command items | `tessera-menu.js` (`<tessera-menu>`) | Return focus to the menu button after a dialog opened from the menu closes |
+| Elements with `interestTooltip` | `interest-tooltip.js` | Show and anchor tooltips on hover and focus where native interest invokers are absent |
 
-Custom components can [contribute their own scripts](consumer-guide.md#contribute-a-page-script).
+All bundled listeners attach with an `AbortSignal` and clean up automatically when their host disconnects. Native `<dialog>` behavior handles opening, focus trapping, and dismissal.
 
 ## Verification boundary
 
-CI installs the Chromium and Firefox builds bundled with the Playwright version pinned in [pom.xml](../pom.xml). These are the tested builds for that dependency version. Keeping Playwright current and checking stable-browser releases is part of maintaining the support contract; a green run does not establish compatibility with every installed browser version.
+CI runs against the Chromium and Firefox builds bundled with the Playwright version pinned in [pom.xml](../pom.xml). Updating Playwright and re-checking stable browser releases is part of maintaining the support contract; a green run verifies the pinned builds rather than every installed browser version.
 
-The opt-in `wasm` profile adds the experimental [Java browser backend](browser-rendering.md) and its acceptance showcase. Its packaged-image suite runs separately from the default JVM CI workflow. The [architecture proposal](architecture-redesign.md) describes the next capability and module boundaries.
+The opt-in `wasm` Maven profile builds and tests the [experimental browser rendering backend](browser-rendering.md) separately from the default JVM CI workflow.

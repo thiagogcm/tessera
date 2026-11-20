@@ -1,110 +1,102 @@
 # Compiler internals
 
-The static compiler separates preparation from emission so a site can validate every route and merge styles before producing HTML. It uses the same expansion, linking, and validation layer as the [browser renderer](browser-internals.md). Public inputs and outputs are described in [Sites](sites.md); [Architecture](architecture.md) defines package boundaries.
+The static compiler in `tessera-compiler` separates page preparation from HTML emission so multi-page sites can validate every route, resolve cross-page links, and merge one deterministic stylesheet before writing output. It shares expansion, linking, validation, and CSS collection with the [browser runtime](browser-internals.md).
+
+See [Architecture](architecture.md) for package boundaries and [Sites](sites.md) for public compilation inputs and outputs.
 
 ## Prepare a page
 
-`PageCompiler` coordinates the passes. The sequence shows the successful path:
+`PageCompiler` orchestrates document expansion, reference linking, validation, and metadata snapshotting:
 
 ```mermaid
 sequenceDiagram
+    accTitle: Static page preparation pipeline
+    accDescr: PageCompiler delegates layout to DocumentPass, which invokes shared ViewExpansion and ReferenceLinker, then runs ViewValidation before snapshotting a PreparedPage.
     participant Page as PageCompiler
-    participant Document as DocumentPass
+    participant Doc as DocumentPass
     participant Expand as ViewExpansion
     participant Link as ReferenceLinker
     participant Validate as ViewValidation
     participant Prepared as PreparedPage
 
-    Page->>Document: Lay out document and contributions
-    Document->>Expand: Expand components in their contexts
-    Expand-->>Document: Expanded nodes and collected styles
-    Document->>Expand: Link ordered body and head content
-    Expand->>Link: Resolve slots and references
-    Link-->>Expand: Linked nodes
-    Expand-->>Document: Linked document
-    Document->>Expand: Resolve collected heading references
-    Document-->>Page: Linked nodes, headings, and compilation state
-    Page->>Validate: Index and validate linked document
-    Validate-->>Page: Metadata and diagnostics
-    Page->>Page: Fail if diagnostics exist
-    Page->>Prepared: Retain linked tree, styles, and metadata snapshots
+    Page->>Doc: Lay out body, deferred, late, and contributions
+    Doc->>Expand: Expand portable and document nodes
+    Expand-->>Doc: ViewNode tree and collected styles
+    Doc->>Expand: Link ordered body and head trees
+    Expand->>Link: Resolve ElementRefs, late slots, keys, and tooltips
+    Link-->>Expand: LinkedNode tree
+    Expand-->>Doc: Linked document
+    Doc->>Expand: Resolve collected OutlineHeading refs
+    Doc-->>Page: Linked trees, headings, scripts, and state
+    Page->>Validate: Index IDs and run semantic and accessibility rules
+    Validate-->>Page: Outgoing URLs, metadata, and diagnostics
+    Page->>Page: Throw CompilationException if diagnostics exist
+    Page->>Prepared: Snapshot linked tree, styles, IDs, headings, and URLs
 ```
 
-| Owner | Responsibility |
+| Collaborator | Responsibility |
 | --- | --- |
-| `DocumentPass` | Orders deferred priorities, late slots, and document contributions |
-| `DocumentExpansion` | Lowers document placements and contributes scripts declared by portable widgets |
-| `ViewExpansion` | Expand components/scopes, require one element host per scope, allocate identities, collect styles and outline headings, and preserve origins |
-| `ViewState` | Shared reference bindings, DOM IDs, generated counters, transition identities, and expansion diagnostics |
-| `ReferenceLinker` | Resolve symbolic references and late slots, check sibling keys, splice transparent wrappers, and place tooltip companions |
-| `CompilationState` | Read-only identity/transition views, outgoing URLs, and accumulated diagnostics |
-| `ViewValidation` / `AccessibilityRules` | Validate linked elements, commands, URLs, and accessibility semantics |
-| `PreparedPage` | Own the linked tree and stylesheet; snapshot IDs, headings, URLs, transitions, and scripts |
+| `DocumentPass` | Orders deferred priorities, resolves late callbacks, expands document-end sections and head contributions, and resolves outline heading refs |
+| `DocumentExpansion` | Lowers `DocumentNode` placements, checks `wasm-mount-placement`, registers `BundlePublication` entries, and contributes bundled widget scripts |
+| `ViewExpansion` | Expands components and scopes, enforces one element host per scope, allocates `ViewScope` identities, collects styles and outline headings, and preserves origins |
+| `ViewState` | Tracks reference bindings, DOM IDs, scope counters, transition keys, and expansion diagnostics |
+| `ReferenceLinker` | Resolves `ElementRef` targets and late slots, validates sibling keys, lowers form defaults (`ControlLowerer`), preserves transparent groups, and places tooltip companions |
+| `CompilationState` | Holds read-only identity/transition snapshots, collected outgoing URLs, and accumulated diagnostics |
+| `ViewValidation` / `AccessibilityRules` | Runs markup, security, image, command, URL, and ARIA checks |
+| `PreparedPage` | Retains linked trees, page `StyleSheet`, and immutable snapshots of IDs, headings, URLs, transition keys, scripts, and bundle assets |
 
-### Placement and linking
+### Placement, linking, and defensive copying
 
-Deferred content expands in its lexical scope and is emitted in priority/sequence order. Late callbacks resolve before document-end sections and head contributions. Contribution processing allows end sections to register more end sections and head contributions to register more head content.
+Deferred nodes expand in their lexical `ViewScope` and emit at the end of `<body>` ordered by ascending priority, then encounter order. Late callbacks resolve FIFO after body expansion, before document-end sections and head contributions. Document-end and head passes loop until fixed point so contributions can register further contributions.
 
-A scope's host is the element its `expand` returns: a `TagElement` for a portable scope and a `DocumentElement` for a document scope. `ViewExpansion` stamps `data-scope` and `data-scope-id` on it. Expansion does not insert a `div` or replace an inner scope's host. Page bodies, document components, late callbacks, and end sections lower to `DocumentNode`s; live nodes never reach the compiler.
+`ReferenceLinker` transforms `ViewNode` trees into `LinkedNode` trees. Component boundaries, scope boundaries, fragments, and keyed children remain transparent `LinkedNode.Group` wrappers (flattened during HTML emission) so keyed content returned from late callbacks participates in its enclosing sibling namespace. Tooltip companions are spliced immediately after their invokers.
 
-`ReferenceLinker` converts `ViewNode` values to `LinkedNode` values in `internal.view` (which `ViewSnapshot` hands to `tessera-wasm` as is). Component boundaries, scope boundaries, fragments, and keyed children keep their own child namespaces while emitting no wrapper markup of their own. A scope boundary links as an ordinary group whose definition is the stable `scopeName()`. Expanded keyed wrappers retain keys and locations until linking, so keys returned by late callbacks participate in the surrounding sibling namespace. Tooltip companions are placed after their invokers.
+Linked tags own copies of their attribute maps and child lists. `TagElement.copy` copies descendant tags while preserving `ElementRef` identities and nested component/scope instances. Built-in wrappers such as `Field` and `Image` copy elements when adding labels, hints, errors, or anchors so repeated compilations never mutate a caller's retained builder.
 
-Heading metadata is read from the element during expansion and resolved by `DocumentPass` after linking. An unbound outline target reports `unbound-reference`.
+### Validation and preparation snapshots
 
-Linked tags, text, raw HTML, and transparent groups reach document validation, inspection, and emission. Groups retain keys and authoring definitions for browser reconciliation; static writers flatten their children. Linked tags own copies of their attributes and child lists. `TagElement.copy` also copies descendant elements while retaining reference identities and nested component/scope instances. `Field` and `Image` use copies when adding labels, hints, errors, and anchors, so repeated compilation does not mutate the caller's retained builder.
+Image checks run during expansion while authored CSS dimensions are available. Linked-tree validation then checks interactive labels, fragment targets, invoker commands, URLs (in both `<head>` and `<body>`), and body accessibility rules. Ambiguous ID bindings and unresolved references are flagged so dependent checks do not emit secondary errors.
 
-### Validation and preparation
-
-After references and headings resolve, `CompilationState` receives read-only identity and transition views and copies diagnostics. It does not retain allocation counters or reference bindings. Indexing records targets by ID and labelled control IDs for later checks.
-
-Image checks run during expansion while authored style information is available. Linked-tree checks validate interactive names, fragments, invoker targets, and built-in command compatibility. Accessibility rules inspect the body tree; URL collection reads `href`, `src`, and `poster` in both body and head. Malformed URLs become page diagnostics before site validation uses their metadata.
-
-Ambiguous bindings and unresolved attributes remain marked so dependent checks do not choose arbitrary targets or report secondary errors. All collected authoring diagnostics fail preparation together. The [diagnostics guide](diagnostics.md) defines the public reporting behavior and accessibility rule codes.
-
-A prepared page retains its own stylesheet. `contributeStylesTo(target)` copies its rules to the site stylesheet; `stylesheet(theme)` serializes a standalone contribution. Prepared metadata snapshots keep the first location for each outgoing URL and transition key, allowing site validation without exposing the intermediate tree.
+`PreparedPage` retains its own `StyleSheet` (`contributeStylesTo` merges it into a site stylesheet) and keeps only the first location for each outgoing URL and `TransitionKey`. Emission reads `PreparedPage` without ever calling application callbacks a second time.
 
 ## Coordinate a site
 
-Site compilation gates each stage before proceeding. The diagram describes authoring-error paths; application callback and internal compiler exceptions propagate directly.
+`SiteCompiler` gates compilation into four ordered stages. Application exceptions propagate directly; authoring errors halt at the end of the failing stage and throw `CompilationException`:
 
 ```mermaid
 stateDiagram-v2
+    accTitle: Site compilation stages
+    accDescr: SiteCompiler checks route and file paths, prepares routes concurrently, runs cross-route validation, and emits pages and site artifacts. Any authoring diagnostics transition to Rejected.
     [*] --> CheckingPaths
-    CheckingPaths: Check routes and registered or reserved files
+    CheckingPaths: Validate routes, registered assets, and reserved paths
     CheckingPaths --> Rejected: Path diagnostics
     CheckingPaths --> Preparing: Paths are distinct
-    Preparing: Prepare routes concurrently
-    Preparing --> Rejected: Page diagnostics
+    Preparing: Prepare routes concurrently on virtual threads
+    Preparing --> Rejected: Page diagnostics (in route order)
     Preparing --> Validating: Every page prepared
-    Validating: Check links, transitions, and generated asset paths
+    Validating: Validate links, fragments, transitions, and generated asset paths
     Validating --> Rejected: Site diagnostics
     Validating --> Emitting: Site is valid
-    Emitting: Emit prepared pages with merged CSS
-    Emitting --> Compiled: Assemble pages and artifacts
+    Emitting: Merge CSS in route order and emit pages concurrently
+    Emitting --> Compiled: Assemble CompiledSite, search index, and sitemap
     Rejected: Throw CompilationException
     Rejected --> [*]
     Compiled: Return CompiledSite
     Compiled --> [*]
 ```
 
-Route preparation and emission run on virtual threads. The shared parallel mapper owns scheduling and ordered results; the coordinator owns diagnostic aggregation. Page failures, output pages, and stylesheet contributions retain route declaration order. Each page has separate compilation state; shared application state must be safe for concurrent callbacks.
-
-`SiteValidator` consumes prepared metadata and registered asset paths. It resolves local URLs from each route's document URI, decodes paths and fragments, ignores queries for target lookup, and accepts generated `index.html` aliases. It also checks that transition keys appear on at least two routes. [Sites](sites.md#write-links-as-browser-urls) gives URL examples.
-
-CSS merges sequentially in route order. The coordinator checks generated stylesheet and module paths for collisions with routes or registered files before emitting. `SiteArtifacts` then generates the search index and optional sitemap from prepared metadata.
+- **Concurrency and determinism**: Route preparation and page emission run on virtual threads (`Executors.newVirtualThreadPerTaskExecutor`), preserving route declaration order for diagnostics, CSS merging, search entries, sitemap entries, and returned `pages()`.
+- **Cross-route validation**: `SiteValidator` resolves local URLs against each route's `documentUri()`, decodes percent-encoding, ignores queries, accepts `index.html` aliases, validates fragments against target page IDs, and verifies that every `TransitionKey` spans at least two routes.
+- **Asset collision check**: After merging route stylesheets and collecting deduplicated scripts, Wasm bundle assets, and external speculation rules, `SiteCompiler` checks every generated asset path against routes and registered assets before emitting HTML.
 
 ## Emit resources
 
-`HtmlWriter` encodes the linked tree and document envelope using the selected output mode. Its `Resources` object hashes and encodes the final stylesheet once and each distinct page module once per compilation. Every page references those selected resources. Resource paths and returned asset collections follow the [output-mode contract](sites.md#choose-an-output-mode).
+`HtmlWriter` handles context-sensitive OWASP encoding and the HTML envelope. Its `Resources` helper hashes and encodes the final stylesheet once and each distinct `PageScript` once per compilation. `BundlePublication` resolves `WasmBundle` graphs into content-hashed files under `<assetBase>/wasm/`, publishes the shared `wasm-bootstrap.js`, and supplies deployment CSP headers.
 
-Diagnostics and locations live in `core` so both backends use the same model. `CompilationException` in `compiler` reports static failures; `ViewException` in `view` reports invalid mounted candidates.
+`SiteArtifacts` generates `search-index.json` (from routes and prepared outline headings) and optional `sitemap.xml` (when `baseUrl` is configured).
 
-`PreparedPage` is opaque to callers. Emission reads its prepared content without invoking application callbacks again. Trusted raw HTML bypasses parsing and encoding; typed text and attribute output use context-sensitive encoding.
+## Preserve diagnostic and source provenance
 
-## Preserve source and diagnostic context
+`Location` captures optional route, page title, component path, element tag, DOM ID, and `SourceLocation`. Contribution records pair head, document-end, and heading registrations with their originating locations across deferred and late boundaries.
 
-`Location` records optional route, page, component path, element tag, DOM ID, and source. Contribution records pair head, end-section, and heading content with the registering location. ViewExpansion and linking carry that location through deferred and late content.
-
-`SourceProvenance` captures locations through the `SourceCapture` contract in `internal.authoring`. The JVM implementation, `SourceTracking`, lives in `compiler` and uses stack walking. Code-source classification distinguishes platform/library frames from application frames, including applications using Tessera-like package names. Elements built during component expansion inherit the component placement origin.
-
-Tracking is off by default and is propagated to site virtual threads when enabled. Public usage and inspection commands are in [Diagnostics](diagnostics.md#trace-elements-to-java-source).
+`SourceProvenance` reads caller locations via `internal.authoring.SourceCapture`. On the JVM, `SourceTracking` implements capture with `StackWalker`, skipping JDK and Tessera library frames by code-source classification so applications using similar package names still receive accurate source lines. Tracking is off by default and propagates automatically across site virtual threads when enabled. See [Diagnostics](diagnostics.md#trace-elements-to-java-source) for public usage.

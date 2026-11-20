@@ -1,6 +1,6 @@
 # Kotlin
 
-Tessera exposes a Java API that Kotlin can call directly. Follow [Getting started](getting-started.md#install-the-library-locally) to install the dependency. Use Kotlin 2.3.20 or newer for package-level JSpecify nullability in library dependencies; see [KT-83467](https://youtrack.jetbrains.com/issue/KT-83467).
+Call Tessera's Java API directly from Kotlin. Follow [Getting started](getting-started.md#install-the-library-locally) to install the local dependency. Use **Kotlin 2.3.20 or newer** so Kotlin reads Tessera's package-level JSpecify nullability annotations accurately (see [KT-83467](https://youtrack.jetbrains.com/issue/KT-83467)).
 
 ## Compose a page
 
@@ -10,7 +10,6 @@ import dev.nthings.tessera.compiler.PageDocument
 import dev.nthings.tessera.core.Component
 import dev.nthings.tessera.core.Elements
 import dev.nthings.tessera.core.Elements.*
-import dev.nthings.tessera.core.IntoElement
 import dev.nthings.tessera.core.Scope
 import dev.nthings.tessera.core.TagElement
 import dev.nthings.tessera.core.ViewContext
@@ -34,40 +33,40 @@ fun main() {
 }
 ```
 
-The example uses ordinary SAM callbacks with `it`. The receiver plugin described below is optional and changes callback syntax throughout the configured module.
+This example uses standard SAM lambdas with `it`. Enabling the optional receiver plugin below replaces `it` with a Kotlin receiver across the configured module.
 
 ## Map Java conventions to Kotlin
 
 | Java API | Kotlin usage |
 | --- | --- |
-| Element factories | Import `Elements.*`; qualify `Elements.main()` because your `fun main()` takes precedence |
-| Numeric factories taking `double` | Use `CssLength.rem(1.0)`, `CssDuration.ms(150.0)`, and `opacity(0.5)` |
-| `CssLength.plus`, `minus`, `times` | Also available as `+`, `-`, and `*` |
-| `Component` functional interface | `Component { context -> ... }` |
-| `Scope` interface | Implement a class or data class with `expand`; override scope naming and styles as needed |
-| Record accessors | Properties such as `diagnostic.rule`, `page.html`, and `site.pages` |
-| Public sealed variants | Exhaustive `when` for `Element`, `TagName`, `Condition`, and `PageTree.Node` |
-| Immutable `@CheckReturnValue` types | Enable `-Xreturn-value-checker=check` to warn about discarded derived values |
+| Element factories | Import `Elements.*`; qualify `Elements.main()` when a top-level `fun main()` is in scope |
+| `double`-taking CSS factories | Pass doubles: `CssLength.rem(1.0)`, `CssDuration.ms(150.0)`, `opacity(0.5)` |
+| `CssLength.plus`, `minus`, `times` | Available as `+`, `-`, and `*` operators |
+| `Component` SAM interface | `Component { context -> ... }` |
+| `Scope` interface | Implement a class or `data class` with `expand` and optional `scopeId`/`configureScope` |
+| Java record accessors | Kotlin properties: `diagnostic.rule`, `page.html`, `site.pages` |
+| Public sealed hierarchies | Exhaustive `when` over `Element`, `TagName`, `Condition`, and `PageTree.Node` |
+| `@CheckReturnValue` value types | Pass `-Xreturn-value-checker=check` to flag discarded derived values |
 
-Tessera's member names avoid Kotlin keywords and standard scope-function names. For example, `div().apply { child(span()) }` uses Kotlin's `apply` and adds the span to the div. Component identity and lifetime rules remain the same as in the [component guide](consumer-guide.md).
+Tessera member names avoid Kotlin keywords and standard scope-function names. For example, `div().apply { child(span()) }` invokes Kotlin's `apply` cleanly. Component identity, keying, and expansion rules match [Components](components.md).
 
 ## Enable receiver lambdas
 
-`StyleBlock`, `ScopeBlock`, and `ElementBlock` carry `dev.nthings.tessera.foundation.KotlinReceiver`. Register that annotation with Kotlin's `sam-with-receiver` compiler plugin to make the configured object the callback receiver:
+`StyleBlock`, `ScopeBlock`, and `ElementBlock` carry `@dev.nthings.tessera.foundation.KotlinReceiver`. Register that annotation with Kotlin's `sam-with-receiver` compiler plugin to expose the builder as `this` instead of `it`:
 
-| Callback mode   | Example                                                  |
+| Callback style  | Example                                                  |
 | --------------- | -------------------------------------------------------- |
-| Ordinary SAM    | `div().on(State.HOVER) { it.bg(Tokens.SURFACE_SUBTLE) }` |
+| Standard SAM    | `div().on(State.HOVER) { it.bg(Tokens.SURFACE_SUBTLE) }` |
 | Receiver plugin | `div().on(State.HOVER) { bg(Tokens.SURFACE_SUBTLE) }`    |
 
-The plugin applies to all three callback types in the module. Enabled callbacks have a receiver and no `it` parameter. Use matching versions for the JVM and receiver plugins.
+The plugin applies to all three callback types in the configured module; enabled callbacks no longer have an `it` parameter. Match the plugin version to your Kotlin compiler version.
 
-For Gradle Kotlin DSL:
+### Gradle (Kotlin DSL)
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.4.21"
-    kotlin("plugin.sam.with.receiver") version "2.4.21"
+    kotlin("jvm") version "2.3.20"
+    kotlin("plugin.sam.with.receiver") version "2.3.20"
 }
 
 samWithReceiver {
@@ -75,7 +74,9 @@ samWithReceiver {
 }
 ```
 
-For Maven, add the plugin and its dependency to your Kotlin build configuration, using the same `kotlin.version` property for both:
+### Maven
+
+Use the same `${kotlin.version}` property for both `kotlin-maven-plugin` and `kotlin-maven-sam-with-receiver`:
 
 ```xml
 <plugin>
@@ -100,7 +101,7 @@ For Maven, add the plugin and its dependency to your Kotlin build configuration,
 </plugin>
 ```
 
-With receiver callbacks enabled, scope rules and conditions use nested blocks:
+With receiver lambdas enabled, nested style rules and keyframes read as DSL blocks:
 
 ```kotlin
 scope.root { p(Tokens.SPACE_5) }
@@ -113,4 +114,4 @@ val pulse = Keyframes.named("pulse")
     .end { opacity(1.0) }
 ```
 
-See [Styling](styling.md) for the underlying rules and values.
+See [Styling](styling.md) for the underlying CSS properties, layers, and token rules.

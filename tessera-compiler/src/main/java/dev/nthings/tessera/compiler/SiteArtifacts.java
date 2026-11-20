@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import java.net.URI;
 import java.util.List;
 import org.owasp.encoder.Encode;
 
@@ -10,12 +11,13 @@ final class SiteArtifacts {
   static final String SITEMAP_PATH = "/sitemap.xml";
   static final String SEARCH_INDEX_PATH = "/search-index.json";
 
-  static String generateSitemapXml(String baseUrl, List<SiteRoute> routes) {
+  static String generateSitemapXml(URI baseUrl, List<SiteRoute> routes) {
+    var origin = baseUrl.toASCIIString();
     var sb = new StringBuilder(1024);
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     for (var route : routes) {
-      var loc = baseUrl + route.documentUri().toASCIIString();
+      var loc = origin + route.documentUri().toASCIIString();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");

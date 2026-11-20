@@ -3,6 +3,7 @@ package dev.nthings.tessera.wasm.example;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Select;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.Live;
@@ -52,7 +53,7 @@ final class ShippingDemo {
     return LiveElement.of(Elements.label())
         .child(
             LiveElement.of(
-                    Elements.input("radio")
+                    Elements.input(InputType.RADIO)
                         .attr("name", "delivery")
                         .attr("value", value)
                         .initialChecked(byDefault))

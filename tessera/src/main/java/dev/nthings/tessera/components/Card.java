@@ -3,6 +3,7 @@ package dev.nthings.tessera.components;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
@@ -238,7 +239,7 @@ public final class Card extends BuiltinScope<Card> {
             ? Elements.label()
                 .cursor(Cursor.POINTER)
                 .child(
-                    Elements.input(choice.multiSelect() ? "checkbox" : "radio")
+                    Elements.input(choice.multiSelect() ? InputType.CHECKBOX : InputType.RADIO)
                         .attr("name", choice.name())
                         .attr("value", choice.value())
                         .initialChecked(checked))

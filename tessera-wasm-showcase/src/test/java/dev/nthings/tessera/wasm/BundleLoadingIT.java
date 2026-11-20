@@ -232,11 +232,10 @@ class BundleLoadingIT {
                     Kind.DATA,
                     "Verified chunk".getBytes(StandardCharsets.UTF_8))));
     var document =
-        new PageDocument(
+        PageDocument.of(
             "Chunks",
-            Documents.wasmMount(
-                "chunks", "view", bundle, Elements.p().text("Static chunk fallback")));
-    var site = Compiler.compile(SiteDefinition.of(List.of(new SiteRoute("/", document))));
+            Documents.wasmMount("chunks", "view", bundle, Elements.p("Static chunk fallback")));
+    var site = Compiler.forSite().compile(SiteDefinition.of(List.of(SiteRoute.of("/", document))));
     var chunk =
         site.files().values().stream()
             .filter(file -> file.path().endsWith(".bin"))

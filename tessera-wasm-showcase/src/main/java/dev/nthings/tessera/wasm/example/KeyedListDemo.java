@@ -8,13 +8,15 @@ import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Events;
+import dev.nthings.tessera.wasm.KeyboardEvent;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveComponent;
 import dev.nthings.tessera.wasm.LiveContent;
@@ -78,7 +80,7 @@ public final class KeyedListDemo {
                 .children(
                     LiveElement.of(Elements.label())
                         .child(
-                            LiveElement.of(Elements.input("checkbox"))
+                            LiveElement.of(Elements.input(InputType.CHECKBOX))
                                 .bindChecked(feed)
                                 .onCheckedChange(value -> root.update(() -> feed = value).run()))
                         .text("Live feed"),
@@ -115,12 +117,11 @@ public final class KeyedListDemo {
           .run();
     }
 
-    void keydown(String key, BrowserEvent event) {
-      var data = event.keyboard();
+    void keydown(String key, KeyboardEvent event) {
       var step =
-          !data.altKey()
+          !event.altKey()
               ? 0
-              : switch (data.key()) {
+              : switch (event.key()) {
                 case "ArrowUp" -> -1;
                 case "ArrowDown" -> 1;
                 default -> 0;
@@ -220,7 +221,7 @@ public final class KeyedListDemo {
     var key = parts.key();
     return Live.fragment(
         LiveContent.of(parts.label()),
-        LiveElement.of(parts.input()).on("keydown", event -> actions.keydown(key, event)),
+        LiveElement.of(parts.input()).on(Events.KEYDOWN, event -> actions.keydown(key, event)),
         LiveContent.of(parts.hint()),
         Ui.button("Choose " + key, () -> actions.choose(key)));
   }

@@ -48,10 +48,11 @@ class SiteCompilationTest {
   @DisplayName("every page links one shared stylesheet holding every route's rules")
   void sharesOneStylesheetAcrossRoutes() {
     var site =
-        Compiler.compile(
-            SiteDefinition.of(
-                new SiteRoute("/", new PageDocument("Home", main().p(CssLength.rem(2)))),
-                new SiteRoute("/about", new PageDocument("About", main().m(CssLength.rem(3))))));
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", main().p(CssLength.rem(2)))),
+                    SiteRoute.of("/about", PageDocument.of("About", main().m(CssLength.rem(3))))));
     var stylesheet = site.files().get(stylesheetPath(site)).textContent();
 
     for (var route : site.pages().keySet()) {
@@ -70,11 +71,12 @@ class SiteCompilationTest {
   void declaresThemeTokens() {
     var brand = new DesignToken.Color("brand-hue", CssColor.oklch(60, 0.2, 300));
     var site =
-        Compiler.compile(
-            SiteDefinition.builder()
-                .theme(Theme.defaults().with(brand, brand.defaultValue()))
-                .route(new SiteRoute("/", new PageDocument("Home", main().child(p().text("x")))))
-                .build());
+        Compiler.forSite()
+            .withTheme(Theme.defaults().with(brand, brand.defaultValue()))
+            .compile(
+                SiteDefinition.builder()
+                    .route(SiteRoute.of("/", PageDocument.of("Home", main(p("x")))))
+                    .build());
 
     assertThat(site.files().get(stylesheetPath(site)).textContent()).contains("--brand-hue:");
   }
@@ -91,10 +93,11 @@ class SiteCompilationTest {
   void linksPageScriptsOnlyWhereUsed() {
     var script = new PageScript("test-widget", "customElements.define('test-widget', class {});");
     var site =
-        Compiler.compile(
-            SiteDefinition.of(
-                new SiteRoute("/", new PageDocument("Home", widget(script))),
-                new SiteRoute("/plain", new PageDocument("Plain", main().text("Plain")))));
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", widget(script))),
+                    SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain")))));
 
     var loaded = RenderedPage.of(site, "/").element("script[type=module]");
     assertThat(site.files().get(loaded.attr("src")).textContent()).isEqualTo(script.module());
@@ -108,15 +111,16 @@ class SiteCompilationTest {
     Supplier<SiteDefinition> site =
         () ->
             SiteDefinition.of(
-                new SiteRoute("/", new PageDocument("Home", widget(script))),
-                new SiteRoute("/about", new PageDocument("About", main().p(CssLength.rem(1)))));
-    var first = Compiler.compile(site.get());
-    var second = Compiler.compile(site.get());
+                SiteRoute.of("/", PageDocument.of("Home", widget(script))),
+                SiteRoute.of("/about", PageDocument.of("About", main().p(CssLength.rem(1)))));
+    var first = Compiler.forSite().compile(site.get());
+    var second = Compiler.forSite().compile(site.get());
     var restyled =
-        Compiler.compile(
-            SiteDefinition.of(
-                new SiteRoute("/", new PageDocument("Home", widget(script))),
-                new SiteRoute("/about", new PageDocument("About", main().p(CssLength.rem(2))))));
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", widget(script))),
+                    SiteRoute.of("/about", PageDocument.of("About", main().p(CssLength.rem(2))))));
 
     assertThat(second.pages()).isEqualTo(first.pages());
     assertThat(second.files().keySet()).isEqualTo(first.files().keySet());
@@ -139,7 +143,7 @@ class SiteCompilationTest {
       };
 
   private static SiteRoute unrendered(String path) {
-    return new SiteRoute(path, new PageDocument(path, main().child(UNREACHABLE)));
+    return SiteRoute.of(path, PageDocument.of(path, main(UNREACHABLE)));
   }
 
   static Stream<Arguments> pathConflicts() {
@@ -188,7 +192,7 @@ class SiteCompilationTest {
       List<SiteRoute> routes, List<Asset> assets, Tuple expected) {
     var site = SiteDefinition.builder().routes(routes).assets(assets).build();
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route)
         .containsExactly(expected);
   }
@@ -198,14 +202,13 @@ class SiteCompilationTest {
   void reportsPageErrorsBeforeCrossRouteChecks() {
     var site =
         SiteDefinition.of(
-            new SiteRoute(
+            SiteRoute.of(
                 "/profile",
-                new PageDocument(
-                    "Profile",
-                    main().children(img("/avatar.png", "Avatar"), a("/missing").text("Gone")))),
-            new SiteRoute("/settings", new PageDocument("Settings", main().child(button()))));
+                PageDocument.of(
+                    "Profile", main(img("/avatar.png", "Avatar"), a("/missing", "Gone")))),
+            SiteRoute.of("/settings", PageDocument.of("Settings", main(button()))));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route, Found::tag)
         .containsExactlyInAnyOrder(
             tuple("image-dimensions", "/profile", "img"),
@@ -229,11 +232,12 @@ class SiteCompilationTest {
           }
           throw (RuntimeException) failure;
         };
-    var document = new PageDocument("Broken", main().child(broken));
+    var document = PageDocument.of("Broken", main(broken));
 
-    assertThat(catchThrowable(() -> Compiler.compile(document))).isSameAs(failure);
+    assertThat(catchThrowable(() -> Compiler.forPage().compile(document))).isSameAs(failure);
     assertThat(
-            catchThrowable(() -> Compiler.compile(SiteDefinition.of(new SiteRoute("/", document)))))
+            catchThrowable(
+                () -> Compiler.forSite().compile(SiteDefinition.of(SiteRoute.of("/", document)))))
         .isSameAs(failure);
   }
 
@@ -244,10 +248,10 @@ class SiteCompilationTest {
   void rejectsUnsharedTransitionKey() {
     var site =
         SiteDefinition.of(
-            new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
-            new SiteRoute("/about", new PageDocument("About", h1().text("About"))));
+            SiteRoute.of("/", PageDocument.of("Home", h1("Home").transitionKey(key))),
+            SiteRoute.of("/about", PageDocument.of("About", h1("About"))));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route)
         .containsExactly(tuple("unshared-transition-key", "/"));
   }
@@ -257,13 +261,13 @@ class SiteCompilationTest {
   void rejectsTransitionKeysWithDifferentClasses() {
     var site =
         SiteDefinition.of(
-            new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
-            new SiteRoute(
+            SiteRoute.of("/", PageDocument.of("Home", h1("Home").transitionKey(key))),
+            SiteRoute.of(
                 "/about",
-                new PageDocument(
-                    "About", h1().text("About").transitionKey(TransitionKey.of("page-title")))));
+                PageDocument.of(
+                    "About", h1("About").transitionKey(TransitionKey.of("page-title")))));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route)
         .containsExactlyInAnyOrder(
             tuple("unshared-transition-key", "/"), tuple("unshared-transition-key", "/about"));
@@ -273,11 +277,12 @@ class SiteCompilationTest {
   @DisplayName("a shared transition key gives both pages' elements the same transition name")
   void pairsSharedTransitionKeys() {
     var site =
-        Compiler.compile(
-            SiteDefinition.of(
-                new SiteRoute("/", new PageDocument("Home", h1().text("Home").transitionKey(key))),
-                new SiteRoute(
-                    "/about", new PageDocument("About", h1().text("About").transitionKey(key)))));
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", h1("Home").transitionKey(key))),
+                    SiteRoute.of(
+                        "/about", PageDocument.of("About", h1("About").transitionKey(key)))));
 
     for (var route : List.of("/", "/about")) {
       var page = RenderedPage.of(site, route);
@@ -291,7 +296,7 @@ class SiteCompilationTest {
   @EnumSource(LinkSpeculation.class)
   @DisplayName("pages declare same-site speculation rules for the chosen action")
   void declaresSpeculationRules(LinkSpeculation speculation) {
-    var site = Compiler.compile(docsSite().linkSpeculation(speculation).build());
+    var site = Compiler.forSite().compile(docsSite().linkSpeculation(speculation).build());
     var rules = RenderedPage.of(site, "/").elements("script[type=speculationrules]");
 
     if (speculation == LinkSpeculation.NONE) {
@@ -309,7 +314,7 @@ class SiteCompilationTest {
   @Test
   @DisplayName("a registered asset is published with its bytes and inferred content type")
   void publishesRegisteredAsset() {
-    var file = Compiler.compile(docsSite().build()).files().get(logo().path());
+    var file = Compiler.forSite().compile(docsSite().build()).files().get(logo().path());
 
     assertThat(file.contentType()).isEqualTo("image/png");
     assertThat(file.content()).isEqualTo(logo().content());
@@ -320,10 +325,9 @@ class SiteCompilationTest {
   void rejectsUnregisteredImageAsset() {
     var site =
         SiteDefinition.of(
-            new SiteRoute(
-                "/", new PageDocument("Home", main().child(img("/x.png", "X").dimensions(1, 1)))));
+            SiteRoute.of("/", PageDocument.of("Home", main(img("/x.png", "X").dimensions(1, 1)))));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route, Found::tag)
         .containsExactly(tuple("missing-route-or-asset", "/", "img"));
   }

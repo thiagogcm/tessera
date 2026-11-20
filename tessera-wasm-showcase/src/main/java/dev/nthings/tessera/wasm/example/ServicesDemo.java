@@ -3,8 +3,11 @@ package dev.nthings.tessera.wasm.example;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Events;
+import dev.nthings.tessera.wasm.FetchResult;
 import dev.nthings.tessera.wasm.FocusReturn;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
@@ -47,7 +50,7 @@ final class ServicesDemo {
                 .children(
                     Elements.h2().text("Host services"),
                     Elements.p().role(Role.STATUS).text(status),
-                    Elements.input("text")
+                    Elements.input(InputType.TEXT)
                         .id(draft)
                         .ariaLabel("Draft")
                         .attr("value", "Hello services")))
@@ -66,7 +69,7 @@ final class ServicesDemo {
                         .attr("data-generation", Integer.toString(generation))
                         .text("Open services dialog"))
                 .on(
-                    "click",
+                    Events.CLICK,
                     _ -> {
                       focus = host.rememberFocus();
                       host.showModal(dialog);
@@ -128,19 +131,19 @@ final class ServicesDemo {
                 })),
             Ui.button(
                 "Load greeting",
-                () ->
-                    host.fetchText(
-                        "/text",
-                        body -> status = "Loaded: " + body,
-                        failure -> status = "Failed with HTTP " + failure.status())),
+                () -> host.fetchText("/text", result -> status = formatFetch(result))),
             Ui.button(
                 "Load missing page",
-                () ->
-                    host.fetchText(
-                        "/missing",
-                        body -> status = "Loaded: " + body,
-                        failure -> status = "Failed with HTTP " + failure.status())),
+                () -> host.fetchText("/missing", result -> status = formatFetch(result))),
             Ui.button("Close services root", root::close));
+  }
+
+  private static String formatFetch(FetchResult result) {
+    return switch (result) {
+      case FetchResult.Ok ok -> "Loaded: " + ok.body();
+      case FetchResult.HttpError error -> "Failed with HTTP " + error.status();
+      case FetchResult.NetworkError error -> "Failed: " + error.message();
+    };
   }
 
   private void restoreFocus() {

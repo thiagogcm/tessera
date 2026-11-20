@@ -10,6 +10,7 @@ import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -94,13 +95,16 @@ class LiveBindingsTest {
   @Test
   @DisplayName("binding events leaves the wrapped portable element unmodified")
   void bindingEventsLeavesThePortableElementUnmodified() {
-    var save = Button.of("Save").element();
+    var save = Button.of("Save").toTagElement();
     var bound = firstTag(LiveElement.of(save).onClick(() -> {}));
     var plain = firstTag(LiveContent.of(save));
 
     assertThat(LiveBehavior.bindings(bound).events()).hasSize(1);
     assertThat(LiveBehavior.bindings(plain).events()).isEmpty();
     assertThat(plain.children()).containsExactly(new LinkedNode.Text<>("Save"));
+
+    var wrappedDirectly = firstTag(LiveElement.of(Button.of("Save")).onClick(() -> {}));
+    assertThat(LiveBehavior.bindings(wrappedDirectly).events()).hasSize(1);
   }
 
   @Test
@@ -157,15 +161,15 @@ class LiveBindingsTest {
         argumentSet("value on a div", LiveElement.of(div()).bindValue("text"), "control-value"),
         argumentSet(
             "value on a file input",
-            LiveElement.of(Elements.input("file")).bindValue("path"),
+            LiveElement.of(Elements.input(InputType.FILE)).bindValue("path"),
             "control-value"),
         argumentSet(
             "value on a checkbox",
-            LiveElement.of(Elements.input("checkbox")).bindValue("on"),
+            LiveElement.of(Elements.input(InputType.CHECKBOX)).bindValue("on"),
             "control-value"),
         argumentSet(
             "value on a hidden input",
-            LiveElement.of(Elements.input("hidden")).bindValue("token"),
+            LiveElement.of(Elements.input(InputType.HIDDEN)).bindValue("token"),
             "control-value"),
         argumentSet(
             "value on a multiple select",
@@ -173,7 +177,7 @@ class LiveBindingsTest {
             "control-value"),
         argumentSet(
             "checked on a text input",
-            LiveElement.of(Elements.input("text")).onCheckedChange(_ -> {}),
+            LiveElement.of(Elements.input(InputType.TEXT)).onCheckedChange(_ -> {}),
             "control-checked"),
         argumentSet(
             "checked on a textarea",
@@ -198,10 +202,10 @@ class LiveBindingsTest {
 
   static Stream<LiveElement> compatibleHosts() {
     return Stream.of(
-        LiveElement.of(Elements.input("text")).bindValue("").onValueChange(_ -> {}),
+        LiveElement.of(Elements.input(InputType.TEXT)).bindValue("").onValueChange(_ -> {}),
         LiveElement.of(Elements.textarea()).bindValue("Notes"),
-        LiveElement.of(Elements.input("checkbox")).bindChecked(false),
-        LiveElement.of(Elements.input("radio")).bindChecked(true).onCheckedChange(_ -> {}),
+        LiveElement.of(Elements.input(InputType.CHECKBOX)).bindChecked(false),
+        LiveElement.of(Elements.input(InputType.RADIO)).bindChecked(true).onCheckedChange(_ -> {}),
         LiveElement.of(Elements.select()).bindValue("a"),
         LiveElement.of(Elements.select().boolAttr("multiple")).bindSelectedValues(List.of()));
   }

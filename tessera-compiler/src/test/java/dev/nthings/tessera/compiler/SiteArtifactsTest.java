@@ -16,6 +16,7 @@ import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.document.components.Footnotes;
 import dev.nthings.tessera.support.Json;
 import dev.nthings.tessera.support.RenderedPage;
+import java.net.URI;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -27,7 +28,7 @@ import org.junit.jupiter.api.Test;
 class SiteArtifactsTest {
 
   private static SiteRoute page(String path) {
-    return new SiteRoute(path, new PageDocument(path, main().text(path)));
+    return SiteRoute.of(path, PageDocument.of(path, main().text(path)));
   }
 
   @Test
@@ -35,8 +36,12 @@ class SiteArtifactsTest {
   void listsPublishedUrlsInTheSitemap() {
     var routes = List.of(page("/"), page("/guide"), page("/guides/café"), page("/notes.html"));
     var site =
-        Compiler.compile(
-            SiteDefinition.builder().baseUrl("https://tessera.dev/").routes(routes).build());
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.builder()
+                    .baseUrl(URI.create("https://tessera.dev/"))
+                    .routes(routes)
+                    .build());
 
     var sitemap = Jsoup.parse(site.sitemapXml(), Parser.xmlParser());
     assertThat(sitemap.select("urlset > url > loc"))
@@ -52,7 +57,7 @@ class SiteArtifactsTest {
   @Test
   @DisplayName("without a base URL no sitemap is published")
   void omitsTheSitemapWithoutBaseUrl() {
-    var site = Compiler.compile(SiteDefinition.of(documentationRoutes()));
+    var site = Compiler.forSite().compile(SiteDefinition.of(documentationRoutes()));
 
     assertThat(site.sitemapXml()).isNull();
     assertThat(site.files()).doesNotContainKey("/sitemap.xml");
@@ -62,7 +67,7 @@ class SiteArtifactsTest {
   @DisplayName("the search index lists each route's title, description and outlined sections")
   void indexesRoutesAndSections() {
     var site = SiteDefinition.of(documentationRoutes());
-    var index = Json.parse(Compiler.compile(site).searchIndexJson()).list();
+    var index = Json.parse(Compiler.forSite().compile(site).searchIndexJson()).list();
 
     assertThat(index)
         .extracting(
@@ -105,7 +110,8 @@ class SiteArtifactsTest {
                 Footnotes.of().title("Notes"),
                 DocumentElement.of(p()).child(Footnote.of("A detail.").reference()));
     var site =
-        Compiler.compile(SiteDefinition.of(new SiteRoute("/", new PageDocument("Custom", body))));
+        Compiler.forSite()
+            .compile(SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Custom", body))));
 
     var headings = Json.parse(site.searchIndexJson()).list().getFirst().get("headings").list();
     assertThat(headings)
@@ -122,10 +128,12 @@ class SiteArtifactsTest {
     var title = "Say \"hi\" \\ café";
     var description = "Col1\tCol2\nRow\u0001\u001f end";
     var site =
-        Compiler.compile(
-            SiteDefinition.of(
-                new SiteRoute(
-                    "/", new PageDocument("Home", main().text("x")), title, description)));
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", main().text("x")))
+                        .withTitle(title)
+                        .withDescription(description)));
 
     var entry = Json.parse(site.searchIndexJson()).list().getFirst();
     assertThat(entry.get("title").string()).isEqualTo(title);

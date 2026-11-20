@@ -108,21 +108,26 @@ public final class Host {
 
   // --- Requests -----------------------------------------------------------------------------
 
-  /// Fetches `url` as text with `GET`. Exactly one callback runs while the request is active: a
-  /// successful status calls `completed` with the body, any other status or a network failure calls
-  /// `failed`. Cancelling, disposing the lifetime or closing the root aborts the request.
-  public Cancellable fetchText(
-      String url, Consumer<String> completed, Consumer<RequestFailure> failed) {
+  /// Fetches `url` as text with `GET` and delivers one [FetchResult] while the request is active:
+  /// [FetchResult.Ok] on a 2xx status, [FetchResult.HttpError] on a non-2xx HTTP response, or
+  /// [FetchResult.NetworkError] when no response was received. Cancelling, disposing the lifetime,
+  /// or closing the root aborts the request without invoking `onResult`.
+  public Cancellable fetchText(String url, Consumer<FetchResult> onResult) {
     return start(handle ->
         releasing(
             Dom.fetchText(
                 url,
-                body -> handle.complete(() -> completed.accept(text(body))),
+                body -> handle.complete(() -> onResult.accept(new FetchResult.Ok(text(body)))),
                 (status, message) ->
-                    handle.complete(() ->
-                        failed.accept(
-                            new RequestFailure(
-                                JSValue.checkedCoerce(status, Integer.class), text(message)))))));
+                    handle.complete(() -> {
+                      var code = JSValue.checkedCoerce(status, Integer.class);
+                      var detail = text(message);
+                      FetchResult result =
+                          code > 0
+                              ? new FetchResult.HttpError(code, detail)
+                              : new FetchResult.NetworkError(detail);
+                      onResult.accept(result);
+                    }))));
   }
 
   private static String text(Object value) {

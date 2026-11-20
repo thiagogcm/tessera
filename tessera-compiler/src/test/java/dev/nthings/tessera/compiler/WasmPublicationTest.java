@@ -10,7 +10,6 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.WasmBundle;
@@ -105,10 +104,9 @@ class WasmPublicationTest {
     var view = "edit\"<&=view";
     var id = "editor\"<&";
     var compiled =
-        Compiler.compile(
-            new PageDocument("Mount", wasmMount(id, view, bundle(), p().text("Fallback"))),
-            Theme.defaults(),
-            OutputMode.external("/assets/./nested/"));
+        Compiler.forPage()
+            .withOutputMode(OutputMode.external("/assets/./nested/"))
+            .compile(PageDocument.of("Mount", wasmMount(id, view, bundle(), p("Fallback"))));
     var page = RenderedPage.of(compiled);
     var host = page.elementById(id);
     Map<String, Asset> assets =
@@ -145,17 +143,17 @@ class WasmPublicationTest {
             .child(wasmMount("one", "a", bundle(), p().text("Home")))
             .child(wasmMount("two", "b", bundle(), p().text("More")));
     var site =
-        Compiler.compile(
-            SiteDefinition.builder()
-                .outputMode(OutputMode.external("/"))
-                .route(new SiteRoute("/", new PageDocument("Mount", home)))
-                .route(
-                    new SiteRoute(
-                        "/share",
-                        new PageDocument(
-                            "Share", wasmMount("one", "a", bundle(), p().text("Share")))))
-                .route(new SiteRoute("/plain", new PageDocument("Plain", main().text("Plain"))))
-                .build());
+        Compiler.forSite()
+            .withOutputMode(OutputMode.external("/"))
+            .compile(
+                SiteDefinition.builder()
+                    .route(SiteRoute.of("/", PageDocument.of("Mount", home)))
+                    .route(
+                        SiteRoute.of(
+                            "/share",
+                            PageDocument.of("Share", wasmMount("one", "a", bundle(), p("Share")))))
+                    .route(SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain"))))
+                    .build());
 
     assertThat(site.files().keySet()).filteredOn(path -> path.startsWith("/wasm/")).hasSize(4);
     assertThat(site.pageHeaders().keySet()).containsExactly("/", "/share");
@@ -195,7 +193,8 @@ class WasmPublicationTest {
   @MethodSource("misplacedMounts")
   @DisplayName("mount placement and fallback content are validated")
   void validatesMountPlacementAndFallback(DocumentContent content, String rule) {
-    assertThat(Diagnostics.rules(() -> Compiler.compile(new PageDocument("Mount", content))))
+    assertThat(
+            Diagnostics.rules(() -> Compiler.forPage().compile(PageDocument.of("Mount", content))))
         .contains(rule);
   }
 }

@@ -65,36 +65,31 @@ For portable component libraries that do not compile pages or sites, depend on `
 Save this class as `src/main/java/BuildSite.java`:
 
 ```java
+import static dev.nthings.tessera.core.Elements.a;
+import static dev.nthings.tessera.core.Elements.h1;
+import static dev.nthings.tessera.core.Elements.main;
+import static dev.nthings.tessera.core.Elements.p;
+
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
-import dev.nthings.tessera.core.Elements;
 import java.nio.file.Path;
 
 public class BuildSite {
   public static void main(String[] args) {
     var site =
         SiteDefinition.of(
-            new SiteRoute(
-                "/",
-                new PageDocument(
-                    "Home",
-                    Elements.main()
-                        .children(
-                            Elements.h1().text("Home"),
-                            Elements.a("/guide/").text("Read the guide")))),
-            new SiteRoute(
+            SiteRoute.of(
+                "/", PageDocument.of("Home", main(h1("Home"), a("/guide/", "Read the guide")))),
+            SiteRoute.of(
                 "/guide",
-                new PageDocument(
+                PageDocument.of(
                     "Guide",
-                    Elements.main()
-                        .children(
-                            Elements.h1().text("Guide"),
-                            Elements.p().text("Upload the generated files to a static host.")))));
+                    main(h1("Guide"), p("Upload the generated files to a static host.")))));
 
-    SiteWriter.writeToDirectory(Compiler.compile(site), Path.of("target/site"));
+    SiteWriter.writeToDirectory(Compiler.forSite().compile(site), Path.of("target/site"));
   }
 }
 ```

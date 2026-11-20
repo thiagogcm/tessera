@@ -95,12 +95,13 @@ public final class Catalog {
           for (var density : Density.values()) {
             var heading = story.heading(variant);
             routes.add(
-                new SiteRoute(
-                    casePath(story.id(), variant.name(), appearance, density),
-                    new PageDocument(
-                        "Tessera — " + heading, new StoryPage(story, variant, appearance, density)),
-                    heading,
-                    variant.label()));
+                SiteRoute.of(
+                        casePath(story.id(), variant.name(), appearance, density),
+                        PageDocument.of(
+                            "Tessera — " + heading,
+                            new StoryPage(story, variant, appearance, density)))
+                    .withTitle(heading)
+                    .withDescription(variant.label()));
           }
         }
       }

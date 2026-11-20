@@ -7,6 +7,7 @@ import dev.nthings.tessera.compiler.SitePreviewServer;
 import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.compiler.SourceTracking;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,16 +36,15 @@ public final class ShowcaseSite {
     var routes = new ArrayList<SiteRoute>();
     for (var page : PAGES) {
       routes.add(
-          new SiteRoute(
-              page.path(),
-              new PageDocument("Tessera — " + page.navLabel(), new Shell(page)),
-              page.title(),
-              page.summary()));
+          SiteRoute.of(
+                  page.path(), PageDocument.of("Tessera — " + page.navLabel(), new Shell(page)))
+              .withTitle(page.title())
+              .withDescription(page.summary()));
     }
     routes.addAll(Catalog.routes());
     return SiteDefinition.builder()
         .routes(routes)
-        .baseUrl("http://localhost:8188")
+        .baseUrl(URI.create("http://localhost:8188"))
         .assets(Art.assets())
         .build();
   }
@@ -99,7 +99,7 @@ public final class ShowcaseSite {
       return;
     }
 
-    var compiled = SourceTracking.enabledIf(tracking, () -> Compiler.compile(definition));
+    var compiled = SourceTracking.enabledIf(tracking, () -> Compiler.forSite().compile(definition));
     SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "

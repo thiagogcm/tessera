@@ -22,12 +22,12 @@ import org.jsoup.select.Elements;
 public record RenderedPage(CompiledPage compiled, Document dom) {
 
   public static RenderedPage render(IntoElement body) {
-    return of(new PageDocument("Test", body));
+    return of(PageDocument.of("Test", body));
   }
 
   /// Compiles a page whose body is document `body`.
   public static RenderedPage render(DocumentContent body) {
-    return of(new PageDocument("Test", body));
+    return of(PageDocument.of("Test", body));
   }
 
   public static RenderedPage renderMain(IntoElement... content) {
@@ -40,7 +40,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
   }
 
   public static RenderedPage of(PageDocument document) {
-    return of(Compiler.compile(document));
+    return of(Compiler.forPage().compile(document));
   }
 
   /// The page at `route` of `site`, with the site's shared stylesheet and the route's response

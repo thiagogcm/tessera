@@ -100,7 +100,9 @@ final class PreparedPage {
   }
 
   Map<String, String> responseHeaders(OutputMode mode) {
-    return bundleBootstrap != null && mode.isExternal() ? BundlePublication.HEADERS : Map.of();
+    return bundleBootstrap != null && mode instanceof OutputMode.External
+        ? BundlePublication.HEADERS
+        : Map.of();
   }
 
   /// An inspection snapshot of this page's element tree.

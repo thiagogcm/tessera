@@ -6,9 +6,11 @@ import dev.nthings.tessera.components.Drawer;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
-import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Events;
+import dev.nthings.tessera.wasm.KeyboardEvent;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
@@ -81,7 +83,7 @@ final class DialogDemo {
 
     var page =
         LiveElement.of(Elements.section().ariaLabel("Dialogs"))
-            .on("keydown", event -> shortcut(root, event))
+            .on(Events.KEYDOWN, event -> shortcut(root, event))
             // The session warning opens after an hour; the minute clock updates meanwhile.
             .child(
                 Live.effect(
@@ -97,7 +99,7 @@ final class DialogDemo {
             .child(
                 LiveElement.of(Elements.label())
                     .child(
-                        LiveElement.of(Elements.input("checkbox"))
+                        LiveElement.of(Elements.input(InputType.CHECKBOX))
                             .bindChecked(unsaved)
                             .onCheckedChange(value -> root.update(() -> unsaved = value).run()))
                     .text("Unsaved changes"));
@@ -122,13 +124,12 @@ final class DialogDemo {
         .child(help);
   }
 
-  private void shortcut(BrowserRoot root, BrowserEvent event) {
-    var key = event.keyboard();
-    if (!key.ctrlKey()) {
+  private void shortcut(BrowserRoot root, KeyboardEvent event) {
+    if (!event.ctrlKey()) {
       return;
     }
     @Nullable Runnable change =
-        switch (key.key()) {
+        switch (event.key()) {
           case "s" -> () -> unsaved = false;
           case "Delete" -> () -> showEntry = false;
           case "d" -> () -> showEditor = false;

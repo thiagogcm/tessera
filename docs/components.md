@@ -6,19 +6,17 @@ For static document assembly such as raw HTML, deferred content, outlines, and f
 
 ## Compose elements
 
-`Elements` provides factories such as `div()`, `h1()`, `p()`, and `a(href)`. Each factory returns a mutable `TagElement` builder. Add content with `child(...)`, `children(...)`, or `text(...)`; text is always HTML-escaped.
+`Elements` provides typed factories such as `div(...)`, `h1(...)`, `p(...)`, `a(href, text)`, and `input(InputType)`. Zero-arg factories return mutable `TagElement` builders for chaining attributes and styles; container and text overloads build common markup concisely, and text is always HTML-escaped.
 
 ```java
 var content =
-    Elements.main()
-        .children(Elements.h1().text("Build status"), Elements.p().text("All checks passed."));
+    Elements.main(Elements.h1("Build status"), Elements.p("All checks passed."));
 ```
 
-Element builders, portable components, and scopes all implement `IntoElement`, so you can pass them directly to any parent. Use `Elements.fragment()` to group siblings without emitting a wrapper tag:
+Element builders, portable components, and scopes all implement `IntoElement`, so you can pass them directly to any parent. Use `Elements.fragment(...)` to group siblings without emitting a wrapper tag:
 
 ```java
-Elements.ul()
-    .child(Elements.fragment().children(Elements.li().text("One"), Elements.li().text("Two")));
+Elements.ul(Elements.fragment(Elements.li("One"), Elements.li("Two")));
 ```
 
 Special tags and namespaces follow strict validation rules:
@@ -162,7 +160,7 @@ var close =
 
 `ContentTabs.of(label).tab(key, label, content)` incorporates each tab key into tab and panel IDs. Blank keys throw `IllegalArgumentException`, and duplicate keys report `duplicate-tab`. On static pages, its bundled module manages selection and keyboard focus; in browser roots, wrap it with [`LiveTabs`](browser-rendering.md#adapt-portable-widgets).
 
-Buttons are portable and carry no Java event handlers. In a browser root, wrap `button.element()` in `LiveElement` to attach a handler.
+Buttons are portable and carry no Java event handlers. Because `Button`, `IconButton`, and `Image` implement `TagHost`, you can wrap them directly in `LiveElement.of(button)` or `DocumentElement.of(button)`.
 
 ## Link elements with identity references
 

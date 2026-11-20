@@ -22,7 +22,6 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
@@ -45,8 +44,7 @@ class PageOutputTest {
   @DisplayName("untrusted strings round-trip through the title, text and attributes")
   void encodesUntrustedStrings(String value) {
     var page =
-        RenderedPage.of(
-            new PageDocument(value, main().child(p().attr("title", value + "\r\n").text(value))));
+        RenderedPage.of(PageDocument.of(value, main(p(value).attr("title", value + "\r\n"))));
 
     assertThat(page.dom().title()).isEqualTo(value);
     assertThat(page.element("main > p").wholeText()).isEqualTo(value);
@@ -69,10 +67,9 @@ class PageOutputTest {
   @DisplayName("external output links one stylesheet asset under the normalized base")
   void externalOutputLinksTheStylesheetAsset() {
     var compiled =
-        Compiler.compile(
-            new PageDocument("External", main().p(CssLength.rem(2)).text("Hello")),
-            Theme.defaults(),
-            OutputMode.external("/static/./assets/"));
+        Compiler.forPage()
+            .withOutputMode(OutputMode.external("/static/./assets/"))
+            .compile(PageDocument.of("External", main().p(CssLength.rem(2)).text("Hello")));
     var page = RenderedPage.of(compiled);
 
     var href = page.element("head > link[rel=stylesheet]").attr("href");
@@ -184,7 +181,7 @@ class PageOutputTest {
           return DocumentContent.of(main().child(p().text("Body")));
         };
 
-    var rendered = RenderedPage.of(new PageDocument("Order", body));
+    var rendered = RenderedPage.of(PageDocument.of("Order", body));
 
     assertThat(rendered.elements("head > meta[name=from-head]")).hasSize(1);
     assertThat(rendered.elements("head > meta[name=from-section]")).hasSize(1);
@@ -202,7 +199,7 @@ class PageOutputTest {
           }
           return DocumentContent.of(custom("test-widget"));
         };
-    return new PageDocument("Scripts", DocumentElement.of(main()).child(component));
+    return PageDocument.of("Scripts", DocumentElement.of(main()).child(component));
   }
 
   @Test
@@ -237,10 +234,9 @@ class PageOutputTest {
   @DisplayName("an external page script is a module asset the page loads by URL")
   void publishesExternalScriptAsset() {
     var compiled =
-        Compiler.compile(
-            withScripts(new PageScript("test-widget", WIDGET)),
-            Theme.defaults(),
-            OutputMode.external("/assets"));
+        Compiler.forPage()
+            .withOutputMode(OutputMode.external("/assets"))
+            .compile(withScripts(new PageScript("test-widget", WIDGET)));
     var script = RenderedPage.of(compiled).element("script[type=module]");
 
     assertThat(script.data()).isEmpty();
@@ -288,7 +284,7 @@ class PageOutputTest {
           return DocumentContent.of(main().child(p().text("Body")));
         };
 
-    var page = RenderedPage.of(new PageDocument("Styled", styled));
+    var page = RenderedPage.of(PageDocument.of("Styled", styled));
 
     assertThat(page.element("style[data-own]").data()).isEqualTo(css);
   }

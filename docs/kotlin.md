@@ -28,8 +28,8 @@ data class MetricCard(val title: String, val value: String) : Scope {
 }
 
 fun main() {
-    val body = Elements.main().children(notice, MetricCard("Builds", "42"))
-    println(Compiler.compile(PageDocument("Home", body)).html)
+    val body = Elements.main(notice, MetricCard("Builds", "42"))
+    println(Compiler.forPage().compile(PageDocument.of("Home", body)).html)
 }
 ```
 
@@ -45,7 +45,7 @@ This example uses standard SAM lambdas with `it`. Enabling the optional receiver
 | `Component` SAM interface | `Component { context -> ... }` |
 | `Scope` interface | Implement a class or `data class` with `expand` and optional `scopeId`/`configureScope` |
 | Java record accessors | Kotlin properties: `diagnostic.rule`, `page.html`, `site.pages` |
-| Public sealed hierarchies | Exhaustive `when` over `Element`, `TagName`, `Condition`, and `PageTree.Node` |
+| Public sealed hierarchies | Exhaustive `when` over `Element`, `TagName`, `Condition`, `OutputMode`, `CompilationResult`, `BrowserEvent`, `FetchResult`, and `PageTree.Node` |
 | `@CheckReturnValue` value types | Pass `-Xreturn-value-checker=check` to flag discarded derived values |
 
 Tessera member names avoid Kotlin keywords and standard scope-function names. For example, `div().apply { child(span()) }` invokes Kotlin's `apply` cleanly. Component identity, keying, and expansion rules match [Components](components.md).

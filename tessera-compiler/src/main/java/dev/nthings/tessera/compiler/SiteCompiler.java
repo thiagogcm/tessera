@@ -5,6 +5,7 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Location;
+import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -24,7 +25,7 @@ import java.util.function.Function;
 final class SiteCompiler {
   private SiteCompiler() {}
 
-  static CompiledSite compile(SiteDefinition site) {
+  static CompiledSite compile(SiteDefinition site, Theme theme, OutputMode output) {
     var routes = site.routes();
 
     // Route and declared-file paths are known up front: reject conflicts before rendering.
@@ -47,7 +48,6 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
-    var output = site.outputMode();
     var speculation = site.linkSpeculation();
     var preparedPages = preparePages(site, new BundlePublication(output));
     var preparedByRoute = new LinkedHashMap<String, PreparedPage>(routes.size());
@@ -60,16 +60,15 @@ final class SiteCompiler {
     for (var prepared : preparedPages) {
       prepared.contributeStylesTo(sharedStyles);
     }
-    var css = sharedStyles.render(site.theme());
+    var css = sharedStyles.render(theme);
     var behaviors = new LinkedHashSet<PageScript>();
     for (var prepared : preparedPages) {
       behaviors.addAll(prepared.scripts());
     }
     // One stylesheet and one file per distinct module, hashed and encoded once for every page.
     var resources = new HtmlWriter.Resources(css, output, behaviors);
-    var externalBase = output.assetBase();
     var externalRules =
-        externalBase != null
+        output instanceof OutputMode.External(var externalBase)
                 && preparedPages.stream().anyMatch(page -> page.bundleBootstrap() != null)
             ? speculation.externalRules(externalBase)
             : null;

@@ -4,15 +4,13 @@ Tessera validates markup, references, form controls, accessibility semantics, an
 
 ## Read a diagnostic
 
-Inspect collected errors from `CompilationException.diagnostics()`:
+Inspect collected errors without exceptions using `tryCompile(...)` (returning a sealed `CompilationResult`), or catch `CompilationException` from `compile(...)`:
 
 ```java
-try {
-  Compiler.compile(site);
-} catch (CompilationException failure) {
-  for (var diagnostic : failure.diagnostics()) {
-    System.err.println(diagnostic.format());
-  }
+switch (Compiler.forSite().tryCompile(site)) {
+  case CompilationResult.Compiled(var compiled) -> SiteWriter.writeToDirectory(compiled, out);
+  case CompilationResult.Failed(var diagnostics) ->
+      diagnostics.forEach(d -> System.err.println(d.format()));
 }
 ```
 
@@ -122,9 +120,7 @@ Wrap authoring and compilation in `SourceTracking.enabled(...)` to record Java f
 ```java
 var page =
     SourceTracking.enabled(
-        () ->
-            Compiler.compile(
-                new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))));
+        () -> Compiler.forPage().compile(PageDocument.of("Home", Elements.main(Elements.h1("Home")))));
 ```
 
 When enabled, emitted HTML elements carry `data-src="Page.java:42"` attributes and diagnostics include the exact Java source line. Elements constructed inside built-in components attribute themselves to the caller line that placed the component. Site compilation propagates tracking automatically to its virtual threads.

@@ -7,12 +7,12 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
+import dev.nthings.tessera.wasm.MountOptions;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +28,8 @@ final class SchedulingDemo {
   private int effectStarts;
 
   BrowserRoot mount(String host) {
-    return BrowserRoot.mount(host, new BrowserRoot.Scheduling(2, 8), this::view);
+    return BrowserRoot.mount(
+        host, this::view, MountOptions.DEFAULT.withScheduling(new BrowserRoot.Scheduling(2, 8)));
   }
 
   private LiveContent view(LiveContext context) {
@@ -83,9 +84,7 @@ final class SchedulingDemo {
             "Throw from handler",
             () -> {
               throw new IllegalStateException("Simulated handler failure");
-            }),
-        LiveElement.of(Elements.button().text("Read keys on click"))
-            .on("click", BrowserEvent::keyboard));
+            }));
   }
 
   private record FailingPanel() implements Component {

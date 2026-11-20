@@ -10,6 +10,8 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.ul;
 
+import dev.nthings.tessera.compiler.CompiledSite;
+import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.OutputMode;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
@@ -45,9 +47,9 @@ final class Fixtures {
 
   private Fixtures() {}
 
-  /// Every fixture site by name.
-  static Map<String, SiteDefinition> all() {
-    var sites = new LinkedHashMap<String, SiteDefinition>();
+  /// Every compiled fixture site by name.
+  static Map<String, CompiledSite> all() {
+    var sites = new LinkedHashMap<String, CompiledSite>();
     sites.put("search", site("Search examples", searchPage()));
     sites.put("rtl", site("Right to left", rtlPage()));
     sites.put("ids", site("Fragment links", idsPage()));
@@ -61,16 +63,15 @@ final class Fixtures {
     return sites;
   }
 
-  private static SiteDefinition site(String title, DocumentElement body) {
+  private static CompiledSite site(String title, DocumentElement body) {
     return site(Theme.defaults(), title, body);
   }
 
-  private static SiteDefinition site(Theme theme, String title, DocumentElement body) {
-    return SiteDefinition.builder()
-        .outputMode(OutputMode.inline())
-        .theme(theme)
-        .route(new SiteRoute("/", new PageDocument(title, body)))
-        .build();
+  private static CompiledSite site(Theme theme, String title, DocumentElement body) {
+    return Compiler.forSite()
+        .withOutputMode(OutputMode.inline())
+        .withTheme(theme)
+        .compile(SiteDefinition.of(SiteRoute.of("/", PageDocument.of(title, body))));
   }
 
   /// Two independent palettes whose links point at headings on the same page.

@@ -84,35 +84,20 @@ public final class BrowserRoot implements AutoCloseable {
     this.services = new Host(this, lifetime);
   }
 
-  /// Mounts with [Theme#defaults()] and the default scheduling limits.
+  /// Mounts with [MountOptions#DEFAULT].
   ///
   /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
   public static BrowserRoot mount(String hostId, LiveComponent view) {
-    return mount(hostId, Theme.defaults(), Scheduling.DEFAULT, view);
+    return mount(hostId, view, MountOptions.DEFAULT);
   }
 
-  /// Mounts with `theme` and the default scheduling limits.
-  ///
-  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
-  public static BrowserRoot mount(String hostId, Theme theme, LiveComponent view) {
-    return mount(hostId, theme, Scheduling.DEFAULT, view);
-  }
-
-  /// Mounts with [Theme#defaults()] and `scheduling`.
-  ///
-  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root.
-  public static BrowserRoot mount(String hostId, Scheduling scheduling, LiveComponent view) {
-    return mount(hostId, Theme.defaults(), scheduling, view);
-  }
-
-  /// The view receives a [LiveContext] whose [LiveContext#root()] is this root, and returns live
-  /// content; wrap portable content with [LiveContent#of].
+  /// Mounts with `options`. The view receives a [LiveContext] whose [LiveContext#root()] is this
+  /// root, and returns live content; wrap portable content with [LiveContent#of].
   ///
   /// The first render runs synchronously. A rejected candidate keeps the host's fallback content,
   /// and a later invalidation retries. Other roots mount independently.
-  public static BrowserRoot mount(
-      String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
-    var root = new BrowserRoot(hostId, theme, scheduling, view);
+  public static BrowserRoot mount(String hostId, LiveComponent view, MountOptions options) {
+    var root = new BrowserRoot(hostId, options.theme(), options.scheduling(), view);
     var conflict = Dom.mountConflict(root.hostElement, StyleSheet.ROOT_ATTRIBUTE);
     if (conflict != null) {
       throw new IllegalStateException(

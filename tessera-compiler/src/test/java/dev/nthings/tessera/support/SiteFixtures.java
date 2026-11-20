@@ -48,30 +48,31 @@ public final class SiteFixtures {
                 a("guide/install/").text("Install"),
                 a("/notes.html").text("Notes"));
     return SiteDefinition.builder()
-        .route(new SiteRoute("/", new PageDocument("Home", home)))
-        .route(new SiteRoute("/guide", new PageDocument("Guide", main().text("Guide"))))
-        .route(new SiteRoute("/guide/install", new PageDocument("Install", main().text("Install"))))
-        .route(new SiteRoute("/notes.html", new PageDocument("Notes", main().text("Notes"))))
+        .route(SiteRoute.of("/", PageDocument.of("Home", home)))
+        .route(SiteRoute.of("/guide", PageDocument.of("Guide", main().text("Guide"))))
+        .route(SiteRoute.of("/guide/install", PageDocument.of("Install", main().text("Install"))))
+        .route(SiteRoute.of("/notes.html", PageDocument.of("Notes", main().text("Notes"))))
         .asset(logo());
   }
 
   /// Three documentation routes; the untitled FAQ falls back to its document title.
   public static List<SiteRoute> documentationRoutes() {
     return List.of(
-        new SiteRoute(
-            "/",
-            new PageDocument("Home", main().child(Section.of("features", "Features").child(p()))),
-            "Tessera Home",
-            "Static HTML/CSS compiler"),
-        new SiteRoute(
-            "/guide",
-            new PageDocument(
-                "Guide",
-                main()
-                    .children(
-                        Section.of("quickstart", "Quick Start").child(p()),
-                        Section.of("config", "Configuration").level(3).child(p()))),
-            "Getting Started"),
-        new SiteRoute("/faq", new PageDocument("FAQ", main().child(p().text("Q&A")))));
+        SiteRoute.of(
+                "/",
+                PageDocument.of(
+                    "Home", main().child(Section.of("features", "Features").child(p()))))
+            .withTitle("Tessera Home")
+            .withDescription("Static HTML/CSS compiler"),
+        SiteRoute.of(
+                "/guide",
+                PageDocument.of(
+                    "Guide",
+                    main()
+                        .children(
+                            Section.of("quickstart", "Quick Start").child(p()),
+                            Section.of("config", "Configuration").level(3).child(p()))))
+            .withTitle("Getting Started"),
+        SiteRoute.of("/faq", PageDocument.of("FAQ", main(p("Q&A")))));
   }
 }

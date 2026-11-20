@@ -44,67 +44,74 @@ public final class PublishedWeb {
         GraalWebImage.read(
             build.resolve("tessera-second.js"), build.resolve("tessera-second.js.wasm"));
     var counter = mount("counter", "counter", second, p().text("Counter is unavailable."));
-    return Compiler.compile(
-        SiteDefinition.builder()
-            .outputMode(OutputMode.external(assetBase))
-            .route(
-                page(
-                    "/",
-                    "Published Web Images",
-                    mount("app", "app", demo, a("/guide/").text("Open the static guide")),
-                    mount("notes", "notes", demo, Field.of("Fallback notes", Forms.text("notes"))),
-                    counter))
-            .route(
-                page(
-                    "/guide",
-                    "Static guide",
-                    mount("broken", "broken", demo, a("/").text("Return to the static home")),
-                    counter))
-            .route(
-                page(
-                    "/forms",
-                    "Forms",
-                    mount("forms", "forms", demo, p().text("The profile form is loading.")),
-                    mount("defaults", "defaults", demo, p().text("The defaults form is loading.")),
-                    mount("shipping", "shipping", demo, p().text("Shipping is loading."))))
-            .route(
-                page(
-                    "/forms/static", "Static forms", DocumentContent.of(DefaultsDemo.staticForm())))
-            .route(page("/lists", "Lists", mount("lists", "lists", demo, p().text("Loading."))))
-            .route(
-                page(
-                    "/lists/static",
-                    "Static lists",
-                    DocumentContent.of(KeyedListDemo.content(List.of("a", "b", "c"), true, false))))
-            .route(page("/tabs", "Tabs", mount("tabs", "tabs", demo, p().text("Loading."))))
-            .route(
-                page(
-                    "/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p().text("Loading."))))
-            .route(page("/search", "Search", mount("search", "search", demo, p().text("Loading."))))
-            .route(page("/events", "Events", mount("events", "events", demo, p().text("Loading."))))
-            .route(
-                page(
-                    "/services",
-                    "Services",
-                    mount("services", "services", demo, p().text("Loading."))))
-            .route(
-                page(
-                    "/lifecycle",
-                    "Lifecycle",
-                    mount("toolbar", "toolbar", demo, p().text("Loading.")),
-                    mount("lifetime", "lifetime", demo, p().text("Loading.")),
-                    mount("closure", "closure", demo, p().text("Loading.")),
-                    mount("activity", "activity", demo, p().text("Loading."))))
-            .route(
-                page(
-                    "/failures",
-                    "Failures",
-                    DocumentContent.of(
-                        p().id(ElementRef.page("page-note")).text("A note owned by the page")),
-                    mount("schedule", "schedule", demo, p().text("Loading.")),
-                    mount("collisions", "collisions", demo, p().text("Loading.")),
-                    counter))
-            .build());
+    return Compiler.forSite()
+        .withOutputMode(OutputMode.external(assetBase))
+        .compile(
+            SiteDefinition.builder()
+                .route(
+                    page(
+                        "/",
+                        "Published Web Images",
+                        mount("app", "app", demo, a("/guide/", "Open the static guide")),
+                        mount(
+                            "notes",
+                            "notes",
+                            demo,
+                            Field.of("Fallback notes", Forms.text("notes"))),
+                        counter))
+                .route(
+                    page(
+                        "/guide",
+                        "Static guide",
+                        mount("broken", "broken", demo, a("/", "Return to the static home")),
+                        counter))
+                .route(
+                    page(
+                        "/forms",
+                        "Forms",
+                        mount("forms", "forms", demo, p("The profile form is loading.")),
+                        mount("defaults", "defaults", demo, p("The defaults form is loading.")),
+                        mount("shipping", "shipping", demo, p("Shipping is loading."))))
+                .route(
+                    page(
+                        "/forms/static",
+                        "Static forms",
+                        DocumentContent.of(DefaultsDemo.staticForm())))
+                .route(page("/lists", "Lists", mount("lists", "lists", demo, p("Loading."))))
+                .route(
+                    page(
+                        "/lists/static",
+                        "Static lists",
+                        DocumentContent.of(
+                            KeyedListDemo.content(List.of("a", "b", "c"), true, false))))
+                .route(page("/tabs", "Tabs", mount("tabs", "tabs", demo, p("Loading."))))
+                .route(
+                    page("/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p("Loading."))))
+                .route(page("/search", "Search", mount("search", "search", demo, p("Loading."))))
+                .route(page("/events", "Events", mount("events", "events", demo, p("Loading."))))
+                .route(
+                    page(
+                        "/services",
+                        "Services",
+                        mount("services", "services", demo, p("Loading."))))
+                .route(
+                    page(
+                        "/lifecycle",
+                        "Lifecycle",
+                        mount("toolbar", "toolbar", demo, p("Loading.")),
+                        mount("lifetime", "lifetime", demo, p("Loading.")),
+                        mount("closure", "closure", demo, p("Loading.")),
+                        mount("activity", "activity", demo, p("Loading."))))
+                .route(
+                    page(
+                        "/failures",
+                        "Failures",
+                        DocumentContent.of(
+                            p("A note owned by the page").id(ElementRef.page("page-note"))),
+                        mount("schedule", "schedule", demo, p("Loading.")),
+                        mount("collisions", "collisions", demo, p("Loading.")),
+                        counter))
+                .build());
   }
 
   private static DocumentContent mount(
@@ -113,7 +120,7 @@ public final class PublishedWeb {
   }
 
   private static SiteRoute page(String path, String title, DocumentContent... content) {
-    var document = DocumentElement.of(Elements.main().child(h1().text(title))).children(content);
-    return new SiteRoute(path, new PageDocument(title, document));
+    var document = DocumentElement.of(Elements.main(h1(title))).children(content);
+    return SiteRoute.of(path, PageDocument.of(title, document));
   }
 }

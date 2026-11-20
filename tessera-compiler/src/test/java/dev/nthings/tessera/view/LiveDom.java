@@ -28,12 +28,12 @@ final class LiveDom {
 
   /// The compiled page of `content`.
   static Document page(IntoElement content) {
-    return Jsoup.parse(Compiler.compile(new PageDocument("Test", content)).html());
+    return Jsoup.parse(Compiler.forPage().compile(PageDocument.of("Test", content)).html());
   }
 
   /// The compiled page of document `content`.
   static Document page(DocumentContent content) {
-    return Jsoup.parse(Compiler.compile(new PageDocument("Test", content)).html());
+    return Jsoup.parse(Compiler.forPage().compile(PageDocument.of("Test", content)).html());
   }
 
   /// One element of a body: tag, attributes other than generated styling and scope markers, text.

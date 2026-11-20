@@ -15,6 +15,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
@@ -85,12 +86,12 @@ class AuthoringDiagnosticsTest {
     return Stream.of(
         argumentSet(
             "value on a file input",
-            Elements.input("FILE").initialValue("x"),
+            Elements.el(HtmlTag.INPUT).attr("type", "FILE").initialValue("x"),
             "initial-value",
             "input"),
         argumentSet(
             "checked on a text input",
-            Elements.input("text").initialChecked(false),
+            Elements.input(InputType.TEXT).initialChecked(false),
             "initial-checked",
             "input"),
         argumentSet(
@@ -105,12 +106,12 @@ class AuthoringDiagnosticsTest {
             "select"),
         argumentSet(
             "value attribute and initial value",
-            Elements.input("text").attr("VALUE", "x").initialValue("x"),
+            Elements.input(InputType.TEXT).attr("VALUE", "x").initialValue("x"),
             "initial-control-conflict",
             "input"),
         argumentSet(
             "checked attribute and initial checked",
-            Elements.input("checkbox").initialChecked(false).boolAttr("CHECKED"),
+            Elements.input(InputType.CHECKBOX).initialChecked(false).boolAttr("CHECKED"),
             "initial-control-conflict",
             "input"),
         argumentSet(

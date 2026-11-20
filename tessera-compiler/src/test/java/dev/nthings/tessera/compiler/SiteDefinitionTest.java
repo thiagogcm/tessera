@@ -5,6 +5,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import dev.nthings.tessera.document.PageScript;
+import java.net.URI;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,10 +24,12 @@ class SiteDefinitionTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"", "/", "example.com", "//example.com", "/docs"})
+  @ValueSource(
+      strings = {"", "/", "example.com", "//example.com", "/docs", "https://example.com?q=1"})
   @DisplayName("a base URL must be an absolute origin")
   void rejectsBaseUrlWithoutOrigin(String baseUrl) {
-    var builder = SiteDefinition.builder().routes(documentationRoutes()).baseUrl(baseUrl);
+    var builder =
+        SiteDefinition.builder().routes(documentationRoutes()).baseUrl(URI.create(baseUrl));
 
     assertThatIllegalArgumentException().isThrownBy(builder::build);
   }

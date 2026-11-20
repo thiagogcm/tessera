@@ -131,7 +131,7 @@ class ExpansionTest {
   @MethodSource("callbackFailures")
   @DisplayName("a failing callback keeps its exception and names its page and component path")
   void reportsCallbackFailureContext(DocumentElement body, List<String> components) {
-    var failure = catchThrowable(() -> Compiler.compile(new PageDocument("Broken", body)));
+    var failure = catchThrowable(() -> Compiler.forPage().compile(PageDocument.of("Broken", body)));
 
     assertThat(failure).isInstanceOf(IllegalStateException.class).hasMessage("Broken render");
     assertThat(failure.getSuppressed())
@@ -163,7 +163,7 @@ class ExpansionTest {
   void reportsUnstableScopeName(Scope scope) {
     assertThat(
             Diagnostics.rules(
-                () -> Compiler.compile(new PageDocument("Unstable", main().child(scope)))))
+                () -> Compiler.forPage().compile(PageDocument.of("Unstable", main(scope)))))
         .containsExactly("unstable-scope-name");
   }
 
@@ -198,7 +198,7 @@ class ExpansionTest {
 
     var failure =
         catchThrowable(() ->
-            Compiler.compile(new PageDocument("Strict", main().child(new Box("outer", strict)))));
+            Compiler.forPage().compile(PageDocument.of("Strict", main(new Box("outer", strict)))));
 
     assertThat(failure)
         .isInstanceOfSatisfying(
@@ -225,7 +225,7 @@ class ExpansionTest {
 
     assertThat(
             Diagnostics.of(
-                () -> Compiler.compile(new PageDocument("Headings", main().child(heading)))))
+                () -> Compiler.forPage().compile(PageDocument.of("Headings", main(heading)))))
         .extracting(Found::rule, Found::tag, Found::components)
         .containsExactly(tuple("unbound-reference", "h2", List.of("Heading")));
   }
@@ -269,9 +269,9 @@ class ExpansionTest {
   void sharedKeysNeedNamedParents() {
     assertThat(
             Diagnostics.rules(() ->
-                Compiler.compile(
-                    new PageDocument(
-                        "Lists", main().children(list(List.of("a")), list(List.of("a")))))))
+                Compiler.forPage()
+                    .compile(
+                        PageDocument.of("Lists", main(list(List.of("a")), list(List.of("a")))))))
         .isNotEmpty()
         .containsOnly("duplicate-id");
 
@@ -308,7 +308,7 @@ class ExpansionTest {
   @MethodSource("keyedContentInGeneratedScope")
   @DisplayName("keyed content under a scope with a generated id is reported")
   void reportsKeyedContentInGeneratedScope(Element body) {
-    assertThat(Diagnostics.rules(() -> Compiler.compile(new PageDocument("Keys", body))))
+    assertThat(Diagnostics.rules(() -> Compiler.forPage().compile(PageDocument.of("Keys", body))))
         .containsExactly("generated-scope-id");
   }
 
@@ -317,7 +317,8 @@ class ExpansionTest {
   void acceptsKeyedContentInExplicitScope() {
     var body = main().child(new Box("cards", new Box("inner", p().key("a"))));
 
-    assertThatNoException().isThrownBy(() -> Compiler.compile(new PageDocument("Keys", body)));
+    assertThatNoException()
+        .isThrownBy(() -> Compiler.forPage().compile(PageDocument.of("Keys", body)));
   }
 
   @Test

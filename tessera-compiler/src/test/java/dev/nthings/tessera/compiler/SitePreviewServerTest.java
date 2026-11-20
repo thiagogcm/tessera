@@ -29,8 +29,9 @@ class SitePreviewServerTest {
   @BeforeAll
   static void startServer() {
     site =
-        Compiler.compile(
-            docsSite().asset(Asset.of("/assets/manual v1.pdf", new byte[] {1, 2})).build());
+        Compiler.forSite()
+            .compile(
+                docsSite().asset(Asset.of("/assets/manual v1.pdf", new byte[] {1, 2})).build());
     server = SitePreviewServer.start(site, 0);
     client = HttpClient.newHttpClient();
   }

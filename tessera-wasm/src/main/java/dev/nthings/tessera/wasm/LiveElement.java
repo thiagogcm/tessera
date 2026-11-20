@@ -3,6 +3,7 @@ package dev.nthings.tessera.wasm;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.view.LiveNode;
 import java.util.ArrayList;
@@ -20,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 /// children; children added here follow them.
 ///
 /// ```java
-/// LiveElement.of(Button.of("Save").element()).onClick(root.update(this::save));
+/// LiveElement.of(Button.of("Save")).onClick(root.update(this::save));
 /// LiveElement.of(Forms.text("name")).bindValue(name).onValueChange(value -> name = value);
 /// ```
 public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
@@ -35,9 +36,18 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
     this.host = host;
   }
 
-  /// Wraps `host`, whose attributes, styles and children are read on each render.
-  public static LiveElement of(TagElement host) {
-    return new LiveElement(host);
+  /// Wraps `host`, whose attributes, styles and children are read on each render. Accepts
+  /// [TagElement] and tag-backed components such as `Button`, `IconButton`, and `Image`.
+  public static LiveElement of(TagHost host) {
+    return new LiveElement(host.toTagElement());
+  }
+
+  /// Wraps `host` and runs `configure` on the resulting live element, allowing mixed portable and
+  /// live children and bindings to be attached in one block.
+  public static LiveElement of(TagHost host, Consumer<LiveElement> configure) {
+    var element = of(host);
+    configure.accept(element);
+    return element;
   }
 
   @Override
@@ -45,23 +55,17 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
     return this;
   }
 
-  /// Runs `handler` synchronously when the browser dispatches `event` (such as `click`, `input` or
-  /// `keydown`) to the host, bubble phase. A handler for the same type and phase replaces the
-  /// previous one. Re-rendering rebinds the current handler, so it may capture the state of the
-  /// render that created it. Throws IllegalArgumentException if `event` is blank.
+  /// Runs `handler` synchronously when the browser dispatches `event` to the host, with optional
+  /// native listener `options` ([EventOption#CAPTURE], [EventOption#PASSIVE], [EventOption#ONCE]).
+  /// A handler for the same type and phase replaces the previous one. Re-rendering rebinds the
+  /// current handler, so it may capture the state of the render that created it.
   ///
-  /// On an input or textarea, the `input` handler also runs when an IME composition ends, with the
-  /// event type `compositionend` and the committed text: browsers dispatch the composition's last
-  /// `input` event while [ControlState#composing()] is still true.
-  public LiveElement on(String event, Consumer<BrowserEvent> handler) {
-    return on(event, EventOptions.DEFAULT, handler);
-  }
-
-  /// Runs `handler` for `event` with native listener `options`: capture phase, passive, or once. A
-  /// handler for the same type and phase replaces the previous one. Throws IllegalArgumentException
-  /// if `event` is blank.
-  public LiveElement on(String event, EventOptions options, Consumer<BrowserEvent> handler) {
-    return listen(new EventListener(event, options, handler, null));
+  /// On an input or textarea, the [Events#INPUT] handler also runs when an IME composition ends,
+  /// with the event type `compositionend` and the committed text: browsers dispatch the
+  /// composition's last `input` event while [ControlState#composing()] is still true.
+  public <E extends BrowserEvent> LiveElement on(
+      EventType<E> event, Consumer<E> handler, EventOption... options) {
+    return listen(EventListener.of(event, options, handler, null));
   }
 
   private LiveElement listen(EventListener listener) {
@@ -72,7 +76,7 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
   /// Runs `handler` synchronously when the host is clicked, within the click's user activation, so
   /// it may open a modal dialog.
   public LiveElement onClick(Runnable handler) {
-    return on("click", _ -> handler.run());
+    return on(Events.CLICK, _ -> handler.run());
   }
 
   /// Binds the current value of a value-editable input, textarea or single select to application
@@ -104,9 +108,9 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
   /// and trigger a render to accept the edit.
   public LiveElement onValueChange(Consumer<String> handler) {
     return listen(
-        new EventListener(
-            "input",
-            EventOptions.DEFAULT,
+        EventListener.of(
+            Events.INPUT,
+            new EventOption[0],
             event -> handler.accept(event.control().value()),
             ControlProperties.Kind.VALUE));
   }
@@ -114,9 +118,9 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
   /// Reports the checked state on a native `change` event from a checkbox or radio.
   public LiveElement onCheckedChange(Consumer<Boolean> handler) {
     return listen(
-        new EventListener(
-            "change",
-            EventOptions.DEFAULT,
+        EventListener.of(
+            Events.CHANGE,
+            new EventOption[0],
             event -> handler.accept(event.control().checked()),
             ControlProperties.Kind.CHECKED));
   }
@@ -124,9 +128,9 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
   /// Reports the selected values of a multiple select in option order on a native `input` event.
   public LiveElement onSelectedValuesChange(Consumer<List<String>> handler) {
     return listen(
-        new EventListener(
-            "input",
-            EventOptions.DEFAULT,
+        EventListener.of(
+            Events.INPUT,
+            new EventOption[0],
             event -> handler.accept(event.control().selectedValues()),
             ControlProperties.Kind.SELECTION));
   }

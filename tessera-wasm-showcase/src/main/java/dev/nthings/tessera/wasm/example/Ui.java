@@ -15,6 +15,6 @@ final class Ui {
 
   /// `button`'s element, running `onClick` when clicked.
   static LiveElement button(Button button, Runnable onClick) {
-    return LiveElement.of(button.element()).onClick(onClick);
+    return LiveElement.of(button).onClick(onClick);
   }
 }

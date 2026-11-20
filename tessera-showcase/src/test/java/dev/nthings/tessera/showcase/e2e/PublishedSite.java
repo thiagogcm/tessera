@@ -46,11 +46,11 @@ final class PublishedSite implements AutoCloseable {
   private static PublishedSite publish() {
     try {
       var root = Files.createTempDirectory("tessera-showcase");
-      SiteWriter.writeToDirectory(Compiler.compile(ShowcaseSite.createDefinition()), root);
+      SiteWriter.writeToDirectory(
+          Compiler.forSite().compile(ShowcaseSite.createDefinition()), root);
       for (var fixture : Fixtures.all().entrySet()) {
         SiteWriter.writeToDirectory(
-            Compiler.compile(fixture.getValue()),
-            root.resolve(Path.of("fixtures", fixture.getKey())));
+            fixture.getValue(), root.resolve(Path.of("fixtures", fixture.getKey())));
       }
       var server =
           SimpleFileServer.createFileServer(

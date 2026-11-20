@@ -14,8 +14,8 @@ var theme =
         .with(Tokens.RADIUS_XL, CssLength.rem(1))
         .with(Tokens.CONTROL_FG, Tokens.ACCENT_TEXT);
 
-var site = SiteDefinition.builder().theme(theme).routes(routes).build();
-var page = Compiler.compile(document, theme, OutputMode.inline());
+var site = Compiler.forSite().withTheme(theme).compile(siteDefinition);
+var page = Compiler.forPage().withTheme(theme).compile(document);
 ```
 
 Each token accepts only values from its own category: color, length, duration, font family, or number. Because tokens are valid values of their own category, one token can alias another (such as `CONTROL_FG` referring to `ACCENT_TEXT`). Define application tokens with category records, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`, then register them with `theme.with(brand, value)`.
@@ -55,6 +55,7 @@ Elements.div()
 | Need | Values and operations |
 | --- | --- |
 | Dimensions and math | `CssLength`: `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, `anchor` |
+| Durations | `CssDuration.ms(double)` and `CssDuration.of(java.time.Duration)` |
 | Colors | `CssColor`: `mix`, `mixTransparent`, `sameHue`, `lightDark`, `contrast` |
 | Shadows | `Shadow.drop(...)`, `Shadow.inset(...)`; `offsetX(...)` adjusts a layer |
 | Keyword properties | Enums such as `Overflow.AUTO`, `TextWrap.BALANCE`, `Cursor.POINTER`, `Appearance.NONE`, `Resize.VERTICAL` |

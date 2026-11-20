@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.FetchResult;
 import dev.nthings.tessera.wasm.Lifetime;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveContent;
@@ -92,8 +93,14 @@ final class LifetimeDemo {
         .within(lifetime)
         .fetchText(
             "/slow",
-            _ -> activity.record("preview loaded"),
-            failure -> activity.record("preview failed " + failure.status()));
+            result -> {
+              switch (result) {
+                case FetchResult.Ok _ -> activity.record("preview loaded");
+                case FetchResult.HttpError(var status, _) ->
+                    activity.record("preview failed " + status);
+                case FetchResult.NetworkError _ -> activity.record("preview failed 0");
+              }
+            });
   }
 
   /// The report request belongs to the panel: closing the panel aborts it.
@@ -104,7 +111,13 @@ final class LifetimeDemo {
         .host()
         .fetchText(
             "/slow",
-            _ -> activity.record("report loaded"),
-            failure -> activity.record("report failed " + failure.status()));
+            result -> {
+              switch (result) {
+                case FetchResult.Ok _ -> activity.record("report loaded");
+                case FetchResult.HttpError(var status, _) ->
+                    activity.record("report failed " + status);
+                case FetchResult.NetworkError _ -> activity.record("report failed 0");
+              }
+            });
   }
 }

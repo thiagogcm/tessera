@@ -99,7 +99,7 @@ classDiagram
 
 ## Built-in components and widgets
 
-Portable built-in widgets extend package-private `BuiltinComponent` (no new identity scope; records class name in diagnostics) or `BuiltinScope<B>` (adapts a private `Scope` for stable scope naming, CSS scoping, and instance ID). `Modal` and `Drawer` share `DialogView`; `Button` and `IconButton` remain scope-free and expose `element()` for live wrapping.
+Portable built-in widgets extend package-private `BuiltinComponent` (no new identity scope; records class name in diagnostics) or `BuiltinScope<B>` (adapts a private `Scope` for stable scope naming, CSS scoping, and instance ID). `Modal` and `Drawer` share `DialogView`; `Button`, `IconButton`, and `Image` implement `TagHost` so `DocumentElement.of(...)` and `LiveElement.of(...)` wrap them directly.
 
 Widgets that number, collect, or preload across a page (`Footnote`, `Footnotes`, `TableOfContents`, `DocLayout`, `HeroImage`, `DocumentSection`) live in `tessera-compiler`'s `document.components`. Portable widgets never import `document` or `wasm`. Interactive portable widgets (`ContentTabs`, `SearchPalette`, `Dropdown` command menus) declare bundled behaviors via `internal.components.WidgetBridge`: static lowering attaches their bundled ES modules, while `tessera-wasm` adapters attach Java controllers to the same markup.
 

@@ -75,8 +75,6 @@ class FailureRecoveryIT {
     session.open("/failures/");
     session.button("Throw from handler").click();
     session.awaitError("Simulated handler failure");
-    session.button("Read keys on click").click();
-    session.awaitErrors(2);
     var before = count(renders(session));
     session.button("Refresh").click();
     assertThat(renders(session)).hasText("Renders: " + (before + 1));

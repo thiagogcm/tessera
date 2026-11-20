@@ -5,6 +5,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.docsSite;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +23,8 @@ class SiteWriterTest {
   @Test
   @DisplayName("every page and file lands at its URL path with its exact bytes, and nothing else")
   void writesEveryPageAndFileAtItsUrlPath() throws IOException {
-    var site = Compiler.compile(docsSite().baseUrl("https://example.com").build());
+    var site =
+        Compiler.forSite().compile(docsSite().baseUrl(URI.create("https://example.com")).build());
 
     SiteWriter.writeToDirectory(site, out.resolve("site"));
 
@@ -49,7 +51,7 @@ class SiteWriterTest {
   @Test
   @DisplayName("writing over an earlier build replaces its files")
   void overwritesAnEarlierBuild() throws IOException {
-    var site = Compiler.compile(docsSite().build());
+    var site = Compiler.forSite().compile(docsSite().build());
     Files.writeString(out.resolve("index.html"), "stale");
 
     SiteWriter.writeToDirectory(site, out);
@@ -62,12 +64,13 @@ class SiteWriterTest {
   void writesToTheCurrentDirectory() throws IOException {
     var page = "site-writer-" + UUID.randomUUID() + ".html";
     var site =
-        Compiler.compile(
-            SiteDefinition.builder()
-                .outputMode(OutputMode.inline())
-                .linkSpeculation(LinkSpeculation.NONE)
-                .route(new SiteRoute(page, new PageDocument("Here", main().text("Here"))))
-                .build());
+        Compiler.forSite()
+            .withOutputMode(OutputMode.inline())
+            .compile(
+                SiteDefinition.builder()
+                    .linkSpeculation(LinkSpeculation.NONE)
+                    .route(SiteRoute.of(page, PageDocument.of("Here", main().text("Here"))))
+                    .build());
     var written = site.files().keySet().stream().map(path -> Path.of(path.substring(1))).toList();
     assertThat(written).noneMatch(Files::exists);
 

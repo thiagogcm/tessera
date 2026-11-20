@@ -30,7 +30,7 @@ public final class IconButton extends ButtonBase<IconButton> {
   }
 
   @Override
-  public TagElement element() {
+  public TagElement toTagElement() {
     return ButtonFace.element(this, true).ariaLabel(label).child(ButtonFace.icon(icon));
   }
 }

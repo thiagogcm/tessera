@@ -3,13 +3,22 @@ package dev.nthings.tessera.core;
 import dev.nthings.tessera.internal.authoring.PortableNode;
 
 /// Static factories for portable element trees, usually imported statically. Most [HtmlTag] values
-/// have a factory returning a mutable [TagElement]; tags without one, such as `time`, are built
-/// with [#el(TagName)]. Also [#fragment()], [#custom], [#svg(SvgTag)], and [#text] and [#empty],
-/// which return a plain [Element]. Content that only a static document places comes from
-/// `Documents`.
+/// have a zero-arg factory returning a mutable [TagElement], plus overloads accepting child nodes
+/// (`IntoElement...`) or text (`String`) for concise authoring. Tags without a dedicated factory,
+/// such as `time`, are built with [#el(TagName)]. Also [#fragment()], [#custom], [#svg(SvgTag)],
+/// and [#text] and [#empty], which return a plain [Element]. Content that only a static document
+/// places comes from `Documents`.
 public final class Elements {
 
   private Elements() {}
+
+  private static TagElement with(TagElement tag, IntoElement first, IntoElement... rest) {
+    tag.child(first);
+    for (var child : rest) {
+      tag.child(child);
+    }
+    return tag;
+  }
 
   /// Creates an element for any tag, including those without a factory here, such as
   /// `HtmlTag.TIME`. Text children are HTML-escaped. Scripts are document content: create them with
@@ -31,20 +40,50 @@ public final class Elements {
     return new FragmentElement();
   }
 
+  /// Creates a [FragmentElement] containing `first` and `rest` in order.
+  public static FragmentElement fragment(IntoElement first, IntoElement... rest) {
+    var fragment = new FragmentElement();
+    fragment.child(first);
+    for (var child : rest) {
+      fragment.child(child);
+    }
+    return fragment;
+  }
+
   public static TagElement div() {
     return new TagElement(HtmlTag.DIV);
+  }
+
+  public static TagElement div(IntoElement first, IntoElement... rest) {
+    return with(div(), first, rest);
   }
 
   public static TagElement span() {
     return new TagElement(HtmlTag.SPAN);
   }
 
+  public static TagElement span(String text) {
+    return span().text(text);
+  }
+
+  public static TagElement span(IntoElement first, IntoElement... rest) {
+    return with(span(), first, rest);
+  }
+
   public static TagElement main() {
     return new TagElement(HtmlTag.MAIN);
   }
 
+  public static TagElement main(IntoElement first, IntoElement... rest) {
+    return with(main(), first, rest);
+  }
+
   public static TagElement header() {
     return new TagElement(HtmlTag.HEADER);
+  }
+
+  public static TagElement header(IntoElement first, IntoElement... rest) {
+    return with(header(), first, rest);
   }
 
   /// `<search>` landmark grouping search or filtering controls.
@@ -52,80 +91,200 @@ public final class Elements {
     return new TagElement(HtmlTag.SEARCH);
   }
 
+  public static TagElement search(IntoElement first, IntoElement... rest) {
+    return with(search(), first, rest);
+  }
+
   public static TagElement footer() {
     return new TagElement(HtmlTag.FOOTER);
+  }
+
+  public static TagElement footer(IntoElement first, IntoElement... rest) {
+    return with(footer(), first, rest);
   }
 
   public static TagElement nav() {
     return new TagElement(HtmlTag.NAV);
   }
 
+  public static TagElement nav(IntoElement first, IntoElement... rest) {
+    return with(nav(), first, rest);
+  }
+
   public static TagElement section() {
     return new TagElement(HtmlTag.SECTION);
+  }
+
+  public static TagElement section(IntoElement first, IntoElement... rest) {
+    return with(section(), first, rest);
   }
 
   public static TagElement article() {
     return new TagElement(HtmlTag.ARTICLE);
   }
 
+  public static TagElement article(IntoElement first, IntoElement... rest) {
+    return with(article(), first, rest);
+  }
+
   public static TagElement aside() {
     return new TagElement(HtmlTag.ASIDE);
+  }
+
+  public static TagElement aside(IntoElement first, IntoElement... rest) {
+    return with(aside(), first, rest);
   }
 
   public static TagElement hgroup() {
     return new TagElement(HtmlTag.HGROUP);
   }
 
+  public static TagElement hgroup(IntoElement first, IntoElement... rest) {
+    return with(hgroup(), first, rest);
+  }
+
   public static TagElement h1() {
     return new TagElement(HtmlTag.H1);
+  }
+
+  public static TagElement h1(String text) {
+    return h1().text(text);
+  }
+
+  public static TagElement h1(IntoElement first, IntoElement... rest) {
+    return with(h1(), first, rest);
   }
 
   public static TagElement h2() {
     return new TagElement(HtmlTag.H2);
   }
 
+  public static TagElement h2(String text) {
+    return h2().text(text);
+  }
+
+  public static TagElement h2(IntoElement first, IntoElement... rest) {
+    return with(h2(), first, rest);
+  }
+
   public static TagElement h3() {
     return new TagElement(HtmlTag.H3);
+  }
+
+  public static TagElement h3(String text) {
+    return h3().text(text);
+  }
+
+  public static TagElement h3(IntoElement first, IntoElement... rest) {
+    return with(h3(), first, rest);
   }
 
   public static TagElement h4() {
     return new TagElement(HtmlTag.H4);
   }
 
+  public static TagElement h4(String text) {
+    return h4().text(text);
+  }
+
+  public static TagElement h4(IntoElement first, IntoElement... rest) {
+    return with(h4(), first, rest);
+  }
+
   public static TagElement h5() {
     return new TagElement(HtmlTag.H5);
+  }
+
+  public static TagElement h5(String text) {
+    return h5().text(text);
+  }
+
+  public static TagElement h5(IntoElement first, IntoElement... rest) {
+    return with(h5(), first, rest);
   }
 
   public static TagElement h6() {
     return new TagElement(HtmlTag.H6);
   }
 
+  public static TagElement h6(String text) {
+    return h6().text(text);
+  }
+
+  public static TagElement h6(IntoElement first, IntoElement... rest) {
+    return with(h6(), first, rest);
+  }
+
   public static TagElement p() {
     return new TagElement(HtmlTag.P);
+  }
+
+  public static TagElement p(String text) {
+    return p().text(text);
+  }
+
+  public static TagElement p(IntoElement first, IntoElement... rest) {
+    return with(p(), first, rest);
   }
 
   public static TagElement ul() {
     return new TagElement(HtmlTag.UL);
   }
 
+  public static TagElement ul(IntoElement first, IntoElement... rest) {
+    return with(ul(), first, rest);
+  }
+
   public static TagElement ol() {
     return new TagElement(HtmlTag.OL);
+  }
+
+  public static TagElement ol(IntoElement first, IntoElement... rest) {
+    return with(ol(), first, rest);
   }
 
   public static TagElement li() {
     return new TagElement(HtmlTag.LI);
   }
 
+  public static TagElement li(String text) {
+    return li().text(text);
+  }
+
+  public static TagElement li(IntoElement first, IntoElement... rest) {
+    return with(li(), first, rest);
+  }
+
   public static TagElement dl() {
     return new TagElement(HtmlTag.DL);
+  }
+
+  public static TagElement dl(IntoElement first, IntoElement... rest) {
+    return with(dl(), first, rest);
   }
 
   public static TagElement dt() {
     return new TagElement(HtmlTag.DT);
   }
 
+  public static TagElement dt(String text) {
+    return dt().text(text);
+  }
+
+  public static TagElement dt(IntoElement first, IntoElement... rest) {
+    return with(dt(), first, rest);
+  }
+
   public static TagElement dd() {
     return new TagElement(HtmlTag.DD);
+  }
+
+  public static TagElement dd(String text) {
+    return dd().text(text);
+  }
+
+  public static TagElement dd(IntoElement first, IntoElement... rest) {
+    return with(dd(), first, rest);
   }
 
   /// Creates a `<button type="button">`, which does not submit its form.
@@ -133,9 +292,29 @@ public final class Elements {
     return new TagElement(HtmlTag.BUTTON).attr("type", "button");
   }
 
+  /// Creates a `<button type="button">` with visible `text`.
+  public static TagElement button(String text) {
+    return button().text(text);
+  }
+
+  /// Creates a `<button type="button">` containing `first` and `rest`.
+  public static TagElement button(IntoElement first, IntoElement... rest) {
+    return with(button(), first, rest);
+  }
+
   /// Creates a link to the URL `href`.
   public static TagElement a(String href) {
     return new TagElement(HtmlTag.A).attr("href", href);
+  }
+
+  /// Creates a link to the URL `href` with visible `text`.
+  public static TagElement a(String href, String text) {
+    return a(href).text(text);
+  }
+
+  /// Creates a link to the URL `href` containing `first` and `rest`.
+  public static TagElement a(String href, IntoElement first, IntoElement... rest) {
+    return with(a(href), first, rest);
   }
 
   /// Creates a same-page link to the element bound to `target`: `href="#<target dom id>"`. An
@@ -144,24 +323,55 @@ public final class Elements {
     return new TagElement(HtmlTag.A).href(target);
   }
 
+  /// Creates a same-page link to `target` with visible `text`.
+  public static TagElement a(ElementRef target, String text) {
+    return a(target).text(text);
+  }
+
+  /// Creates a same-page link to `target` containing `first` and `rest`.
+  public static TagElement a(ElementRef target, IntoElement first, IntoElement... rest) {
+    return with(a(target), first, rest);
+  }
+
   public static TagElement dialog() {
     return new TagElement(HtmlTag.DIALOG);
+  }
+
+  public static TagElement dialog(IntoElement first, IntoElement... rest) {
+    return with(dialog(), first, rest);
   }
 
   public static TagElement form() {
     return new TagElement(HtmlTag.FORM);
   }
 
+  public static TagElement form(IntoElement first, IntoElement... rest) {
+    return with(form(), first, rest);
+  }
+
   public static TagElement label() {
     return new TagElement(HtmlTag.LABEL);
   }
 
-  public static TagElement input(String type) {
-    return new TagElement(HtmlTag.INPUT).attr("type", type);
+  public static TagElement label(String text) {
+    return label().text(text);
+  }
+
+  public static TagElement label(IntoElement first, IntoElement... rest) {
+    return with(label(), first, rest);
+  }
+
+  /// Creates an `<input>` with the typed `type` attribute.
+  public static TagElement input(InputType type) {
+    return new TagElement(HtmlTag.INPUT).attr("type", type.wireValue());
   }
 
   public static TagElement select() {
     return new TagElement(HtmlTag.SELECT);
+  }
+
+  public static TagElement select(IntoElement first, IntoElement... rest) {
+    return with(select(), first, rest);
   }
 
   public static TagElement option() {
@@ -192,12 +402,28 @@ public final class Elements {
     return new TagElement(HtmlTag.FIELDSET);
   }
 
+  public static TagElement fieldset(IntoElement first, IntoElement... rest) {
+    return with(fieldset(), first, rest);
+  }
+
   public static TagElement legend() {
     return new TagElement(HtmlTag.LEGEND);
   }
 
+  public static TagElement legend(String text) {
+    return legend().text(text);
+  }
+
+  public static TagElement legend(IntoElement first, IntoElement... rest) {
+    return with(legend(), first, rest);
+  }
+
   public static TagElement output() {
     return new TagElement(HtmlTag.OUTPUT);
+  }
+
+  public static TagElement output(IntoElement first, IntoElement... rest) {
+    return with(output(), first, rest);
   }
 
   /// Creates an `<img>` with `loading="lazy"` and `decoding="async"`. The compiler requires `alt`
@@ -253,100 +479,272 @@ public final class Elements {
     return new TagElement(HtmlTag.FIGURE);
   }
 
+  public static TagElement figure(IntoElement first, IntoElement... rest) {
+    return with(figure(), first, rest);
+  }
+
   public static TagElement figcaption() {
     return new TagElement(HtmlTag.FIGCAPTION);
+  }
+
+  public static TagElement figcaption(String text) {
+    return figcaption().text(text);
+  }
+
+  public static TagElement figcaption(IntoElement first, IntoElement... rest) {
+    return with(figcaption(), first, rest);
   }
 
   public static TagElement table() {
     return new TagElement(HtmlTag.TABLE);
   }
 
+  public static TagElement table(IntoElement first, IntoElement... rest) {
+    return with(table(), first, rest);
+  }
+
   public static TagElement caption() {
     return new TagElement(HtmlTag.CAPTION);
+  }
+
+  public static TagElement caption(String text) {
+    return caption().text(text);
+  }
+
+  public static TagElement caption(IntoElement first, IntoElement... rest) {
+    return with(caption(), first, rest);
   }
 
   public static TagElement thead() {
     return new TagElement(HtmlTag.THEAD);
   }
 
+  public static TagElement thead(IntoElement first, IntoElement... rest) {
+    return with(thead(), first, rest);
+  }
+
   public static TagElement tbody() {
     return new TagElement(HtmlTag.TBODY);
+  }
+
+  public static TagElement tbody(IntoElement first, IntoElement... rest) {
+    return with(tbody(), first, rest);
   }
 
   public static TagElement tfoot() {
     return new TagElement(HtmlTag.TFOOT);
   }
 
+  public static TagElement tfoot(IntoElement first, IntoElement... rest) {
+    return with(tfoot(), first, rest);
+  }
+
   public static TagElement tr() {
     return new TagElement(HtmlTag.TR);
+  }
+
+  public static TagElement tr(IntoElement first, IntoElement... rest) {
+    return with(tr(), first, rest);
   }
 
   public static TagElement th() {
     return new TagElement(HtmlTag.TH);
   }
 
+  public static TagElement th(String text) {
+    return th().text(text);
+  }
+
+  public static TagElement th(IntoElement first, IntoElement... rest) {
+    return with(th(), first, rest);
+  }
+
   public static TagElement td() {
     return new TagElement(HtmlTag.TD);
+  }
+
+  public static TagElement td(String text) {
+    return td().text(text);
+  }
+
+  public static TagElement td(IntoElement first, IntoElement... rest) {
+    return with(td(), first, rest);
   }
 
   public static TagElement code() {
     return new TagElement(HtmlTag.CODE);
   }
 
+  public static TagElement code(String text) {
+    return code().text(text);
+  }
+
+  public static TagElement code(IntoElement first, IntoElement... rest) {
+    return with(code(), first, rest);
+  }
+
   public static TagElement pre() {
     return new TagElement(HtmlTag.PRE);
+  }
+
+  public static TagElement pre(String text) {
+    return pre().text(text);
+  }
+
+  public static TagElement pre(IntoElement first, IntoElement... rest) {
+    return with(pre(), first, rest);
   }
 
   public static TagElement kbd() {
     return new TagElement(HtmlTag.KBD);
   }
 
+  public static TagElement kbd(String text) {
+    return kbd().text(text);
+  }
+
+  public static TagElement kbd(IntoElement first, IntoElement... rest) {
+    return with(kbd(), first, rest);
+  }
+
   public static TagElement mark() {
     return new TagElement(HtmlTag.MARK);
+  }
+
+  public static TagElement mark(String text) {
+    return mark().text(text);
+  }
+
+  public static TagElement mark(IntoElement first, IntoElement... rest) {
+    return with(mark(), first, rest);
   }
 
   public static TagElement u() {
     return new TagElement(HtmlTag.U);
   }
 
+  public static TagElement u(String text) {
+    return u().text(text);
+  }
+
+  public static TagElement u(IntoElement first, IntoElement... rest) {
+    return with(u(), first, rest);
+  }
+
   public static TagElement s() {
     return new TagElement(HtmlTag.S);
+  }
+
+  public static TagElement s(String text) {
+    return s().text(text);
+  }
+
+  public static TagElement s(IntoElement first, IntoElement... rest) {
+    return with(s(), first, rest);
   }
 
   public static TagElement del() {
     return new TagElement(HtmlTag.DEL);
   }
 
+  public static TagElement del(String text) {
+    return del().text(text);
+  }
+
+  public static TagElement del(IntoElement first, IntoElement... rest) {
+    return with(del(), first, rest);
+  }
+
   public static TagElement ins() {
     return new TagElement(HtmlTag.INS);
+  }
+
+  public static TagElement ins(String text) {
+    return ins().text(text);
+  }
+
+  public static TagElement ins(IntoElement first, IntoElement... rest) {
+    return with(ins(), first, rest);
   }
 
   public static TagElement sub() {
     return new TagElement(HtmlTag.SUB);
   }
 
+  public static TagElement sub(String text) {
+    return sub().text(text);
+  }
+
+  public static TagElement sub(IntoElement first, IntoElement... rest) {
+    return with(sub(), first, rest);
+  }
+
   public static TagElement sup() {
     return new TagElement(HtmlTag.SUP);
+  }
+
+  public static TagElement sup(String text) {
+    return sup().text(text);
+  }
+
+  public static TagElement sup(IntoElement first, IntoElement... rest) {
+    return with(sup(), first, rest);
   }
 
   public static TagElement strong() {
     return new TagElement(HtmlTag.STRONG);
   }
 
+  public static TagElement strong(String text) {
+    return strong().text(text);
+  }
+
+  public static TagElement strong(IntoElement first, IntoElement... rest) {
+    return with(strong(), first, rest);
+  }
+
   public static TagElement em() {
     return new TagElement(HtmlTag.EM);
+  }
+
+  public static TagElement em(String text) {
+    return em().text(text);
+  }
+
+  public static TagElement em(IntoElement first, IntoElement... rest) {
+    return with(em(), first, rest);
   }
 
   public static TagElement small() {
     return new TagElement(HtmlTag.SMALL);
   }
 
+  public static TagElement small(String text) {
+    return small().text(text);
+  }
+
+  public static TagElement small(IntoElement first, IntoElement... rest) {
+    return with(small(), first, rest);
+  }
+
   public static TagElement details() {
     return new TagElement(HtmlTag.DETAILS);
   }
 
+  public static TagElement details(IntoElement first, IntoElement... rest) {
+    return with(details(), first, rest);
+  }
+
   public static TagElement summary() {
     return new TagElement(HtmlTag.SUMMARY);
+  }
+
+  public static TagElement summary(String text) {
+    return summary().text(text);
+  }
+
+  public static TagElement summary(IntoElement first, IntoElement... rest) {
+    return with(summary(), first, rest);
   }
 
   public static TagElement br() {

@@ -16,6 +16,7 @@ import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.Diagnostics.Found;
+import java.net.URI;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class SiteLinkValidationTest {
   private static SiteDefinition site(String source, IntoElement link) {
     var builder =
         SiteDefinition.builder()
-            .baseUrl("https://example.com")
+            .baseUrl(URI.create("https://example.com"))
             .asset(Asset.of("/assets/manual v1.pdf", new byte[] {1}));
     for (var path : PATHS) {
       var body = main();
@@ -45,7 +46,7 @@ class SiteLinkValidationTest {
       if (path.equals(source)) {
         body.child(link);
       }
-      builder.route(new SiteRoute(path, new PageDocument(path, body)));
+      builder.route(SiteRoute.of(path, PageDocument.of(path, body)));
     }
     return builder.build();
   }
@@ -79,7 +80,7 @@ class SiteLinkValidationTest {
   void acceptsResolvableLinks(String source, String href) {
     var site = site(source, a(href).text("Read"));
 
-    assertThatNoException().isThrownBy(() -> Compiler.compile(site));
+    assertThatNoException().isThrownBy(() -> Compiler.forSite().compile(site));
   }
 
   static Stream<Arguments> brokenLinks() {
@@ -122,7 +123,7 @@ class SiteLinkValidationTest {
   void reportsBrokenLinks(String source, IntoElement link, String rule, String tag) {
     var site = site(source, link);
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route, Found::tag)
         .containsExactly(tuple(rule, source, tag));
   }
@@ -135,9 +136,9 @@ class SiteLinkValidationTest {
           context.contributeHead(el(HtmlTag.LINK).attr("rel", "icon").attr("href", "/favicon.ico"));
           return DocumentContent.of(main().text("Home"));
         };
-    var site = SiteDefinition.of(new SiteRoute("/", new PageDocument("Home", icon)));
+    var site = SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", icon)));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route, Found::tag)
         .containsExactly(tuple("missing-route-or-asset", "/", "link"));
   }
@@ -147,11 +148,10 @@ class SiteLinkValidationTest {
   void collectsBrokenLinksAcrossRoutes() {
     var site =
         SiteDefinition.of(
-            new SiteRoute("/", new PageDocument("Home", main().child(a("/gone").text("Gone")))),
-            new SiteRoute(
-                "/docs", new PageDocument("Docs", main().child(a("/#missing").text("Back")))));
+            SiteRoute.of("/", PageDocument.of("Home", main(a("/gone", "Gone")))),
+            SiteRoute.of("/docs", PageDocument.of("Docs", main(a("/#missing", "Back")))));
 
-    assertThat(Diagnostics.of(() -> Compiler.compile(site)))
+    assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route)
         .containsExactlyInAnyOrder(
             tuple("missing-route-or-asset", "/"), tuple("missing-route-fragment", "/docs"));

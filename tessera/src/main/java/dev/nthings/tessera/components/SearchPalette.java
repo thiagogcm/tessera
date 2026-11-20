@@ -14,6 +14,7 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ClosedBy;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
@@ -210,7 +211,7 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
             .attr("class", "palette-header")
             .child(Icons.search())
             .child(
-                input("search")
+                input(InputType.SEARCH)
                     .id(input)
                     .attr("class", "palette-input")
                     .attr("placeholder", placeholder)

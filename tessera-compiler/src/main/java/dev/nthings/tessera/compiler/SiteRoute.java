@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -7,9 +8,11 @@ import org.jspecify.annotations.Nullable;
 
 /// A route and the [PageDocument] published there. The path is normalized: it is trimmed, gains a
 /// leading `/`, and loses one trailing `/` except on the root, so `guide/` and `/guide` name the
-/// same route. A blank path throws IllegalArgumentException. `title` replaces the name shown in
-/// navigation and search, but not the page's `<title>`, which comes from the document.
-/// `description` feeds `search-index.json` and the search palette.
+/// same route. A blank path throws IllegalArgumentException.
+///
+/// Create a route with [#of(String, PageDocument)] and optionally refine it with
+/// [#withTitle(String)] (replaces the label in navigation and search without altering `<title>`)
+/// and [#withDescription(String)] (feeds `search-index.json` and the search palette).
 public record SiteRoute(
     String path, PageDocument document, @Nullable String title, @Nullable String description) {
 
@@ -17,12 +20,21 @@ public record SiteRoute(
     path = normalizePath(path);
   }
 
-  public SiteRoute(String path, PageDocument document) {
-    this(path, document, null, null);
+  /// Creates a route publishing `document` at `path`.
+  public static SiteRoute of(String path, PageDocument document) {
+    return new SiteRoute(path, document, null, null);
   }
 
-  public SiteRoute(String path, PageDocument document, String title) {
-    this(path, document, title, null);
+  /// Returns a copy of this route with `title` for navigation and search labels.
+  @CheckReturnValue
+  public SiteRoute withTitle(String title) {
+    return new SiteRoute(path, document, title, description);
+  }
+
+  /// Returns a copy of this route with `description` for search metadata.
+  @CheckReturnValue
+  public SiteRoute withDescription(String description) {
+    return new SiteRoute(path, document, title, description);
   }
 
   /// Normalizes a route path: trims it, adds a leading `/`, and removes one trailing `/` except on

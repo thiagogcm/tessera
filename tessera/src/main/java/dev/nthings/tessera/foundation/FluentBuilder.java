@@ -1,7 +1,7 @@
 package dev.nthings.tessera.foundation;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /// Composable fluent conditionals without unchecked self-casts. Element and builder types implement
@@ -14,13 +14,19 @@ public interface FluentBuilder<SELF extends FluentBuilder<SELF>> {
   SELF self();
 
   /// Applies `then` when `condition` holds, and returns this builder unchanged otherwise.
-  default SELF onlyIf(boolean condition, Function<SELF, SELF> then) {
-    return condition ? then.apply(self()) : self();
+  default SELF onlyIf(boolean condition, Consumer<SELF> then) {
+    if (condition) {
+      then.accept(self());
+    }
+    return self();
   }
 
   /// Applies `then` with `value` when `value` is non-null, and returns this builder unchanged
   /// otherwise.
-  default <T> SELF ifPresent(@Nullable T value, BiFunction<SELF, T, SELF> then) {
-    return value != null ? then.apply(self(), value) : self();
+  default <T> SELF ifPresent(@Nullable T value, BiConsumer<SELF, T> then) {
+    if (value != null) {
+      then.accept(self(), value);
+    }
+    return self();
   }
 }

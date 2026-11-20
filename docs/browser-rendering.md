@@ -4,7 +4,7 @@ The opt-in `tessera-wasm` module compiles portable Tessera components to WebAsse
 
 A browser root renders `LiveContent`: portable `IntoElement` content plus live handlers, form bindings, widget adapters, and effects. Placement types enforce separation at compile time: live content cannot enter portable or static document trees, and document-only content (raw HTML, deferred or late nodes, document components) cannot enter a browser root.
 
-Import live authoring types (`BrowserEntry`, `BrowserRoot`, `Live`, `LiveContent`, `LiveElement`, `LiveComponent`, `LiveScope`, `BrowserEvent`, `EventOptions`, `Effect`, `Lifetime`, `Host`, and live widget adapters) from `dev.nthings.tessera.wasm`. Modular Java applications require `dev.nthings.tessera.wasm`, which exports `dev.nthings.tessera` transitively.
+Import live authoring types (`BrowserEntry`, `BrowserRoot`, `MountOptions`, `Live`, `LiveContent`, `LiveElement`, `LiveComponent`, `LiveScope`, `Events`, `EventType`, `EventOption`, `BrowserEvent`, `PointerEvent`, `KeyboardEvent`, `ControlEvent`, `BasicEvent`, `FetchResult`, `Effect`, `Lifetime`, `Host`, and live widget adapters) from `dev.nthings.tessera.wasm`. Modular Java applications require `dev.nthings.tessera.wasm`, which exports `dev.nthings.tessera` transitively.
 
 ## Build and verify the showcase
 
@@ -35,13 +35,13 @@ Compile your GraalVM Web Image entry with `-H:-AutoRunVM`. On the JVM side, load
 ```java
 var bundle = GraalWebImage.read(Path.of("editor.js"), Path.of("editor.js.wasm"));
 var page =
-    Compiler.compile(
-        new PageDocument(
-            "Editor",
-            Documents.wasmMount(
-                "editor", "editor", bundle, Elements.a("/edit/").text("Open the static editor"))),
-        Theme.defaults(),
-        OutputMode.external("/assets/editor"));
+    Compiler.forPage()
+        .withOutputMode(OutputMode.external("/assets/editor"))
+        .compile(
+            PageDocument.of(
+                "Editor",
+                Documents.wasmMount(
+                    "editor", "editor", bundle, Elements.a("/edit/", "Open the static editor"))));
 ```
 
 ```mermaid
@@ -94,13 +94,13 @@ public final class Editor {
             LiveElement.of(input)
                 .bindValue(name)
                 .on(
-                    "input",
+                    Events.INPUT,
                     event -> {
                       name = event.control().value();
                       root.invalidate();
                     }))
-        .child(LiveElement.of(Button.of("Save").element()).onClick(root.update(() -> saved = true)))
-        .child(Elements.p().text(saved ? "Saved " + name : "Not saved"));
+        .child(LiveElement.of(Button.of("Save")).onClick(root.update(() -> saved = true)))
+        .child(Elements.p(saved ? "Saved " + name : "Not saved"));
   }
 }
 ```
@@ -117,10 +117,14 @@ Call `root.invalidate()` after mutating application state. Multiple invalidation
 
 `root.update(Runnable)` wraps a state mutation and invalidates the root. Once `root.close()` runs, the wrapper becomes a no-op so late callbacks never touch a disposed root.
 
-Configure per-root limits with `BrowserRoot.Scheduling(workBudget, runawayLimit)`:
+Configure per-root theme or scheduling limits with `MountOptions`:
 
 ```java
-var root = BrowserRoot.mount("app", new BrowserRoot.Scheduling(8, 32), state::view);
+var root =
+    BrowserRoot.mount(
+        "app",
+        state::view,
+        MountOptions.DEFAULT.withScheduling(new BrowserRoot.Scheduling(8, 32)));
 ```
 
 | Limit | Default | Behavior |
@@ -130,16 +134,16 @@ var root = BrowserRoot.mount("app", new BrowserRoot.Scheduling(8, 32), state::vi
 
 ## Handle events
 
-Attach listeners to a `LiveElement` with `on(type, handler)`, `on(type, options, handler)`, or `onClick(runnable)`:
+Attach typed listeners to a `LiveElement` with `on(EventType<E>, Consumer<E>, EventOption...)` or `onClick(Runnable)`:
 
 ```java
 LiveElement.of(Elements.div())
-    .on("click", EventOptions.DEFAULT.withCapture(), event -> audit())
-    .on("wheel", EventOptions.DEFAULT.withPassive(), event -> zoom(event.pointer()))
+    .on(Events.CLICK, event -> audit(), EventOption.CAPTURE)
+    .on(Events.WHEEL, event -> zoom(event.clientX(), event.clientY()), EventOption.PASSIVE)
     .child(
-        LiveElement.of(Elements.a("/help").text("Help"))
+        LiveElement.of(Elements.a("/help", "Help"))
             .on(
-                "click",
+                Events.CLICK,
                 event -> {
                   event.preventDefault();
                   openHelp();
@@ -147,9 +151,9 @@ LiveElement.of(Elements.div())
 ```
 
 - Handlers execute synchronously within native browser dispatch and user activation, so `preventDefault()`, `stopPropagation()`, and gesture-gated operations such as `showModal()` work immediately.
-- `event.control()`, `event.keyboard()`, and `event.pointer()` return typed copies of native event data; calling the wrong accessor fails and reports a handler error while keeping the root interactive.
-- Each element keeps one listener per event type and capture phase. Re-renders update the Java handler in place without re-registering when `EventOptions` match.
-- A `once` listener remains spent across subsequent renders until a render omits it and a later render attaches it again.
+- `Events` keys deliver compile-time typed events from the sealed `BrowserEvent` hierarchy (`PointerEvent`, `KeyboardEvent`, `ControlEvent`, or `BasicEvent` via `Events.custom(name)`).
+- Each element keeps one listener per event type and capture phase. Re-renders update the Java handler in place without re-registering when the `EventOption` flags match.
+- A `ONCE` listener remains spent across subsequent renders until a render omits it and a later render attaches it again.
 
 ## Bind form values
 
@@ -157,7 +161,7 @@ Declare native reset defaults on portable controls with [`initialValue`, `initia
 
 ```java
 var enabled =
-    LiveElement.of(Elements.input("checkbox").initialChecked(true))
+    LiveElement.of(Elements.input(InputType.CHECKBOX).initialChecked(true))
         .bindChecked(state.enabled)
         .onCheckedChange(checked -> root.update(() -> state.enabled = checked).run());
 
@@ -231,7 +235,7 @@ for (var item : items) {
   entries.child(
       Live.fragment(
               LiveContent.of(Field.of(item.label(), Forms.text(item.id()))),
-              LiveElement.of(Button.of("Choose " + item.label()).element())
+              LiveElement.of(Button.of("Choose " + item.label()))
                   .onClick(() -> choose(item)))
           .key(item.id()));
 }
@@ -268,26 +272,35 @@ final class Discard {
   final ElementRef draft = ElementRef.scoped("draft");
   FocusReturn returnFocus;
   String saved = "";
-  RequestFailure error;
+  String error = "";
 
   LiveContent view(LiveContext context) {
     var host = context.root().host();
     return LiveElement.of(
-            Elements.main()
-                .children(
-                    Elements.input("text").id(draft).ariaLabel("Draft"),
-                    Modal.of("Discard changes?").dialogRef(confirm)))
+            Elements.main(
+                Elements.input(InputType.TEXT).id(draft).ariaLabel("Draft"),
+                Modal.of("Discard changes?").dialogRef(confirm)))
         .children(
-            LiveElement.of(Button.of("Discard").element())
+            LiveElement.of(Button.of("Discard"))
                 .onClick(
                     () -> {
                       returnFocus = host.rememberFocus();
                       host.showModal(confirm);
                     }),
-            LiveElement.of(Button.of("Select draft").element()).onClick(() -> host.selectAll(draft)),
-            LiveElement.of(Button.of("Autosave").element())
+            LiveElement.of(Button.of("Select draft")).onClick(() -> host.selectAll(draft)),
+            LiveElement.of(Button.of("Autosave"))
                 .onClick(
-                    () -> host.fetchText("/save", body -> saved = body, failure -> error = failure)));
+                    () ->
+                        host.fetchText(
+                            "/save",
+                            result -> {
+                              switch (result) {
+                                case FetchResult.Ok(var body) -> saved = body;
+                                case FetchResult.HttpError(var status, _) ->
+                                    error = "HTTP " + status;
+                                case FetchResult.NetworkError(var message) -> error = message;
+                              }
+                            })));
   }
 }
 ```
@@ -295,7 +308,7 @@ final class Discard {
 `Host` covers:
 
 - **Scheduling**: `timeout`, `interval`, `frame`, and `afterRender`. Timers invalidate the root after running; `afterRender` runs once after the next commit without re-invalidating.
-- **Requests**: `fetchText(url, onSuccess, onFailure)` separates HTTP status failures from network errors and aborts automatically when cancelled or disposed.
+- **Requests**: `fetchText(url, onResult)` delivers a sealed `FetchResult` (`Ok`, `HttpError`, or `NetworkError`) and aborts automatically when cancelled or disposed.
 - **Focus and selection**: `focus`, `focused`, `rememberFocus`, `selection`, `select`, and `selectAll`.
 - **Dialogs and popovers**: `showModal`, `show`, `close`, `open`, `showPopover`, `hidePopover`, and `togglePopover`.
 - **Media**: `play`, `pause`, `seek`, `muted`, and `media`.

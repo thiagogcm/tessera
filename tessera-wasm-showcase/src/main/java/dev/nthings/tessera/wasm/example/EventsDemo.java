@@ -1,8 +1,10 @@
 package dev.nthings.tessera.wasm.example;
 
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.wasm.BrowserRoot;
-import dev.nthings.tessera.wasm.EventOptions;
+import dev.nthings.tessera.wasm.EventOption;
+import dev.nthings.tessera.wasm.Events;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
@@ -39,55 +41,51 @@ final class EventsDemo {
                 .text(!armed ? "Preparing reward" : claimed ? "Reward claimed" : "Claim reward"));
     if (armed) {
       reward.on(
-          "click",
-          EventOptions.DEFAULT.withOnce(),
+          Events.CLICK,
           _ ->
               root.update(
                       () -> {
                         claimed = true;
                         log.add("reward " + ++rewards);
                       })
-                  .run());
+                  .run(),
+          EventOption.ONCE);
     }
     var entries = Elements.ol().ariaLabel("Event log");
-    log.forEach(entry -> entries.child(Elements.li().text(entry)));
-    return LiveElement.of(
-            Elements.section().ariaLabel("Events").child(Elements.h2().text("Events")))
+    log.forEach(entry -> entries.child(Elements.li(entry)));
+    return LiveElement.of(Elements.section(Elements.h2("Events")).ariaLabel("Events"))
         .child(
             LiveElement.of(Elements.div().ariaLabel("Toolbar"))
                 .on(
-                    "click",
-                    EventOptions.DEFAULT.withCapture(),
+                    Events.CLICK,
                     event -> {
                       if (readOnly) {
                         event.stopPropagation();
                         log(root, "blocked");
                       }
-                    })
+                    },
+                    EventOption.CAPTURE)
                 .child(Ui.button("Delete", () -> log(root, "deleted"))))
         .children(
             LiveElement.of(Elements.label())
                 .child(
-                    LiveElement.of(Elements.input("checkbox"))
-                        .on("change", _ -> root.update(() -> readOnly = !readOnly).run()))
+                    LiveElement.of(Elements.input(InputType.CHECKBOX))
+                        .on(Events.CHANGE, _ -> root.update(() -> readOnly = !readOnly).run()))
                 .text("Read-only"),
             LiveElement.of(Elements.label())
                 .child(
-                    LiveElement.of(Elements.input("checkbox"))
+                    LiveElement.of(Elements.input(InputType.CHECKBOX))
                         .on(
-                            "click",
+                            Events.CLICK,
                             event -> {
                               event.preventDefault();
                               log(root, "terms must be read first");
                             }))
                 .text("Accept terms"),
-            LiveElement.of(Elements.input("text").ariaLabel("Shortcut"))
+            LiveElement.of(Elements.input(InputType.TEXT).ariaLabel("Shortcut"))
                 .on(
-                    "keydown",
-                    event -> {
-                      var key = event.keyboard();
-                      log(root, (key.shiftKey() ? "Shift+" : "") + key.key());
-                    }),
+                    Events.KEYDOWN,
+                    event -> log(root, (event.shiftKey() ? "Shift+" : "") + event.key())),
             reward,
             Ui.button(
                 "Offer another reward",

@@ -1,55 +1,80 @@
 package dev.nthings.tessera.compiler;
 
+import com.google.errorprone.annotations.CheckReturnValue;
 import dev.nthings.tessera.css.Theme;
 
-/// Compiles pages and sites. Every method throws [CompilationException] when it finds authoring
-/// errors, before any HTML is produced; each reported error carries a stable rule code such as
-/// `duplicate-id` or `image-alt`. Exceptions thrown by expand callbacks propagate unchanged.
-public final class Compiler {
-  private Compiler() {}
+/// Immutable compiler configuration pairing a [Theme] with an [OutputMode]. Start from [#forPage()]
+/// (default theme, inline CSS and scripts) or [#forSite()] (default theme, external assets under
+/// `/assets`), refine with [#withTheme(Theme)] and [#withOutputMode(OutputMode)], and compile pages
+/// or sites.
+///
+/// [#compile(PageDocument)] and [#compile(SiteDefinition)] throw [CompilationException] on
+/// authoring errors; [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a
+/// [CompilationResult] instead. Exceptions thrown by expand callbacks propagate unchanged.
+public record Compiler(Theme theme, OutputMode outputMode) {
 
-  /// Compiles `document` with [Theme#defaults()] and [OutputMode#inline()].
-  public static CompiledPage compile(PageDocument document) {
-    return compile(document, Theme.defaults(), OutputMode.inline());
+  private static final Compiler FOR_PAGE = new Compiler(Theme.defaults(), OutputMode.inline());
+  private static final Compiler FOR_SITE =
+      new Compiler(Theme.defaults(), OutputMode.external(OutputMode.DEFAULT_EXTERNAL_BASE));
+
+  /// Compiler configured for a standalone page: [Theme#defaults()] and [OutputMode#inline()].
+  public static Compiler forPage() {
+    return FOR_PAGE;
   }
 
-  /// Compiles `document` with `theme`'s token values and [OutputMode#inline()].
-  public static CompiledPage compile(PageDocument document, Theme theme) {
-    return compile(document, theme, OutputMode.inline());
+  /// Compiler configured for a multi-page site: [Theme#defaults()] and
+  /// [OutputMode#external(String)] (`"/assets"`).
+  public static Compiler forSite() {
+    return FOR_SITE;
   }
 
-  /// Compiles `document` with [Theme#defaults()], packaging CSS and page scripts as `outputMode`
-  /// specifies.
-  public static CompiledPage compile(PageDocument document, OutputMode outputMode) {
-    return compile(document, Theme.defaults(), outputMode);
+  /// Returns a compiler with `theme` and this compiler's output mode.
+  @CheckReturnValue
+  public Compiler withTheme(Theme theme) {
+    return new Compiler(theme, outputMode);
   }
 
-  /// Compiles `document` with `theme`'s token values, packaging CSS and page scripts as
-  /// `outputMode` specifies. Publish every returned asset at its path and apply the response
-  /// headers to the page when serving it.
-  public static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
+  /// Returns a compiler with `outputMode` and this compiler's theme.
+  @CheckReturnValue
+  public Compiler withOutputMode(OutputMode outputMode) {
+    return new Compiler(theme, outputMode);
+  }
+
+  /// Compiles `document` with this compiler's theme and output mode, throwing
+  /// [CompilationException] on authoring errors. Publish every returned asset at its path and apply
+  /// the response headers to the page when serving it.
+  public CompiledPage compile(PageDocument document) {
     return PageCompiler.compile(document, theme, outputMode);
   }
 
-  /// Compiles every route of `site` into one [CompiledSite].
-  ///
-  /// Routes are first checked for duplicate paths (`duplicate-route`), and for registered or
-  /// generated files and routes that share a URL path or an output file, such as an asset at
-  /// `/index.html` beside the `/` route (`file-path-collision`); these stop compilation before any
-  /// page renders. Pages are then prepared concurrently on virtual threads, so expand callbacks
-  /// must not change shared application state. Once every page compiles, links, fragments and
-  /// transition keys are checked across pages (links may target generated files such as
-  /// `/sitemap.xml`), generated stylesheet and module paths are checked for collisions, the shared
-  /// stylesheet is merged, and pages are emitted concurrently.
-  ///
-  /// Throws [CompilationException] with the route and file diagnostics, else with the page
-  /// diagnostics in route order, else with the cross-route diagnostics.
-  public static CompiledSite compile(SiteDefinition site) {
-    return SiteCompiler.compile(site);
+  /// Compiles `document` and returns [CompilationResult.Compiled] or [CompilationResult.Failed]
+  /// without throwing on authoring errors.
+  public CompilationResult<CompiledPage> tryCompile(PageDocument document) {
+    try {
+      return new CompilationResult.Compiled<>(compile(document));
+    } catch (CompilationException failure) {
+      return new CompilationResult.Failed<>(failure.diagnostics());
+    }
   }
 
-  /// Lays out and validates `document` and returns its element tree instead of HTML. The theme does
-  /// not affect the tree, so there is no theme overload.
+  /// Compiles every route of `site` into one [CompiledSite] using this compiler's theme and output
+  /// mode, throwing [CompilationException] on authoring errors.
+  public CompiledSite compile(SiteDefinition site) {
+    return SiteCompiler.compile(site, theme, outputMode);
+  }
+
+  /// Compiles every route of `site` and returns [CompilationResult.Compiled] or
+  /// [CompilationResult.Failed] without throwing on authoring errors.
+  public CompilationResult<CompiledSite> tryCompile(SiteDefinition site) {
+    try {
+      return new CompilationResult.Compiled<>(compile(site));
+    } catch (CompilationException failure) {
+      return new CompilationResult.Failed<>(failure.diagnostics());
+    }
+  }
+
+  /// Lays out and validates `document` and returns its element tree instead of HTML. The theme and
+  /// output mode do not affect the element tree.
   public static PageTree explain(PageDocument document) {
     return PageCompiler.prepare(document, new BundlePublication(OutputMode.inline())).tree();
   }

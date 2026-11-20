@@ -42,7 +42,11 @@ import org.jspecify.annotations.Nullable;
 /// document output only. Event handlers and controlled form properties belong to the browser
 /// module's live elements, which wrap a portable element without changing it.
 public final class TagElement
-    implements Element, Styled<TagElement>, ParentElement<TagElement>, FluentBuilder<TagElement> {
+    implements Element,
+        TagHost,
+        Styled<TagElement>,
+        ParentElement<TagElement>,
+        FluentBuilder<TagElement> {
 
   static {
     AuthoringAccess.registerTag(element -> element.data);
@@ -98,6 +102,11 @@ public final class TagElement
 
   @Override
   public TagElement self() {
+    return this;
+  }
+
+  @Override
+  public TagElement toTagElement() {
     return this;
   }
 

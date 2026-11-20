@@ -39,7 +39,7 @@ public final class Button extends ButtonBase<Button> {
   }
 
   @Override
-  public TagElement element() {
+  public TagElement toTagElement() {
     var el = ButtonFace.element(this, false);
     if (content.isEmpty()) {
       el.text(label);

@@ -1,6 +1,7 @@
 package dev.nthings.tessera.wasm.example;
 
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.wasm.BrowserRoot;
@@ -71,7 +72,7 @@ public final class DefaultsDemo {
     return Elements.form()
         .ariaLabel("Defaults form")
         .child(
-            Elements.input("hidden")
+            Elements.input(InputType.HIDDEN)
                 .attr("name", "serialized")
                 .initialValue("a\r\nb\rc" + (char) 0 + "d"))
         .child(Elements.button().attr("type", "reset").text("Reset browser defaults"));
@@ -88,7 +89,7 @@ public final class DefaultsDemo {
 
   private static Controls controls(boolean alternate) {
     return new Controls(
-        Elements.input("text")
+        Elements.input(InputType.TEXT)
             .attr("name", "text")
             .ariaLabel("Default text")
             .initialValue(alternate ? "Replacement" : "Portable <value>"),
@@ -96,16 +97,16 @@ public final class DefaultsDemo {
             .attr("name", "notes")
             .ariaLabel("Default notes")
             .initialValue(alternate ? "Replacement notes" : "\r\nPortable & notes"),
-        Elements.input("checkbox")
+        Elements.input(InputType.CHECKBOX)
             .attr("name", "check")
             .ariaLabel("Default check")
             .initialChecked(!alternate),
-        Elements.input("radio")
+        Elements.input(InputType.RADIO)
             .attr("name", "radio")
             .attr("value", "one")
             .ariaLabel("Default radio one")
             .initialChecked(!alternate),
-        Elements.input("radio")
+        Elements.input(InputType.RADIO)
             .attr("name", "radio")
             .attr("value", "two")
             .ariaLabel("Default radio two")

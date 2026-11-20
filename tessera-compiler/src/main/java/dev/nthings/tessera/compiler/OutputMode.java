@@ -1,27 +1,15 @@
 package dev.nthings.tessera.compiler;
 
-import java.util.Objects;
-import org.jspecify.annotations.Nullable;
-
-/// How compiled CSS and page scripts are packaged: [#inline()] or [#external(String)].
-public final class OutputMode {
+/// How compiled CSS and page scripts are packaged: [Inline] or [External].
+public sealed interface OutputMode permits OutputMode.Inline, OutputMode.External {
 
   /// The default site asset base, which inline output also uses for browser bundles.
-  static final String DEFAULT_EXTERNAL_BASE = "/assets";
-
-  private static final OutputMode INLINE = new OutputMode(null);
-
-  /// `null` for inline output; otherwise the normalized external asset base (empty string for `/`).
-  private final @Nullable String assetBase;
-
-  private OutputMode(@Nullable String assetBase) {
-    this.assetBase = assetBase;
-  }
+  String DEFAULT_EXTERNAL_BASE = "/assets";
 
   /// Inline output: the stylesheet is embedded in a `<style>` element in `<head>`, and each page
   /// script in an inline `<script type="module">`. Browser bundles still publish separate assets.
-  public static OutputMode inline() {
-    return INLINE;
+  record Inline() implements OutputMode {
+    private static final Inline INSTANCE = new Inline();
   }
 
   /// External output: the page links `<assetBase>/styles-<hash>.css` from `<head>` and loads each
@@ -30,40 +18,29 @@ public final class OutputMode {
   /// returned as [Asset]s, which the caller must publish at their paths.
   ///
   /// `assetBase` must be an absolute URL path such as `/assets`; trailing slashes and `.` path
-  /// segments are normalized. Throws IllegalArgumentException if it does not start with `/`, or
-  /// contains `//` or `..`.
-  public static OutputMode external(String assetBase) {
-    if (!assetBase.startsWith("/") || assetBase.contains("//") || assetBase.contains("..")) {
-      throw new IllegalArgumentException(
-          "External asset base must be an absolute path such as /assets: " + assetBase);
+  /// segments are normalized (the root path `/` normalizes to `""`). Throws
+  /// IllegalArgumentException if it does not start with `/`, or contains `//` or `..`.
+  record External(String assetBase) implements OutputMode {
+    public External {
+      if (!assetBase.startsWith("/") || assetBase.contains("//") || assetBase.contains("..")) {
+        throw new IllegalArgumentException(
+            "External asset base must be an absolute path such as /assets: " + assetBase);
+      }
+      var normalized = assetBase.replaceAll("/\\.(?=/|$)", "");
+      if (normalized.endsWith("/")) {
+        normalized = normalized.substring(0, normalized.length() - 1);
+      }
+      assetBase = normalized;
     }
-    var normalized = assetBase.replaceAll("/\\.(?=/|$)", "");
-    if (normalized.endsWith("/")) {
-      normalized = normalized.substring(0, normalized.length() - 1);
-    }
-    return new OutputMode(normalized);
   }
 
-  boolean isExternal() {
-    return assetBase != null;
+  /// Returns inline output mode.
+  static Inline inline() {
+    return Inline.INSTANCE;
   }
 
-  @Nullable String assetBase() {
-    return assetBase;
-  }
-
-  @Override
-  public boolean equals(@Nullable Object other) {
-    return other instanceof OutputMode mode && Objects.equals(assetBase, mode.assetBase);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hashCode(assetBase);
-  }
-
-  @Override
-  public String toString() {
-    return assetBase == null ? "OutputMode.inline()" : "OutputMode.external(" + assetBase + ")";
+  /// Returns external output mode under `assetBase`.
+  static External external(String assetBase) {
+    return new External(assetBase);
   }
 }

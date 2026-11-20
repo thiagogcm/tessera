@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
@@ -20,7 +21,7 @@ import dev.nthings.tessera.internal.components.WidgetBridge.ImageParts;
 /// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
-public final class Image extends BuiltinComponent implements FluentBuilder<Image> {
+public final class Image extends BuiltinComponent implements TagHost, FluentBuilder<Image> {
 
   static {
     WidgetBridge.registerImage(image -> new ImageParts(image.src, image.render(true)));
@@ -67,8 +68,13 @@ public final class Image extends BuiltinComponent implements FluentBuilder<Image
   }
 
   @Override
-  IntoElement expand(ViewContext context) {
+  public TagElement toTagElement() {
     return render(false);
+  }
+
+  @Override
+  IntoElement expand(ViewContext context) {
+    return toTagElement();
   }
 
   /// A copy of the configured `<img>` with its loading attributes.

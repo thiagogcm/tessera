@@ -38,14 +38,14 @@ final class HtmlWriter {
     /// encoded once.
     Resources(String css, OutputMode outputMode, Iterable<PageScript> behaviors) {
       this.css = css;
-      var base = outputMode.assetBase();
-      if (base != null) {
-        stylesheet = Asset.text(stylesheetPath(base, css), css);
-        for (var behavior : behaviors) {
-          modules.computeIfAbsent(behavior, b -> Asset.text(scriptPath(base, b), b.module()));
+      switch (outputMode) {
+        case OutputMode.External(var base) -> {
+          stylesheet = Asset.text(stylesheetPath(base, css), css);
+          for (var behavior : behaviors) {
+            modules.computeIfAbsent(behavior, b -> Asset.text(scriptPath(base, b), b.module()));
+          }
         }
-      } else {
-        stylesheet = null;
+        case OutputMode.Inline() -> stylesheet = null;
       }
     }
 
@@ -80,7 +80,7 @@ final class HtmlWriter {
       @Nullable String speculationRules) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
-    out.append(Encode.forHtmlAttribute(doc.lang()));
+    out.append(Encode.forHtmlAttribute(doc.lang().toLanguageTag()));
     out.append("\">\n<head>\n<meta charset=\"utf-8\">\n");
     out.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n");
     // rem layouts follow the OS text size, not only the browser's.

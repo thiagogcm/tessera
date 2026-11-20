@@ -763,7 +763,7 @@ final class DomReconciler {
     while (iterator.hasNext()) {
       var event = iterator.next();
       var listener = next.get(event.getKey());
-      if (listener == null || !listener.options().equals(event.getValue().options)) {
+      if (listener == null || !listener.flags().equals(event.getValue().flags)) {
         Dom.release(event.getValue().cleanup);
         iterator.remove();
       }
@@ -832,21 +832,21 @@ final class DomReconciler {
   }
 
   private static final class Binding {
-    private Consumer<BrowserEvent> handler;
-    private final EventOptions options;
+    private Consumer<EventType.Source> handler;
+    private final EventListener.Flags flags;
     private final JSObject cleanup;
 
     private Binding(Mounted target, EventListener listener, String hostId, BooleanSupplier open) {
       this.handler = listener.handler();
-      this.options = listener.options();
+      this.flags = listener.flags();
       var type = listener.type();
       this.cleanup =
           Dom.listen(
               target.first,
               type,
-              options.capture(),
-              options.passive(),
-              options.once(),
+              flags.capture(),
+              flags.passive(),
+              flags.once(),
               event -> {
                 if (open.getAsBoolean()) {
                   dispatch(event, target, type, hostId);
@@ -857,14 +857,164 @@ final class DomReconciler {
     /// An application handler failure is reported and does not affect the root or its tree.
     private void dispatch(JSObject event, Mounted target, String type, String hostId) {
       try {
-        handler.accept(new NativeEvent(event, target));
+        handler.accept(new NativeEventSource(event, target));
       } catch (RuntimeException failure) {
         Failures.report("Java '" + type + "' handler", hostId, failure);
       }
     }
   }
 
-  private record NativeEvent(JSObject event, Mounted target) implements BrowserEvent {
+  private record NativeEventSource(JSObject event, Mounted target) implements EventType.Source {
+    @Override
+    public BasicEvent basic() {
+      return new NativeBasicEvent(event);
+    }
+
+    @Override
+    public PointerEvent pointer() {
+      if (!Dom.isMouseEvent(event)) {
+        throw new IllegalStateException(
+            "Pointer data requires a mouse or pointer event, not "
+                + Dom.eventString(event, "type"));
+      }
+      return new NativePointerEvent(
+          event,
+          (int) Dom.number(event, "button"),
+          Dom.number(event, "clientX"),
+          Dom.number(event, "clientY"),
+          (int) Dom.number(event, "detail"),
+          Dom.flag(event, "altKey"),
+          Dom.flag(event, "ctrlKey"),
+          Dom.flag(event, "metaKey"),
+          Dom.flag(event, "shiftKey"));
+    }
+
+    @Override
+    public KeyboardEvent keyboard() {
+      if (!Dom.isKeyboardEvent(event)) {
+        throw new IllegalStateException(
+            "Keyboard data requires a keyboard event, not " + Dom.eventString(event, "type"));
+      }
+      return new NativeKeyboardEvent(
+          event,
+          Dom.eventString(event, "key"),
+          Dom.eventString(event, "code"),
+          Dom.flag(event, "altKey"),
+          Dom.flag(event, "ctrlKey"),
+          Dom.flag(event, "metaKey"),
+          Dom.flag(event, "shiftKey"),
+          Dom.flag(event, "repeat"));
+    }
+
+    @Override
+    public ControlEvent control() {
+      return new NativeControlEvent(event, target);
+    }
+  }
+
+  record NativeBasicEvent(JSObject event) implements BasicEvent {
+    @Override
+    public String type() {
+      return Dom.eventString(event, "type");
+    }
+
+    @Override
+    public void preventDefault() {
+      Dom.preventDefault(event);
+    }
+
+    @Override
+    public boolean defaultPrevented() {
+      return Dom.flag(event, "defaultPrevented");
+    }
+
+    @Override
+    public void stopPropagation() {
+      Dom.stopPropagation(event);
+    }
+
+    @Override
+    public void stopImmediatePropagation() {
+      Dom.stopImmediatePropagation(event);
+    }
+  }
+
+  record NativePointerEvent(
+      JSObject event,
+      int button,
+      double clientX,
+      double clientY,
+      int detail,
+      boolean altKey,
+      boolean ctrlKey,
+      boolean metaKey,
+      boolean shiftKey)
+      implements PointerEvent {
+
+    @Override
+    public String type() {
+      return Dom.eventString(event, "type");
+    }
+
+    @Override
+    public void preventDefault() {
+      Dom.preventDefault(event);
+    }
+
+    @Override
+    public boolean defaultPrevented() {
+      return Dom.flag(event, "defaultPrevented");
+    }
+
+    @Override
+    public void stopPropagation() {
+      Dom.stopPropagation(event);
+    }
+
+    @Override
+    public void stopImmediatePropagation() {
+      Dom.stopImmediatePropagation(event);
+    }
+  }
+
+  record NativeKeyboardEvent(
+      JSObject event,
+      String key,
+      String code,
+      boolean altKey,
+      boolean ctrlKey,
+      boolean metaKey,
+      boolean shiftKey,
+      boolean repeat)
+      implements KeyboardEvent {
+
+    @Override
+    public String type() {
+      return Dom.eventString(event, "type");
+    }
+
+    @Override
+    public void preventDefault() {
+      Dom.preventDefault(event);
+    }
+
+    @Override
+    public boolean defaultPrevented() {
+      return Dom.flag(event, "defaultPrevented");
+    }
+
+    @Override
+    public void stopPropagation() {
+      Dom.stopPropagation(event);
+    }
+
+    @Override
+    public void stopImmediatePropagation() {
+      Dom.stopImmediatePropagation(event);
+    }
+  }
+
+  record NativeControlEvent(JSObject event, Mounted target) implements ControlEvent {
     @Override
     public ControlState control() {
       var tag = ((LinkedNode.Tag<LiveBehavior>) target.view).tag();
@@ -878,38 +1028,6 @@ final class DomReconciler {
     @Override
     public String type() {
       return Dom.eventString(event, "type");
-    }
-
-    @Override
-    public KeyboardData keyboard() {
-      if (!Dom.isKeyboardEvent(event)) {
-        throw new IllegalStateException("Keyboard data requires a keyboard event, not " + type());
-      }
-      return new KeyboardData(
-          Dom.eventString(event, "key"),
-          Dom.eventString(event, "code"),
-          Dom.flag(event, "altKey"),
-          Dom.flag(event, "ctrlKey"),
-          Dom.flag(event, "metaKey"),
-          Dom.flag(event, "shiftKey"),
-          Dom.flag(event, "repeat"));
-    }
-
-    @Override
-    public PointerData pointer() {
-      if (!Dom.isMouseEvent(event)) {
-        throw new IllegalStateException(
-            "Pointer data requires a mouse or pointer event, not " + type());
-      }
-      return new PointerData(
-          (int) Dom.number(event, "button"),
-          Dom.number(event, "clientX"),
-          Dom.number(event, "clientY"),
-          (int) Dom.number(event, "detail"),
-          Dom.flag(event, "altKey"),
-          Dom.flag(event, "ctrlKey"),
-          Dom.flag(event, "metaKey"),
-          Dom.flag(event, "shiftKey"));
     }
 
     @Override

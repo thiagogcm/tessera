@@ -1,8 +1,6 @@
 package dev.nthings.tessera.compiler;
 
-import dev.nthings.tessera.css.Theme;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,13 +10,11 @@ import org.jspecify.annotations.Nullable;
 /// Multi-page static site specification; build one with [#builder()] or [#of(SiteRoute...)]. Throws
 /// IllegalArgumentException if it has no routes.
 ///
-/// Defaults to [OutputMode#external(String)] (`"/assets"`), so pages share one content-hashed
-/// stylesheet across cross-document view transitions, and to [LinkSpeculation#PRERENDER].
+/// Compilation settings ([dev.nthings.tessera.css.Theme] and [OutputMode]) live on [Compiler].
+/// Defaults to [LinkSpeculation#PRERENDER].
 public record SiteDefinition(
-    Theme theme,
-    OutputMode outputMode,
     List<SiteRoute> routes,
-    @Nullable String baseUrl,
+    @Nullable URI baseUrl,
     LinkSpeculation linkSpeculation,
     List<Asset> assets) {
 
@@ -29,29 +25,25 @@ public record SiteDefinition(
     routes = List.copyOf(routes);
     assets = List.copyOf(assets);
     if (baseUrl != null) {
-      baseUrl = baseUrl.strip();
-      if (baseUrl.endsWith("/")) {
-        baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-      }
-      if (!isAbsoluteHttpUrl(baseUrl)) {
-        throw new IllegalArgumentException(
-            "Site baseUrl must be an absolute http(s) URL such as https://example.com: " + baseUrl);
-      }
+      baseUrl = normalizeBaseUrl(baseUrl);
     }
   }
 
-  private static boolean isAbsoluteHttpUrl(String url) {
-    try {
-      var uri = new URI(url);
-      var scheme = uri.getScheme();
-      return scheme != null
-          && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))
-          && uri.getHost() != null
-          && uri.getRawQuery() == null
-          && uri.getRawFragment() == null;
-    } catch (URISyntaxException invalid) {
-      return false;
+  private static URI normalizeBaseUrl(URI uri) {
+    var scheme = uri.getScheme();
+    if (scheme == null
+        || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
+        || uri.getHost() == null
+        || uri.getRawQuery() != null
+        || uri.getRawFragment() != null) {
+      throw new IllegalArgumentException(
+          "Site baseUrl must be an absolute http(s) URL such as https://example.com: " + uri);
     }
+    var text = uri.toASCIIString();
+    if (text.endsWith("/")) {
+      return URI.create(text.substring(0, text.length() - 1));
+    }
+    return uri;
   }
 
   /// The route published at `path`, normalized like a route path (so `guide/` finds `/guide`), or
@@ -80,27 +72,12 @@ public record SiteDefinition(
   /// defaults.
   public static final class Builder {
 
-    private Theme theme = Theme.defaults();
-    private OutputMode outputMode = OutputMode.external(OutputMode.DEFAULT_EXTERNAL_BASE);
     private final List<SiteRoute> routes = new ArrayList<>();
-    private @Nullable String baseUrl;
+    private @Nullable URI baseUrl;
     private LinkSpeculation linkSpeculation = LinkSpeculation.PRERENDER;
     private final List<Asset> assets = new ArrayList<>();
 
     private Builder() {}
-
-    /// Sets the token values for every page. Defaults to [Theme#defaults()].
-    public Builder theme(Theme siteTheme) {
-      this.theme = siteTheme;
-      return this;
-    }
-
-    /// Sets how the shared stylesheet and page scripts are packaged. Defaults to
-    /// [OutputMode#external(String)] with `/assets`.
-    public Builder outputMode(OutputMode mode) {
-      this.outputMode = mode;
-      return this;
-    }
 
     /// Adds a route. Routes keep the order they are added in, which sets the order of diagnostics,
     /// `sitemap.xml` entries and `search-index.json` entries. Two routes with one path are reported
@@ -117,10 +94,10 @@ public record SiteDefinition(
     }
 
     /// Sets the base URL prepended to each page's published URL in `sitemap.xml`, such as
-    /// `https://example.com`. Without one, no sitemap is generated. A trailing `/` is removed.
-    /// Throws IllegalArgumentException from [#build()] unless the value is an absolute `http` or
-    /// `https` URL with a host and no query or fragment.
-    public Builder baseUrl(String url) {
+    /// `URI.create("https://example.com")`. Without one, no sitemap is generated. A trailing `/` is
+    /// removed. Throws IllegalArgumentException from [#build()] unless the value is an absolute
+    /// `http` or `https` URI with a host and no query or fragment.
+    public Builder baseUrl(URI url) {
       this.baseUrl = url;
       return this;
     }
@@ -146,9 +123,9 @@ public record SiteDefinition(
     }
 
     /// Builds the site. Throws IllegalArgumentException if no route was added, or if the base URL
-    /// is not an absolute `http` or `https` URL.
+    /// is not an absolute `http` or `https` URI.
     public SiteDefinition build() {
-      return new SiteDefinition(theme, outputMode, routes, baseUrl, linkSpeculation, assets);
+      return new SiteDefinition(routes, baseUrl, linkSpeculation, assets);
     }
   }
 }

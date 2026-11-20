@@ -9,20 +9,17 @@ Compile routes and static assets together into a validated, publishable site. Th
 ```java
 var site =
     SiteDefinition.builder()
+        .route(SiteRoute.of("/", PageDocument.of("Home", Elements.main(Elements.h1("Home")))))
         .route(
-            new SiteRoute(
-                "/", new PageDocument("Home", Elements.main().child(Elements.h1().text("Home")))))
-        .route(
-            new SiteRoute(
-                "/guide",
-                new PageDocument("Guide", Elements.main().child(Elements.h1().text("Guide")))))
+            SiteRoute.of("/guide", PageDocument.of("Guide", Elements.main(Elements.h1("Guide"))))
+                .withDescription("Publishing guide"))
         .build();
 
-var compiled = Compiler.compile(site);
+var compiled = Compiler.forSite().compile(site);
 SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 ```
 
-`PageDocument(lang, title, body)` sets the document language and `<title>`; the two-argument constructor defaults to English (`en`). An optional route title overrides navigation and search labels without altering `<title>`, and route descriptions populate search metadata.
+`PageDocument.of(title, body)` defaults to `Locale.ENGLISH`; call `.withLang(Locale)` to set another BCP 47 language tag. On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels without altering `<title>`, and `.withDescription(String)` populates search metadata.
 
 | Logical route | Public document URL (`documentUri()`) | Generated file     |
 | ------------- | ------------------------------------- | ------------------ |
@@ -34,15 +31,15 @@ SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 
 `SiteDefinition.builder()` also accepts:
 
-- `theme(Theme)`: Design tokens shared by every route; see [Styling](styling.md#set-a-theme).
-- `outputMode(OutputMode)`: Controls inline or external packaging for CSS and scripts.
 - `asset(Asset)` / `assets(...)`: Static files published alongside pages.
-- `baseUrl("https://example.com")`: Generates `sitemap.xml` using absolute HTTP(S) URLs. Omit it to skip sitemap generation.
+- `baseUrl(URI.create("https://example.com"))`: Generates `sitemap.xml` using absolute HTTP(S) URIs. Omit it to skip sitemap generation.
 - `linkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
+
+Configure themes and output modes on the immutable [`Compiler`](#choose-an-output-mode) value (`Compiler.forSite().withTheme(theme).withOutputMode(mode)`).
 
 ## Choose an output mode
 
-Standalone `Compiler.compile(document)` defaults to `OutputMode.inline()`. Multi-page `SiteDefinition` defaults to `OutputMode.external("/assets")` so every route shares one content-hashed stylesheet.
+`Compiler.forPage()` defaults to `OutputMode.inline()`. `Compiler.forSite()` defaults to `OutputMode.external("/assets")` so every route shares one content-hashed stylesheet. `OutputMode` is a sealed interface (`OutputMode.Inline` or `OutputMode.External`).
 
 | Mode | Stylesheet | Page scripts | Publication contract |
 | --- | --- | --- | --- |
@@ -52,7 +49,7 @@ Standalone `Compiler.compile(document)` defaults to `OutputMode.inline()`. Multi
 Compile a standalone page with external assets:
 
 ```java
-var page = Compiler.compile(document, Theme.defaults(), OutputMode.external("/assets"));
+var page = Compiler.forPage().withOutputMode(OutputMode.external("/assets")).compile(document);
 ```
 
 Asset base paths must be absolute URL paths; relative paths, `//`, and `..` are rejected. Because filenames include content hashes, changing a resource produces a new URL.
@@ -68,7 +65,7 @@ erDiagram
     SITE_DEFINITION ||--|{ SITE_ROUTE : declares
     SITE_DEFINITION ||--o{ ASSET : registers
     SITE_ROUTE ||--|| PAGE_DOCUMENT : wraps
-    SITE_DEFINITION ||--|| COMPILED_SITE : "Compiler.compile()"
+    SITE_DEFINITION ||--|| COMPILED_SITE : "Compiler.forSite().compile()"
     COMPILED_SITE ||--|{ HTML_PAGE : "pages() in route order"
     COMPILED_SITE ||--|{ PUBLISHED_FILE : "files(): assets, CSS, JS, wasm, search-index.json, sitemap.xml"
     COMPILED_SITE ||--o{ PAGE_HEADERS : "pageHeaders() by route"

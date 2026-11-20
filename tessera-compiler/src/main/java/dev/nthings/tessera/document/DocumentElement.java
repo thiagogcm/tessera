@@ -3,6 +3,7 @@ package dev.nthings.tessera.document;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.document.DocumentAccess;
@@ -10,6 +11,7 @@ import dev.nthings.tessera.internal.document.DocumentNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /// A portable host element whose children continue with document content. The host keeps its own
@@ -34,8 +36,16 @@ public final class DocumentElement implements DocumentTree, FluentBuilder<Docume
   }
 
   /// Wraps `host`, whose attributes, styles and children are read when the page is expanded.
-  public static DocumentElement of(TagElement host) {
-    return new DocumentElement(host);
+  public static DocumentElement of(TagHost host) {
+    return new DocumentElement(host.toTagElement());
+  }
+
+  /// Wraps `host` and runs `configure` on the resulting document element, allowing mixed portable
+  /// and document children to be appended in one block.
+  public static DocumentElement of(TagHost host, Consumer<DocumentElement> configure) {
+    var element = of(host);
+    configure.accept(element);
+    return element;
   }
 
   @Override

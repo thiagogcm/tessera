@@ -134,12 +134,12 @@ final class OverviewPage {
             block(
                 "How it compiles",
                 CodeBlock.ofLines(
-                        "var page = new PageDocument(\"Hello\",",
-                        "    main().p(rem(2)).children(",
-                        "        h1().textWrap(TextWrap.BALANCE).text(\"Hello\"),",
-                        "        Callout.of(Callout.Kind.TIP, \"Rendered without JavaScript\")));",
+                        "var page = PageDocument.of(\"Hello\",",
+                        "    main(h1(\"Hello\").textWrap(TextWrap.BALANCE),",
+                        "        Callout.of(Callout.Kind.TIP, \"Rendered without JavaScript\"))",
+                        "        .p(rem(2)));",
                         "",
-                        "CompiledPage out = Compiler.compile(page); // html + css")
+                        "CompiledPage out = Compiler.forPage().compile(page); // html + css")
                     .filename("Hello.java")
                     .language("java"),
                 pipeline),

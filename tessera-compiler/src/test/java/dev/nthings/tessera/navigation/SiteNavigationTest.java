@@ -85,11 +85,11 @@ class SiteNavigationTest {
           main()
               .children(
                   SiteNavigation.searchPalette(site), SiteNavigation.docPager(site, route.path()));
-      builder.route(new SiteRoute(route.path(), new PageDocument(route.document().title(), body)));
+      builder.route(SiteRoute.of(route.path(), PageDocument.of(route.document().title(), body)));
     }
     var withNavigation = builder.build();
 
-    assertThatNoException().isThrownBy(() -> Compiler.compile(withNavigation));
+    assertThatNoException().isThrownBy(() -> Compiler.forSite().compile(withNavigation));
   }
 
   @Test
@@ -97,9 +97,9 @@ class SiteNavigationTest {
   void linksUsePublishedDocumentUris() {
     var routes =
         List.of(
-            new SiteRoute("/", new PageDocument("Home", main().text("Home"))),
-            new SiteRoute("/guides/café", new PageDocument("Café", main().text("Café"))),
-            new SiteRoute("/about.html", new PageDocument("About", main().text("About"))));
+            SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))),
+            SiteRoute.of("/guides/café", PageDocument.of("Café", main().text("Café"))),
+            SiteRoute.of("/about.html", PageDocument.of("About", main().text("About"))));
 
     var paletteLinks = renderMain(SiteNavigation.searchPalette(routes, "Docs")).elements("a[href]");
     assertThat(paletteLinks)

@@ -69,7 +69,7 @@ class BackendParityTest {
                 ul().role(Role.LIST)
                     .child(fragment().child(li().role(Role.LISTITEM).text("Entry"))));
     var live = render(content);
-    var page = Compiler.compile(new PageDocument("Editor", content));
+    var page = Compiler.forPage().compile(PageDocument.of("Editor", content));
 
     assertThat(semantics(dom(live))).isEqualTo(semantics(Jsoup.parse(page.html())));
     assertThat(styleRules(live))
@@ -201,7 +201,7 @@ class BackendParityTest {
       "live declarations compile to plain values in static output and custom properties live")
   void liveDeclarationsCompileDifferentlyPerBackend() {
     var box = div().live(style -> style.inlineSize(CssLength.px(7)));
-    var staticCss = Compiler.compile(new PageDocument("Live", main().child(box))).css();
+    var staticCss = Compiler.forPage().compile(PageDocument.of("Live", main(box))).css();
     var liveTag = (LinkedNode.Tag<?>) render(box).roots().getFirst();
 
     assertThat(staticCss).contains("inline-size:7px").doesNotContain("--tl-");

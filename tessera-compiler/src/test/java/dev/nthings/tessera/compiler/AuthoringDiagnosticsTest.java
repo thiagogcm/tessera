@@ -26,6 +26,7 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.Role;
@@ -51,7 +52,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class AuthoringDiagnosticsTest {
 
   private static List<Found> diagnosticsOf(Element body) {
-    return Diagnostics.of(() -> Compiler.compile(new PageDocument("Page", body)));
+    return Diagnostics.of(() -> Compiler.forPage().compile(PageDocument.of("Page", body)));
   }
 
   static Stream<Arguments> violations() {
@@ -85,7 +86,7 @@ class AuthoringDiagnosticsTest {
             1),
         argumentSet(
             "a switch without a label",
-            main().child(input("checkbox").role(Role.SWITCH)),
+            main().child(input(InputType.CHECKBOX).role(Role.SWITCH)),
             "role-name-required",
             "input",
             1),
@@ -202,8 +203,8 @@ class AuthoringDiagnosticsTest {
                     div().role(Role.REGION).ariaLabel("Results").text("Content"),
                     dialog().ariaLabel("Confirm").text("Sure?"),
                     label().labelFor(control).text("Notifications"),
-                    input("checkbox").id(control).role(Role.SWITCH),
-                    label().child(input("checkbox").role(Role.SWITCH)).text("Updates"),
+                    input(InputType.CHECKBOX).id(control).role(Role.SWITCH),
+                    label().child(input(InputType.CHECKBOX).role(Role.SWITCH)).text("Updates"),
                     div()
                         .role(Role.TABLIST)
                         .ariaLabel("Sections")
@@ -263,7 +264,8 @@ class AuthoringDiagnosticsTest {
   @MethodSource("validPatterns")
   @DisplayName("valid patterns compile without diagnostics")
   void compilesValidPatterns(Element body) {
-    assertThatNoException().isThrownBy(() -> Compiler.compile(new PageDocument("Page", body)));
+    assertThatNoException()
+        .isThrownBy(() -> Compiler.forPage().compile(PageDocument.of("Page", body)));
   }
 
   record Panel(String id, DocumentContent content) implements DocumentScope {
@@ -292,7 +294,7 @@ class AuthoringDiagnosticsTest {
   void reportsErrorsWithComponentPaths() {
     var missing = ElementRef.scoped("confirmation");
     var document =
-        new PageDocument(
+        PageDocument.of(
             "Settings",
             new Panel(
                 "settings",
@@ -318,7 +320,7 @@ class AuthoringDiagnosticsTest {
 
     var profile = List.of("panel[settings]", "panel[settings--profile]");
     var actions = List.of("panel[settings]", "panel[settings--actions]");
-    assertThat(Diagnostics.of(() -> Compiler.compile(document)))
+    assertThat(Diagnostics.of(() -> Compiler.forPage().compile(document)))
         .extracting(Found::rule, Found::components, Found::tag, Found::domId)
         .containsExactlyInAnyOrder(
             tuple("image-dimensions", profile, "img", null),
@@ -349,10 +351,10 @@ class AuthoringDiagnosticsTest {
   @Test
   @DisplayName("head and end-of-document errors identify the component that registered the content")
   void reportsContributionOrigins() {
-    var document = new PageDocument("Settings", new Panel("settings", new DocumentExtras()));
+    var document = PageDocument.of("Settings", new Panel("settings", new DocumentExtras()));
 
     var origin = List.of("panel[settings]", "document-extras[settings--extras]");
-    assertThat(Diagnostics.of(() -> Compiler.compile(document)))
+    assertThat(Diagnostics.of(() -> Compiler.forPage().compile(document)))
         .extracting(Found::rule, Found::components, Found::tag)
         .containsExactlyInAnyOrder(
             tuple("invalid-url", origin, "link"), tuple("interactive-label", origin, "button"));
@@ -378,7 +380,7 @@ class AuthoringDiagnosticsTest {
         };
     var page =
         RenderedPage.of(
-            new PageDocument(
+            PageDocument.of(
                 "Commands",
                 main()
                     .children(

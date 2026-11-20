@@ -4,6 +4,7 @@ import static dev.nthings.tessera.core.Elements.div;
 
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Animatable;
@@ -35,7 +36,7 @@ public final class Forms {
 
   /// Styled `<input>` of `type` submitted as `name`. Wrap it with [Field#of(String, TagElement)] to
   /// label it.
-  public static TagElement input(String name, String type) {
+  public static TagElement input(String name, InputType type) {
     return controlChrome(Elements.input(type).attr("name", name))
         .on(State.FOCUS_VISIBLE, Forms::controlFocusRing)
         .on(
@@ -49,27 +50,27 @@ public final class Forms {
 
   /// Styled `<input type="text">` submitted as `name`.
   public static TagElement text(String name) {
-    return input(name, "text");
+    return input(name, InputType.TEXT);
   }
 
   /// Styled `<input type="email">` submitted as `name`.
   public static TagElement email(String name) {
-    return input(name, "email");
+    return input(name, InputType.EMAIL);
   }
 
   /// Styled `<input type="password">` submitted as `name`.
   public static TagElement password(String name) {
-    return input(name, "password");
+    return input(name, InputType.PASSWORD);
   }
 
   /// Styled `<input type="number">` submitted as `name`.
   public static TagElement number(String name) {
-    return input(name, "number");
+    return input(name, InputType.NUMBER);
   }
 
   /// Styled `<input type="search">` submitted as `name`.
   public static TagElement search(String name) {
-    return input(name, "search");
+    return input(name, InputType.SEARCH);
   }
 
   /// Styled `<textarea>` submitted as `name` with a minimum height of `minRows` lines plus 1rem. It
@@ -93,7 +94,7 @@ public final class Forms {
   /// renders as the native checkbox. It starts off; add `initialChecked(true)` to start it on. Use
   /// [#switchField(String, String)] to add a label.
   public static TagElement switchInput(String name) {
-    return Elements.input("checkbox")
+    return Elements.input(InputType.CHECKBOX)
         .attr("name", name)
         .role(Role.SWITCH)
         .appearance(Appearance.NONE)

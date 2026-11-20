@@ -6,7 +6,6 @@ import dev.nthings.tessera.internal.authoring.PortableNode;
 /// [Scope], or a built-in component. Expand callbacks return it too, so a component can return
 /// another component directly. Document and live builders accept it as well; it never accepts their
 /// content in return.
-@FunctionalInterface
 public interface IntoElement {
 
   /// Lowers this value to an [Element]. Builders call it when the value is added to a parent.

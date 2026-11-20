@@ -36,8 +36,11 @@ final class BundlePublication {
   private final Map<WasmBundle, Entry> entries = new ConcurrentHashMap<>();
 
   BundlePublication(OutputMode output) {
-    var externalBase = output.assetBase();
-    base = externalBase != null ? externalBase : OutputMode.DEFAULT_EXTERNAL_BASE;
+    base =
+        switch (output) {
+          case OutputMode.External(var externalBase) -> externalBase;
+          case OutputMode.Inline() -> OutputMode.DEFAULT_EXTERNAL_BASE;
+        };
   }
 
   /// The shared bootstrap module, published once per compilation on first use.

@@ -4,6 +4,7 @@ import dev.nthings.tessera.core.Command;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
+import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -16,7 +17,7 @@ import org.jspecify.annotations.Nullable;
 /// A button opens no id scope of its own: it renders a single `<button>` styled with element-level
 /// styles, so the refs it binds and targets resolve in the enclosing scope.
 abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
-    implements FluentBuilder<B> {
+    implements TagHost, FluentBuilder<B> {
 
   Tone tone;
   Button.Variant variant;
@@ -100,14 +101,14 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     return self();
   }
 
-  /// The `<button>` element this configuration renders, built now. Placing the button builds the
-  /// same element, so use this only to wrap it, as the browser module's live elements do to bind
-  /// event handlers: `LiveElement.of(button.element()).onClick(...)`. Later setters do not change
-  /// the returned element.
-  public abstract TagElement element();
+  /// The `<button>` element this configuration renders, built now. Wrapping this button directly in
+  /// `DocumentElement.of(...)` or `LiveElement.of(...)` calls this method automatically through
+  /// [TagHost]. Later setters do not change the returned element.
+  @Override
+  public abstract TagElement toTagElement();
 
   @Override
   final IntoElement expand(ViewContext context) {
-    return element();
+    return toTagElement();
   }
 }

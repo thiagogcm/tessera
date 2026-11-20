@@ -3,12 +3,14 @@ package dev.nthings.tessera.wasm.example;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.wasm.BrowserEvent;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.ControlEvent;
 import dev.nthings.tessera.wasm.ControlState;
+import dev.nthings.tessera.wasm.Events;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
@@ -75,21 +77,23 @@ final class ControlledFormDemo {
 
   private LiveContent fields(BrowserRoot root) {
     var input = Forms.text("controlled-text").initialValue("Default text");
-    var text = LiveElement.of(input).on("input", edit(root, state -> this.text = state.value()));
+    var text =
+        LiveElement.of(input).on(Events.INPUT, edit(root, state -> this.text = state.value()));
     var textarea =
         Elements.textarea().attr("name", "controlled-notes").initialValue("Default notes");
     var notes =
-        LiveElement.of(textarea).on("input", edit(root, state -> this.notes = state.value()));
-    var checkbox = Elements.input("checkbox").attr("name", "controlled-check").initialChecked(true);
+        LiveElement.of(textarea).on(Events.INPUT, edit(root, state -> this.notes = state.value()));
+    var checkbox =
+        Elements.input(InputType.CHECKBOX).attr("name", "controlled-check").initialChecked(true);
     var check =
-        LiveElement.of(checkbox).on("change", edit(root, state -> checked = state.checked()));
+        LiveElement.of(checkbox).on(Events.CHANGE, edit(root, state -> checked = state.checked()));
     var select = options("choice", false).initialValue("a");
     var choice =
-        LiveElement.of(select).on("change", edit(root, state -> this.choice = state.value()));
+        LiveElement.of(select).on(Events.CHANGE, edit(root, state -> this.choice = state.value()));
     var multiple = options("choices", true).initialSelectedValues(List.of("b"));
     var choices =
         LiveElement.of(multiple)
-            .on("change", edit(root, state -> this.choices = state.selectedValues()));
+            .on(Events.CHANGE, edit(root, state -> this.choices = state.selectedValues()));
     if (controlled) {
       text.bindValue(this.text);
       notes.bindValue(this.notes);
@@ -102,7 +106,7 @@ final class ControlledFormDemo {
                 Field.of("Username", Forms.text("username")).hint("Shown on your public profile"),
                 control ->
                     control.on(
-                        "input",
+                        Events.INPUT,
                         event -> {
                           var invalid = event.control().value().length() < 3;
                           if (invalid != usernameInvalid) {
@@ -123,7 +127,7 @@ final class ControlledFormDemo {
 
   /// Applies an accepted edit and renders it. A locked form, or text still being composed, is
   /// ignored without a render.
-  private Consumer<BrowserEvent> edit(BrowserRoot root, Consumer<ControlState> apply) {
+  private Consumer<ControlEvent> edit(BrowserRoot root, Consumer<ControlState> apply) {
     return event -> {
       var state = event.control();
       if (!locked && !state.composing()) {
@@ -137,7 +141,7 @@ final class ControlledFormDemo {
       String label, boolean value, BrowserRoot root, Consumer<Boolean> change) {
     return LiveElement.of(Elements.label())
         .child(
-            LiveElement.of(Elements.input("checkbox"))
+            LiveElement.of(Elements.input(InputType.CHECKBOX))
                 .bindChecked(value)
                 .onCheckedChange(checked -> root.update(() -> change.accept(checked)).run()))
         .text(label);

@@ -41,34 +41,34 @@ import java.util.List;
 public final class GuideSite {
   private GuideSite() {}
 
-  public static SiteDefinition createDefinition() {
-    var theme =
-        Theme.defaults()
-            .with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150))
-            .with(Tokens.DENSITY, CssNumber.of(0.9))
-            .with(Tokens.RADIUS_XL, CssLength.rem(1));
+  public static Theme theme() {
+    return Theme.defaults()
+        .with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150))
+        .with(Tokens.DENSITY, CssNumber.of(0.9))
+        .with(Tokens.RADIUS_XL, CssLength.rem(1));
+  }
 
+  public static SiteDefinition createDefinition() {
     return SiteDefinition.builder()
-        .theme(theme)
         .asset(
             Asset.text(
                 "/assets/logo.svg",
                 "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\">"
                     + "<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"seagreen\"/></svg>"))
         .route(
-            new SiteRoute(
+            SiteRoute.of(
                 "/",
-                new PageDocument(
+                PageDocument.of(
                     "My Tessera site",
                     page(
                         "My Tessera site",
                         Image.of("assets/logo.svg", "Site logo").dimensions(64, 64),
                         new MetricCard("builds", "Successful builds", "128"),
-                        a("guide/?source=home#installation").text("Read the installation guide")))))
+                        a("guide/?source=home#installation", "Read the installation guide")))))
         .route(
-            new SiteRoute(
+            SiteRoute.of(
                 "/guide",
-                new PageDocument(
+                PageDocument.of(
                     "Guide",
                     page(
                         "Guide",
@@ -76,12 +76,11 @@ public final class GuideSite {
                             TableOfContents.of("On this page"),
                             DocumentContent.of(
                                 Section.of("installation", "Installation")
-                                    .child(p().text("Build with JDK 25 and Maven."))),
+                                    .child(p("Build with JDK 25 and Maven."))),
                             DocumentContent.of(
                                 Section.of("publishing", "Publishing")
                                     .child(
-                                        p().text(
-                                                "Upload the generated directory to a static host."))))))))
+                                        p("Upload the generated directory to a static host."))))))))
         .build();
   }
 
@@ -148,7 +147,8 @@ public final class GuideSite {
 
   public static void main(String[] args) {
     var output = Path.of(args.length == 0 ? "target/guide" : args[0]);
-    SiteWriter.writeToDirectory(Compiler.compile(createDefinition()), output);
+    SiteWriter.writeToDirectory(
+        Compiler.forSite().withTheme(theme()).compile(createDefinition()), output);
     System.out.println("Wrote guide example to " + output.toAbsolutePath());
   }
 }

@@ -21,18 +21,17 @@ For a minimal two-page application, follow [Getting started](docs/getting-starte
 ## Compile a page
 
 ```java
+import static dev.nthings.tessera.core.Elements.h1;
+import static dev.nthings.tessera.core.Elements.main;
+import static dev.nthings.tessera.core.Elements.p;
+
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
-import dev.nthings.tessera.core.Elements;
 
 void main() {
-  var document =
-      new PageDocument(
-          "Hello",
-          Elements.main()
-              .children(Elements.h1().text("Hello"), Elements.p().text("Built with Tessera.")));
+  var document = PageDocument.of("Hello", main(h1("Hello"), p("Built with Tessera.")));
 
-  System.out.println(Compiler.compile(document).html());
+  System.out.println(Compiler.forPage().compile(document).html());
 }
 ```
 

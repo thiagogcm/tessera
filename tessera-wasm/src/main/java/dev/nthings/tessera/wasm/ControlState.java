@@ -2,7 +2,7 @@ package dev.nthings.tessera.wasm;
 
 import java.util.List;
 
-/// The state of a form control copied during an event, from [BrowserEvent#control()]: its `value`,
+/// The state of a form control copied during an event, from [ControlEvent#control()]: its `value`,
 /// whether a checkbox or radio is `checked`, the values of a multiple select's selected options in
 /// document order, and whether an input method (IME) composition is in progress. While `composing`
 /// is true the text is provisional; wait for the composition to end before validating or

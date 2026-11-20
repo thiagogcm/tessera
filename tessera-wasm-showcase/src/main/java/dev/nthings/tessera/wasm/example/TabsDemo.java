@@ -5,8 +5,10 @@ import static dev.nthings.tessera.core.Elements.p;
 import dev.nthings.tessera.components.ContentTabs;
 import dev.nthings.tessera.components.ContentTabs.Activation;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.wasm.BrowserRoot;
+import dev.nthings.tessera.wasm.Events;
 import dev.nthings.tessera.wasm.Live;
 import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
@@ -73,9 +75,9 @@ final class TabsDemo {
         .child(
             LiveElement.of(Elements.div())
                 .on(
-                    "keydown",
+                    Events.KEYDOWN,
                     event -> {
-                      if (event.keyboard().key().equals("Delete")) {
+                      if (event.key().equals("Delete")) {
                         root.update(() -> mailboxes.remove(current)).run();
                       }
                     })
@@ -85,7 +87,7 @@ final class TabsDemo {
             LiveContent.of(Elements.p().role(Role.STATUS).text("Requested: " + requested)),
             LiveElement.of(Elements.label())
                 .child(
-                    LiveElement.of(Elements.input("checkbox"))
+                    LiveElement.of(Elements.input(InputType.CHECKBOX))
                         .bindChecked(allowSwitching)
                         .onCheckedChange(value -> root.update(() -> allowSwitching = value).run()))
                 .text("Allow switching"),

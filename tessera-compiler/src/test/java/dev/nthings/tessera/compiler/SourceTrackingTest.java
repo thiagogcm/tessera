@@ -60,7 +60,7 @@ class SourceTrackingTest {
     var failure =
         catchThrowableOfType(
             CompilationException.class,
-            () -> Compiler.compile(new PageDocument("Bad", main().child(button()))));
+            () -> Compiler.forPage().compile(PageDocument.of("Bad", main(button()))));
 
     assertThat(page.elements("[data-src]")).isEmpty();
     assertThat(failure.diagnostics().getFirst().location().source()).isNull();
@@ -101,10 +101,11 @@ class SourceTrackingTest {
   @Test
   @DisplayName("a diagnostic is located at the line of the offending element")
   void diagnosticsNameTheSourceLine() {
-    var page = SourceTracking.enabled(() -> new PageDocument("Bad", main().child(button())));
+    var page = SourceTracking.enabled(() -> PageDocument.of("Bad", main(button())));
     var line = here() - 1;
 
-    var failure = catchThrowableOfType(CompilationException.class, () -> Compiler.compile(page));
+    var failure =
+        catchThrowableOfType(CompilationException.class, () -> Compiler.forPage().compile(page));
 
     assertThat(failure.diagnostics().getFirst().location().source()).isEqualTo(sourceAt(line));
   }
@@ -116,10 +117,11 @@ class SourceTrackingTest {
     var second = new Panel("b");
     var compiled =
         SourceTracking.enabled(() ->
-            Compiler.compile(
-                SiteDefinition.of(
-                    new SiteRoute("/", new PageDocument("Home", main().child(first))),
-                    new SiteRoute("/b", new PageDocument("B", main().child(second))))));
+            Compiler.forSite()
+                .compile(
+                    SiteDefinition.of(
+                        SiteRoute.of("/", PageDocument.of("Home", main(first))),
+                        SiteRoute.of("/b", PageDocument.of("B", main(second))))));
 
     var home = RenderedPage.of(compiled, "/");
     var other = RenderedPage.of(compiled, "/b");
@@ -139,7 +141,7 @@ class SourceTrackingTest {
     var tree =
         SourceTracking.enabled(() ->
             Compiler.explain(
-                new PageDocument(
+                PageDocument.of(
                     "Tree", DocumentElement.of(main()).child(panel).child(rawHtml(svg)))));
 
     var body = (PageTree.Tag) tree.body().getFirst();

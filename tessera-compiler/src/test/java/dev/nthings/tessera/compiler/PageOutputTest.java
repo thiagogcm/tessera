@@ -21,7 +21,10 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.ViewKey;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
@@ -30,6 +33,7 @@ import dev.nthings.tessera.document.DocumentScope;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.support.RenderedPage;
+import java.util.Locale;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -87,6 +91,26 @@ class PageOutputTest {
   @DisplayName("external output rejects a relative asset base")
   void externalOutputRejectsRelativeBase() {
     assertThatIllegalArgumentException().isThrownBy(() -> OutputMode.external("assets"));
+  }
+
+  @Test
+  @DisplayName("page language, theme overrides, and tryCompile results reflect the document")
+  void pageLanguageThemeAndTryCompile() {
+    var theme = Theme.defaults().with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
+    var doc = PageDocument.of("Localized", main(p("Hi"))).withLang(Locale.forLanguageTag("pt-BR"));
+
+    var ok = Compiler.forPage().withTheme(theme).tryCompile(doc);
+    var compiled = ok.orThrow();
+    assertThat(compiled.html()).contains("lang=\"pt-BR\"", "Hi");
+    assertThat(compiled.css()).contains("oklch(55% 0.18 150)");
+
+    var failed = Compiler.forPage().tryCompile(PageDocument.of("Bad", main(button())));
+    switch (failed) {
+      case CompilationResult.Compiled<CompiledPage> _ ->
+          throw new AssertionError("Expected failure");
+      case CompilationResult.Failed<CompiledPage>(var diagnostics) ->
+          assertThat(diagnostics).isNotEmpty();
+    }
   }
 
   @Test

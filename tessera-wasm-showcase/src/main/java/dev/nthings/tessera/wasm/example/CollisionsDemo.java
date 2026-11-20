@@ -11,13 +11,12 @@ import dev.nthings.tessera.wasm.LiveElement;
 
 /// A view that can render page-level ids already used elsewhere on the page: by the second entry's
 /// root (`shared-id`), by the host page (`page-note`) or by its own mount host. Each rejects the
-/// render; the note's own id stays owned once committed.
+/// render.
 final class CollisionsDemo {
   private final String host;
   private boolean claimShared;
   private boolean claimPage;
   private boolean claimHost;
-  private boolean showNote = true;
   private int updates;
 
   private CollisionsDemo(String host) {
@@ -47,17 +46,13 @@ final class CollisionsDemo {
                   claimShared = false;
                   claimPage = false;
                   claimHost = false;
-                })),
-            Ui.button("Toggle note", root.update(() -> showNote = !showNote)))
+                })))
         .child(notes());
   }
 
   private IntoElement notes() {
     return Elements.fragment()
         .children(
-            showNote
-                ? Elements.p().id(ElementRef.page("collisions-note")).text("Owned note")
-                : Elements.empty(),
             claimShared
                 ? Elements.p().id(ElementRef.page("shared-id")).text("Claimed")
                 : Elements.empty(),

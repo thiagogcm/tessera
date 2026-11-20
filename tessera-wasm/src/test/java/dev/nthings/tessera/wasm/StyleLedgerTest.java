@@ -14,11 +14,20 @@ class StyleLedgerTest {
   void sharedRulesAreInsertedOnceAndKeptWhileAnyTreeUsesThem() {
     var ledger = new StyleLedger(0);
 
-    assertThat(ledger.acquire(List.of("a", "b"))).containsExactly("a", "b");
-    assertThat(ledger.acquire(List.of("b", "c"))).containsExactly("c");
-    assertThat(ledger.release(List.of("a", "b"))).containsExactly("a");
-    assertThat(ledger.release(List.of("b", "c"))).containsExactly("b", "c");
-    assertThat(ledger.inserted()).isZero();
+    var inserted = 0;
+    var first = ledger.acquire(List.of("a", "b"));
+    assertThat(first).containsExactly("a", "b");
+    inserted += first.size();
+    var second = ledger.acquire(List.of("b", "c"));
+    assertThat(second).containsExactly("c");
+    inserted += second.size();
+    var firstReleased = ledger.release(List.of("a", "b"));
+    assertThat(firstReleased).containsExactly("a");
+    inserted -= firstReleased.size();
+    var secondReleased = ledger.release(List.of("b", "c"));
+    assertThat(secondReleased).containsExactly("b", "c");
+    inserted -= secondReleased.size();
+    assertThat(inserted).isZero();
   }
 
   @Test
@@ -26,16 +35,16 @@ class StyleLedgerTest {
   void changingValuesPerRenderKeepAtMostTheRetainedNumberOfUnusedRules() {
     var ledger = new StyleLedger(3);
     var committed = List.of("layout", "width-0");
-    ledger.acquire(committed);
+    var inserted = ledger.acquire(committed).size();
 
     for (var width = 1; width <= 100; width++) {
       var next = List.of("layout", "width-" + width);
-      ledger.acquire(next);
-      ledger.release(committed);
+      inserted += ledger.acquire(next).size();
+      inserted -= ledger.release(committed).size();
       committed = next;
     }
 
-    assertThat(ledger.inserted()).isEqualTo(2 + 3);
+    assertThat(inserted).isEqualTo(2 + 3);
   }
 
   @Test

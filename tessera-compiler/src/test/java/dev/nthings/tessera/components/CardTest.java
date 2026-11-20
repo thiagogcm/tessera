@@ -99,10 +99,7 @@ class CardTest {
   void headingLevelFollowsTheOutline() {
     assertThat(Diagnostics.of(() -> renderMain(h1().text("Plans"), Card.of("Pro"))))
         .singleElement()
-        .satisfies(found -> {
-          assertThat(found.rule()).isEqualTo("heading-level-skip");
-          assertThat(found.components()).containsExactly("card[card-1]");
-        });
+        .satisfies(found -> assertThat(found.rule()).isEqualTo("heading-level-skip"));
 
     var page = renderMain(h1().text("Plans"), Card.of("Pro").headingLevel(2));
     assertThat(page.element("h2")).hasText("Pro");

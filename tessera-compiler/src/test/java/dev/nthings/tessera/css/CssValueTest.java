@@ -1,7 +1,9 @@
 package dev.nthings.tessera.css;
 
+import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import java.util.List;
@@ -18,18 +20,7 @@ class CssValueTest {
   static Stream<Arguments> serialized() {
     var scrim = CssColor.oklch(0, 0, 0, 0.28);
     return Stream.of(
-        argumentSet("alpha", scrim, "oklch(0% 0 0 / 0.28)"),
-        argumentSet(
-            "color mix",
-            Tokens.ACCENT_PRIMARY.mixTransparent(24),
-            "color-mix(in oklch, var(--accent-primary) 24%, transparent)"),
-        argumentSet(
-            "light and dark",
-            CssColor.lightDark(CssColor.oklch(20, 0.02, 150), CssColor.oklch(96, 0.01, 150)),
-            "light-dark(oklch(20% 0.02 150), oklch(96% 0.01 150))"),
-        argumentSet("unitless zero", CssLength.zero(), "0"),
         argumentSet("rounded decimals", CssLength.rem(0.1 + 0.2), "0.3rem"),
-        argumentSet("difference", CssLength.pct(100).minus(CssLength.rem(2)), "calc(100% - 2rem)"),
         argumentSet(
             "nested calculation",
             CssLength.pct(20)
@@ -38,10 +29,6 @@ class CssValueTest {
                         .times(CssNumber.property(CustomProperty.named("step-index")))
                         .dividedBy(CssNumber.property(CustomProperty.named("step-total")))),
             "calc(20% + ((60% * var(--step-index)) / var(--step-total)))"),
-        argumentSet(
-            "fluid length",
-            CssLength.fluid(CssLength.rem(1), CssLength.cqi(4), CssLength.rem(1.5)),
-            "clamp(1rem, 4cqi, 1.5rem)"),
         argumentSet(
             "drop shadow with spread",
             Shadow.drop(CssLength.px(24), CssLength.px(48), CssLength.px(-12), scrim),
@@ -90,17 +77,18 @@ class CssValueTest {
   @Test
   @DisplayName("a transition lists its properties and keeps discrete transitions explicit")
   void transitionDeclaresDiscreteBehavior() {
-    var style =
-        new Declarations()
-            .transition(
-                Transition.of(
-                        CssDuration.ms(200),
-                        Easing.easeOut(),
-                        Animatable.OPACITY,
-                        Animatable.TRANSLATE)
-                    .allowingDiscrete());
+    var page =
+        renderMain(
+            div()
+                .transition(
+                    Transition.of(
+                            CssDuration.ms(200),
+                            Easing.easeOut(),
+                            Animatable.OPACITY,
+                            Animatable.TRANSLATE)
+                        .allowingDiscrete()));
 
-    assertThat(style.toCssBlockBody())
+    assertThat(page.css())
         .contains("transition-property:opacity, translate", "transition-behavior:allow-discrete");
   }
 

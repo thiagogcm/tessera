@@ -4,17 +4,6 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.AriaRole;
-import dev.nthings.tessera.compiler.Compiler;
-import dev.nthings.tessera.compiler.PageDocument;
-import dev.nthings.tessera.compiler.SiteDefinition;
-import dev.nthings.tessera.compiler.SitePreviewServer;
-import dev.nthings.tessera.compiler.SiteRoute;
-import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.document.Documents;
-import dev.nthings.tessera.document.WasmBundle;
-import dev.nthings.tessera.document.WasmBundle.Kind;
-import dev.nthings.tessera.document.WasmBundle.Resource;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -24,7 +13,7 @@ import org.jsoup.Jsoup;
 import org.junit.jupiter.api.DisplayName;
 
 /// Loading the published bundles through the shipped bootstrap: the full policy at root and nested
-/// asset bases, usable fallbacks when a resource or the browser fails, and supplementary payloads.
+/// asset bases, and usable fallbacks when a resource, the browser, or an initial render fails.
 @DisplayName("Bundle loading")
 class BundleLoadingIT {
   private static final String POLICY =
@@ -83,7 +72,12 @@ class BundleLoadingIT {
     var page = session.page();
     var otherImageBytes = page.request().get(site.baseUrl() + otherImage).body();
     var imageBytes = page.request().get(site.baseUrl() + image).body();
-    session.expectError("");
+    session.expectError("Unable to load or verify");
+    session.expectError("Failed to load resource");
+    session.expectError("Failed to find a valid digest");
+    session.expectError("integrity");
+    session.expectError("None of the");
+    session.expectError("Loading failed for the <script>");
 
     record Failure(String name, String url, Consumer<Route> handler) {}
     var failures =
@@ -150,7 +144,7 @@ class BundleLoadingIT {
     var requested = new ArrayList<String>();
     page.onRequest(request -> requested.add(request.url()));
     page.addInitScript("WebAssembly.validate = () => false");
-    session.expectError("");
+    session.expectError("WebAssembly GC");
     session.open("/");
 
     assertThat(page.locator("#app").getByRole(AriaRole.STATUS)).isVisible();
@@ -190,74 +184,13 @@ class BundleLoadingIT {
   @BothEngines
   @DisplayName("a failed first render keeps that host's fallback while other hosts mount")
   void failedFirstRenderKeepsTheFallback(Session session) {
-    session.open("/guide/?fail-mount");
+    session.open("/broken/");
     session.awaitError("Simulated initial render failure");
 
     assertThat(session.role(AriaRole.LINK, "Return to the static home")).isVisible();
     session.button("Second increment").click();
     assertThat(session.text("Second count: 1")).isVisible();
     Assertions.assertThat(session.errors()).hasSize(1);
-  }
-
-  @BothEngines
-  @DisplayName("a verified supplementary payload reaches the launcher by its logical name")
-  void supplementaryResourcesReachTheLauncher(Session session) {
-    var source =
-        """
-        globalThis.GraalVM = {
-          Config: class {},
-          run(args, config) {
-            const bytes = config.tesseraResources.get("extra/message.bin");
-            document.getElementById(args[0].split("=")[0]).textContent =
-              new TextDecoder().decode(bytes);
-          }
-        };
-        """;
-    var launcher =
-        Resource.of(
-            "launcher.js",
-            Kind.LAUNCHER,
-            source.getBytes(StandardCharsets.UTF_8),
-            "main.wasm",
-            "extra/message.bin");
-    var bundle =
-        new WasmBundle(
-            "launcher.js",
-            "main.wasm",
-            List.of(
-                launcher,
-                Resource.of("main.wasm", Kind.WASM, new byte[] {0, 'a', 's', 'm', 1, 0, 0, 0}),
-                Resource.of(
-                    "extra/message.bin",
-                    Kind.DATA,
-                    "Verified chunk".getBytes(StandardCharsets.UTF_8))));
-    var document =
-        PageDocument.of(
-            "Chunks",
-            Documents.wasmMount("chunks", "view", bundle, Elements.p("Static chunk fallback")));
-    var site = Compiler.forSite().compile(SiteDefinition.of(List.of(SiteRoute.of("/", document))));
-    var chunk =
-        site.files().values().stream()
-            .filter(file -> file.path().endsWith(".bin"))
-            .findFirst()
-            .orElseThrow();
-    var page = session.page();
-    try (var server = SitePreviewServer.start(site, 0)) {
-      page.navigate(server.baseUrl());
-      assertThat(page.locator("#chunks")).hasText("Verified chunk");
-
-      session.expectError("");
-      page.route(
-          "**" + chunk.path(),
-          route ->
-              route.fulfill(
-                  new Route.FulfillOptions()
-                      .setContentType(chunk.contentType())
-                      .setBody("Modified chunk")));
-      page.navigate(server.baseUrl());
-      assertThat(page.locator("#chunks").getByRole(AriaRole.STATUS)).isVisible();
-      assertThat(session.text("Static chunk fallback")).isVisible();
-    }
   }
 
   private static String fixtureHome(Session session) {

@@ -63,6 +63,12 @@ public final class PublishedWeb {
                     page(
                         "/guide",
                         "Static guide",
+                        DocumentContent.of(a("/", "Return to the static home")),
+                        counter))
+                .route(
+                    page(
+                        "/broken",
+                        "Failed initial render",
                         mount("broken", "broken", demo, a("/", "Return to the static home")),
                         counter))
                 .route(

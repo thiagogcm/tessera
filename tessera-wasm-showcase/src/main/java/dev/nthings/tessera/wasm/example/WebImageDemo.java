@@ -26,7 +26,6 @@ import dev.nthings.tessera.wasm.LiveContent;
 import dev.nthings.tessera.wasm.LiveContext;
 import dev.nthings.tessera.wasm.LiveElement;
 import java.util.Map;
-import org.graalvm.webimage.api.JS;
 
 /// The showcase's main entry point: every view the published pages mount, plus the home page's
 /// counter with shared component styling and a live-animated meter.
@@ -121,17 +120,10 @@ public final class WebImageDemo {
     }
   }
 
-  @JS.Coerce
-  @JS("return new URLSearchParams(location.search).has('fail-mount');")
-  private static native boolean failMount();
-
   private record BrokenPanel() implements Component {
     @Override
     public IntoElement expand(ViewContext context) {
-      if (failMount()) {
-        throw new IllegalStateException("Simulated initial render failure");
-      }
-      return Elements.p().text("Rendered without a simulated failure");
+      throw new IllegalStateException("Simulated initial render failure");
     }
   }
 

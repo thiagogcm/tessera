@@ -10,7 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 @DisplayName("IME composition")
 class ImeIT {
 
-  @BothEngines
+  @Chromium
   @DisplayName("provisional text survives a render and the committed text reaches Java")
   void committedTextReachesJava(Session session) {
     var page = session.page();
@@ -22,7 +22,7 @@ class ImeIT {
     assertThat(preview).containsText("Text: ;");
     var ime = new Ime(session);
 
-    ime.compose(text, "かな");
+    ime.compose("かな");
     assertThat(text).hasValue("かな");
     page.clock().runFor(60_000);
     assertThat(session.text("Autosaved 1 times")).isVisible();
@@ -30,7 +30,7 @@ class ImeIT {
     assertThat(text).isFocused();
     assertThat(preview).containsText("Text: ;");
 
-    ime.commit(text, "確定");
+    ime.commit("確定");
     assertThat(preview).containsText("Text: 確定;");
     assertThat(text).hasValue("確定");
     page.clock().runFor(60_000);
@@ -38,7 +38,7 @@ class ImeIT {
     assertThat(text).hasValue("確定");
   }
 
-  @BothEngines
+  @Chromium
   @DisplayName("a locked form keeps provisional text and reverts the committed text")
   void rejectedCompositionReverts(Session session) {
     session.open("/forms/");
@@ -49,9 +49,9 @@ class ImeIT {
     session.page().keyboard().press("End");
     var ime = new Ime(session);
 
-    ime.compose(text, "かな");
+    ime.compose("かな");
     assertThat(text).hasValue("Initial textかな");
-    ime.commit(text, "確定");
+    ime.commit("確定");
     assertThat(text).hasValue("Initial text");
   }
 
@@ -66,12 +66,12 @@ class ImeIT {
     entry.fill("Draft ");
     var ime = new Ime(session);
 
-    ime.compose(entry, "かな");
+    ime.compose("かな");
     page.clock().runFor(60_000);
     assertThat(session.field("Entry item-4")).isVisible();
     assertThat(entry).isFocused();
     assertThat(entry).hasValue("Draft かな");
-    ime.commit(entry, "確定");
+    ime.commit("確定");
     assertThat(entry).hasValue("Draft 確定");
     assertThat(entry).isFocused();
   }

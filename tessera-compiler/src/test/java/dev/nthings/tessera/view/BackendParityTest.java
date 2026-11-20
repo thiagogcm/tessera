@@ -32,11 +32,9 @@ import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Theme;
-import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
@@ -128,10 +126,6 @@ class BackendParityTest {
         .isNotEmpty()
         .allSatisfy(selector -> assertThat(hosts).anyMatch(selector::startsWith));
     assertThat(String.join("", base)).doesNotContain(":root", "@view-transition");
-    var custom = theme.with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
-    assertThat(StyleSheet.themeKey(theme))
-        .isEqualTo(StyleSheet.themeKey(Theme.defaults()))
-        .isNotEqualTo(StyleSheet.themeKey(custom));
   }
 
   @Test

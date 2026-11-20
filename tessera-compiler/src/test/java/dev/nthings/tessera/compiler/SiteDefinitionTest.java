@@ -4,7 +4,6 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
-import dev.nthings.tessera.document.PageScript;
 import java.net.URI;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,15 +31,5 @@ class SiteDefinitionTest {
         SiteDefinition.builder().routes(documentationRoutes()).baseUrl(URI.create(baseUrl));
 
     assertThatIllegalArgumentException().isThrownBy(builder::build);
-  }
-
-  @Test
-  @DisplayName("assets compare by value and page scripts reject blank ids")
-  void assetEqualityAndPageScriptId() {
-    var first = Asset.text("/assets/a.txt", "hello");
-    var second = Asset.text("/assets/a.txt", "hello");
-
-    assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
-    assertThatIllegalArgumentException().isThrownBy(() -> new PageScript("  ", "export {};"));
   }
 }

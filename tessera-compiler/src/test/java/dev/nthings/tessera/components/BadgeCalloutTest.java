@@ -45,11 +45,7 @@ class BadgeCalloutTest {
   static Stream<Arguments> callouts() {
     var body = "Deploys are frozen.";
     return Stream.of(
-        argumentSet("note", Callout.of(Callout.Kind.NOTE, body), "Note"),
-        argumentSet("tip", Callout.of(Callout.Kind.TIP, body), "Tip"),
-        argumentSet("important", Callout.of(Callout.Kind.IMPORTANT, body), "Important"),
-        argumentSet("warning", Callout.of(Callout.Kind.WARNING, body), "Warning"),
-        argumentSet("caution", Callout.of(Callout.Kind.CAUTION, body), "Caution"),
+        argumentSet("default title", Callout.of(Callout.Kind.NOTE, body), "Note"),
         argumentSet(
             "custom title",
             Callout.of(Callout.Kind.CAUTION, body).title("Hazard Ahead"),

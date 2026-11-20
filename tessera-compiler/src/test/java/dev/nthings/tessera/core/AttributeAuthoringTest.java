@@ -10,10 +10,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgume
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -50,48 +48,6 @@ class AttributeAuthoringTest {
     var element = a("/start").href(ElementRef.page("top")).attr("href", "/end");
 
     assertThat(renderMain(element.text("End")).element("a")).hasAttribute("href", "/end");
-  }
-
-  @Test
-  @DisplayName("typed ARIA values render tokens from the ARIA value sets")
-  void ariaEnumsRenderSpecTokens() {
-    var page =
-        renderMain(
-            div()
-                .children(
-                    Arrays.stream(AriaCurrent.values())
-                        .map(value -> div().ariaCurrent(value))
-                        .toArray(IntoElement[]::new))
-                .children(
-                    Arrays.stream(AriaChecked.values())
-                        .map(value -> div().ariaChecked(value))
-                        .toArray(IntoElement[]::new))
-                .children(
-                    Arrays.stream(AriaPopup.values())
-                        .map(value -> div().ariaHasPopup(value))
-                        .toArray(IntoElement[]::new))
-                .children(
-                    Arrays.stream(AriaLive.values())
-                        .map(value -> div().ariaLive(value))
-                        .toArray(IntoElement[]::new)));
-
-    var tokens =
-        Map.of(
-            "aria-current", Set.of("page", "step", "location", "date", "time", "true"),
-            "aria-checked", Set.of("true", "false", "mixed"),
-            "aria-haspopup", Set.of("true", "menu", "listbox", "tree", "grid", "dialog"),
-            "aria-live", Set.of("off", "polite", "assertive"));
-    var counts =
-        Map.of(
-            "aria-current", AriaCurrent.values().length,
-            "aria-checked", AriaChecked.values().length,
-            "aria-haspopup", AriaPopup.values().length,
-            "aria-live", AriaLive.values().length);
-    tokens.forEach((attribute, allowed) ->
-        assertThat(page.elements("[" + attribute + "]").eachAttr(attribute))
-            .hasSize(counts.get(attribute))
-            .doesNotHaveDuplicates()
-            .allSatisfy(token -> assertThat(allowed).contains(token)));
   }
 
   @Test

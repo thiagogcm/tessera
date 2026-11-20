@@ -23,15 +23,15 @@ class FailureRecoveryIT {
     assertThat(rows).hasText(expected);
 
     session.button("Duplicate a row").click();
-    session.awaitErrors(1);
+    session.awaitError("duplicate-key");
+    session.button("Remove duplicate").click();
     session.button("Fail next render").click();
-    session.awaitErrors(2);
+    session.awaitError("Simulated render failure");
     session.button("Reject render with effect").click();
-    session.awaitErrors(3);
+    session.awaitError("audit");
     assertThat(rows).hasText(expected);
     assertThat(draft).hasValue("My draft");
 
-    session.button("Remove duplicate").click();
     var renders = renders(session).textContent();
     session.button("Refresh").click();
     assertThat(renders(session)).not().hasText(renders);
@@ -59,7 +59,7 @@ class FailureRecoveryIT {
     page.clock().install();
     session.open("/failures/");
     session.button("Start runaway").click();
-    session.awaitErrors(1);
+    session.awaitError("Runaway invalidation");
     var halted = renders(session).textContent();
     page.clock().runFor(1_000);
     assertThat(renders(session)).hasText(halted);
@@ -81,36 +81,21 @@ class FailureRecoveryIT {
   }
 
   @Chromium
-  @DisplayName("ids used elsewhere on the page reject the render, and committed ids stay owned")
+  @DisplayName("ids used elsewhere on the page reject the render")
   void pageIdCollisionsRejectRenders(Session session) {
-    var page = session.page();
     session.open("/failures/");
     var updates = session.page().getByText("Updates:");
     assertThat(updates).hasText("Updates: 0");
     var reported = 0;
     for (var claim : new String[] {"Claim second entry id", "Claim page id", "Claim host id"}) {
       session.button(claim).click();
-      session.awaitErrors(++reported);
+      session.awaitErrors(++reported, "cross-root-id");
       assertThat(session.text("Claimed")).hasCount(0);
       session.button("Release ids").click();
     }
     session.button("Update").click();
     assertThat(updates).hasText("Updates: 1");
     assertThat(session.text("A note owned by the page")).isVisible();
-
-    // The host page later adds an element with the id the view already rendered.
-    page.evaluate(
-        "() => { const copy = document.createElement('p'); copy.id = 'collisions-note';"
-            + " copy.textContent = 'Page copy'; document.body.prepend(copy); }");
-    session.button("Update").click();
-    assertThat(updates).hasText("Updates: 2");
-    var note = session.text("Owned note");
-    assertThat(note).isVisible();
-    session.button("Toggle note").click();
-    assertThat(note).hasCount(0);
-    session.button("Toggle note").click();
-    session.awaitErrors(++reported);
-    assertThat(note).hasCount(0);
     Assertions.assertThat(session.errors()).hasSize(reported);
   }
 

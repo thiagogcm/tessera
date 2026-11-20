@@ -80,23 +80,16 @@ class CascadeTest {
   }
 
   @Test
-  @DisplayName("writing a property again replaces its value")
-  void lastWriteReplaces() {
-    var page = renderMain(div().bg(Tokens.SURFACE_CARD).bg(Tokens.SURFACE_SUBTLE));
-
-    assertThat(page.ruleOf(page.element("main > div"), "u-"))
-        .contains("var(--surface-subtle)")
-        .doesNotContain("--surface-card");
-  }
-
-  @Test
   @DisplayName("merging replays the other refinement's writes, so its shorthands win")
   void mergeReplaysWrites() {
-    var base = new Declarations().mt(CssLength.rem(2)).textColor(Tokens.TEXT_PRIMARY);
+    var override = new Declarations().my(CssLength.zero());
+    var page =
+        renderMain(
+            div()
+                .styles(s ->
+                    s.mt(CssLength.rem(2)).textColor(Tokens.TEXT_PRIMARY).mergeFrom(override)));
 
-    base.mergeFrom(new Declarations().my(CssLength.zero()));
-
-    assertThat(properties(base.toCssBlockBody()))
+    assertThat(properties(page.ruleOf(page.element("main > div"), "u-")))
         .contains("margin-block", "color")
         .doesNotContain("margin-block-start");
   }

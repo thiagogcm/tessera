@@ -64,8 +64,4 @@ final class StyleLedger {
     }
     return evicted;
   }
-
-  int inserted() {
-    return users.size();
-  }
 }

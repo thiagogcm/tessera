@@ -1,6 +1,5 @@
 package dev.nthings.tessera.compiler;
 
-import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.docsSite;
 
@@ -10,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,29 +58,14 @@ class SiteWriterTest {
   }
 
   @Test
-  @DisplayName("the current directory is a valid output directory")
-  void writesToTheCurrentDirectory() throws IOException {
-    var page = "site-writer-" + UUID.randomUUID() + ".html";
-    var site =
-        Compiler.forSite()
-            .withOutputMode(OutputMode.inline())
-            .compile(
-                SiteDefinition.builder()
-                    .linkSpeculation(LinkSpeculation.NONE)
-                    .route(SiteRoute.of(page, PageDocument.of("Here", main().text("Here"))))
-                    .build());
-    var written = site.files().keySet().stream().map(path -> Path.of(path.substring(1))).toList();
-    assertThat(written).noneMatch(Files::exists);
+  @DisplayName("a relative output directory with dot segments resolves cleanly")
+  void writesToARelativeDirectory() {
+    var site = Compiler.forSite().compile(docsSite().build());
+    var target = out.resolve("nested").resolve(".").resolve("site");
+    var relative = Path.of("").toAbsolutePath().relativize(target);
 
-    try {
-      SiteWriter.writeToDirectory(site, Path.of("."));
+    SiteWriter.writeToDirectory(site, relative);
 
-      assertThat(Path.of(page)).hasContent(site.pages().get("/" + page));
-    } finally {
-      Files.deleteIfExists(Path.of(page));
-      for (var file : written) {
-        Files.deleteIfExists(file);
-      }
-    }
+    assertThat(target.resolve("index.html")).hasContent(site.pages().get("/"));
   }
 }

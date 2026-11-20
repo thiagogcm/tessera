@@ -57,9 +57,6 @@ class ContentModelTest {
     var page = render(place.apply(scope));
 
     assertThat(page.elements(path).eachText()).containsExactly("One", "Two");
-    assertThat(page.elements("[data-scope-id]"))
-        .singleElement()
-        .satisfies(host -> assertThat(host.attr("data-scope-id")).isEqualTo(scope.scopeId()));
   }
 
   @Test

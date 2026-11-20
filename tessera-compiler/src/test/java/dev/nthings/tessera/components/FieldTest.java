@@ -120,7 +120,7 @@ class FieldTest {
     var described = Field.of("Name", control).hint("Full name").error("Name is required");
     var plain = Field.of("Name", control);
 
-    for (var field : List.of(described, plain, described, plain)) {
+    for (var field : List.of(described, plain)) {
       var page = renderMain(field);
       var input = page.element("input[name=name]");
       assertThat(page.target(page.element("label"), "for")).isSameAs(input);

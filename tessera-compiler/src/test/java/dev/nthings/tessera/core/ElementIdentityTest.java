@@ -13,11 +13,11 @@ import static dev.nthings.tessera.support.RenderedPage.render;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
-import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.css.PositionArea;
+import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.Diagnostics.Found;
-import dev.nthings.tessera.support.Snapshots;
 import java.net.URI;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -81,7 +81,7 @@ class ElementIdentityTest {
     var named = ElementRef.scoped("menu");
     var menu = div().popover(PopoverMode.AUTO).text("Menu");
     var early = menu.ref();
-    menu.anchorName().id(named);
+    menu.id(named);
 
     var page =
         renderMain(
@@ -195,19 +195,22 @@ class ElementIdentityTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"signup.email", "menü", "a:b", "x#1"})
-  @DisplayName("a field tooltip anchors to a control bound to any page name, in both backends")
-  void tooltipAnchorsToControlsWithAnyPageName(String name) {
-    var field =
-        Field.of("Email", Forms.text("email").id(ElementRef.page(name)))
-            .tooltip("We never share it");
-
-    var page = renderMain(field);
-    Snapshots.render(field);
+  @DisplayName("an anchored element pairs with a target bound to any page name")
+  void anchorsPairWithAnyPageName(String name) {
+    var target = ElementRef.page(name);
+    var page =
+        renderMain(
+            div().id(target).anchorName().text("Anchor"),
+            p().id(ElementRef.page("floating"))
+                .anchoredTo(
+                    target,
+                    PositionArea.of(PositionArea.Part.BOTTOM, PositionArea.Part.CENTER),
+                    PositionTry.flip(PositionTry.Flip.BLOCK))
+                .text("Floating"));
 
     var anchor = match(ANCHOR, page.ruleOf(page.elementById(name), "u-"));
     assertThat(anchor).matches("--[A-Za-z0-9_-]+");
-    assertThat(match(POSITION, page.ruleOf(page.element(".field-anchor-tooltip"), "u-")))
-        .isEqualTo(anchor);
+    assertThat(match(POSITION, page.ruleOf(page.elementById("floating"), "u-"))).isEqualTo(anchor);
   }
 
   @Test
@@ -233,7 +236,6 @@ class ElementIdentityTest {
     var content = Elements.main().children(div().id(target).text("Target"), a(target).text("Go"));
 
     var page = render(content);
-    Snapshots.render(content);
 
     var href = page.element("a").attr("href");
     assertThat(URI.create(href).getFragment()).isEqualTo(name);

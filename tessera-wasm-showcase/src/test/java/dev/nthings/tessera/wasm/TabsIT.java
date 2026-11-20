@@ -74,7 +74,7 @@ class TabsIT {
     assertThat(session.text("Billing settings")).isVisible();
 
     session.button("Restore a removed section").click();
-    session.awaitErrors(1);
+    session.awaitError("tab-selection");
     assertSelected(billing);
     session.button("Reset settings").click();
     assertSelected(account);

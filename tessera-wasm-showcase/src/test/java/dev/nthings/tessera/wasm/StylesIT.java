@@ -2,6 +2,7 @@ package dev.nthings.tessera.wasm;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
+import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -21,15 +22,16 @@ class StylesIT {
   @BothEngines
   @DisplayName("mounting styles the components without restyling the page, and survives unmounts")
   void rootsStyleOnlyTheirComponents(Session session) {
-    var page = session.page();
-    page.route("**/*.wasm", route -> route.abort());
-    session.expectError("");
-    session.open("/");
-    assertThat(session.field("Fallback notes")).isVisible();
-    var unmounted = page.evaluate(PAGE_STYLES);
-    page.unrouteAll();
+    Object unmounted;
+    try (var baseline = session.page().context().newPage()) {
+      baseline.route("**/*.wasm", route -> route.abort());
+      baseline.navigate(session.url("/"));
+      assertThat(baseline.getByLabel("Fallback notes", new Page.GetByLabelOptions().setExact(true)))
+          .isVisible();
+      unmounted = baseline.evaluate(PAGE_STYLES);
+    }
 
-    session.open("/");
+    var page = session.open("/");
     var status = page.getByRole(AriaRole.STATUS);
     assertThat(status).hasText("Count: 0");
     Assertions.assertThat(page.evaluate(PAGE_STYLES)).isEqualTo(unmounted);

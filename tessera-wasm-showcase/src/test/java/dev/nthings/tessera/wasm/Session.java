@@ -2,8 +2,10 @@ package dev.nthings.tessera.wasm;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
+import com.microsoft.playwright.ConsoleMessage;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.PlaywrightException;
 import com.microsoft.playwright.options.AriaRole;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +32,26 @@ final class Session {
     page.onPageError(errors::add);
     page.onConsoleMessage(message -> {
       if (message.type().equals("error")) {
-        errors.add(message.text());
+        errors.add(describe(message));
       }
     });
+  }
+
+  /// The text of a console error. Firefox prints a logged `Error` object as just "Error", so the
+  /// message of each logged error is read from the page instead.
+  private static String describe(ConsoleMessage message) {
+    var text = new StringBuilder(message.text());
+    for (var arg : message.args()) {
+      try {
+        var detail = arg.evaluate("value => value instanceof Error ? value.message : null");
+        if (detail != null) {
+          text.append(' ').append(detail);
+        }
+      } catch (PlaywrightException e) {
+        // The page navigated away before the argument could be read; keep the plain text.
+      }
+    }
+    return text.toString();
   }
 
   Page page() {
@@ -63,8 +82,11 @@ final class Session {
     return page;
   }
 
-  /// Allows errors containing `fragment`, however many are reported.
+  /// Allows errors containing non-empty `fragment`, however many are reported.
   void expectError(String fragment) {
+    if (fragment.isBlank()) {
+      throw new IllegalArgumentException("Expected error fragment must not be blank");
+    }
     expected.add(fragment);
   }
 
@@ -74,10 +96,11 @@ final class Session {
     page.waitForCondition(() -> errors.stream().anyMatch(error -> error.contains(fragment)));
   }
 
-  /// Waits until `count` errors have been reported in all, and allows every error.
-  void awaitErrors(int count) {
-    expectError("");
-    page.waitForCondition(() -> errors.size() >= count);
+  /// Waits until at least `count` errors matching `fragment` have been reported, and allows them.
+  void awaitErrors(int count, String fragment) {
+    expectError(fragment);
+    page.waitForCondition(
+        () -> errors.stream().filter(error -> error.contains(fragment)).count() >= count);
   }
 
   /// Every error reported so far, expected or not.

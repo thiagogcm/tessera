@@ -18,7 +18,8 @@ import dev.nthings.tessera.internal.components.WidgetBridge.ImageParts;
 /// `dev.nthings.tessera.document.components`. Style the `<img>`, give it ARIA states, a ref or a
 /// transition key with [#element(ElementBlock)].
 ///
-/// - Set [#dimensions(int, int)] or a CSS aspect ratio, or the compiler reports `image-dimensions`.
+/// - Set [#dimensions(int, int)], a CSS aspect ratio, or [#unknownDimensions()], or the compiler
+///   reports `image-dimensions`.
 /// - Missing alt text reports `image-alt`. Empty alt marks the image decorative and also needs
 ///   `role="presentation"` or `aria-hidden="true"`, or the compiler reports `decorative-image`.
 public final class Image extends BuiltinComponent implements TagHost, FluentBuilder<Image> {
@@ -56,6 +57,14 @@ public final class Image extends BuiltinComponent implements TagHost, FluentBuil
       throw new IllegalArgumentException("Image width and height must be positive");
     }
     img.dimensions(width, height);
+    return this;
+  }
+
+  /// Opts out of the `image-dimensions` check when the image's intrinsic dimensions are unknown at
+  /// authoring time, such as for external or user-supplied URLs. Prefer [#dimensions(int, int)] or
+  /// a CSS `aspect-ratio` whenever the dimensions or ratio are known, to prevent layout shift.
+  public Image unknownDimensions() {
+    img.unknownDimensions();
     return this;
   }
 

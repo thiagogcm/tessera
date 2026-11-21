@@ -46,6 +46,8 @@ public final class TableOfContents extends BuiltinDocumentComponent
   private final String title;
   private @Nullable String id;
   private @Nullable List<OutlineHeading> headings;
+  private int minLevel = 1;
+  private int maxLevel = 6;
 
   private TableOfContents(String title) {
     this.title = title;
@@ -74,14 +76,37 @@ public final class TableOfContents extends BuiltinDocumentComponent
     return this;
   }
 
+  /// Limits rendered entries to headings with levels between `min` and `max`, inclusive. Throws
+  /// IllegalArgumentException unless `1 <= min <= max <= 6`. Applies to both collected outline
+  /// headings and explicit [#headings(List)] entries. Defaults to `1` through `6`.
+  public TableOfContents levels(int min, int max) {
+    if (min < 1 || max > 6 || min > max) {
+      throw new IllegalArgumentException(
+          "Heading level range must satisfy 1 <= min <= max <= 6: [" + min + ", " + max + "]");
+    }
+    this.minLevel = min;
+    this.maxLevel = max;
+    return this;
+  }
+
   @Override
   DocumentContent expand(DocumentContext context) {
+    var min = minLevel;
+    var max = maxLevel;
     var fixed = headings;
     if (fixed != null) {
-      return DocumentContent.of(new Links(title, id, fixed));
+      return DocumentContent.of(new Links(title, id, filterLevels(fixed, min, max)));
     }
     var instance = id;
-    return Documents.late(late -> DocumentContent.of(new Links(title, instance, late.headings())));
+    return Documents.late(late ->
+        DocumentContent.of(new Links(title, instance, filterLevels(late.headings(), min, max))));
+  }
+
+  private static List<OutlineHeading> filterLevels(
+      List<OutlineHeading> headings, int min, int max) {
+    return headings.stream()
+        .filter(heading -> heading.level() >= min && heading.level() <= max)
+        .toList();
   }
 
   /// The rendered list, a scope for its scoped styles.
@@ -178,6 +203,14 @@ public final class TableOfContents extends BuiltinDocumentComponent
                           h -> h.textColor(Tokens.TEXT_PRIMARY).bg(Tokens.SURFACE_SUBTLE)))
           .select(
               ":scope a[data-level=\"3\"]", s -> s.ps(Tokens.SPACE_6).fontSize(Tokens.FONT_SIZE_XS))
+          .select(
+              ":scope a[data-level=\"4\"]", s -> s.ps(Tokens.SPACE_8).fontSize(Tokens.FONT_SIZE_XS))
+          .select(
+              ":scope a[data-level=\"5\"]",
+              s -> s.ps(Tokens.SPACE_10).fontSize(Tokens.FONT_SIZE_XS))
+          .select(
+              ":scope a[data-level=\"6\"]",
+              s -> s.ps(Tokens.SPACE_12).fontSize(Tokens.FONT_SIZE_XS))
           .select(
               ":scope a:target-current",
               s ->

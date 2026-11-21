@@ -64,7 +64,7 @@ Heading.of(2, "Install", Elements.code().text("mvn"), Elements.text(" verify"))
 - `Section.of(id, title)` binds a page-level ID on `<section>` and outlines that ID automatically for heading levels `2` through `4`. Use `Heading` directly for levels `1`, `5`, `6`, or rich heading phrasing.
 - Ordinary HTML headings, dialog titles, and the footnotes heading are not outlined. If two headings outline the same target, the first is kept.
 
-`TableOfContents.of(title)` uses a late callback to render the page's collected outline in document order, so you can place it before the sections. Use `TableOfContents.headings(list)` for a fixed list, or `DocLayout.of(sections...)` to pair sections with a sticky table of contents.
+`TableOfContents.of(title)` uses a late callback to render the page's collected outline in document order, so you can place it before the sections. Heading levels 3 through 6 indent progressively. Call `.levels(min, max)` (within `1` through `6`) to filter entries to a heading level range, use `TableOfContents.headings(list)` for a fixed list, or use `DocLayout.of(sections...)` to pair sections with a sticky table of contents.
 
 ## Place footnotes
 

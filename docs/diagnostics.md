@@ -65,7 +65,7 @@ Exceptions thrown inside application callbacks (`expand`, `configureScope`, `lat
 | `missing-fragment` | A same-page `#fragment` link does not match any DOM ID on the page |
 | `missing-command-target`, `incompatible-command-target` | A `commandfor` target is missing, or a built-in dialog/popover command targets an incompatible element |
 | `missing-interest-target` | An `interestTooltip` trigger targets a missing ID |
-| `image-alt`, `decorative-image`, `image-dimensions` | An image lacks `alt` text, mixes empty `alt` without decorative ARIA, or lacks dimensions/aspect ratio |
+| `image-alt`, `decorative-image`, `image-dimensions` | An image lacks `alt` text, mixes empty `alt` without decorative ARIA, or lacks dimensions, an aspect ratio, or `.unknownDimensions()` |
 | `duplicate-hero-image` | More than one `HeroImage` is placed on the same page |
 | `callback-failure` | An expansion or styling callback throws during live rendering |
 

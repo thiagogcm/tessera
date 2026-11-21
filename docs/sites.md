@@ -97,7 +97,7 @@ Image.of("/assets/divider.svg", "")
     .element(img -> img.ariaHidden(true).inlineSize(CssLength.pct(100)));
 ```
 
-The compiler requires non-empty `alt` text and explicit dimensions or an aspect ratio. Decorative images must use empty `alt` text paired with `role(Role.PRESENTATION)` or `ariaHidden(true)`.
+The compiler requires non-empty `alt` text and explicit dimensions or an aspect ratio. When an image comes from an external or user-supplied source whose intrinsic dimensions are unknown at authoring time, opt out of `image-dimensions` explicitly with `.unknownDimensions()` on `Image` or `Elements.img(...)` rather than guessing a fixed ratio. Decorative images must use empty `alt` text paired with `role(Role.PRESENTATION)` or `ariaHidden(true)`.
 
 ## Write links as browser URLs
 

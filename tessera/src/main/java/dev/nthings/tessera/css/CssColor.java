@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import java.util.Optional;
 
 /// A CSS color: OKLCH and sRGB literals, keywords, derived colors (`color-mix`, relative
 /// `oklch(from ...)`, `light-dark`, `contrast-color`), and design tokens. Build values with the
@@ -37,6 +38,19 @@ public sealed interface CssColor extends CssValue
   /// `0x000000` to `0xffffff`.
   static CssColor srgb(int rgb) {
     return new CssColors.Srgb(rgb);
+  }
+
+  /// `rgb(R G B / A)` from a 24-bit value and opacity, or `#rrggbb` at full opacity. Throws
+  /// IllegalArgumentException if `rgb` is outside `0x000000` to `0xffffff` or `alpha` is outside
+  /// `[0, 1]`.
+  static CssColor srgb(int rgb, double alpha) {
+    return new CssColors.Srgb(rgb, alpha);
+  }
+
+  /// Parses a CSS hexadecimal color (`#rgb`, `#rgba`, `#rrggbb`, or `#rrggbbaa`). Returns an empty
+  /// optional for invalid input without throwing.
+  static Optional<CssColor> parseHex(String hex) {
+    return CssColors.parseHex(hex);
   }
 
   /// `#ffffff`.

@@ -23,6 +23,7 @@ public enum HtmlTag implements TagName {
   H5,
   H6,
   P,
+  BLOCKQUOTE,
   UL,
   OL,
   LI,

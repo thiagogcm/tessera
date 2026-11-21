@@ -16,8 +16,13 @@ import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.document.components.Footnotes;
 import dev.nthings.tessera.support.Json;
 import dev.nthings.tessera.support.RenderedPage;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
@@ -138,5 +143,37 @@ class SiteArtifactsTest {
     var entry = Json.parse(site.searchIndexJson()).list().getFirst();
     assertThat(entry.get("title").string()).isEqualTo(title);
     assertThat(entry.get("description").string()).isEqualTo(description);
+  }
+
+  @Test
+  @DisplayName("native-image resource metadata covers every bundled compiler script")
+  void nativeImageResourceConfigCoversBundledScripts() throws IOException {
+    String configJson;
+    try (var input =
+        SiteArtifactsTest.class.getResourceAsStream(
+            "/META-INF/native-image/dev.nthings/tessera-compiler/resource-config.json")) {
+      assertThat(input).isNotNull();
+      configJson = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+    }
+    var patterns =
+        Json.parse(configJson).get("resources").get("includes").list().stream()
+            .map(entry -> Pattern.compile(entry.get("pattern").string()))
+            .toList();
+
+    var scriptsDir = "dev/nthings/tessera/compiler/";
+    List<String> scripts;
+    try (var files = Files.list(Path.of("src/main/resources", scriptsDir))) {
+      scripts =
+          files
+              .map(file -> scriptsDir + file.getFileName())
+              .filter(name -> name.endsWith(".js"))
+              .toList();
+    }
+    assertThat(scripts).isNotEmpty();
+    for (var script : scripts) {
+      assertThat(patterns)
+          .as("resource-config.json covers %s", script)
+          .anyMatch(pattern -> pattern.matcher(script).find());
+    }
   }
 }

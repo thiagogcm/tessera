@@ -115,10 +115,11 @@ public final class ViewValidation {
   private static final List<String> URL_ATTRIBUTES = List.of("href", "src", "poster");
 
   /// Element contracts checked while the expanded element still carries authored declarations.
-  static void checkElement(ViewNode.Tag<?> tag, Declarations style, DiagnosticSink reporter) {
+  static void checkElement(
+      ViewNode.Tag<?> tag, Declarations style, boolean unknownDimensions, DiagnosticSink reporter) {
     var location = tag.location();
     if (tag.tag() == HtmlTag.IMG) {
-      validateImage(tag.attributes(), style, reporter, location);
+      validateImage(tag.attributes(), style, unknownDimensions, reporter, location);
     }
     for (var attribute : tag.attributes().entrySet()) {
       var name = attribute.getKey();
@@ -168,7 +169,11 @@ public final class ViewValidation {
   }
 
   private static void validateImage(
-      Map<String, String> attrs, Declarations style, DiagnosticSink reporter, Location location) {
+      Map<String, String> attrs,
+      Declarations style,
+      boolean unknownDimensions,
+      DiagnosticSink reporter,
+      Location location) {
     var alt = attrs.get("alt");
     if (alt == null) {
       reporter.report(
@@ -186,7 +191,7 @@ public final class ViewValidation {
           "Add role=\"presentation\" or aria-hidden=\"true\", or provide descriptive alt text.");
     }
     var hasWidthAndHeight = attrs.containsKey("width") && attrs.containsKey("height");
-    if (!hasWidthAndHeight && !CssAccess.get().hasAspectRatio(style)) {
+    if (!hasWidthAndHeight && !unknownDimensions && !CssAccess.get().hasAspectRatio(style)) {
       reporter.report(
           location,
           "image-dimensions",
@@ -194,7 +199,8 @@ public final class ViewValidation {
               + attrs.getOrDefault("src", "")
               + "\" must declare both 'width' and 'height' attributes or a CSS 'aspect-ratio' to"
               + " prevent Cumulative Layout Shift (CLS)",
-          "Set .dimensions(width, height) or a CSS aspect-ratio to reserve the image's layout space.");
+          "Set .dimensions(width, height) or a CSS aspect-ratio to reserve the image's layout"
+              + " space, or call .unknownDimensions() when intrinsic dimensions are unavailable.");
     }
   }
 

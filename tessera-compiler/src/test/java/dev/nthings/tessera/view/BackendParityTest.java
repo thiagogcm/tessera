@@ -21,6 +21,7 @@ import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Heading;
+import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -200,6 +201,15 @@ class BackendParityTest {
 
     assertThat(staticCss).contains("inline-size:7px").doesNotContain("--tl-");
     assertThat(liveTag.liveProperties()).containsEntry("--tl-inline-size", "7px");
+  }
+
+  @Test
+  @DisplayName("unknownDimensions opts an image out of image-dimensions in both backends")
+  void unknownDimensionsParityAcrossBackends() {
+    var content =
+        main().child(Image.of("https://example.com/photo.png", "External").unknownDimensions());
+
+    assertThat(semantics(dom(render(content)))).isEqualTo(semantics(page(content)));
   }
 
   /// The selectors of the rules in `css`, looking through at-rules.

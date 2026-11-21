@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
+    child.project.url.inherit.append.path="false"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -30,6 +31,14 @@
         </developer>
     </developers>
 
+    <scm child.scm.connection.inherit.append.path="false"
+        child.scm.developerConnection.inherit.append.path="false"
+        child.scm.url.inherit.append.path="false">
+        <connection>scm:git:https://github.com/thiagogcm/tessera.git</connection>
+        <developerConnection>scm:git:git@github.com:thiagogcm/tessera.git</developerConnection>
+        <url>https://github.com/thiagogcm/tessera</url>
+    </scm>
+
     <modules>
         <module>tessera</module>
         <module>tessera-compiler</module>
@@ -44,6 +53,90 @@
                 <module>tessera-wasm-showcase</module>
             </modules>
         </profile>
+        <!-- Release pipeline (`-Ppublication`): build the source/javadoc jars Central requires, flatten
+             the POM to a self-contained artifact, and stage `deploy` locally for JReleaser to upload.
+             Published modules opt in by listing these plugins in their own `publication` profile. -->
+        <profile>
+            <id>publication</id>
+            <properties>
+                <altDeploymentRepository>local::file:${maven.multiModuleProjectDirectory}/target/staging-deploy</altDeploymentRepository>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-source-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>attach-sources</id>
+                                    <goals>
+                                        <goal>jar-no-fork</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <configuration>
+                                <doclint>none</doclint>
+                                <failOnError>false</failOnError>
+                                <quiet>true</quiet>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>attach-javadocs</id>
+                                    <goals>
+                                        <goal>jar</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <!-- CycloneDX SBOM, attached at package so JReleaser signs and publishes it with the jar. -->
+                        <plugin>
+                            <groupId>org.cyclonedx</groupId>
+                            <artifactId>cyclonedx-maven-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>sbom</id>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>makeBom</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <outputFormat>json</outputFormat>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>flatten-maven-plugin</artifactId>
+                            <configuration>
+                                <flattenMode>ossrh</flattenMode>
+                            </configuration>
+                            <executions>
+                                <execution>
+                                    <id>flatten</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>flatten</goal>
+                                    </goals>
+                                </execution>
+                                <execution>
+                                    <id>flatten-clean</id>
+                                    <phase>clean</phase>
+                                    <goals>
+                                        <goal>clean</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
     </profiles>
 
     <properties>
@@ -51,6 +144,7 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <tessera.javac.lint>all</tessera.javac.lint>
+        <maven.deploy.skip>true</maven.deploy.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -60,7 +154,9 @@
         <assertj-core.version>3.27.7</assertj-core.version>
         <axe-core.version>4.14.0</axe-core.version>
         <checkstyle.version>14.4.0</checkstyle.version>
+        <cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
         <errorprone.version>2.52.0</errorprone.version>
+        <flatten-maven-plugin.version>1.9.0</flatten-maven-plugin.version>
         <google-java-format.version>2.0.0</google-java-format.version>
         <jacoco-maven-plugin.version>0.8.16</jacoco-maven-plugin.version>
         <jsoup.version>1.24.1</jsoup.version>
@@ -69,9 +165,13 @@
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
         <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+        <maven-deploy-plugin.version>3.2.0</maven-deploy-plugin.version>
         <maven-enforcer-plugin.version>3.7.0</maven-enforcer-plugin.version>
+        <maven-install-plugin.version>3.2.0</maven-install-plugin.version>
         <maven-jar-plugin.version>3.5.1</maven-jar-plugin.version>
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-resources-plugin.version>3.5.0</maven-resources-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
         <nullaway.version>0.14.4</nullaway.version>
         <owasp-encoder.version>1.6.0</owasp-encoder.version>
@@ -126,6 +226,40 @@
     </dependencyManagement>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven-deploy-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${maven-install-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${cyclonedx-maven-plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

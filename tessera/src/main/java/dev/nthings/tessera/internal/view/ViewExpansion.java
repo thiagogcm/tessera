@@ -370,7 +370,7 @@ public abstract class ViewExpansion<M> {
             references.isEmpty() ? Map.of() : new LinkedHashMap<>(references),
             children,
             companion);
-    ViewValidation.checkElement(node, style, reporter);
+    ViewValidation.checkElement(node, style, element.unknownDimensions, reporter);
     return node;
   }
 

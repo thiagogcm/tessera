@@ -218,6 +218,18 @@ public final class Elements {
     return with(p(), first, rest);
   }
 
+  public static TagElement blockquote() {
+    return new TagElement(HtmlTag.BLOCKQUOTE);
+  }
+
+  public static TagElement blockquote(String text) {
+    return blockquote().text(text);
+  }
+
+  public static TagElement blockquote(IntoElement first, IntoElement... rest) {
+    return with(blockquote(), first, rest);
+  }
+
   public static TagElement ul() {
     return new TagElement(HtmlTag.UL);
   }
@@ -419,9 +431,9 @@ public final class Elements {
 
   /// Creates an `<img>` with `loading="lazy"` and `decoding="async"`. The compiler requires `alt`
   /// (`image-alt`); an empty `alt` also needs `role="presentation"` or `aria-hidden="true"`
-  /// (`decorative-image`). It also requires `width` and `height`, or a CSS aspect ratio
-  /// (`image-dimensions`). For a hero image that needs priority loading, wrap `components.Image`
-  /// with `document.components.HeroImage`.
+  /// (`decorative-image`). It also requires `width` and `height`, a CSS aspect ratio, or
+  /// [TagElement#unknownDimensions()] (`image-dimensions`). For a hero image that needs priority
+  /// loading, wrap `components.Image` with `document.components.HeroImage`.
   public static TagElement img(String src, String alt) {
     return new TagElement(HtmlTag.IMG)
         .attr("src", src)

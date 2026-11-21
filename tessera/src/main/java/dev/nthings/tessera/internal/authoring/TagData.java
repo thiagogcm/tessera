@@ -38,6 +38,7 @@ public final class TagData {
   public @Nullable ElementRef anchorTarget;
   public @Nullable TransitionKey transitionKey;
   public @Nullable OutlineHeading navigationHeading;
+  public boolean unknownDimensions;
 
   public TagData(TagName tag, @Nullable SourceLocation source) {
     this.tag = tag;

@@ -56,7 +56,7 @@ Elements.div()
 | --- | --- |
 | Dimensions and math | `CssLength`: `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, `anchor` |
 | Durations | `CssDuration.ms(double)` and `CssDuration.of(java.time.Duration)` |
-| Colors | `CssColor`: `mix`, `mixTransparent`, `sameHue`, `lightDark`, `contrast` |
+| Colors | `CssColor`: `oklch`, `srgb`, `parseHex`, `mix`, `mixTransparent`, `sameHue`, `lightDark`, `contrast` |
 | Shadows | `Shadow.drop(...)`, `Shadow.inset(...)`; `offsetX(...)` adjusts a layer |
 | Keyword properties | Enums such as `Overflow.AUTO`, `TextWrap.BALANCE`, `Cursor.POINTER`, `Appearance.NONE`, `Resize.VERTICAL` |
 | Single-purpose helpers | Methods such as `listStyleNone()` and `tabularNums()` |

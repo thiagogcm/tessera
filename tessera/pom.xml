@@ -11,8 +11,11 @@
 
     <artifactId>tessera</artifactId>
     <name>Tessera Library</name>
+    <description>Portable HTML/CSS authoring, components, and shared view engine for Tessera.</description>
 
     <properties>
+        <!-- Published artifact; re-enable the deploy the parent disables. -->
+        <maven.deploy.skip>false</maven.deploy.skip>
         <!-- The qualified export targets the optional browser module, compiled after this one. -->
         <tessera.javac.lint>all,-module</tessera.javac.lint>
     </properties>
@@ -53,5 +56,32 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- Release pipeline (`-Ppublication`); executions and configuration live in the parent. -->
+        <profile>
+            <id>publication</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.cyclonedx</groupId>
+                        <artifactId>cyclonedx-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>flatten-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>

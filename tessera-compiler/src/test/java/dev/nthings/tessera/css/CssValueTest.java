@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Typed CSS values")
 class CssValueTest {
@@ -64,7 +65,15 @@ class CssValueTest {
                 CssContent.empty(),
                 CssContent.text("Slide "),
                 CssContent.counter(Counter.named("item"))),
-            "\"\" / \"Slide \" counter(item)"));
+            "\"\" / \"Slide \" counter(item)"),
+        argumentSet("opaque sRGB", CssColor.srgb(0x1d4ed8), "#1d4ed8"),
+        argumentSet("sRGB with full alpha", CssColor.srgb(0x1d4ed8, 1), "#1d4ed8"),
+        argumentSet("sRGB with alpha", CssColor.srgb(0x1d4ed8, 0.5), "rgb(29 78 216 / 0.5)"),
+        argumentSet("sRGB with zero alpha", CssColor.srgb(0x000000, 0), "rgb(0 0 0 / 0)"),
+        argumentSet(
+            "sRGB white with quarter alpha",
+            CssColor.srgb(0xffffff, 0.25),
+            "rgb(255 255 255 / 0.25)"));
   }
 
   @ParameterizedTest
@@ -114,7 +123,59 @@ class CssValueTest {
     assertThatIllegalArgumentException().isThrownBy(() -> GridPlacement.at(0));
     assertThatIllegalArgumentException().isThrownBy(() -> GridPlacement.span(0));
     assertThatIllegalArgumentException().isThrownBy(() -> CssColor.oklch(50, 0.1, 10, 1.5));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.oklch(50, 0.1, 10, Double.NaN));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.srgb(-1));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.srgb(0x1000000));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.srgb(0x1d4ed8, -0.01));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.srgb(0x1d4ed8, 1.01));
+    assertThatIllegalArgumentException().isThrownBy(() -> CssColor.srgb(0x1d4ed8, Double.NaN));
     assertThatIllegalArgumentException().isThrownBy(() -> CssDuration.ms(-1));
     assertThatIllegalArgumentException().isThrownBy(() -> new TrackList(List.of()));
+  }
+
+  static Stream<Arguments> validHexColors() {
+    return Stream.of(
+        argumentSet("3-digit lowercase", "#f0a", "#ff00aa"),
+        argumentSet("3-digit uppercase", "#FFF", "#ffffff"),
+        argumentSet("3-digit black", "#000", "#000000"),
+        argumentSet("4-digit opaque", "#f0af", "#ff00aa"),
+        argumentSet("4-digit transparent", "#f0a0", "rgb(255 0 170 / 0)"),
+        argumentSet("4-digit translucent", "#f0a8", "rgb(255 0 170 / 0.533)"),
+        argumentSet("6-digit lowercase", "#1d4ed8", "#1d4ed8"),
+        argumentSet("6-digit uppercase", "#1D4ED8", "#1d4ed8"),
+        argumentSet("8-digit opaque", "#1d4ed8ff", "#1d4ed8"),
+        argumentSet("8-digit transparent", "#1d4ed800", "rgb(29 78 216 / 0)"),
+        argumentSet("8-digit translucent", "#1d4ed880", "rgb(29 78 216 / 0.502)"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("validHexColors")
+  @DisplayName("parseHex accepts 3-, 4-, 6-, and 8-digit CSS hex colors")
+  void parsesValidHexColors(String hex, String expectedCss) {
+    assertThat(CssColor.parseHex(hex)).map(CssColor::toCss).contains(expectedCss);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "",
+        "#",
+        "1d4ed8",
+        "#12",
+        "#12345",
+        "#1234567",
+        "#123456789",
+        "#gggggg",
+        "#1d4ed8gg",
+        "#f0az",
+        " #fff",
+        "#fff ",
+        "+#fff",
+        "#-ff",
+        "rgb(0 0 0)"
+      })
+  @DisplayName("parseHex returns empty without throwing for invalid input")
+  void rejectsInvalidHexColors(String invalid) {
+    assertThat(CssColor.parseHex(invalid)).isEmpty();
   }
 }

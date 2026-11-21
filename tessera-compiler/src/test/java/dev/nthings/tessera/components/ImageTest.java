@@ -1,10 +1,16 @@
 package dev.nthings.tessera.components;
 
+import static dev.nthings.tessera.core.Elements.div;
+import static dev.nthings.tessera.core.Elements.el;
+import static dev.nthings.tessera.core.Elements.img;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalStateException;
 import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.AspectRatio;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.components.HeroImage;
@@ -82,18 +88,47 @@ class ImageTest {
     return Stream.of(
         argumentSet(
             "empty alt, not hidden", Image.of("/a.png", "").dimensions(1, 1), "decorative-image"),
-        argumentSet("no reserved space", Image.of("/a.png", "Chart"), "image-dimensions"));
+        argumentSet(
+            "empty alt, unknown dimensions still checks decorative semantics",
+            Image.of("/a.png", "").unknownDimensions(),
+            "decorative-image"),
+        argumentSet("no reserved space", Image.of("/a.png", "Chart"), "image-dimensions"),
+        argumentSet(
+            "raw img, no alt, unknown dimensions",
+            el(HtmlTag.IMG).attr("src", "/a.png").unknownDimensions(),
+            "image-alt"));
   }
 
   @ParameterizedTest
   @MethodSource("inaccessibleImages")
   @DisplayName("an image that would be misread or shift the layout is reported")
-  void reportsInaccessibleImage(Image image, String rule) {
+  void reportsInaccessibleImage(IntoElement image, String rule) {
     assertThat(Diagnostics.of(() -> renderMain(image)))
         .singleElement()
         .satisfies(d -> {
           assertThat(d.rule()).isEqualTo(rule);
           assertThat(d.tag()).isEqualTo("img");
         });
+  }
+
+  @Test
+  @DisplayName(
+      "unknownDimensions opts an image out of image-dimensions, including through HeroImage")
+  void unknownDimensionsAllowsUnmeasuredImages() {
+    var page =
+        renderDocumentMain(
+            HeroImage.of(Image.of("https://example.com/hero.jpg", "Hero").unknownDimensions()),
+            DocumentContent.of(
+                Image.of("https://example.com/photo.jpg", "Photo").unknownDimensions()),
+            DocumentContent.of(
+                img("https://example.com/inline.png", "Inline").unknownDimensions()));
+
+    assertThat(page.elements("img")).hasSize(3);
+  }
+
+  @Test
+  @DisplayName("unknownDimensions is rejected on non-img tags")
+  void unknownDimensionsRejectsNonImages() {
+    assertThatIllegalStateException().isThrownBy(() -> div().unknownDimensions());
   }
 }

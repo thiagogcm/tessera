@@ -1,18 +1,44 @@
 package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.internal.foundation.Decimals;
+import java.util.HexFormat;
+import java.util.Optional;
 
 /// The [CssColor] implementations, built only through its factories and derivation methods.
 final class CssColors {
 
   private CssColors() {}
 
+  static Optional<CssColor> parseHex(String hex) {
+    if (!hex.startsWith("#") || !hex.chars().skip(1).allMatch(HexFormat::isHexDigit)) {
+      return Optional.empty();
+    }
+    var digits = hex.substring(1);
+    if (digits.length() <= 4) {
+      var expanded = new StringBuilder(digits.length() * 2);
+      digits.chars().forEach(c -> expanded.append((char) c).append((char) c));
+      digits = expanded.toString();
+    }
+    return switch (digits.length()) {
+      case 6 -> Optional.of(new Srgb(HexFormat.fromHexDigits(digits)));
+      case 8 -> {
+        var rgba = HexFormat.fromHexDigits(digits);
+        yield Optional.of(new Srgb(rgba >>> 8, (rgba & 0xff) / 255.0));
+      }
+      default -> Optional.empty();
+    };
+  }
+
+  private static void requireAlpha(double alpha) {
+    if (!(alpha >= 0 && alpha <= 1)) {
+      throw new IllegalArgumentException("Alpha must be within [0, 1]: " + alpha);
+    }
+  }
+
   /// `oklch(L% C H)` or, below full opacity, `oklch(L% C H / A)`. Lightness is a percentage.
   record Oklch(double lightness, double chroma, double hue, double alpha) implements CssColor {
     Oklch {
-      if (alpha < 0 || alpha > 1) {
-        throw new IllegalArgumentException("Alpha must be within [0, 1]: " + alpha);
-      }
+      requireAlpha(alpha);
     }
 
     @Override
@@ -28,17 +54,28 @@ final class CssColors {
     }
   }
 
-  /// `#rrggbb`.
-  record Srgb(int rgb) implements CssColor {
+  /// `#rrggbb` or, below full opacity, `rgb(R G B / A)`.
+  record Srgb(int rgb, double alpha) implements CssColor {
     Srgb {
       if (rgb < 0 || rgb > 0xffffff) {
         throw new IllegalArgumentException("Not a 24-bit color: " + rgb);
       }
+      requireAlpha(alpha);
+    }
+
+    Srgb(int rgb) {
+      this(rgb, 1);
     }
 
     @Override
     public String toCss() {
-      return String.format("#%06x", rgb);
+      if (alpha < 1) {
+        var r = (rgb >>> 16) & 0xff;
+        var g = (rgb >>> 8) & 0xff;
+        var b = rgb & 0xff;
+        return "rgb(" + r + " " + g + " " + b + " / " + Decimals.format(alpha) + ")";
+      }
+      return "#" + HexFormat.of().toHexDigits(rgb).substring(2);
     }
   }
 

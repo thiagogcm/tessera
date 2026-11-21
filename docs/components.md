@@ -6,7 +6,7 @@ For static document assembly such as raw HTML, deferred content, outlines, and f
 
 ## Compose elements
 
-`Elements` provides typed factories such as `div(...)`, `h1(...)`, `p(...)`, `a(href, text)`, and `input(InputType)`. Zero-arg factories return mutable `TagElement` builders for chaining attributes and styles; container and text overloads build common markup concisely, and text is always HTML-escaped.
+`Elements` provides typed factories such as `div(...)`, `h1(...)`, `p(...)`, `blockquote(...)`, `a(href, text)`, and `input(InputType)`. Zero-arg factories return mutable `TagElement` builders for chaining attributes and styles; container and text overloads build common markup concisely, and text is always HTML-escaped.
 
 ```java
 var content =

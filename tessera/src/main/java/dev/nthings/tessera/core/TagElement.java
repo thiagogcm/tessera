@@ -84,6 +84,7 @@ public final class TagElement
     copy.data.anchorTarget = data.anchorTarget;
     copy.data.transitionKey = data.transitionKey;
     copy.data.navigationHeading = data.navigationHeading;
+    copy.data.unknownDimensions = data.unknownDimensions;
     copy.data.behavior = data.behavior;
     copy.data.initial = data.initial;
     return copy;
@@ -217,6 +218,19 @@ public final class TagElement
   /// Sets the `width` and `height` attributes, in CSS pixels.
   public TagElement dimensions(int width, int height) {
     return attr("width", Integer.toString(width)).attr("height", Integer.toString(height));
+  }
+
+  /// Opts an `<img>` out of the `image-dimensions` check when its intrinsic dimensions are unknown
+  /// at authoring time, such as for external or user-supplied URLs. Prefer [#dimensions(int, int)]
+  /// or a CSS `aspect-ratio` whenever the dimensions or ratio are known, to prevent layout shift.
+  /// Throws IllegalStateException if this element is not an `<img>`.
+  public TagElement unknownDimensions() {
+    if (data.tag != HtmlTag.IMG) {
+      throw new IllegalStateException(
+          "unknownDimensions() is only valid on <img> elements, not <" + data.tag.tagName() + ">");
+    }
+    data.unknownDimensions = true;
+    return this;
   }
 
   public TagElement title(String title) {

@@ -141,8 +141,9 @@ interface BoxStyled<SELF extends BoxStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Sets `border-collapse: separate` with zero `border-spacing`, for gapless table borders.
   default SELF borderSeparateZero() {
-    StyleTarget.declarations(this).put(CssProperty.BORDER_COLLAPSE, "separate");
-    StyleTarget.declarations(this).put(CssProperty.BORDER_SPACING, CssLength.zero());
+    StyleTarget.declarations(this)
+        .put(CssProperty.BORDER_COLLAPSE, "separate")
+        .put(CssProperty.BORDER_SPACING, CssLength.zero());
     return self();
   }
 

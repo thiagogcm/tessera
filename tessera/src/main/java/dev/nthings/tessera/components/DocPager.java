@@ -116,27 +116,21 @@ public final class DocPager extends BuiltinScope<DocPager> {
   @Override
   TagElement expand(ViewContext context) {
     var navEl = nav().ariaLabel(label).attr("class", "doc-pager");
-
     if (previous != null) {
-      var prevCard =
-          a(previous.href())
-              .attr("class", "pager-card pager-prev")
-              .children(
-                  span().attr("class", "pager-hint").text("← Previous"),
-                  span().attr("class", "pager-title").text(previous.label()));
-      navEl.child(prevCard);
+      navEl.child(card(previous, "pager-prev", "← Previous"));
     }
-
     if (next != null) {
-      var nextCard =
-          a(next.href())
-              .attr("class", "pager-card pager-next")
-              .children(
-                  span().attr("class", "pager-hint").text("Next →"),
-                  span().attr("class", "pager-title").text(next.label()));
-      navEl.child(nextCard);
+      navEl.child(card(next, "pager-next", "Next →"));
     }
-
     return navEl;
+  }
+
+  /// The card linking to `link`, marked with the `side` class and labelled by `hint`.
+  private static TagElement card(Link link, String side, String hint) {
+    return a(link.href())
+        .attr("class", "pager-card " + side)
+        .children(
+            span().attr("class", "pager-hint").text(hint),
+            span().attr("class", "pager-title").text(link.label()));
   }
 }

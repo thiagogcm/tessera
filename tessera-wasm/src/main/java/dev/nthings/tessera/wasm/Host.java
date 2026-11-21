@@ -38,6 +38,7 @@ public final class Host {
   /// On the root host: the scoped host of each lifetime, until that lifetime is disposed.
   private final Map<Lifetime, Host> scoped = new IdentityHashMap<>();
 
+  /// On the root host: whether its lifetime cancels every pending task.
   private boolean registered;
 
   Host(BrowserRoot root, Lifetime lifetime) {
@@ -64,7 +65,6 @@ public final class Host {
     var host = new Host(this, scope);
     if (!scope.disposed()) {
       hosts.put(scope, host);
-      host.registered = true;
       scope.onDispose(() -> {
         hosts.remove(scope);
         host.cancelAll();

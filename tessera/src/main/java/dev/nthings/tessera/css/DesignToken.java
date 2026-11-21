@@ -24,10 +24,10 @@ public sealed interface DesignToken<V extends CssValue> extends CssValue
   /// The value [Theme#defaults()] gives the token.
   V defaultValue();
 
-  /// `var(--name)`.
+  /// `var(--name)`. Each constructor has already validated the name.
   @Override
   default String toCss() {
-    return CssIdent.custom(name()).varReference();
+    return "var(--" + name() + ")";
   }
 
   /// A color token. Use `CssColor.lightDark(light, dark)` for a value that follows the color

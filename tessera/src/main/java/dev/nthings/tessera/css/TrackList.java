@@ -30,8 +30,7 @@ public record TrackList(List<GridTrack> tracks) implements CssValue {
   public static TrackList autoFit(CssLength minWidth) {
     var floor = CssLength.min(CssLength.pct(100), minWidth);
     return of(
-        new GridTracks.AutoRepeat(
-            GridTracks.AutoCount.AUTO_FIT,
+        new GridTracks.AutoFit(
             List.of(GridTrack.minmax(GridTrack.length(floor), GridTrack.fr(1)))));
   }
 

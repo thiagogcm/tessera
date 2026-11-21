@@ -15,8 +15,6 @@ import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.WhiteSpace;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,7 +30,7 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
 
   private static final Counter LINE_COUNTER = Counter.named("code-line");
 
-  private final List<String> lines = new ArrayList<>();
+  private final List<String> lines;
   private final Set<Integer> highlightedLines = new LinkedHashSet<>();
   private final Set<Integer> addedLines = new LinkedHashSet<>();
   private final Set<Integer> deletedLines = new LinkedHashSet<>();
@@ -41,20 +39,20 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
   private boolean diffAutoDetect = false;
 
   private CodeBlock(List<String> lines) {
-    this.lines.addAll(lines);
+    this.lines = lines;
   }
 
   /// Creates a block from `code`, splitting lines on `\n`, `\r\n`, or `\r`. A trailing newline adds
   /// an empty last line.
   public static CodeBlock of(String code) {
     var normalized = code.replace("\r\n", "\n").replace('\r', '\n');
-    return new CodeBlock(Arrays.asList(normalized.split("\n", -1)));
+    return new CodeBlock(List.of(normalized.split("\n", -1)));
   }
 
   /// Creates a block with one line per element. An element is not split, so an embedded newline
   /// stays on one numbered line.
   public static CodeBlock ofLines(String... lines) {
-    return new CodeBlock(Arrays.asList(lines));
+    return new CodeBlock(List.of(lines));
   }
 
   @Override
@@ -209,17 +207,11 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
       }
       var isHighlight = highlightedLines.contains(lineNum);
 
-      var lineSpan = span().attr("class", "code-line");
-      if (isAdd) {
-        lineSpan.attr("class", "code-line is-add");
-      } else if (isDel) {
-        lineSpan.attr("class", "code-line is-del");
-      } else if (isHighlight) {
-        lineSpan.attr("class", "code-line is-highlighted");
-      }
-
-      lineSpan.text(content);
-      codeEl.child(lineSpan);
+      var lineClass =
+          isAdd
+              ? "code-line is-add"
+              : isDel ? "code-line is-del" : isHighlight ? "code-line is-highlighted" : "code-line";
+      codeEl.child(span().attr("class", lineClass).text(content));
     }
 
     var preEl =

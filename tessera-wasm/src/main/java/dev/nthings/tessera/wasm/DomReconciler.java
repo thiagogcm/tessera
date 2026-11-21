@@ -27,8 +27,8 @@ import org.jspecify.annotations.Nullable;
 /// the candidate as the committed tree, moving a first build into the host. [#retire] then releases
 /// the resources of replaced subtrees with their application cleanups, and [#activate] starts the
 /// effects the commit placed. A root that closes while a phase runs settles through [ClosedRoot]:
-/// the commit releases everything it acquired, publishes nothing and starts nothing, and the
-/// closing root releases what it already owned.
+/// the commit publishes nothing and starts nothing, and the closing root releases what the commit
+/// acquired along with what it already owned.
 final class DomReconciler {
   /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names and
   /// group definitions.
@@ -96,10 +96,7 @@ final class DomReconciler {
   /// failure or closure: the closing root has already released the created instances, and a native
   /// failure closes the root, whose teardown releases the committed tree and the acquisitions.
   Commit apply(ViewSnapshot<LiveBehavior> snapshot) {
-    disposalFailures.clear();
-    created.clear();
-    retiring.clear();
-    clearQueued();
+    // The previous commit drained every queue, or failed and closed the root.
     for (var instance : widgets) {
       requireOpen();
       var controller = instance.widget;
@@ -125,10 +122,8 @@ final class DomReconciler {
   /// content on the first commit. Acquired instances transfer to the committed tree here; a failure
   /// during first installation releases them and restores the original fallback nodes.
   void publish(Commit commit) {
-    if (!open.getAsBoolean()) {
-      abort();
-      throw new ClosedRoot();
-    }
+    // A root that closed after the last mutation of [#apply] already released its acquisitions.
+    requireOpen();
     if (mounted) {
       finishControls();
       requireOpen();
@@ -169,7 +164,6 @@ final class DomReconciler {
       dispose(instance);
     }
     report("Effect cleanup failed", disposalFailures);
-    disposalFailures.clear();
   }
 
   /// Applies browser-owned state once the tree and references are visible.
@@ -250,10 +244,9 @@ final class DomReconciler {
             && "radio".equals(ControlSemantics.inputType(tag.attributes())));
   }
 
+  /// Reports and clears `failures`, if any.
   private void report(String what, List<RuntimeException> failures) {
-    if (!failures.isEmpty()) {
-      Failures.reportAll(Failures.inRoot(what, hostId), failures);
-    }
+    Failures.reportAll(Failures.inRoot(what, hostId), failures);
   }
 
   /// Releases every listener and effect, closes open dialogs and popovers, then empties the owned

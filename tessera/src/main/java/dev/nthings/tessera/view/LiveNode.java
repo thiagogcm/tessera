@@ -5,9 +5,7 @@ import dev.nthings.tessera.core.ScopeDefinition;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.PortableNode;
-import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -26,10 +24,6 @@ public sealed interface LiveNode<M> {
   record Host<M>(TagElement host, List<LiveNode<M>> children, M payload) implements LiveNode<M> {
     public Host {
       children = List.copyOf(children);
-    }
-
-    public static void requireChildren(TagElement host) {
-      AuthoringAccess.tag(host).requireChildren();
     }
   }
 
@@ -62,9 +56,5 @@ public sealed interface LiveNode<M> {
 
   default LiveNode<M> key(String key) {
     return new Keyed<>(key, this);
-  }
-
-  static @Nullable SourceLocation captureSource() {
-    return SourceProvenance.capture();
   }
 }

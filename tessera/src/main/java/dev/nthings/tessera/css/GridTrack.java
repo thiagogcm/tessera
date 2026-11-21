@@ -9,7 +9,7 @@ public sealed interface GridTrack extends CssValue
         GridTracks.Keyword,
         GridTracks.MinMax,
         GridTracks.Repeat,
-        GridTracks.AutoRepeat {
+        GridTracks.AutoFit {
 
   /// `minmax(0, 1fr)`: an equal share that may shrink below its content.
   static GridTrack flexible() {

@@ -54,7 +54,6 @@ class TesseraTabs extends HTMLElement {
       Home: 0,
       End: enabled.length - 1,
     }[event.key];
-    if (next === undefined) return;
 
     event.preventDefault();
     const target = enabled[next];

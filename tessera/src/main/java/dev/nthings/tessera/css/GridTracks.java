@@ -54,17 +54,11 @@ final class GridTracks {
     }
   }
 
-  /// How many tracks an [AutoRepeat] creates.
-  enum AutoCount implements CssKeyword {
-    AUTO_FIT,
-    AUTO_FILL
-  }
-
-  /// `repeat(auto-fit | auto-fill, tracks)`.
-  record AutoRepeat(AutoCount count, List<GridTrack> tracks) implements GridTrack {
+  /// `repeat(auto-fit, tracks)`: as many repetitions as fit.
+  record AutoFit(List<GridTrack> tracks) implements GridTrack {
     @Override
     public String toCss() {
-      return "repeat(" + count.toCss() + ", " + TrackList.joined(tracks) + ")";
+      return "repeat(auto-fit, " + TrackList.joined(tracks) + ")";
     }
   }
 }

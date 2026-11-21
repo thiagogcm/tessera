@@ -20,9 +20,6 @@ final class StyleLedger {
   private final SequencedSet<String> unused = new LinkedHashSet<>();
 
   StyleLedger(int retained) {
-    if (retained < 0) {
-      throw new IllegalArgumentException("retained must not be negative");
-    }
     this.retained = retained;
   }
 

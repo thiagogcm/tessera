@@ -5,7 +5,6 @@ import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
-import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
@@ -24,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Lowers document placements into shared expansion. The static compiler controls when document
@@ -33,28 +31,9 @@ final class DocumentExpansion extends ViewExpansion<String> {
 
   private static final Map<BundledBehavior, PageScript> BUNDLED_SCRIPTS = new ConcurrentHashMap<>();
 
-  interface Assembly {
-    RuntimeException failureContext(Diagnostic diagnostic);
+  private final DocumentPass assembly;
 
-    ViewNode<String> defer(Supplier<ViewNode<String>> content, int priority);
-
-    ViewNode<String> late(Supplier<ViewNode<String>> content);
-
-    void contributeHead(DocumentNode content, Location placedBy);
-
-    void atDocumentEnd(
-        ViewKey<?> owner,
-        Function<DocumentContext, ? extends DocumentContent> section,
-        Location placedBy);
-
-    void contributeScript(PageScript script);
-
-    Map<String, String> mountAttributes(DocumentNode.Mount mount);
-  }
-
-  private final Assembly assembly;
-
-  DocumentExpansion(Assembly assembly, StyleSheet styles) {
+  DocumentExpansion(DocumentPass assembly, StyleSheet styles) {
     super(styles, ViewScope.ROOT);
     this.assembly = assembly;
   }

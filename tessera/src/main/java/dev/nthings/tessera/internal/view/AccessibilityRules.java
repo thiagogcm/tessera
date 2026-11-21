@@ -10,7 +10,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -98,8 +97,6 @@ final class AccessibilityRules {
           Role.TOOLTIP,
           Role.DOC_BACKLINK,
           Role.DOC_NOTEREF);
-
-  private static final Map<Role, Set<String>> SUPPORTED_ARIA = supportedAriaByRole();
 
   private static final Set<Role> NAMED_LANDMARKS =
       Set.of(Role.NAVIGATION, Role.COMPLEMENTARY, Role.SEARCH, Role.FORM, Role.REGION);
@@ -200,9 +197,9 @@ final class AccessibilityRules {
   private void checkDeclaredRole(Tag<?> tag, Role role, Context context) {
     var attrs = tag.attributes();
 
-    var supported = supportedAria(role);
+    var specific = specificAria(role);
     for (var name : attrs.keySet()) {
-      if (name.startsWith("aria-") && !supported.contains(name)) {
+      if (name.startsWith("aria-") && !GLOBAL_ARIA.contains(name) && !specific.contains(name)) {
         state.report(
             tag.location(),
             "aria-attribute-not-allowed",
@@ -331,20 +328,7 @@ final class AccessibilityRules {
     };
   }
 
-  private static Set<String> supportedAria(Role role) {
-    return Objects.requireNonNull(SUPPORTED_ARIA.get(role));
-  }
-
-  private static Map<Role, Set<String>> supportedAriaByRole() {
-    var byRole = new EnumMap<Role, Set<String>>(Role.class);
-    for (var role : Role.values()) {
-      var supported = new HashSet<>(GLOBAL_ARIA);
-      supported.addAll(specificAria(role));
-      byRole.put(role, Set.copyOf(supported));
-    }
-    return byRole;
-  }
-
+  /// The `aria-*` attributes `role` supports beyond `GLOBAL_ARIA`.
   private static Set<String> specificAria(Role role) {
     return switch (role) {
       case CHECKBOX, SWITCH -> Set.of("aria-checked", "aria-readonly", "aria-required");
@@ -508,14 +492,6 @@ final class AccessibilityRules {
     return declared == null ? 0 : Integer.parseInt(declared);
   }
 
-  private static int parseIntOr(String text, int fallback) {
-    try {
-      return Integer.parseInt(text.strip());
-    } catch (NumberFormatException invalid) {
-      return fallback;
-    }
-  }
-
   /// Comparable form of the author-supplied name: label text, or the text of the elements that
   /// label it; `null` when there is none.
   private @Nullable String nameKey(Tag<?> tag) {
@@ -642,8 +618,13 @@ final class AccessibilityRules {
     }
   }
 
+  /// The declared tab index, or `Integer.MIN_VALUE` when a generic `tabindex` is not an integer.
   private static int tabIndex(String declared) {
-    return parseIntOr(declared, Integer.MIN_VALUE);
+    try {
+      return Integer.parseInt(declared.strip());
+    } catch (NumberFormatException invalid) {
+      return Integer.MIN_VALUE;
+    }
   }
 
   private void checkLabelTarget(Tag<?> label) {

@@ -7,9 +7,10 @@ import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /// The state of one expansion that every backend keeps the same way, for one page or one attempted
 /// live render: [dev.nthings.tessera.core.ViewContext#state(ViewKey)] values and outline headings,
@@ -21,7 +22,8 @@ public final class ExpansionRegistry {
 
   private final Map<ViewKey<?>, Object> values = new HashMap<>();
   private final List<Heading> headings = new ArrayList<>();
-  private final Map<ElementRef, Boolean> headingTargets = new IdentityHashMap<>();
+  // ElementRef keeps identity equality, so a plain set tells targets apart by handle.
+  private final Set<ElementRef> headingTargets = new HashSet<>();
 
   public ExpansionRegistry() {}
 
@@ -30,7 +32,7 @@ public final class ExpansionRegistry {
   }
 
   public void registerHeading(OutlineHeading heading, Location placedBy) {
-    if (headingTargets.putIfAbsent(heading.target(), Boolean.TRUE) == null) {
+    if (headingTargets.add(heading.target())) {
       headings.add(new Heading(heading, placedBy));
     }
   }

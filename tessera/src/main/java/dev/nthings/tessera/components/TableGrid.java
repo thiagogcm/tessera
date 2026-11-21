@@ -239,27 +239,17 @@ public final class TableGrid {
 
   private record ColumnKey(int group, int column) {}
 
-  private boolean labels(Anchor header, Anchor target) {
+  /// Whether candidate `header` labels `target`. [#headers] collects candidates from the indexes,
+  /// which already hold only headers in `target`'s group (or a leading head group) that overlap its
+  /// columns or rows, so only the header's position before `target` remains to check.
+  private static boolean labels(Anchor header, Anchor target) {
     return switch (header.cell().kind()) {
-      case COLUMN_HEADER ->
-          (groups.get(header.group()).kind() == SectionKind.HEAD
-                  || header.group() == target.group())
-              && header.row() + header.rowSpan() <= target.row()
-              && overlaps(
-                  header.column(), header.columnSpan(), target.column(), target.columnSpan());
-      case ROW_HEADER ->
-          header.group() == target.group()
-              && header.column() + header.columnSpan() <= target.column()
-              && overlaps(header.row(), header.rowSpan(), target.row(), target.rowSpan());
+      case COLUMN_HEADER -> header.row() + header.rowSpan() <= target.row();
+      case ROW_HEADER -> header.column() + header.columnSpan() <= target.column();
       case SECTION_HEADER ->
-          header.group() == target.group()
-              && (target.cell().kind() == Kind.DATA || target.cell().kind() == Kind.ROW_HEADER);
+          target.cell().kind() == Kind.DATA || target.cell().kind() == Kind.ROW_HEADER;
       case DATA, CORNER_HEADER -> false;
     };
-  }
-
-  private static boolean overlaps(int start, int span, int otherStart, int otherSpan) {
-    return start < otherStart + otherSpan && otherStart < start + span;
   }
 
   /// Whether rows can become independent cards with one plain-text label per data column.

@@ -90,8 +90,9 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Underlines at `offset` from the baseline; color and thickness come from the cascade.
   default SELF textDecorationUnderline(CssLength offset) {
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_LINE, "underline");
-    StyleTarget.declarations(this).put(CssProperty.TEXT_UNDERLINE_OFFSET, offset);
+    StyleTarget.declarations(this)
+        .put(CssProperty.TEXT_DECORATION_LINE, "underline")
+        .put(CssProperty.TEXT_UNDERLINE_OFFSET, offset);
     return self();
   }
 
@@ -99,9 +100,10 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
   /// light or dark scheme), with `padding-inline: var(--space-1)` and `border-radius:
   /// var(--radius-sm)`.
   default SELF highlight(Tone tone) {
-    StyleTarget.declarations(this).put(CssProperty.BACKGROUND, tone.color().mixTransparent(24));
-    StyleTarget.declarations(this).put(CssProperty.PADDING_INLINE, Tokens.SPACE_1);
-    StyleTarget.declarations(this).put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
+    StyleTarget.declarations(this)
+        .put(CssProperty.BACKGROUND, tone.color().mixTransparent(24))
+        .put(CssProperty.PADDING_INLINE, Tokens.SPACE_1)
+        .put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
     return self();
   }
 
@@ -114,12 +116,13 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
   /// `text-decoration-skip-ink: auto`. [#textDecorationUnderline(CssLength)] sets only the offset,
   /// keeping the cascade's color and thickness.
   default SELF underline(UnderlineStyle lineStyle, CssColor color) {
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_LINE, "underline");
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_STYLE, lineStyle);
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_COLOR, color);
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_THICKNESS, CssLength.em(0.1));
-    StyleTarget.declarations(this).put(CssProperty.TEXT_UNDERLINE_OFFSET, CssLength.em(0.18));
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_SKIP_INK, "auto");
+    StyleTarget.declarations(this)
+        .put(CssProperty.TEXT_DECORATION_LINE, "underline")
+        .put(CssProperty.TEXT_DECORATION_STYLE, lineStyle)
+        .put(CssProperty.TEXT_DECORATION_COLOR, color)
+        .put(CssProperty.TEXT_DECORATION_THICKNESS, CssLength.em(0.1))
+        .put(CssProperty.TEXT_UNDERLINE_OFFSET, CssLength.em(0.18))
+        .put(CssProperty.TEXT_DECORATION_SKIP_INK, "auto");
     return self();
   }
 
@@ -130,10 +133,11 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
 
   /// A solid strikethrough in `color`, `0.09em` thick.
   default SELF strikethrough(CssColor color) {
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_LINE, "line-through");
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_STYLE, UnderlineStyle.SOLID);
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_COLOR, color);
-    StyleTarget.declarations(this).put(CssProperty.TEXT_DECORATION_THICKNESS, CssLength.em(0.09));
+    StyleTarget.declarations(this)
+        .put(CssProperty.TEXT_DECORATION_LINE, "line-through")
+        .put(CssProperty.TEXT_DECORATION_STYLE, UnderlineStyle.SOLID)
+        .put(CssProperty.TEXT_DECORATION_COLOR, color)
+        .put(CssProperty.TEXT_DECORATION_THICKNESS, CssLength.em(0.09));
     return self();
   }
 }

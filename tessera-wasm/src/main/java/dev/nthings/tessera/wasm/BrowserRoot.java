@@ -63,7 +63,6 @@ public final class BrowserRoot implements AutoCloseable {
   private Set<String> committedIds = Set.of();
 
   private final List<Runnable> afterRender = new ArrayList<>();
-  private final Theme theme;
   private final StyleSink.Root styles;
   private final String hostId;
   private final Scheduling scheduling;
@@ -75,7 +74,6 @@ public final class BrowserRoot implements AutoCloseable {
 
   private BrowserRoot(String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
     this.hostId = hostId;
-    this.theme = theme;
     this.styles = StyleSink.shared().root(theme);
     this.scheduling = scheduling;
     this.hostElement = Dom.host(hostId);
@@ -108,7 +106,8 @@ public final class BrowserRoot implements AutoCloseable {
               + ". Close that root first, or mount on a separate host outside every root.");
     }
     Dom.attribute(root.hostElement, StyleSheet.ROOT_ATTRIBUTE, "");
-    Dom.attribute(root.hostElement, StyleSheet.THEME_ATTRIBUTE, StyleSheet.themeKey(root.theme));
+    Dom.attribute(
+        root.hostElement, StyleSheet.THEME_ATTRIBUTE, StyleSheet.themeKey(options.theme()));
     root.styles.mount();
     root.turn();
     if (root.dirty && !root.closed) {

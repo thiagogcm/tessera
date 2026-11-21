@@ -351,11 +351,12 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
   /// `on(container.atLeast(rem(36)), ...)`. Containment changes layout (an inline-size container
   /// does not size to its content), so declare it only where queries need it.
   default SELF container(Container container) {
+    var style = StyleTarget.declarations(this);
     var name = container.ident();
     if (name != null) {
-      StyleTarget.declarations(this).put(CssProperty.CONTAINER_NAME, name);
+      style.put(CssProperty.CONTAINER_NAME, name);
     }
-    StyleTarget.declarations(this).put(CssProperty.CONTAINER_TYPE, container.typeList());
+    style.put(CssProperty.CONTAINER_TYPE, container.typeList());
     return self();
   }
 

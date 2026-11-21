@@ -368,12 +368,10 @@ public final class TagElement
   /// generated as `<tag>-<n>`. Two named refs asking for different ids report
   /// `conflicting-element-id`. Binding the same ref twice on one element has no further effect.
   public TagElement id(ElementRef elementRef) {
-    for (var bound : data.refs) {
-      if (bound == elementRef) {
-        return this;
-      }
+    // ElementRef keeps identity equality, so contains matches the same handle only.
+    if (!data.refs.contains(elementRef)) {
+      data.refs.add(elementRef);
     }
-    data.refs.add(elementRef);
     return this;
   }
 

@@ -1,6 +1,7 @@
 package dev.nthings.tessera.wasm;
 
 import dev.nthings.tessera.core.ScopeDefinition;
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.view.LiveNode;
 
 /// Styled scope whose host carries live behavior, such as event handlers on the scope's own
@@ -15,6 +16,6 @@ public interface LiveScope extends ScopeDefinition, LiveContent {
   default LiveTree intoLiveTree() {
     return new LivePlacement(
         new LiveNode.ScopePlacement<>(
-            this, LiveNode.captureSource(), context -> expand((LiveContext) context).capture()));
+            this, SourceProvenance.capture(), context -> expand((LiveContext) context).capture()));
   }
 }

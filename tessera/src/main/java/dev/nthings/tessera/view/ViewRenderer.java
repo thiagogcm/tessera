@@ -50,8 +50,9 @@ public final class ViewRenderer {
     var nodes = expansion.link(expansion.expandRoot(content));
     ViewValidation.check(
         nodes, List.of(), expansion.ids(), expansion.ambiguousIds(), expansion.reporter());
-    if (!expansion.diagnostics().isEmpty()) {
-      throw new ViewException(expansion.diagnostics());
+    var diagnostics = expansion.diagnostics();
+    if (!diagnostics.isEmpty()) {
+      throw new ViewException(diagnostics);
     }
     return new ViewSnapshot<>(
         nodes, styles.embeddedRules(), expansion.references(), expansion.ids());

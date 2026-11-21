@@ -41,13 +41,14 @@ final class PreparedPage {
       List<Asset> bundleAssets,
       @Nullable File bundleBootstrap) {
     this.document = document;
-    // Taken over as is: the compilation that produced it is finished and discarded.
+    // Taken over as is: the compilation that produced them is finished and discarded, and its ids
+    // and transitions are already read-only views.
     this.styles = styles;
     this.bodyNodes = bodyNodes;
     this.headNodes = headNodes;
-    this.registeredDomIds = Collections.unmodifiableSet(registeredDomIds);
+    this.registeredDomIds = registeredDomIds;
     this.outgoingLinks = Collections.unmodifiableMap(outgoingLinks);
-    this.transitionLocations = Collections.unmodifiableMap(transitionLocations);
+    this.transitionLocations = transitionLocations;
     this.headings = headings;
     this.behaviors = behaviors;
     this.bundleAssets = bundleAssets;

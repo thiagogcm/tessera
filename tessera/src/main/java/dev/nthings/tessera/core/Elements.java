@@ -13,11 +13,7 @@ public final class Elements {
   private Elements() {}
 
   private static TagElement with(TagElement tag, IntoElement first, IntoElement... rest) {
-    tag.child(first);
-    for (var child : rest) {
-      tag.child(child);
-    }
-    return tag;
+    return tag.child(first).children(rest);
   }
 
   /// Creates an element for any tag, including those without a factory here, such as
@@ -42,12 +38,7 @@ public final class Elements {
 
   /// Creates a [FragmentElement] containing `first` and `rest` in order.
   public static FragmentElement fragment(IntoElement first, IntoElement... rest) {
-    var fragment = new FragmentElement();
-    fragment.child(first);
-    for (var child : rest) {
-      fragment.child(child);
-    }
-    return fragment;
+    return new FragmentElement().child(first).children(rest);
   }
 
   public static TagElement div() {

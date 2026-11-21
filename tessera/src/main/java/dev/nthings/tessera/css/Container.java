@@ -102,9 +102,9 @@ public final class Container {
     return ident;
   }
 
-  /// The `container-type` value, such as `inline-size scroll-state`.
+  /// The `container-type` value, such as `inline-size scroll-state`, in [Type] order.
   String typeList() {
-    return types.stream().sorted().map(Type::toCss).collect(Collectors.joining(" "));
+    return types.stream().map(Type::toCss).collect(Collectors.joining(" "));
   }
 
   @Override

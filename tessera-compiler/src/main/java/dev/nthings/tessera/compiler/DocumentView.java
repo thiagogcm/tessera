@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.function.Function;
 
 /// The [DocumentContext] of a document callback: the portable operations of its expansion context
-/// plus the document operations of the [DocumentExpansion.Assembly]. Portable callbacks nested in
-/// the result receive the portable context, not this one.
+/// plus the document operations of its [DocumentPass]. Portable callbacks nested in the result
+/// receive the portable context, not this one.
 final class DocumentView implements DocumentContext {
 
   private final ExpansionContext context;
-  private final DocumentExpansion.Assembly backend;
+  private final DocumentPass backend;
 
-  DocumentView(ExpansionContext context, DocumentExpansion.Assembly backend) {
+  DocumentView(ExpansionContext context, DocumentPass backend) {
     this.context = context;
     this.backend = backend;
   }

@@ -155,7 +155,8 @@ public final class Card extends BuiltinScope<Card> {
 
   /// Container name for the card's width. [CardGrid] resets it, since layout containment makes
   /// `subgrid` compute to `none`.
-  static final Container CONTAINER = Container.named("tessera-card", Container.Type.INLINE_SIZE);
+  private static final Container CONTAINER =
+      Container.named("tessera-card", Container.Type.INLINE_SIZE);
 
   @Override
   void configureScope(ScopeStyle scope) {

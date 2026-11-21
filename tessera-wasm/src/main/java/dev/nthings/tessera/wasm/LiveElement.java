@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.foundation.FluentBuilder;
+import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.view.LiveNode;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,7 +183,7 @@ public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
   }
 
   private LiveElement append(LiveNode<LiveBehavior> child) {
-    LiveNode.Host.requireChildren(host);
+    AuthoringAccess.tag(host).requireChildren();
     children.add(child);
     return this;
   }

@@ -35,6 +35,7 @@ public final class ClassNames {
 
   /// The kebab-cased simple name of `type`, the default scopeName().
   public static String defaultScopeName(Class<?> type) {
-    return isUnstable(type) ? "" : NAMES.get(type).kebabName();
+    var names = NAMES.get(type);
+    return names.unstable() ? "" : names.kebabName();
   }
 }

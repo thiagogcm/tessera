@@ -9,8 +9,6 @@ import org.jspecify.annotations.Nullable;
 record EventListener(String type, Flags flags, Consumer<Source> handler, @Nullable Kind observed) {
 
   record Flags(boolean capture, boolean passive, boolean once) {
-    static final Flags DEFAULT = new Flags(false, false, false);
-
     static Flags of(EventOption... options) {
       var capture = false;
       var passive = false;
@@ -26,12 +24,7 @@ record EventListener(String type, Flags flags, Consumer<Source> handler, @Nullab
     }
   }
 
-  public EventListener {
-    if (type.isBlank()) {
-      throw new IllegalArgumentException("An event type must not be blank");
-    }
-  }
-
+  /// Binds `handler` to `event`, whose name [EventType] has already checked is not blank.
   static <E extends BrowserEvent> EventListener of(
       EventType<E> event, EventOption[] options, Consumer<E> handler, @Nullable Kind observed) {
     return new EventListener(

@@ -176,9 +176,7 @@ public final class ViewValidation {
           "image-alt",
           "<img> element is missing a required 'alt' attribute",
           "Provide descriptive alt text, or mark the image as decorative with empty alt text and presentation semantics.");
-    }
-    if (alt != null
-        && alt.isEmpty()
+    } else if (alt.isEmpty()
         && !"presentation".equals(attrs.get("role"))
         && !"true".equals(attrs.get("aria-hidden"))) {
       reporter.report(
@@ -236,16 +234,16 @@ public final class ViewValidation {
     var attrs = tag.attributes();
     var registeredDomIds = state.registeredDomIds;
 
-    if ((tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A) && !declaresRole(tag)) {
-      if (!hasAccessibleLabel(tag)) {
-        state.report(
-            tag.location(),
-            "interactive-label",
-            "Interactive <"
-                + tag.tag().tagName()
-                + "> element must have text content or an aria-label / aria-labelledby / title attribute",
-            "Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.");
-      }
+    if ((tag.tag() == HtmlTag.BUTTON || tag.tag() == HtmlTag.A)
+        && !declaresRole(tag)
+        && !hasAccessibleLabel(tag)) {
+      state.report(
+          tag.location(),
+          "interactive-label",
+          "Interactive <"
+              + tag.tag().tagName()
+              + "> element must have text content or an aria-label / aria-labelledby / title attribute",
+          "Add visible label text, .ariaLabel(...), or .ariaLabelledBy(...) referencing a label.");
     }
 
     for (var urlAttribute : URL_ATTRIBUTES) {

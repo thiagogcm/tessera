@@ -1,8 +1,6 @@
 // Firefox lacks interest invokers: mirror `interestfor` so hint popovers open on hover and
 // focus and close when interest leaves.
 if (!("interestForElement" in HTMLElement.prototype)) {
-  const controller = new AbortController();
-  const { signal } = controller;
   let active = null;
 
   const targetFor = (trigger) => {
@@ -21,7 +19,7 @@ if (!("interestForElement" in HTMLElement.prototype)) {
     const trigger = event.target.closest?.("[interestfor]");
     const target = trigger && targetFor(trigger);
     if (!target) return;
-    if (active && active !== target) active.hidePopover?.();
+    if (active && active !== target) active.hidePopover();
     active = target;
     // The source makes the trigger the implicit anchor that positions the hint next to it.
     if (!target.matches(":popover-open")) target.showPopover({ source: trigger });
@@ -35,8 +33,8 @@ if (!("interestForElement" in HTMLElement.prototype)) {
     if (active === target) active = null;
   };
 
-  document.addEventListener("pointerover", show, { signal });
-  document.addEventListener("pointerout", hide, { signal });
-  document.addEventListener("focusin", show, { signal });
-  document.addEventListener("focusout", hide, { signal });
+  document.addEventListener("pointerover", show);
+  document.addEventListener("pointerout", hide);
+  document.addEventListener("focusin", show);
+  document.addEventListener("focusout", hide);
 }

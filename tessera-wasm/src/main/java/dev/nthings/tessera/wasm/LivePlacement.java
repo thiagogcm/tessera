@@ -1,5 +1,6 @@
 package dev.nthings.tessera.wasm;
 
+import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.view.LiveNode;
 import java.util.function.Function;
 
@@ -18,7 +19,7 @@ record LivePlacement(LiveNode<LiveBehavior> node) implements LiveTree {
     return new LivePlacement(
         new LiveNode.ComponentPlacement<>(
             type,
-            LiveNode.captureSource(),
+            SourceProvenance.capture(),
             context -> capture(expand.apply((LiveContext) context))));
   }
 }

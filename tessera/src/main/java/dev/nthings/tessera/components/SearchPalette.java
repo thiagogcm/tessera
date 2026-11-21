@@ -2,7 +2,6 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.button;
-import static dev.nthings.tessera.core.Elements.dialog;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.footer;
 import static dev.nthings.tessera.core.Elements.input;
@@ -162,28 +161,22 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
                 .flex()
                 .itemsCenter()
                 .gap(CssLength.rem(0.2))
-                .child(
-                    kbd()
-                        .px(CssLength.rem(0.35))
-                        .py(CssLength.rem(0.1))
-                        .rounded(Tokens.RADIUS_SM)
-                        .bg(Tokens.SURFACE_SUBTLE)
-                        .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                        .fontSize(Tokens.FONT_SIZE_XS)
-                        .fontWeight(600)
-                        .textColor(Tokens.TEXT_PRIMARY)
-                        .text("Alt"))
-                .child(
-                    kbd()
-                        .px(CssLength.rem(0.35))
-                        .py(CssLength.rem(0.1))
-                        .rounded(Tokens.RADIUS_SM)
-                        .bg(Tokens.SURFACE_SUBTLE)
-                        .border(Border.hairline(Tokens.BORDER_SUBTLE))
-                        .fontSize(Tokens.FONT_SIZE_XS)
-                        .fontWeight(600)
-                        .textColor(Tokens.TEXT_PRIMARY)
-                        .text("K")));
+                .child(keyCap("Alt"))
+                .child(keyCap("K")));
+  }
+
+  /// One key of the trigger's shortcut hint.
+  private static TagElement keyCap(String key) {
+    return kbd()
+        .px(CssLength.rem(0.35))
+        .py(CssLength.rem(0.1))
+        .rounded(Tokens.RADIUS_SM)
+        .bg(Tokens.SURFACE_SUBTLE)
+        .border(Border.hairline(Tokens.BORDER_SUBTLE))
+        .fontSize(Tokens.FONT_SIZE_XS)
+        .fontWeight(600)
+        .textColor(Tokens.TEXT_PRIMARY)
+        .text(key);
   }
 
   @Override
@@ -279,21 +272,9 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     var footerEl =
         footer()
             .attr("class", "palette-footer")
-            .child(
-                div()
-                    .attr("class", "palette-hint")
-                    .child(kbd().attr("class", "palette-hint-kbd").text("↑ ↓"))
-                    .child(span().text("navigate")))
-            .child(
-                div()
-                    .attr("class", "palette-hint")
-                    .child(kbd().attr("class", "palette-hint-kbd").text("↵"))
-                    .child(span().text("select")))
-            .child(
-                div()
-                    .attr("class", "palette-hint")
-                    .child(kbd().attr("class", "palette-hint-kbd").text("esc"))
-                    .child(span().text("close")));
+            .child(footerHint("↑ ↓", "navigate"))
+            .child(footerHint("↵", "select"))
+            .child(footerHint("esc", "close"));
 
     var root =
         Elements.dialog()
@@ -308,6 +289,14 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
       AuthoringAccess.tag(root).behavior = BundledBehavior.SEARCH;
     }
     return new SearchParts(root, input, empty, results);
+  }
+
+  /// One footer hint: `keys` followed by the `action` they perform.
+  private static TagElement footerHint(String keys, String action) {
+    return div()
+        .attr("class", "palette-hint")
+        .child(kbd().attr("class", "palette-hint-kbd").text(keys))
+        .child(span().text(action));
   }
 
   @Override

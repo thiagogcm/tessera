@@ -6,7 +6,7 @@ See [Architecture](architecture.md) for package boundaries and [Sites](sites.md)
 
 ## Prepare a page
 
-`PageCompiler` orchestrates document expansion, reference linking, validation, and metadata snapshotting:
+`PageCompiler` orchestrates document expansion, reference linking, validation (including the `wasm-mount-placement` check), and metadata snapshotting:
 
 ```mermaid
 sequenceDiagram
@@ -37,7 +37,7 @@ sequenceDiagram
 | Collaborator | Responsibility |
 | --- | --- |
 | `DocumentPass` | Orders deferred priorities, resolves late callbacks, expands document-end sections and head contributions, and resolves outline heading refs |
-| `DocumentExpansion` | Lowers `DocumentNode` placements, checks `wasm-mount-placement`, registers `BundlePublication` entries, and contributes bundled widget scripts |
+| `DocumentExpansion` | Lowers `DocumentNode` placements, registers `BundlePublication` entries, and contributes bundled widget scripts |
 | `ViewExpansion` | Expands components and scopes, enforces one element host per scope, allocates `ViewScope` identities, collects styles and outline headings, and preserves origins |
 | `ViewState` | Tracks reference bindings, DOM IDs, scope counters, transition keys, and expansion diagnostics |
 | `ReferenceLinker` | Resolves `ElementRef` targets and late slots, validates sibling keys, lowers form defaults (`ControlLowerer`), preserves transparent groups, and places tooltip companions |

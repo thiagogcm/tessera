@@ -48,8 +48,8 @@ public final class Theme {
     var existing = entries.get(token.name());
     if (existing != null && existing.token().getClass() != token.getClass()) {
       throw new IllegalArgumentException(
-          "Token '"
-              + CssIdent.custom(token.name()).toCss()
+          "Token '--"
+              + token.name()
               + "' is already a "
               + existing.token().getClass().getSimpleName()
               + " token");
@@ -59,10 +59,11 @@ public final class Theme {
     return new Theme(next);
   }
 
-  /// The `--name:value` declarations, in theme order.
+  /// The `--name:value` declarations, in theme order. Token names were validated when the tokens
+  /// were constructed.
   List<String> declarations() {
     return entries.values().stream()
-        .map(entry -> CssIdent.custom(entry.token().name()).toCss() + ":" + entry.value().toCss())
+        .map(entry -> "--" + entry.token().name() + ":" + entry.value().toCss())
         .toList();
   }
 

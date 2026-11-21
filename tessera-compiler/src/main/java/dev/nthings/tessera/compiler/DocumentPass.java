@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 /// The document backend of the shared [ViewExpansion]: orders one page's expansion (body, late
 /// elements, end sections, head), links it, flattens its groups, and checks the document-only
 /// element contracts.
-final class DocumentPass implements DocumentExpansion.Assembly {
+final class DocumentPass {
   private final String pageTitle;
   private final DocumentState contributions = new DocumentState();
   private final DocumentExpansion expansion;
@@ -64,19 +64,18 @@ final class DocumentPass implements DocumentExpansion.Assembly {
     resolveLate();
     // Sections and head content may register further sections and head content in either
     // direction, so both lists are read by index until neither grows.
+    var sections = contributions.documentEndSections();
+    var headElements = contributions.headElements();
     var heads = new ArrayList<ViewNode<String>>();
     var sectionCount = 0;
     var headCount = 0;
-    List<Contribution<Function<DocumentContext, ? extends DocumentContent>>> sections;
-    while (sectionCount < (sections = contributions.documentEndSections()).size()
-        || headCount < contributions.headElements().size()) {
+    while (sectionCount < sections.size() || headCount < headElements.size()) {
       for (; sectionCount < sections.size(); sectionCount++) {
         var section = sections.get(sectionCount);
-        defer(() -> expand(section, "Document end", section.content()), Integer.MAX_VALUE);
-        sections = contributions.documentEndSections();
+        defer(() -> expandSection(section), Integer.MAX_VALUE);
       }
-      for (; headCount < contributions.headElements().size(); headCount++) {
-        var head = contributions.headElements().get(headCount);
+      for (; headCount < headElements.size(); headCount++) {
+        var head = headElements.get(headCount);
         heads.add(expansion.expandDocument(head.placedBy(), head.content()));
         resolveLate();
       }
@@ -115,12 +114,10 @@ final class DocumentPass implements DocumentExpansion.Assembly {
     return headings;
   }
 
-  /// Expands a contribution in its registering component context, then its late elements.
-  private ViewNode<String> expand(
-      Contribution<?> contribution,
-      String phase,
-      Function<DocumentContext, ? extends DocumentContent> content) {
-    var node = expansion.expandDocument(contribution.placedBy(), phase, content);
+  /// Expands an end-of-page section in its registering component context, then its late elements.
+  private ViewNode<String> expandSection(
+      Contribution<Function<DocumentContext, ? extends DocumentContent>> section) {
+    var node = expansion.expandDocument(section.placedBy(), "Document end", section.content());
     resolveLate();
     return node;
   }
@@ -131,41 +128,35 @@ final class DocumentPass implements DocumentExpansion.Assembly {
     }
   }
 
-  @Override
-  public RuntimeException failureContext(Diagnostic diagnostic) {
+  RuntimeException failureContext(Diagnostic diagnostic) {
     return new CompilationException(List.of(CompilationState.atPage(diagnostic, pageTitle)));
   }
 
-  @Override
-  public ViewNode<String> defer(Supplier<ViewNode<String>> content, int priority) {
+  ViewNode<String> defer(Supplier<ViewNode<String>> content, int priority) {
     // Expanded first, so deferred elements nested in it are queued before it.
     var node = content.get();
     deferred.add(new Deferred(priority, sequence++, node));
     return new ViewNode.Empty<>();
   }
 
-  @Override
-  public ViewNode<String> late(Supplier<ViewNode<String>> content) {
+  ViewNode<String> late(Supplier<ViewNode<String>> content) {
     var slot = new ViewNode.Slot<String>();
     pending.add(() -> slot.fill(content.get()));
     return slot;
   }
 
-  @Override
-  public void contributeHead(DocumentNode content, Location placedBy) {
+  void contributeHead(DocumentNode content, Location placedBy) {
     contributions.contributeHead(content, placedBy);
   }
 
-  @Override
-  public void atDocumentEnd(
+  void atDocumentEnd(
       ViewKey<?> owner,
       Function<DocumentContext, ? extends DocumentContent> section,
       Location placedBy) {
     contributions.atDocumentEnd(owner, section, placedBy);
   }
 
-  @Override
-  public Map<String, String> mountAttributes(DocumentNode.Mount mount) {
+  Map<String, String> mountAttributes(DocumentNode.Mount mount) {
     var entry = bundles.entry(mount.bundle());
     contributions.contributeBundle(bundles.bootstrap(), entry);
     var attributes = new LinkedHashMap<String, String>();
@@ -178,8 +169,7 @@ final class DocumentPass implements DocumentExpansion.Assembly {
     return attributes;
   }
 
-  @Override
-  public void contributeScript(PageScript script) {
+  void contributeScript(PageScript script) {
     contributions.contributeScript(script);
   }
 }

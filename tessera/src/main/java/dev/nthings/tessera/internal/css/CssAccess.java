@@ -27,19 +27,12 @@ public abstract class CssAccess {
     }
   }
 
+  /// The conditional rules of one element style. The CSS package builds it from lists it already
+  /// made immutable.
   public record ElementRules(
-      @Nullable Rule interactive, List<Rule> containers, List<Keyframes> keyframes) {
-    public ElementRules {
-      containers = List.copyOf(containers);
-      keyframes = List.copyOf(keyframes);
-    }
-  }
+      @Nullable Rule interactive, List<Rule> containers, List<Keyframes> keyframes) {}
 
-  public record ScopeRules(String css, List<Keyframes> keyframes) {
-    public ScopeRules {
-      keyframes = List.copyOf(keyframes);
-    }
-  }
+  public record ScopeRules(String css, List<Keyframes> keyframes) {}
 
   public abstract @Nullable String utilityKey(Declarations style);
 

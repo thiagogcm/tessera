@@ -35,7 +35,7 @@ Modules are deduplicated once per page and packaged according to the page's [out
 | `Dropdown` with command items | `tessera-menu.js` (`<tessera-menu>`) | Return focus to the menu button after a dialog opened from the menu closes |
 | Elements with `interestTooltip` | `interest-tooltip.js` | Show and anchor tooltips on hover and focus where native interest invokers are absent |
 
-All bundled listeners attach with an `AbortSignal` and clean up automatically when their host disconnects. Native `<dialog>` behavior handles opening, focus trapping, and dismissal.
+Host-bound modules (tabs, menu, and search) attach their listeners with an `AbortSignal` and clean up when their host disconnects. The tooltip module listens on the document for the page's lifetime. Native `<dialog>` behavior handles opening, focus trapping, and dismissal.
 
 ## Verification boundary
 

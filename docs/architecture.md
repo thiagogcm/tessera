@@ -113,7 +113,7 @@ Widgets that number, collect, or preload across a page (`Footnote`, `Footnotes`,
 
 ## Stylesheet assembly
 
-`Styled` composes package-private property traits over `Declarations`, which enforces shorthand/longhand replacement and retains conditional groups, `@starting-style` rules, and referenced `Keyframes`. The `css` package keeps serialization package-private and exposes rule collection to `internal.css.StyleSheet` via `CssAccess`.
+`Styled` composes package-private property traits over `Declarations`, which enforces shorthand/longhand replacement and retains conditional groups, `@starting-style` rules, and referenced `Keyframes`. The `css` package keeps serialization package-private and exposes rule collection to `internal.css.StyleSheet` via `CssAccess`. Utility, conditional, container, and scope rules are named by structural hashes of their declarations, and a stylesheet serializes a rule only the first time it registers that name.
 
 Both static documents and mounted browser roots emit from the same `StyleSheet` rules in this cascade order:
 

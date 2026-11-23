@@ -16,6 +16,15 @@ final class Easings {
     EASE_IN_OUT
   }
 
+  /// A `linear(...)` function through precomputed stops, such as a compiled [Spring]. `css` is the
+  /// whole function, which the compiler has already formatted.
+  record LinearStops(String css) implements Easing {
+    @Override
+    public String toCss() {
+      return css;
+    }
+  }
+
   /// `cubic-bezier(x1, y1, x2, y2)`.
   record CubicBezier(double x1, double y1, double x2, double y2) implements Easing {
     CubicBezier {

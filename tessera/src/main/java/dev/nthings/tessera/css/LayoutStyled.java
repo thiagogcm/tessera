@@ -340,6 +340,24 @@ interface LayoutStyled<SELF extends LayoutStyled<SELF>> extends StyleTarget<SELF
     return self();
   }
 
+  /// Lets the browser skip laying out and painting this element's contents while they are far from
+  /// the viewport (`content-visibility: auto`), so long documents, lists and tables render only
+  /// what is near the screen. Until the element first renders it takes `intrinsicBlockSize` as its
+  /// block size, and afterwards the size it last rendered at (`contain-intrinsic-block-size: auto
+  /// <length>`), so the scrollbar stays steady; estimate the typical rendered size.
+  ///
+  /// Skipped contents stay in the accessibility tree, the tab order and find-in-page, and render as
+  /// soon as they are focused, found or scrolled near. The element contains its layout, style and
+  /// paint: it clips what overflows it, such as shadows, and becomes the containing block of
+  /// positioned descendants. Its inline size comes from its container, so use it on block-level
+  /// sections stacked in the block direction rather than on shrink-to-fit items.
+  default SELF contentVisibilityAuto(CssLength intrinsicBlockSize) {
+    StyleTarget.declarations(this)
+        .put(CssProperty.CONTENT_VISIBILITY, "auto")
+        .put(CssProperty.CONTAIN_INTRINSIC_BLOCK_SIZE, "auto " + intrinsicBlockSize.toCss());
+    return self();
+  }
+
   /// `object-fit`, for images and other replaced content.
   default SELF objectFit(ObjectFit fit) {
     StyleTarget.declarations(this).put(CssProperty.OBJECT_FIT, fit);

@@ -18,7 +18,7 @@ Where an enhancement is not yet available in an engine, output degrades to usabl
 | Scroll-triggered animations (`animation-trigger`) | Reveal-once tiles render immediately without entry motion |
 | Interest-invoker tooltips | Bundled tooltip script shows and anchors tooltips on hover and focus |
 
-At the Playwright browser builds pinned in [pom.xml](../pom.xml), Firefox lacks the first six features above, and both Chromium and Firefox lack native interest invokers. Scroll-driven animations, `field-sizing`, `sibling-index()`, anchor positioning, `@starting-style`, and invoker commands work in both engines.
+At the Playwright browser builds pinned in [pom.xml](../pom.xml), Firefox lacks the first six features above, and both Chromium and Firefox lack native interest invokers. Scroll-driven animations, `field-sizing`, `sibling-index()`, anchor positioning, `@starting-style`, invoker commands, `linear()` easings (compiled springs), and `content-visibility: auto` work in both engines.
 
 Verify pages that rely on progressive enhancements in both Chromium and Firefox using the [browser verification suite](development.md#browser-verification).
 

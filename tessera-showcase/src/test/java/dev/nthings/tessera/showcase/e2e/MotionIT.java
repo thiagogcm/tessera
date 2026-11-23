@@ -8,6 +8,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ReducedMotion;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 
 @DisplayName("Motion")
@@ -62,6 +63,13 @@ class MotionIT {
     session.role(AriaRole.SWITCH, "Weekly digest").click();
     assertStill(page, "flipping a switch");
 
+    session.open("/motion/");
+    var spring = session.text("Bouncy spring");
+    spring.scrollIntoViewIfNeeded();
+    spring.hover();
+    assertStill(page, "hovering a spring tile");
+    assertThat(translate(spring)).isEqualTo("0px -12px");
+
     session.open("/docs/");
     page.locator("summary").filter(new Locator.FilterOptions().setHasText("On this page")).click();
     assertStill(page, "collapsing the table of contents");
@@ -96,6 +104,36 @@ class MotionIT {
   }
 
   @BrowserTest
+  @DisplayName("hovering a spring tile moves it along the compiled linear() curve")
+  void springTileFollowsItsCurve(Session session) {
+    var page = session.open("/motion/");
+    var tile = session.text("Snappy spring");
+    tile.scrollIntoViewIfNeeded();
+
+    tile.hover();
+
+    var timing =
+        (Map<?, ?>)
+            tile.evaluate(
+                """
+                el => {
+                  const [transition] = el.getAnimations();
+                  const timing = transition.effect.getTiming();
+                  return {
+                    property: transition.transitionProperty,
+                    easing: timing.easing,
+                    duration: timing.duration,
+                  };
+                }
+                """);
+    assertThat(timing.get("property")).isEqualTo("translate");
+    assertThat(String.valueOf(timing.get("easing"))).startsWith("linear(0");
+    assertThat(Session.number(timing.get("duration"))).isEqualTo(697);
+    page.waitForFunction("el => el.getAnimations().length === 0", tile.elementHandle());
+    assertThat(translate(tile)).isEqualTo("0px -12px");
+  }
+
+  @BrowserTest
   @DisplayName("the reading progress bar fills from the start of the line")
   void progressBarFillsFromTheStart(Session session) {
     var page = session.open("/docs/");
@@ -119,6 +157,10 @@ class MotionIT {
 
   private static List<Locator> tiles(Session session) {
     return TILES.stream().flatMap(label -> session.text(label).all().stream()).toList();
+  }
+
+  private static String translate(Locator element) {
+    return String.valueOf(element.evaluate("el => getComputedStyle(el).translate"));
   }
 
   private static double opacity(Locator element) {

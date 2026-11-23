@@ -18,7 +18,7 @@ var site = Compiler.forSite().withTheme(theme).compile(siteDefinition);
 var page = Compiler.forPage().withTheme(theme).compile(document);
 ```
 
-Each token accepts only values from its own category: color, length, duration, font family, or number. Because tokens are valid values of their own category, one token can alias another (such as `CONTROL_FG` referring to `ACCENT_TEXT`). Define application tokens with category records, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`, then register them with `theme.with(brand, value)`.
+Each token accepts only values from its own category: color, length, duration, easing, font family, or number. Because tokens are valid values of their own category, one token can alias another (such as `CONTROL_FG` referring to `ACCENT_TEXT`). Define application tokens with category records, such as `new DesignToken.Color("brand", CssColor.oklch(60, 0.2, 300))`, then register them with `theme.with(brand, value)`.
 
 Token names accept `[A-Za-z0-9_-]` and cannot start with `-`. Invalid names throw immediately rather than being rewritten.
 
@@ -66,6 +66,7 @@ Elements.div()
 | --- | --- |
 | Dimensions and math | `CssLength`: `plus`, `minus`, `times`, `dividedBy`, `min`, `max`, `anchor` |
 | Durations | `CssDuration.ms(double)` and `CssDuration.of(java.time.Duration)` |
+| Easings | `Easing.ease()`, `Easing.cubicBezier(...)`, and `Spring.easing()` for a compiled `linear()` curve |
 | Colors | `CssColor`: `oklch`, `srgb`, `parseHex`, `mix`, `mixTransparent`, `sameHue`, `lightDark`, `contrast` |
 | Shadows | `Shadow.drop(...)`, `Shadow.inset(...)`; `offsetX(...)` adjusts a layer |
 | Keyword properties | Enums such as `Overflow.AUTO`, `TextWrap.BALANCE`, `Cursor.POINTER`, `Appearance.NONE`, `Resize.VERTICAL` |
@@ -86,7 +87,7 @@ Later writes replace earlier declarations for the same property. A shorthand cle
 | `rowGap(...).gap(...)` | Gap shorthand only                |
 | `gap(...).rowGap(...)` | Gap shorthand and row gap         |
 
-The same rule applies to borders and merged `Declarations`. Immutable value types (`Theme`, `CssLength`, `Transition`, `Animation`) carry `@CheckReturnValue`, so always retain their returned values.
+The same rule applies to borders and merged `Declarations`. Immutable value types (`Theme`, `CssLength`, `Transition`, `Animation`, `Spring`) carry `@CheckReturnValue`, so always retain their returned values.
 
 ## Share rules and flex layouts
 
@@ -159,7 +160,48 @@ Size queries support `atLeast(length)` and `below(length)`. A `SCROLL_STATE` con
 
 ## Add transitions and animations
 
-`Transition.controlFeedback()`, `Transition.overlayEntry()`, and `Transition.disclosure()` provide coordinated duration, easing, and property sets. For spatial movement, place transitions inside `on(Media.MOTION_SAFE, ...)` and keep the resting visible state outside the condition.
+`Transition.controlFeedback()`, `Transition.overlayEntry()`, and `Transition.disclosure()` provide coordinated duration, easing, and property sets. For spatial movement, build the transition with `whenMotionSafe()` (or write it inside `on(Media.MOTION_SAFE, ...)`) and keep the resting visible state outside the condition. A motion-safe rule written inside another `MOTION_SAFE` rule joins it rather than nesting a second `@media` block.
+
+### Use spring transitions
+
+A `Spring` describes motion by feel: a perceptual duration and a bounce between `-1` and `1`. Tessera solves the spring in closed form when you create it and compiles it to a CSS `linear()` easing, so the browser plays the motion natively without script.
+
+```java
+var lift = Transition.spring(Spring.SNAPPY, Animatable.TRANSLATE);
+
+Elements.div()
+    .transition(Transition.of(CssDuration.ms(150), Easing.ease(), Animatable.OPACITY))
+    .transition(lift)
+    .on(State.HOVER, s -> s.translate(Translation.y(CssLength.rem(-0.75))));
+```
+
+| Bounce | Motion | Presets (500ms) |
+| --- | --- | --- |
+| `0` | Fastest arrival without overshoot | `Spring.SMOOTH` |
+| `0` to `1` | Overshoots, then settles in shrinking oscillations | `Spring.SNAPPY` (`0.15`), `Spring.BOUNCY` (`0.3`) |
+| `-1` to `0` | Approaches more slowly, never overshooting | `Spring.of(duration, -0.5)` |
+
+`Transition.spring(...)` runs over the spring's `settlingDuration()`, the whole milliseconds until it stays within 0.1% of its end value, so it lasts longer than the perceptual duration. The transition is always motion-safe: with reduced motion the properties change at once, or follow a plain transition written on the same style, such as the opacity fade above. A bouncy spring overshoots, so it suits position, size, and transforms; opacity and colors clamp at the ends of their range.
+
+The compiled curve stays within 0.002 of the exact spring and is computed with `StrictMath`, so static pages and browser roots emit byte-identical CSS. A typical spring compiles to about 20 stops; higher bounces oscillate longer and compile to longer curves. Each `Spring` compiles once when created, so keep springs in constants.
+
+To emit a spring's curve once in `@layer theme` instead of in every rule that uses it, store its easing and duration in tokens and register them in the theme:
+
+```java
+var settle = Spring.of(Duration.ofMillis(450), 0.2);
+var easeSettle = new DesignToken.Easing("ease-settle", settle.easing());
+var settleDuration = new DesignToken.Duration("settle-duration", settle.settlingDuration());
+var theme =
+    Theme.defaults()
+        .with(easeSettle, settle.easing())
+        .with(settleDuration, settle.settlingDuration());
+
+var slide = Transition.of(settleDuration, easeSettle, Animatable.TRANSLATE).whenMotionSafe();
+```
+
+Pass a spring's `settlingDuration()` and `easing()` to `Animation.of(...)` to play keyframes along it.
+
+### Play keyframe animations
 
 `Animation` registers its `Keyframes` automatically and runs only when the user does not prefer reduced motion:
 
@@ -183,3 +225,15 @@ Elements.div().animation(Animation.enterViewport(Keyframes.FADE_UP));
 | Built-in keyframe presets | `Keyframes.FADE_IN`, `FADE_UP`, `SCALE_IN`, `SLIDE_INLINE`, `FADE_OUT` |
 
 For values that change on every frame in a browser root, use [`live(...)`](browser-rendering.md#animate-values-without-new-rules) so CSS rules stay bounded. Check engine availability for scroll-state and scroll-triggered features in [Browser support](browser-support.md#platform-features).
+
+## Skip rendering far-off content
+
+Long documents, lists, and tables can let the browser skip layout and paint for content far from the viewport. Call `contentVisibilityAuto(intrinsicBlockSize)` on each block-level section:
+
+```java
+Elements.li().contentVisibilityAuto(CssLength.rem(3)).children(title, summary);
+```
+
+It emits `content-visibility: auto` with `contain-intrinsic-block-size: auto <length>`. Until a section first renders it reserves the estimated block size, and afterwards the browser remembers the size it last rendered at, so the scrollbar stays steady. Skipped content stays in the accessibility tree, the tab order, and find-in-page, and renders as soon as it is focused, found, or scrolled near.
+
+The section contains its layout, style, and paint: it clips overflowing content such as shadows, and it becomes the containing block of positioned descendants. Its inline size comes from its container, so apply it to sections stacked in the block direction rather than to shrink-to-fit items.

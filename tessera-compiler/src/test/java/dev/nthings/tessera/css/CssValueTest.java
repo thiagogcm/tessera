@@ -66,6 +66,10 @@ class CssValueTest {
                 CssContent.text("Slide "),
                 CssContent.counter(Counter.named("item"))),
             "\"\" / \"Slide \" counter(item)"),
+        argumentSet(
+            "easing token",
+            new DesignToken.Easing("ease-settle", Easing.ease()),
+            "var(--ease-settle)"),
         argumentSet("opaque sRGB", CssColor.srgb(0x1d4ed8), "#1d4ed8"),
         argumentSet("sRGB with full alpha", CssColor.srgb(0x1d4ed8, 1), "#1d4ed8"),
         argumentSet("sRGB with alpha", CssColor.srgb(0x1d4ed8, 0.5), "rgb(29 78 216 / 0.5)"),
@@ -102,6 +106,15 @@ class CssValueTest {
   }
 
   @Test
+  @DisplayName("content-visibility: auto reserves an intrinsic block size the browser remembers")
+  void contentVisibilityAutoReservesSize() {
+    var page = renderMain(div().contentVisibilityAuto(CssLength.rem(20)).text("Section"));
+
+    assertThat(page.ruleOf(page.element("main > div"), "u-"))
+        .isEqualTo("content-visibility:auto;contain-intrinsic-block-size:auto 20rem");
+  }
+
+  @Test
   @DisplayName("names are validated, not sanitized, and keywords are refused")
   void identifiersAreValidated() {
     for (var name : List.of("1st", "has space", "--dashed", "None", "")) {
@@ -110,6 +123,8 @@ class CssValueTest {
     for (var name : List.of("has space", "--dashed", "")) {
       assertThatIllegalArgumentException()
           .isThrownBy(() -> new DesignToken.Length(name, CssLength.rem(1)));
+      assertThatIllegalArgumentException()
+          .isThrownBy(() -> new DesignToken.Easing(name, Easing.ease()));
     }
     assertThatIllegalArgumentException()
         .isThrownBy(() -> Container.named("inherit", Container.Type.INLINE_SIZE));

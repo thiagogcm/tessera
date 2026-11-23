@@ -41,6 +41,35 @@ class DataIT {
   }
 
   @BrowserTest
+  @DisplayName("far-off list entries skip rendering until scrolled near, at their reserved size")
+  void longListSkipsFarOffEntries(Session session) {
+    var page = session.open("/data/");
+    var title = session.text("Release 1.1");
+    var entry = title.locator("xpath=..");
+    var text = entry.locator("p");
+
+    assertThat(entry.evaluate("el => getComputedStyle(el).contentVisibility")).isEqualTo("auto");
+    assertThat(entry.evaluate("el => getComputedStyle(el).containIntrinsicBlockSize"))
+        .isEqualTo("auto 48px");
+    assertThat(entry.evaluate("el => el.getBoundingClientRect().height"))
+        .isEqualTo(
+            entry.evaluate(
+                "el => 48 + parseFloat(getComputedStyle(el).paddingBlockStart)"
+                    + " + parseFloat(getComputedStyle(el).paddingBlockEnd)"
+                    + " + parseFloat(getComputedStyle(el).borderBlockStartWidth)"
+                    + " + parseFloat(getComputedStyle(el).borderBlockEndWidth)"));
+    assertThat(text.evaluate("el => el.checkVisibility({ contentVisibilityAuto: true })"))
+        .isEqualTo(false);
+    assertThat(title).isAttached();
+
+    entry.scrollIntoViewIfNeeded();
+
+    page.waitForFunction(
+        "el => el.checkVisibility({ contentVisibilityAuto: true })", text.elementHandle());
+    assertThat(text).isVisible();
+  }
+
+  @BrowserTest
   @DisplayName("on a phone, a grouped table keeps its grid and scrolls from the keyboard")
   void groupedTableScrollsFromKeyboard(Session session) {
     var page = session.width(360).open("/data/");

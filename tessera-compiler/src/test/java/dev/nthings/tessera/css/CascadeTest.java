@@ -188,6 +188,37 @@ class CascadeTest {
     assertThat(body).containsSubsequence(":scope a{", "@container", MOTION_OK);
   }
 
+  @Test
+  @DisplayName("structurally equal conditional and scope styles share one rule")
+  void equalConditionalStylesShareRules() {
+    var wide = Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(30));
+    StyleBlock hover = s -> s.on(State.HOVER, h -> h.opacity(0.8)).on(wide, c -> c.flexRow());
+    var page =
+        renderMain(
+            button().styles(hover).text("One"),
+            button().styles(hover).on(State.DISABLED, _ -> {}).text("Two"),
+            button()
+                .on(State.FOCUS_VISIBLE, h -> h.opacity(0.8))
+                .on(wide, c -> c.flexRow())
+                .text("Three"),
+            new Pulsing(Keyframes.FADE_IN),
+            new Pulsing(Keyframes.FADE_IN));
+
+    var buttons = page.elements("button");
+    var interactive = CssBlocks.generatedClass(buttons.get(0).className(), "i-");
+    var container = CssBlocks.generatedClass(buttons.get(0).className(), "cq-");
+    assertThat(buttons.get(1).className()).isEqualTo(buttons.get(0).className());
+    assertThat(CssBlocks.generatedClass(buttons.get(2).className(), "i-"))
+        .isNotEqualTo(interactive);
+    assertThat(CssBlocks.generatedClass(buttons.get(2).className(), "cq-")).isEqualTo(container);
+    assertThat(page.css())
+        .containsOnlyOnce("." + interactive + "{")
+        .containsOnlyOnce("." + container + "{");
+    var scopes = page.elements("[data-scope]").eachAttr("data-scope");
+    assertThat(scopes).hasSize(2).containsOnly(scopes.getFirst());
+    assertThat(page.css()).containsOnlyOnce("[data-scope=\"" + scopes.getFirst() + "\"]");
+  }
+
   static Stream<Arguments> reveals() {
     return Stream.of(
         argumentSet(

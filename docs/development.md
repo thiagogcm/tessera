@@ -83,9 +83,9 @@ Each `@BrowserTest` runs in both Chromium and Firefox unless pinned to one engin
 | `OverlaysIT` | Modals, drawers, popovers, Pages menu, inspector, and tooltips |
 | `DisclosureIT` | Tabs, accordions, and carousels, including RTL writing direction |
 | `FormsIT` | Validation, switches, selects, growing textareas, and choice cards |
-| `DataIT` | Scrolling and stacked card tables and code blocks |
+| `DataIT` | Scrolling and stacked card tables, code blocks, and `content-visibility` lists |
 | `LayoutIT` | Grids, cards, prose, density scaling, and container queries |
-| `MotionIT` | Reduced motion, scroll progress, and viewport reveal animations |
+| `MotionIT` | Reduced motion, scroll progress, viewport reveal animations, and spring transitions |
 
 Inspect static test failures here:
 

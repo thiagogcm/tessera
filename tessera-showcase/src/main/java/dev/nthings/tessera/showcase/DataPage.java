@@ -10,11 +10,16 @@ import static dev.nthings.tessera.components.TableGrid.head;
 import static dev.nthings.tessera.components.TableGrid.row;
 import static dev.nthings.tessera.components.TableGrid.rowHeader;
 import static dev.nthings.tessera.components.TableGrid.sectionHeader;
+import static dev.nthings.tessera.core.Elements.li;
+import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.strong;
+import static dev.nthings.tessera.core.Elements.ul;
 
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.TableGrid;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
 /// Grid-backed tables, responsive cards, and code blocks.
@@ -35,7 +40,33 @@ final class DataPage {
         dataTable(),
         groupedTable(),
         referenceTable(),
-        codeBlock());
+        codeBlock(),
+        longList());
+  }
+
+  private static Demo longList() {
+    var list = ul().listStyleNone().flex().flexCol().gap(CssLength.rem(0.75));
+    for (var minor = 24; minor >= 1; minor--) {
+      list.child(
+          Demo.surface(
+                  li().p(CssLength.rem(1)).contentVisibilityAuto(CssLength.rem(3)),
+                  CssLength.rem(0.75))
+              .children(
+                  strong().text("Release 1." + minor),
+                  p().textColor(Tokens.TEXT_MUTED)
+                      .text(
+                          "Compiler, component and stylesheet changes shipped in release 1."
+                              + minor
+                              + ", with migration notes for each breaking change.")));
+    }
+    return Demo.of("long-list", "Long lists")
+        .summary(
+            "Each entry skips layout and paint until it nears the viewport, reserving an "
+                + "estimated height so the scrollbar stays steady. Entries stay in the "
+                + "accessibility tree and find-in-page.")
+        .features("content-visibility: auto", "contain-intrinsic-block-size: auto")
+        .example(list)
+        .code("li().contentVisibilityAuto(CssLength.rem(3));");
   }
 
   private static Demo dataTable() {

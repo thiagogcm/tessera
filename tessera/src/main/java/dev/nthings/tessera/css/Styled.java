@@ -16,15 +16,15 @@ import dev.nthings.tessera.core.TagElement;
 /// - Position and size: `relative`, `absolute`, `fixed`, `sticky`, `inset*`, `zIndex`,
 ///   `inlineSize`/`blockSize` and their `min`/`max` forms, `aspectRatio`, [#objectFit(ObjectFit)],
 ///   [#overflow(Overflow)] (and `overflowX`/`overflowY`), [#container(Container)] and
-///   `containerNone`.
+///   `containerNone`, [#contentVisibilityAuto(CssLength)].
 /// - Box: padding `p`/`px`/`py`/`pt`/`pb`/`ps`/`pe`, margin `m`/`mx`/`my`/`mt`/`mb`/`ms`/`me`,
 ///   `bg`/`background`, [#border(Border)] and its sides (`borderBlockStart`, `borderBlockEnd`,
 ///   `borderInlineStart`, `borderInlineEnd`), `borderColor`, `rounded`, `shadow`, `outline`,
 ///   `focusRing`, `opacity`, `accentColor`, [#appearance(Appearance)], [#resize(Resize)].
 /// - Text: `textColor`, `fontSize`, `fontFamily`, `fontWeight`, `lineHeight`, `typography`,
 ///   `textAlign`, [#textWrap(TextWrap)], `whiteSpace`, `underline`, `strikethrough`, `highlight`.
-/// - Effects: [#transition(Transition)], [#animation(Animation)], `transform`, `translate`,
-///   `backdropFilter`, [#cursor(Cursor)].
+/// - Effects: [#transition(Transition)] (including [Spring] transitions), [#animation(Animation)],
+///   `transform`, `translate`, `backdropFilter`, [#cursor(Cursor)].
 /// - Conditions: [#on(Condition, StyleBlock)] for states, media features and container queries.
 /// - Presets: [#styles(StyleBlock)] runs a shared [StyleBlock] on this target.
 /// - Scrolling and anchoring: snapping, scroll margins and markers, `anchorName`, `positionAnchor`,

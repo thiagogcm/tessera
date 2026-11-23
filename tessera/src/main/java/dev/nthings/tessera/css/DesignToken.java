@@ -15,6 +15,7 @@ public sealed interface DesignToken<V extends CssValue> extends CssValue
     permits DesignToken.Color,
         DesignToken.Length,
         DesignToken.Duration,
+        DesignToken.Easing,
         DesignToken.FontFamily,
         DesignToken.Number {
 
@@ -49,6 +50,16 @@ public sealed interface DesignToken<V extends CssValue> extends CssValue
   record Duration(String name, CssDuration defaultValue)
       implements DesignToken<CssDuration>, CssDuration {
     public Duration {
+      CssIdent.custom(name);
+    }
+  }
+
+  /// A timing function token, used by [Transition]s and [Animation]s. A [Spring]'s compiled
+  /// `linear()` curve is long, so give it a token to emit it once in the theme instead of in every
+  /// rule that uses it: `new DesignToken.Easing("ease-settle", spring.easing())`.
+  record Easing(String name, dev.nthings.tessera.css.Easing defaultValue)
+      implements DesignToken<dev.nthings.tessera.css.Easing>, dev.nthings.tessera.css.Easing {
+    public Easing {
       CssIdent.custom(name);
     }
   }

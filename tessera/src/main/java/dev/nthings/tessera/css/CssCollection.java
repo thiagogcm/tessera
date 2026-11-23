@@ -8,7 +8,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
-/// Serializes authored styles before the stylesheet combines and deduplicates their rules.
+/// Keys authored styles by structural hashes and serializes them on demand, so the stylesheet
+/// serializes each distinct rule once however many elements and scopes register it.
 final class CssCollection extends CssAccess {
   private static final ElementRules EMPTY = new ElementRules(null, List.of(), List.of());
 
@@ -29,11 +30,10 @@ final class CssCollection extends CssAccess {
     }
     var frames = new LinkedHashSet<Keyframes>();
     style.collectKeyframes(frames);
-    var nested = style.nestedRules();
     Rule interactive = null;
-    if (!nested.isEmpty()) {
-      var key = "i-" + Fnv1a64.toBase36Hash(Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, nested));
-      interactive = new Rule(key, "", nested);
+    if (style.hasNestedRulesBesideContainers()) {
+      var key = "i-" + Fnv1a64.toBase36Hash(style.nestedRulesHash());
+      interactive = new Rule(key, () -> "." + key + "{" + style.nestedRules() + "}");
     }
     var containers =
         style.containerRules().entrySet().stream()
@@ -42,13 +42,11 @@ final class CssCollection extends CssAccess {
     return new ElementRules(interactive, containers, List.copyOf(frames));
   }
 
-  private static Rule container(Condition.Query query, Declarations declarations) {
-    var prelude = Declarations.prelude(query);
-    var body = declarations.toCssBody();
-    var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, prelude);
-    hash = Fnv1a64.updateChars(hash, body);
+  private static Rule container(ContainerQuery query, Declarations declarations) {
+    var prelude = query.prelude();
+    var hash = declarations.updateBody(Declarations.updateText(Fnv1a64.OFFSET_BASIS, prelude));
     var key = "cq-" + Fnv1a64.toBase36Hash(hash);
-    return new Rule(key, prelude, body);
+    return new Rule(key, () -> prelude + "{." + key + "{" + declarations.toCssBody() + "}}");
   }
 
   @Override
@@ -57,7 +55,12 @@ final class CssCollection extends CssAccess {
     configure.configure(scope);
     var frames = new LinkedHashSet<Keyframes>();
     scope.collectKeyframes(frames);
-    return new ScopeRules(scope.toCssBody(), List.copyOf(frames));
+    var rule =
+        scope.isEmpty()
+            ? null
+            : new Rule(
+                Fnv1a64.toBase36Hash(scope.updateHash(Fnv1a64.OFFSET_BASIS)), scope::toCssBody);
+    return new ScopeRules(rule, List.copyOf(frames));
   }
 
   @Override

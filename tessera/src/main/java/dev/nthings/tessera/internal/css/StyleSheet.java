@@ -79,8 +79,9 @@ public final class StyleSheet {
   /// Compiler-facing: registers an element's style and returns the class names that reference its
   /// rules, in emission order (empty for an unstyled element): a `u-` class for the plain
   /// declarations (`utilities` layer), an `i-` class for state, media and starting-style rules
-  /// (`interactive` layer), and one `cq-` class per container query (`container` layer). The
-  /// keyframes the style uses are registered too.
+  /// (`interactive` layer), and one `cq-` class per container query (`container` layer). Each class
+  /// is named by a structural hash of its styles, and a rule is serialized only the first time this
+  /// stylesheet sees its class. The keyframes the style uses are registered too.
   public List<String> registerElement(Declarations style) {
     var css = CssAccess.get();
     var utility = css.utilityKey(style);
@@ -109,7 +110,8 @@ public final class StyleSheet {
   }
 
   /// Compiler-facing: registers the styles of a scope named `scopeName`, which `configure` writes
-  /// into a fresh `ScopeStyle`, and returns its `data-scope` value, `<scopeName>-<hash>`. Identical
+  /// into a fresh `ScopeStyle`, and returns its `data-scope` value, `<scopeName>-<hash>`, where the
+  /// hash is structural, so a scope already registered here is not serialized again. Identical
   /// scopes share one `@scope` block, and stylesheets from different pages merge without conflicts.
   /// A scope without scoped styles keeps the bare (sanitized) name as its scope boundary. Throws
   /// IllegalArgumentException if `scopeName` is empty.
@@ -117,13 +119,12 @@ public final class StyleSheet {
     var safeType = Fnv1a64.sanitizeIdentifier(scopeName);
     var scope = CssAccess.get().collectScope(configure);
     keyframes.addAll(scope.keyframes());
-    var scopedCss = scope.css();
-    if (scopedCss.isBlank()) {
+    var rule = scope.rule();
+    if (rule == null) {
       return safeType;
     }
-    var hash = Fnv1a64.updateChars(Fnv1a64.OFFSET_BASIS, scopedCss);
-    var key = safeType + "-" + Fnv1a64.toBase36Hash(hash);
-    scopeBodies.putIfAbsent(key, scopedCss);
+    var key = safeType + "-" + rule.key();
+    scopeBodies.computeIfAbsent(key, _ -> rule.css());
     return key;
   }
 

@@ -33,9 +33,14 @@ import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.css.Animatable;
+import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.Spring;
+import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
@@ -78,6 +83,33 @@ class BackendParityTest {
         .allSatisfy(rule ->
             assertThat(page.css())
                 .contains(rule.substring(rule.indexOf('{') + 1, rule.length() - 1)));
+  }
+
+  @Test
+  @DisplayName("both backends compile spring, state, container and scope rules byte-identically")
+  void conditionalRulesMatchAcrossBackends() {
+    var wide = Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(30));
+    var content =
+        main()
+            .children(
+                div()
+                    .transition(Transition.spring(Spring.BOUNCY, Animatable.TRANSLATE))
+                    .on(State.HOVER, s -> s.opacity(0.9))
+                    .on(wide, s -> s.flexRow())
+                    .text("Spring"),
+                new Springy());
+    var live = styleRules(render(content));
+    var page = Compiler.forPage().compile(PageDocument.of("Springs", content));
+
+    assertThat(live)
+        .filteredOn(rule ->
+            Stream.of("interactive", "container", "components")
+                .anyMatch(layer -> rule.startsWith("@layer " + layer + "{")))
+        .hasSize(3)
+        .allSatisfy(rule ->
+            assertThat(page.css())
+                .contains(rule.substring(rule.indexOf('{') + 1, rule.length() - 1)));
+    assertThat(String.join("", live)).contains(Spring.BOUNCY.easing().toCss());
   }
 
   static Stream<Arguments> invalidContent() {
@@ -249,6 +281,19 @@ class BackendParityTest {
     public DocumentContent expand(DocumentContext context) {
       var titles = context.headings().stream().map(OutlineHeading::title).toList();
       return DocumentContent.of(p().text(String.join(",", titles)));
+    }
+  }
+
+  private record Springy() implements Scope {
+    @Override
+    public void configureScope(ScopeStyle scope) {
+      scope.root(style ->
+          style.transition(Transition.spring(Spring.SNAPPY, Animatable.TRANSFORM)).opacity(1));
+    }
+
+    @Override
+    public TagElement expand(ViewContext context) {
+      return p().text("Springy");
     }
   }
 

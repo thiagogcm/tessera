@@ -7,6 +7,7 @@ import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.components.Grid;
+import dev.nthings.tessera.css.Animatable;
 import dev.nthings.tessera.css.Animation;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
@@ -14,9 +15,14 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Resize;
+import dev.nthings.tessera.css.Spring;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Transition;
+import dev.nthings.tessera.css.Translation;
+import java.util.List;
+import java.util.Map;
 
 /// Scroll-driven animation, scroll-state and size container queries, and view transitions.
 final class MotionPage {
@@ -37,6 +43,7 @@ final class MotionPage {
         scrollReveal(),
         revealOnce(),
         stagger(),
+        springs(),
         containerQueries(),
         scrollState(),
         viewTransitions());
@@ -93,6 +100,33 @@ final class MotionPage {
         .features("sibling-index()", "animation-delay: calc()")
         .example(row)
         .code("chip.animation(Animation.revealOnce(Keyframes.FADE_UP).staggerBySiblingIndex(60));");
+  }
+
+  private static Demo springs() {
+    var row = div().flex().flexWrap().gap(CssLength.rem(1));
+    for (var spring :
+        List.of(
+            Map.entry("Smooth spring", Spring.SMOOTH),
+            Map.entry("Snappy spring", Spring.SNAPPY),
+            Map.entry("Bouncy spring", Spring.BOUNCY))) {
+      row.child(
+          Demo.tile(spring.getKey())
+              .minInlineSize(CssLength.rem(10))
+              .transition(Transition.spring(spring.getValue(), Animatable.TRANSLATE))
+              .on(State.HOVER, s -> s.translate(Translation.y(CssLength.rem(-0.75)))));
+    }
+    return Demo.of("springs", "Spring transitions")
+        .summary(
+            "Hover a tile. Each spring is solved in closed form at build time and compiled to a "
+                + "CSS linear() easing, so the browser plays the overshoot natively. With reduced "
+                + "motion the tiles move at once.")
+        .features("transition-timing-function: linear()", "prefers-reduced-motion")
+        .example(row)
+        .code(
+            "tile.transition(Transition.spring(Spring.SNAPPY, Animatable.TRANSLATE))",
+            "    .on(State.HOVER, s -> s.translate(Translation.y(rem(-0.75))));",
+            "var settle = Spring.of(Duration.ofMillis(450), 0.2); // or keep it in the theme:",
+            "var ease = new DesignToken.Easing(\"ease-settle\", settle.easing());");
   }
 
   private static Demo containerQueries() {

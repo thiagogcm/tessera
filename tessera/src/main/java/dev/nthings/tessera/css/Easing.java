@@ -1,8 +1,10 @@
 package dev.nthings.tessera.css;
 
-/// A timing function: a keyword or a cubic Bézier curve, used by [Transition] and [Animation].
-/// Build values with the static factories.
-public sealed interface Easing extends CssValue permits Easings.Preset, Easings.CubicBezier {
+/// A timing function, used by [Transition] and [Animation]: a keyword, a cubic Bézier curve, a
+/// [Spring]'s compiled `linear()` curve, or a [DesignToken.Easing] that holds one of them in the
+/// theme. Build values with the static factories or [Spring#easing()].
+public sealed interface Easing extends CssValue
+    permits Easings.Preset, Easings.CubicBezier, Easings.LinearStops, DesignToken.Easing {
 
   /// `linear`.
   static Easing linear() {

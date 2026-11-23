@@ -7,8 +7,9 @@ interface EffectStyled<SELF extends EffectStyled<SELF>> extends StyleTarget<SELF
 
   /// Sets `transition-property`, `transition-duration`, and `transition-timing-function` from
   /// `transition`, plus `transition-behavior: allow-discrete` when it allows discrete transitions.
-  /// A transition that moves an element belongs inside `on(Media.MOTION_SAFE, ...)`, with its
-  /// visible end state kept outside that block.
+  /// A motion-safe transition ([Transition#whenMotionSafe()], [Transition#spring(Spring,
+  /// Animatable...)]) is written under [Media#MOTION_SAFE], where it overrides a plain transition
+  /// on the same style; keep the visible end state outside it.
   default SELF transition(Transition transition) {
     transition.writeTo(StyleTarget.declarations(this));
     return self();

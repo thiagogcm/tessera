@@ -29,6 +29,10 @@ final class PageCompiler {
   private PageCompiler() {}
 
   static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
+    var themeErrors = theme.contrastDiagnostics();
+    if (!themeErrors.isEmpty()) {
+      throw new CompilationException(themeErrors);
+    }
     var prepared = prepare(document, new BundlePublication(outputMode));
     var css = prepared.stylesheet(theme);
     var resources = new HtmlWriter.Resources(css, outputMode, prepared.scripts());

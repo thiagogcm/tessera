@@ -43,7 +43,9 @@ public final class GuideSite {
 
   public static Theme theme() {
     return Theme.defaults()
-        .with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150))
+        .with(
+            Tokens.ACCENT_PRIMARY,
+            CssColor.lightDark(CssColor.oklch(50, 0.16, 150), CssColor.oklch(72, 0.16, 150)))
         .with(Tokens.DENSITY, CssNumber.of(0.9))
         .with(Tokens.RADIUS_XL, CssLength.rem(1));
   }

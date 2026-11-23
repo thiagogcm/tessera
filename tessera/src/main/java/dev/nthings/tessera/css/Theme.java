@@ -1,6 +1,7 @@
 package dev.nthings.tessera.css;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.internal.css.CssAccess;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,11 +10,13 @@ import org.jspecify.annotations.Nullable;
 
 /// The values of the design tokens, emitted as custom properties on `:root` in `@layer theme`.
 /// Immutable: start from [#defaults()] and override tokens with [#with(DesignToken, CssValue)],
-/// which returns a new theme, then pass it to `Compiler.compile` or `SiteDefinition.Builder#theme`.
+/// which returns a new theme, then pass it to `Compiler.withTheme`. The compiler rejects a theme
+/// whose text colors fall below WCAG AA contrast on their surfaces; see [#contrastDiagnostics()].
 ///
 /// ```java
 /// var theme = Theme.defaults()
-///     .with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150))
+///     .with(Tokens.ACCENT_PRIMARY,
+///         CssColor.lightDark(CssColor.oklch(50, 0.16, 150), CssColor.oklch(72, 0.16, 150)))
 ///     .with(Tokens.DENSITY, CssNumber.of(0.9))
 ///     .with(Tokens.RADIUS_XL, CssLength.rem(1));
 /// ```
@@ -57,6 +60,23 @@ public final class Theme {
     var next = new LinkedHashMap<>(entries);
     next.put(token.name(), new Entry(token, value));
     return new Theme(next);
+  }
+
+  /// The WCAG AA contrast failures of this theme as `theme-contrast` diagnostics, empty when the
+  /// theme passes. Checks every text and surface pair that built-in components draw from color
+  /// tokens, such as [Tokens#TEXT_MUTED] on [Tokens#SURFACE_SUBTLE] or a [Tone]'s label on its
+  /// solid fill, against 4.5:1 in both the light and the dark color scheme. Token aliases,
+  /// `light-dark()`, `sameHue`, `color-mix()` and `contrast-color()` resolve statically; a pair is
+  /// skipped when a color depends on the page, such as `currentColor`, a token this theme does not
+  /// define, or a cycle of token aliases. The compiler reports these diagnostics before it renders.
+  public List<Diagnostic> contrastDiagnostics() {
+    return ThemeContrast.diagnostics(this);
+  }
+
+  /// The value this theme gives the token named `name`, or null if it does not define one.
+  @Nullable CssValue value(String name) {
+    var entry = entries.get(name);
+    return entry == null ? null : entry.value();
   }
 
   /// The `--name:value` declarations, in theme order. Token names were validated when the tokens

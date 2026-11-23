@@ -9,8 +9,9 @@ import dev.nthings.tessera.css.Theme;
 /// or sites.
 ///
 /// [#compile(PageDocument)] and [#compile(SiteDefinition)] throw [CompilationException] on
-/// authoring errors; [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a
-/// [CompilationResult] instead. Exceptions thrown by expand callbacks propagate unchanged.
+/// authoring errors, including a theme that fails [Theme#contrastDiagnostics()];
+/// [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a [CompilationResult]
+/// instead. Exceptions thrown by expand callbacks propagate unchanged.
 public record Compiler(Theme theme, OutputMode outputMode) {
 
   private static final Compiler FOR_PAGE = new Compiler(Theme.defaults(), OutputMode.inline());

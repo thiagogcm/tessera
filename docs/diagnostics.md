@@ -1,6 +1,6 @@
 # Diagnostics
 
-Tessera validates markup, references, form controls, accessibility semantics, and site links before returning output. Static `Compiler` methods throw `CompilationException` on authoring errors; live browser renders reject invalid candidates with `ViewException` and keep the last valid DOM.
+Tessera validates theme contrast, markup, references, form controls, accessibility semantics, and site links before returning output. Static `Compiler` methods throw `CompilationException` on authoring errors; live browser renders reject invalid candidates with `ViewException` and keep the last valid DOM.
 
 ## Read a diagnostic
 
@@ -29,7 +29,7 @@ Compilation failed with 1 error:
 | `fix()` | Actionable correction |
 | `location()` | Optional route, page title, component path, element tag, DOM ID, and Java source line |
 
-Standalone pages omit routes from locations, and site-level file collisions can omit both route and page. Deferred, head, and document-end content retains the component path that registered it.
+Standalone pages omit routes from locations, and site-level file collisions and theme diagnostics can omit both route and page. Deferred, head, and document-end content retains the component path that registered it.
 
 ## Understand validation stages
 
@@ -37,7 +37,7 @@ The compiler collects all independent diagnostics within the failing stage and e
 
 | Stage | Scope and ordering |
 | --- | --- |
-| 1. Site paths | Checks duplicate routes and registered or reserved file collisions before preparing pages |
+| 1. Theme and site paths | Checks [theme contrast](#theme-contrast), then duplicate routes and registered or reserved file collisions, before preparing pages; a standalone page checks its theme only |
 | 2. Page preparation | Checks identity, references, images, markup, controls, widgets, accessibility, and URL syntax; site failures are ordered by route declaration |
 | 3. Site validation | Runs after all pages prepare; checks cross-route links, fragments, shared transition keys, and generated asset collisions |
 
@@ -93,6 +93,37 @@ See [Set form defaults](components.md#set-form-defaults) and [Bind form values](
 | `file-path-collision` | Two routes, registered assets, or generated files map to the same URL or output path |
 | `missing-route-or-asset`, `missing-route-fragment` | A local site link targets a missing route, asset, or target-page fragment |
 | `duplicate-transition-key`, `unshared-transition-key` | A `TransitionKey` appears twice on one page or on fewer than two site routes |
+
+### Theme contrast
+
+The compiler checks the `Theme` before it prepares any page. Each failing pair produces one `theme-contrast` diagnostic per color scheme:
+
+```text
+[theme-contrast] Light scheme: the solid accent label color (#ffffff) on --accent-primary (#008c2f) has a contrast ratio of 4.36:1, below the WCAG AA minimum of 4.5:1 for text in accent solid buttons and badges
+  Fix: Darken --accent-primary in the light scheme until the solid accent label color on it reaches 4.5:1. Use CssColor.lightDark(light, dark) to give a token separate light and dark values.
+```
+
+| Rule | Reported when |
+| --- | --- |
+| `theme-contrast` | A text color that built-in components draw falls below 4.5:1 (WCAG 2.2 SC 1.4.3, level AA) on its surface in the light or dark scheme |
+
+The check covers the text and surface pairs built-in components draw from color tokens:
+
+| Text | Surfaces |
+| --- | --- |
+| `TEXT_PRIMARY`, `TEXT_MUTED`, `CONTROL_FG` | `SURFACE_CANVAS` and `SURFACE_CARD`; `SURFACE_SUBTLE` for primary and muted text |
+| `ACCENT_PRIMARY` (active tabs, pager links, eyebrows) | `SURFACE_CANVAS`, `SURFACE_CARD`, and `SURFACE_SUBTLE` |
+| Each `Tone.textColor()` (`ACCENT_TEXT`, `STATUS_*_TEXT`) | `SURFACE_CANVAS`, `SURFACE_CARD`, and the tone's 14% tint used by tinted badges |
+| Each `Tone.onSolid()` label color | The tone's solid fill (`ACCENT_PRIMARY`, `STATUS_*`) |
+| `SURFACE_CARD` | Solid neutral fills of `TEXT_PRIMARY` (buttons) and `TEXT_MUTED` (badges) |
+| `CONTROL_FG`, `TEXT_PRIMARY`, `TEXT_MUTED`, `ACCENT_PRIMARY` | Callout tints, text highlights, invalid fields, and highlight sections, as each component uses them |
+| `STATUS_SUCCESS_TEXT`, `STATUS_DANGER_TEXT` | Inserted and deleted code line tints |
+
+Non-text indicators such as focus rings and switch tracks use `ACCENT_PRIMARY`, which its text pairs already hold to the stricter 4.5:1.
+
+Colors resolve the way the browser computes them: token aliases follow the theme, `light-dark()` picks the scheme's branch, and `sameHue`, `color-mix()`, and `contrast-color()` are evaluated in OKLab, OKLCH, and sRGB. Translucent colors composite over the layers beneath them, and colors outside the sRGB gamut clip per channel. Ratios use WCAG 2.x relative luminance and print truncated to two decimals, so a failing pair never prints as `4.50:1`. The check skips a pair, rather than guessing, when a color depends on the page: `currentColor`, a token the theme does not define, a cycle of token aliases, or a `color-mix()` weight that is not a plain percentage.
+
+Fix a failure by adjusting the named token for the reported scheme. Use `CssColor.lightDark(light, dark)` for a token whose light and dark values need different lightness, because a single value rarely reads on both a near-white and a near-black surface. Call `theme.contrastDiagnostics()` to inspect a theme without compiling, such as in a unit test.
 
 ### Accessibility rules
 

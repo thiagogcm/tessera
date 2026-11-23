@@ -96,13 +96,17 @@ class PageOutputTest {
   @Test
   @DisplayName("page language, theme overrides, and tryCompile results reflect the document")
   void pageLanguageThemeAndTryCompile() {
-    var theme = Theme.defaults().with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
+    var theme =
+        Theme.defaults()
+            .with(
+                Tokens.ACCENT_PRIMARY,
+                CssColor.lightDark(CssColor.oklch(50, 0.16, 150), CssColor.oklch(72, 0.16, 150)));
     var doc = PageDocument.of("Localized", main(p("Hi"))).withLang(Locale.forLanguageTag("pt-BR"));
 
     var ok = Compiler.forPage().withTheme(theme).tryCompile(doc);
     var compiled = ok.orThrow();
     assertThat(compiled.html()).contains("lang=\"pt-BR\"", "Hi");
-    assertThat(compiled.css()).contains("oklch(55% 0.18 150)");
+    assertThat(compiled.css()).contains("light-dark(oklch(50% 0.16 150), oklch(72% 0.16 150))");
 
     var failed = Compiler.forPage().tryCompile(PageDocument.of("Bad", main(button())));
     switch (failed) {

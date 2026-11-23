@@ -130,9 +130,9 @@ final class ButtonFace {
       case OUTLINE ->
           style
               .bg(CssColor.transparent())
-              .textColor(ink)
+              .textColor(label(tone))
               .border(Border.hairline(tone == Tone.NEUTRAL ? Tokens.BORDER_SUBTLE : ink));
-      case GHOST -> style.bg(CssColor.transparent()).textColor(ink);
+      case GHOST -> style.bg(CssColor.transparent()).textColor(label(tone));
     };
   }
 
@@ -144,8 +144,13 @@ final class ButtonFace {
     };
   }
 
-  /// The tone's fill and text color; neutral buttons use primary text rather than muted.
+  /// The tone's solid fill and outline; neutral buttons use primary text rather than muted.
   private static DesignToken.Color ink(Tone tone) {
     return tone == Tone.NEUTRAL ? Tokens.TEXT_PRIMARY : tone.color();
+  }
+
+  /// The label color of an outline or ghost button, which sits on the page or card surface.
+  private static DesignToken.Color label(Tone tone) {
+    return tone == Tone.NEUTRAL ? Tokens.TEXT_PRIMARY : tone.textColor();
   }
 }

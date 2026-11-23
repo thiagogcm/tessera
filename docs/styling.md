@@ -22,6 +22,16 @@ Each token accepts only values from its own category: color, length, duration, f
 
 Token names accept `[A-Za-z0-9_-]` and cannot start with `-`. Invalid names throw immediately rather than being rewritten.
 
+The compiler rejects a theme whose text colors fall below WCAG AA contrast on the surfaces built-in components draw them on, in either color scheme; see [Theme contrast](diagnostics.md#theme-contrast). Override a color token with `CssColor.lightDark(light, dark)` so each scheme gets a readable value:
+
+```java
+var theme =
+    Theme.defaults()
+        .with(
+            Tokens.ACCENT_PRIMARY,
+            CssColor.lightDark(CssColor.oklch(50, 0.16, 150), CssColor.oklch(72, 0.16, 150)));
+```
+
 | Family | Tokens | Default values or behavior |
 | --- | --- | --- |
 | Fonts | `FONT_BODY`, `FONT_MONO` | System UI and monospace stacks |
@@ -36,7 +46,7 @@ Token names accept `[A-Za-z0-9_-]` and cannot start with `-`. Invalid names thro
 
 `Typography.LABEL` combines the control typography tokens used by field labels and callout titles alongside `CONTROL_FG`. Overriding `CONTROL_FONT_SIZE` changes those labels directly; overriding `FONT_SIZE_SM` also changes them while `CONTROL_FONT_SIZE` aliases `FONT_SIZE_SM`.
 
-`Tone` supplies semantic roles (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components map each tone to surface, border, and foreground tokens. `Callout.Kind` also picks a matching default icon and title.
+`Tone` supplies semantic roles (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components map each tone to surface, border, and foreground tokens: `color()` paints fills, borders, and icons, `textColor()` paints text on the page, cards, and tints, and `onSolid()` paints labels on a solid fill. `Callout.Kind` also picks a matching default icon and title.
 
 ## Write typed declarations
 

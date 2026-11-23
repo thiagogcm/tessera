@@ -86,13 +86,13 @@ public final class Tokens {
   public static final DesignToken.Color BORDER_SUBTLE =
       adaptive("border-subtle", 88, 0.01, 260, 30, 0.02, 260);
   public static final DesignToken.Color STATUS_SUCCESS =
-      adaptive("status-success", 55, 0.17, 152, 72, 0.16, 152);
+      adaptive("status-success", 52, 0.17, 152, 72, 0.16, 152);
   public static final DesignToken.Color STATUS_WARNING =
       adaptive("status-warning", 68, 0.17, 75, 80, 0.16, 75);
   public static final DesignToken.Color STATUS_DANGER =
       adaptive("status-danger", 56, 0.21, 25, 70, 0.19, 25);
   public static final DesignToken.Color STATUS_INFO =
-      adaptive("status-info", 58, 0.16, 235, 74, 0.14, 235);
+      adaptive("status-info", 52, 0.16, 235, 74, 0.14, 235);
 
   /// Status tones safe for small text on tinted or canvas surfaces.
   public static final DesignToken.Color STATUS_SUCCESS_TEXT =

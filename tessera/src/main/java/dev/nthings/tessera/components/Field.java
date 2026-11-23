@@ -191,17 +191,17 @@ public final class Field extends BuiltinScope<Field> {
                 s.hidden()
                     .fontSize(Tokens.FONT_SIZE_XS)
                     .fontWeight(500)
-                    .textColor(Tokens.STATUS_DANGER)
+                    .textColor(Tokens.STATUS_DANGER_TEXT)
                     .itemsCenter()
                     .gap(Tokens.SPACE_1))
         .select(
             ":scope .field-explicit-error, :scope:has(:user-invalid) .field-error", s -> s.flex())
         .select(
             ":scope:has(:user-invalid:not([aria-invalid]), [aria-invalid=true]) .field-label",
-            s -> s.textColor(Tokens.STATUS_DANGER))
+            s -> s.textColor(Tokens.STATUS_DANGER_TEXT))
         .select(
             ":scope:has(:user-valid:not([aria-invalid])) .field-label",
-            s -> s.textColor(Tokens.STATUS_SUCCESS))
+            s -> s.textColor(Tokens.STATUS_SUCCESS_TEXT))
         .select(
             ":scope .field-anchor-tooltip",
             s ->

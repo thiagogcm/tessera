@@ -87,9 +87,11 @@ public final class Host {
     return start(handle -> releasing(Dom.interval(millis, () -> handle.run(task))));
   }
 
-  /// Runs `task` once before the browser's next paint.
+  /// Runs `task` once before the browser's next paint. Every frame task of the root runs in one
+  /// batch, and the render they request commits before that frame paints, so a value advanced per
+  /// frame is never shown a frame late.
   public Cancellable frame(Runnable task) {
-    return start(handle -> releasing(Dom.frame(() -> handle.complete(task))));
+    return start(handle -> root.frame(() -> handle.complete(task)));
   }
 
   /// Runs `task` once after the next committed render, when the committed tree contains the

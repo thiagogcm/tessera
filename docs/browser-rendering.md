@@ -109,13 +109,16 @@ public final class Editor {
 - Portable content is accepted directly as a child of live builders; use `LiveContent.of(...)` where a `LiveContent` return value is required.
 - Multiple entries can share a page; each launcher executes once regardless of how many hosts it mounts.
 - The first committed render replaces the host's static fallback. A rejected render keeps the fallback and retries on a later invalidation. Calling `root.close()` disposes listeners, effects, styles, and DOM children so the host can be mounted again.
+- The replacement keeps the reader's place when fallback and live content share `ElementRef.page` IDs: focus on a fallback element moves to the live element with the same ID, and a window scrolled into the host keeps the first visible fallback element with an ID at the same height. Text typed into fallback controls is not carried over. See [First-commit fallback handoff](browser-internals.md#first-commit-fallback-handoff).
 - Generated and `ElementRef.scoped` IDs are prefixed with the host ID. Claiming the host's own ID or an external DOM ID already in use rejects the candidate with `cross-root-id`.
 
 ## Schedule updates
 
 Call `root.invalidate()` after mutating application state. Multiple invalidations before the scheduled task coalesce into one render, and invalidating during a render schedules a later turn instead of recursing.
 
-`root.update(Runnable)` wraps a state mutation and invalidates the root. Once `root.close()` runs, the wrapper becomes a no-op so late callbacks never touch a disposed root.
+`root.update(Runnable)` wraps a state mutation and invalidates the root, even when the mutation throws part-way, so whatever it changed still renders. Once `root.close()` runs, the wrapper becomes a no-op so late callbacks never touch a disposed root.
+
+State that `host.frame(task)` advances renders within the same animation frame: every frame task of the root runs in one batch, and the render they request commits before the browser paints.
 
 Configure per-root theme or scheduling limits with `MountOptions`:
 
@@ -152,6 +155,7 @@ LiveElement.of(Elements.div())
 
 - Handlers execute synchronously within native browser dispatch and user activation, so `preventDefault()`, `stopPropagation()`, and gesture-gated operations such as `showModal()` work immediately.
 - `Events` keys deliver compile-time typed events from the sealed `BrowserEvent` hierarchy (`PointerEvent`, `KeyboardEvent`, `ControlEvent`, or `BasicEvent` via `Events.custom(name)`).
+- `KeyboardEvent.composing()` is `true` for keys that belong to an input method composition, such as the Enter that confirms a candidate. Skip shortcuts while it is `true`.
 - Each element keeps one listener per event type and capture phase. Re-renders update the Java handler in place without re-registering when the `EventOption` flags match.
 - A `ONCE` listener remains spent across subsequent renders until a render omits it and a later render attaches it again.
 
@@ -307,7 +311,7 @@ final class Discard {
 
 `Host` covers:
 
-- **Scheduling**: `timeout`, `interval`, `frame`, and `afterRender`. Timers invalidate the root after running; `afterRender` runs once after the next commit without re-invalidating.
+- **Scheduling**: `timeout`, `interval`, `frame`, and `afterRender`. Timers invalidate the root after running, and `frame` tasks render before that frame paints; `afterRender` runs once after the next commit without re-invalidating.
 - **Requests**: `fetchText(url, onResult)` delivers a sealed `FetchResult` (`Ok`, `HttpError`, or `NetworkError`) and aborts automatically when cancelled or disposed.
 - **Focus and selection**: `focus`, `focused`, `rememberFocus`, `selection`, `select`, and `selectAll`.
 - **Dialogs and popovers**: `showModal`, `show`, `close`, `open`, `showPopover`, `hidePopover`, and `togglePopover`.

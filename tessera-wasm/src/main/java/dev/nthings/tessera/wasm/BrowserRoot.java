@@ -21,7 +21,8 @@ import org.jspecify.annotations.Nullable;
 /// Invalidation reconciles compatible native nodes by sibling key, or by kind among unkeyed
 /// siblings (tag name, or component type for a component's DOM range). Each flush renders a bounded
 /// number of turns, coalesces pending invalidations and yields a paint opportunity between batches.
-/// Repeated self-invalidation stops with a reported diagnostic.
+/// Repeated self-invalidation stops with a reported diagnostic. Invalidation from a
+/// [Host#frame(Runnable)] callback renders before that frame paints.
 ///
 /// Generated and [dev.nthings.tessera.core.ElementRef#scoped] ids are prefixed with the host id, so
 /// roots on one page never collide. The host's own id is reserved: a child claiming it rejects the
@@ -30,8 +31,11 @@ import org.jspecify.annotations.Nullable;
 /// committed are its own and are not checked again.
 ///
 /// The root owns its host element: it marks it for embedded styles, replaces fallback content on
-/// the first successful render and empties it on [#close()]. Style rules are shared with other
-/// roots through one document stylesheet and released when no committed tree uses them.
+/// the first successful render and empties it on [#close()]. Focus on a fallback element moves to
+/// the committed element with the same id, and a window scrolled past the host's top keeps the
+/// first fallback element with an id in view at the same offset when the committed tree has that
+/// id. Style rules are shared with other roots through one document stylesheet and released when no
+/// committed tree uses them.
 public final class BrowserRoot implements AutoCloseable {
 
   /// Scheduling limits for one mounted root: `workBudget` render turns run in one browser task
@@ -52,6 +56,22 @@ public final class BrowserRoot implements AutoCloseable {
     }
   }
 
+  /// The root's lifecycle. A render turn moves an open root through preparing and applying back to
+  /// open; [#close()] moves any phase to closing and then closed, and a turn it interrupts settles
+  /// at its next phase boundary.
+  private enum Phase {
+    /// Showing the committed tree, or the fallback content, and accepting invalidation.
+    OPEN,
+    /// Expanding, linking and validating a candidate; the DOM is untouched.
+    PREPARING,
+    /// Applying, publishing, retiring and activating an accepted candidate.
+    APPLYING,
+    /// Releasing every resource; requests are ignored.
+    CLOSING,
+    /// Every resource is released.
+    CLOSED
+  }
+
   private final DomReconciler renderer;
   private final JSObject hostElement;
   private @Nullable LiveComponent view;
@@ -66,18 +86,30 @@ public final class BrowserRoot implements AutoCloseable {
   private final StyleSink.Root styles;
   private final String hostId;
   private final Scheduling scheduling;
-  private @Nullable JSObject pending;
+  private Phase phase = Phase.OPEN;
+
+  /// Whether an invalidation awaits a render turn.
   private boolean dirty;
-  private boolean rendering;
+
+  /// The scheduled flush, or `null`.
+  private @Nullable JSObject pending;
+
   private int selfInvalidations;
-  private boolean closed;
+
+  /// Callbacks for the next animation frame, which run in one batch that renders before painting.
+  private final List<Runnable> frameTasks = new ArrayList<>();
+
+  private @Nullable JSObject frameRequest;
+
+  /// Whether the frame batch is running, so invalidation waits for its render.
+  private boolean inFrame;
 
   private BrowserRoot(String hostId, Theme theme, Scheduling scheduling, LiveComponent view) {
     this.hostId = hostId;
     this.styles = StyleSink.shared().root(theme);
     this.scheduling = scheduling;
     this.hostElement = Dom.host(hostId);
-    this.renderer = new DomReconciler(hostElement, hostId, this::invalidate, () -> !closed);
+    this.renderer = new DomReconciler(hostElement, hostId, this::invalidate, () -> !closed());
     this.view = view;
     this.services = new Host(this, lifetime);
   }
@@ -110,23 +142,27 @@ public final class BrowserRoot implements AutoCloseable {
         root.hostElement, StyleSheet.THEME_ATTRIBUTE, StyleSheet.themeKey(options.theme()));
     root.styles.mount();
     root.turn();
-    if (root.dirty && !root.closed) {
+    if (root.dirty && root.phase == Phase.OPEN) {
       root.pending = Dom.defer(root::flush);
     }
     return root;
   }
 
-  /// Wraps `change` so that running it applies the change and invalidates this root.
+  /// Wraps `change` so that running it applies the change and invalidates this root. The root is
+  /// invalidated even when `change` throws, so whatever it changed before failing still renders.
   ///
   /// After [#close()] the wrapper does nothing. Asynchronous work wraps its completion when it
   /// starts, so a late result cannot mutate a disposed root.
   public Runnable update(Runnable change) {
     return () -> {
-      if (closed) {
+      if (closed()) {
         return;
       }
-      change.run();
-      invalidate();
+      try {
+        change.run();
+      } finally {
+        invalidate();
+      }
     };
   }
 
@@ -140,12 +176,13 @@ public final class BrowserRoot implements AutoCloseable {
     return services;
   }
 
+  /// Whether [#close()] has started: the root renders, schedules and dispatches nothing more.
   boolean closed() {
-    return closed;
+    return phase == Phase.CLOSING || phase == Phase.CLOSED;
   }
 
   void requireOpen() {
-    if (closed) {
+    if (closed()) {
       throw new IllegalStateException("Browser root '" + hostId + "' is closed");
     }
   }
@@ -188,25 +225,72 @@ public final class BrowserRoot implements AutoCloseable {
     }
   }
 
+  /// Queues `task` for the root's next animation frame and returns its removal. Every task queued
+  /// for one frame runs in one batch; a task queued while the batch runs waits for the next frame.
+  Runnable frame(Runnable task) {
+    frameTasks.add(task);
+    if (frameRequest == null) {
+      frameRequest = Dom.frame(this::runFrame);
+    }
+    return () -> {
+      if (frameTasks.remove(task) && frameTasks.isEmpty()) {
+        cancelFrame();
+      }
+    };
+  }
+
+  /// Runs the frame's tasks, then renders what they invalidated before the browser paints the
+  /// frame, within the usual work budget.
+  private void runFrame() {
+    frameRequest = null;
+    var tasks = List.copyOf(frameTasks);
+    frameTasks.clear();
+    inFrame = true;
+    try {
+      for (var task : tasks) {
+        if (closed()) {
+          return;
+        }
+        task.run();
+      }
+    } finally {
+      inFrame = false;
+    }
+    if (dirty && phase == Phase.OPEN) {
+      cancelPending();
+      flush();
+    }
+  }
+
+  private void cancelFrame() {
+    var request = frameRequest;
+    frameRequest = null;
+    if (request != null) {
+      Dom.release(request);
+    }
+  }
+
   /// Coalesces requests into the current flush and leaves event handlers synchronous.
   public void invalidate() {
-    if (closed) {
-      return;
-    }
-    dirty = true;
-    if (rendering) {
-      return;
-    }
-    selfInvalidations = 0;
-    if (pending == null) {
-      pending = Dom.defer(this::flush);
+    switch (phase) {
+      case CLOSING, CLOSED -> {}
+      // The running turn counts it as a self-invalidation and renders again.
+      case PREPARING, APPLYING -> dirty = true;
+      case OPEN -> {
+        dirty = true;
+        selfInvalidations = 0;
+        // A frame batch renders once its tasks have run.
+        if (pending == null && !inFrame) {
+          pending = Dom.defer(this::flush);
+        }
+      }
     }
   }
 
   private void flush() {
     pending = null;
     var turns = 0;
-    while (dirty && !closed && turns < scheduling.workBudget()) {
+    while (dirty && phase == Phase.OPEN && turns < scheduling.workBudget()) {
       dirty = false;
       turns++;
       turn();
@@ -221,7 +305,7 @@ public final class BrowserRoot implements AutoCloseable {
         selfInvalidations = 0;
       }
     }
-    if (dirty && !closed) {
+    if (dirty && phase == Phase.OPEN) {
       pending = Dom.paint(this::flush);
     }
   }
@@ -235,12 +319,12 @@ public final class BrowserRoot implements AutoCloseable {
   /// publishes or starts afterwards. An unexpected native failure closes the root and is reported;
   /// a failure before the first publication leaves the fallback content in the host.
   private void turn() {
-    rendering = true;
+    var content = view;
+    if (content == null) {
+      return;
+    }
+    phase = Phase.PREPARING;
     try {
-      var content = view;
-      if (content == null) {
-        return;
-      }
       ViewSnapshot<LiveBehavior> snapshot;
       try {
         snapshot =
@@ -257,7 +341,7 @@ public final class BrowserRoot implements AutoCloseable {
         return;
       }
       // Closing during expansion discards the result: nothing publishes afterwards.
-      if (closed) {
+      if (closed()) {
         return;
       }
       var foreign = foreignId(snapshot.ids());
@@ -273,6 +357,7 @@ public final class BrowserRoot implements AutoCloseable {
                 .format());
         return;
       }
+      phase = Phase.APPLYING;
       try {
         styles.update(
             snapshot.styleRules(),
@@ -284,6 +369,7 @@ public final class BrowserRoot implements AutoCloseable {
             });
         renderer.retire();
         renderer.updateWidgets(this);
+        renderer.handOff();
         renderer.activate();
         runAfterRender();
       } catch (ClosedRoot _) {
@@ -294,14 +380,16 @@ public final class BrowserRoot implements AutoCloseable {
         return;
       }
     } finally {
-      rendering = false;
+      if (!closed()) {
+        phase = Phase.OPEN;
+      }
     }
   }
 
   /// Runs queued after-render work while the root stays open. A task that closes the root stops the
   /// rest of the batch, and a failing task is reported without affecting the root.
   private void runAfterRender() {
-    while (!closed && !afterRender.isEmpty()) {
+    while (!closed() && !afterRender.isEmpty()) {
       var task = afterRender.remove(0);
       Failures.run("After-render task", hostId, task);
     }
@@ -359,14 +447,16 @@ public final class BrowserRoot implements AutoCloseable {
   /// cleanup failures are collected and reported together once.
   @Override
   public void close() {
-    if (closed) {
+    if (closed()) {
       return;
     }
-    closed = true;
+    phase = Phase.CLOSING;
     dirty = false;
     view = null;
     var failures = new ArrayList<RuntimeException>();
     cancelPending();
+    cancelFrame();
+    frameTasks.clear();
     committedReferences = Map.of();
     committedIds = Set.of();
     afterRender.clear();
@@ -375,6 +465,7 @@ public final class BrowserRoot implements AutoCloseable {
     styles.close();
     Dom.removeAttribute(hostElement, StyleSheet.ROOT_ATTRIBUTE);
     Dom.removeAttribute(hostElement, StyleSheet.THEME_ATTRIBUTE);
+    phase = Phase.CLOSED;
     Failures.reportAll("Cleanup failed while closing browser root '" + hostId + "'", failures);
   }
 }

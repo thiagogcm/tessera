@@ -22,9 +22,11 @@ import org.jspecify.annotations.Nullable;
 
 /// Browser-owned mailbox tabs that a background sync and the Delete key change, and app-bound
 /// settings tabs that switch only when the application accepts the request.
-final class TabsDemo {
-  private final List<String> mailboxes =
-      new ArrayList<>(List.of("Inbox", "Drafts", "Archive", "Sent"));
+public final class TabsDemo {
+  /// The mailboxes before the background sync changes them.
+  public static final List<String> MAILBOXES = List.of("Inbox", "Drafts", "Archive", "Sent");
+
+  private final List<String> mailboxes = new ArrayList<>(MAILBOXES);
   private String current = "Drafts";
   private @Nullable String section = "account";
   private String requested = "none";
@@ -36,14 +38,7 @@ final class TabsDemo {
 
   private LiveContent view(LiveContext context) {
     var root = context.root();
-    var tabs = ContentTabs.of("Mailboxes").id("mailboxes").initialSelected("Drafts");
-    for (var mailbox : mailboxes) {
-      if (mailbox.equals("Archive")) {
-        tabs.disabledTab(mailbox, mailbox, p().text("The archive is read-only"));
-      } else {
-        tabs.tab(mailbox, mailbox, p().text(mailbox + " messages"));
-      }
-    }
+    var tabs = mailboxes(mailboxes);
     var settings =
         LiveTabs.of(
                 ContentTabs.of("Settings")
@@ -93,5 +88,19 @@ final class TabsDemo {
                 .text("Allow switching"),
             Ui.button("Restore a removed section", root.update(() -> section = "privacy")),
             Ui.button("Reset settings", root.update(() -> section = "account")));
+  }
+
+  /// The mailbox tabs, browser-owned with Drafts selected first; the static tabs route compiles
+  /// them as the live root renders them.
+  public static ContentTabs mailboxes(List<String> mailboxes) {
+    var tabs = ContentTabs.of("Mailboxes").id("mailboxes").initialSelected("Drafts");
+    for (var mailbox : mailboxes) {
+      if (mailbox.equals("Archive")) {
+        tabs.disabledTab(mailbox, mailbox, p().text("The archive is read-only"));
+      } else {
+        tabs.tab(mailbox, mailbox, p().text(mailbox + " messages"));
+      }
+    }
+    return tabs;
   }
 }

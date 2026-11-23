@@ -126,6 +126,66 @@ final class Dom {
       value = "host.replaceChildren(...children);")
   static native void restoreChildren(JSObject host, JSObject children);
 
+  /// What a first commit hands over from the fallback content of `host`: the focused fallback
+  /// element and its id, and the reading position when the top of the viewport lies within `host`,
+  /// as the first fallback element with an id that reaches below that edge and its offset from it.
+  @JS(
+      args = {"host"},
+      value =
+          """
+          const active = document.activeElement;
+          const focused = active !== host && host.contains(active) ? active : null;
+          let anchor = '';
+          let offset = 0;
+          const box = host.getBoundingClientRect();
+          if (box.top < 0 && box.bottom > 0) {
+            for (const element of host.querySelectorAll('[id]')) {
+              const top = element.getBoundingClientRect();
+              if (top.bottom > 0) {
+                anchor = element.id;
+                offset = top.top;
+                break;
+              }
+            }
+          }
+          return {focused, focusId: focused ? focused.id : '', anchor, offset};
+          """)
+  static native JSObject captureFallback(JSObject host);
+
+  /// Returns focus to the restored fallback element that had it before a failed first commit.
+  @JS(
+      args = {"state"},
+      value =
+          """
+          const focused = state.focused;
+          if (focused && focused.isConnected && document.activeElement !== focused) {
+            focused.focus({preventScroll: true});
+          }
+          """)
+  static native void refocusFallback(JSObject state);
+
+  /// Completes the handoff from fallback content to the committed tree in `host`: scrolls the
+  /// window so the element with the anchor's id keeps its offset from the top of the viewport, and
+  /// focuses the element with the id of the fallback element that had focus, unless focus moved
+  /// elsewhere meanwhile. Elements are found within `host`; missing counterparts change nothing.
+  @JS(
+      args = {"host", "state"},
+      value =
+          """
+          const within = id => id && host.querySelector('#' + CSS.escape(id));
+          const anchor = within(state.anchor);
+          if (anchor) {
+            const delta = anchor.getBoundingClientRect().top - state.offset;
+            if (Math.abs(delta) >= 1) window.scrollBy({top: delta, behavior: 'instant'});
+          }
+          const target = within(state.focusId);
+          const active = document.activeElement;
+          const lost = active === null || active === document.body
+              || active === document.documentElement;
+          if (target && lost) target.focus({preventScroll: true});
+          """)
+  static native void handOffFallback(JSObject host, JSObject state);
+
   /// Adopts a new constructed stylesheet into the document. Constructed sheets need no inline
   /// `<style>` element, so they work under a `style-src` policy without `'unsafe-inline'`.
   @JS(
@@ -629,17 +689,24 @@ final class Dom {
   static native @Nullable String mountConflict(JSObject host, String attribute);
 
   /// The first of the newline-separated `ids` that an element outside `host` already uses, followed
-  /// by a newline and that element's owner, or `null`.
+  /// by a newline and that element's owner, or `null`. The document lookup returns only the first
+  /// element with an id; when that one is inside `host`, such as fallback content, every element
+  /// with the id is checked.
   @JS.Coerce
   @JS(
       args = {"host", "ids", "attribute"},
       value =
           """
+          const owner = (id, element) => {
+            const root = element.closest('[' + attribute + ']');
+            return id + '\\n' + (root ? "browser root '" + root.id + "'" : 'the host page');
+          };
           for (const id of ids.split('\\n')) {
-            const element = id && document.getElementById(id);
-            if (element && !host.contains(element)) {
-              const root = element.closest('[' + attribute + ']');
-              return id + '\\n' + (root ? "browser root '" + root.id + "'" : 'the host page');
+            const first = id && document.getElementById(id);
+            if (!first) continue;
+            if (!host.contains(first)) return owner(id, first);
+            for (const element of document.querySelectorAll('#' + CSS.escape(id))) {
+              if (!host.contains(element)) return owner(id, element);
             }
           }
           return null;

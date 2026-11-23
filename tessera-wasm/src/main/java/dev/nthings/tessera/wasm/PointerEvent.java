@@ -1,7 +1,7 @@
 package dev.nthings.tessera.wasm;
 
 /// A mouse, wheel, or pointer browser event, including `click`.
-public sealed interface PointerEvent extends BrowserEvent permits DomReconciler.NativePointerEvent {
+public sealed interface PointerEvent extends BrowserEvent permits NativeEvent.Pointer {
 
   /// The button that changed state: 0 primary, 1 auxiliary, 2 secondary.
   int button();

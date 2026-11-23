@@ -4,6 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.options.AriaRole;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 
 /// Live tabs on the tabs page: browser-owned mailboxes and app-bound settings.
@@ -46,6 +47,20 @@ class TabsIT {
     assertThat(sent).isFocused();
     assertSelected(sent);
     assertThat(session.text("Sent messages")).isVisible();
+  }
+
+  @BothEngines
+  @DisplayName("live mailbox tabs expose the same accessibility tree as the static page")
+  void liveTabsMatchStaticTabs(Session session) {
+    session.open("/tabs/");
+    var liveTree = mailboxTabs(session).ariaSnapshot();
+    session.open("/tabs/static/");
+    Assertions.assertThat(mailboxTabs(session).ariaSnapshot()).isEqualTo(liveTree);
+  }
+
+  /// The mailbox tab list and its panels.
+  private static Locator mailboxTabs(Session session) {
+    return session.role(AriaRole.TABLIST, "Mailboxes").locator("xpath=..");
   }
 
   @BothEngines

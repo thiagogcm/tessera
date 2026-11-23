@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /// A view whose next render can be invalid in several ways, plus coalesced and runaway invalidation
-/// and failing handlers. A rejected render must leave the rows and the draft as they were, and the
-/// view must recover on the next valid render.
+/// and failing handlers and updates. A rejected render must leave the rows and the draft as they
+/// were, and the view must recover on the next valid render.
 final class SchedulingDemo {
   private int renders;
   private boolean runaway;
@@ -26,6 +26,7 @@ final class SchedulingDemo {
   private boolean fail;
   private boolean rejectWithEffect;
   private int effectStarts;
+  private int partialUpdates;
 
   BrowserRoot mount(String host) {
     return BrowserRoot.mount(
@@ -52,6 +53,7 @@ final class SchedulingDemo {
                         Elements.h2().text("Render checks"),
                         Elements.p().role(Role.STATUS).text("Renders: " + renders),
                         Elements.p().text("Effects started: " + effectStarts),
+                        Elements.p().text("Changes before a failure: " + partialUpdates),
                         Field.of("Draft", Forms.text("draft"))))
             .child(list);
     if (fail) {
@@ -80,6 +82,13 @@ final class SchedulingDemo {
         Ui.button("Fail next render", root.update(() -> fail = true)),
         Ui.button("Reject render with effect", root.update(() -> rejectWithEffect = true)),
         Ui.button("Refresh", root.update(() -> {})),
+        // The change is applied before the failure, so it still renders.
+        Ui.button(
+            "Fail during update",
+            root.update(() -> {
+              partialUpdates++;
+              throw new IllegalStateException("Simulated update failure");
+            })),
         Ui.button(
             "Throw from handler",
             () -> {

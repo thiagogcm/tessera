@@ -3,6 +3,7 @@ package dev.nthings.tessera.wasm;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.AriaRole;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -78,6 +79,42 @@ class FailureRecoveryIT {
     var before = count(renders(session));
     session.button("Refresh").click();
     assertThat(renders(session)).hasText("Renders: " + (before + 1));
+  }
+
+  @Chromium
+  @DisplayName("a change that fails part-way still renders what it changed")
+  void failedUpdatesStillRender(Session session) {
+    session.open("/failures/");
+    session.button("Fail during update").click();
+    session.awaitError("Simulated update failure");
+    assertThat(session.text("Changes before a failure: 1")).isVisible();
+  }
+
+  @BothEngines
+  @DisplayName("an id the page uses rejects the render even when fallback content uses it first")
+  void fallbackIdsDoNotHidePageIds(Session session) {
+    var page = session.page();
+    // A host page written by hand can repeat an id of its own inside the fallback content.
+    page.route(
+        session.url("/failures/shadowed/"),
+        route -> {
+          var response = route.fetch();
+          route.fulfill(
+              new Route.FulfillOptions()
+                  .setResponse(response)
+                  .setBody(
+                      response
+                          .text()
+                          .replace(
+                              "<p>The claim is loading.</p>",
+                              "<p id=\"page-footer\">The claim is loading.</p>")));
+        });
+    session.open("/failures/shadowed/");
+    session.awaitError("cross-root-id");
+
+    assertThat(session.text("The claim is loading.")).isVisible();
+    assertThat(session.text("Claimed footer")).hasCount(0);
+    assertThat(session.text("A footer owned by the page")).isVisible();
   }
 
   @Chromium

@@ -92,6 +92,11 @@ public final class PublishedWeb {
                             KeyedListDemo.content(List.of("a", "b", "c"), true, false))))
                 .route(page("/tabs", "Tabs", mount("tabs", "tabs", demo, p("Loading."))))
                 .route(
+                    page(
+                        "/tabs/static",
+                        "Static tabs",
+                        DocumentContent.of(TabsDemo.mailboxes(TabsDemo.MAILBOXES))))
+                .route(
                     page("/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p("Loading."))))
                 .route(page("/search", "Search", mount("search", "search", demo, p("Loading."))))
                 .route(page("/events", "Events", mount("events", "events", demo, p("Loading."))))
@@ -110,6 +115,11 @@ public final class PublishedWeb {
                         mount("activity", "activity", demo, p("Loading."))))
                 .route(
                     page(
+                        "/handoff",
+                        "Handoff",
+                        mount("handoff", "handoff", demo, HandoffDemo.fallback())))
+                .route(
+                    page(
                         "/failures",
                         "Failures",
                         DocumentContent.of(
@@ -117,6 +127,13 @@ public final class PublishedWeb {
                         mount("schedule", "schedule", demo, p("Loading.")),
                         mount("collisions", "collisions", demo, p("Loading.")),
                         counter))
+                .route(
+                    page(
+                        "/failures/shadowed",
+                        "Shadowed ids",
+                        mount("claim", "claim", demo, p("The claim is loading.")),
+                        DocumentContent.of(
+                            p("A footer owned by the page").id(ElementRef.page("page-footer")))))
                 .build());
   }
 

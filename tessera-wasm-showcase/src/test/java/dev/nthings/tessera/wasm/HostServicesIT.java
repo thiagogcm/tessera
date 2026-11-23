@@ -13,6 +13,35 @@ import org.junit.jupiter.api.DisplayName;
 class HostServicesIT {
 
   @BothEngines
+  @DisplayName("a value a frame callback advances renders within that frame")
+  void frameCallbacksRenderInTheirFrame(Session session) {
+    var page = session.page();
+    // Counts the animation frame callbacks during which the meter's rendered width changes.
+    page.addInitScript(
+        """
+        const request = window.requestAnimationFrame.bind(window);
+        const width = () => {
+          const meter = document.querySelector('[aria-label="Upload progress"]');
+          return meter ? getComputedStyle(meter).inlineSize : null;
+        };
+        globalThis.meterFrames = 0;
+        window.requestAnimationFrame = callback => request(time => {
+          const before = width();
+          try {
+            callback(time);
+          } finally {
+            if (width() !== before) globalThis.meterFrames++;
+          }
+        });
+        """);
+    session.open("/");
+    session.button("Animate progress").click();
+    assertThat(session.role(AriaRole.PROGRESSBAR, "Upload progress"))
+        .hasCSS("inline-size", "120px");
+    Assertions.assertThat(page.evaluate("globalThis.meterFrames")).isEqualTo(120);
+  }
+
+  @BothEngines
   @DisplayName("text requests deliver their body and report HTTP failures by status")
   void textRequestsComplete(Session session) {
     session.open("/services/");

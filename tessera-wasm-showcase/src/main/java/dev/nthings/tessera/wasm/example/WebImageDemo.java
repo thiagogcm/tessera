@@ -77,7 +77,17 @@ public final class WebImageDemo {
             Map.entry("toolbar", lifetime::mountToolbar),
             Map.entry("closure", closure::mount),
             Map.entry("schedule", scheduling::mount),
-            Map.entry("collisions", CollisionsDemo::mount)));
+            Map.entry("handoff", HandoffDemo::mount),
+            Map.entry("collisions", CollisionsDemo::mount),
+            // Claims the id of the page's footer in its first render.
+            Map.entry(
+                "claim",
+                host ->
+                    BrowserRoot.mount(
+                        host,
+                        _ ->
+                            LiveContent.of(
+                                p().id(ElementRef.page("page-footer")).text("Claimed footer"))))));
   }
 
   private LiveContent view(LiveContext context) {

@@ -4,9 +4,7 @@ import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.internal.view.ControlSemantics;
 import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.view.ViewSnapshot;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,10 +23,11 @@ import org.jspecify.annotations.Nullable;
 /// listeners or an effect lifetime, and detaching obsolete ranges; a first commit builds off the
 /// host, so a failure before publication leaves the fallback nodes in place. [#publish] installs
 /// the candidate as the committed tree, moving a first build into the host. [#retire] then releases
-/// the resources of replaced subtrees with their application cleanups, and [#activate] starts the
-/// effects the commit placed. A root that closes while a phase runs settles through [ClosedRoot]:
-/// the commit publishes nothing and starts nothing, and the closing root releases what the commit
-/// acquired along with what it already owned.
+/// the resources of replaced subtrees with their application cleanups, [#handOff] moves focus and
+/// the reading position from a replaced fallback, and [#activate] starts the effects the commit
+/// placed. A root that closes while a phase runs settles through [ClosedRoot]: the commit publishes
+/// nothing and starts nothing, and the closing root releases what the commit acquired along with
+/// what it already owned.
 final class DomReconciler {
   /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names and
   /// group definitions.
@@ -81,6 +80,9 @@ final class DomReconciler {
   private final List<RuntimeException> disposalFailures = new ArrayList<>();
   private boolean mounted;
 
+  /// What the first commit took over from the fallback content, until [#handOff] applies it.
+  private @Nullable JSObject handoff;
+
   DomReconciler(JSObject host, String hostId, Runnable invalidate, BooleanSupplier open) {
     this.host = host;
     this.hostId = hostId;
@@ -120,7 +122,9 @@ final class DomReconciler {
 
   /// Publishes a prepared commit: installs its tree as the committed tree, replacing fallback
   /// content on the first commit. Acquired instances transfer to the committed tree here; a failure
-  /// during first installation releases them and restores the original fallback nodes.
+  /// during first installation releases them, restores the original fallback nodes and returns
+  /// focus to the fallback element that had it. A successful first installation leaves the focus
+  /// and scroll handoff to [#handOff].
   void publish(Commit commit) {
     // A root that closed after the last mutation of [#apply] already released its acquisitions.
     requireOpen();
@@ -130,6 +134,7 @@ final class DomReconciler {
     } else {
       // Retain the real nodes until installation succeeds, including dirty native controls.
       var fallback = Dom.snapshotChildren(host);
+      var state = Dom.captureFallback(host);
       var installed = false;
       try {
         Dom.clear(host);
@@ -145,13 +150,27 @@ final class DomReconciler {
             abort();
           } finally {
             Dom.restoreChildren(host, fallback);
+            Dom.refocusFallback(state);
           }
         }
       }
       mounted = true;
+      handoff = state;
     }
     roots = commit.tree();
     created.clear();
+  }
+
+  /// Completes the first commit's handoff from fallback content, once the committed tree, its
+  /// references and its widgets are in place and before effects start: keeps the reading position
+  /// of a host scrolled past its top, and moves focus from a fallback element to the committed
+  /// element with the same id. Focus events it fires reach the committed handlers.
+  void handOff() {
+    var state = handoff;
+    handoff = null;
+    if (state != null) {
+      Dom.handOffFallback(host, state);
+    }
   }
 
   /// Releases the obsolete subtrees the last commit replaced, descendant first and each resource
@@ -266,6 +285,7 @@ final class DomReconciler {
     clearQueued();
     boundControls = List.of();
     widgets = List.of();
+    handoff = null;
     if (mounted) {
       Dom.closeTransient(host);
       Dom.clear(host);
@@ -301,10 +321,11 @@ final class DomReconciler {
     Dom.removeRange(instance.first, instance.last);
   }
 
-  /// Matches `next` against `previous`, then moves only the retained ranges outside the longest run
-  /// already in order, creates new nodes in their final position, and detaches the rest for
-  /// [#retire]. Matched nodes are patched in sibling order with creations, so effects start in
-  /// document order. The root closing mid-mutation aborts at the next child or range boundary.
+  /// Plans the change from `previous` to `next` with [SiblingPlan], then moves only the retained
+  /// ranges outside the longest run already in order, creates new nodes in their final position,
+  /// and detaches the rest for [#retire]. Matched nodes are patched in sibling order with
+  /// creations, so effects start in document order. The root closing mid-mutation aborts at the
+  /// next child or range boundary.
   private List<Mounted> reconcile(
       JSObject parent,
       List<Mounted> previous,
@@ -315,54 +336,21 @@ final class DomReconciler {
       return List.of();
     }
     requireOpen();
-    for (var index = 0; index < previous.size(); index++) {
-      previous.get(index).slot = index;
-    }
-    var consumed = new boolean[previous.size()];
-    @Nullable Mounted[] matched = new Mounted[next.size()];
-    // Built at the first child that does not match its position; until then the sibling structure
-    // is unchanged and each child matches the previous child at its index.
-    @Nullable Map<Object, ArrayDeque<Mounted>> unmatched = null;
-    var lastSlot = -1;
-    var reordered = false;
-    for (var index = 0; index < next.size(); index++) {
-      var identity = identity(next.get(index));
-      Mounted old;
-      if (unmatched == null
-          && index < previous.size()
-          && identity.equals(previous.get(index).identity)) {
-        old = previous.get(index);
-      } else {
-        if (unmatched == null) {
-          unmatched = new HashMap<>();
-          for (var rest = index; rest < previous.size(); rest++) {
-            var instance = previous.get(rest);
-            unmatched.computeIfAbsent(instance.identity, _ -> new ArrayDeque<>()).addLast(instance);
-          }
-        }
-        var candidates = unmatched.get(identity);
-        old = candidates == null ? null : candidates.pollFirst();
-      }
-      if (old != null) {
-        consumed[old.slot] = true;
-        matched[index] = old;
-        reordered |= old.slot < lastSlot;
-        lastSlot = old.slot;
-      }
-    }
+    var plan =
+        SiblingPlan.of(previous, instance -> instance.identity, next, DomReconciler::identity);
     // Walking backwards, each retained range is placed before its next retained sibling, and each
     // new child's anchor is that sibling.
-    var stable = reordered ? stableSlots(matched, previous.size()) : null;
     @Nullable JSObject[] anchors = new JSObject[next.size()];
     var before = end;
     for (var index = next.size() - 1; index >= 0; index--) {
       requireOpen();
-      var old = matched[index];
-      if (old == null) {
+      var slot = plan.match(index);
+      if (slot == SiblingPlan.NEW) {
         anchors[index] = before;
         continue;
       }
-      if (stable != null && !stable[old.slot]) {
+      var old = previous.get(slot);
+      if (plan.moves(index)) {
         Dom.moveRange(parent, old.first, old.last, before);
       }
       before = old.first;
@@ -370,17 +358,18 @@ final class DomReconciler {
     var result = new ArrayList<Mounted>(next.size());
     for (var index = 0; index < next.size(); index++) {
       requireOpen();
-      var old = matched[index];
-      if (old != null) {
+      var slot = plan.match(index);
+      if (slot != SiblingPlan.NEW) {
+        var old = previous.get(slot);
         patch(parent, old, next.get(index), retainOptionDefaults);
         result.add(old);
       } else {
         result.add(create(parent, next.get(index), anchors[index]));
       }
     }
-    for (var index = 0; index < previous.size(); index++) {
-      if (!consumed[index]) {
-        var obsolete = previous.get(index);
+    for (var slot = 0; slot < previous.size(); slot++) {
+      if (!plan.retains(slot)) {
+        var obsolete = previous.get(slot);
         Dom.removeRange(obsolete.first, obsolete.last);
         retiring.add(obsolete);
       }
@@ -393,44 +382,6 @@ final class DomReconciler {
     if (!open.getAsBoolean()) {
       throw new ClosedRoot();
     }
-  }
-
-  /// Marks the previous slots on one longest increasing run of matched slots in `matched` order;
-  /// those ranges are already in relative order and stay where they are.
-  private static boolean[] stableSlots(@Nullable Mounted[] matched, int previousSize) {
-    var slots = new int[matched.length];
-    var count = 0;
-    for (var instance : matched) {
-      if (instance != null) {
-        slots[count++] = instance.slot;
-      }
-    }
-    // tails[length - 1] ends the longest run found so far; each entry links to its predecessor.
-    var tails = new int[count];
-    var predecessors = new int[count];
-    var length = 0;
-    for (var index = 0; index < count; index++) {
-      var low = 0;
-      var high = length;
-      while (low < high) {
-        var middle = (low + high) >>> 1;
-        if (slots[tails[middle]] < slots[index]) {
-          low = middle + 1;
-        } else {
-          high = middle;
-        }
-      }
-      predecessors[index] = low > 0 ? tails[low - 1] : -1;
-      tails[low] = index;
-      if (low == length) {
-        length++;
-      }
-    }
-    var stable = new boolean[previousSize];
-    for (var index = length > 0 ? tails[length - 1] : -1; index >= 0; index = predecessors[index]) {
-      stable[slots[index]] = true;
-    }
-    return stable;
   }
 
   /// What a child matches among its previous siblings: a keyed child its key, an unkeyed child the
@@ -783,7 +734,6 @@ final class DomReconciler {
     private final JSObject first;
     private final JSObject last;
     private List<Mounted> children = List.of();
-    private int slot;
     private LinkedNode.Defaults defaults;
 
     /// Allocated on first use: most nodes bind no listeners.
@@ -850,197 +800,15 @@ final class DomReconciler {
     /// An application handler failure is reported and does not affect the root or its tree.
     private void dispatch(JSObject event, Mounted target, String type, String hostId) {
       try {
-        handler.accept(new NativeEventSource(event, target));
+        handler.accept(
+            new NativeEvent.Source(
+                event,
+                target.first,
+                ((LinkedNode.Tag<LiveBehavior>) target.view).tag(),
+                target.composing));
       } catch (RuntimeException failure) {
         Failures.report("Java '" + type + "' handler", hostId, failure);
       }
-    }
-  }
-
-  private record NativeEventSource(JSObject event, Mounted target) implements EventType.Source {
-    @Override
-    public BasicEvent basic() {
-      return new NativeBasicEvent(event);
-    }
-
-    @Override
-    public PointerEvent pointer() {
-      if (!Dom.isMouseEvent(event)) {
-        throw new IllegalStateException(
-            "Pointer data requires a mouse or pointer event, not "
-                + Dom.eventString(event, "type"));
-      }
-      return new NativePointerEvent(
-          event,
-          (int) Dom.number(event, "button"),
-          Dom.number(event, "clientX"),
-          Dom.number(event, "clientY"),
-          (int) Dom.number(event, "detail"),
-          Dom.flag(event, "altKey"),
-          Dom.flag(event, "ctrlKey"),
-          Dom.flag(event, "metaKey"),
-          Dom.flag(event, "shiftKey"));
-    }
-
-    @Override
-    public KeyboardEvent keyboard() {
-      if (!Dom.isKeyboardEvent(event)) {
-        throw new IllegalStateException(
-            "Keyboard data requires a keyboard event, not " + Dom.eventString(event, "type"));
-      }
-      return new NativeKeyboardEvent(
-          event,
-          Dom.eventString(event, "key"),
-          Dom.eventString(event, "code"),
-          Dom.flag(event, "altKey"),
-          Dom.flag(event, "ctrlKey"),
-          Dom.flag(event, "metaKey"),
-          Dom.flag(event, "shiftKey"),
-          Dom.flag(event, "repeat"));
-    }
-
-    @Override
-    public ControlEvent control() {
-      return new NativeControlEvent(event, target);
-    }
-  }
-
-  record NativeBasicEvent(JSObject event) implements BasicEvent {
-    @Override
-    public String type() {
-      return Dom.eventString(event, "type");
-    }
-
-    @Override
-    public void preventDefault() {
-      Dom.preventDefault(event);
-    }
-
-    @Override
-    public boolean defaultPrevented() {
-      return Dom.flag(event, "defaultPrevented");
-    }
-
-    @Override
-    public void stopPropagation() {
-      Dom.stopPropagation(event);
-    }
-
-    @Override
-    public void stopImmediatePropagation() {
-      Dom.stopImmediatePropagation(event);
-    }
-  }
-
-  record NativePointerEvent(
-      JSObject event,
-      int button,
-      double clientX,
-      double clientY,
-      int detail,
-      boolean altKey,
-      boolean ctrlKey,
-      boolean metaKey,
-      boolean shiftKey)
-      implements PointerEvent {
-
-    @Override
-    public String type() {
-      return Dom.eventString(event, "type");
-    }
-
-    @Override
-    public void preventDefault() {
-      Dom.preventDefault(event);
-    }
-
-    @Override
-    public boolean defaultPrevented() {
-      return Dom.flag(event, "defaultPrevented");
-    }
-
-    @Override
-    public void stopPropagation() {
-      Dom.stopPropagation(event);
-    }
-
-    @Override
-    public void stopImmediatePropagation() {
-      Dom.stopImmediatePropagation(event);
-    }
-  }
-
-  record NativeKeyboardEvent(
-      JSObject event,
-      String key,
-      String code,
-      boolean altKey,
-      boolean ctrlKey,
-      boolean metaKey,
-      boolean shiftKey,
-      boolean repeat)
-      implements KeyboardEvent {
-
-    @Override
-    public String type() {
-      return Dom.eventString(event, "type");
-    }
-
-    @Override
-    public void preventDefault() {
-      Dom.preventDefault(event);
-    }
-
-    @Override
-    public boolean defaultPrevented() {
-      return Dom.flag(event, "defaultPrevented");
-    }
-
-    @Override
-    public void stopPropagation() {
-      Dom.stopPropagation(event);
-    }
-
-    @Override
-    public void stopImmediatePropagation() {
-      Dom.stopImmediatePropagation(event);
-    }
-  }
-
-  record NativeControlEvent(JSObject event, Mounted target) implements ControlEvent {
-    @Override
-    public ControlState control() {
-      var tag = ((LinkedNode.Tag<LiveBehavior>) target.view).tag();
-      if (tag != HtmlTag.INPUT && tag != HtmlTag.TEXTAREA && tag != HtmlTag.SELECT) {
-        throw new IllegalStateException(
-            "Form state requires an input, textarea or select current target");
-      }
-      return ControlCodec.state(Dom.controlState(target.first, event), target.composing);
-    }
-
-    @Override
-    public String type() {
-      return Dom.eventString(event, "type");
-    }
-
-    @Override
-    public void preventDefault() {
-      Dom.preventDefault(event);
-    }
-
-    @Override
-    public boolean defaultPrevented() {
-      return Dom.flag(event, "defaultPrevented");
-    }
-
-    @Override
-    public void stopPropagation() {
-      Dom.stopPropagation(event);
-    }
-
-    @Override
-    public void stopImmediatePropagation() {
-      Dom.stopImmediatePropagation(event);
     }
   }
 }

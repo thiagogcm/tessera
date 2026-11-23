@@ -12,7 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /// Native event handling: a capture-phase guard on a toolbar, synchronous default prevention,
-/// keyboard data and a one-shot listener, each reported in a visible event log.
+/// keyboard data that skips input method composition and a one-shot listener, each reported in a
+/// visible event log.
 final class EventsDemo {
   private final List<String> log = new ArrayList<>();
   private boolean readOnly;
@@ -82,10 +83,15 @@ final class EventsDemo {
                               log(root, "terms must be read first");
                             }))
                 .text("Accept terms"),
+            // A key that confirms input method text is not a shortcut.
             LiveElement.of(Elements.input(InputType.TEXT).ariaLabel("Shortcut"))
                 .on(
                     Events.KEYDOWN,
-                    event -> log(root, (event.shiftKey() ? "Shift+" : "") + event.key())),
+                    event -> {
+                      if (!event.composing()) {
+                        log(root, (event.shiftKey() ? "Shift+" : "") + event.key());
+                      }
+                    }),
             reward,
             Ui.button(
                 "Offer another reward",

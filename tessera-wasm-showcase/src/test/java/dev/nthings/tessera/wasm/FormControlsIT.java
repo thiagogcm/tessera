@@ -148,11 +148,13 @@ class FormControlsIT {
   }
 
   @BothEngines
-  @DisplayName("portable defaults submit like the static form, survive renders and reset natively")
+  @DisplayName(
+      "portable defaults submit and read like the static form, survive renders and reset natively")
   void portableDefaultsMatchStaticOutput(Session session) {
     session.open("/forms/static/");
     var form = session.role(AriaRole.FORM, "Defaults form");
     var defaults = formData(form);
+    var compiledTree = form.ariaSnapshot();
     Assertions.assertThat(defaults)
         .isEqualTo(
             List.of(
@@ -167,6 +169,7 @@ class FormControlsIT {
 
     session.open("/forms/");
     Assertions.assertThat(formData(form)).isEqualTo(defaults);
+    Assertions.assertThat(form.ariaSnapshot()).isEqualTo(compiledTree);
     session.field("Default text").fill("Browser edit");
     assertThat(session.text("Last change: text")).isVisible();
     session.field("Default notes").fill("Edited notes");

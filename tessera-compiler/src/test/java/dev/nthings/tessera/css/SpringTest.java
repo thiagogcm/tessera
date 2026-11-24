@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @DisplayName("Springs")
 class SpringTest {
 
-  private static final String MOTION_OK = "@media (prefers-reduced-motion: no-preference){";
+  private static final String MOTION_OK = Media.MOTION_SAFE.prelude() + "{";
 
   static Stream<Arguments> springs() {
     return Stream.of(
@@ -67,7 +67,7 @@ class SpringTest {
       var seconds = millis(spring.settlingDuration()) / 1000;
       assertThat(Math.abs(1 - exact(spring, seconds - 0.001))).isGreaterThanOrEqualTo(0.001);
     }
-    assertThat(Spring.SMOOTH.settlingDuration().toCss()).isEqualTo("735ms");
+    assertThat(millis(Spring.SMOOTH.settlingDuration())).isEqualTo(735);
   }
 
   @Test
@@ -104,8 +104,7 @@ class SpringTest {
     var perceptual = Duration.ofSeconds(2);
     var spring = Spring.of(perceptual, bounce);
 
-    assertThat(Double.parseDouble(spring.settlingDuration().toCss().replace("ms", "")))
-        .isLessThan(4.5 * perceptual.toMillis());
+    assertThat(millis(spring.settlingDuration())).isLessThan(4.5 * perceptual.toMillis());
     assertThat(spring.easing().toCss()).hasSizeLessThan(600);
   }
 
@@ -225,8 +224,10 @@ class SpringTest {
   }
 
   private static double millis(CssDuration duration) {
-    var css = duration.toCss();
-    return Double.parseDouble(css.substring(0, css.length() - 2));
+    if (duration instanceof CssDurations.Millis(var millis)) {
+      return millis;
+    }
+    throw new AssertionError("Not a literal duration: " + duration);
   }
 
   /// A parsed `linear()` function: its stops, as (progress, value) pairs with explicit positions.

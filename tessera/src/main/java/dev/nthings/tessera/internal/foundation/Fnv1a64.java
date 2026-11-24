@@ -38,6 +38,12 @@ public final class Fnv1a64 {
     return h;
   }
 
+  /// Compiler-facing: folds the length of `text`, then its UTF-16 code units, into `hash`. The
+  /// length prefix keeps consecutive texts apart, so `ab`, `c` and `a`, `bc` fold different hashes.
+  public static long updateText(long hash, CharSequence text) {
+    return updateChars(updateInt(hash, text.length()), text);
+  }
+
   /// Compiler-facing: the unsigned base-36 form of `hash`, used in generated class names.
   public static String toBase36Hash(long hash) {
     return Long.toUnsignedString(hash, 36);

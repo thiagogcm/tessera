@@ -28,7 +28,8 @@ import org.jspecify.annotations.Nullable;
 /// The compiled curve stays within 0.002 of the exact spring position and ends once the spring
 /// stays within 0.001 of its end value. Values are computed with [StrictMath] and rounded
 /// half-even, so every JVM and browser runtime emits the same CSS. Each spring compiles its curve
-/// once, when it is created: keep springs in constants rather than creating them on every render.
+/// once, the first time its [#easing()] or [#settlingDuration()] is read, so an unused spring costs
+/// nothing: keep springs in constants rather than creating them on every render.
 @CheckReturnValue
 public final class Spring {
 
@@ -66,19 +67,31 @@ public final class Spring {
 
   private final Duration perceptualDuration;
   private final double bounce;
-  private final CssDuration settlingDuration;
-  private final Easing easing;
+
+  /// The compiled curve, set on first use. Compiling is deterministic and [Compiled] is immutable,
+  /// so threads that race to compile it publish equal values.
+  private @Nullable Compiled compiled;
+
+  /// A compiled curve: the settling duration and the easing that runs over it.
+  private record Compiled(CssDuration settlingDuration, Easing easing) {}
 
   private Spring(Duration perceptualDuration, double bounce) {
     this.perceptualDuration = perceptualDuration;
     // Folds -0.0 into 0.0, so equal springs compare equal.
     this.bounce = bounce == 0 ? 0 : bounce;
-    var omega = TAU / (perceptualDuration.toNanos() / 1e9);
-    var zeta = bounce >= 0 ? 1 - bounce : 1 / (1 + bounce);
-    var motion = new Motion(omega, zeta);
-    var settlingMillis = Math.max(1, Math.ceil(motion.settlingTime() * 1000));
-    this.settlingDuration = CssDuration.ms(settlingMillis);
-    this.easing = motion.compile(settlingMillis / 1000);
+  }
+
+  private Compiled compiled() {
+    var curve = compiled;
+    if (curve == null) {
+      var omega = TAU / (perceptualDuration.toNanos() / 1e9);
+      var zeta = bounce >= 0 ? 1 - bounce : 1 / (1 + bounce);
+      var motion = new Motion(omega, zeta);
+      var settlingMillis = Math.max(1, Math.ceil(motion.settlingTime() * 1000));
+      curve = new Compiled(CssDuration.ms(settlingMillis), motion.compile(settlingMillis / 1000));
+      compiled = curve;
+    }
+    return curve;
   }
 
   /// A spring that takes about `perceptualDuration` to reach its end value, with `bounce` from
@@ -112,13 +125,13 @@ public final class Spring {
   /// over. Longer than [#perceptualDuration()], since the spring keeps easing in once it looks
   /// arrived.
   public CssDuration settlingDuration() {
-    return settlingDuration;
+    return compiled().settlingDuration();
   }
 
   /// The spring's position over [#settlingDuration()] as a CSS `linear()` easing, such as
   /// `linear(0, 0.031 3.05%, ..., 1)`. A bouncy spring passes `1` on its way to the end value.
   public Easing easing() {
-    return easing;
+    return compiled().easing();
   }
 
   @Override
@@ -166,13 +179,12 @@ public final class Spring {
     /// The time after which the position stays within [#SETTLED] of the end value.
     double settlingTime() {
       var bound = settlingBound();
-      // The last scanned time still outside the band, then the band crossing just after it.
+      // The last scanned time still outside the band, found scanning back from the bound, then
+      // the band crossing just after it.
       var step = bound / SETTLE_SCAN;
-      var last = 0;
-      for (var i = 1; i <= SETTLE_SCAN; i++) {
-        if (!settledAt(step * i)) {
-          last = i;
-        }
+      var last = SETTLE_SCAN;
+      while (last > 0 && settledAt(step * last)) {
+        last--;
       }
       var outside = step * last;
       var inside = step * (last + 1);
@@ -224,8 +236,20 @@ public final class Spring {
       var css = new StringBuilder("linear(0");
       var from = 0;
       while (from < samples) {
+        // Extends the line from `from` while its slope to the next rounded stop stays within the
+        // window of slopes that keep every sample between them within TOLERANCE.
+        var start = rounded[from];
+        var low = Double.NEGATIVE_INFINITY;
+        var high = Double.POSITIVE_INFINITY;
         var to = from + 1;
-        while (to < samples && fits(exact, rounded, from, to + 1)) {
+        while (to < samples) {
+          var span = to - from;
+          low = Math.max(low, (exact[to] - TOLERANCE - start) / span);
+          high = Math.min(high, (exact[to] + TOLERANCE - start) / span);
+          var slope = (rounded[to + 1] - start) / (span + 1);
+          if (slope < low || slope > high) {
+            break;
+          }
           to++;
         }
         if (to < samples) {
@@ -238,19 +262,6 @@ public final class Spring {
         from = to;
       }
       return new Easings.LinearStops(css.append(", 1)").toString());
-    }
-
-    /// Whether the straight line between the rounded stops `from` and `to` stays within
-    /// [#TOLERANCE] of every exact sample between them.
-    private static boolean fits(double[] exact, double[] rounded, int from, int to) {
-      var start = rounded[from];
-      var slope = (rounded[to] - start) / (to - from);
-      for (var i = from + 1; i < to; i++) {
-        if (Math.abs(start + slope * (i - from) - exact[i]) > TOLERANCE) {
-          return false;
-        }
-      }
-      return true;
     }
   }
 }

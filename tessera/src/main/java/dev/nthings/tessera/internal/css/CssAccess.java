@@ -20,13 +20,9 @@ public abstract class CssAccess {
   protected CssAccess() {}
 
   /// A rule keyed by a structural hash of the styles it serializes: equal styles get equal keys
-  /// without serializing them. `text` serializes the rule from those styles, so the stylesheet
-  /// calls [#css()] only for a key it does not hold yet, before the styles can change.
-  public record Rule(String key, Supplier<String> text) {
-    public String css() {
-      return text.get();
-    }
-  }
+  /// without serializing them. `css` serializes the rule from those styles, so the stylesheet calls
+  /// it only for a key it does not hold yet, before the styles can change.
+  public record Rule(String key, Supplier<String> css) {}
 
   /// The conditional rules of one element style. The CSS package builds it from lists it already
   /// made immutable.
@@ -37,9 +33,8 @@ public abstract class CssAccess {
   /// structural hash, and is null when the scope emits no rules.
   public record ScopeRules(@Nullable Rule rule, List<Keyframes> keyframes) {}
 
-  public abstract @Nullable String utilityKey(Declarations style);
-
-  public abstract String utilityRule(String key, Declarations style);
+  /// The `u-` rule of a style's plain declarations, or null when it has none.
+  public abstract @Nullable Rule utility(Declarations style);
 
   public abstract ElementRules collectConditional(Declarations style);
 

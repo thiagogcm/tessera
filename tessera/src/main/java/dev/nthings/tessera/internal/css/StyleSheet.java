@@ -6,6 +6,7 @@ import dev.nthings.tessera.css.ScopeBlock;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Compiler-facing: the stylesheet of one page, site or live render. The compiler registers each
@@ -66,24 +66,34 @@ public final class StyleSheet {
 
   private static final String MOTION_SAFE = "@media (prefers-reduced-motion: no-preference){";
 
-  private final Map<String, String> utilityRules = new LinkedHashMap<>();
-  private final Map<String, String> interactiveRules = new LinkedHashMap<>();
-  private final Map<String, String> containerRules = new LinkedHashMap<>();
-  private final Map<String, String> scopeBodies = new LinkedHashMap<>();
+  /// The cascade layers of registered rules, in the order [#embeddedRules()] lists them.
+  private enum Layer {
+    COMPONENTS("components"),
+    UTILITIES("utilities"),
+    INTERACTIVE("interactive"),
+    CONTAINER("container");
+
+    private final String cssName;
+
+    Layer(String cssName) {
+      this.cssName = cssName;
+    }
+  }
+
+  /// The text of each registered rule by layer and key: a whole rule, or the body of a scope's
+  /// `@scope` block.
+  private final Map<Layer, Map<String, String>> rules = new EnumMap<>(Layer.class);
+
   private final Set<Keyframes> keyframes = new LinkedHashSet<>();
   private final Set<String> transitionClasses = new LinkedHashSet<>();
   private final Set<String> liveProperties = new LinkedHashSet<>();
 
-  /// The rule text of an earlier stylesheet, by kind and key, reused instead of serializing again.
-  private final Map<String, String> reusedUtility;
-
-  private final Map<String, String> reusedInteractive;
-  private final Map<String, String> reusedContainer;
-  private final Map<String, String> reusedScopes;
+  /// The rule text of an earlier stylesheet, by layer and key, reused instead of serializing again.
+  private final Map<Layer, Map<String, String>> reused;
 
   /// Creates an empty stylesheet.
   public StyleSheet() {
-    this(Map.of(), Map.of(), Map.of(), Map.of());
+    this(Map.of());
   }
 
   /// Backend-facing: creates an empty stylesheet for the render after `previous`'s, which reuses
@@ -92,22 +102,14 @@ public final class StyleSheet {
   /// referenced, not those it reused from its predecessor, so a chain of renders keeps one render's
   /// rules alive.
   public StyleSheet(StyleSheet previous) {
-    this(
-        previous.utilityRules,
-        previous.interactiveRules,
-        previous.containerRules,
-        previous.scopeBodies);
+    this(previous.rules);
   }
 
-  private StyleSheet(
-      Map<String, String> reusedUtility,
-      Map<String, String> reusedInteractive,
-      Map<String, String> reusedContainer,
-      Map<String, String> reusedScopes) {
-    this.reusedUtility = reusedUtility;
-    this.reusedInteractive = reusedInteractive;
-    this.reusedContainer = reusedContainer;
-    this.reusedScopes = reusedScopes;
+  private StyleSheet(Map<Layer, Map<String, String>> reused) {
+    this.reused = reused;
+    for (var layer : Layer.values()) {
+      rules.put(layer, new LinkedHashMap<>());
+    }
   }
 
   /// Compiler-facing: registers an element's style and returns the class names that reference its
@@ -119,36 +121,42 @@ public final class StyleSheet {
   /// uses are registered too.
   public List<String> registerElement(Declarations style) {
     var css = CssAccess.get();
-    var utility = css.utilityKey(style);
+    var utility = css.utility(style);
+    var conditional = css.collectConditional(style);
+    keyframes.addAll(conditional.keyframes());
+    var interactive = conditional.interactive();
+    if (interactive == null && conditional.containers().isEmpty()) {
+      return utility == null ? List.of() : List.of(register(Layer.UTILITIES, utility));
+    }
+    var classes = new ArrayList<String>(2 + conditional.containers().size());
     if (utility != null) {
-      utilityRules.computeIfAbsent(
-          utility, key -> text(reusedUtility, key, () -> css.utilityRule(key, style)));
+      classes.add(register(Layer.UTILITIES, utility));
     }
-    var rules = css.collectConditional(style);
-    keyframes.addAll(rules.keyframes());
-    if (rules.interactive() == null && rules.containers().isEmpty()) {
-      return utility == null ? List.of() : List.of(utility);
-    }
-    var classes = new ArrayList<String>(3);
-    if (utility != null) {
-      classes.add(utility);
-    }
-    var interactive = rules.interactive();
     if (interactive != null) {
-      interactiveRules.computeIfAbsent(
-          interactive.key(), key -> text(reusedInteractive, key, interactive::css));
-      classes.add(interactive.key());
+      classes.add(register(Layer.INTERACTIVE, interactive));
     }
-    for (var rule : rules.containers()) {
-      containerRules.computeIfAbsent(rule.key(), key -> text(reusedContainer, key, rule::css));
-      classes.add(rule.key());
+    for (var container : conditional.containers()) {
+      classes.add(register(Layer.CONTAINER, container));
     }
     return classes;
   }
 
-  private static String text(Map<String, String> reused, String key, Supplier<String> build) {
-    var text = reused.get(key);
-    return text != null ? text : build.get();
+  /// Registers `rule` in `layer` under `key`, serializing it unless this stylesheet or the one it
+  /// reuses already holds that key, and returns the key.
+  private String register(Layer layer, String key, CssAccess.Rule rule) {
+    Objects.requireNonNull(rules.get(layer))
+        .computeIfAbsent(
+            key,
+            k -> {
+              var previous = reused.get(layer);
+              var text = previous == null ? null : previous.get(k);
+              return text != null ? text : rule.css().get();
+            });
+    return key;
+  }
+
+  private String register(Layer layer, CssAccess.Rule rule) {
+    return register(layer, rule.key(), rule);
   }
 
   /// Compiler-facing: registers the styles of a scope named `scopeName`, which `configure` writes
@@ -162,12 +170,7 @@ public final class StyleSheet {
     var scope = CssAccess.get().collectScope(configure);
     keyframes.addAll(scope.keyframes());
     var rule = scope.rule();
-    if (rule == null) {
-      return safeType;
-    }
-    var key = safeType + "-" + rule.key();
-    scopeBodies.computeIfAbsent(key, k -> text(reusedScopes, k, rule::css));
-    return key;
+    return rule == null ? safeType : register(Layer.COMPONENTS, safeType + "-" + rule.key(), rule);
   }
 
   /// Compiler-facing: records a view transition class whose group uses the shared 0.35s timing. The
@@ -191,10 +194,8 @@ public final class StyleSheet {
   /// Compiler-facing: merges another stylesheet's rules into this one, keeping first-registration
   /// order.
   public void mergeFrom(StyleSheet other) {
-    other.utilityRules.forEach(utilityRules::putIfAbsent);
-    other.interactiveRules.forEach(interactiveRules::putIfAbsent);
-    other.containerRules.forEach(containerRules::putIfAbsent);
-    other.scopeBodies.forEach(scopeBodies::putIfAbsent);
+    other.rules.forEach(
+        (layer, texts) -> texts.forEach(Objects.requireNonNull(rules.get(layer))::putIfAbsent));
     keyframes.addAll(other.keyframes);
     transitionClasses.addAll(other.transitionClasses);
     liveProperties.addAll(other.liveProperties);
@@ -206,8 +207,9 @@ public final class StyleSheet {
     // The base layer opens with fixed rules; the others are emitted only when they have rules.
     var base = new StringBuilder();
     var layers = new LinkedHashMap<String, StringBuilder>();
-    for (var layer : List.of("components", "utilities", "container", "interactive")) {
-      layers.put(layer, new StringBuilder());
+    for (var layer :
+        List.of(Layer.COMPONENTS, Layer.UTILITIES, Layer.CONTAINER, Layer.INTERACTIVE)) {
+      layers.put(layer.cssName, new StringBuilder());
     }
     // A document declares no live properties, so it has no unlayered rules.
     registeredRules(rule -> {
@@ -286,19 +288,21 @@ public final class StyleSheet {
     });
     liveProperties.forEach(name ->
         sink.accept(new Rule(name, null, "@property ", name, "{syntax:\"*\";inherits:false}")));
-    scopeBodies.forEach((key, body) -> {
-      var selector = "[data-scope=\"" + key + "\"]";
-      sink.accept(
-          new Rule(
-              selector,
-              "components",
-              "@scope (" + selector + ") to (:scope [data-scope] > *){",
-              body,
-              "}"));
-    });
-    utilityRules.forEach((key, rule) -> sink.accept(new Rule(key, "utilities", rule)));
-    interactiveRules.forEach((key, rule) -> sink.accept(new Rule(key, "interactive", rule)));
-    containerRules.forEach((key, rule) -> sink.accept(new Rule(key, "container", rule)));
+    rules.forEach((layer, texts) ->
+        texts.forEach((key, text) -> {
+          if (layer == Layer.COMPONENTS) {
+            var selector = "[data-scope=\"" + key + "\"]";
+            sink.accept(
+                new Rule(
+                    selector,
+                    layer.cssName,
+                    "@scope (" + selector + ") to (:scope [data-scope] > *){",
+                    text,
+                    "}"));
+          } else {
+            sink.accept(new Rule(key, layer.cssName, text));
+          }
+        }));
   }
 
   /// The reset rules beneath `host`, an embedded root's selector, or of the whole document when

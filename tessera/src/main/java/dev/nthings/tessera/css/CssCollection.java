@@ -2,25 +2,38 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.internal.css.CssAccess;
 import dev.nthings.tessera.internal.foundation.Fnv1a64;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 /// Keys authored styles by structural hashes and serializes them on demand, so the stylesheet
-/// serializes each distinct rule once however many elements and scopes register it.
+/// serializes each distinct rule once however many elements and scopes register it. Each rule is
+/// described once, as a [RuleWriter]: hashing it names the rule and serializing it gives its text.
 final class CssCollection extends CssAccess {
   private static final ElementRules EMPTY = new ElementRules(null, List.of(), List.of());
 
-  @Override
-  public @Nullable String utilityKey(Declarations style) {
-    return style.hasDeclarations() ? "u-" + Fnv1a64.toBase36Hash(style.contentHash()) : null;
+  /// Writes one rule into a sink, opening its selector with `selector`. The key is the hash of the
+  /// rule written with an empty selector, and the text is the rule written with the selector of
+  /// that key, so equal keys mean equal text.
+  @FunctionalInterface
+  private interface RuleWriter {
+    void write(CssSink sink, String selector);
   }
 
   @Override
-  public String utilityRule(String key, Declarations style) {
-    return "." + key + "{" + style.toCssBlockBody() + "}";
+  public @Nullable Rule utility(Declarations style) {
+    return rule(
+        "u-",
+        null,
+        (sink, selector) -> {
+          sink.open(selector);
+          style.writeDeclarations(sink);
+          sink.close();
+        });
   }
 
   @Override
@@ -29,24 +42,33 @@ final class CssCollection extends CssAccess {
       return EMPTY;
     }
     var frames = new LinkedHashSet<Keyframes>();
-    style.collectKeyframes(frames);
-    Rule interactive = null;
-    if (style.hasNestedRulesBesideContainers()) {
-      var key = "i-" + Fnv1a64.toBase36Hash(style.nestedRulesHash());
-      interactive = new Rule(key, () -> "." + key + "{" + style.nestedRules() + "}");
-    }
-    var containers =
-        style.containerRules().entrySet().stream()
-            .map(entry -> container(entry.getKey(), entry.getValue()))
-            .toList();
-    return new ElementRules(interactive, containers, List.copyOf(frames));
-  }
-
-  private static Rule container(ContainerQuery query, Declarations declarations) {
-    var prelude = query.prelude();
-    var hash = declarations.updateBody(Declarations.updateText(Fnv1a64.OFFSET_BASIS, prelude));
-    var key = "cq-" + Fnv1a64.toBase36Hash(hash);
-    return new Rule(key, () -> prelude + "{." + key + "{" + declarations.toCssBody() + "}}");
+    var interactive =
+        rule(
+            "i-",
+            frames,
+            (sink, selector) -> {
+              sink.open(selector);
+              style.writeNested(sink, false);
+              sink.close();
+            });
+    var containers = new ArrayList<Rule>();
+    style.forEachContainerQuery((prelude, body) -> {
+      var rule =
+          rule(
+              "cq-",
+              frames,
+              (sink, selector) -> {
+                sink.open(prelude);
+                sink.open(selector);
+                body.writeBody(sink);
+                sink.close();
+                sink.close();
+              });
+      if (rule != null) {
+        containers.add(rule);
+      }
+    });
+    return new ElementRules(interactive, List.copyOf(containers), List.copyOf(frames));
   }
 
   @Override
@@ -54,13 +76,27 @@ final class CssCollection extends CssAccess {
     var scope = new ScopeStyle();
     configure.configure(scope);
     var frames = new LinkedHashSet<Keyframes>();
-    scope.collectKeyframes(frames);
-    var rule =
-        scope.isEmpty()
-            ? null
-            : new Rule(
-                Fnv1a64.toBase36Hash(scope.updateHash(Fnv1a64.OFFSET_BASIS)), scope::toCssBody);
+    var rule = rule("", frames, (sink, _) -> scope.write(sink));
     return new ScopeRules(rule, List.copyOf(frames));
+  }
+
+  /// The rule `writer` writes, keyed by `prefix` and its structural hash, or null when it writes
+  /// nothing. Adds the keyframes its styles use to `keyframes`, unless that is null.
+  private static @Nullable Rule rule(
+      String prefix, @Nullable Set<Keyframes> keyframes, RuleWriter writer) {
+    var hash = new CssSink.Hash(keyframes);
+    writer.write(hash, "");
+    if (hash.isEmpty()) {
+      return null;
+    }
+    var key = prefix + Fnv1a64.toBase36Hash(hash.value());
+    return new Rule(
+        key,
+        () -> {
+          var text = new CssSink.Text();
+          writer.write(text, "." + key);
+          return text.toString();
+        });
   }
 
   @Override

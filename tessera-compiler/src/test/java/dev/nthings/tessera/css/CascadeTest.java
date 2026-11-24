@@ -28,7 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @DisplayName("Cascade")
 class CascadeTest {
 
-  private static final String MOTION_OK = "@media (prefers-reduced-motion: no-preference){";
+  private static final String MOTION_OK = Media.MOTION_SAFE.prelude() + "{";
 
   static Stream<Arguments> shorthandPairs() {
     return Stream.of(
@@ -126,6 +126,28 @@ class CascadeTest {
     assertThat(CssBlocks.block(rule, "&:hover:not(:where(:disabled)){"))
         .contains("opacity:0.9", "cursor:pointer");
     assertThat(CssBlocks.block(rule, MOTION_OK)).contains("&:focus-visible{opacity:0.5}");
+  }
+
+  @Test
+  @DisplayName("a condition already in force joins the enclosing rule instead of nesting again")
+  void conditionsInForceJoinTheEnclosingRule() {
+    var wide = Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(30));
+    var page =
+        renderMain(
+            button()
+                .on(State.HOVER, h -> h.opacity(0.9).on(State.HOVER, s -> s.cursor(Cursor.POINTER)))
+                .on(wide, c -> c.flexRow().on(wide, s -> s.gap(CssLength.rem(1))))
+                .text("Save"),
+            new Wide(wide));
+
+    var button = page.element("button");
+    assertThat(page.ruleOf(button, "i-"))
+        .isEqualTo("&:hover:not(:where(:disabled)){opacity:0.9;cursor:pointer}");
+    assertThat(page.ruleOf(button, "cq-")).contains("gap:1rem").doesNotContain("@container");
+    assertThat(CssBlocks.block(page.css(), "@layer container{")).containsOnlyOnce("@container");
+    assertThat(page.scopeBody(page.element("section")))
+        .containsOnlyOnce("@container")
+        .contains(":scope p{opacity:0.5}", ":scope a{opacity:0.8}");
   }
 
   @Test
@@ -324,6 +346,22 @@ class CascadeTest {
     @Override
     public TagElement expand(ViewContext context) {
       return nav().child(a("/home").text("Home"));
+    }
+  }
+
+  private record Wide(ContainerQuery wide) implements Scope {
+    @Override
+    public void configureScope(ScopeStyle scope) {
+      scope.on(
+          wide,
+          w ->
+              w.select(":scope p", s -> s.opacity(0.5))
+                  .on(wide, i -> i.select(":scope a", s -> s.opacity(0.8))));
+    }
+
+    @Override
+    public TagElement expand(ViewContext context) {
+      return section().child(p().text("Wide"));
     }
   }
 

@@ -131,7 +131,7 @@ flowchart LR
     reset --> base --> theme --> components --> utilities --> container --> interactive
 ```
 
-Call `on(condition, styles)` to apply declarations while a `Condition` holds. Conditions can nest.
+Call `on(condition, styles)` to apply declarations while a `Condition` holds. Conditions can nest, and a condition that already holds adds nothing when nested again: `on(State.HOVER, s -> s.on(State.HOVER, ...))` writes into the one hover rule, and `ScopeStyle.on(query, ...)` inside a block for an equal query joins that block. A conditional rule that ends up empty is not emitted.
 
 | Condition | Layer and behavior |
 | --- | --- |
@@ -160,11 +160,11 @@ Size queries support `atLeast(length)` and `below(length)`. A `SCROLL_STATE` con
 
 ## Add transitions and animations
 
-`Transition.controlFeedback()`, `Transition.overlayEntry()`, and `Transition.disclosure()` provide coordinated duration, easing, and property sets. For spatial movement, build the transition with `whenMotionSafe()` (or write it inside `on(Media.MOTION_SAFE, ...)`) and keep the resting visible state outside the condition. A motion-safe rule written inside another `MOTION_SAFE` rule joins it rather than nesting a second `@media` block.
+`Transition.controlFeedback()`, `Transition.overlayEntry()`, and `Transition.disclosure()` provide coordinated duration, easing, and property sets. For spatial movement, build the transition with `whenMotionSafe()` (or write it inside `on(Media.MOTION_SAFE, ...)`) and keep the resting visible state outside the condition. Because a condition that already holds adds nothing, a motion-safe transition written inside `on(Media.MOTION_SAFE, ...)` joins that rule rather than nesting a second `@media` block.
 
 ### Use spring transitions
 
-A `Spring` describes motion by feel: a perceptual duration and a bounce from `-0.5` to `0.7`. Tessera solves the spring in closed form when you create it and compiles it to a CSS `linear()` easing, so the browser plays the motion natively without script.
+A `Spring` describes motion by feel: a perceptual duration and a bounce from `-0.5` to `0.7`. Tessera solves the spring in closed form and compiles it to a CSS `linear()` easing, so the browser plays the motion natively without script.
 
 ```java
 var lift = Transition.spring(Spring.SNAPPY, Animatable.TRANSLATE);
@@ -183,7 +183,7 @@ Elements.div()
 
 `Transition.spring(...)` runs over the spring's `settlingDuration()`, the whole milliseconds until it stays within 0.1% of its end value, so it lasts longer than the perceptual duration. The transition is always motion-safe: with reduced motion the properties change at once, or follow a plain transition written on the same style, such as the opacity fade above. A bouncy spring overshoots, so it suits position, size, and transforms; opacity and colors clamp at the ends of their range.
 
-The compiled curve stays within 0.002 of the exact spring and is computed with `StrictMath`, so static pages and browser roots emit byte-identical CSS. A typical spring compiles to about 20 stops. Bounces further from `0` settle more slowly and compile to longer curves; the bounce range keeps every spring settling within about four times its perceptual duration and under 600 characters of CSS. Each `Spring` compiles once when created, so keep springs in constants.
+The compiled curve stays within 0.002 of the exact spring and is computed with `StrictMath`, so static pages and browser roots emit byte-identical CSS. A typical spring compiles to about 20 stops. Bounces further from `0` settle more slowly and compile to longer curves; the bounce range keeps every spring settling within about four times its perceptual duration and under 600 characters of CSS. Each `Spring` compiles once, the first time its `easing()` or `settlingDuration()` is read, so presets you never use cost nothing; keep springs in constants rather than creating them on every render.
 
 To emit a spring's curve once in `@layer theme` instead of in every rule that uses it, store its easing and duration in tokens and register them in the theme:
 

@@ -1,7 +1,6 @@
 package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.foundation.FluentBuilder;
-import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -9,9 +8,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jspecify.annotations.Nullable;
 
 /// A mutable set of declarations and custom properties, written through the [Styled] methods, plus
@@ -23,43 +22,35 @@ import org.jspecify.annotations.Nullable;
 /// written after its shorthand.
 public final class Declarations implements Styled<Declarations>, FluentBuilder<Declarations> {
 
-  /// The state and media conditions in emission order: states first (in [State] order), then media.
-  /// Container queries follow them in first-use order, so a later state wins over an earlier one at
-  /// equal specificity.
-  private static final List<Condition> STATE_AND_MEDIA_ORDER =
-      Stream.concat(Stream.of(State.values()), Stream.of(Media.values()))
-          .map(Condition.class::cast)
-          .toList();
-
-  // Markers that make the structural hash prefix-free: each nested rule opens with its kind, and
-  // every rule list ends with RULE_END.
-  private static final int RULE_END = 0;
-  private static final int STATE_OR_MEDIA_RULE = 1;
-  private static final int CONTAINER_RULE = 2;
-  private static final int STARTING_STYLE_RULE = 3;
+  /// The number of [State] constants, which rank ahead of the [Media] features.
+  private static final int STATE_COUNT = State.values().length;
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
 
-  /// Created on first use, so a plain style allocates no conditional state.
-  private @Nullable Map<Condition, Declarations> conditional;
+  /// The conditional rules in emission order: states (in [State] order), then media features (in
+  /// [Media] order), then container queries in first-use order, so a later state wins over an
+  /// earlier one at equal specificity. Created on first use, so a plain style allocates no
+  /// conditional state.
+  private @Nullable List<Nested> nested;
 
   private @Nullable Set<Keyframes> keyframes;
   private @Nullable Declarations startingStyle;
 
-  /// The [Media] features an enclosing rule already requires, as a bit set of their ordinals. A
-  /// nested rule for one of them would add nothing, so [#nested(Condition)] writes it here instead.
-  private final int enclosingMedia;
+  /// The conditions an enclosing rule already requires.
+  private final Enclosing enclosing;
+
+  /// A conditional rule: the styles that apply while `condition` holds, opened with `prelude`.
+  private record Nested(Condition condition, String prelude, Declarations style) {}
 
   /// Creates an empty refinement, for building a style outside an element.
   public Declarations() {
-    this(0);
+    this(Enclosing.NONE);
   }
 
-  /// An empty refinement inside rules that already require the [Media] features in
-  /// `enclosingMedia`, a bit set of their ordinals.
-  Declarations(int enclosingMedia) {
-    this.enclosingMedia = enclosingMedia;
+  /// An empty refinement inside rules that already require the `enclosing` conditions.
+  Declarations(Enclosing enclosing) {
+    this.enclosing = enclosing;
   }
 
   @Override
@@ -102,7 +93,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   public Declarations startingStyle(StyleBlock styles) {
     var start = startingStyle;
     if (start == null) {
-      start = new Declarations(enclosingMedia);
+      start = new Declarations(enclosing);
       startingStyle = start;
     }
     styles.configure(start);
@@ -124,9 +115,9 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
 
   /// Writes `other`'s conditional styles, keyframes and starting style into this one.
   private void mergeConditionalFrom(Declarations other) {
-    var otherConditional = other.conditional;
-    if (otherConditional != null) {
-      otherConditional.forEach((condition, style) -> nested(condition).mergeFrom(style));
+    var otherNested = other.nested;
+    if (otherNested != null) {
+      otherNested.forEach(rule -> nested(rule.condition()).mergeFrom(rule.style()));
     }
     var otherKeyframes = other.keyframes;
     if (otherKeyframes != null) {
@@ -138,29 +129,51 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     }
   }
 
-  /// The refinement holding the styles for `condition`, created on first use. A media feature an
+  /// The refinement holding the styles for `condition`, created on first use. A condition an
   /// enclosing rule already requires adds nothing, so this refinement holds those styles itself.
   Declarations nested(Condition condition) {
-    var media = enclosingMedia;
-    if (condition instanceof Media feature) {
-      var bit = mediaBit(feature);
-      if ((media & bit) != 0) {
-        return this;
-      }
-      media |= bit;
-    }
-    var rules = conditional;
-    if (rules == null) {
-      rules = new LinkedHashMap<>();
-      conditional = rules;
-    }
-    var nestedMedia = media;
-    return rules.computeIfAbsent(condition, _ -> new Declarations(nestedMedia));
+    return enclosing.enter(condition, this, inside -> conditionalRule(condition, inside));
   }
 
-  /// The bit of `feature` in an enclosing-media bit set.
-  static int mediaBit(Media feature) {
-    return 1 << feature.ordinal();
+  /// The rule for `condition`, created with the `inside` conditions in force if absent, at its
+  /// place in emission order.
+  private Declarations conditionalRule(Condition condition, Enclosing inside) {
+    var rules = nested;
+    if (rules == null) {
+      rules = new ArrayList<>(2);
+      nested = rules;
+    }
+    for (var rule : rules) {
+      if (rule.condition().equals(condition)) {
+        return rule.style();
+      }
+    }
+    var rank = rank(condition);
+    var index = rules.size();
+    while (index > 0 && rank(rules.get(index - 1).condition()) > rank) {
+      index--;
+    }
+    var style = new Declarations(inside);
+    rules.add(index, new Nested(condition, prelude(condition), style));
+    return style;
+  }
+
+  /// The emission rank of `condition`: equal ranks keep first-use order.
+  private static int rank(Condition condition) {
+    return switch (condition) {
+      case State state -> state.ordinal();
+      case Media media -> STATE_COUNT + media.ordinal();
+      case ContainerQuery _ -> Integer.MAX_VALUE;
+    };
+  }
+
+  /// The prelude that opens a condition's nested rule.
+  static String prelude(Condition condition) {
+    return switch (condition) {
+      case State state -> state.prelude();
+      case Media media -> media.prelude();
+      case ContainerQuery query -> query.prelude();
+    };
   }
 
   private Set<Keyframes> keyframes() {
@@ -182,23 +195,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   /// Whether conditional styles, a starting style or keyframes were written, so the style may emit
   /// more than its plain declarations.
   boolean hasConditionalStyles() {
-    return conditional != null || startingStyle != null || keyframes != null;
-  }
-
-  /// Every keyframes rule this style or a nested one uses.
-  void collectKeyframes(Set<Keyframes> target) {
-    var used = keyframes;
-    if (used != null) {
-      target.addAll(used);
-    }
-    var rules = conditional;
-    if (rules != null) {
-      rules.values().forEach(style -> style.collectKeyframes(target));
-    }
-    var start = startingStyle;
-    if (start != null) {
-      start.collectKeyframes(target);
-    }
+    return nested != null || startingStyle != null || keyframes != null;
   }
 
   /// Compiler-facing: sets `view-transition-name` to `name` and, when `transitionClass` is not
@@ -249,215 +246,65 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
     return declarations.containsKey(CssProperty.ASPECT_RATIO);
   }
 
-  /// Whether this style emits nothing, including its nested rules.
-  boolean isEmpty() {
-    return !hasDeclarations() && !hasNestedRules();
+  /// Writes the plain declarations and custom properties into `sink`.
+  void writeDeclarations(CssSink sink) {
+    declarations.forEach(sink::declaration);
+    customProperties.forEach(sink::customProperty);
   }
 
-  /// Whether plain declarations or custom properties are set.
-  boolean hasDeclarations() {
-    return !declarations.isEmpty() || !customProperties.isEmpty();
+  /// Writes everything this style emits inside its rule into `sink`: the declarations, then the
+  /// state and media rules, the container queries and `@starting-style`.
+  void writeBody(CssSink sink) {
+    writeDeclarations(sink);
+    writeNested(sink, true);
   }
 
-  /// Whether a nested rule, container queries included, emits something.
-  private boolean hasNestedRules() {
-    var start = startingStyle;
-    if (start != null && !start.isEmpty()) {
-      return true;
+  /// Writes the nested rules into `sink`: the state and media rules, then the container queries
+  /// when `containers` is true, then `@starting-style`. Reports the keyframes this style uses, and
+  /// those of every nested rule written.
+  void writeNested(CssSink sink, boolean containers) {
+    var used = keyframes;
+    if (used != null) {
+      sink.uses(used);
     }
-    var rules = conditional;
+    var rules = nested;
     if (rules != null) {
-      for (var style : rules.values()) {
-        if (!style.isEmpty()) {
-          return true;
+      for (var rule : rules) {
+        if (!containers && rule.condition() instanceof ContainerQuery) {
+          // Container queries come last.
+          break;
         }
+        writeRule(sink, rule.prelude(), rule.style());
       }
     }
-    return false;
-  }
-
-  /// A content hash of the plain declarations and custom properties, used to name the generated
-  /// utility class. Each text is preceded by its length, so `--col-1:23` and `--col-12:3` hash
-  /// apart.
-  long contentHash() {
-    return updateDeclarations(Fnv1a64.OFFSET_BASIS);
-  }
-
-  /// A structural hash of [#nestedRules()], computed without serializing it: equal styles hash
-  /// equal, so the hash names the generated interactive class.
-  long nestedRulesHash() {
-    var hash = updateStateAndMediaRules(Fnv1a64.OFFSET_BASIS);
-    return Fnv1a64.updateByte(updateStartingStyle(hash), RULE_END);
-  }
-
-  /// Folds everything [#toCssBody()] serializes into `hash`, in the same order, without serializing
-  /// it. Counts and rule markers delimit each part, so different structures never fold the same
-  /// sequence, and equal styles fold equal hashes.
-  long updateBody(long hash) {
-    var h = updateStateAndMediaRules(updateDeclarations(hash));
-    var rules = conditional;
-    if (rules != null) {
-      for (var entry : rules.entrySet()) {
-        if (entry.getKey() instanceof ContainerQuery query && !entry.getValue().isEmpty()) {
-          h = Fnv1a64.updateByte(h, CONTAINER_RULE);
-          h = updateText(h, query.prelude());
-          h = entry.getValue().updateBody(h);
-        }
-      }
-    }
-    return Fnv1a64.updateByte(updateStartingStyle(h), RULE_END);
-  }
-
-  private long updateDeclarations(long hash) {
-    var h = Fnv1a64.updateInt(hash, declarations.size());
-    for (var entry : declarations.entrySet()) {
-      h = Fnv1a64.updateInt(h, entry.getKey().ordinal());
-      h = updateText(h, entry.getValue());
-    }
-    h = Fnv1a64.updateInt(h, customProperties.size());
-    for (var entry : customProperties.entrySet()) {
-      h = updateText(h, entry.getKey());
-      h = updateText(h, entry.getValue());
-    }
-    return h;
-  }
-
-  private long updateStateAndMediaRules(long hash) {
-    var h = hash;
-    var rules = conditional;
-    if (rules == null) {
-      return h;
-    }
-    for (int i = 0, count = STATE_AND_MEDIA_ORDER.size(); i < count; i++) {
-      var style = rules.get(STATE_AND_MEDIA_ORDER.get(i));
-      if (style != null && !style.isEmpty()) {
-        h = Fnv1a64.updateInt(Fnv1a64.updateByte(h, STATE_OR_MEDIA_RULE), i);
-        h = style.updateBody(h);
-      }
-    }
-    return h;
-  }
-
-  private long updateStartingStyle(long hash) {
-    var start = startingStyle;
-    if (start == null || start.isEmpty()) {
-      return hash;
-    }
-    return start.updateBody(Fnv1a64.updateByte(hash, STARTING_STYLE_RULE));
-  }
-
-  /// Folds `text`, preceded by its length, into `hash`.
-  static long updateText(long hash, String text) {
-    return Fnv1a64.updateChars(Fnv1a64.updateInt(hash, text.length()), text);
-  }
-
-  /// The full block body, without braces: the declarations, then the state and media rules, the
-  /// container queries and `@starting-style`.
-  String toCssBody() {
-    var nested = new StringBuilder();
-    appendStateAndMediaRules(nested);
-    containerRules().forEach((query, style) -> appendRule(nested, prelude(query), style));
-    appendStartingStyle(nested);
-    var sb = new StringBuilder(toCssBlockBody());
-    if (!sb.isEmpty() && !nested.isEmpty()) {
-      sb.append(';');
-    }
-    return sb.append(nested).toString();
-  }
-
-  /// Whether a state or media rule, or the starting style, emits something: whether
-  /// [#nestedRules()] is not empty.
-  boolean hasNestedRulesBesideContainers() {
-    var start = startingStyle;
-    if (start != null && !start.isEmpty()) {
-      return true;
-    }
-    var rules = conditional;
-    if (rules != null) {
-      for (var condition : STATE_AND_MEDIA_ORDER) {
-        var style = rules.get(condition);
-        if (style != null && !style.isEmpty()) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /// The nested rules except container queries: state and media rules, then `@starting-style`.
-  /// Empty when none emits anything.
-  String nestedRules() {
-    var sb = new StringBuilder();
-    appendStateAndMediaRules(sb);
-    appendStartingStyle(sb);
-    return sb.toString();
-  }
-
-  /// The container-query rules that emit something, in first-use order.
-  Map<ContainerQuery, Declarations> containerRules() {
-    var rules = conditional;
-    if (rules == null) {
-      return Map.of();
-    }
-    var queries = new LinkedHashMap<ContainerQuery, Declarations>();
-    rules.forEach((condition, style) -> {
-      if (condition instanceof ContainerQuery query && !style.isEmpty()) {
-        queries.put(query, style);
-      }
-    });
-    return queries;
-  }
-
-  private void appendStateAndMediaRules(StringBuilder sb) {
-    var rules = conditional;
-    if (rules == null) {
-      return;
-    }
-    for (var condition : STATE_AND_MEDIA_ORDER) {
-      var style = rules.get(condition);
-      if (style != null) {
-        appendRule(sb, prelude(condition), style);
-      }
-    }
-  }
-
-  private void appendStartingStyle(StringBuilder sb) {
     var start = startingStyle;
     if (start != null) {
-      appendRule(sb, "@starting-style", start);
+      writeRule(sink, "@starting-style", start);
     }
   }
 
-  private static void appendRule(StringBuilder sb, String prelude, Declarations style) {
-    if (!style.isEmpty()) {
-      sb.append(prelude).append('{').append(style.toCssBody()).append('}');
+  /// Calls `action` with the prelude and styles of each container query, in first-use order.
+  void forEachContainerQuery(BiConsumer<String, Declarations> action) {
+    var rules = nested;
+    if (rules != null) {
+      for (var rule : rules) {
+        if (rule.condition() instanceof ContainerQuery) {
+          action.accept(rule.prelude(), rule.style());
+        }
+      }
     }
   }
 
-  /// The prelude that opens a condition's nested rule.
-  static String prelude(Condition condition) {
-    return switch (condition) {
-      case State state -> state.prelude();
-      case Media media -> media.prelude();
-      case ContainerQuery query -> query.prelude();
-    };
+  private static void writeRule(CssSink sink, String prelude, Declarations style) {
+    sink.open(prelude);
+    style.writeBody(sink);
+    sink.close();
   }
 
   /// The plain declarations and custom properties as a CSS block body, without braces.
   String toCssBlockBody() {
-    var sb = new StringBuilder();
-    for (var entry : declarations.entrySet()) {
-      if (!sb.isEmpty()) {
-        sb.append(';');
-      }
-      sb.append(entry.getKey().cssName()).append(':').append(entry.getValue());
-    }
-    for (var entry : customProperties.entrySet()) {
-      if (!sb.isEmpty()) {
-        sb.append(';');
-      }
-      sb.append(entry.getKey()).append(':').append(entry.getValue());
-    }
-    return sb.toString();
+    var text = new CssSink.Text();
+    writeDeclarations(text);
+    return text.toString();
   }
 }

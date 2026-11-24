@@ -22,16 +22,16 @@ import org.jspecify.annotations.Nullable;
 /// written after its shorthand.
 public final class Declarations implements Styled<Declarations>, FluentBuilder<Declarations> {
 
-  /// The number of [State] constants, which rank ahead of the [Media] features.
+  /// The number of [State] constants: states rank first, then group states, then [Media] features.
   private static final int STATE_COUNT = State.values().length;
 
   private final EnumMap<CssProperty, String> declarations = new EnumMap<>(CssProperty.class);
   private final Map<String, String> customProperties = new LinkedHashMap<>();
 
-  /// The conditional rules in emission order: states (in [State] order), then media features (in
-  /// [Media] order), then container queries in first-use order, so a later state wins over an
-  /// earlier one at equal specificity. Created on first use, so a plain style allocates no
-  /// conditional state.
+  /// The conditional rules in emission order: states (in [State] order), then group states (in
+  /// order of their [State], groups in first-use order), then media features (in [Media] order),
+  /// then container queries in first-use order, so a later state wins over an earlier one at equal
+  /// specificity. Created on first use, so a plain style allocates no conditional state.
   private @Nullable List<Nested> nested;
 
   private @Nullable Set<Keyframes> keyframes;
@@ -162,7 +162,8 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   private static int rank(Condition condition) {
     return switch (condition) {
       case State state -> state.ordinal();
-      case Media media -> STATE_COUNT + media.ordinal();
+      case GroupState group -> STATE_COUNT + group.state().ordinal();
+      case Media media -> 2 * STATE_COUNT + media.ordinal();
       case ContainerQuery _ -> Integer.MAX_VALUE;
     };
   }
@@ -171,6 +172,7 @@ public final class Declarations implements Styled<Declarations>, FluentBuilder<D
   static String prelude(Condition condition) {
     return switch (condition) {
       case State state -> state.prelude();
+      case GroupState group -> group.prelude();
       case Media media -> media.prelude();
       case ContainerQuery query -> query.prelude();
     };

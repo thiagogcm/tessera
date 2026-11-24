@@ -5,10 +5,11 @@
 /// [StyleBlock]s, applied to any target with [Styled#styles(StyleBlock)]; [ScopeBlock] groups scope
 /// rules.
 ///
-/// Conditional styles go through [Styled#on(Condition, StyleBlock)] with a [State], a [Media]
-/// feature or a [ContainerQuery] from a [Container] handle. Motion is a [Transition] or an
-/// [Animation] of typed [Keyframes]; animations apply only without a reduced-motion preference and
-/// register their keyframes themselves. [Tone] is the shared semantic color.
+/// Conditional styles go through [Styled#on(Condition, StyleBlock)] with a [State], a [GroupState]
+/// from a [Group] handle, a [Media] feature or a [ContainerQuery] from a [Container] handle. Motion
+/// is a [Transition] or an [Animation] of typed [Keyframes]; animations apply only without a
+/// reduced-motion preference and register their keyframes themselves. [Tone] is the shared semantic
+/// color.
 ///
 /// Design tokens ([Tokens], [DesignToken]) are custom properties usable wherever a value of their
 /// category is accepted; an immutable [Theme] sets their values with type-checked

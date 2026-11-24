@@ -1,6 +1,7 @@
 package dev.nthings.tessera.internal.css;
 
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.css.Group;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.ScopeBlock;
 import dev.nthings.tessera.css.Theme;
@@ -46,6 +47,9 @@ public abstract class CssAccess {
 
   public abstract void writeLiveShape(
       Declarations live, Declarations into, Map<String, String> values, Consumer<String> register);
+
+  /// The class that marks an element as part of `group`.
+  public abstract String groupClass(Group group);
 
   public abstract boolean hasAspectRatio(Declarations style);
 

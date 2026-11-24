@@ -336,6 +336,13 @@ public abstract class ViewExpansion<M> {
     }
 
     var classes = styles.registerElement(style);
+    if (!element.groups.isEmpty()) {
+      var css = CssAccess.get();
+      var marked = new ArrayList<String>(element.groups.size() + classes.size());
+      element.groups.forEach(group -> marked.add(css.groupClass(group)));
+      marked.addAll(classes);
+      classes = marked;
+    }
     if (!classes.isEmpty()) {
       var existing = attrs.get("class");
       var joined = String.join(" ", classes);

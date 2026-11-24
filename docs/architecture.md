@@ -125,7 +125,7 @@ Both static documents and mounted browser roots emit from the same `StyleSheet` 
 | --- | --- |
 | Element base declarations | `u-*` classes in `utilities` |
 | Element container queries | `cq-*` classes in `container` |
-| Element states, media, starting styles | `i-*` classes in `interactive` |
+| Element states, group states, media, starting styles | `i-*` classes in `interactive` |
 | `ScopeStyle` rules | Deduplicated `@scope ([data-scope="..."])` blocks in `components` |
 | Referenced `Keyframes` | Emitted once in `base` |
 | `Theme` overrides | CSS custom properties in `theme` |

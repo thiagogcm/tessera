@@ -118,6 +118,11 @@ final class CssCollection extends CssAccess {
   }
 
   @Override
+  public String groupClass(Group group) {
+    return group.className();
+  }
+
+  @Override
   public boolean hasAspectRatio(Declarations style) {
     return style.hasAspectRatio();
   }

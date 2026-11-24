@@ -1,6 +1,7 @@
 package dev.nthings.tessera.showcase;
 
 import static dev.nthings.tessera.core.Elements.a;
+import static dev.nthings.tessera.core.Elements.button;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.span;
@@ -12,6 +13,7 @@ import dev.nthings.tessera.css.Animation;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.Group;
 import dev.nthings.tessera.css.Keyframes;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Resize;
@@ -24,11 +26,14 @@ import dev.nthings.tessera.css.Translation;
 import java.util.List;
 import java.util.Map;
 
-/// Scroll-driven animation, scroll-state and size container queries, and view transitions.
+/// Scroll-driven animation, springs, group states, scroll-state and size container queries, and
+/// view transitions.
 final class MotionPage {
 
   private static final Container RESIZABLE =
       Container.named("resizable", Container.Type.INLINE_SIZE);
+
+  private static final Group FILE = Group.named("file");
 
   private MotionPage() {}
 
@@ -44,6 +49,7 @@ final class MotionPage {
         revealOnce(),
         stagger(),
         springs(),
+        groupStates(),
         containerQueries(),
         scrollState(),
         viewTransitions());
@@ -127,6 +133,44 @@ final class MotionPage {
             "    .on(State.HOVER, s -> s.translate(Translation.y(rem(-0.75))));",
             "var settle = Spring.of(Duration.ofMillis(450), 0.2); // or keep it in the theme:",
             "var ease = new DesignToken.Easing(\"ease-settle\", settle.easing());");
+  }
+
+  private static Demo groupStates() {
+    var rows = div().flex().flexCol().gap(CssLength.rem(0.5)).maxInlineSize(CssLength.rem(28));
+    for (var name : List.of("notes.md", "draft.md", "archive.zip")) {
+      rows.child(
+          Demo.surface(
+                  div()
+                      .group(FILE)
+                      .flex()
+                      .itemsCenter()
+                      .justifyBetween()
+                      .gap(CssLength.rem(1))
+                      .px(CssLength.rem(1))
+                      .py(CssLength.rem(0.5)),
+                  CssLength.rem(0.75))
+              .children(
+                  span().text(name),
+                  button()
+                      .attr("type", "button")
+                      .ariaLabel("Rename " + name)
+                      .opacity(0)
+                      .on(FILE.state(State.HOVER), s -> s.opacity(1))
+                      .on(FILE.state(State.FOCUS_WITHIN), s -> s.opacity(1))
+                      .text("Rename")));
+    }
+    return Demo.of("group-states", "Group states")
+        .summary(
+            "Hover a row, or tab into it: its Rename button appears. The button is styled by the "
+                + "state of the row it sits in, with plain CSS and no script.")
+        .features(":where(.g-file:hover) &", ":focus-within")
+        .example(rows)
+        .code(
+            "var file = Group.named(\"file\");",
+            "row.group(file);",
+            "rename.opacity(0)",
+            "    .on(file.state(State.HOVER), s -> s.opacity(1))",
+            "    .on(file.state(State.FOCUS_WITHIN), s -> s.opacity(1));");
   }
 
   private static Demo containerQueries() {

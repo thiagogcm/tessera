@@ -134,6 +134,26 @@ class MotionIT {
   }
 
   @BrowserTest
+  @DisplayName("hovering a group row or focusing inside it reveals only that row's action")
+  void groupStatesRevealTheirRowsAction(Session session) {
+    var page = session.open("/motion/");
+    var rename = session.button("Rename draft.md");
+    var other = session.button("Rename notes.md");
+    rename.scrollIntoViewIfNeeded();
+    assertThat(opacity(rename)).isZero();
+
+    session.text("draft.md").hover();
+    assertThat(opacity(rename)).isEqualTo(1);
+    assertThat(opacity(other)).isZero();
+
+    page.mouse().move(0, 0);
+    assertThat(opacity(rename)).isZero();
+    rename.focus();
+    assertThat(opacity(rename)).isEqualTo(1);
+    assertThat(opacity(other)).isZero();
+  }
+
+  @BrowserTest
   @DisplayName("the reading progress bar fills from the start of the line")
   void progressBarFillsFromTheStart(Session session) {
     var page = session.open("/docs/");

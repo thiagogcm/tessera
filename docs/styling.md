@@ -135,11 +135,27 @@ Call `on(condition, styles)` to apply declarations while a `Condition` holds. Co
 
 | Condition | Layer and behavior |
 | --- | --- |
-| `State` | `interactive` layer. Pseudo-classes emit in fixed order: `HOVER`, `FOCUS_VISIBLE`, `ACTIVE`, `CHECKED`, `OPEN`, `USER_INVALID`, `USER_VALID`, `DISABLED`. |
+| `State` | `interactive` layer. Pseudo-classes emit in fixed order: `HOVER`, `FOCUS_WITHIN`, `FOCUS_VISIBLE`, `ACTIVE`, `CHECKED`, `OPEN`, `USER_INVALID`, `USER_VALID`, `DISABLED`. |
+| `GroupState` | `interactive` layer, after the element's own states, in the same state order. Matches while an enclosing element marked with the `Group` is in that state. |
 | `Media.MOTION_SAFE` | `interactive` layer. Matches `prefers-reduced-motion: no-preference`. |
 | Container query | `container` layer. Matches size, stuck-edge, or snapped-axis conditions on a `Container` handle. |
 
 Because state order is fixed regardless of call order, `ACTIVE` always beats `HOVER`, and `DISABLED` beats all other states. Hover and active rules exclude disabled elements with a zero-specificity guard. Because `interactive` comes after `container`, state styles remain active across container breakpoints. Inside a `ScopeStyle` rule, conditions nest inside that selector; `ScopeStyle.on(query, rules)` wraps multiple rules in one media or container query.
+
+Mark an element with a `Group` to style its descendants by its state. A group state adds no specificity, so a descendant's own states still override its group states:
+
+```java
+var row = Group.named("row");
+Elements.li()
+    .group(row)
+    .child(Elements.button()
+        .opacity(0)
+        .on(row.state(State.HOVER), s -> s.opacity(1))
+        .on(row.state(State.FOCUS_WITHIN), s -> s.opacity(1))
+        .text("Rename"));
+```
+
+`group(row)` adds the class `g-row`, and `row.state(State.HOVER)` emits `:where(.g-row:hover:not(:where(:disabled))) &`, so it works the same in static pages and live roots. A descendant matches while *any* enclosing element marked with the group is in the state, not only the nearest, so give nested groups distinct names. To style an element by the state of its descendants instead, use a `:has()` selector in a `ScopeStyle` rule.
 
 Use `startingStyle(...)` to define entry-transition starting values:
 

@@ -129,6 +129,44 @@ class CascadeTest {
   }
 
   @Test
+  @DisplayName("group states follow the element's own states and nest under the marked group")
+  void groupStatesStyleDescendants() {
+    var row = Group.named("row");
+    var page =
+        renderMain(
+            div()
+                .group(row)
+                .group(row)
+                .child(
+                    button()
+                        .opacity(0)
+                        .on(
+                            Media.MOTION_SAFE,
+                            m -> m.on(row.state(State.HOVER), s -> s.opacity(0.5)))
+                        .on(row.state(State.FOCUS_WITHIN), s -> s.opacity(1))
+                        .on(row.state(State.HOVER), s -> s.opacity(1))
+                        .on(State.DISABLED, s -> s.opacity(0.4))
+                        .text("Edit")),
+            new GroupHover(row));
+
+    assertThat(page.element("main > div").className()).isEqualTo("g-row");
+    var rule = page.ruleOf(page.element("main > div > button"), "i-");
+    assertThat(rule)
+        .containsSubsequence(
+            "&:disabled{",
+            ":where(.g-row:hover:not(:where(:disabled))) &{opacity:1}",
+            ":where(.g-row:focus-within) &{opacity:1}",
+            MOTION_OK);
+    assertThat(CssBlocks.block(rule, MOTION_OK))
+        .isEqualTo(":where(.g-row:hover:not(:where(:disabled))) &{opacity:0.5}");
+    assertThat(page.scopeBody(page.element("section")))
+        .contains(":scope a{:where(.g-row:open) &{opacity:0.8}}");
+    assertThat(Group.named("row")).isEqualTo(row);
+    assertThat(row.state(State.OPEN)).isEqualTo(Group.named("row").state(State.OPEN));
+    assertThatIllegalArgumentException().isThrownBy(() -> Group.named("--row"));
+  }
+
+  @Test
   @DisplayName("a condition already in force joins the enclosing rule instead of nesting again")
   void conditionsInForceJoinTheEnclosingRule() {
     var wide = Container.unnamed(Container.Type.INLINE_SIZE).atLeast(CssLength.rem(30));
@@ -346,6 +384,18 @@ class CascadeTest {
     @Override
     public TagElement expand(ViewContext context) {
       return nav().child(a("/home").text("Home"));
+    }
+  }
+
+  private record GroupHover(Group group) implements Scope {
+    @Override
+    public void configureScope(ScopeStyle scope) {
+      scope.select(":scope a", s -> s.on(group.state(State.OPEN), o -> o.opacity(0.8)));
+    }
+
+    @Override
+    public TagElement expand(ViewContext context) {
+      return section().child(a("/home").text("Home"));
     }
   }
 

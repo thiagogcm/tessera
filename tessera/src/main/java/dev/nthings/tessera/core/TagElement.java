@@ -2,6 +2,7 @@ package dev.nthings.tessera.core;
 
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.css.Group;
 import dev.nthings.tessera.css.PositionArea;
 import dev.nthings.tessera.css.PositionTry;
 import dev.nthings.tessera.css.StyleBlock;
@@ -75,6 +76,7 @@ public final class TagElement
       copy.data.children.add(detach(child));
     }
     copy.data.refs.addAll(data.refs);
+    copy.data.groups.addAll(data.groups);
     var liveStyle = data.live;
     if (liveStyle != null) {
       copy.data.live = new Declarations().mergeFrom(liveStyle);
@@ -432,6 +434,14 @@ public final class TagElement
       ElementRef anchor, PositionArea area, PositionTry firstFallback, PositionTry... fallbacks) {
     data.anchorTarget = anchor;
     return positionArea(area).positionTryFallbacks(firstFallback, fallbacks);
+  }
+
+  /// Marks this element as part of `group`, so descendants can style themselves by its state with
+  /// `on(group.state(State.HOVER), ...)`. Adds the class `g-<name>`; marking again with an equal
+  /// group changes nothing. See [Group].
+  public TagElement group(Group group) {
+    data.groups.add(group);
+    return this;
   }
 
   /// Emits `view-transition-name` (and class) for a cross-document transition. Keys are checked per

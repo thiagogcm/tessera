@@ -8,8 +8,10 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.TransitionKey;
 import dev.nthings.tessera.css.Declarations;
+import dev.nthings.tessera.css.Group;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,6 +31,7 @@ public final class TagData {
   public final Map<String, IdReference> idReferences = new LinkedHashMap<>();
   public final List<Element> children = new ArrayList<>();
   public final List<ElementRef> refs = new ArrayList<>(1);
+  public final Set<Group> groups = new LinkedHashSet<>(1);
 
   public InitialControl initial = InitialControl.NONE;
   public @Nullable Declarations live;

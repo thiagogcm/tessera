@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Springs")
 class SpringTest {
@@ -96,12 +97,24 @@ class SpringTest {
     assertThat(Spring.of(Duration.ofMillis(500), -0.0)).isEqualTo(Spring.SMOOTH);
   }
 
+  @ParameterizedTest
+  @ValueSource(doubles = {-0.5, 0.7})
+  @DisplayName("the extreme bounces settle within about four perceptual durations in a short curve")
+  void extremeBouncesStayBounded(double bounce) {
+    var perceptual = Duration.ofSeconds(2);
+    var spring = Spring.of(perceptual, bounce);
+
+    assertThat(Double.parseDouble(spring.settlingDuration().toCss().replace("ms", "")))
+        .isLessThan(4.5 * perceptual.toMillis());
+    assertThat(spring.easing().toCss()).hasSizeLessThan(600);
+  }
+
   @Test
-  @DisplayName("a spring needs a positive duration and a bounce within (-1, 1)")
+  @DisplayName("a spring needs a positive duration and a bounce within [-0.5, 0.7]")
   void springValidation() {
     assertThatIllegalArgumentException().isThrownBy(() -> Spring.of(Duration.ZERO, 0));
     assertThatIllegalArgumentException().isThrownBy(() -> Spring.of(Duration.ofMillis(-1), 0));
-    for (var bounce : List.of(-1.0, 1.0, Double.NaN, Double.POSITIVE_INFINITY)) {
+    for (var bounce : List.of(-0.51, 0.71, -1.0, 1.0, Double.NaN, Double.POSITIVE_INFINITY)) {
       assertThatIllegalArgumentException()
           .isThrownBy(() -> Spring.of(Duration.ofMillis(500), bounce));
     }

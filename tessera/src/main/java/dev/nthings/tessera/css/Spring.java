@@ -18,8 +18,12 @@ import org.jspecify.annotations.Nullable;
 /// | Bounce         | Damping            | Motion                                         |
 /// | -------------- | ------------------ | ---------------------------------------------- |
 /// | `0`            | critically damped  | Fastest approach without overshoot             |
-/// | `0` to `1`     | underdamped        | Overshoots the end value and oscillates around it |
-/// | `-1` to `0`    | overdamped         | Approaches the end value more slowly, never passing it |
+/// | `0` to `0.7`   | underdamped        | Overshoots the end value and oscillates around it |
+/// | `-0.5` to `0`  | overdamped         | Approaches the end value more slowly, never passing it |
+///
+/// The bounce range keeps every spring settling within about four times its perceptual duration and
+/// compiling to a few hundred characters of CSS; beyond it, settling time and curve length grow
+/// without bound as the bounce approaches `±1`.
 ///
 /// The compiled curve stays within 0.002 of the exact spring position and ends once the spring
 /// stays within 0.001 of its end value. Values are computed with [StrictMath] and rounded
@@ -40,6 +44,11 @@ public final class Spring {
   private static final int MIN_SAMPLES = 2000;
 
   private static final int SAMPLES_PER_PERIOD = 128;
+
+  /// The bounce range: the least and the greatest bounce a spring accepts.
+  private static final double MIN_BOUNCE = -0.5;
+
+  private static final double MAX_BOUNCE = 0.7;
 
   /// Steps of the scan that finds the settling time below its analytic upper bound.
   private static final int SETTLE_SCAN = 4096;
@@ -72,18 +81,19 @@ public final class Spring {
     this.easing = motion.compile(settlingMillis / 1000);
   }
 
-  /// A spring that takes about `perceptualDuration` to reach its end value, with `bounce` between
-  /// `-1` and `1` (exclusive): `0` arrives without overshoot, a positive bounce overshoots and
+  /// A spring that takes about `perceptualDuration` to reach its end value, with `bounce` from
+  /// `-0.5` to `0.7` (inclusive): `0` arrives without overshoot, a positive bounce overshoots and
   /// oscillates (`0.15` is subtle, `0.3` playful), and a negative bounce approaches more slowly.
-  /// The higher the bounce, the longer the spring oscillates and the longer its compiled curve:
-  /// above about `0.5` it keeps moving for several seconds. Throws IllegalArgumentException if
-  /// `perceptualDuration` is not positive or `bounce` is out of range.
+  /// The further the bounce is from `0`, the longer the spring takes to settle and the longer its
+  /// compiled curve. Throws IllegalArgumentException if `perceptualDuration` is not positive or
+  /// `bounce` is out of range.
   public static Spring of(Duration perceptualDuration, double bounce) {
     if (perceptualDuration.isNegative() || perceptualDuration.isZero()) {
       throw new IllegalArgumentException("Spring duration must be positive: " + perceptualDuration);
     }
-    if (!(bounce > -1 && bounce < 1)) {
-      throw new IllegalArgumentException("Spring bounce must be within (-1, 1): " + bounce);
+    if (!(bounce >= MIN_BOUNCE && bounce <= MAX_BOUNCE)) {
+      throw new IllegalArgumentException(
+          "Spring bounce must be within [" + MIN_BOUNCE + ", " + MAX_BOUNCE + "]: " + bounce);
     }
     return new Spring(perceptualDuration, bounce);
   }

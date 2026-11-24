@@ -14,7 +14,9 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.internal.css.Tint;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -161,16 +163,17 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
                     .opacity(0.6))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-highlighted",
-            s -> s.bg(Tokens.ACCENT_PRIMARY.mixTransparent(15)))
+            s -> s.bg(Tint.CODE_HIGHLIGHT.fill(Tone.ACCENT)))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-add",
             s ->
-                s.bg(Tokens.STATUS_SUCCESS.mixTransparent(16))
-                    .textColor(Tokens.STATUS_SUCCESS_TEXT))
+                s.bg(Tint.CODE_CHANGE.fill(Tone.SUCCESS))
+                    .textColor(Tint.CODE_CHANGE.text(Tone.SUCCESS)))
         .select(
             ":scope > .code-pre > .code-lines > .code-line.is-del",
             s ->
-                s.bg(Tokens.STATUS_DANGER.mixTransparent(16)).textColor(Tokens.STATUS_DANGER_TEXT));
+                s.bg(Tint.CODE_CHANGE.fill(Tone.DANGER))
+                    .textColor(Tint.CODE_CHANGE.text(Tone.DANGER)));
   }
 
   @Override

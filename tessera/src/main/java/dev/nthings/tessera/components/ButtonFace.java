@@ -18,6 +18,7 @@ import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Typography;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.internal.css.Tint;
 
 /// Shared face of [Button] and [IconButton]: the `<button>` element with its attributes and its
 /// element-level styles. Classes never alter type or invoker attributes.
@@ -140,7 +141,7 @@ final class ButtonFace {
     return switch (variant) {
       case SOLID -> style.opacity(0.92);
       case OUTLINE, GHOST ->
-          style.bg(tone == Tone.NEUTRAL ? Tokens.SURFACE_SUBTLE : ink(tone).mixTransparent(12));
+          style.bg(tone == Tone.NEUTRAL ? Tokens.SURFACE_SUBTLE : Tint.BUTTON_HOVER.fill(tone));
     };
   }
 

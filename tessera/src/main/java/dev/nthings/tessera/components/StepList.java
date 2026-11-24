@@ -6,13 +6,14 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Counter;
-import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssNumber;
 import dev.nthings.tessera.css.CustomProperty;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
+import dev.nthings.tessera.internal.css.Tint;
 import java.util.List;
 
 /// Ordered list drawn as numbered steps. The step badges shade toward the accent color as the steps
@@ -78,15 +79,11 @@ public final class StepList extends BuiltinScope<StepList> {
                     .fontWeight(600)
                     .tabularNums()
                     .bg(
-                        Tokens.ACCENT_PRIMARY.mix(
-                            CssColor.Space.OKLAB,
-                            CssLength.pct(20)
-                                .plus(
-                                    CssLength.pct(60)
-                                        .times(CssNumber.property(STEP_INDEX))
-                                        .dividedBy(CssNumber.property(STEP_TOTAL))),
-                            Tokens.SURFACE_SUBTLE))
-                    .textColor(Tokens.TEXT_PRIMARY));
+                        Tint.STEP.ramp(
+                            Tone.ACCENT,
+                            CssNumber.property(STEP_INDEX),
+                            CssNumber.property(STEP_TOTAL)))
+                    .textColor(Tint.STEP.text(Tone.ACCENT)));
   }
 
   @Override

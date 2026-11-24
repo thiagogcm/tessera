@@ -22,7 +22,7 @@ Each token accepts only values from its own category: color, length, duration, e
 
 Token names accept `[A-Za-z0-9_-]` and cannot start with `-`. Invalid names throw immediately rather than being rewritten.
 
-The compiler rejects a theme whose text colors fall below WCAG AA contrast on the surfaces built-in components draw them on, in either color scheme; see [Theme contrast](diagnostics.md#theme-contrast). Override a color token with `CssColor.lightDark(light, dark)` so each scheme gets a readable value:
+`Compiler.withTheme` and `MountOptions.withTheme` reject a theme whose text colors fall below WCAG AA contrast on the surfaces built-in components draw them on, in either color scheme; see [Theme contrast](diagnostics.md#theme-contrast). Override a color token with `CssColor.lightDark(light, dark)` so each scheme gets a readable value:
 
 ```java
 var theme =
@@ -46,7 +46,7 @@ var theme =
 
 `Typography.LABEL` combines the control typography tokens used by field labels and callout titles alongside `CONTROL_FG`. Overriding `CONTROL_FONT_SIZE` changes those labels directly; overriding `FONT_SIZE_SM` also changes them while `CONTROL_FONT_SIZE` aliases `FONT_SIZE_SM`.
 
-`Tone` supplies semantic roles (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components map each tone to surface, border, and foreground tokens: `color()` paints fills, borders, and icons, `textColor()` paints text on the page, cards, and tints, and `onSolid()` paints labels on a solid fill. `Callout.Kind` also picks a matching default icon and title.
+`Tone` supplies semantic roles (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components map each tone to surface, border, and foreground tokens: `color()` paints fills, borders, and icons, `textColor()` paints text on the page, cards, and tints, and `onSolid()` paints labels on a solid fill. Tinted surfaces, such as tinted badges, callouts, and `highlight(tone)`, mix `color()` into the surface at fixed strengths that the [theme contrast check](diagnostics.md#theme-contrast) measures. `Callout.Kind` also picks a matching default icon and title.
 
 ## Write typed declarations
 

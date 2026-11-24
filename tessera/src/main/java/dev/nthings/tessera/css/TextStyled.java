@@ -1,5 +1,7 @@
 package dev.nthings.tessera.css;
 
+import dev.nthings.tessera.internal.css.Tint;
+
 /// Typography, text color, alignment, wrapping, and decoration. Part of [Styled].
 ///
 /// @param <SELF> concrete element or style builder type
@@ -96,12 +98,11 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
     return self();
   }
 
-  /// Sets a highlight background, the tone's color mixed 24% over transparent (so it follows the
-  /// light or dark scheme), with `padding-inline: var(--space-1)` and `border-radius:
-  /// var(--radius-sm)`.
+  /// Sets a highlight background, a translucent tint of the tone's color (so it follows the light
+  /// or dark scheme), with `padding-inline: var(--space-1)` and `border-radius: var(--radius-sm)`.
   default SELF highlight(Tone tone) {
     StyleTarget.declarations(this)
-        .put(CssProperty.BACKGROUND, tone.color().mixTransparent(24))
+        .put(CssProperty.BACKGROUND, Tint.HIGHLIGHT.fill(tone))
         .put(CssProperty.PADDING_INLINE, Tokens.SPACE_1)
         .put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
     return self();

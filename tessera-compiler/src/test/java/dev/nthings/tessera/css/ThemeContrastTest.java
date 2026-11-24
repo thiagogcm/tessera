@@ -3,15 +3,18 @@ package dev.nthings.tessera.css;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatThrownBy;
 import static dev.nthings.tessera.support.HtmlAssertions.within;
 
 import dev.nthings.tessera.compiler.Compiler;
+import dev.nthings.tessera.compiler.OutputMode;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.css.ThemeContrast.Scheme;
+import dev.nthings.tessera.internal.css.Tint;
 import dev.nthings.tessera.support.Diagnostics;
 import java.util.List;
 import java.util.Objects;
@@ -26,21 +29,30 @@ class ThemeContrastTest {
   private static final CssColor WHITE = CssColor.white();
   private static final CssColor BLACK = CssColor.srgb(0x000000);
 
-  private static double ratio(CssColor text, CssColor surface) {
-    return measured(Theme.defaults(), Scheme.LIGHT, text, List.of(surface)).ratio();
+  /// `text` over `layers`, painted upward over the scheme's canvas, or null if a color cannot be
+  /// known statically.
+  private static ThemeContrast.@Nullable Measurement measure(
+      Theme theme, Scheme scheme, CssColor text, CssColor... layers) {
+    return ThemeContrast.measure(theme, scheme, text, List.of(layers));
   }
 
   private static ThemeContrast.Measurement measured(
-      Theme theme, Scheme scheme, CssColor text, List<CssColor> layers) {
-    return Objects.requireNonNull(ThemeContrast.measure(theme, scheme, text, layers));
+      Theme theme, Scheme scheme, CssColor text, CssColor... layers) {
+    return Objects.requireNonNull(measure(theme, scheme, text, layers));
   }
 
-  private static ThemeContrast.@Nullable Measurement measure(Theme theme, CssColor text) {
-    return ThemeContrast.measure(theme, Scheme.LIGHT, text, List.of(WHITE));
+  /// The `#rrggbb` `color` paints over the scheme's canvas.
+  private static String hex(Theme theme, Scheme scheme, CssColor color) {
+    return ThemeContrast.hex(measured(theme, scheme, color).text());
   }
 
+  /// The `#rrggbb` `color` paints over the default light canvas, which is white.
   private static String hex(CssColor color) {
-    return ColorMath.hex(measured(Theme.defaults(), Scheme.LIGHT, color, List.of(WHITE)).text());
+    return hex(Theme.defaults(), Scheme.LIGHT, color);
+  }
+
+  private static double ratio(CssColor text, CssColor surface) {
+    return measured(Theme.defaults(), Scheme.LIGHT, text, surface).ratio();
   }
 
   private static List<String> messages(Theme theme) {
@@ -102,15 +114,7 @@ class ThemeContrastTest {
 
       // A transparent partner keeps the color and scales its opacity; an achromatic partner
       // keeps its hue.
-      var tint = red.mixTransparent(40);
-      assertThat(measured(Theme.defaults(), Scheme.LIGHT, tint, List.of(WHITE)).text())
-          .isEqualTo(
-              measured(
-                      Theme.defaults(),
-                      Scheme.LIGHT,
-                      CssColor.oklch(60, 0.2, 20, 0.4),
-                      List.of(WHITE))
-                  .text());
+      assertThat(hex(red.mixTransparent(40))).isEqualTo(hex(CssColor.oklch(60, 0.2, 20, 0.4)));
       assertThat(hex(red.mix(CssColor.Space.OKLCH, 50, CssColor.oklch(60, 0, 0))))
           .isEqualTo(hex(CssColor.oklch(60, 0.1, 20)));
     }
@@ -119,11 +123,9 @@ class ThemeContrastTest {
     @DisplayName("translucent colors composite over the layers beneath them")
     void composites() {
       var shade = CssColor.srgb(0x000000, 0.4);
-      var measurement = measured(Theme.defaults(), Scheme.LIGHT, WHITE, List.of(WHITE, shade));
-      assertThat(ColorMath.hex(measurement.surface())).isEqualTo("#999999");
-      assertThat(
-              ColorMath.hex(measured(Theme.defaults(), Scheme.LIGHT, shade, List.of(WHITE)).text()))
-          .isEqualTo("#999999");
+      var measurement = measured(Theme.defaults(), Scheme.LIGHT, WHITE, WHITE, shade);
+      assertThat(ThemeContrast.hex(measurement.surface())).isEqualTo("#999999");
+      assertThat(hex(shade)).isEqualTo("#999999");
     }
   }
 
@@ -135,36 +137,27 @@ class ThemeContrastTest {
     @DisplayName("light-dark() follows the scheme")
     void lightDark() {
       var text = CssColor.lightDark(BLACK, WHITE);
-      assertThat(ColorMath.hex(measured(Theme.defaults(), Scheme.LIGHT, text, List.of()).text()))
-          .isEqualTo("#000000");
-      assertThat(ColorMath.hex(measured(Theme.defaults(), Scheme.DARK, text, List.of()).text()))
-          .isEqualTo("#ffffff");
+      assertThat(hex(Theme.defaults(), Scheme.LIGHT, text)).isEqualTo("#000000");
+      assertThat(hex(Theme.defaults(), Scheme.DARK, text)).isEqualTo("#ffffff");
     }
 
     @Test
     @DisplayName("tokens resolve through the theme, including aliases and sameHue derivations")
     void tokens() {
       var theme = Theme.defaults().with(Tokens.ACCENT_PRIMARY, CssColor.oklch(50, 0.2, 30));
-      var derived = measured(theme, Scheme.LIGHT, Tokens.ACCENT_TEXT, List.of(WHITE)).text();
-      var expected =
-          measured(theme, Scheme.LIGHT, CssColor.oklch(38, 0.16, 30), List.of(WHITE)).text();
-      assertThat(ColorMath.hex(derived)).isEqualTo(ColorMath.hex(expected));
+      var expected = hex(CssColor.oklch(38, 0.16, 30));
+      assertThat(hex(theme, Scheme.LIGHT, Tokens.ACCENT_TEXT)).isEqualTo(expected);
 
       var aliased = theme.with(Tokens.CONTROL_FG, Tokens.ACCENT_TEXT);
-      assertThat(
-              ColorMath.hex(
-                  measured(aliased, Scheme.LIGHT, Tokens.CONTROL_FG, List.of(WHITE)).text()))
-          .isEqualTo(ColorMath.hex(expected));
+      assertThat(hex(aliased, Scheme.LIGHT, Tokens.CONTROL_FG)).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("contrast-color() picks white or black, whichever contrasts more")
     void contrastColor() {
       var onCard = Tokens.SURFACE_CARD.contrast();
-      assertThat(ColorMath.hex(measured(Theme.defaults(), Scheme.LIGHT, onCard, List.of()).text()))
-          .isEqualTo("#000000");
-      assertThat(ColorMath.hex(measured(Theme.defaults(), Scheme.DARK, onCard, List.of()).text()))
-          .isEqualTo("#ffffff");
+      assertThat(hex(Theme.defaults(), Scheme.LIGHT, onCard)).isEqualTo("#000000");
+      assertThat(hex(Theme.defaults(), Scheme.DARK, onCard)).isEqualTo("#ffffff");
     }
 
     @Test
@@ -172,16 +165,26 @@ class ThemeContrastTest {
     void unresolvable() {
       var theme = Theme.defaults();
       var undefined = new DesignToken.Color("undefined-ink", BLACK);
-      assertThat(measure(theme, CssColor.currentColor())).isNull();
-      assertThat(measure(theme, undefined)).isNull();
-      assertThat(measure(theme.with(Tokens.CONTROL_FG, Tokens.CONTROL_FG), Tokens.CONTROL_FG))
-          .isNull();
-      assertThat(
-              measure(
-                  theme,
-                  BLACK.mix(CssColor.Space.OKLAB, CssLength.pct(50).plus(CssLength.px(1)), WHITE)))
-          .isNull();
-      assertThat(measure(theme, CssColor.srgb(0x000000, 0.5).contrast())).isNull();
+      var cyclic = theme.with(Tokens.CONTROL_FG, Tokens.CONTROL_FG);
+      var computed =
+          BLACK.mix(CssColor.Space.OKLAB, CssLength.pct(50).plus(CssLength.px(1)), WHITE);
+      assertThat(measure(theme, Scheme.LIGHT, CssColor.currentColor())).isNull();
+      assertThat(measure(theme, Scheme.LIGHT, undefined)).isNull();
+      assertThat(measure(cyclic, Scheme.LIGHT, Tokens.CONTROL_FG)).isNull();
+      assertThat(measure(theme, Scheme.LIGHT, computed)).isNull();
+      assertThat(measure(theme, Scheme.LIGHT, CssColor.srgb(0x000000, 0.5).contrast())).isNull();
+    }
+
+    @Test
+    @DisplayName("a token that depends on an alias cycle is skipped, however it is reached")
+    void dependsOnCycle() {
+      var theme =
+          Theme.defaults()
+              .with(Tokens.TEXT_PRIMARY, Tokens.TEXT_MUTED)
+              .with(Tokens.TEXT_MUTED, Tokens.TEXT_PRIMARY);
+      assertThat(measure(theme, Scheme.LIGHT, Tokens.CONTROL_FG)).isNull();
+      assertThat(measure(theme, Scheme.LIGHT, Tokens.TEXT_MUTED)).isNull();
+      assertThat(theme.contrastDiagnostics()).isEmpty();
     }
   }
 
@@ -193,6 +196,17 @@ class ThemeContrastTest {
     @DisplayName("the default theme passes in both schemes")
     void defaultsPass() {
       assertThat(Theme.defaults().contrastDiagnostics()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("a theme computes its diagnostics once")
+    void cached() {
+      var theme =
+          Theme.defaults()
+              .with(Tokens.TEXT_MUTED, withLight(Tokens.TEXT_MUTED, CssColor.oklch(70, 0.02, 260)));
+      assertThat(theme.contrastDiagnostics()).isNotEmpty().isSameAs(theme.contrastDiagnostics());
+      assertThat(Theme.defaults().contrastDiagnostics())
+          .isSameAs(Theme.defaults().contrastDiagnostics());
     }
 
     @Test
@@ -218,10 +232,10 @@ class ThemeContrastTest {
       assertThat(messages)
           .isNotEmpty()
           .allSatisfy(message ->
-              assertThat(message).startsWith("Light scheme: ").contains("--text-muted ("))
+              assertThat(message).contains("--text-muted (").contains(" in the light scheme, "))
           .contains(
-              "Light scheme: --text-muted (#979fab) on --surface-subtle (#ebeff5) has a contrast"
-                  + " ratio of 2.30:1, below the WCAG AA minimum of 4.5:1 for text in table"
+              "--text-muted (#979fab) on --surface-subtle (#ebeff5) has a contrast ratio of 2.30:1"
+                  + " in the light scheme, below the WCAG AA minimum of 4.5:1 for text in table"
                   + " headers, code captions and neutral badges");
       assertThat(theme.contrastDiagnostics())
           .allSatisfy(diagnostic -> {
@@ -242,8 +256,8 @@ class ThemeContrastTest {
 
       assertThat(messages(theme))
           .isNotEmpty()
-          .allSatisfy(message -> assertThat(message).startsWith("Dark scheme: "))
-          .anySatisfy(message -> assertThat(message).startsWith("Dark scheme: --text-primary ("));
+          .allSatisfy(message -> assertThat(message).contains(" in the dark scheme, "))
+          .anySatisfy(message -> assertThat(message).startsWith("--text-primary ("));
     }
 
     @Test
@@ -255,8 +269,9 @@ class ThemeContrastTest {
       assertThat(messages(theme))
           .anySatisfy(message ->
               assertThat(message)
-                  .startsWith("Light scheme: --control-fg = --brand-ink (")
-                  .contains(" on --surface-canvas ("));
+                  .startsWith("--control-fg = --brand-ink (")
+                  .contains(" on --surface-canvas (")
+                  .contains(" in the light scheme, "));
       assertThat(theme.contrastDiagnostics())
           .allSatisfy(diagnostic ->
               assertThat(diagnostic.fix()).contains("CssColor.lightDark(light, dark)"));
@@ -276,10 +291,10 @@ class ThemeContrastTest {
       assertThat(messages(theme))
           .anySatisfy(message ->
               assertThat(message)
-                  .startsWith("Light scheme: --status-info-text (")
+                  .startsWith("--status-info-text (")
                   .contains(" on --status-info at 14% over --surface-canvas (")
                   .endsWith("for text in info tinted badges"))
-          .noneSatisfy(message -> assertThat(message).startsWith("Dark scheme"));
+          .noneSatisfy(message -> assertThat(message).contains("dark scheme"));
     }
 
     @Test
@@ -290,9 +305,9 @@ class ThemeContrastTest {
 
       assertThat(messages(theme))
           .isNotEmpty()
-          .allSatisfy(message -> assertThat(message).contains("--control-fg ("))
-          .anySatisfy(message -> assertThat(message).startsWith("Light scheme"))
-          .anySatisfy(message -> assertThat(message).startsWith("Dark scheme"));
+          .allSatisfy(message -> assertThat(message).startsWith("--control-fg ("))
+          .anySatisfy(message -> assertThat(message).contains("light scheme"))
+          .anySatisfy(message -> assertThat(message).contains("dark scheme"));
     }
 
     @Test
@@ -312,14 +327,54 @@ class ThemeContrastTest {
           .singleElement()
           .satisfies(diagnostic -> {
             assertThat(diagnostic.message())
-                .startsWith(
-                    "Light scheme: the solid success label color (#ffffff) on --status-success (")
-                .contains("below the WCAG AA minimum of 4.5:1");
+                .startsWith("the solid success label color (#ffffff) on --status-success (")
+                .contains("in the light scheme, below the WCAG AA minimum of 4.5:1");
             assertThat(diagnostic.fix())
                 .isEqualTo(
                     "Darken --status-success in the light scheme until the solid success label"
                         + " color on it reaches 4.5:1.");
           });
+    }
+
+    @Test
+    @DisplayName("every tint is measured, in every tone it paints, under its own name")
+    void tints() {
+      var uses = String.join("\n", messages(Theme.defaults().with(Tokens.TEXT_PRIMARY, WHITE)));
+      for (var tint : Tint.values()) {
+        if (!tint.texts(tint.tones().getFirst()).contains(Tokens.TEXT_PRIMARY)) {
+          continue;
+        }
+        for (var tone : tint.tones()) {
+          assertThat(uses).contains("for text in " + tint.use(tone));
+        }
+      }
+      assertThat(uses)
+          .contains("for text in highlighted code lines")
+          .contains("for text in invalid form fields")
+          .contains(" on --accent-primary mixed 20% into --surface-subtle (")
+          .contains(" on --accent-primary mixed 60% into --surface-subtle (");
+
+      var hover =
+          Theme.defaults()
+              .with(
+                  Tokens.STATUS_WARNING_TEXT,
+                  withLight(Tokens.STATUS_WARNING_TEXT, CssColor.oklch(55, 0.12, 75)));
+      assertThat(messages(hover))
+          .anySatisfy(message ->
+              assertThat(message)
+                  .contains(" on --status-warning at 12% over --surface-card (")
+                  .contains("warning outline and ghost buttons on hover"));
+    }
+
+    @Test
+    @DisplayName("a tint paints only the tones it declares, so nothing paints unmeasured")
+    void undeclaredTone() {
+      assertThatThrownBy(() -> Tint.CODE_CHANGE.fill(Tone.INFO))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("CODE_CHANGE");
+      assertThatThrownBy(() -> Tint.STEP.fill(Tone.ACCENT))
+          .isInstanceOf(IllegalStateException.class);
+      assertThat(Tint.CODE_CHANGE.text(Tone.DANGER)).isEqualTo(Tokens.STATUS_DANGER_TEXT);
     }
 
     @Test
@@ -335,12 +390,10 @@ class ThemeContrastTest {
                   Tokens.CONTROL_FG,
                   CssColor.lightDark(CssColor.srgb(0x777777), CssColor.oklch(96, 0.01, 260)));
       assertThat(messages(failing))
-          .anySatisfy(message ->
-              assertThat(message)
-                  .isEqualTo(
-                      "Light scheme: --control-fg (#777777) on --surface-card (#ffffff) has a"
-                          + " contrast ratio of 4.47:1, below the WCAG AA minimum of 4.5:1 for"
-                          + " text in field labels inside cards"));
+          .contains(
+              "--control-fg (#777777) on --surface-card (#ffffff) has a contrast ratio of 4.47:1"
+                  + " in the light scheme, below the WCAG AA minimum of 4.5:1 for text in field"
+                  + " labels inside cards");
     }
 
     @Test
@@ -362,29 +415,25 @@ class ThemeContrastTest {
         Theme.defaults().with(Tokens.ACCENT_PRIMARY, CssColor.oklch(55, 0.18, 150));
 
     @Test
-    @DisplayName("a page compile rejects a failing theme before rendering")
-    void page() {
-      assertThat(
-              Diagnostics.rules(() ->
-                  Compiler.forPage()
-                      .withTheme(failing)
-                      .compile(PageDocument.of("Home", main(p("x"))))))
+    @DisplayName("a compiler rejects a failing theme when it is configured")
+    void configured() {
+      assertThat(Diagnostics.rules(() -> Compiler.forPage().withTheme(failing)))
           .isNotEmpty()
+          .containsOnly("theme-contrast");
+      assertThat(Diagnostics.rules(() -> new Compiler(failing, OutputMode.inline())))
           .containsOnly("theme-contrast");
     }
 
     @Test
-    @DisplayName("a site compile reports theme failures with its path checks")
-    void site() {
+    @DisplayName("a passing theme compiles pages and sites")
+    void passing() {
+      var compiler =
+          Compiler.forSite().withTheme(Theme.defaults().with(Tokens.DENSITY, CssNumber.of(0.9)));
       var site =
           SiteDefinition.builder()
               .route(SiteRoute.of("/", PageDocument.of("Home", main(p("x")))))
-              .route(SiteRoute.of("/", PageDocument.of("Again", main(p("y")))))
               .build();
-
-      assertThat(Diagnostics.rules(() -> Compiler.forSite().withTheme(failing).compile(site)))
-          .contains("theme-contrast")
-          .endsWith("duplicate-route");
+      assertThat(compiler.compile(site).pages()).hasSize(1);
     }
   }
 }

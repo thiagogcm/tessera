@@ -10,8 +10,9 @@ import org.jspecify.annotations.Nullable;
 
 /// The values of the design tokens, emitted as custom properties on `:root` in `@layer theme`.
 /// Immutable: start from [#defaults()] and override tokens with [#with(DesignToken, CssValue)],
-/// which returns a new theme, then pass it to `Compiler.withTheme`. The compiler rejects a theme
-/// whose text colors fall below WCAG AA contrast on their surfaces; see [#contrastDiagnostics()].
+/// which returns a new theme, then pass it to `Compiler.withTheme` or `MountOptions.withTheme`.
+/// Both reject a theme whose text colors fall below WCAG AA contrast on their surfaces; see
+/// [#contrastDiagnostics()].
 ///
 /// ```java
 /// var theme = Theme.defaults()
@@ -32,6 +33,10 @@ public final class Theme {
   private static final Theme DEFAULTS = defaultTheme();
 
   private final Map<String, Entry> entries;
+
+  /// [#contrastDiagnostics()], computed on first use. The theme is immutable, so a race computes
+  /// the same immutable list twice at worst.
+  private volatile @Nullable List<Diagnostic> contrast;
 
   private Theme(Map<String, Entry> entries) {
     this.entries = entries;
@@ -68,9 +73,16 @@ public final class Theme {
   /// solid fill, against 4.5:1 in both the light and the dark color scheme. Token aliases,
   /// `light-dark()`, `sameHue`, `color-mix()` and `contrast-color()` resolve statically; a pair is
   /// skipped when a color depends on the page, such as `currentColor`, a token this theme does not
-  /// define, or a cycle of token aliases. The compiler reports these diagnostics before it renders.
+  /// define, or a cycle of token aliases. Each backend rejects a theme with diagnostics where it
+  /// accepts the theme: `Compiler.withTheme` and `MountOptions.withTheme`. The theme computes them
+  /// once.
   public List<Diagnostic> contrastDiagnostics() {
-    return ThemeContrast.diagnostics(this);
+    var computed = contrast;
+    if (computed == null) {
+      computed = ThemeContrast.diagnostics(this);
+      contrast = computed;
+    }
+    return computed;
   }
 
   /// The value this theme gives the token named `name`, or null if it does not define one.

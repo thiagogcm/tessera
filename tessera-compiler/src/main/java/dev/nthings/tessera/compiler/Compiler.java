@@ -8,15 +8,26 @@ import dev.nthings.tessera.css.Theme;
 /// `/assets`), refine with [#withTheme(Theme)] and [#withOutputMode(OutputMode)], and compile pages
 /// or sites.
 ///
+/// A compiler accepts only a theme that passes [Theme#contrastDiagnostics()]: creating one with any
+/// other theme, as [#withTheme(Theme)] does, throws [CompilationException] with the theme's
+/// `theme-contrast` diagnostics, before any page is compiled.
+///
 /// [#compile(PageDocument)] and [#compile(SiteDefinition)] throw [CompilationException] on
-/// authoring errors, including a theme that fails [Theme#contrastDiagnostics()];
-/// [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a [CompilationResult]
-/// instead. Exceptions thrown by expand callbacks propagate unchanged.
+/// authoring errors; [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a
+/// [CompilationResult] instead. Exceptions thrown by expand callbacks propagate unchanged.
 public record Compiler(Theme theme, OutputMode outputMode) {
 
   private static final Compiler FOR_PAGE = new Compiler(Theme.defaults(), OutputMode.inline());
   private static final Compiler FOR_SITE =
       new Compiler(Theme.defaults(), OutputMode.external(OutputMode.DEFAULT_EXTERNAL_BASE));
+
+  /// Throws [CompilationException] if `theme` fails WCAG AA text contrast.
+  public Compiler {
+    var failures = theme.contrastDiagnostics();
+    if (!failures.isEmpty()) {
+      throw new CompilationException(failures);
+    }
+  }
 
   /// Compiler configured for a standalone page: [Theme#defaults()] and [OutputMode#inline()].
   public static Compiler forPage() {
@@ -29,7 +40,8 @@ public record Compiler(Theme theme, OutputMode outputMode) {
     return FOR_SITE;
   }
 
-  /// Returns a compiler with `theme` and this compiler's output mode.
+  /// Returns a compiler with `theme` and this compiler's output mode. Throws [CompilationException]
+  /// if `theme` fails WCAG AA text contrast.
   @CheckReturnValue
   public Compiler withTheme(Theme theme) {
     return new Compiler(theme, outputMode);

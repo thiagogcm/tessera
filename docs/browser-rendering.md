@@ -120,7 +120,7 @@ Call `root.invalidate()` after mutating application state. Multiple invalidation
 
 State that `host.frame(task)` advances renders within the same animation frame: every frame task of the root runs in one batch, and the render they request commits before the browser paints.
 
-Configure per-root theme or scheduling limits with `MountOptions`:
+Configure per-root theme or scheduling limits with `MountOptions`. `withTheme` applies the static compiler's [theme contrast check](diagnostics.md#theme-contrast) and throws `IllegalArgumentException` for a failing theme; inside a `BrowserEntry` mount, the failure is reported as a failed mount and the host keeps its fallback content:
 
 ```java
 var root =

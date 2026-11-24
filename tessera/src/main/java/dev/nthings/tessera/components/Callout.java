@@ -12,13 +12,13 @@ import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
-import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Typography;
 import dev.nthings.tessera.internal.components.Icons;
+import dev.nthings.tessera.internal.css.Tint;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -187,12 +187,10 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
 
     var content = div().attr("class", "callout-content").children(children);
 
-    var tint = kind.tone.color().mix(CssColor.Space.OKLAB, 14, Tokens.SURFACE_CARD);
-
     return aside()
         .role(Role.NOTE)
         .attr("class", "callout callout--" + CssNames.of(kind))
-        .bg(tint)
+        .bg(Tint.CALLOUT.fill(kind.tone))
         .borderInlineStart(Border.solid(CssLength.px(4), kind.tone.color()))
         .children(header, content);
   }

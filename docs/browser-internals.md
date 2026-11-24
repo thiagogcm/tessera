@@ -71,6 +71,7 @@ Failures are surfaced as readable browser `Error` reports naming the host root r
 | Failure point | Runtime behavior |
 | --- | --- |
 | Validation diagnostics, `cross-root-id`, or throwing render/style callback | Rejects candidate; committed DOM (or initial fallback) stays untouched; later invalidation retries. Callback failures include component and key path. |
+| `MountOptions` given a theme that fails [theme contrast](diagnostics.md#theme-contrast) | `withTheme` throws `IllegalArgumentException` listing the `theme-contrast` diagnostics; inside a `BrowserEntry` mount this is reported as a failed mount and the host keeps its fallback content. |
 | Initial mount preparation or pre-publication DOM failure | First mount builds off-host and preserves original fallback nodes until publication succeeds; partial acquisitions are released, the fallback nodes return with focus on the element that had it, and other hosts continue mounting. |
 | Unexpected native DOM failure during update of live tree | Enters `Closing`, releases all acquired and committed resources, and reports the error without claiming arbitrary DOM rollback. |
 | Event handler or effect startup failure | Reports error with context; root stays open and interactive unless `close()` was requested. |

@@ -66,10 +66,10 @@ Image checks run during expansion while authored CSS dimensions are available. L
 ```mermaid
 stateDiagram-v2
     accTitle: Site compilation stages
-    accDescr: SiteCompiler checks theme contrast and route and file paths, prepares routes concurrently, runs cross-route validation, and emits pages and site artifacts. Any authoring diagnostics transition to Rejected.
+    accDescr: SiteCompiler checks route and file paths, prepares routes concurrently, runs cross-route validation, and emits pages and site artifacts. Any authoring diagnostics transition to Rejected.
     [*] --> CheckingPaths
-    CheckingPaths: Validate theme contrast, routes, registered assets, and reserved paths
-    CheckingPaths --> Rejected: Theme or path diagnostics
+    CheckingPaths: Validate routes, registered assets, and reserved paths
+    CheckingPaths --> Rejected: Path diagnostics
     CheckingPaths --> Preparing: Paths are distinct
     Preparing: Prepare routes concurrently on virtual threads
     Preparing --> Rejected: Page diagnostics (in route order)
@@ -85,7 +85,7 @@ stateDiagram-v2
     Compiled --> [*]
 ```
 
-- **Theme contrast**: `Theme.contrastDiagnostics()` resolves the token pairs built-in components draw in both color schemes and joins the path diagnostics; `PageCompiler` runs the same check before preparing a standalone page. See [Theme contrast](diagnostics.md#theme-contrast).
+- **Theme contrast**: The `Compiler` constructor rejects a theme whose `Theme.contrastDiagnostics()` is not empty, so neither `PageCompiler` nor `SiteCompiler` receives a failing theme. The theme computes its diagnostics once, resolving each token once per color scheme; the pairs come from `ThemeContrast`'s token pairs and the `internal.css.Tint` recipes the components paint with. See [Theme contrast](diagnostics.md#theme-contrast).
 - **Concurrency and determinism**: Route preparation and page emission run on virtual threads (`Executors.newVirtualThreadPerTaskExecutor`), preserving route declaration order for diagnostics, CSS merging, search entries, sitemap entries, and returned `pages()`.
 - **Cross-route validation**: `SiteValidator` resolves local URLs against each route's `documentUri()`, decodes percent-encoding, ignores queries, accepts `index.html` aliases, validates fragments against target page IDs, and verifies that every `TransitionKey` spans at least two routes.
 - **Asset collision check**: After merging route stylesheets and collecting deduplicated scripts, Wasm bundle assets, and external speculation rules, `SiteCompiler` checks every generated asset path against routes and registered assets before emitting HTML.

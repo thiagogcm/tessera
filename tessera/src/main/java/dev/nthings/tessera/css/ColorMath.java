@@ -1,7 +1,5 @@
 package dev.nthings.tessera.css;
 
-import java.util.Locale;
-
 /// Deterministic color arithmetic behind [Theme#contrastDiagnostics()]: OKLCH and sRGB to OKLab,
 /// `color-mix()` interpolation, source-over compositing and WCAG 2.x relative luminance. It uses
 /// [StrictMath] throughout, so a theme reports the same ratios on every platform.
@@ -15,6 +13,12 @@ final class ColorMath {
 
   /// `transparent`: black at zero opacity.
   static final Lab TRANSPARENT = new Lab(0, 0, 0, 0);
+
+  /// Opaque white, the candidate `contrast-color()` prefers and the light user-agent canvas.
+  static final Lab WHITE = srgb(0xffffff, 1);
+
+  /// Opaque black, the other `contrast-color()` candidate.
+  static final Lab BLACK = srgb(0x000000, 1);
 
   private ColorMath() {}
 
@@ -131,15 +135,14 @@ final class ColorMath {
     return (StrictMath.max(y1, y2) + 0.05) / (StrictMath.min(y1, y2) + 0.05);
   }
 
-  /// `#rrggbb` of an opaque color, clipped to the sRGB gamut and rounded to 8-bit channels.
-  static String hex(Lab color) {
+  /// An opaque color as the 8-bit sRGB color a browser paints, clipped to the sRGB gamut.
+  static CssColors.Srgb toSrgb(Lab color) {
     var rgb = encoded(color);
-    return String.format(
-        Locale.ROOT,
-        "#%02x%02x%02x",
-        StrictMath.round(rgb[0] * 255),
-        StrictMath.round(rgb[1] * 255),
-        StrictMath.round(rgb[2] * 255));
+    return new CssColors.Srgb((channel(rgb[0]) << 16) | (channel(rgb[1]) << 8) | channel(rgb[2]));
+  }
+
+  private static int channel(double encoded) {
+    return (int) StrictMath.round(encoded * 255);
   }
 
   private static Lab fromLinear(double r, double g, double b, double alpha) {

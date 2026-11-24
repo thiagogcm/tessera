@@ -28,9 +28,8 @@ final class SiteCompiler {
   static CompiledSite compile(SiteDefinition site, Theme theme, OutputMode output) {
     var routes = site.routes();
 
-    // The theme, route paths and declared-file paths are known up front: reject them before
-    // rendering.
-    var diagnostics = new ArrayList<>(theme.contrastDiagnostics());
+    // Route paths and declared-file paths are known up front: reject them before rendering.
+    var diagnostics = new ArrayList<Diagnostic>();
     var routePaths = new RoutePaths();
     for (var route : routes) {
       routePaths.add(route, diagnostics);

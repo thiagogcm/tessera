@@ -17,6 +17,7 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.internal.css.Tint;
 import org.jspecify.annotations.Nullable;
 
 /// Compact label such as a status or a count. Create one with [#of(String)]; it is a neutral,
@@ -155,14 +156,15 @@ public final class Badge extends BuiltinScope<Badge> {
     for (var tone : Tone.values()) {
       var token = tone.color();
       var neutral = tone == Tone.NEUTRAL;
-      CssColor tintFill = neutral ? Tokens.SURFACE_SUBTLE : token.mixTransparent(14);
+      CssColor tintFill = neutral ? Tokens.SURFACE_SUBTLE : Tint.BADGE.fill(tone);
       CssColor tintEdge = neutral ? Tokens.BORDER_SUBTLE : token.mixTransparent(28);
+      var tintText = neutral ? tone.textColor() : Tint.BADGE.text(tone);
       var outlineEdge = neutral ? Tokens.BORDER_SUBTLE : token;
       var selector = ":scope.badge--" + CssNames.of(tone) + ".badge--";
       scope
           .select(
               selector + CssNames.of(Variant.TINTED),
-              s -> s.bg(tintFill).textColor(tone.textColor()).border(Border.hairline(tintEdge)))
+              s -> s.bg(tintFill).textColor(tintText).border(Border.hairline(tintEdge)))
           .select(
               selector + CssNames.of(Variant.OUTLINE),
               s ->

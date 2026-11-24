@@ -16,9 +16,11 @@ import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.components.WidgetBridge;
 import dev.nthings.tessera.internal.components.WidgetBridge.SectionParts;
+import dev.nthings.tessera.internal.css.Tint;
 import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
@@ -184,7 +186,7 @@ public final class Section extends BuiltinComponent
           sectionEl
               .p(Tokens.SPACE_6)
               .rounded(Tokens.RADIUS_XL)
-              .bg(Tokens.ACCENT_PRIMARY.mix(CssColor.Space.OKLAB, 6, Tokens.SURFACE_CARD))
+              .bg(Tint.SECTION.fill(Tone.ACCENT))
               .border(Border.hairline(Tokens.ACCENT_PRIMARY));
     }
 

@@ -2,10 +2,12 @@ package dev.nthings.tessera.css;
 
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Location;
+import dev.nthings.tessera.internal.css.Tint;
 import dev.nthings.tessera.internal.foundation.Decimals;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,7 +17,8 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// The text and surface color pairs built-in components draw from theme tokens, and the WCAG AA
-/// check of each pair in both color schemes. Backs [Theme#contrastDiagnostics()].
+/// check of each pair in both color schemes. Backs [Theme#contrastDiagnostics()]. Tinted surfaces
+/// come from [Tint], the recipes the components paint with.
 final class ThemeContrast {
 
   static final String RULE = "theme-contrast";
@@ -32,21 +35,18 @@ final class ThemeContrast {
   /// The color scheme a `light-dark()` value follows, and the opaque user-agent canvas a
   /// translucent page background shows through.
   enum Scheme {
-    LIGHT(0xffffff),
-    DARK(0x121212);
+    LIGHT(ColorMath.WHITE),
+    DARK(ColorMath.srgb(0x121212, 1));
 
     private final ColorMath.Lab canvas;
 
-    Scheme(int canvas) {
-      this.canvas = ColorMath.srgb(canvas, 1);
+    Scheme(ColorMath.Lab canvas) {
+      this.canvas = canvas;
     }
 
+    /// `light` or `dark`, as messages name the scheme.
     String label() {
-      return this == LIGHT ? "Light" : "Dark";
-    }
-
-    String adjective() {
-      return this == LIGHT ? "light" : "dark";
+      return name().toLowerCase(Locale.ROOT);
     }
   }
 
@@ -67,8 +67,9 @@ final class ThemeContrast {
   static List<Diagnostic> diagnostics(Theme theme) {
     var diagnostics = new ArrayList<Diagnostic>();
     for (var scheme : Scheme.values()) {
+      var colors = new Colors(theme, scheme);
       for (var pair : PAIRS) {
-        var measured = measure(theme, scheme, pair.ink().color(), pair.surface().layers());
+        var measured = colors.measure(pair.ink().color(), pair.surface().layers());
         if (measured != null && measured.ratio() < TEXT_MINIMUM) {
           diagnostics.add(diagnostic(theme, scheme, pair, measured));
         }
@@ -81,77 +82,93 @@ final class ThemeContrast {
   /// color depends on runtime state such as `currentColor`, an undefined token, or a token cycle.
   static @Nullable Measurement measure(
       Theme theme, Scheme scheme, CssColor text, List<CssColor> layers) {
-    var surface = scheme.canvas;
-    for (var layer : layers) {
-      var painted = resolve(layer, theme, scheme, new HashSet<>());
-      if (painted == null) {
-        return null;
-      }
-      surface = ColorMath.over(painted, surface);
-    }
-    var ink = resolve(text, theme, scheme, new HashSet<>());
-    if (ink == null) {
-      return null;
-    }
-    var visible = ColorMath.over(ink, surface);
-    return new Measurement(visible, surface, ColorMath.contrast(visible, surface));
+    return new Colors(theme, scheme).measure(text, layers);
   }
 
-  /// `color` as `theme` computes it in `scheme`, or null if it cannot be known statically.
-  /// `visiting` holds the tokens being resolved, so a cycle resolves to null as CSS makes it
-  /// invalid.
-  private static ColorMath.@Nullable Lab resolve(
-      CssColor color, Theme theme, Scheme scheme, Set<String> visiting) {
-    return switch (color) {
-      case CssColors.Oklch oklch ->
-          ColorMath.oklch(oklch.lightness(), oklch.chroma(), oklch.hue(), oklch.alpha());
-      case CssColors.Srgb srgb -> ColorMath.srgb(srgb.rgb(), srgb.alpha());
-      case CssColors.Named named ->
-          named == CssColors.Named.TRANSPARENT ? ColorMath.TRANSPARENT : null;
-      case CssColors.LightDark lightDark ->
-          resolve(
-              scheme == Scheme.LIGHT ? lightDark.light() : lightDark.dark(),
-              theme,
-              scheme,
-              visiting);
-      case CssColors.Relative relative -> {
-        var origin = resolve(relative.base(), theme, scheme, visiting);
-        yield origin == null
-            ? null
-            : ColorMath.oklch(
-                relative.lightness(), relative.chroma(), origin.hue(), origin.alpha());
-      }
-      case CssColors.Mix mix -> {
-        var share = share(mix.weight());
-        var one = resolve(mix.first(), theme, scheme, visiting);
-        var two = resolve(mix.second(), theme, scheme, visiting);
-        yield share == null || one == null || two == null
-            ? null
-            : ColorMath.mix(mix.space(), one, share, two);
-      }
-      case CssColors.ContrastOn contrastOn -> {
-        var behind = resolve(contrastOn.background(), theme, scheme, visiting);
-        if (behind == null || !behind.opaque()) {
-          yield null;
+  /// The colors of one theme in one scheme. Each token resolves once, however many pairs use it.
+  private static final class Colors {
+    private final Theme theme;
+    private final Scheme scheme;
+    private final Map<String, ColorMath.@Nullable Lab> tokens = new HashMap<>();
+
+    /// The tokens being resolved, so a cycle resolves to null as CSS makes it invalid.
+    private final Set<String> visiting = new HashSet<>();
+
+    Colors(Theme theme, Scheme scheme) {
+      this.theme = theme;
+      this.scheme = scheme;
+    }
+
+    @Nullable Measurement measure(CssColor text, List<CssColor> layers) {
+      var surface = scheme.canvas;
+      for (var layer : layers) {
+        var painted = resolve(layer);
+        if (painted == null) {
+          return null;
         }
-        var white = ColorMath.srgb(0xffffff, 1);
-        var black = ColorMath.srgb(0x000000, 1);
-        yield ColorMath.contrast(white, behind) >= ColorMath.contrast(black, behind)
-            ? white
-            : black;
+        surface = ColorMath.over(painted, surface);
       }
-      case DesignToken.Color token -> {
-        if (!visiting.add(token.name())) {
-          yield null;
+      var ink = resolve(text);
+      if (ink == null) {
+        return null;
+      }
+      var visible = ColorMath.over(ink, surface);
+      return new Measurement(visible, surface, ColorMath.contrast(visible, surface));
+    }
+
+    /// `color` as the theme computes it in the scheme, or null if it cannot be known statically.
+    private ColorMath.@Nullable Lab resolve(CssColor color) {
+      return switch (color) {
+        case CssColors.Oklch oklch ->
+            ColorMath.oklch(oklch.lightness(), oklch.chroma(), oklch.hue(), oklch.alpha());
+        case CssColors.Srgb srgb -> ColorMath.srgb(srgb.rgb(), srgb.alpha());
+        case CssColors.Named named ->
+            named == CssColors.Named.TRANSPARENT ? ColorMath.TRANSPARENT : null;
+        case CssColors.LightDark lightDark ->
+            resolve(scheme == Scheme.LIGHT ? lightDark.light() : lightDark.dark());
+        case CssColors.Relative relative -> {
+          var origin = resolve(relative.base());
+          yield origin == null
+              ? null
+              : ColorMath.oklch(
+                  relative.lightness(), relative.chroma(), origin.hue(), origin.alpha());
         }
-        var resolved =
-            theme.value(token.name()) instanceof CssColor value
-                ? resolve(value, theme, scheme, visiting)
-                : null;
-        visiting.remove(token.name());
-        yield resolved;
+        case CssColors.Mix mix -> {
+          var share = share(mix.weight());
+          var one = resolve(mix.first());
+          var two = resolve(mix.second());
+          yield share == null || one == null || two == null
+              ? null
+              : ColorMath.mix(mix.space(), one, share, two);
+        }
+        case CssColors.ContrastOn contrastOn -> {
+          var behind = resolve(contrastOn.background());
+          if (behind == null || !behind.opaque()) {
+            yield null;
+          }
+          yield ColorMath.contrast(ColorMath.WHITE, behind)
+                  >= ColorMath.contrast(ColorMath.BLACK, behind)
+              ? ColorMath.WHITE
+              : ColorMath.BLACK;
+        }
+        case DesignToken.Color token -> token(token.name());
+      };
+    }
+
+    /// A token's color, resolved once. A token on an alias cycle is null, as is every token that
+    /// depends on one, so a null cached while the cycle is still being resolved is exact.
+    private ColorMath.@Nullable Lab token(String name) {
+      if (tokens.containsKey(name)) {
+        return tokens.get(name);
       }
-    };
+      if (!visiting.add(name)) {
+        return null;
+      }
+      var resolved = theme.value(name) instanceof CssColor value ? resolve(value) : null;
+      visiting.remove(name);
+      tokens.put(name, resolved);
+      return resolved;
+    }
   }
 
   /// A `color-mix()` weight as a share in `[0, 1]`, or null unless it is a plain percentage.
@@ -172,18 +189,18 @@ final class ThemeContrast {
     var surfaceLabel =
         surfaceToken == null ? pair.surface().label() : describe(surfaceToken, theme);
     var message =
-        scheme.label()
-            + " scheme: "
-            + inkLabel
+        inkLabel
             + " ("
-            + ColorMath.hex(measured.text())
+            + hex(measured.text())
             + ") on "
             + surfaceLabel
             + " ("
-            + ColorMath.hex(measured.surface())
+            + hex(measured.surface())
             + ") has a contrast ratio of "
             + ratio(measured.ratio())
-            + ":1, below the WCAG AA minimum of "
+            + ":1 in the "
+            + scheme.label()
+            + " scheme, below the WCAG AA minimum of "
             + Decimals.format(TEXT_MINIMUM)
             + ":1 for text in "
             + pair.use();
@@ -196,7 +213,7 @@ final class ThemeContrast {
     var inkToken = pair.ink().token();
     var surfaceToken = pair.surface().token();
     var minimum = Decimals.format(TEXT_MINIMUM) + ":1";
-    var where = " in the " + scheme.adjective() + " scheme";
+    var where = " in the " + scheme.label() + " scheme";
     String advice;
     if (inkToken != null && surfaceToken != null) {
       advice =
@@ -258,11 +275,18 @@ final class ThemeContrast {
     return "--" + token.name();
   }
 
+  /// `#rrggbb` of an opaque measured color.
+  static String hex(ColorMath.Lab color) {
+    return ColorMath.toSrgb(color).toCss();
+  }
+
   /// `ratio` truncated to two decimals, so a failing ratio never prints as the minimum.
   private static String ratio(double ratio) {
     return BigDecimal.valueOf(ratio).setScale(2, RoundingMode.FLOOR).toPlainString();
   }
 
+  /// The pairs built-in components draw: token text on token surfaces, each tone's label on its
+  /// solid fill, and every text of every [Tint].
   private static List<Pair> catalog() {
     var canvas = on(Tokens.SURFACE_CANVAS);
     var card = on(Tokens.SURFACE_CARD);
@@ -293,36 +317,22 @@ final class ThemeContrast {
       var text = ink(tone.textColor());
       add(pairs, text, canvas, name + " outline badges, outline and ghost buttons, and messages");
       add(pairs, text, card, name + " outline badges, buttons and messages inside cards");
-      add(pairs, text, tint(tone.color(), 14, Tokens.SURFACE_CANVAS), name + " tinted badges");
       add(
           pairs,
           new Ink(tone.onSolid(), null, "the solid " + name + " label color"),
           on(tone.color()),
           name + " solid buttons and badges");
-      add(pairs, ink(Tokens.CONTROL_FG), blend(tone.color(), 14), name + " callouts");
-      add(
-          pairs,
-          ink(Tokens.TEXT_PRIMARY),
-          tint(tone.color(), 24, Tokens.SURFACE_CANVAS),
-          name + " text highlights");
     }
 
-    var invalid = blend(Tokens.STATUS_DANGER, 8);
-    add(pairs, ink(Tokens.TEXT_PRIMARY), invalid, "invalid form fields");
-    var highlight = blend(Tokens.ACCENT_PRIMARY, 6);
-    add(pairs, ink(Tokens.TEXT_PRIMARY), highlight, "highlight sections");
-    add(pairs, ink(Tokens.TEXT_MUTED), highlight, "highlight section descriptions");
-    add(pairs, ink(Tokens.ACCENT_PRIMARY), highlight, "highlight section eyebrows");
-    add(
-        pairs,
-        ink(Tokens.STATUS_SUCCESS_TEXT),
-        tint(Tokens.STATUS_SUCCESS, 16, Tokens.SURFACE_CARD),
-        "inserted code lines");
-    add(
-        pairs,
-        ink(Tokens.STATUS_DANGER_TEXT),
-        tint(Tokens.STATUS_DANGER, 16, Tokens.SURFACE_CARD),
-        "deleted code lines");
+    for (var tint : Tint.values()) {
+      for (var tone : tint.tones()) {
+        for (var surface : surfaces(tint, tone)) {
+          for (var text : tint.texts(tone)) {
+            add(pairs, ink(text), surface, tint.use(tone));
+          }
+        }
+      }
+    }
     return List.copyOf(pairs.values());
   }
 
@@ -347,21 +357,26 @@ final class ThemeContrast {
     return new Surface(layers, token, name(token));
   }
 
-  /// `tone` at `percent` opacity over the opaque `base`, as `tone.mixTransparent(percent)` paints.
-  private static Surface tint(DesignToken.Color tone, int percent, DesignToken.Color base) {
-    var layers = new ArrayList<CssColor>(on(base).layers());
-    layers.add(tone.mixTransparent(percent));
-    return new Surface(
-        List.copyOf(layers), null, name(tone) + " at " + percent + "% over " + name(base));
-  }
-
-  /// `tone` mixed `percent` into [Tokens#SURFACE_CARD] in OKLab, the tinted card of callouts,
-  /// invalid fields and highlight sections.
-  private static Surface blend(DesignToken.Color tone, int percent) {
-    return new Surface(
-        List.of(
-            Tokens.SURFACE_CANVAS, tone.mix(CssColor.Space.OKLAB, percent, Tokens.SURFACE_CARD)),
-        null,
-        name(tone) + " mixed " + percent + "% into " + name(Tokens.SURFACE_CARD));
+  /// `tint` in `tone` over each surface it can sit on, at each percentage it paints. Its fix is the
+  /// text color, so the surface names no token.
+  private static List<Surface> surfaces(Tint tint, Tone tone) {
+    var surfaces = new ArrayList<Surface>();
+    var source = name(tone.color()) + " ";
+    for (var sample : tint.samples(tone)) {
+      for (var base : tint.surfaces()) {
+        var layers = new ArrayList<CssColor>();
+        String label;
+        if (tint.blend() == Tint.Blend.OVER) {
+          layers.addAll(on(base).layers());
+          label = source + "at " + sample.percent() + "% over " + name(base);
+        } else {
+          layers.add(Tokens.SURFACE_CANVAS);
+          label = source + "mixed " + sample.percent() + "% into " + name(base);
+        }
+        layers.add(sample.fill());
+        surfaces.add(new Surface(List.copyOf(layers), null, label));
+      }
+    }
+    return surfaces;
   }
 }

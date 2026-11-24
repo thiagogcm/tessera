@@ -21,8 +21,10 @@ import dev.nthings.tessera.css.Resize;
 import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Styled;
 import dev.nthings.tessera.css.Tokens;
+import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Typography;
+import dev.nthings.tessera.internal.css.Tint;
 
 /// Form control functions: styled text-like inputs, a textarea and a switch, returned as plain
 /// elements you can refine further. The controls are bare: wrap one with [Field#of(String,
@@ -43,8 +45,7 @@ public final class Forms {
             State.USER_INVALID,
             s ->
                 // A tint of the field's own surface, so the text stays legible in dark mode.
-                s.borderColor(Tokens.STATUS_DANGER)
-                    .bg(Tokens.STATUS_DANGER.mix(CssColor.Space.OKLAB, 8, Tokens.SURFACE_CARD)))
+                s.borderColor(Tokens.STATUS_DANGER).bg(Tint.INVALID_FIELD.fill(Tone.DANGER)))
         .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
   }
 

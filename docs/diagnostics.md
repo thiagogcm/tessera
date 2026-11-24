@@ -1,6 +1,6 @@
 # Diagnostics
 
-Tessera validates theme contrast, markup, references, form controls, accessibility semantics, and site links before returning output. Static `Compiler` methods throw `CompilationException` on authoring errors; live browser renders reject invalid candidates with `ViewException` and keep the last valid DOM.
+Tessera validates theme contrast, markup, references, form controls, accessibility semantics, and site links before returning output. Static `Compiler` methods throw `CompilationException` on authoring errors; live browser renders reject invalid candidates with `ViewException` and keep the last valid DOM. A theme is checked once, where a backend accepts it: see [Theme contrast](#theme-contrast).
 
 ## Read a diagnostic
 
@@ -29,15 +29,15 @@ Compilation failed with 1 error:
 | `fix()` | Actionable correction |
 | `location()` | Optional route, page title, component path, element tag, DOM ID, and Java source line |
 
-Standalone pages omit routes from locations, and site-level file collisions and theme diagnostics can omit both route and page. Deferred, head, and document-end content retains the component path that registered it.
+Standalone pages omit routes from locations, and site-level file collisions and theme diagnostics omit both route and page. Deferred, head, and document-end content retains the component path that registered it.
 
 ## Understand validation stages
 
-The compiler collects all independent diagnostics within the failing stage and emits no HTML when a stage fails:
+The theme is checked before any stage, when the `Compiler` is created. The compiler collects all independent diagnostics within the failing stage and emits no HTML when a stage fails:
 
 | Stage | Scope and ordering |
 | --- | --- |
-| 1. Theme and site paths | Checks [theme contrast](#theme-contrast), then duplicate routes and registered or reserved file collisions, before preparing pages; a standalone page checks its theme only |
+| 1. Site paths | Checks duplicate routes and registered or reserved file collisions before preparing pages; a standalone page skips this stage |
 | 2. Page preparation | Checks identity, references, images, markup, controls, widgets, accessibility, and URL syntax; site failures are ordered by route declaration |
 | 3. Site validation | Runs after all pages prepare; checks cross-route links, fragments, shared transition keys, and generated asset collisions |
 
@@ -96,10 +96,15 @@ See [Set form defaults](components.md#set-form-defaults) and [Bind form values](
 
 ### Theme contrast
 
-The compiler checks the `Theme` before it prepares any page. Each failing pair produces one `theme-contrast` diagnostic per color scheme:
+A backend checks a `Theme` once, where it accepts it, before anything renders:
+
+| Backend | Entry point | A failing theme |
+| --- | --- | --- |
+| Static compiler | `Compiler.withTheme(theme)` (the `Compiler` constructor) | Throws `CompilationException` with one `theme-contrast` diagnostic per failing pair and scheme. `tryCompile(...)` never sees it, because no `Compiler` holds a failing theme. |
+| Browser root | `MountOptions.withTheme(theme)` (the `MountOptions` constructor) | Throws `IllegalArgumentException` listing the same diagnostics. Inside a `BrowserEntry` mount it is reported as a failed mount in the browser console, and the host keeps its fallback content. |
 
 ```text
-[theme-contrast] Light scheme: the solid accent label color (#ffffff) on --accent-primary (#008c2f) has a contrast ratio of 4.36:1, below the WCAG AA minimum of 4.5:1 for text in accent solid buttons and badges
+[theme-contrast] the solid accent label color (#ffffff) on --accent-primary (#008c2f) has a contrast ratio of 4.36:1 in the light scheme, below the WCAG AA minimum of 4.5:1 for text in accent solid buttons and badges
   Fix: Darken --accent-primary in the light scheme until the solid accent label color on it reaches 4.5:1. Use CssColor.lightDark(light, dark) to give a token separate light and dark values.
 ```
 
@@ -113,17 +118,31 @@ The check covers the text and surface pairs built-in components draw from color 
 | --- | --- |
 | `TEXT_PRIMARY`, `TEXT_MUTED`, `CONTROL_FG` | `SURFACE_CANVAS` and `SURFACE_CARD`; `SURFACE_SUBTLE` for primary and muted text |
 | `ACCENT_PRIMARY` (active tabs, pager links, eyebrows) | `SURFACE_CANVAS`, `SURFACE_CARD`, and `SURFACE_SUBTLE` |
-| Each `Tone.textColor()` (`ACCENT_TEXT`, `STATUS_*_TEXT`) | `SURFACE_CANVAS`, `SURFACE_CARD`, and the tone's 14% tint used by tinted badges |
+| Each `Tone.textColor()` (`ACCENT_TEXT`, `STATUS_*_TEXT`) | `SURFACE_CANVAS` and `SURFACE_CARD` |
 | Each `Tone.onSolid()` label color | The tone's solid fill (`ACCENT_PRIMARY`, `STATUS_*`) |
 | `SURFACE_CARD` | Solid neutral fills of `TEXT_PRIMARY` (buttons) and `TEXT_MUTED` (badges) |
-| `CONTROL_FG`, `TEXT_PRIMARY`, `TEXT_MUTED`, `ACCENT_PRIMARY` | Callout tints, text highlights, invalid fields, and highlight sections, as each component uses them |
-| `STATUS_SUCCESS_TEXT`, `STATUS_DANGER_TEXT` | Inserted and deleted code line tints |
+| The text each tinted surface carries | Every tinted surface, in every tone that paints it, over each surface beneath it |
 
-Non-text indicators such as focus rings and switch tracks use `ACCENT_PRIMARY`, which its text pairs already hold to the stricter 4.5:1.
+Built-in components paint their tinted surfaces from one set of recipes, and the check measures exactly those recipes, so the two cannot drift:
 
-Colors resolve the way the browser computes them: token aliases follow the theme, `light-dark()` picks the scheme's branch, and `sameHue`, `color-mix()`, and `contrast-color()` are evaluated in OKLab, OKLCH, and sRGB. Translucent colors composite over the layers beneath them, and colors outside the sRGB gamut clip per channel. Ratios use WCAG 2.x relative luminance and print truncated to two decimals, so a failing pair never prints as `4.50:1`. The check skips a pair, rather than guessing, when a color depends on the page: `currentColor`, a token the theme does not define, a cycle of token aliases, or a `color-mix()` weight that is not a plain percentage.
+| Tinted surface | Recipe | Text checked |
+| --- | --- | --- |
+| Tinted badges | Tone color at 14% over the canvas or a card | `Tone.textColor()` |
+| Outline and ghost buttons on hover | Tone color at 12% over the canvas or a card | `Tone.textColor()` |
+| `highlight(tone)`, any tone | Tone color at 24% over the canvas or a card | `TEXT_PRIMARY` |
+| Current table of contents entry | Accent at 24% over the canvas or a card | `ACCENT_TEXT` |
+| Callouts | Tone color mixed 14% into `SURFACE_CARD` | `CONTROL_FG` |
+| Inserted and deleted code lines | Success or danger at 16% over `SURFACE_CARD` | `STATUS_SUCCESS_TEXT`, `STATUS_DANGER_TEXT` |
+| Highlighted code lines | Accent at 15% over `SURFACE_CARD` | `TEXT_PRIMARY` |
+| Invalid form fields | Danger mixed 8% into `SURFACE_CARD` | `TEXT_PRIMARY` |
+| Highlight sections | Accent mixed 6% into `SURFACE_CARD` | `TEXT_PRIMARY`, `TEXT_MUTED`, `ACCENT_PRIMARY` |
+| `StepList` numbers | Accent mixed 20% to 60% into `SURFACE_SUBTLE`, both ends checked | `TEXT_PRIMARY` |
 
-Fix a failure by adjusting the named token for the reported scheme. Use `CssColor.lightDark(light, dark)` for a token whose light and dark values need different lightness, because a single value rarely reads on both a near-white and a near-black surface. Call `theme.contrastDiagnostics()` to inspect a theme without compiling, such as in a unit test.
+Non-text indicators such as focus rings and switch tracks use `ACCENT_PRIMARY`, which its text pairs already hold to the stricter 4.5:1. The translucent `StickyHeader` surface is not checked, because the page content scrolling beneath it is unknown.
+
+Colors resolve the way the browser computes them: token aliases follow the theme, `light-dark()` picks the scheme's branch, and `sameHue`, `color-mix()`, and `contrast-color()` are evaluated in OKLab, OKLCH, and sRGB. Translucent colors composite over the layers beneath them, and colors outside the sRGB gamut clip per channel. Ratios use WCAG 2.x relative luminance and print truncated to two decimals, so a failing pair never prints as `4.50:1`. The check skips a pair, rather than guessing, when a color depends on the page: `currentColor`, a token the theme does not define, a cycle of token aliases (or a token that follows one), or a `color-mix()` weight that is not a plain percentage.
+
+Fix a failure by adjusting the named token for the reported scheme. Use `CssColor.lightDark(light, dark)` for a token whose light and dark values need different lightness, because a single value rarely reads on both a near-white and a near-black surface. Call `theme.contrastDiagnostics()` to inspect a theme without a backend, such as in a unit test. A `Theme` is immutable, so it computes its diagnostics once and returns the same list on every call.
 
 ### Accessibility rules
 

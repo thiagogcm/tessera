@@ -31,6 +31,7 @@ import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.components.Icons;
+import dev.nthings.tessera.internal.css.Tint;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
@@ -214,10 +215,10 @@ public final class TableOfContents extends BuiltinDocumentComponent
           .select(
               ":scope a:target-current",
               s ->
-                  s.textColor(Tokens.ACCENT_TEXT)
+                  s.textColor(Tint.CURRENT_ENTRY.text(Tone.ACCENT))
                       .fontWeight(600)
                       .borderInlineStart(Border.solid(CssLength.px(3), Tokens.ACCENT_PRIMARY))
-                      .bg(Tone.ACCENT.color().mixTransparent(24)));
+                      .bg(Tint.CURRENT_ENTRY.fill(Tone.ACCENT)));
     }
 
     @Override

@@ -241,41 +241,35 @@ class SiblingPlanTest {
       dom.add("p" + slot);
     }
     dom.add("end");
-    var stayed = new ArrayList<String>();
-    var anchors = new String[next.size()];
-    var before = "end";
+    var stable = new ArrayList<String>(dom);
     for (var index = next.size() - 1; index >= 0; index--) {
-      var slot = plan.match(index);
-      if (slot == SiblingPlan.NEW) {
-        anchors[index] = before;
-        continue;
-      }
-      var node = "p" + slot;
       if (plan.moves(index)) {
+        var node = "p" + plan.match(index);
         dom.remove(node);
-        dom.add(dom.indexOf(before), node);
-      } else {
-        stayed.addFirst(node);
+        dom.add(dom.indexOf(anchor(plan, index)), node);
+        stable.remove(node);
       }
-      before = node;
     }
     for (var index = 0; index < next.size(); index++) {
       if (plan.match(index) == SiblingPlan.NEW) {
-        dom.add(dom.indexOf(anchors[index]), "n" + index);
+        dom.add(dom.indexOf(anchor(plan, index)), "n" + index);
       }
     }
     for (var slot = 0; slot < previous.size(); slot++) {
       if (!plan.retains(slot)) {
         dom.remove("p" + slot);
+        stable.remove("p" + slot);
       }
     }
-    assertThat(dom.removeLast()).isEqualTo("end");
     // Children that did not move keep their previous relative order.
-    assertThat(stayed).isSortedAccordingTo((a, b) -> Integer.compare(slotOf(a), slotOf(b)));
+    assertThat(dom).containsSubsequence(stable);
+    assertThat(dom.removeLast()).isEqualTo("end");
     return dom;
   }
 
-  private static int slotOf(String node) {
-    return Integer.parseInt(node.substring(1));
+  /// The node next child `index` is placed before.
+  private static String anchor(SiblingPlan plan, int index) {
+    var slot = plan.anchor(index);
+    return slot == SiblingPlan.END ? "end" : "p" + slot;
   }
 }

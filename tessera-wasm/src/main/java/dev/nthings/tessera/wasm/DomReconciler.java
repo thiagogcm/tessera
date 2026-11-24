@@ -21,13 +21,15 @@ import org.jspecify.annotations.Nullable;
 /// A commit runs in phases, and each phase owns what it touches. [#apply] reconciles a candidate
 /// against the committed tree, registering every instance it creates before that instance acquires
 /// listeners or an effect lifetime, and detaching obsolete ranges; a first commit builds off the
-/// host, so a failure before publication leaves the fallback nodes in place. [#publish] installs
-/// the candidate as the committed tree, moving a first build into the host. [#retire] then releases
-/// the resources of replaced subtrees with their application cleanups, [#handOff] moves focus and
-/// the reading position from a replaced fallback, and [#activate] starts the effects the commit
-/// placed. A root that closes while a phase runs settles through [ClosedRoot]: the commit publishes
-/// nothing and starts nothing, and the closing root releases what the commit acquired along with
-/// what it already owned.
+/// host, so a failure before publication leaves the fallback nodes in place, and treats each
+/// fallback control as the previous instance of the created control with the same id, so the user's
+/// edits carry over as on a retained control. [#publish] installs the candidate as the committed
+/// tree, moving a first build into the host. [#retire] then releases the resources of replaced
+/// subtrees with their application cleanups, [#handOff] moves focus and the reading position from a
+/// replaced fallback, and [#activate] starts the effects the commit placed. A root that closes
+/// while a phase runs settles through [ClosedRoot]: the commit publishes nothing and starts
+/// nothing, and the closing root releases what the commit acquired along with what it already
+/// owned.
 final class DomReconciler {
   /// Identity of every unkeyed text node; keyed groups are [KeyedGroup]s, kinds are tag names and
   /// group definitions.
@@ -80,8 +82,13 @@ final class DomReconciler {
   private final List<RuntimeException> disposalFailures = new ArrayList<>();
   private boolean mounted;
 
+  /// Where the reader was in the fallback content the first commit replaced: the focused fallback
+  /// element, and the id of the first fallback element with an id below the top of the viewport
+  /// with its offset from that edge, when the window was scrolled into the host.
+  private record Fallback(@Nullable JSObject focused, String anchor, double offset) {}
+
   /// What the first commit took over from the fallback content, until [#handOff] applies it.
-  private @Nullable JSObject handoff;
+  private @Nullable Fallback handoff;
 
   DomReconciler(JSObject host, String hostId, Runnable invalidate, BooleanSupplier open) {
     this.host = host;
@@ -121,10 +128,11 @@ final class DomReconciler {
   }
 
   /// Publishes a prepared commit: installs its tree as the committed tree, replacing fallback
-  /// content on the first commit. Acquired instances transfer to the committed tree here; a failure
-  /// during first installation releases them, restores the original fallback nodes and returns
-  /// focus to the fallback element that had it. A successful first installation leaves the focus
-  /// and scroll handoff to [#handOff].
+  /// content on the first commit, then restores browser-owned control state and applies control
+  /// bindings. Acquired instances transfer to the committed tree here; a failure during first
+  /// installation releases them, restores the original fallback nodes and returns focus to the
+  /// fallback element that had it. A successful first installation leaves the focus and scroll
+  /// handoff to [#handOff].
   void publish(Commit commit) {
     // A root that closed after the last mutation of [#apply] already released its acquisitions.
     requireOpen();
@@ -134,7 +142,12 @@ final class DomReconciler {
     } else {
       // Retain the real nodes until installation succeeds, including dirty native controls.
       var fallback = Dom.snapshotChildren(host);
-      var state = Dom.captureFallback(host);
+      var focused = Dom.focusedWithin(host);
+      var anchor = Dom.readingAnchor(host);
+      var reader =
+          anchor == null
+              ? new Fallback(focused, "", 0)
+              : new Fallback(focused, Dom.id(anchor), Dom.top(anchor));
       var installed = false;
       try {
         Dom.clear(host);
@@ -150,27 +163,50 @@ final class DomReconciler {
             abort();
           } finally {
             Dom.restoreChildren(host, fallback);
-            Dom.refocusFallback(state);
+            if (focused != null) {
+              Dom.refocus(focused);
+            }
           }
         }
       }
       mounted = true;
-      handoff = state;
+      handoff = reader;
     }
     roots = commit.tree();
     created.clear();
   }
 
   /// Completes the first commit's handoff from fallback content, once the committed tree, its
-  /// references and its widgets are in place and before effects start: keeps the reading position
-  /// of a host scrolled past its top, and moves focus from a fallback element to the committed
-  /// element with the same id. Focus events it fires reach the committed handlers.
+  /// references and its widgets are in place and before effects start: scrolls the window so the
+  /// committed element with the reading anchor's id keeps the anchor's offset from the top of the
+  /// viewport, then focuses the committed element with the id of the focused fallback element, if
+  /// focus fell back to the document meanwhile. A missing counterpart changes nothing. Focus events
+  /// it fires reach the committed handlers.
   void handOff() {
-    var state = handoff;
+    var reader = handoff;
     handoff = null;
-    if (state != null) {
-      Dom.handOffFallback(host, state);
+    if (reader == null) {
+      return;
     }
+    var anchor = find(reader.anchor());
+    if (anchor != null) {
+      var delta = Dom.top(anchor) - reader.offset();
+      if (Math.abs(delta) >= 1) {
+        Dom.scrollWindow(delta);
+      }
+    }
+    var focused = reader.focused();
+    if (focused != null && Dom.focusLost()) {
+      var target = find(Dom.id(focused));
+      if (target != null) {
+        Dom.refocus(target);
+      }
+    }
+  }
+
+  /// The element with `id` within the host, or `null`; an empty id matches nothing.
+  private @Nullable JSObject find(String id) {
+    return id.isEmpty() ? null : Dom.find(host, id);
   }
 
   /// Releases the obsolete subtrees the last commit replaced, descendant first and each resource
@@ -338,22 +374,13 @@ final class DomReconciler {
     requireOpen();
     var plan =
         SiblingPlan.of(previous, instance -> instance.identity, next, DomReconciler::identity);
-    // Walking backwards, each retained range is placed before its next retained sibling, and each
-    // new child's anchor is that sibling.
-    @Nullable JSObject[] anchors = new JSObject[next.size()];
-    var before = end;
+    // Backwards, so each retained range moves before an anchor already in its final place.
     for (var index = next.size() - 1; index >= 0; index--) {
-      requireOpen();
-      var slot = plan.match(index);
-      if (slot == SiblingPlan.NEW) {
-        anchors[index] = before;
-        continue;
-      }
-      var old = previous.get(slot);
       if (plan.moves(index)) {
-        Dom.moveRange(parent, old.first, old.last, before);
+        requireOpen();
+        var old = previous.get(plan.match(index));
+        Dom.moveRange(parent, old.first, old.last, anchor(previous, plan.anchor(index), end));
       }
-      before = old.first;
     }
     var result = new ArrayList<Mounted>(next.size());
     for (var index = 0; index < next.size(); index++) {
@@ -364,7 +391,8 @@ final class DomReconciler {
         patch(parent, old, next.get(index), retainOptionDefaults);
         result.add(old);
       } else {
-        result.add(create(parent, next.get(index), anchors[index]));
+        var before = anchor(previous, plan.anchor(index), end);
+        result.add(create(parent, next.get(index), before));
       }
     }
     for (var slot = 0; slot < previous.size(); slot++) {
@@ -375,6 +403,12 @@ final class DomReconciler {
       }
     }
     return result;
+  }
+
+  /// The first node of previous sibling `slot`, or `end` for [SiblingPlan#END].
+  private static @Nullable JSObject anchor(
+      List<Mounted> previous, int slot, @Nullable JSObject end) {
+    return slot == SiblingPlan.END ? end : previous.get(slot).first;
   }
 
   /// The root closed mid-mutation: settle at this boundary, releasing what was acquired.
@@ -424,9 +458,7 @@ final class DomReconciler {
         if (bindings.widget() != null) {
           widgetUpdates.add(instance);
         }
-        if (bindings.controls().isControlled()) {
-          controlUpdates.add(new ControlUpdate(instance, bindings.controls(), null, false, false));
-        }
+        queueCreatedControl(instance, tag, bindings.controls());
         yield instance;
       }
       case LinkedNode.Group<LiveBehavior> group -> {
@@ -548,6 +580,39 @@ final class DomReconciler {
     var retained = restoreValue || restoreChecked || restoreSelection ? handoff : null;
     if (retained != null || next.isControlled()) {
       controlUpdates.add(new ControlUpdate(instance, next, retained, restoreValue, restoreChecked));
+    }
+  }
+
+  /// Queues a created control for [#finishControls] when it has bindings or, on the first commit,
+  /// takes over a fallback control. A fallback control with the same id stands in for the previous
+  /// instance: as a retained control keeps the properties its bindings leave to the browser, the
+  /// created control takes over what the user changed on the fallback control for those properties
+  /// only. A bound property shows application state, so text typed into the fallback field of a
+  /// bound value is dropped rather than bypassing that state.
+  private void queueCreatedControl(
+      Mounted instance, LinkedNode.Tag<LiveBehavior> tag, ControlProperties controls) {
+    @Nullable JSObject retained = null;
+    var restoreValue = false;
+    var restoreChecked = false;
+    var id = tag.attributes().get("id");
+    if (!mounted && id != null) {
+      var attributes = tag.attributes();
+      restoreValue =
+          controls.value() == null && ControlSemantics.hasEditableValue(tag.tag(), attributes);
+      restoreChecked =
+          controls.checked() == null && ControlSemantics.isCheckable(tag.tag(), attributes);
+      var restoreSelection =
+          tag.tag() == HtmlTag.SELECT
+              && controls.value() == null
+              && controls.selectedValues() == null;
+      var fallback = restoreValue || restoreChecked || restoreSelection ? find(id) : null;
+      if (fallback != null) {
+        retained = Dom.captureFallbackControl(fallback, instance.first);
+      }
+    }
+    if (retained != null || controls.isControlled()) {
+      controlUpdates.add(
+          new ControlUpdate(instance, controls, retained, restoreValue, restoreChecked));
     }
   }
 

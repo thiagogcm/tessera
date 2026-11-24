@@ -6,6 +6,7 @@ import com.microsoft.playwright.ConsoleMessage;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.AriaRole;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,20 @@ final class Session {
   Page open(String path) {
     page.navigate(url(path));
     return page;
+  }
+
+  /// Serves the fixture page at `path` with every `target` in its body replaced by `replacement`,
+  /// as a host page edited by hand would read. Call before opening the page.
+  void serveEdited(String path, String target, String replacement) {
+    page.route(
+        url(path),
+        route -> {
+          var response = route.fetch();
+          route.fulfill(
+              new Route.FulfillOptions()
+                  .setResponse(response)
+                  .setBody(response.text().replace(target, replacement)));
+        });
   }
 
   /// Allows errors containing non-empty `fragment`, however many are reported.

@@ -38,21 +38,17 @@ sequenceDiagram
     end
 ```
 
-`BrowserRoot` records its lifecycle in one private `Phase` enum (`OPEN`, `PREPARING`, `APPLYING`, `CLOSING`, `CLOSED`). `Closing` is terminal and idempotent:
+`BrowserRoot` records its lifecycle in one private `Phase` enum (`OPEN`, `RENDERING`, `CLOSED`). A render turn first prepares a candidate (expansion, linking, and validation, leaving the DOM untouched), then applies, publishes, retires, and activates it. `CLOSED` is terminal and idempotent: `close()` enters it before releasing anything, so callbacks that run during the release see a closed root.
 
 ```mermaid
 stateDiagram-v2
     accTitle: BrowserRoot lifecycle states
-    accDescr: An open root prepares and applies renders. Closing from any active state settles at the next safe phase boundary and releases every owned resource once before reaching Closed.
+    accDescr: An open root runs render turns. Closing from either state settles at the next safe phase boundary and releases every owned resource once.
     [*] --> Open
-    Open --> Preparing: invalidate()
-    Preparing --> Open: Candidate rejected
-    Preparing --> Applying: Candidate accepted
-    Applying --> Open: Publish, retire, and activate callbacks
-    Open --> Closing: close()
-    Preparing --> Closing: close()
-    Applying --> Closing: close() or native DOM failure
-    Closing --> Closed: Release committed, active, and retiring resources
+    Open --> Rendering: Flush runs a turn
+    Rendering --> Open: Candidate rejected, or published, retired, and activated
+    Open --> Closed: close()
+    Rendering --> Closed: close() or native DOM failure
     Closed --> [*]
 ```
 
@@ -61,8 +57,8 @@ No application effect cleanup runs mid-reconciliation. If a native DOM event or 
 | Phase | `invalidate()` | Event dispatch and host callbacks |
 | --- | --- | --- |
 | `OPEN` | Marks the root dirty and schedules a flush (or leaves it to the running frame batch) | Run |
-| `PREPARING`, `APPLYING` | Marks the root dirty; the running flush renders again and counts a self-invalidation | Run (only callbacks the commit itself triggers) |
-| `CLOSING`, `CLOSED` | Ignored | Dropped |
+| `RENDERING` | Marks the root dirty; the running flush renders again and counts a self-invalidation | Run (only callbacks the commit itself triggers) |
+| `CLOSED` | Ignored | Dropped |
 
 ### Failure containment
 
@@ -73,7 +69,7 @@ Failures are surfaced as readable browser `Error` reports naming the host root r
 | Validation diagnostics, `cross-root-id`, or throwing render/style callback | Rejects candidate; committed DOM (or initial fallback) stays untouched; later invalidation retries. Callback failures include component and key path. |
 | `MountOptions` given a theme that fails [theme contrast](diagnostics.md#theme-contrast) | `withTheme` throws `IllegalArgumentException` listing the `theme-contrast` diagnostics; inside a `BrowserEntry` mount this is reported as a failed mount and the host keeps its fallback content. |
 | Initial mount preparation or pre-publication DOM failure | First mount builds off-host and preserves original fallback nodes until publication succeeds; partial acquisitions are released, the fallback nodes return with focus on the element that had it, and other hosts continue mounting. |
-| Unexpected native DOM failure during update of live tree | Enters `Closing`, releases all acquired and committed resources, and reports the error without claiming arbitrary DOM rollback. |
+| Unexpected native DOM failure during update of live tree | Closes the root, releases all acquired and committed resources, and reports the error without claiming arbitrary DOM rollback. |
 | Event handler or effect startup failure | Reports error with context; root stays open and interactive unless `close()` was requested. |
 | `update(change)` wrapper whose change throws | Invalidates the root anyway, so state changed before the failure renders; the failure propagates to the caller (an event handler reports it). |
 | Cleanup failure during retirement or close | Continues running all remaining cleanups and reports collected failures together once. |
@@ -83,7 +79,7 @@ Failures are surfaced as readable browser `Error` reports naming the host root r
 
 Linking preserves components, scopes, fragments, and keyed items as `LinkedNode.Group` nodes carrying an optional sibling key and a stable definition (`scopeName()` for scopes, `FragmentElement` for fragments, or the authoring type for components and keyed elements). `DomReconciler` brackets each group between two anchor comment nodes and manages the entire range between them.
 
-For each parent, the pure `SiblingPlan` decides which previous sibling each candidate child retains and which retained siblings move, without touching the DOM; `DomReconciler` then applies the plan. Seeded randomized JVM tests (`SiblingPlanTest`) check the plan against independent oracles: occurrence-order matching, a quadratic longest-increasing-subsequence search for minimal movement, and a model of the reconciler's DOM operations that must yield the candidate order.
+For each parent, the pure `SiblingPlan` decides which previous sibling each candidate child retains, which retained siblings move, and which anchor each child is placed before (the previous sibling its nearest later retained sibling retains, or the end of the range), without touching the DOM. `DomReconciler` then applies the plan: it moves the out-of-order ranges walking backwards, so every anchor already sits in its final place, and creates new children before their anchors in document order. Seeded randomized JVM tests (`SiblingPlanTest`) check the plan against independent oracles: occurrence-order matching, a quadratic longest-increasing-subsequence search for minimal movement, and a model of the reconciler's DOM operations that must yield the candidate order without moving the children the plan keeps in place.
 
 | Candidate node | Matching strategy |
 | --- | --- |
@@ -125,18 +121,17 @@ Every page with at least one `Documents.wasmMount` receives one shared `wasm-boo
 Cross-root identity checks inspect the live document across all entries:
 
 - Mounting rejects any host that already holds a root, sits inside an active root, or contains one.
-- Every DOM ID introduced by a candidate (present in `ViewSnapshot.ids()` and absent from the root's previous commit) is checked against the host element and all DOM nodes outside the root's owned descendants. Any match, including the host's own reserved ID, rejects the candidate with `cross-root-id`. When the document's first element with an ID lies inside the host, such as fallback content, every element with that ID is checked, so fallback content cannot hide a page element that uses it.
+- Every DOM ID introduced by a candidate (present in `ViewSnapshot.ids()` and absent from the root's previous commit) is checked against the host element and all DOM nodes outside the root's owned descendants. Any match, including the host's own reserved ID, rejects the candidate with `cross-root-id`. Each ID is first looked up in the document; the IDs whose first element lies inside the host, such as fallback content, are then checked together in one pass over every element with an ID, so fallback content cannot hide a page element that uses one.
 - Already-committed IDs belong to the root until a later render stops emitting them; reintroducing a released ID checks it again.
 
 ## First-commit fallback handoff
 
-The first commit builds off-host, so failure before publication restores the exact fallback nodes, including their dirty native control state. Publication then replaces the fallback in one task, without an intermediate paint, and hands the reader's context over to the committed tree:
+The first commit builds off-host, so failure before publication restores the exact fallback nodes, including their dirty native control state. Publication then replaces the fallback in one task, without an intermediate paint, and hands the reader's context over to the committed tree. Matching uses DOM IDs because fallback and live content are separate node trees. `Documents.wasmMount` compiles the fallback in the same ID scope the live root renders in, so generated, `ElementRef.scoped` and `ElementRef.page` IDs all match when the two render the same structure; the `cross-root-id` check treats IDs inside the host as the root's own, so a candidate may reuse them.
 
-1. Before replacing the fallback, `DomReconciler.publish` records the focused fallback element and its ID. When the window is scrolled past the host's top edge, it also records the first fallback element with an ID that reaches below the top of the viewport, and that element's offset from it.
-2. If installation fails, the original nodes return and focus returns to the recorded element.
-3. After publication, references, and widget controllers are in place, and before effects start, `DomReconciler.handOff` scrolls the window so the committed element with the recorded anchor ID sits at the recorded offset, then focuses the committed element with the focused element's ID if focus fell back to the document. Both elements are looked up inside the host; a missing counterpart changes nothing. Focus events from the handoff reach committed handlers. Effects and `afterRender` tasks run afterwards and may move focus again.
-
-Matching uses DOM IDs because fallback and live content are separate node trees. `Documents.wasmMount` compiles the fallback in the same ID scope the live root renders in, so generated, `ElementRef.scoped` and `ElementRef.page` IDs all match when the two render the same structure; the `cross-root-id` check treats IDs inside the host as the root's own, so a candidate may reuse them. Text typed into fallback controls is not carried over: a live control may be bound to application state, and copying a value into it would bypass that state.
+1. While building, each created input, textarea, or select with an ID treats the fallback control with that ID as its previous instance, as a retained control keeps its browser-owned state. For each property its bindings leave to the browser, it queues what the user changed on the fallback control: a value or checked flag that differs from the fallback's default, the caret and selection when the value carries over or already matches, and a select's choice, matched to the live options by value. A bound property shows application state instead, so text typed into the fallback field of a bound value is dropped rather than bypassing that state. Controls of different kinds (tag or input type) share nothing.
+2. Before replacing the fallback, `DomReconciler.publish` records the focused fallback element. When the window is scrolled past the host's top edge, it also records the ID of the first fallback element with an ID that reaches below the top of the viewport, and that element's offset from it.
+3. After moving the committed tree into the host, `publish` restores the queued control state, then applies control bindings, exactly as for retained controls. If installation fails, the original nodes return and focus returns to the recorded element.
+4. After publication, references, and widget controllers are in place, and before effects start, `DomReconciler.handOff` scrolls the window so the committed element with the recorded anchor ID sits at the recorded offset, then focuses the committed element with the focused element's ID if focus fell back to the document. Both elements are looked up inside the host; a missing counterpart changes nothing. Focus events from the handoff reach committed handlers. Effects and `afterRender` tasks run afterwards and may move focus again.
 
 When the host lies entirely below the top of the viewport, the replacement only changes content under the reading line. When it lies entirely above, browser scroll anchoring (`overflow-anchor`) keeps the visible content in place. Only the window is adjusted; a host inside its own scroll container keeps that container's offset as the browser clamps it.
 
@@ -153,4 +148,4 @@ All roots within one compiled Web Image entry share one constructed `CSSStyleShe
 
 `BrowserRoot` schedules flushes into a macrotask queue, coalescing repeated `invalidate()` calls before the flush runs. Each flush applies up to `workBudget` (default `8`) turns before yielding to `requestAnimationFrame` so the browser can paint. If `runawayLimit` (default `32`) consecutive turns each invalidate the root again, scheduling halts with one browser `Error` and preserves the last committed tree until an external event or call invalidates the root.
 
-`Host.frame` tasks of one root share a single native `requestAnimationFrame` request. When it fires, the root runs every task queued for that frame, then flushes synchronously within the same callback if any task invalidated it, replacing any flush already scheduled. The render therefore commits before the browser paints that frame, under the same `workBudget` and `runawayLimit`. A task queued while the batch runs waits for the next frame, as with native `requestAnimationFrame`.
+`Host.frame` tasks of one root share a single native `requestAnimationFrame` request. When it fires, the root runs every task queued for that frame, then flushes synchronously within the same callback if any task invalidated it, cancelling the flush that invalidation scheduled. The render therefore commits before the browser paints that frame, under the same `workBudget` and `runawayLimit`. A task queued while the batch runs waits for the next frame, as with native `requestAnimationFrame`.

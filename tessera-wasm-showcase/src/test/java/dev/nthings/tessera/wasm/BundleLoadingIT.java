@@ -160,19 +160,7 @@ class BundleLoadingIT {
   @DisplayName("a host naming a view its entry lacks keeps its fallback while other hosts mount")
   void unknownViewsKeepTheFallback(Session session) {
     var page = session.page();
-    page.route(
-        session.url("/"),
-        route -> {
-          var response = route.fetch();
-          route.fulfill(
-              new Route.FulfillOptions()
-                  .setResponse(response)
-                  .setBody(
-                      response
-                          .text()
-                          .replace(
-                              "data-tessera-view=\"counter\"", "data-tessera-view=\"missing\"")));
-        });
+    session.serveEdited("/", "data-tessera-view=\"counter\"", "data-tessera-view=\"missing\"");
     session.open("/");
     session.awaitError("missing");
 

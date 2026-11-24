@@ -7,7 +7,7 @@ import org.graalvm.webimage.api.JSObject;
 /// The dispatched JavaScript event behind each [BrowserEvent] a handler receives. Accessors read
 /// the native event when called, so a handler pays only for the properties it uses.
 abstract sealed class NativeEvent
-    permits NativeEvent.Basic, NativeEvent.Pointer, NativeEvent.Keyboard, NativeEvent.Control {
+    permits NativeEvent.Basic, NativeEvent.Modified, NativeEvent.Control {
   final JSObject event;
 
   private NativeEvent(JSObject event) {
@@ -34,7 +34,7 @@ abstract sealed class NativeEvent
     Dom.stopImmediatePropagation(event);
   }
 
-  boolean flag(String name) {
+  final boolean flag(String name) {
     return Dom.flag(event, name);
   }
 
@@ -78,7 +78,30 @@ abstract sealed class NativeEvent
     }
   }
 
-  static final class Pointer extends NativeEvent implements PointerEvent {
+  /// An event that reports which modifier keys were held, for [PointerEvent] and [KeyboardEvent].
+  abstract static sealed class Modified extends NativeEvent permits Pointer, Keyboard {
+    private Modified(JSObject event) {
+      super(event);
+    }
+
+    public final boolean altKey() {
+      return flag("altKey");
+    }
+
+    public final boolean ctrlKey() {
+      return flag("ctrlKey");
+    }
+
+    public final boolean metaKey() {
+      return flag("metaKey");
+    }
+
+    public final boolean shiftKey() {
+      return flag("shiftKey");
+    }
+  }
+
+  static final class Pointer extends Modified implements PointerEvent {
     private Pointer(JSObject event) {
       super(event);
     }
@@ -102,29 +125,9 @@ abstract sealed class NativeEvent
     public int detail() {
       return (int) Dom.number(event, "detail");
     }
-
-    @Override
-    public boolean altKey() {
-      return flag("altKey");
-    }
-
-    @Override
-    public boolean ctrlKey() {
-      return flag("ctrlKey");
-    }
-
-    @Override
-    public boolean metaKey() {
-      return flag("metaKey");
-    }
-
-    @Override
-    public boolean shiftKey() {
-      return flag("shiftKey");
-    }
   }
 
-  static final class Keyboard extends NativeEvent implements KeyboardEvent {
+  static final class Keyboard extends Modified implements KeyboardEvent {
     private Keyboard(JSObject event) {
       super(event);
     }
@@ -137,26 +140,6 @@ abstract sealed class NativeEvent
     @Override
     public String code() {
       return Dom.eventString(event, "code");
-    }
-
-    @Override
-    public boolean altKey() {
-      return flag("altKey");
-    }
-
-    @Override
-    public boolean ctrlKey() {
-      return flag("ctrlKey");
-    }
-
-    @Override
-    public boolean metaKey() {
-      return flag("metaKey");
-    }
-
-    @Override
-    public boolean shiftKey() {
-      return flag("shiftKey");
     }
 
     @Override

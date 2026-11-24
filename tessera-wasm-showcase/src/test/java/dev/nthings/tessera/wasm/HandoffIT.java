@@ -12,23 +12,43 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 
 /// The first commit replacing fallback content on the handoff page while a reader uses it: the Web
-/// Image is held back until the reader has focused or scrolled the fallback.
+/// Image is held back until the reader has typed in, focused or scrolled the fallback.
 @DisplayName("Fallback handoff")
 class HandoffIT {
 
   @BothEngines
-  @DisplayName("focus on a fallback field moves to the live field with the same id")
-  void focusMovesToTheLiveField(Session session) {
+  @DisplayName("text, selection and focus in a fallback field carry over to the live field")
+  void typedTextCarriesOver(Session session) {
     var images = hold(session);
     session.open("/handoff/");
     var note = session.field("Reader note");
-    note.click();
+    note.fill("Read chapter five again");
+    Session.select(note, 5, 12, "backward");
     assertThat(note).isFocused();
 
     release(session, images);
     assertThat(session.role(AriaRole.COMPLEMENTARY, "Reading tools")).isAttached();
     assertThat(session.text("Loading the reading tools.")).hasCount(0);
+    assertThat(note).hasValue("Read chapter five again");
     assertThat(note).isFocused();
+    Assertions.assertThat(Session.selection(note)).isEqualTo(List.of(5, 12, "backward"));
+  }
+
+  @BothEngines
+  @DisplayName("a bound field shows application state instead of text typed into its fallback")
+  void boundFieldsShowApplicationState(Session session) {
+    var images = hold(session);
+    session.open("/handoff/");
+    var bookmark = session.field("Bookmark");
+    assertThat(bookmark).hasValue("Chapter 1");
+    bookmark.fill("Chapter 4");
+
+    release(session, images);
+    assertThat(session.role(AriaRole.COMPLEMENTARY, "Reading tools")).isAttached();
+    assertThat(bookmark).hasValue("Chapter 1");
+    assertThat(bookmark).isFocused();
+    bookmark.fill("Chapter 6");
+    assertThat(bookmark).hasValue("Chapter 6");
   }
 
   @BothEngines

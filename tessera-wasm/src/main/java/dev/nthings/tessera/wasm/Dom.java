@@ -126,65 +126,105 @@ final class Dom {
       value = "host.replaceChildren(...children);")
   static native void restoreChildren(JSObject host, JSObject children);
 
-  /// What a first commit hands over from the fallback content of `host`: the focused fallback
-  /// element and its id, and the reading position when the top of the viewport lies within `host`,
-  /// as the first fallback element with an id that reaches below that edge and its offset from it.
+  /// The element inside `host` that has focus, or `null`.
   @JS(
       args = {"host"},
       value =
           """
           const active = document.activeElement;
-          const focused = active !== host && host.contains(active) ? active : null;
-          let anchor = '';
-          let offset = 0;
+          return active !== host && host.contains(active) ? active : null;
+          """)
+  static native @Nullable JSObject focusedWithin(JSObject host);
+
+  /// Where a reader scrolled into `host` is reading: when the top of the viewport lies within
+  /// `host`, the first element in it with an id that reaches below that edge; otherwise `null`.
+  @JS(
+      args = {"host"},
+      value =
+          """
           const box = host.getBoundingClientRect();
-          if (box.top < 0 && box.bottom > 0) {
-            for (const element of host.querySelectorAll('[id]')) {
-              const top = element.getBoundingClientRect();
-              if (top.bottom > 0) {
-                anchor = element.id;
-                offset = top.top;
-                break;
-              }
+          if (box.top >= 0 || box.bottom <= 0) return null;
+          for (const element of host.querySelectorAll('[id]:not([id=""])')) {
+            if (element.getBoundingClientRect().bottom > 0) return element;
+          }
+          return null;
+          """)
+  static native @Nullable JSObject readingAnchor(JSObject host);
+
+  /// The distance in CSS pixels from the top of the viewport to the top of `node`.
+  @JS.Coerce
+  @JS(
+      args = {"node"},
+      value = "return node.getBoundingClientRect().top;")
+  static native double top(JSObject node);
+
+  @JS.Coerce
+  @JS(
+      args = {"node"},
+      value = "return node.id;")
+  static native String id(JSObject node);
+
+  /// Scrolls the window down by `delta` CSS pixels at once, ignoring `scroll-behavior`.
+  @JS.Coerce
+  @JS(
+      args = {"delta"},
+      value = "window.scrollBy({top: delta, behavior: 'instant'});")
+  static native void scrollWindow(double delta);
+
+  /// Whether focus fell back to the document: no element, or only the body, has it.
+  @JS.Coerce
+  @JS(
+      """
+      const active = document.activeElement;
+      return active === null || active === document.body || active === document.documentElement;
+      """)
+  static native boolean focusLost();
+
+  /// Focuses `node` without scrolling, unless it already has focus or is detached.
+  @JS(
+      args = {"node"},
+      value =
+          """
+          if (node.isConnected && document.activeElement !== node) node.focus({preventScroll: true});
+          """)
+  static native void refocus(JSObject node);
+
+  /// What the user changed on the fallback control `from`, as a [#captureControl] state of the
+  /// newly created control `to` for [#restoreControl], or `null` when the two are different kinds
+  /// of control. Only edits carry over: a value or checked flag that differs from the fallback's
+  /// default, with the caret when the value carries over or already matches, and a select's choice
+  /// that differs from its default, matched to `to`'s options by value. Unchanged properties keep
+  /// `to`'s own state.
+  @JS(
+      args = {"from", "to"},
+      value =
+          """
+          if (from.localName !== to.localName || from.type !== to.type) return null;
+          if (to.localName === 'select') {
+            const before = Array.from(from.options);
+            let changed;
+            if (from.multiple) {
+              changed = before.some(option => option.selected !== option.defaultSelected);
+            } else {
+              const initial = before.findLast(option => option.defaultSelected)
+                  ?? (from.size > 1 ? null : before.find(option => !option.disabled) ?? null);
+              changed = (from.selectedOptions[0] ?? null) !== initial;
             }
+            if (!changed) return null;
+            const values = new Set(Array.from(from.selectedOptions, option => option.value));
+            const options = Array.from(to.options);
+            const selected = new Set(options.filter(option => values.has(option.value)));
+            if (!to.multiple && selected.size === 0 && values.size > 0) return null;
+            return {options: new Set(options), selected};
           }
-          return {focused, focusId: focused ? focused.id : '', anchor, offset};
+          const value = from.value !== from.defaultValue ? from.value : to.value;
+          const caret = value === from.value;
+          return {value,
+                  checked: from.checked !== from.defaultChecked ? from.checked : to.checked,
+                  start: caret ? from.selectionStart : null, end: from.selectionEnd,
+                  direction: from.selectionDirection};
           """)
-  static native JSObject captureFallback(JSObject host);
-
-  /// Returns focus to the restored fallback element that had it before a failed first commit.
-  @JS(
-      args = {"state"},
-      value =
-          """
-          const focused = state.focused;
-          if (focused && focused.isConnected && document.activeElement !== focused) {
-            focused.focus({preventScroll: true});
-          }
-          """)
-  static native void refocusFallback(JSObject state);
-
-  /// Completes the handoff from fallback content to the committed tree in `host`: scrolls the
-  /// window so the element with the anchor's id keeps its offset from the top of the viewport, and
-  /// focuses the element with the id of the fallback element that had focus, unless focus moved
-  /// elsewhere meanwhile. Elements are found within `host`; missing counterparts change nothing.
-  @JS(
-      args = {"host", "state"},
-      value =
-          """
-          const within = id => id && host.querySelector('#' + CSS.escape(id));
-          const anchor = within(state.anchor);
-          if (anchor) {
-            const delta = anchor.getBoundingClientRect().top - state.offset;
-            if (Math.abs(delta) >= 1) window.scrollBy({top: delta, behavior: 'instant'});
-          }
-          const target = within(state.focusId);
-          const active = document.activeElement;
-          const lost = active === null || active === document.body
-              || active === document.documentElement;
-          if (target && lost) target.focus({preventScroll: true});
-          """)
-  static native void handOffFallback(JSObject host, JSObject state);
+  static native @Nullable JSObject captureFallbackControl(JSObject from, JSObject to);
 
   /// Adopts a new constructed stylesheet into the document. Constructed sheets need no inline
   /// `<style>` element, so they work under a `style-src` policy without `'unsafe-inline'`.
@@ -688,10 +728,10 @@ final class Dom {
           """)
   static native @Nullable String mountConflict(JSObject host, String attribute);
 
-  /// The first of the newline-separated `ids` that an element outside `host` already uses, followed
+  /// An id among the newline-separated `ids` that an element outside `host` already uses, followed
   /// by a newline and that element's owner, or `null`. The document lookup returns only the first
-  /// element with an id; when that one is inside `host`, such as fallback content, every element
-  /// with the id is checked.
+  /// element with an id; ids whose first element is inside `host`, such as fallback content, are
+  /// then checked together in one pass over every element with an id.
   @JS.Coerce
   @JS(
       args = {"host", "ids", "attribute"},
@@ -701,13 +741,16 @@ final class Dom {
             const root = element.closest('[' + attribute + ']');
             return id + '\\n' + (root ? "browser root '" + root.id + "'" : 'the host page');
           };
+          const shadowed = new Set();
           for (const id of ids.split('\\n')) {
             const first = id && document.getElementById(id);
             if (!first) continue;
             if (!host.contains(first)) return owner(id, first);
-            for (const element of document.querySelectorAll('#' + CSS.escape(id))) {
-              if (!host.contains(element)) return owner(id, element);
-            }
+            shadowed.add(id);
+          }
+          if (shadowed.size === 0) return null;
+          for (const element of document.querySelectorAll('[id]')) {
+            if (shadowed.has(element.id) && !host.contains(element)) return owner(element.id, element);
           }
           return null;
           """)

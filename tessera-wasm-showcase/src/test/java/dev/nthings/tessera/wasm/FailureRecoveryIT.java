@@ -3,7 +3,6 @@ package dev.nthings.tessera.wasm;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 import com.microsoft.playwright.Locator;
-import com.microsoft.playwright.Route;
 import com.microsoft.playwright.options.AriaRole;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -93,22 +92,11 @@ class FailureRecoveryIT {
   @BothEngines
   @DisplayName("an id the page uses rejects the render even when fallback content uses it first")
   void fallbackIdsDoNotHidePageIds(Session session) {
-    var page = session.page();
     // A host page written by hand can repeat an id of its own inside the fallback content.
-    page.route(
-        session.url("/failures/shadowed/"),
-        route -> {
-          var response = route.fetch();
-          route.fulfill(
-              new Route.FulfillOptions()
-                  .setResponse(response)
-                  .setBody(
-                      response
-                          .text()
-                          .replace(
-                              "<p>The claim is loading.</p>",
-                              "<p id=\"page-footer\">The claim is loading.</p>")));
-        });
+    session.serveEdited(
+        "/failures/shadowed/",
+        "<p>The claim is loading.</p>",
+        "<p id=\"page-footer\">The claim is loading.</p>");
     session.open("/failures/shadowed/");
     session.awaitError("cross-root-id");
 

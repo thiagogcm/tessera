@@ -1,6 +1,7 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagElement;
@@ -72,9 +73,17 @@ final class DocumentExpansion extends ViewExpansion<String> {
       case DocumentNode.Late(var expand) -> assembly.late(() -> callback(context, "Late", expand));
       case DocumentNode.Host host -> documentHost(host, context);
       case DocumentNode.Mount mount -> {
-        var host = Elements.div().id(mount.id());
+        var host = Elements.div().id(ElementRef.page(mount.id()));
         assembly.mountAttributes(mount).forEach(host::attr);
-        yield documentHost(new DocumentNode.Host(host, List.of(mount.fallback())), context);
+        // The fallback takes the ids the live root will render, so its first commit can hand
+        // focus and the reading position over by id.
+        var fallbackScope = ViewScope.host(mount.id());
+        yield tag(
+            host,
+            null,
+            child -> List.of(expandDocument(mount.fallback(), child.withRootScope(fallbackScope))),
+            null,
+            context);
       }
       case DocumentNode.Fragment(var children) ->
           new ViewNode.Fragment<>(

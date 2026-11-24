@@ -91,6 +91,11 @@ public final class ExpansionContext implements ViewContext {
         viewScope.extend(scopeId, generated), expansion, componentPath, origin, null, namespace);
   }
 
+  /// This context moved into `scope`, replacing its id scope rather than nesting in it.
+  public ExpansionContext withRootScope(ViewScope scope) {
+    return new ExpansionContext(scope, expansion, componentPath, origin, null, namespace);
+  }
+
   ExpansionContext withKeyedScope(String slug) {
     return new ExpansionContext(
         viewScope.extendKeyed(slug), expansion, componentPath, origin, null, namespace);

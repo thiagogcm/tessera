@@ -96,6 +96,9 @@ public final class BrowserRoot implements AutoCloseable {
 
   private int selfInvalidations;
 
+  /// The stylesheet of the latest rendered turn, whose rule text the next turn reuses.
+  private StyleSheet renderedStyles = new StyleSheet();
+
   /// Callbacks for the next animation frame, which run in one batch that renders before painting.
   private final List<Runnable> frameTasks = new ArrayList<>();
 
@@ -331,6 +334,7 @@ public final class BrowserRoot implements AutoCloseable {
             ViewRenderer.render(
                 context -> LivePlacement.capture(content.expand((LiveContext) context)),
                 hostId,
+                renderedStyles,
                 base -> new RootContext(base, this),
                 LiveBehavior::validate);
       } catch (RuntimeException rejected) {
@@ -340,6 +344,7 @@ public final class BrowserRoot implements AutoCloseable {
                 : Failures.describe(rejected));
         return;
       }
+      renderedStyles = snapshot.styles();
       // Closing during expansion discards the result: nothing publishes afterwards.
       if (closed()) {
         return;
@@ -459,6 +464,7 @@ public final class BrowserRoot implements AutoCloseable {
     frameTasks.clear();
     committedReferences = Map.of();
     committedIds = Set.of();
+    renderedStyles = new StyleSheet();
     afterRender.clear();
     renderer.close(failures);
     lifetime.dispose(failures);

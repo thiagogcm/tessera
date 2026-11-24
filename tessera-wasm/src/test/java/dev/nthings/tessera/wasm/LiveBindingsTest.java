@@ -7,6 +7,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.InputType;
+import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.view.ViewException;
 import dev.nthings.tessera.view.ViewRenderer;
 import dev.nthings.tessera.view.ViewSnapshot;
@@ -23,7 +24,11 @@ class LiveBindingsTest {
   /// Renders `content` as a mounted view with page-level ids, outside a browser.
   private static ViewSnapshot<LiveBehavior> render(LiveContent content) {
     return ViewRenderer.render(
-        _ -> LivePlacement.capture(content), "", base -> base, LiveBehavior::validate);
+        _ -> LivePlacement.capture(content),
+        "",
+        new StyleSheet(),
+        base -> base,
+        LiveBehavior::validate);
   }
 
   /// The rules a render of `content` reports; fails if it renders.

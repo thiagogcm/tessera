@@ -11,9 +11,9 @@ import dev.nthings.tessera.wasm.BrowserRoot;
 import dev.nthings.tessera.wasm.LiveContent;
 
 /// A long article that the page publishes as fallback content and the live root renders with extra
-/// reading tools above it. Both name the note field and the chapter headings with the same
-/// page-level ids, so a reader who focused or scrolled the fallback keeps their place when the live
-/// view replaces it.
+/// reading tools above it. The note field and the chapter headings use scoped ids, which the
+/// fallback and the live root both prefix with the host id, so a reader who focused or scrolled the
+/// fallback keeps their place when the live view replaces it.
 public final class HandoffDemo {
   private static final int CHAPTERS = 8;
 
@@ -40,14 +40,14 @@ public final class HandoffDemo {
   private static TagElement article(IntoElement tools) {
     var article =
         Elements.article()
-            .child(Forms.text("note").id(ElementRef.page("reader-note")).ariaLabel("Reader note"))
+            .child(Forms.text("note").id(ElementRef.scoped("reader-note")).ariaLabel("Reader note"))
             .child(tools);
     for (var chapter = 1; chapter <= CHAPTERS; chapter++) {
       article.child(
           Elements.section()
               .child(
                   Elements.h2()
-                      .id(ElementRef.page("chapter-" + chapter))
+                      .id(ElementRef.scoped("chapter-" + chapter))
                       .text("Chapter " + chapter))
               .child(Elements.p().blockSize(CssLength.px(400)).text("Text of chapter " + chapter)));
     }

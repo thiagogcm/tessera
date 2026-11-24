@@ -1,7 +1,6 @@
 package dev.nthings.tessera.internal.document;
 
 import dev.nthings.tessera.core.Element;
-import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.document.DocumentComponent;
@@ -44,7 +43,9 @@ public sealed interface DocumentNode {
     }
   }
 
-  record Mount(ElementRef id, String view, WasmBundle bundle, DocumentNode fallback)
+  /// A Wasm host with the page-wide DOM id `id`, whose fallback content shares the id scope the
+  /// live root renders in.
+  record Mount(String id, String view, WasmBundle bundle, DocumentNode fallback)
       implements DocumentNode {}
 
   record Fragment(List<DocumentNode> children) implements DocumentNode {

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 
 /// Compiler-facing: the stylesheet of one page, site or live render. The compiler registers each
@@ -73,20 +74,55 @@ public final class StyleSheet {
   private final Set<String> transitionClasses = new LinkedHashSet<>();
   private final Set<String> liveProperties = new LinkedHashSet<>();
 
+  /// The rule text of an earlier stylesheet, by kind and key, reused instead of serializing again.
+  private final Map<String, String> reusedUtility;
+
+  private final Map<String, String> reusedInteractive;
+  private final Map<String, String> reusedContainer;
+  private final Map<String, String> reusedScopes;
+
   /// Creates an empty stylesheet.
-  public StyleSheet() {}
+  public StyleSheet() {
+    this(Map.of(), Map.of(), Map.of(), Map.of());
+  }
+
+  /// Backend-facing: creates an empty stylesheet for the render after `previous`'s, which reuses
+  /// the text `previous` built for every rule registered again. Keys are structural hashes of the
+  /// styles a rule serializes, so an equal key means equal text. Only `previous`'s own rules are
+  /// referenced, not those it reused from its predecessor, so a chain of renders keeps one render's
+  /// rules alive.
+  public StyleSheet(StyleSheet previous) {
+    this(
+        previous.utilityRules,
+        previous.interactiveRules,
+        previous.containerRules,
+        previous.scopeBodies);
+  }
+
+  private StyleSheet(
+      Map<String, String> reusedUtility,
+      Map<String, String> reusedInteractive,
+      Map<String, String> reusedContainer,
+      Map<String, String> reusedScopes) {
+    this.reusedUtility = reusedUtility;
+    this.reusedInteractive = reusedInteractive;
+    this.reusedContainer = reusedContainer;
+    this.reusedScopes = reusedScopes;
+  }
 
   /// Compiler-facing: registers an element's style and returns the class names that reference its
   /// rules, in emission order (empty for an unstyled element): a `u-` class for the plain
   /// declarations (`utilities` layer), an `i-` class for state, media and starting-style rules
   /// (`interactive` layer), and one `cq-` class per container query (`container` layer). Each class
   /// is named by a structural hash of its styles, and a rule is serialized only the first time this
-  /// stylesheet sees its class. The keyframes the style uses are registered too.
+  /// stylesheet sees its class, unless the stylesheet it reuses built it. The keyframes the style
+  /// uses are registered too.
   public List<String> registerElement(Declarations style) {
     var css = CssAccess.get();
     var utility = css.utilityKey(style);
     if (utility != null) {
-      utilityRules.computeIfAbsent(utility, key -> css.utilityRule(key, style));
+      utilityRules.computeIfAbsent(
+          utility, key -> text(reusedUtility, key, () -> css.utilityRule(key, style)));
     }
     var rules = css.collectConditional(style);
     keyframes.addAll(rules.keyframes());
@@ -99,14 +135,20 @@ public final class StyleSheet {
     }
     var interactive = rules.interactive();
     if (interactive != null) {
-      interactiveRules.computeIfAbsent(interactive.key(), _ -> interactive.css());
+      interactiveRules.computeIfAbsent(
+          interactive.key(), key -> text(reusedInteractive, key, interactive::css));
       classes.add(interactive.key());
     }
     for (var rule : rules.containers()) {
-      containerRules.computeIfAbsent(rule.key(), _ -> rule.css());
+      containerRules.computeIfAbsent(rule.key(), key -> text(reusedContainer, key, rule::css));
       classes.add(rule.key());
     }
     return classes;
+  }
+
+  private static String text(Map<String, String> reused, String key, Supplier<String> build) {
+    var text = reused.get(key);
+    return text != null ? text : build.get();
   }
 
   /// Compiler-facing: registers the styles of a scope named `scopeName`, which `configure` writes
@@ -124,7 +166,7 @@ public final class StyleSheet {
       return safeType;
     }
     var key = safeType + "-" + rule.key();
-    scopeBodies.computeIfAbsent(key, _ -> rule.css());
+    scopeBodies.computeIfAbsent(key, k -> text(reusedScopes, k, rule::css));
     return key;
   }
 

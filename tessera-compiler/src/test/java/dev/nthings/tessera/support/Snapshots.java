@@ -19,8 +19,13 @@ public final class Snapshots {
   }
 
   public static ViewSnapshot<Void> render(IntoElement content, String scope) {
+    return render(content, scope, new StyleSheet());
+  }
+
+  /// Renders `content` like a root turn after one that rendered `previous`.
+  public static ViewSnapshot<Void> render(IntoElement content, String scope, StyleSheet previous) {
     var node = new LiveNode.Portable<Void>(content.intoElement());
-    return ViewRenderer.render(_ -> node, scope, base -> base, (_, _, _, _, _) -> {});
+    return ViewRenderer.render(_ -> node, scope, previous, base -> base, (_, _, _, _, _) -> {});
   }
 
   /// The text of each embedded style rule of `snapshot`, in order.

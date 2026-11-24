@@ -7,7 +7,6 @@ import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.internal.css.StyleSheet;
-import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.view.DiagnosticSink;
 import dev.nthings.tessera.internal.view.ExpansionContext;
 import dev.nthings.tessera.internal.view.LinkedNode;
@@ -37,15 +36,17 @@ public final class ViewRenderer {
         DiagnosticSink reporter);
   }
 
-  /// Renders into a linked snapshot with embedded CSS. Generated and scoped DOM ids are prefixed
-  /// with `scope`, so roots on one page keep distinct ids. Authoring errors are reported together
-  /// in a [ViewException].
+  /// Renders into a linked snapshot with embedded CSS. `previous` is the [ViewSnapshot#styles()] of
+  /// the root's previous render, or an empty stylesheet, so rules that render already serialized
+  /// are not serialized again. Generated and scoped DOM ids are prefixed with `scope`, so roots on
+  /// one page keep distinct ids. Authoring errors are reported together in a [ViewException].
   public static <M> ViewSnapshot<M> render(
       Function<ViewContext, LiveNode<M>> content,
       String scope,
+      StyleSheet previous,
       UnaryOperator<ViewContext> liveContext,
       HostValidator<M> validator) {
-    var styles = new StyleSheet();
+    var styles = new StyleSheet(previous);
     var expansion = new LiveExpansion<>(styles, scope, liveContext, validator);
     var nodes = expansion.link(expansion.expandRoot(content));
     ViewValidation.check(
@@ -54,8 +55,7 @@ public final class ViewRenderer {
     if (!diagnostics.isEmpty()) {
       throw new ViewException(diagnostics);
     }
-    return new ViewSnapshot<>(
-        nodes, styles.embeddedRules(), expansion.references(), expansion.ids());
+    return new ViewSnapshot<>(nodes, styles, expansion.references(), expansion.ids());
   }
 
   private static final class LiveExpansion<M> extends ViewExpansion<M> {
@@ -67,11 +67,7 @@ public final class ViewRenderer {
         String scope,
         UnaryOperator<ViewContext> liveContext,
         HostValidator<M> validator) {
-      super(
-          styles,
-          scope.isEmpty()
-              ? ViewScope.ROOT
-              : ViewScope.ROOT.extend(Fnv1a64.sanitizeLocalId(scope), false));
+      super(styles, ViewScope.host(scope));
       this.liveContext = liveContext;
       this.validator = validator;
     }

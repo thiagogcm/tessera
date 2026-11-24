@@ -10,6 +10,9 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.components.Field;
+import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.WasmBundle;
@@ -17,6 +20,7 @@ import dev.nthings.tessera.document.WasmBundle.Kind;
 import dev.nthings.tessera.document.WasmBundle.Resource;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.RenderedPage;
+import dev.nthings.tessera.support.Snapshots;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -27,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -156,6 +161,30 @@ class WasmPublicationTest {
     assertThat(mounted.elements("script[type=speculationrules]")).isEmpty();
     assertThat(RenderedPage.of(site, "/plain").elements("script[type=speculationrules]"))
         .hasSize(1);
+  }
+
+  @Test
+  @DisplayName("fallback content takes the ids the live root renders in the same host")
+  void fallbackIdsMatchTheLiveRoot() {
+    var content =
+        main()
+            .children(
+                Field.of("Notes", Forms.text("notes")),
+                p("Intro").id(ElementRef.scoped("intro")),
+                p("Pinned").id(ElementRef.page("pinned")));
+    var page =
+        RenderedPage.of(
+            Compiler.forPage()
+                .compile(PageDocument.of("Mount", wasmMount("notes", "notes", bundle(), content))));
+    var fallbackIds =
+        page.elementById("notes").select("[id]").stream()
+            .map(Element::id)
+            .filter(id -> !id.equals("notes"))
+            .toList();
+
+    assertThat(fallbackIds)
+        .contains("notes--intro", "pinned")
+        .containsExactlyInAnyOrderElementsOf(Snapshots.render(content, "notes").ids());
   }
 
   static Stream<Arguments> misplacedMounts() {

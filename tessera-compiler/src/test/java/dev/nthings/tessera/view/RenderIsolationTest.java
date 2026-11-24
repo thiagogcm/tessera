@@ -4,6 +4,7 @@ import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.support.Snapshots.render;
+import static dev.nthings.tessera.support.Snapshots.styleRules;
 import static dev.nthings.tessera.view.LiveDom.dom;
 import static dev.nthings.tessera.view.LiveDom.page;
 import static dev.nthings.tessera.view.LiveDom.semantics;
@@ -19,6 +20,8 @@ import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.css.ScopeStyle;
+import dev.nthings.tessera.css.State;
+import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.support.Diagnostics;
@@ -40,6 +43,20 @@ class RenderIsolationTest {
     public IntoElement expand(ViewContext context) {
       return p().text(Integer.toString(context.state(COUNTER).incrementAndGet()));
     }
+  }
+
+  @Test
+  @DisplayName("a turn reusing the previous turn's stylesheet emits exactly the rules it registers")
+  void reusedStylesheetsEmitOnlyTheirOwnRules() {
+    var shared = div().p(Tokens.SPACE_2).on(State.HOVER, s -> s.bg(Tokens.SURFACE_SUBTLE));
+    var first = main().children(shared, p().text("Gone").m(Tokens.SPACE_4));
+    var second = main().children(shared, p().text("New").gap(Tokens.SPACE_3));
+
+    var reusing = render(second, "root", render(first, "root").styles());
+
+    assertThat(styleRules(reusing))
+        .containsExactlyElementsOf(styleRules(render(second, "root")))
+        .noneMatch(rule -> rule.contains("margin"));
   }
 
   @Test

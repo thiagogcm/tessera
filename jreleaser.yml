@@ -1,0 +1,52 @@
+project:
+  name: tessera
+  description: Declarative HTML and CSS view engine for Java
+  authors:
+    - Thiago Moura
+  license: Apache-2.0
+  copyright: 2026 Thiago Moura
+  inceptionYear: "2026"
+  links:
+    homepage: https://github.com/thiagogcm/tessera
+  languages:
+    java:
+      groupId: dev.nthings
+      artifactId: tessera
+      version: "25"
+
+release:
+  github:
+    owner: thiagogcm
+    name: tessera
+    tagName: v{{projectVersion}}
+    skipTag: true
+    overwrite: false
+    draft: false
+    prerelease:
+      pattern: .*-.*
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        enabled: true
+
+signing:
+  active: RELEASE
+  pgp:
+    armored: true
+    mode: MEMORY
+
+deploy:
+  maven:
+    mavenCentral:
+      sonatype:
+        active: RELEASE
+        url: https://central.sonatype.com/api/v1/publisher
+        stage: FULL
+        applyMavenCentralRules: true
+        stagingRepositories:
+          - target/staging-deploy
+
+checksum:
+  algorithms:
+    - SHA_512

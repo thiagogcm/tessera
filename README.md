@@ -22,14 +22,14 @@ For a minimal two-page application, follow [Getting started](docs/getting-starte
 
 ```java
 import static dev.nthings.tessera.core.Elements.h1;
-import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.core.Elements;
 
 void main() {
-  var document = PageDocument.of("Hello", main(h1("Hello"), p("Built with Tessera.")));
+  var document = PageDocument.of("Hello", Elements.main(h1("Hello"), p("Built with Tessera.")));
 
   System.out.println(Compiler.forPage().compile(document).html());
 }
@@ -43,7 +43,7 @@ This Java 25 program prints a complete HTML document with an embedded stylesheet
 
 | Goal | Guide |
 | --- | --- |
-| Install locally, build a two-page site, and publish | [Getting started](docs/getting-started.md) |
+| Add the compiler from Maven Central, build a two-page site, and publish | [Getting started](docs/getting-started.md) |
 | Build portable elements, components, scopes, forms, and identities | [Components](docs/components.md) |
 | Build logical data tables with merges, sticky headers, and card mode | [Tables](docs/tables.md) |
 | Compose static document features, outlines, footnotes, and page scripts | [Documents](docs/documents.md) |
@@ -67,7 +67,7 @@ This Java 25 program prints a complete HTML document with an embedded stylesheet
 | Follow static page preparation, site validation, and resource emission | [Compiler internals](docs/compiler.md) |
 | Follow DOM reconciliation, commit ownership, lifecycles, and style ledgers | [Browser runtime internals](docs/browser-internals.md) |
 | Run builds, quality gates, browser suites, and doc checks | [Development](docs/development.md) |
-| Review remaining planned capabilities and release readiness criteria | [Roadmap](docs/roadmap.md) |
+| Stage and publish a release | [Release guide](RELEASE.md) |
 
 ## License
 

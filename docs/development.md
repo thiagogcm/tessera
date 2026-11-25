@@ -13,7 +13,7 @@ tessera/
 |-- tessera-wasm/             Opt-in GraalVM Web Image browser runtime (-Pwasm)
 |-- tessera-wasm-showcase/    Web Image builds and real-image browser acceptance (-Pwasm)
 |-- config/                   Checkstyle and SpotBugs rule configurations
-|-- docs/                     User guides, architecture, and roadmap
+|-- docs/                     User guides and architecture
 |-- justfile                  Local and CI task definitions
 `-- .github/workflows/ci.yml  GitHub Actions verification workflow
 ```

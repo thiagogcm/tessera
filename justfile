@@ -110,3 +110,29 @@ doctor:
     echo "java:  $(java -version 2>&1 | head -1)"
     echo "mvnw:  $({{mvn}} -v 2>/dev/null | head -1)"
     command -v just >/dev/null && echo "just:  $(just --version)" || echo "just:  MISSING"
+
+# --- Release ------------------------------------------------------------------
+
+[group('release')]
+version:
+    @{{mvn}} -q -N help:evaluate -Dexpression=project.version -DforceStdout
+
+# Update the parent and every module, including the opt-in Wasm reactor.
+[group('release')]
+[positional-arguments]
+set-version version:
+    {{mvn}} -Pwasm org.codehaus.mojo:versions-maven-plugin:2.25.3:set -DnewVersion="$1" -DprocessAllModules -DgenerateBackupPoms=false
+
+# Verify the JVM reactor and stage the two published modules locally.
+[group('release')]
+stage:
+    {{mvn}} -Ppublication clean deploy
+
+[group('release')]
+[positional-arguments]
+release version next="" dry="true":
+    gh workflow run release.yml --ref main -f "releaseVersion=$1" -f "nextVersion=$2" -f "dryRun=$3"
+
+[group('release')]
+release-watch:
+    gh run watch "$(gh run list --workflow=release.yml --branch main --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status

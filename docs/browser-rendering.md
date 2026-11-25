@@ -1,6 +1,6 @@
 # Browser rendering (experimental)
 
-The opt-in `tessera-wasm` module compiles portable Tessera components to WebAssembly through GraalVM Web Image and mounts them as live browser roots. When application state changes, a mounted root re-renders and reconciles the native DOM while preserving focus, selection, and uncontrolled form edits.
+Build the experimental `tessera-wasm` module from source with the opt-in `wasm` profile. It compiles portable Tessera components to WebAssembly through GraalVM Web Image and mounts them as live browser roots. When application state changes, a mounted root re-renders and reconciles the native DOM while preserving focus, selection, and uncontrolled form edits.
 
 A browser root renders `LiveContent`: portable `IntoElement` content plus live handlers, form bindings, widget adapters, and effects. Placement types enforce separation at compile time: live content cannot enter portable or static document trees, and document-only content (raw HTML, deferred or late nodes, document components) cannot enter a browser root.
 

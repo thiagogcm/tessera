@@ -21,15 +21,9 @@ The source lives in [GuideSite.java](../tessera-showcase/src/main/java/dev/nthin
   -Dexec.args="$PWD/target/guide"
 ```
 
-## Install the library locally
+## Add Tessera to a Maven project
 
-The current development version is `0.1.0-SNAPSHOT`. Install the portable library (`tessera`), static compiler (`tessera-compiler`), and parent POM into your local Maven repository:
-
-```sh
-./mvnw -pl tessera-compiler -am install
-```
-
-Add the dependency and compiler settings to your application's `pom.xml`:
+Tessera 1.0.0 provides a static compiler and a portable component library through Maven Central. Add the compiler dependency and Java settings to your application's `pom.xml`:
 
 ```xml
 <properties>
@@ -41,7 +35,7 @@ Add the dependency and compiler settings to your application's `pom.xml`:
     <dependency>
         <groupId>dev.nthings</groupId>
         <artifactId>tessera-compiler</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </dependency>
 </dependencies>
 
@@ -67,7 +61,6 @@ Save this class as `src/main/java/BuildSite.java`:
 ```java
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.h1;
-import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.compiler.Compiler;
@@ -75,6 +68,7 @@ import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
+import dev.nthings.tessera.core.Elements;
 import java.nio.file.Path;
 
 public class BuildSite {
@@ -82,12 +76,13 @@ public class BuildSite {
     var site =
         SiteDefinition.of(
             SiteRoute.of(
-                "/", PageDocument.of("Home", main(h1("Home"), a("/guide/", "Read the guide")))),
+                "/",
+                PageDocument.of("Home", Elements.main(h1("Home"), a("/guide/", "Read the guide")))),
             SiteRoute.of(
                 "/guide",
                 PageDocument.of(
                     "Guide",
-                    main(h1("Guide"), p("Upload the generated files to a static host.")))));
+                    Elements.main(h1("Guide"), p("Upload the generated files to a static host.")))));
 
     SiteWriter.writeToDirectory(Compiler.forSite().compile(site), Path.of("target/site"));
   }

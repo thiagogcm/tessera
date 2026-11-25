@@ -24,7 +24,7 @@ flowchart LR
 
 ## Module and package boundaries
 
-Tessera ships three runtime Maven artifacts and JPMS modules, plus two separate showcase/test projects. Neither `tessera-compiler` nor `tessera-wasm` depends on the other; both require `dev.nthings.tessera` transitively.
+The reactor defines three library artifacts and JPMS modules, plus two showcase projects. Tessera 1.0.0 publishes `tessera` and `tessera-compiler` to Maven Central. The experimental `tessera-wasm` backend builds from source. Both backends require `dev.nthings.tessera` transitively.
 
 | Module and artifact | Package | Visibility and responsibility |
 | --- | --- | --- |

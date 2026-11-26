@@ -92,7 +92,7 @@ Built-in portable components are final classes with static factories for require
 | Navigation | `Breadcrumbs`, `NavTabs`, `DocPager`, `StickyHeader` |
 | Dialogs and popovers | `Modal`, `Drawer`, `Dropdown` |
 | Forms and search | `Forms`, `Field`, `Select`, `SearchPalette` |
-| Actions | `Button`, `IconButton` |
+| Actions | `Button`, `IconButton`, `ColorSchemeToggle` |
 | Data and cards | `DataTable`, `TableGrid`, `Card`, `CardGrid` |
 | Layout and disclosure | `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` |
 

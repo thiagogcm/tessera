@@ -64,4 +64,31 @@ public final class Icons {
   public static TagElement chevronRight(int size) {
     return stroked(size, 24, 2.2, polyline("9 18 15 12 9 6"));
   }
+
+  /// The sun of the light color scheme.
+  public static TagElement sun() {
+    return stroked(
+        18,
+        24,
+        2,
+        circle(12, 12, 4),
+        path(
+            "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"
+                + "M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"));
+  }
+
+  /// The crescent moon of the dark color scheme.
+  public static TagElement moon() {
+    return stroked(18, 24, 2, path("M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"));
+  }
+
+  /// The monitor of the system color scheme.
+  public static TagElement monitor() {
+    return stroked(
+        18,
+        24,
+        2,
+        path("M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"),
+        path("M8 21h8M12 17v4"));
+  }
 }

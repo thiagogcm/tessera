@@ -9,6 +9,7 @@ import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.css.Declarations;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
 import dev.nthings.tessera.internal.authoring.BundledBehavior;
@@ -32,7 +33,15 @@ final class DocumentExpansion extends ViewExpansion<String> {
 
   private static final Map<BundledBehavior, PageScript> BUNDLED_SCRIPTS = new ConcurrentHashMap<>();
 
+  /// Restores the scheme `color-scheme.js` saved, before the body paints. A module script runs only
+  /// after parsing, too late to avoid a flash of the system scheme.
+  private static final String RESTORE_COLOR_SCHEME =
+      "try{var s=localStorage.getItem(\"tessera-color-scheme\");"
+          + "if(s===\"light\"||s===\"dark\")document.documentElement.dataset.colorScheme=s}"
+          + "catch(e){}";
+
   private final DocumentPass assembly;
+  private boolean colorSchemeRestored;
 
   DocumentExpansion(DocumentPass assembly, StyleSheet styles) {
     super(styles, ViewScope.ROOT);
@@ -166,6 +175,12 @@ final class DocumentExpansion extends ViewExpansion<String> {
     var behavior = AuthoringAccess.tag(host).behavior;
     if (behavior != null) {
       assembly.contributeScript(bundledScript(behavior));
+      if (behavior == BundledBehavior.COLOR_SCHEME && !colorSchemeRestored) {
+        colorSchemeRestored = true;
+        assembly.contributeHead(
+            DocumentNode.capture(Documents.script("text/javascript", RESTORE_COLOR_SCHEME)),
+            context.location());
+      }
     }
     if (node.companion() != null) {
       assembly.contributeScript(TooltipScript.INSTANCE);
@@ -184,6 +199,7 @@ final class DocumentExpansion extends ViewExpansion<String> {
       case TABS -> "tessera-tabs.js";
       case MENU -> "tessera-menu.js";
       case SEARCH -> "search-palette.js";
+      case COLOR_SCHEME -> "color-scheme.js";
     };
   }
 }

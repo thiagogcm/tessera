@@ -12,47 +12,25 @@ import org.jspecify.annotations.Nullable;
 /// IllegalArgumentException if it has no routes.
 ///
 /// Compilation settings ([dev.nthings.tessera.css.Theme] and [OutputMode]) live on [Compiler].
-/// Defaults to [LinkSpeculation#PRERENDER]. Sites compare by identity.
-public final class SiteDefinition {
+/// Defaults to [LinkSpeculation#PRERENDER].
+///
+/// @param baseUrl the site origin without a trailing `/`, or `null`; it enables `sitemap.xml` and
+///     the default canonical URL of each page
+public record SiteDefinition(
+    List<SiteRoute> routes,
+    @Nullable URI baseUrl,
+    LinkSpeculation linkSpeculation,
+    List<Asset> assets) {
 
-  private final List<SiteRoute> routes;
-  private final @Nullable URI baseUrl;
-  private final LinkSpeculation linkSpeculation;
-  private final List<Asset> assets;
-
-  private SiteDefinition(
-      List<SiteRoute> routes,
-      @Nullable URI baseUrl,
-      LinkSpeculation linkSpeculation,
-      List<Asset> assets) {
+  public SiteDefinition {
     if (routes.isEmpty()) {
       throw new IllegalArgumentException("SiteDefinition must contain at least one route");
     }
-    this.routes = List.copyOf(routes);
-    this.assets = List.copyOf(assets);
-    this.baseUrl = baseUrl != null ? normalizeBaseUrl(baseUrl) : null;
-    this.linkSpeculation = linkSpeculation;
-  }
-
-  /// The routes in declaration order.
-  public List<SiteRoute> routes() {
-    return routes;
-  }
-
-  /// The base URL without a trailing `/`, or `null` when none was set. It enables `sitemap.xml` and
-  /// the default canonical URL of each page.
-  public @Nullable URI baseUrl() {
-    return baseUrl;
-  }
-
-  /// The same-site speculation rules added to each page.
-  public LinkSpeculation linkSpeculation() {
-    return linkSpeculation;
-  }
-
-  /// The files published beside the pages, in declaration order.
-  public List<Asset> assets() {
-    return assets;
+    routes = List.copyOf(routes);
+    assets = List.copyOf(assets);
+    if (baseUrl != null) {
+      baseUrl = normalizeBaseUrl(baseUrl);
+    }
   }
 
   /// `uri` without its trailing `/`, validated as [PageAddress#withBaseUrl(URI)] validates it.

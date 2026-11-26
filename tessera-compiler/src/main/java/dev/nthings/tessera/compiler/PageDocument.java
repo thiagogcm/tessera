@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import java.net.URI;
 import java.util.Locale;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// An HTML document to compile with [Compiler]: its BCP 47 `lang` [Locale], its `<title>`, the
@@ -75,7 +76,8 @@ public record PageDocument(
   /// blank.
   @CheckReturnValue
   public PageDocument withDescription(String description) {
-    return new PageDocument(lang, title, bodyRoot, description, canonicalUrl);
+    return new PageDocument(
+        lang, title, bodyRoot, Objects.requireNonNull(description), canonicalUrl);
   }
 
   /// Returns a copy of this document whose canonical URL is `url`. In a site compiled with a base
@@ -83,6 +85,6 @@ public record PageDocument(
   /// is an absolute `http` or `https` URI with a host and no user info or fragment.
   @CheckReturnValue
   public PageDocument withCanonicalUrl(URI url) {
-    return new PageDocument(lang, title, bodyRoot, description, url);
+    return new PageDocument(lang, title, bodyRoot, description, Objects.requireNonNull(url));
   }
 }

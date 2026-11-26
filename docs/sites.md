@@ -231,7 +231,17 @@ try (var server = SitePreviewServer.start(compiled, 8080)) {
 }
 ```
 
-`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`. Recompile and restart the server after changes.
+`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`.
+
+To rebuild while you write, pass a build function and the directories to watch instead of a compiled site:
+
+```java
+try (var server = SitePreviewServer.watch(8080, () -> compiler.compile(site()), Path.of("content"))) {
+  // Rebuilds when a file under content/ changes, and reloads open pages
+}
+```
+
+Changes within 100 ms of each other cause one rebuild. A failed rebuild prints its stack trace and keeps serving the last good site. Pages load a small script from `/_tessera/live.js` that checks `/_tessera/version` and reloads after a rebuild. Java classes are not reloaded, so restart after changing code.
 
 To inspect the written showcase directory as a static host sees it:
 

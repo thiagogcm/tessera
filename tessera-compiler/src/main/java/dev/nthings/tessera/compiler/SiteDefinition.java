@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 /// Defaults to [LinkSpeculation#PRERENDER].
 ///
 /// @param baseUrl the site origin without a trailing `/`, or `null`; it enables `sitemap.xml` and
-///     the default canonical URL of each page
+///   the default canonical URL of each page
 public record SiteDefinition(
     List<SiteRoute> routes,
     @Nullable URI baseUrl,

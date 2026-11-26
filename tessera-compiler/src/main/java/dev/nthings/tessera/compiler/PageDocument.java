@@ -22,7 +22,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// @param description a short summary of the page, or `null`; blank values are rejected
 /// @param canonicalUrl the canonical URL of the page, or `null`; it must be an absolute `http` or
-///     `https` URI with a host and no user info or fragment
+///   `https` URI with a host and no user info or fragment
 public record PageDocument(
     Locale lang,
     String title,

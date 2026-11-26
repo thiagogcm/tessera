@@ -24,7 +24,15 @@ class SiteDefinitionTest {
 
   @ParameterizedTest
   @ValueSource(
-      strings = {"", "/", "example.com", "//example.com", "/docs", "https://example.com?q=1"})
+      strings = {
+        "",
+        "/",
+        "example.com",
+        "//example.com",
+        "/docs",
+        "https://example.com?q=1",
+        "https://user:secret@example.com"
+      })
   @DisplayName("a base URL must be an absolute origin")
   void rejectsBaseUrlWithoutOrigin(String baseUrl) {
     var builder =

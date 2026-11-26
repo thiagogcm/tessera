@@ -84,8 +84,14 @@ class PageOutputTest {
 
   @ParameterizedTest
   @ValueSource(
-      strings = {"/guide/", "ftp://tessera.dev/", "https:///guide", "https://tessera.dev/#top"})
-  @DisplayName("a canonical URL must be an absolute http(s) URL without a fragment")
+      strings = {
+        "/guide/",
+        "ftp://tessera.dev/",
+        "https:///guide",
+        "https://tessera.dev/#top",
+        "https://user:secret@tessera.dev/"
+      })
+  @DisplayName("a canonical URL must be an absolute http(s) URL without user info or a fragment")
   void rejectsNonAbsoluteCanonicalUrls(String url) {
     var doc = PageDocument.of("Guide", main(p("Hi")));
 

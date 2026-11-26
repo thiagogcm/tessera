@@ -6,6 +6,7 @@ GitHub Actions builds Tessera on JDK 25. JReleaser signs the Maven artifacts, pu
 | ---------------------------------------------- | --------------- |
 | `dev.nthings:tessera`                          | Maven Central   |
 | `dev.nthings:tessera-compiler`                 | Maven Central   |
+| `dev.nthings:tessera-markdown`                 | Maven Central   |
 | Release tag and Conventional Commits changelog | GitHub Releases |
 
 Each Maven artifact includes a binary JAR, sources, Javadoc, a flattened POM, and a CycloneDX SBOM. The parent and showcases are reactor projects. The experimental Wasm backend is available from source via `-Pwasm`.

@@ -47,6 +47,7 @@ This Java 25 program prints a complete HTML document with an embedded stylesheet
 | Build portable elements, components, scopes, forms, and identities | [Components](docs/components.md) |
 | Build logical data tables with merges, sticky headers, and card mode | [Tables](docs/tables.md) |
 | Compose static document features, outlines, footnotes, and page scripts | [Documents](docs/documents.md) |
+| Turn Markdown pages with front matter into document content | [Markdown](docs/markdown.md) |
 | Configure themes, typed CSS, layout, container queries, and motion | [Styling](docs/styling.md) |
 | Call the Java API from Kotlin and enable receiver lambdas | [Kotlin](docs/kotlin.md) |
 

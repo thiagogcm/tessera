@@ -96,7 +96,7 @@ format-check:
 no-suppress-warnings:
     #!/usr/bin/env bash
     set -euo pipefail
-    if rg -n '@SuppressWarnings' tessera/src tessera-compiler/src tessera-showcase/src tessera-wasm/src tessera-wasm-showcase/src; then
+    if rg -n '@SuppressWarnings' tessera/src tessera-compiler/src tessera-markdown/src tessera-showcase/src tessera-wasm/src tessera-wasm-showcase/src; then
         echo "ERROR: @SuppressWarnings is forbidden in tessera." >&2
         exit 1
     fi

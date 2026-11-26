@@ -9,6 +9,7 @@ tessera/
 |-- pom.xml                   Parent POM and shared quality configuration
 |-- tessera/                  Portable authoring library, components, and shared view engine
 |-- tessera-compiler/         Document authoring, static site compiler, and preview server
+|-- tessera-markdown/         Markdown pages converted to document content
 |-- tessera-showcase/         Static showcase examples and Playwright E2E suite
 |-- tessera-wasm/             Opt-in GraalVM Web Image browser runtime (-Pwasm)
 |-- tessera-wasm-showcase/    Web Image builds and real-image browser acceptance (-Pwasm)
@@ -18,7 +19,7 @@ tessera/
 `-- .github/workflows/ci.yml  GitHub Actions verification workflow
 ```
 
-The default Maven reactor builds `tessera`, `tessera-compiler`, and `tessera-showcase`. Adding `-Pwasm` activates `tessera-wasm` and `tessera-wasm-showcase`; see [Browser rendering](browser-rendering.md#build-and-verify-the-showcase) for its separate toolchain prerequisites. Playwright is test-scoped in the showcases and never enters library dependencies.
+The default Maven reactor builds `tessera`, `tessera-compiler`, `tessera-markdown`, and `tessera-showcase`. Adding `-Pwasm` activates `tessera-wasm` and `tessera-wasm-showcase`; see [Browser rendering](browser-rendering.md#build-and-verify-the-showcase) for its separate toolchain prerequisites. Playwright is test-scoped in the showcases and never enters library dependencies.
 
 ## Build and verify commands
 

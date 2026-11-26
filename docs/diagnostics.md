@@ -92,6 +92,7 @@ See [Set form defaults](components.md#set-form-defaults) and [Bind form values](
 | `duplicate-route` | Two `SiteRoute` entries declare the same normalized path |
 | `file-path-collision` | Two routes, registered assets, or generated files map to the same URL or output path |
 | `missing-route-or-asset`, `missing-route-fragment` | A local site link targets a missing route, asset, or target-page fragment |
+| `markdown-unplaceable-content` | A Markdown heading, alert, or footnote holds raw HTML, a footnote reference, or fence-renderer output, which it cannot contain |
 | `duplicate-transition-key`, `unshared-transition-key` | A `TransitionKey` appears twice on one page or on fewer than two site routes |
 
 ### Theme contrast

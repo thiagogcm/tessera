@@ -32,10 +32,11 @@ Modules are deduplicated once per page and packaged according to the page's [out
 | --- | --- | --- |
 | `ContentTabs` | `tessera-tabs.js` (`<tessera-tabs>`) | Sync panel selection through `aria-controls`; manage Arrow Left, Arrow Right, Home, and End focus |
 | `SearchPalette` | `search-palette.js` (customized `<dialog>`) | Filter rendered links, move result focus, and open the first palette whose trigger advertises the pressed shortcut |
+| `ColorSchemeToggle` | `color-scheme.js` (`<tessera-color-scheme>`) | Cycle the root's `data-color-scheme` through system, light, and dark; save the choice in `localStorage` and follow other tabs |
 | `Dropdown` with command items | `tessera-menu.js` (`<tessera-menu>`) | Return focus to the menu button after a dialog opened from the menu closes |
 | Elements with `interestTooltip` | `interest-tooltip.js` | Show and anchor tooltips on hover and focus where native interest invokers are absent |
 
-Host-bound modules (tabs, menu, and search) attach their listeners with an `AbortSignal` and clean up when their host disconnects. The tooltip module listens on the document for the page's lifetime. Native `<dialog>` behavior handles opening, focus trapping, and dismissal.
+Host-bound modules (tabs, menu, search, and color scheme) attach their listeners with an `AbortSignal` and clean up when their host disconnects. The tooltip module listens on the document for the page's lifetime. Native `<dialog>` behavior handles opening, focus trapping, and dismissal.
 
 ## Verification boundary
 

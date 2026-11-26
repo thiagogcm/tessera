@@ -12,6 +12,7 @@ import static dev.nthings.tessera.core.Elements.p;
 import static dev.nthings.tessera.core.Elements.section;
 
 import dev.nthings.tessera.components.Breadcrumbs;
+import dev.nthings.tessera.components.ColorSchemeToggle;
 import dev.nthings.tessera.components.DataTable;
 import dev.nthings.tessera.components.DescriptionList;
 import dev.nthings.tessera.components.DocPager;
@@ -144,7 +145,8 @@ record Shell(Page page) implements DocumentComponent {
                                     .children(
                                         search.triggerButton(),
                                         quickActions,
-                                        inspector.triggerButton("Inspector"))),
+                                        inspector.triggerButton("Inspector"),
+                                        ColorSchemeToggle.of())),
                         div().overflowX(Overflow.AUTO).child(nav)))
             .id("site-header");
 

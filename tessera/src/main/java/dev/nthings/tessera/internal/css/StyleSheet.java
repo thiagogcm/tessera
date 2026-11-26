@@ -312,6 +312,9 @@ public final class StyleSheet {
         host == null
             ? ":root{interpolate-size:allow-keywords;color-scheme:light dark;"
                 + "scrollbar-gutter:stable}"
+                // A chosen scheme, as `components.ColorSchemeToggle` sets it.
+                + ":root[data-color-scheme=light]{color-scheme:light}"
+                + ":root[data-color-scheme=dark]{color-scheme:dark}"
             : host + "{interpolate-size:allow-keywords;color-scheme:light dark}";
     var boxes =
         within(host, "*")

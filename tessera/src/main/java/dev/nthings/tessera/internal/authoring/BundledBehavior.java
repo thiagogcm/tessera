@@ -17,7 +17,11 @@ public enum BundledBehavior {
   MENU("tessera-menu", false),
   /// Result filtering and selection for `components.SearchPalette`, whose host `<dialog>` becomes
   /// the customized built-in `is="tessera-search"`.
-  SEARCH("tessera-search", true);
+  SEARCH("tessera-search", true),
+  /// The saved light or dark choice of `components.ColorSchemeToggle`, whose host becomes the
+  /// autonomous `tessera-color-scheme` element. A page with one also restores the saved choice in
+  /// `<head>`, before first paint.
+  COLOR_SCHEME("tessera-color-scheme", false);
 
   private final CustomElement element;
   private final boolean builtIn;

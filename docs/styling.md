@@ -44,6 +44,8 @@ var theme =
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | `0.25`, `0.375`, `0.5`, `0.75` rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light and dark OKLCH colors |
 
+Color tokens resolve through `light-dark()`, so the root's `color-scheme` picks every value. It follows the system preference until `<html>` carries `data-color-scheme="light"` or `data-color-scheme="dark"`. Place a `ColorSchemeToggle` to let readers pick: it cycles system, light, and dark, saves the choice in `localStorage`, and a page that places one restores the saved choice from an inline `<head>` script before first paint.
+
 `Typography.LABEL` combines the control typography tokens used by field labels and callout titles alongside `CONTROL_FG`. Overriding `CONTROL_FONT_SIZE` changes those labels directly; overriding `FONT_SIZE_SM` also changes them while `CONTROL_FONT_SIZE` aliases `FONT_SIZE_SM`.
 
 `Tone` supplies semantic roles (`NEUTRAL`, `ACCENT`, `INFO`, `SUCCESS`, `WARNING`, `DANGER`). Components map each tone to surface, border, and foreground tokens: `color()` paints fills, borders, and icons, `textColor()` paints text on the page, cards, and tints, and `onSolid()` paints labels on a solid fill. Tinted surfaces, such as tinted badges, callouts, and `highlight(tone)`, mix `color()` into the surface at fixed strengths that the [theme contrast check](diagnostics.md#theme-contrast) measures. `Callout.Kind` also picks a matching default icon and title.

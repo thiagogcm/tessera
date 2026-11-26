@@ -37,7 +37,7 @@ final class PageCompiler {
     var assets = new ArrayList<>(resources.assets());
     assets.addAll(prepared.bundleAssets());
     return new CompiledPage(
-        emit(prepared, resources, null, prepared.document().canonicalUrl()),
+        emit(prepared, resources, List.of(), null, prepared.document().canonicalUrl()),
         css,
         assets,
         prepared.responseHeaders(outputMode));
@@ -107,6 +107,7 @@ final class PageCompiler {
   static String emit(
       PreparedPage prepared,
       HtmlWriter.Resources resources,
+      List<FontFace> preloads,
       @Nullable String speculationRules,
       @Nullable URI canonicalUrl) {
     return HtmlWriter.emit(
@@ -114,6 +115,7 @@ final class PageCompiler {
         prepared.bodyNodes(),
         prepared.headNodes(),
         resources,
+        preloads,
         prepared.scripts(),
         prepared.bundleBootstrap(),
         speculationRules,

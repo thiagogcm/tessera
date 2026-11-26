@@ -109,6 +109,25 @@ Image.of("/assets/divider.svg", "")
 
 The compiler requires non-empty `alt` text and explicit dimensions or an aspect ratio. When an image comes from an external or user-supplied source whose intrinsic dimensions are unknown at authoring time, opt out of `image-dimensions` explicitly with `.unknownDimensions()` on `Image` or `Elements.img(...)` rather than guessing a fixed ratio. Decorative images must use empty `alt` text paired with `role(Role.PRESENTATION)` or `ariaHidden(true)`.
 
+### Self-host fonts
+
+Register each font file as a `FontFace`. The site publishes the file, the stylesheet declares its `@font-face` rule with `font-display: swap`, and a preloaded face gets a `<link rel="preload" as="font">` on every page. Point a font token at the family to use it:
+
+```java
+builder
+    .font(FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
+        .weight(100, 900)
+        .preload())
+    .font(FontFace.of("Inter", Asset.file("/fonts/inter-italic.woff2", Path.of("fonts/inter-italic.woff2")))
+        .weight(100, 900)
+        .italic());
+
+var theme = Theme.defaults()
+    .with(Tokens.FONT_BODY, FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI));
+```
+
+Preload only the faces the first screen draws with; each preload competes with the page for bandwidth.
+
 ## Write links as browser URLs
 
 Site validation resolves local `href`, `src`, and `poster` attributes against the source route's public `documentUri()`:

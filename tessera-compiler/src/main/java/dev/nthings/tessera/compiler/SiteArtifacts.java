@@ -11,13 +11,17 @@ final class SiteArtifacts {
   static final String SITEMAP_PATH = "/sitemap.xml";
   static final String SEARCH_INDEX_PATH = "/search-index.json";
 
+  /// The published URL of `route` under `baseUrl`, such as `https://example.com/guide/`.
+  static URI absoluteUrl(URI baseUrl, SiteRoute route) {
+    return URI.create(baseUrl.toASCIIString() + route.documentUri().toASCIIString());
+  }
+
   static String generateSitemapXml(URI baseUrl, List<SiteRoute> routes) {
-    var origin = baseUrl.toASCIIString();
     var sb = new StringBuilder(1024);
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
     for (var route : routes) {
-      var loc = origin + route.documentUri().toASCIIString();
+      var loc = absoluteUrl(baseUrl, route).toASCIIString();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");
@@ -35,7 +39,7 @@ final class SiteArtifacts {
       sb.append("  {\n");
       sb.append("    \"path\": \"").append(escapeJson(route.path())).append("\",\n");
       sb.append("    \"title\": \"").append(escapeJson(title)).append("\"");
-      var routeDesc = route.description();
+      var routeDesc = route.document().description();
       if (routeDesc != null) {
         sb.append(",\n    \"description\": \"").append(escapeJson(routeDesc)).append("\"");
       }

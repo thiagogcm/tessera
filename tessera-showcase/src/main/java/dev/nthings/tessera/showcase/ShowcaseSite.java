@@ -37,9 +37,10 @@ public final class ShowcaseSite {
     for (var page : PAGES) {
       routes.add(
           SiteRoute.of(
-                  page.path(), PageDocument.of("Tessera — " + page.navLabel(), new Shell(page)))
-              .withTitle(page.title())
-              .withDescription(page.summary()));
+                  page.path(),
+                  PageDocument.of("Tessera — " + page.navLabel(), new Shell(page))
+                      .withDescription(page.summary()))
+              .withTitle(page.title()));
     }
     routes.addAll(Catalog.routes());
     return SiteDefinition.builder()

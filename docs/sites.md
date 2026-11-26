@@ -11,15 +11,25 @@ var site =
     SiteDefinition.builder()
         .route(SiteRoute.of("/", PageDocument.of("Home", Elements.main(Elements.h1("Home")))))
         .route(
-            SiteRoute.of("/guide", PageDocument.of("Guide", Elements.main(Elements.h1("Guide"))))
-                .withDescription("Publishing guide"))
+            SiteRoute.of(
+                "/guide",
+                PageDocument.of("Guide", Elements.main(Elements.h1("Guide")))
+                    .withDescription("Publishing guide")))
         .build();
 
 var compiled = Compiler.forSite().compile(site);
 SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 ```
 
-`PageDocument.of(title, body)` defaults to `Locale.ENGLISH`; call `.withLang(Locale)` to set another BCP 47 language tag. On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels without altering `<title>`, and `.withDescription(String)` populates search metadata.
+`PageDocument.of(title, body)` defaults to `Locale.ENGLISH`. Page metadata belongs to the document, and each `with...` call returns a new document:
+
+| Call | Emits |
+| --- | --- |
+| `.withLang(Locale)` | `<html lang>` with the BCP 47 language tag |
+| `.withDescription(String)` | `<meta name="description">`, the route's `search-index.json` entry, and its `SiteNavigation.searchPalette` item |
+| `.withCanonicalUrl(URI)` | `<link rel="canonical">` with an absolute `http(s)` URL; in a site with a `baseUrl`, this replaces the route's default canonical URL |
+
+On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels without altering `<title>`.
 
 | Logical route | Public document URL (`documentUri()`) | Generated file     |
 | ------------- | ------------------------------------- | ------------------ |
@@ -32,7 +42,7 @@ SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
 `SiteDefinition.builder()` also accepts:
 
 - `asset(Asset)` / `assets(...)`: Static files published alongside pages.
-- `baseUrl(URI.create("https://example.com"))`: Generates `sitemap.xml` using absolute HTTP(S) URIs. Omit it to skip sitemap generation.
+- `baseUrl(URI.create("https://example.com"))`: Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
 - `linkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
 Configure themes and output modes on the immutable [`Compiler`](#choose-an-output-mode) value (`Compiler.forSite().withTheme(theme).withOutputMode(mode)`).

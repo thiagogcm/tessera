@@ -11,30 +11,46 @@ import org.jspecify.annotations.Nullable;
 /// same route. A blank path throws IllegalArgumentException.
 ///
 /// Create a route with [#of(String, PageDocument)] and optionally refine it with
-/// [#withTitle(String)] (replaces the label in navigation and search without altering `<title>`)
-/// and [#withDescription(String)] (feeds `search-index.json` and the search palette).
-public record SiteRoute(
-    String path, PageDocument document, @Nullable String title, @Nullable String description) {
+/// [#withTitle(String)], which replaces the label in navigation and search without altering
+/// `<title>`. Page metadata such as the description belongs to the [PageDocument]. Routes compare
+/// by identity.
+public final class SiteRoute {
 
-  public SiteRoute {
-    path = normalizePath(path);
+  private final String path;
+  private final PageDocument document;
+  private final @Nullable String title;
+
+  private SiteRoute(String path, PageDocument document, @Nullable String title) {
+    this.path = normalizePath(path);
+    this.document = document;
+    this.title = title;
   }
 
   /// Creates a route publishing `document` at `path`.
   public static SiteRoute of(String path, PageDocument document) {
-    return new SiteRoute(path, document, null, null);
+    return new SiteRoute(path, document, null);
   }
 
   /// Returns a copy of this route with `title` for navigation and search labels.
   @CheckReturnValue
   public SiteRoute withTitle(String title) {
-    return new SiteRoute(path, document, title, description);
+    return new SiteRoute(path, document, title);
   }
 
-  /// Returns a copy of this route with `description` for search metadata.
-  @CheckReturnValue
-  public SiteRoute withDescription(String description) {
-    return new SiteRoute(path, document, title, description);
+  /// The normalized route path, such as `/guide`.
+  public String path() {
+    return path;
+  }
+
+  /// The document published at this route.
+  public PageDocument document() {
+    return document;
+  }
+
+  /// The navigation and search label set with [#withTitle(String)], or `null`; see
+  /// [#displayTitle()].
+  public @Nullable String title() {
+    return title;
   }
 
   /// Normalizes a route path: trims it, adds a leading `/`, and removes one trailing `/` except on
@@ -90,5 +106,10 @@ public record SiteRoute(
   /// The URL path of the output file of a normalized route, such as `/guide/index.html`.
   static String outputUrlPathFor(String routePath) {
     return "/" + outputPathFor(routePath).toString().replace('\\', '/');
+  }
+
+  @Override
+  public String toString() {
+    return "SiteRoute[path=" + path + ", title=" + displayTitle() + "]";
   }
 }

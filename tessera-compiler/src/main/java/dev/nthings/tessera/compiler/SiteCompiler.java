@@ -9,6 +9,7 @@ import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -19,6 +20,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.stream.IntStream;
+import org.jspecify.annotations.Nullable;
 
 /// Site compilation behind [Compiler#compile(SiteDefinition)]: path checks, concurrent page
 /// preparation, cross-route validation, stylesheet merge, concurrent painting and artifacts.
@@ -102,12 +105,15 @@ final class SiteCompiler {
 
     var emitted =
         parallelMap(
-            preparedPages,
-            page ->
-                PageCompiler.emit(
-                    page,
-                    resources,
-                    page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null));
+            IntStream.range(0, routes.size()).boxed().toList(),
+            i -> {
+              var page = preparedPages.get(i);
+              return PageCompiler.emit(
+                  page,
+                  resources,
+                  page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null,
+                  canonicalUrl(routes.get(i), baseUrl));
+            });
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       pages.put(routes.get(i).path(), emitted.get(i));
@@ -251,6 +257,15 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
     return pages;
+  }
+
+  /// The document's own canonical URL, else the route's absolute URL under `baseUrl`, else none.
+  private static @Nullable URI canonicalUrl(SiteRoute route, @Nullable URI baseUrl) {
+    var own = route.document().canonicalUrl();
+    if (own != null || baseUrl == null) {
+      return own;
+    }
+    return SiteArtifacts.absoluteUrl(baseUrl, route);
   }
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.

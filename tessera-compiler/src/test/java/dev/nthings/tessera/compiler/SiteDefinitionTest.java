@@ -31,7 +31,8 @@ class SiteDefinitionTest {
         "//example.com",
         "/docs",
         "https://example.com?q=1",
-        "https://user:secret@example.com"
+        "https://user:secret@example.com",
+        "https://example.com/docs"
       })
   @DisplayName("a base URL must be an absolute origin")
   void rejectsBaseUrlWithoutOrigin(String baseUrl) {

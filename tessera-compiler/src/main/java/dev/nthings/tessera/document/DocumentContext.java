@@ -5,6 +5,7 @@ import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /// The [ViewContext] of document callbacks: [DocumentComponent] and [DocumentScope] expansion,
@@ -32,6 +33,14 @@ public interface DocumentContext extends ViewContext {
   /// Adds `script` to the page once. The first registration with a given id wins, and later ones
   /// with that id are ignored silently.
   void contributeScript(PageScript script);
+
+  /// Where the page is published. Every route of a compiled site has an address, absolute when the
+  /// site has a base URL; a page compiled on its own with [dev.nthings.tessera.compiler.Compiler]
+  /// has none. Use it to build absolute links, or call [PageAddress#isCurrent(String)] to mark the
+  /// current entry of a navigation with `aria-current`.
+  ///
+  /// Only the compiler implements this interface; new operations may be added to it.
+  Optional<PageAddress> address();
 
   /// Headings collected so far on this page, in collection order. A late callback sees every
   /// heading collected from the body. The first heading for a target is kept. An unbound target

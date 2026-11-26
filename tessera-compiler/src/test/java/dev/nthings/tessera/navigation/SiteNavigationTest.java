@@ -3,7 +3,6 @@ package dev.nthings.tessera.navigation;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
-import static dev.nthings.tessera.support.HtmlAssertions.assertThatNoException;
 import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
@@ -12,7 +11,11 @@ import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
+import dev.nthings.tessera.document.DocumentComponent;
+import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.document.PageAddress;
 import java.util.List;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +32,7 @@ class SiteNavigationTest {
   }
 
   private Elements pagerLinks(String path) {
-    return renderMain(SiteNavigation.docPager(site, path)).elements("nav a");
+    return renderMain(SiteNavigation.docPager(site, PageAddress.of(path))).elements("nav a");
   }
 
   @Test
@@ -62,7 +65,7 @@ class SiteNavigationTest {
   @DisplayName("the pager rejects an unknown route")
   void pagerRejectsUnknownRoute() {
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> SiteNavigation.docPager(site, "/missing"));
+        .isThrownBy(() -> SiteNavigation.docPager(site, PageAddress.of("/missing")));
   }
 
   @Test
@@ -77,19 +80,25 @@ class SiteNavigationTest {
   }
 
   @Test
-  @DisplayName("pager and palette links pass site link validation on every route")
+  @DisplayName("a shared layout builds pager and palette links that pass validation on every route")
   void navigationPassesSiteLinkValidation() {
+    DocumentComponent layout =
+        context ->
+            DocumentContent.of(
+                main()
+                    .children(
+                        SiteNavigation.searchPalette(site),
+                        SiteNavigation.docPager(site, context.address().orElseThrow())));
     var builder = SiteDefinition.builder();
     for (var route : site.routes()) {
-      var body =
-          main()
-              .children(
-                  SiteNavigation.searchPalette(site), SiteNavigation.docPager(site, route.path()));
-      builder.route(SiteRoute.of(route.path(), PageDocument.of(route.document().title(), body)));
+      builder.route(SiteRoute.of(route.path(), PageDocument.of(route.document().title(), layout)));
     }
     var withNavigation = builder.build();
 
-    assertThatNoException().isThrownBy(() -> Compiler.forSite().compile(withNavigation));
+    var compiled = Compiler.forSite().compile(withNavigation);
+    assertThat(Jsoup.parse(compiled.pages().get("/guide")).select("nav a"))
+        .extracting(link -> link.attr("href"))
+        .containsExactly("/", "/faq/");
   }
 
   @Test
@@ -106,7 +115,9 @@ class SiteNavigationTest {
         .extracting(link -> link.attr("href"))
         .containsExactly("/", "/guides/caf%C3%A9/", "/about.html");
 
-    var pagerLinks = renderMain(SiteNavigation.docPager(routes, "/guides/café")).elements("nav a");
+    var pagerLinks =
+        renderMain(SiteNavigation.docPager(routes, PageAddress.of("/guides/café")))
+            .elements("nav a");
     assertThat(pagerLinks)
         .extracting(link -> link.attr("href"))
         .containsExactly("/", "/about.html");

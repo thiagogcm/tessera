@@ -1,5 +1,6 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.document.PageAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,22 +55,10 @@ public final class SiteDefinition {
     return assets;
   }
 
+  /// `uri` without its trailing `/`, validated as [PageAddress#withBaseUrl(URI)] validates it.
   private static URI normalizeBaseUrl(URI uri) {
-    var scheme = uri.getScheme();
-    if (scheme == null
-        || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
-        || uri.getHost() == null
-        || uri.getRawUserInfo() != null
-        || uri.getRawQuery() != null
-        || uri.getRawFragment() != null) {
-      throw new IllegalArgumentException(
-          "Site baseUrl must be an absolute http(s) URL such as https://example.com: " + uri);
-    }
-    var text = uri.toASCIIString();
-    if (text.endsWith("/")) {
-      return URI.create(text.substring(0, text.length() - 1));
-    }
-    return uri;
+    var root = PageAddress.of("/").withBaseUrl(uri).absoluteUrl().orElseThrow().toASCIIString();
+    return URI.create(root.substring(0, root.length() - 1));
   }
 
   /// The route published at `path`, normalized like a route path (so `guide/` finds `/guide`), or

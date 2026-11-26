@@ -6,6 +6,7 @@ import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.PageAddress;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.document.DocumentNode;
@@ -19,12 +20,14 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
 
 /// The document backend of the shared [ViewExpansion]: orders one page's expansion (body, late
 /// elements, end sections, head), links it, flattens its groups, and checks the document-only
 /// element contracts.
 final class DocumentPass {
   private final String pageTitle;
+  private final @Nullable PageAddress address;
   private final DocumentState contributions = new DocumentState();
   private final DocumentExpansion expansion;
   private final BundlePublication bundles;
@@ -32,8 +35,13 @@ final class DocumentPass {
   private final PriorityQueue<Deferred> deferred = new PriorityQueue<>();
   private long sequence;
 
-  private DocumentPass(String pageTitle, StyleSheet styles, BundlePublication bundles) {
+  private DocumentPass(
+      String pageTitle,
+      @Nullable PageAddress address,
+      StyleSheet styles,
+      BundlePublication bundles) {
     this.pageTitle = pageTitle;
+    this.address = address;
     this.bundles = bundles;
     this.expansion = new DocumentExpansion(this, styles);
   }
@@ -55,8 +63,17 @@ final class DocumentPass {
       DocumentState contributions,
       CompilationState compilation) {}
 
-  static Result layout(PageDocument document, StyleSheet styles, BundlePublication bundles) {
-    return new DocumentPass(document.title(), styles, bundles).document(document);
+  static Result layout(
+      PageDocument document,
+      @Nullable PageAddress address,
+      StyleSheet styles,
+      BundlePublication bundles) {
+    return new DocumentPass(document.title(), address, styles, bundles).document(document);
+  }
+
+  /// Where the page is published, or null for a standalone page.
+  @Nullable PageAddress address() {
+    return address;
   }
 
   private Result document(PageDocument document) {

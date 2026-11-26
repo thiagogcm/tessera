@@ -3,6 +3,7 @@ package dev.nthings.tessera.compiler;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.document.PageAddress;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.internal.view.ViewValidation;
@@ -30,7 +31,7 @@ final class PageCompiler {
   private PageCompiler() {}
 
   static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
-    var prepared = prepare(document, new BundlePublication(outputMode));
+    var prepared = prepare(document, null, new BundlePublication(outputMode));
     var css = prepared.stylesheet(theme);
     var resources = new HtmlWriter.Resources(css, outputMode, prepared.scripts());
     var assets = new ArrayList<>(resources.assets());
@@ -42,11 +43,12 @@ final class PageCompiler {
         prepared.responseHeaders(outputMode));
   }
 
-  /// Lays out and validates `document` without emitting HTML. Throws [CompilationException] if the
-  /// document has authoring errors.
-  static PreparedPage prepare(PageDocument document, BundlePublication bundles) {
+  /// Lays out and validates `document`, published at `address` (null for a standalone page),
+  /// without emitting HTML. Throws [CompilationException] if the document has authoring errors.
+  static PreparedPage prepare(
+      PageDocument document, @Nullable PageAddress address, BundlePublication bundles) {
     var styles = new StyleSheet();
-    var layout = DocumentPass.layout(document, styles, bundles);
+    var layout = DocumentPass.layout(document, address, styles, bundles);
     var state = layout.compilation();
     var bodyNodes = layout.bodyNodes();
     var headNodes = layout.headNodes();

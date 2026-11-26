@@ -6,6 +6,7 @@ import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 import dev.nthings.tessera.core.Diagnostic;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.css.Theme;
+import dev.nthings.tessera.document.PageAddress;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -52,7 +53,8 @@ final class SiteCompiler {
     }
 
     var speculation = site.linkSpeculation();
-    var preparedPages = preparePages(site, new BundlePublication(output));
+    var addresses = routes.stream().map(route -> address(route, baseUrl)).toList();
+    var preparedPages = preparePages(routes, addresses, new BundlePublication(output));
     var preparedByRoute = new LinkedHashMap<String, PreparedPage>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
       preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
@@ -112,7 +114,7 @@ final class SiteCompiler {
                   page,
                   resources,
                   page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null,
-                  canonicalUrl(routes.get(i), baseUrl));
+                  canonicalUrl(routes.get(i), addresses.get(i)));
             });
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
@@ -120,8 +122,7 @@ final class SiteCompiler {
     }
     if (baseUrl != null) {
       files.put(
-          SITEMAP_PATH,
-          Asset.text(SITEMAP_PATH, SiteArtifacts.generateSitemapXml(baseUrl, routes)));
+          SITEMAP_PATH, Asset.text(SITEMAP_PATH, SiteArtifacts.generateSitemapXml(addresses)));
     }
     files.put(
         SEARCH_INDEX_PATH,
@@ -231,13 +232,16 @@ final class SiteCompiler {
 
   private record Failed(List<Diagnostic> diagnostics) implements Preparation {}
 
-  private static List<PreparedPage> preparePages(SiteDefinition site, BundlePublication bundles) {
+  private static List<PreparedPage> preparePages(
+      List<SiteRoute> routes, List<PageAddress> addresses, BundlePublication bundles) {
     List<Preparation> preparations =
         parallelMap(
-            site.routes(),
-            route -> {
+            IntStream.range(0, routes.size()).boxed().toList(),
+            i -> {
+              var route = routes.get(i);
               try {
-                return new Prepared(PageCompiler.prepare(route.document(), bundles));
+                return new Prepared(
+                    PageCompiler.prepare(route.document(), addresses.get(i), bundles));
               } catch (CompilationException failure) {
                 return new Failed(
                     failure.diagnostics().stream()
@@ -259,13 +263,16 @@ final class SiteCompiler {
     return pages;
   }
 
-  /// The document's own canonical URL, else the route's absolute URL under `baseUrl`, else none.
-  private static @Nullable URI canonicalUrl(SiteRoute route, @Nullable URI baseUrl) {
+  /// Where `route` is published, absolute under `baseUrl` when the site has one.
+  private static PageAddress address(SiteRoute route, @Nullable URI baseUrl) {
+    var address = PageAddress.of(route.path());
+    return baseUrl != null ? address.withBaseUrl(baseUrl) : address;
+  }
+
+  /// The document's own canonical URL, else the page's absolute URL, else none.
+  private static @Nullable URI canonicalUrl(SiteRoute route, PageAddress address) {
     var own = route.document().canonicalUrl();
-    if (own != null || baseUrl == null) {
-      return own;
-    }
-    return SiteArtifacts.absoluteUrl(baseUrl, route);
+    return own != null ? own : address.absoluteUrl().orElse(null);
   }
 
   /// Applies `fn` to every input on virtual threads, returning results in input order.

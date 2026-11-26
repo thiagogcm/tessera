@@ -7,6 +7,7 @@ import dev.nthings.tessera.internal.foundation.Fnv1a64;
 import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.internal.view.LinkedNode.Tag;
 import dev.nthings.tessera.internal.view.LinkedNode.Text;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,7 +78,8 @@ final class HtmlWriter {
       Resources resources,
       List<PageScript> behaviors,
       @Nullable File bootstrap,
-      @Nullable String speculationRules) {
+      @Nullable String speculationRules,
+      @Nullable URI canonicalUrl) {
     var out = new StringBuilder(4096);
     out.append("<!doctype html>\n<html lang=\"");
     out.append(Encode.forHtmlAttribute(doc.lang().toLanguageTag()));
@@ -88,6 +90,17 @@ final class HtmlWriter {
     out.append("<title>");
     out.append(Encode.forHtmlContent(doc.title()));
     out.append("</title>\n");
+    var description = doc.description();
+    if (description != null) {
+      out.append("<meta name=\"description\" content=\"")
+          .append(Encode.forHtmlAttribute(description))
+          .append("\">\n");
+    }
+    if (canonicalUrl != null) {
+      out.append("<link rel=\"canonical\" href=\"")
+          .append(Encode.forHtmlAttribute(canonicalUrl.toASCIIString()))
+          .append("\">\n");
+    }
     if (speculationRules != null) {
       out.append("<script type=\"speculationrules\">")
           .append(inlineModule(speculationRules))

@@ -6,6 +6,7 @@ import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import dev.nthings.tessera.internal.view.LinkedNode;
 import dev.nthings.tessera.internal.view.ViewValidation;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,10 @@ final class PageCompiler {
     var assets = new ArrayList<>(resources.assets());
     assets.addAll(prepared.bundleAssets());
     return new CompiledPage(
-        emit(prepared, resources, null), css, assets, prepared.responseHeaders(outputMode));
+        emit(prepared, resources, null, prepared.document().canonicalUrl()),
+        css,
+        assets,
+        prepared.responseHeaders(outputMode));
   }
 
   /// Lays out and validates `document` without emitting HTML. Throws [CompilationException] if the
@@ -99,7 +103,10 @@ final class PageCompiler {
   /// Emits `prepared` with `resources`, the stylesheet and modules the page links or inlines: its
   /// own for a standalone page, or the shared ones of a site.
   static String emit(
-      PreparedPage prepared, HtmlWriter.Resources resources, @Nullable String speculationRules) {
+      PreparedPage prepared,
+      HtmlWriter.Resources resources,
+      @Nullable String speculationRules,
+      @Nullable URI canonicalUrl) {
     return HtmlWriter.emit(
         prepared.document(),
         prepared.bodyNodes(),
@@ -107,6 +114,7 @@ final class PageCompiler {
         resources,
         prepared.scripts(),
         prepared.bundleBootstrap(),
-        speculationRules);
+        speculationRules,
+        canonicalUrl);
   }
 }

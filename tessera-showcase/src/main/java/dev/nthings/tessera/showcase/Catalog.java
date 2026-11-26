@@ -98,10 +98,10 @@ public final class Catalog {
                 SiteRoute.of(
                         casePath(story.id(), variant.name(), appearance, density),
                         PageDocument.of(
-                            "Tessera — " + heading,
-                            new StoryPage(story, variant, appearance, density)))
-                    .withTitle(heading)
-                    .withDescription(variant.label()));
+                                "Tessera — " + heading,
+                                new StoryPage(story, variant, appearance, density))
+                            .withDescription(variant.label()))
+                    .withTitle(heading));
           }
         }
       }

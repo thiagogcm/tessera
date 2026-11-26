@@ -33,6 +33,7 @@ import dev.nthings.tessera.document.DocumentScope;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.support.RenderedPage;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +56,48 @@ class PageOutputTest {
     assertThat(page.element("main > p")).hasAttribute("title", value + "\r\n");
     assertThat(page.elements("script")).isEmpty();
     assertThat(page.dom().body().children()).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("the description and canonical URL are emitted in the head, encoded")
+  void emitsDescriptionAndCanonicalUrl() {
+    var page =
+        RenderedPage.of(
+            PageDocument.of("Guide", main(p("Hi")))
+                .withDescription("Q&A <draft> \"notes\"")
+                .withCanonicalUrl(URI.create("https://tessera.dev/guide/?v=1")));
+
+    assertThat(page.element("head > meta[name=description]"))
+        .hasAttribute("content", "Q&A <draft> \"notes\"");
+    assertThat(page.element("head > link[rel=canonical]"))
+        .hasAttribute("href", "https://tessera.dev/guide/?v=1");
+  }
+
+  @Test
+  @DisplayName("a document without metadata emits no description or canonical link")
+  void omitsUnsetMetadata() {
+    var page = render(main(p("Hi")));
+
+    assertThat(page.elements("meta[name=description]")).isEmpty();
+    assertThat(page.elements("link[rel=canonical]")).isEmpty();
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"/guide/", "ftp://tessera.dev/", "https:///guide", "https://tessera.dev/#top"})
+  @DisplayName("a canonical URL must be an absolute http(s) URL without a fragment")
+  void rejectsNonAbsoluteCanonicalUrls(String url) {
+    var doc = PageDocument.of("Guide", main(p("Hi")));
+
+    assertThatIllegalArgumentException().isThrownBy(() -> doc.withCanonicalUrl(URI.create(url)));
+  }
+
+  @Test
+  @DisplayName("a blank description is rejected")
+  void rejectsBlankDescription() {
+    var doc = PageDocument.of("Guide", main(p("Hi")));
+
+    assertThatIllegalArgumentException().isThrownBy(() -> doc.withDescription(" \n"));
   }
 
   @Test

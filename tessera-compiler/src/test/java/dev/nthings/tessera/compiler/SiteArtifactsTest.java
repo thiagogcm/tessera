@@ -60,6 +60,59 @@ class SiteArtifactsTest {
   }
 
   @Test
+  @DisplayName("with a base URL each page links its published URL as canonical unless it sets one")
+  void linksCanonicalUrlsUnderTheBaseUrl() {
+    var own = URI.create("https://example.com/original/");
+    var site =
+        Compiler.forSite()
+            .compile(
+                SiteDefinition.builder()
+                    .baseUrl(URI.create("https://tessera.dev/"))
+                    .route(page("/"))
+                    .route(page("/guides/café"))
+                    .route(
+                        SiteRoute.of(
+                            "/copy",
+                            PageDocument.of("Copy", main().text("copy")).withCanonicalUrl(own)))
+                    .build());
+
+    assertThat(canonicalHref(site, "/")).isEqualTo("https://tessera.dev/");
+    assertThat(canonicalHref(site, "/guides/café"))
+        .isEqualTo("https://tessera.dev/guides/caf%C3%A9/");
+    assertThat(canonicalHref(site, "/copy")).isEqualTo(own.toString());
+  }
+
+  @Test
+  @DisplayName("without a base URL pages have no canonical link of their own")
+  void omitsCanonicalUrlsWithoutBaseUrl() {
+    var site = Compiler.forSite().compile(SiteDefinition.of(page("/"), page("/guide")));
+
+    assertThat(Jsoup.parse(site.pages().get("/guide")).select("link[rel=canonical]")).isEmpty();
+  }
+
+  @Test
+  @DisplayName("the document description feeds the meta tag and the search index")
+  void sharesTheDocumentDescription() {
+    var routes =
+        List.of(
+            SiteRoute.of(
+                "/", PageDocument.of("Home", main().text("x")).withDescription("Start here")));
+    var site = Compiler.forSite().compile(SiteDefinition.of(routes));
+
+    assertThat(
+            Jsoup.parse(site.pages().get("/"))
+                .selectFirst("head > meta[name=description]")
+                .attr("content"))
+        .isEqualTo("Start here");
+    assertThat(Json.parse(site.searchIndexJson()).list().getFirst().get("description").string())
+        .isEqualTo("Start here");
+  }
+
+  private static String canonicalHref(CompiledSite site, String route) {
+    return Jsoup.parse(site.pages().get(route)).selectFirst("link[rel=canonical]").attr("href");
+  }
+
+  @Test
   @DisplayName("without a base URL no sitemap is published")
   void omitsTheSitemapWithoutBaseUrl() {
     var site = Compiler.forSite().compile(SiteDefinition.of(documentationRoutes()));
@@ -136,9 +189,10 @@ class SiteArtifactsTest {
         Compiler.forSite()
             .compile(
                 SiteDefinition.of(
-                    SiteRoute.of("/", PageDocument.of("Home", main().text("x")))
-                        .withTitle(title)
-                        .withDescription(description)));
+                    SiteRoute.of(
+                            "/",
+                            PageDocument.of("Home", main().text("x")).withDescription(description))
+                        .withTitle(title)));
 
     var entry = Json.parse(site.searchIndexJson()).list().getFirst();
     assertThat(entry.get("title").string()).isEqualTo(title);

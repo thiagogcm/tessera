@@ -60,10 +60,9 @@ public final class SiteFixtures {
     return List.of(
         SiteRoute.of(
                 "/",
-                PageDocument.of(
-                    "Home", main().child(Section.of("features", "Features").child(p()))))
-            .withTitle("Tessera Home")
-            .withDescription("Static HTML/CSS compiler"),
+                PageDocument.of("Home", main().child(Section.of("features", "Features").child(p())))
+                    .withDescription("Static HTML/CSS compiler"))
+            .withTitle("Tessera Home"),
         SiteRoute.of(
                 "/guide",
                 PageDocument.of(

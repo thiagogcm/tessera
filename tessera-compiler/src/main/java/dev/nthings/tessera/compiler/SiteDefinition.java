@@ -59,6 +59,7 @@ public final class SiteDefinition {
     if (scheme == null
         || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
         || uri.getHost() == null
+        || uri.getRawUserInfo() != null
         || uri.getRawQuery() != null
         || uri.getRawFragment() != null) {
       throw new IllegalArgumentException(
@@ -122,7 +123,7 @@ public final class SiteDefinition {
     /// `<link rel="canonical">`, such as `URI.create("https://example.com")`. Without one, no
     /// sitemap or default canonical link is generated. A trailing `/` is removed. Throws
     /// IllegalArgumentException from [#build()] unless the value is an absolute `http` or `https`
-    /// URI with a host and no query or fragment.
+    /// URI with a host and no user info, query, or fragment.
     public Builder baseUrl(URI url) {
       this.baseUrl = url;
       return this;

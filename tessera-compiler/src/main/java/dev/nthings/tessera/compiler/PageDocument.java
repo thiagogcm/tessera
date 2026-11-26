@@ -73,16 +73,17 @@ public final class PageDocument {
 
   /// Returns a copy of this document whose canonical URL is `url`. In a site compiled with a base
   /// URL this replaces the route's own absolute URL. Throws IllegalArgumentException unless `url`
-  /// is an absolute `http` or `https` URI with a host and no fragment.
+  /// is an absolute `http` or `https` URI with a host and no user info or fragment.
   @CheckReturnValue
   public PageDocument withCanonicalUrl(URI url) {
     var scheme = url.getScheme();
     if (scheme == null
         || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
         || url.getHost() == null
+        || url.getRawUserInfo() != null
         || url.getRawFragment() != null) {
       throw new IllegalArgumentException(
-          "Canonical URL must be an absolute http(s) URL without a fragment: " + url);
+          "Canonical URL must be an absolute http(s) URL without user info or a fragment: " + url);
     }
     return new PageDocument(lang, title, bodyRoot, description, url);
   }

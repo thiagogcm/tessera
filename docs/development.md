@@ -80,7 +80,7 @@ Each `@BrowserTest` runs in both Chromium and Firefox unless pinned to one engin
 | `SiteSmokeIT` | Every route loads cleanly without overflow at 390px, 1440px, and 320px with WCAG text spacing |
 | `AccessibilityIT` | axe-core WCAG A/AA audits in light mode, dark mode, open overlays, and forced colors |
 | `NavigationIT` | Navigation, table of contents, pager, sticky header, footnotes, fragments, history, and view transitions |
-| `SearchIT` | Query filtering, keyboard navigation, `Alt+K` shortcut, and independent search palettes |
+| `SearchIT` | Query filtering, keyboard navigation, `Ctrl+K` and `/` shortcuts, and independent search palettes |
 | `OverlaysIT` | Modals, drawers, popovers, Pages menu, inspector, and tooltips |
 | `DisclosureIT` | Tabs, accordions, and carousels, including RTL writing direction |
 | `FormsIT` | Validation, switches, selects, growing textareas, and choice cards |

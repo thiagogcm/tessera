@@ -71,4 +71,42 @@ class SearchPaletteTest {
     assertThat(names.get(1)).isEqualTo("Typography");
     assertThat(names.get(2)).containsSubsequence("Toggle Dark Mode", "Switch themes", "Action");
   }
+
+  @Test
+  @DisplayName("the trigger advertises Ctrl or Command K and slash, with a hidden Ctrl K hint")
+  void defaultShortcuts() {
+    var trigger = page.element("main > button");
+
+    assertThat(trigger).hasAttribute("aria-keyshortcuts", "Control+K Meta+K /");
+    assertThat(trigger.hasAttr("accesskey")).isFalse();
+    assertThat(trigger.select("kbd")).extracting(kbd -> kbd.text()).containsExactly("Ctrl", "K");
+    assertThat(trigger.selectFirst("kbd[data-mod-key]").text()).isEqualTo("Ctrl");
+    assertThat(AccessibleText.of(trigger)).isEqualTo("Search");
+  }
+
+  @Test
+  @DisplayName("Alt K keeps an access key and shows its own hint")
+  void altKShortcut() {
+    var palette = SearchPalette.of().shortcuts(SearchPalette.Shortcut.ALT_K);
+    var trigger =
+        renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50))
+            .element("main > button");
+
+    assertThat(trigger).hasAttribute("aria-keyshortcuts", "Alt+K");
+    assertThat(trigger).hasAttribute("accesskey", "k");
+    assertThat(trigger.select("kbd")).extracting(kbd -> kbd.text()).containsExactly("Alt", "K");
+  }
+
+  @Test
+  @DisplayName("a palette without shortcuts has no hint and no key attributes")
+  void noShortcuts() {
+    var palette = SearchPalette.of().shortcuts();
+    var trigger =
+        renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50))
+            .element("main > button");
+
+    assertThat(trigger.hasAttr("aria-keyshortcuts")).isFalse();
+    assertThat(trigger.hasAttr("accesskey")).isFalse();
+    assertThat(trigger.select("kbd")).isEmpty();
+  }
 }

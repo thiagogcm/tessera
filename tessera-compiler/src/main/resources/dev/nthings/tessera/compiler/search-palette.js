@@ -76,16 +76,37 @@ class TesseraSearch extends HTMLDialogElement {
 
 customElements.define("tessera-search", TesseraSearch, { extends: "dialog" });
 
-// Trigger buttons advertise Alt+K, but browsers map their accesskey to different chords (Firefox
-// uses Alt+Shift+K), so the advertised chord opens the first palette here in every browser.
+const APPLE = /Mac|iPhone|iPad/.test(navigator.userAgentData?.platform ?? navigator.platform);
+if (APPLE) {
+  for (const key of document.querySelectorAll("kbd[data-mod-key]")) key.textContent = "⌘";
+}
+
+const EDITABLE = "input, textarea, select, [contenteditable]:not([contenteditable=false])";
+
+// Whether `event` is the chord `shortcut`, written as in aria-keyshortcuts ("Control+K", "/").
+// Letters match by physical key, so Alt+K still matches where Option turns K into another
+// character. Other keys match by the character typed, ignoring the Shift some layouts need for it.
+const matches = (event, shortcut) => {
+  const parts = shortcut.split("+");
+  const key = parts.pop();
+  const letter = /^[A-Z]$/.test(key);
+  if (letter ? event.code !== `Key${key}` : event.key !== key) return false;
+  if (event.ctrlKey !== parts.includes("Control") || event.metaKey !== parts.includes("Meta") ||
+      event.altKey !== parts.includes("Alt")) return false;
+  if (letter && event.shiftKey !== parts.includes("Shift")) return false;
+  // A bare character is typing while focus is in a field.
+  return parts.length > 0 || !event.target.closest?.(EDITABLE);
+};
+
+// Each trigger lists its chords in aria-keyshortcuts. The first trigger that advertises the chord
+// pressed opens its palette, in every browser, whatever the browser does with accesskey.
 document.addEventListener("keydown", (event) => {
-  if (
-    event.defaultPrevented || event.isComposing || event.code !== "KeyK" ||
-    !event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
-  ) return;
-  for (const trigger of document.querySelectorAll('button[aria-keyshortcuts="Alt+K"][commandfor]')) {
+  if (event.defaultPrevented || event.isComposing || event.repeat) return;
+  for (const trigger of document.querySelectorAll("button[aria-keyshortcuts][commandfor]")) {
     const dialog = document.getElementById(trigger.getAttribute("commandfor"));
     if (!(dialog instanceof TesseraSearch)) continue;
+    const shortcuts = trigger.getAttribute("aria-keyshortcuts").split(/\s+/).filter(Boolean);
+    if (!shortcuts.some((shortcut) => matches(event, shortcut))) continue;
     event.preventDefault();
     // Like the button itself, the chord does nothing while a modal dialog covers the page.
     if (!document.querySelector("dialog:modal")) trigger.click();

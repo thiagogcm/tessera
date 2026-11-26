@@ -182,9 +182,11 @@ DocumentElement.of(Elements.main().child(search.triggerButton()))
 
 `SearchPalette` filters its rendered links in the browser without fetching `search-index.json` or calling a backend endpoint. `search-index.json` is emitted separately for external search consumers.
 
+The trigger lists the palette's shortcuts in `aria-keyshortcuts` and shows a hint for the first one. `shortcuts(Shortcut.MOD_K, Shortcut.SLASH)` is the default; `Shortcut.ALT_K` also sets `accesskey="k"`, and `shortcuts()` with no arguments leaves only the button.
+
 | User action | Behavior |
 | --- | --- |
-| Press `Alt+K` | Open the first search palette on the page |
+| Press a shortcut from `shortcuts(...)` (by default `Ctrl+K`, `Cmd+K` on Apple platforms, or `/` outside a text field) | Open the first search palette whose trigger advertises it |
 | Type query words | Filter by group, title, and description (case- and accent-insensitive) |
 | Clear query | Restore all entries |
 | Press Up or Down arrow | Move focus through matching links |

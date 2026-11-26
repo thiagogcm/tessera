@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 /// Quick-open search dialog over the links you add with [#item]. Create one with [#of()], place its
@@ -91,7 +92,28 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     }
   }
 
+  /// A key chord that opens the palette from anywhere on a static page.
+  public enum Shortcut {
+    /// Control+K, or Command+K on Apple platforms. The trigger's hint shows `Ctrl K`, which the
+    /// palette's script turns into `⌘ K` on Apple platforms.
+    MOD_K("Control+K Meta+K", "Ctrl", "K"),
+    /// Alt+K, or Option+K on Apple platforms. The trigger also gets `accesskey="k"`, so the browser
+    /// opens the palette on its own access-key chord when the script is absent.
+    ALT_K("Alt+K", "Alt", "K"),
+    /// The `/` key, ignored while focus is in a text field or editable region.
+    SLASH("/", "/");
+
+    private final String aria;
+    private final List<String> keys;
+
+    Shortcut(String aria, String... keys) {
+      this.aria = aria;
+      this.keys = List.of(keys);
+    }
+  }
+
   private final ElementRef dialog = ElementRef.scoped("dialog");
+  private List<Shortcut> shortcuts = List.of(Shortcut.MOD_K, Shortcut.SLASH);
   private String placeholder = "Search documentation, routes, and sections...";
   private String triggerLabel = "Search docs...";
   private final Map<String, List<Item>> groupedItems = new LinkedHashMap<>();
@@ -115,6 +137,14 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     return this;
   }
 
+  /// Sets the chords that open the palette, replacing the default of [Shortcut#MOD_K] and
+  /// [Shortcut#SLASH]. The trigger's hint shows the first one; with none, the trigger has no hint
+  /// and only a click opens the palette.
+  public SearchPalette shortcuts(Shortcut... shortcuts) {
+    this.shortcuts = List.of(shortcuts).stream().distinct().toList();
+    return this;
+  }
+
   /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order they
   /// are first used, and links keep their insertion order.
   public SearchPalette item(String group, String title, String href) {
@@ -129,40 +159,50 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
   }
 
   /// Creates a button that opens the palette with `command="show-modal"`, showing the trigger label
-  /// and an Alt K hint. In a static document the palette's script opens the first such palette on
-  /// Alt+K in every browser; the button's `accesskey` of `k` remains for pages without the script,
-  /// where the browser picks the chord. Returns a plain [TagElement].
+  /// and a hint for the first of its [#shortcuts(Shortcut...)]. The button's `aria-keyshortcuts`
+  /// lists every shortcut, and in a static document the palette's script opens the first palette
+  /// whose trigger advertises the chord pressed. Returns a plain [TagElement].
   public TagElement triggerButton() {
-    return button()
-        .command(dialog, BuiltinCommand.SHOW_MODAL)
-        .ariaKeyShortcuts("Alt+K")
-        .attr("accesskey", "k")
-        .flex()
-        .itemsCenter()
-        .justifyBetween()
-        .gap(Tokens.SPACE_3)
-        .px(Tokens.SPACE_3)
-        .py(CssLength.rem(0.4))
-        .rounded(Tokens.RADIUS_LG)
-        .border(Border.hairline(Tokens.BORDER_SUBTLE))
-        .bg(Tokens.SURFACE_CARD)
-        .textColor(Tokens.TEXT_MUTED)
-        .fontSize(Tokens.FONT_SIZE_SM)
-        .cursor(Cursor.POINTER)
-        .child(
-            div()
-                .flex()
-                .itemsCenter()
-                .gap(Tokens.SPACE_2)
-                .child(Icons.search())
-                .child(span().text(triggerLabel)))
-        .child(
-            div()
-                .flex()
-                .itemsCenter()
-                .gap(CssLength.rem(0.2))
-                .child(keyCap("Alt"))
-                .child(keyCap("K")));
+    var button =
+        button()
+            .command(dialog, BuiltinCommand.SHOW_MODAL)
+            .flex()
+            .itemsCenter()
+            .justifyBetween()
+            .gap(Tokens.SPACE_3)
+            .px(Tokens.SPACE_3)
+            .py(CssLength.rem(0.4))
+            .rounded(Tokens.RADIUS_LG)
+            .border(Border.hairline(Tokens.BORDER_SUBTLE))
+            .bg(Tokens.SURFACE_CARD)
+            .textColor(Tokens.TEXT_MUTED)
+            .fontSize(Tokens.FONT_SIZE_SM)
+            .cursor(Cursor.POINTER)
+            .child(
+                div()
+                    .flex()
+                    .itemsCenter()
+                    .gap(Tokens.SPACE_2)
+                    .child(Icons.search())
+                    .child(span().text(triggerLabel)));
+    if (shortcuts.isEmpty()) {
+      return button;
+    }
+    button.ariaKeyShortcuts(
+        shortcuts.stream().map(shortcut -> shortcut.aria).collect(Collectors.joining(" ")));
+    if (shortcuts.contains(Shortcut.ALT_K)) {
+      button.attr("accesskey", "k");
+    }
+    var hint = div().flex().itemsCenter().gap(CssLength.rem(0.2)).ariaHidden(true);
+    var first = shortcuts.getFirst();
+    for (var key : first.keys) {
+      var cap = keyCap(key);
+      if (first == Shortcut.MOD_K && key.equals("Ctrl")) {
+        cap.attr("data-mod-key", "");
+      }
+      hint.child(cap);
+    }
+    return button.child(hint);
   }
 
   /// One key of the trigger's shortcut hint.

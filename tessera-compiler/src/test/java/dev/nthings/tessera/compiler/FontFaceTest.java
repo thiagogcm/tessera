@@ -89,4 +89,15 @@ class FontFaceTest {
   void rejectsBlankFamily() {
     assertThatThrownBy(() -> FontFace.of(" ", INTER)).isInstanceOf(IllegalArgumentException.class);
   }
+
+  @Test
+  @DisplayName("weights must lie within 1 to 1000, and a range must run low to high")
+  void rejectsInvalidWeights() {
+    var face = FontFace.of("Inter", Asset.of("/fonts/inter.woff2", new byte[] {1}));
+
+    assertThatThrownBy(() -> face.weight(0)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> face.weight(100, 1001)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> face.weight(900, 100)).isInstanceOf(IllegalArgumentException.class);
+    assertThat(face.weight(100, 900).weight()).isEqualTo("100 900");
+  }
 }

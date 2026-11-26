@@ -42,14 +42,27 @@ public record FontFace(String family, Asset file, String weight, String style, b
     return new FontFace(family, file, "400", "normal", false);
   }
 
-  /// The same face at `weight`, such as 600.
+  /// The same face at `weight`, such as 600. Throws IllegalArgumentException outside 1 to 1000.
   public FontFace weight(int weight) {
+    checkWeight(weight);
     return new FontFace(family, file, Integer.toString(weight), style, preloaded);
   }
 
-  /// The same face covering weights `min` to `max`, for a variable font.
+  /// The same face covering weights `min` to `max`, for a variable font. Throws
+  /// IllegalArgumentException outside 1 to 1000 or when `min` is above `max`.
   public FontFace weight(int min, int max) {
+    checkWeight(min);
+    checkWeight(max);
+    if (min > max) {
+      throw new IllegalArgumentException("Font weight range " + min + " " + max + " is reversed");
+    }
     return new FontFace(family, file, min + " " + max, style, preloaded);
+  }
+
+  private static void checkWeight(int weight) {
+    if (weight < 1 || weight > 1000) {
+      throw new IllegalArgumentException("Font weight " + weight + " is outside 1 to 1000");
+    }
   }
 
   /// The same face as the italic style.

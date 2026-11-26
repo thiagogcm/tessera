@@ -134,7 +134,33 @@ The compiler builds `search-index.json` automatically from routes and [outlined 
 `SiteNavigation` (in `dev.nthings.tessera.navigation`) derives navigation components directly from your routes:
 
 - `SiteNavigation.searchPalette(site)` builds a `SearchPalette` pre-populated with every route.
-- `SiteNavigation.docPager(site, currentPath)` builds a previous/next `DocPager` in route declaration order.
+- `SiteNavigation.docPager(site, current)` builds a previous/next `DocPager` around the page at a `PageAddress`, in route declaration order.
+
+### Know the current page in a shared layout
+
+Inside a `DocumentComponent` or `DocumentScope`, `context.address()` returns the `PageAddress` of the route being compiled, so one layout can serve every route:
+
+```java
+DocumentComponent layout =
+    context -> {
+      var here = context.address().orElseThrow();
+      var nav =
+          Stream.of("/", "/guide/")
+              .map(href -> here.isCurrent(href) ? a(href, href).ariaCurrent(AriaCurrent.PAGE) : a(href, href))
+              .toList();
+      return DocumentElement.of(Elements.main().children(nav))
+          .child(SiteNavigation.docPager(site, here));
+    };
+```
+
+| `PageAddress` member | Value for route `/guide` under `baseUrl("https://example.com")` |
+| --- | --- |
+| `routePath()` | `/guide` |
+| `documentUri()` | `/guide/` |
+| `absoluteUrl()` | `https://example.com/guide/` (empty without a `baseUrl`) |
+| `isCurrent(href)` | `true` for `/guide`, `/guide/`, `/guide/index.html`, `./`, `#install`, and same-origin absolute URLs of the page |
+
+`isCurrent` resolves the link against `documentUri()` exactly as [site link validation](#write-links-as-browser-urls) does, ignoring the query and fragment. A page compiled on its own with `Compiler.forPage()` has no address, so `context.address()` is empty.
 
 You can also populate `SearchPalette` manually with custom groups, descriptions, and badges:
 

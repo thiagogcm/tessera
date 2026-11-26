@@ -4,10 +4,12 @@ import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewKey;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
+import dev.nthings.tessera.document.PageAddress;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.document.DocumentNode;
 import dev.nthings.tessera.internal.view.ExpansionContext;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /// The [DocumentContext] of a document callback: the portable operations of its expansion context
@@ -47,6 +49,11 @@ final class DocumentView implements DocumentContext {
   @Override
   public void contributeScript(PageScript script) {
     backend.contributeScript(script);
+  }
+
+  @Override
+  public Optional<PageAddress> address() {
+    return Optional.ofNullable(backend.address());
   }
 
   @Override

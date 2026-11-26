@@ -44,6 +44,7 @@ Implement `DocumentComponent` or `DocumentScope` when a reusable component needs
 | `contributeHead(content)` | Appends elements to `<head>` in registration order; use `ViewKey` state to deduplicate |
 | `atDocumentEnd(owner, callback)` | Registers an end-of-body section; the first registration per owner wins |
 | `contributeScript(script)` | Registers a [`PageScript`](#contribute-a-page-script); each script ID emits once per page |
+| `address()` | Returns the page's [`PageAddress`](sites.md#know-the-current-page-in-a-shared-layout) in a compiled site, or empty for a standalone page |
 | `headings()` | Returns a snapshot of collected outline headings (complete inside `Documents.late`) |
 | `report(rule, message, fix)` | Records a located diagnostic that fails compilation |
 

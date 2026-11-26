@@ -5,6 +5,7 @@ import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.components.DocPager;
 import dev.nthings.tessera.components.Link;
 import dev.nthings.tessera.components.SearchPalette;
+import dev.nthings.tessera.document.PageAddress;
 import java.util.List;
 
 /// Navigation components derived from a [SiteDefinition]'s routes.
@@ -44,26 +45,26 @@ public final class SiteNavigation {
     return palette;
   }
 
-  /// Previous/next pager for `currentPath` in route declaration order. The first route has no
-  /// previous link and the last has no next link. The path is normalized like a route path, so a
-  /// trailing `/` is accepted. Throws IllegalArgumentException if no route is registered at it.
-  public static DocPager docPager(SiteDefinition site, String currentPath) {
-    return docPager(site.routes(), currentPath);
+  /// Previous/next pager around the page at `current` in route declaration order. The first route
+  /// has no previous link and the last has no next link. Inside a document callback, pass
+  /// `context.address().orElseThrow()`. Throws IllegalArgumentException if no route is published at
+  /// `current`.
+  public static DocPager docPager(SiteDefinition site, PageAddress current) {
+    return docPager(site.routes(), current);
   }
 
-  /// Previous/next pager for `currentPath` in `routes` declaration order. Throws
-  /// IllegalArgumentException if no route matches `currentPath`.
-  public static DocPager docPager(List<SiteRoute> routes, String currentPath) {
-    var target = SiteRoute.normalizePath(currentPath);
+  /// Previous/next pager around the page at `current` in `routes` declaration order. Throws
+  /// IllegalArgumentException if no route is published at `current`.
+  public static DocPager docPager(List<SiteRoute> routes, PageAddress current) {
     var index = -1;
     for (var i = 0; i < routes.size(); i++) {
-      if (routes.get(i).path().equals(target)) {
+      if (routes.get(i).path().equals(current.routePath())) {
         index = i;
         break;
       }
     }
     if (index < 0) {
-      throw new IllegalArgumentException("No route registered at " + currentPath);
+      throw new IllegalArgumentException("No route registered at " + current.routePath());
     }
     var pager = DocPager.of();
     if (index > 0) {

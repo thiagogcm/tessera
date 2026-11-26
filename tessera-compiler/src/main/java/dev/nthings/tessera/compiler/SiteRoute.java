@@ -1,8 +1,8 @@
 package dev.nthings.tessera.compiler;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import dev.nthings.tessera.document.PageAddress;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Path;
 import org.jspecify.annotations.Nullable;
 
@@ -56,17 +56,7 @@ public final class SiteRoute {
   /// Normalizes a route path: trims it, adds a leading `/`, and removes one trailing `/` except on
   /// the root. Throws IllegalArgumentException if `rawPath` is blank.
   public static String normalizePath(String rawPath) {
-    if (rawPath.isBlank()) {
-      throw new IllegalArgumentException("Route path cannot be blank");
-    }
-    var p = rawPath.trim();
-    if (!p.startsWith("/")) {
-      p = "/" + p;
-    }
-    if (p.length() > 1 && p.endsWith("/")) {
-      p = p.substring(0, p.length() - 1);
-    }
-    return p;
+    return PageAddress.of(rawPath).routePath();
   }
 
   /// The title shown in navigation and search: `title` if set, otherwise the document title.
@@ -81,13 +71,7 @@ public final class SiteRoute {
   }
 
   static URI documentUriFor(String routePath) {
-    var documentPath =
-        routePath.endsWith(".html") || routePath.endsWith("/") ? routePath : routePath + "/";
-    try {
-      return new URI(null, null, documentPath, null);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException("Invalid route path: " + routePath, e);
-    }
+    return PageAddress.of(routePath).documentUri();
   }
 
   /// The output file of a normalized route, relative to the output directory, such as

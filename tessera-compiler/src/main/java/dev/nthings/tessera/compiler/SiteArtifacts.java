@@ -1,6 +1,6 @@
 package dev.nthings.tessera.compiler;
 
-import java.net.URI;
+import dev.nthings.tessera.document.PageAddress;
 import java.util.List;
 import org.owasp.encoder.Encode;
 
@@ -11,17 +11,13 @@ final class SiteArtifacts {
   static final String SITEMAP_PATH = "/sitemap.xml";
   static final String SEARCH_INDEX_PATH = "/search-index.json";
 
-  /// The published URL of `route` under `baseUrl`, such as `https://example.com/guide/`.
-  static URI absoluteUrl(URI baseUrl, SiteRoute route) {
-    return URI.create(baseUrl.toASCIIString() + route.documentUri().toASCIIString());
-  }
-
-  static String generateSitemapXml(URI baseUrl, List<SiteRoute> routes) {
+  /// Lists the absolute URL of each of `addresses`, which all carry one.
+  static String generateSitemapXml(List<PageAddress> addresses) {
     var sb = new StringBuilder(1024);
     sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     sb.append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-    for (var route : routes) {
-      var loc = absoluteUrl(baseUrl, route).toASCIIString();
+    for (var address : addresses) {
+      var loc = address.absoluteUrl().orElseThrow().toASCIIString();
       sb.append("  <url>\n");
       sb.append("    <loc>").append(Encode.forXmlContent(loc)).append("</loc>\n");
       sb.append("  </url>\n");

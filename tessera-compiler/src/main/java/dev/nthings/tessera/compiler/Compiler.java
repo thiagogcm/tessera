@@ -89,6 +89,6 @@ public record Compiler(Theme theme, OutputMode outputMode) {
   /// Lays out and validates `document` and returns its element tree instead of HTML. The theme and
   /// output mode do not affect the element tree.
   public static PageTree explain(PageDocument document) {
-    return PageCompiler.prepare(document, new BundlePublication(OutputMode.inline())).tree();
+    return PageCompiler.prepare(document, null, new BundlePublication(OutputMode.inline())).tree();
   }
 }

@@ -77,7 +77,7 @@ public enum Tint {
       EnumSet.of(Tone.SUCCESS, Tone.DANGER),
       List.of(Tone::textColor)),
 
-  /// Highlighted code lines behind inherited body text.
+  /// Highlighted code lines behind inherited body text and its syntax colors.
   CODE_HIGHLIGHT(
       "highlighted code lines",
       Blend.OVER,
@@ -85,7 +85,17 @@ public enum Tint {
       15,
       15,
       EnumSet.of(Tone.ACCENT),
-      List.of(tone -> Tokens.TEXT_PRIMARY)),
+      List.of(
+          tone -> Tokens.TEXT_PRIMARY,
+          tone -> Tokens.SYNTAX_COMMENT,
+          tone -> Tokens.SYNTAX_KEYWORD,
+          tone -> Tokens.SYNTAX_STRING,
+          tone -> Tokens.SYNTAX_CONSTANT,
+          tone -> Tokens.SYNTAX_TYPE,
+          tone -> Tokens.SYNTAX_FUNCTION,
+          tone -> Tokens.SYNTAX_PROPERTY,
+          tone -> Tokens.SYNTAX_TAG,
+          tone -> Tokens.SYNTAX_META)),
 
   /// Form fields the user left invalid.
   INVALID_FIELD(

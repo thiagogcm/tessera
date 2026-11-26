@@ -304,6 +304,9 @@ final class ThemeContrast {
     add(pairs, ink(Tokens.ACCENT_PRIMARY), canvas, "active navigation tabs and section eyebrows");
     add(pairs, ink(Tokens.ACCENT_PRIMARY), card, "active content tabs and pager links");
     add(pairs, ink(Tokens.ACCENT_PRIMARY), subtle, "hovered pager links");
+    for (var syntax : Tokens.SYNTAX) {
+      add(pairs, ink(syntax), card, "highlighted code");
+    }
 
     // Solid neutral buttons fill with primary text; solid neutral badges with muted text.
     add(pairs, ink(Tokens.SURFACE_CARD), on(Tokens.TEXT_PRIMARY), "solid neutral buttons");

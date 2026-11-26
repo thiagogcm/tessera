@@ -98,6 +98,8 @@ Built-in portable components are final classes with static factories for require
 
 Document-only components (`DocLayout`, `DocumentSection`, `Footnote`, `Footnotes`, `HeroImage`, `TableOfContents`) live in `dev.nthings.tessera.document.components` and are covered in [Documents](documents.md).
 
+`CodeBlock.language(name)` labels the block and colors its syntax for Java, JavaScript, TypeScript, JSON, CSS, HTML and XML, shell, YAML, Python, and SQL. The lexer runs at compile time, so the page ships colored `<span>` elements and no script; other languages stay plain.
+
 Factories encode required structure, such as `Grid.autoFit(minWidth, ...)`, `Grid.columns(count, ...)`, `CodeBlock.of(source)`, and `CodeBlock.ofLines(...)`. Apply optional configuration conditionally with `onlyIf(condition, x -> ...)` or `ifPresent(value, (x, v) -> ...)`.
 
 Across built-in components, shared conventions apply:

@@ -43,6 +43,7 @@ var theme =
 | Motion | `CONTROL_FEEDBACK_DURATION`, `OVERLAY_DURATION`, `DISCLOSURE_DURATION` | `150ms`, `200ms`, `250ms` |
 | Corners | `RADIUS_SM`, `RADIUS_MD`, `RADIUS_LG`, `RADIUS_XL`, `RADIUS_FULL` | `0.25`, `0.375`, `0.5`, `0.75` rem; pill radius |
 | Colors | `SURFACE_*`, `TEXT_*`, `ACCENT_PRIMARY`, `BORDER_SUBTLE`, `STATUS_*` | Adaptive light and dark OKLCH colors |
+| Syntax | `SYNTAX_COMMENT`, `SYNTAX_KEYWORD`, `SYNTAX_STRING`, `SYNTAX_CONSTANT`, `SYNTAX_TYPE`, `SYNTAX_FUNCTION`, `SYNTAX_PROPERTY`, `SYNTAX_TAG`, `SYNTAX_META` | Adaptive colors of highlighted `CodeBlock` source, checked for contrast on cards and highlighted lines |
 
 Color tokens resolve through `light-dark()`, so the root's `color-scheme` picks every value. It follows the system preference until `<html>` carries `data-color-scheme="light"` or `data-color-scheme="dark"`. Place a `ColorSchemeToggle` to let readers pick: it cycles system, light, and dark, saves the choice in `localStorage`, and a page that places one restores the saved choice from an inline `<head>` script before first paint.
 

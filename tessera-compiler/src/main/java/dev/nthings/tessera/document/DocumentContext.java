@@ -38,8 +38,6 @@ public interface DocumentContext extends ViewContext {
   /// site has a base URL; a page compiled on its own with [dev.nthings.tessera.compiler.Compiler]
   /// has none. Use it to build absolute links, or call [PageAddress#isCurrent(String)] to mark the
   /// current entry of a navigation with `aria-current`.
-  ///
-  /// Only the compiler implements this interface; new operations may be added to it.
   Optional<PageAddress> address();
 
   /// Headings collected so far on this page, in collection order. A late callback sees every

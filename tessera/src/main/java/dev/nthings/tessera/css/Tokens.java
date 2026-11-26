@@ -107,6 +107,27 @@ public final class Tokens {
   public static final DesignToken.Color CONTROL_FG =
       new DesignToken.Color("control-fg", TEXT_PRIMARY);
 
+  /// Syntax colors of highlighted `CodeBlock` source, each readable on cards and highlighted lines.
+  public static final DesignToken.Color SYNTAX_COMMENT =
+      adaptive("syntax-comment", 45, 0.02, 260, 72, 0.02, 260);
+
+  public static final DesignToken.Color SYNTAX_KEYWORD =
+      adaptive("syntax-keyword", 50, 0.19, 25, 74, 0.14, 25);
+  public static final DesignToken.Color SYNTAX_STRING =
+      adaptive("syntax-string", 40, 0.12, 255, 82, 0.08, 240);
+  public static final DesignToken.Color SYNTAX_CONSTANT =
+      adaptive("syntax-constant", 48, 0.16, 255, 78, 0.11, 250);
+  public static final DesignToken.Color SYNTAX_TYPE =
+      adaptive("syntax-type", 48, 0.13, 55, 82, 0.12, 65);
+  public static final DesignToken.Color SYNTAX_FUNCTION =
+      adaptive("syntax-function", 48, 0.19, 300, 78, 0.12, 300);
+  public static final DesignToken.Color SYNTAX_PROPERTY =
+      adaptive("syntax-property", 46, 0.11, 215, 80, 0.09, 210);
+  public static final DesignToken.Color SYNTAX_TAG =
+      adaptive("syntax-tag", 46, 0.13, 150, 80, 0.14, 150);
+  public static final DesignToken.Color SYNTAX_META =
+      adaptive("syntax-meta", 48, 0.15, 345, 78, 0.12, 345);
+
   /// Every built-in token, in the order [Theme#defaults()] emits them.
   static final List<DesignToken<?>> ALL =
       List.of(
@@ -163,7 +184,29 @@ public final class Tokens {
           STATUS_DANGER_TEXT,
           STATUS_INFO,
           STATUS_INFO_TEXT,
-          CONTROL_FG);
+          CONTROL_FG,
+          SYNTAX_COMMENT,
+          SYNTAX_KEYWORD,
+          SYNTAX_STRING,
+          SYNTAX_CONSTANT,
+          SYNTAX_TYPE,
+          SYNTAX_FUNCTION,
+          SYNTAX_PROPERTY,
+          SYNTAX_TAG,
+          SYNTAX_META);
+
+  /// The syntax colors of highlighted code.
+  static final List<DesignToken.Color> SYNTAX =
+      List.of(
+          SYNTAX_COMMENT,
+          SYNTAX_KEYWORD,
+          SYNTAX_STRING,
+          SYNTAX_CONSTANT,
+          SYNTAX_TYPE,
+          SYNTAX_FUNCTION,
+          SYNTAX_PROPERTY,
+          SYNTAX_TAG,
+          SYNTAX_META);
 
   private Tokens() {}
 

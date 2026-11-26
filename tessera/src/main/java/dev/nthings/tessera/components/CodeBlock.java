@@ -4,18 +4,22 @@ import static dev.nthings.tessera.core.Elements.code;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.core.Elements.span;
+import static dev.nthings.tessera.core.Elements.text;
 
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Counter;
+import dev.nthings.tessera.css.CssColor;
 import dev.nthings.tessera.css.CssContent;
 import dev.nthings.tessera.css.CssLength;
+import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.WhiteSpace;
+import dev.nthings.tessera.internal.components.Syntax;
 import dev.nthings.tessera.internal.css.Tint;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,9 +27,10 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 /// Source listing in a keyboard-focusable `<pre>`, one `<span class="code-line">` per line. It can
-/// show a filename and a language in a header, and mark lines as highlighted, added, or deleted.
-/// Line numbers are display-only and are not part of the copied text. Create one with [#of(String)]
-/// for a source string or [#ofLines(String...)] for lines you already have.
+/// show a filename and a language in a header, color the source's syntax, and mark lines as
+/// highlighted, added, or deleted. Line numbers are display-only and are not part of the copied
+/// text. Create one with [#of(String)] for a source string or [#ofLines(String...)] for lines you
+/// already have.
 ///
 /// Without an [#id(String)], the compiler numbers instances `tessera-code-block-<n>`.
 public final class CodeBlock extends BuiltinScope<CodeBlock> {
@@ -68,7 +73,11 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
     return this;
   }
 
-  /// Shows `language` as a small pill in the header. No syntax highlighting is applied.
+  /// Shows `language` as a small pill in the header and colors the source's syntax when the
+  /// language is one of `java`, `javascript` (`js`, `jsx`), `typescript` (`ts`, `tsx`), `json`,
+  /// `css`, `html` (`xml`, `svg`), `shell` (`sh`, `bash`, `zsh`), `yaml` (`yml`), `python` (`py`)
+  /// or `sql`, ignoring case. Each colored span is a `<span class="tok-<kind>">` painted with the
+  /// matching `Tokens.SYNTAX_*` color; added and deleted lines keep their own text color.
   public CodeBlock language(String language) {
     this.language = language;
     return this;
@@ -174,6 +183,27 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
             s ->
                 s.bg(Tint.CODE_CHANGE.fill(Tone.DANGER))
                     .textColor(Tint.CODE_CHANGE.text(Tone.DANGER)));
+    for (var kind : Syntax.Kind.values()) {
+      scope.select(":scope ." + kind.cssClass(), s -> s.textColor(syntaxColor(kind)));
+    }
+    // Changed lines read in their own color, as a diff does.
+    scope.select(
+        ":scope > .code-pre > .code-lines > .code-line:is(.is-add, .is-del) [class^=\"tok-\"]",
+        s -> s.textColor(CssColor.currentColor()));
+  }
+
+  private static DesignToken.Color syntaxColor(Syntax.Kind kind) {
+    return switch (kind) {
+      case COMMENT -> Tokens.SYNTAX_COMMENT;
+      case KEYWORD -> Tokens.SYNTAX_KEYWORD;
+      case STRING -> Tokens.SYNTAX_STRING;
+      case CONSTANT -> Tokens.SYNTAX_CONSTANT;
+      case TYPE -> Tokens.SYNTAX_TYPE;
+      case FUNCTION -> Tokens.SYNTAX_FUNCTION;
+      case PROPERTY -> Tokens.SYNTAX_PROPERTY;
+      case TAG -> Tokens.SYNTAX_TAG;
+      case META -> Tokens.SYNTAX_META;
+    };
   }
 
   @Override
@@ -193,6 +223,12 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
     }
 
     var codeEl = code().attr("class", "code-lines");
+    var spans =
+        language == null
+            ? List.<Syntax.Span>of()
+            : Syntax.highlight(language, String.join("\n", lines)).orElse(List.of());
+    var lineStart = 0;
+    var next = 0;
 
     for (var i = 0; i < lines.size(); i++) {
       var lineNum = i + 1;
@@ -214,7 +250,38 @@ public final class CodeBlock extends BuiltinScope<CodeBlock> {
           isAdd
               ? "code-line is-add"
               : isDel ? "code-line is-del" : isHighlight ? "code-line is-highlighted" : "code-line";
-      codeEl.child(span().attr("class", lineClass).text(content));
+      var line = span().attr("class", lineClass);
+      var lineEnd = lineStart + rawLine.length();
+      if (rawLine.isEmpty()) {
+        line.text(content);
+      } else {
+        // Spans that cross a line break are split into one piece per line.
+        var at = lineStart;
+        while (next < spans.size() && spans.get(next).start() < lineEnd) {
+          var token = spans.get(next);
+          var from = Math.max(token.start(), lineStart);
+          var to = Math.min(token.end(), lineEnd);
+          if (from > at) {
+            line.child(text(rawLine.substring(at - lineStart, from - lineStart)));
+          }
+          if (to > from) {
+            line.child(
+                span()
+                    .attr("class", token.kind().cssClass())
+                    .text(rawLine.substring(from - lineStart, to - lineStart)));
+          }
+          at = Math.max(at, to);
+          if (token.end() > lineEnd) {
+            break;
+          }
+          next++;
+        }
+        if (at < lineEnd) {
+          line.child(text(rawLine.substring(at - lineStart)));
+        }
+      }
+      codeEl.child(line);
+      lineStart = lineEnd + 1;
     }
 
     var preEl =

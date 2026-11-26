@@ -51,7 +51,7 @@ A page without front matter returns `FrontMatter.NONE`.
 | Images, with optional `{width=640 height=480}` | `Image` with dimensions, or `unknownDimensions()` without them |
 | Bullet and ordered lists, task lists `- [x]` | Lists; tight items drop their `<p>`; tasks are disabled, labelled checkboxes |
 | Tables with `:---:` alignment | Native `<table>` with `th scope="col"` and aligned cells |
-| Fenced and indented code | `CodeBlock` with the fence's language |
+| Fenced and indented code | `CodeBlock` with the fence's language, syntax-colored when `CodeBlock` knows it |
 | `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]` | `Callout`; text after the marker becomes the title; alerts may nest |
 | `[^label]` footnotes and inline `^[notes]` | `Footnote` references and the page's footnotes list |
 | Raw HTML blocks and inline tags | Emitted as written with `Documents.rawHtml` |

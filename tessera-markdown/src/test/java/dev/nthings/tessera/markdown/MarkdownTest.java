@@ -72,6 +72,7 @@ class MarkdownTest {
       assertThat(page.frontMatter().value("title")).hasValue("Hello");
       assertThat(page.frontMatter().list("tags")).containsExactly("java", "web");
       assertThat(page.frontMatter().value("missing")).isEmpty();
+      assertThat(page.frontMatter().values().keySet()).containsExactly("title", "tags");
       assertThat(page.frontMatter().yaml()).isEqualTo("title: Hello\ntags:\n  - java\n  - web\n");
       assertThat(render(page.body()).select("main > p").text()).isEqualTo("Body");
     }

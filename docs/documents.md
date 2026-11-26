@@ -85,6 +85,16 @@ Footnotes.of().title("Notes");
 
 Wrap a portable [`Image`](sites.md#register-assets-and-images) with `HeroImage.of(image)` from `dev.nthings.tessera.document.components` to mark the primary above-the-fold image. It configures eager loading, `fetchpriority="high"`, and a `<head>` preload link. Placing more than one hero image on the same page reports `duplicate-hero-image`.
 
+## Add link preview tags
+
+Place `SocialMeta` from `dev.nthings.tessera.document.components` in a page or a shared layout to add Open Graph and Twitter card tags to `<head>`:
+
+```java
+SocialMeta.of(title).description(description).image("/og.png").siteName("nthings.dev").article();
+```
+
+It sets `og:title`, `og:type`, `og:url` (from the page's absolute URL), and, when given, the description, site name, and image, with the matching `twitter:` tags. A site-relative image resolves against the page's absolute URL, so it needs a site base URL; without one it reports `social-meta-url`.
+
 ## Contribute a page script
 
 A `PageScript` represents an ES module with a stable ID. Contribute application scripts through `DocumentContext`:

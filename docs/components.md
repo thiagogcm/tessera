@@ -96,7 +96,7 @@ Built-in portable components are final classes with static factories for require
 | Data and cards | `DataTable`, `TableGrid`, `Card`, `CardGrid` |
 | Layout and disclosure | `Grid`, `Image`, `BulletList`, `NumberedList`, `DescriptionList`, `StepList`, `Accordion`, `ContentTabs`, `Carousel` |
 
-Document-only components (`DocLayout`, `DocumentSection`, `Footnote`, `Footnotes`, `HeroImage`, `TableOfContents`) live in `dev.nthings.tessera.document.components` and are covered in [Documents](documents.md).
+Document-only components (`DocLayout`, `DocumentSection`, `Footnote`, `Footnotes`, `HeroImage`, `SocialMeta`, `TableOfContents`) live in `dev.nthings.tessera.document.components` and are covered in [Documents](documents.md).
 
 `CodeBlock.language(name)` labels the block and colors its syntax for Java, JavaScript, TypeScript, JSON, CSS, HTML and XML, shell, YAML, Python, and SQL. The lexer runs at compile time, so the page ships colored `<span>` elements and no script; other languages stay plain.
 

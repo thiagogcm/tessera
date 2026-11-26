@@ -62,6 +62,7 @@ Heading.of(2, "Install", Elements.code().text("mvn"), Elements.text(" verify"))
 ```
 
 - `Heading.of(level, text)` uses `text` for both visible markup and outline label. Levels outside `1` through `6` throw `IllegalArgumentException`.
+- `.permalink()` ends the heading with a link to its own anchor, named "Link to <label>" and shown while the heading is hovered or the link has keyboard focus. A permalink on a heading without `id(...)` reports `heading-permalink`. Copying the URL to the clipboard is left to a page script.
 - `Section.of(id, title)` binds a page-level ID on `<section>` and outlines that ID automatically for heading levels `2` through `4`. Use `Heading` directly for levels `1`, `5`, `6`, or rich heading phrasing.
 - Ordinary HTML headings, dialog titles, and the footnotes heading are not outlined. If two headings outline the same target, the first is kept.
 

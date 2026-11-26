@@ -94,3 +94,14 @@ var markdown =
     Markdown.create()
         .withUrlResolver(url -> url.replaceFirst("\\.md(#|$)", "/$1"));
 ```
+
+## Typography
+
+Two options adjust how prose renders:
+
+```java
+var markdown = Markdown.create().withHeadingPermalinks().withSmartPunctuation();
+```
+
+- `withHeadingPermalinks()` calls `Heading.permalink()` on every heading from level 2 down, so each one ends with a link to its own anchor.
+- `withSmartPunctuation()` turns straight quotes into curly ones, `--` into an en dash, `---` into an em dash, and `...` into an ellipsis. Code spans, code blocks, and raw HTML keep the source text. Heading ids come from the source text, so `## Don't panic` keeps the id `dont-panic`.

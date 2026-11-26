@@ -9,8 +9,12 @@ import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ParentElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
+import dev.nthings.tessera.css.Group;
+import dev.nthings.tessera.css.State;
+import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import dev.nthings.tessera.internal.authoring.AuthoringAccess;
+import dev.nthings.tessera.internal.components.Icons;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
@@ -25,7 +29,8 @@ import org.jspecify.annotations.Nullable;
 /// The heading does not register itself. Call [#outline(ElementRef)] to put `label` in the document
 /// outline, aimed at `target`. Dialog titles, footnote chrome, and other interface headings leave
 /// the outline unset. [#id(ElementRef)] binds an anchor on the heading element itself; a section
-/// can aim the outline at the section instead.
+/// can aim the outline at the section instead. [#permalink()] adds a link to that anchor, shown
+/// while the heading is hovered or the link has focus.
 public final class Heading extends BuiltinComponent
     implements ParentElement<Heading>, FluentBuilder<Heading> {
 
@@ -35,6 +40,9 @@ public final class Heading extends BuiltinComponent
   private @Nullable ElementRef anchor;
   private @Nullable ElementRef outlineTarget;
   private @Nullable UnaryOperator<TagElement> presentation;
+  private boolean permalink;
+
+  private static final Group PERMALINK = Group.named("heading-permalink");
 
   private Heading(int level, String label) {
     this.level = HtmlTag.heading(level).headingLevel();
@@ -62,6 +70,14 @@ public final class Heading extends BuiltinComponent
   /// outline uses [#of]'s plain label and this heading's level. Bind `target` on the page.
   public Heading outline(ElementRef target) {
     this.outlineTarget = target;
+    return this;
+  }
+
+  /// Ends the heading with a link to its own [#id(ElementRef)] anchor, named `Link to <label>`, so
+  /// readers can copy the section's URL. It is shown while the heading is hovered or the link has
+  /// focus. A heading without an anchor reports `heading-permalink`.
+  public Heading permalink() {
+    this.permalink = true;
     return this;
   }
 
@@ -93,6 +109,28 @@ public final class Heading extends BuiltinComponent
       AuthoringAccess.tag(tag).navigationHeading = new OutlineHeading(outlineTarget, label, level);
     }
     var styled = presentation == null ? tag : presentation.apply(tag);
-    return styled.children(children);
+    styled.children(children);
+    if (permalink) {
+      if (anchor == null) {
+        context.report(
+            "heading-permalink",
+            "Heading '" + label + "' has a permalink but no anchor",
+            "Bind the heading with id(ElementRef) so the permalink has a target.");
+      } else {
+        styled
+            .group(PERMALINK)
+            .child(
+                Elements.a(anchor, Icons.link(16))
+                    .ariaLabel("Link to " + label)
+                    .ms(Tokens.SPACE_2)
+                    .inlineFlex()
+                    .textColor(Tokens.TEXT_MUTED)
+                    .opacity(0)
+                    .on(PERMALINK.state(State.HOVER), s -> s.opacity(1))
+                    .on(State.FOCUS_VISIBLE, s -> s.opacity(1))
+                    .on(State.HOVER, s -> s.textColor(Tokens.ACCENT_PRIMARY)));
+      }
+    }
+    return styled;
   }
 }

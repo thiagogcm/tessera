@@ -112,7 +112,7 @@ public final class SiteDefinition {
     /// `<link rel="canonical">`, such as `URI.create("https://example.com")`. Without one, no
     /// sitemap or default canonical link is generated. A trailing `/` is removed. Throws
     /// IllegalArgumentException from [#build()] unless the value is an absolute `http` or `https`
-    /// URI with a host and no user info, query, or fragment.
+    /// URI with a host and no user info, path, query, or fragment.
     public Builder baseUrl(URI url) {
       this.baseUrl = url;
       return this;

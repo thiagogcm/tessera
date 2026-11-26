@@ -51,7 +51,8 @@ class PageAddressTest {
         "example.com",
         "ftp://tessera.dev",
         "https://u:p@tessera.dev",
-        "https://tessera.dev/?q"
+        "https://tessera.dev/?q",
+        "https://tessera.dev/docs"
       })
   @DisplayName("a base URL must be an absolute http(s) origin")
   void rejectsInvalidBaseUrls(String baseUrl) {

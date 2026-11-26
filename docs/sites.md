@@ -42,7 +42,7 @@ On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels with
 `SiteDefinition.builder()` also accepts:
 
 - `asset(Asset)` / `assets(...)`: Static files published alongside pages.
-- `baseUrl(URI.create("https://example.com"))`: Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
+- `baseUrl(URI.create("https://example.com"))`: Takes a site origin (no path). Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
 - `linkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
 Configure themes and output modes on the immutable [`Compiler`](#choose-an-output-mode) value (`Compiler.forSite().withTheme(theme).withOutputMode(mode)`).

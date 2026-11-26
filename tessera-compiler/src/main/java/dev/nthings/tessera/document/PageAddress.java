@@ -44,7 +44,9 @@ public final class PageAddress {
 
   /// Returns this address published under `baseUrl`, such as `https://example.com`. A trailing `/`
   /// on the base URL is ignored. Throws IllegalArgumentException unless `baseUrl` is an absolute
-  /// `http` or `https` URI with a host and no user info, query, or fragment.
+  /// `http` or `https` origin: a host and no user info, path, query, or fragment. Route paths and
+  /// authored links are not rewritten for subdirectory hosting, so a base path would publish URLs
+  /// that the pages do not link to.
   @CheckReturnValue
   public PageAddress withBaseUrl(URI baseUrl) {
     var scheme = baseUrl.getScheme();
@@ -52,6 +54,9 @@ public final class PageAddress {
         || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))
         || baseUrl.getHost() == null
         || baseUrl.getRawUserInfo() != null
+        || !(baseUrl.getRawPath() == null
+            || baseUrl.getRawPath().isEmpty()
+            || baseUrl.getRawPath().equals("/"))
         || baseUrl.getRawQuery() != null
         || baseUrl.getRawFragment() != null) {
       throw new IllegalArgumentException(

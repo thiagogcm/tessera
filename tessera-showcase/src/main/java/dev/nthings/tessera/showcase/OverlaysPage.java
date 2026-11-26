@@ -85,14 +85,18 @@ final class OverlaysPage {
         .summary(
             "The header's search button opens a command palette dialog with grouped results and "
                 + "live filtering and keyboard selection inside a <search> landmark.")
-        .features("<search>", "automatic ES module", "accesskey", "<dialog>")
+        .features("<search>", "automatic ES module", "aria-keyshortcuts", "<dialog>")
         .example(
             p().textWrap(TextWrap.PRETTY)
                 .children(
                     Formatting.inlineCode("Search"),
                     text(" in the header, or press "),
-                    Formatting.keybinding("Alt+K"),
-                    text(". Every page and demo on this site is indexed.")))
+                    Formatting.keybinding("Ctrl+K"),
+                    text(" (or "),
+                    Formatting.keybinding("⌘K"),
+                    text(" on a Mac, or "),
+                    Formatting.keybinding("/"),
+                    text("). Every page and demo on this site is indexed.")))
         .code(
             "var search = SearchPalette.of().placeholder(\"Search…\").triggerLabel(\"Search\")",
             "    .item(\"Pages\", \"Forms\", \"/forms\");",

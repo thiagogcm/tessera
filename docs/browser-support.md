@@ -31,7 +31,7 @@ Modules are deduplicated once per page and packaged according to the page's [out
 | Component | Bundled ES module | Responsibility |
 | --- | --- | --- |
 | `ContentTabs` | `tessera-tabs.js` (`<tessera-tabs>`) | Sync panel selection through `aria-controls`; manage Arrow Left, Arrow Right, Home, and End focus |
-| `SearchPalette` | `search-palette.js` (customized `<dialog>`) | Filter rendered links, move result focus, and open the first palette on `Alt+K` |
+| `SearchPalette` | `search-palette.js` (customized `<dialog>`) | Filter rendered links, move result focus, and open the first palette whose trigger advertises the pressed shortcut |
 | `Dropdown` with command items | `tessera-menu.js` (`<tessera-menu>`) | Return focus to the menu button after a dialog opened from the menu closes |
 | Elements with `interestTooltip` | `interest-tooltip.js` | Show and anchor tooltips on hover and focus where native interest invokers are absent |
 

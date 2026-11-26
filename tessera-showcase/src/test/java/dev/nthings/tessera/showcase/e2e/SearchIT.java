@@ -56,18 +56,36 @@ class SearchIT {
   }
 
   @BrowserTest
-  @DisplayName("the advertised Alt+K shortcut opens search")
-  void altKOpensSearch(Session session) {
+  @DisplayName("the advertised Ctrl+K shortcut opens search")
+  void controlKOpensSearch(Session session) {
     var page = session.open("/");
     var trigger =
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(SEARCH_BUTTON));
-    assertThat(trigger).hasText(Pattern.compile("Alt\\s*K"));
+    assertThat(trigger).hasAttribute("aria-keyshortcuts", "Control+K Meta+K /");
 
-    page.keyboard().press("Alt+K");
+    page.keyboard().press("Control+K");
 
     var dialog = page.getByRole(AriaRole.DIALOG);
     assertThat(dialog).isVisible();
     assertThat(dialog.getByRole(AriaRole.SEARCHBOX)).isFocused();
+  }
+
+  @BrowserTest
+  @DisplayName("slash opens search, but types a slash inside a text field")
+  void slashOpensSearchOutsideFields(Session session) {
+    var page = session.open("/forms/");
+    var field = page.getByRole(AriaRole.TEXTBOX).first();
+    field.fill("");
+    field.press("/");
+    assertThat(field).hasValue("/");
+    assertThat(page.getByRole(AriaRole.DIALOG)).isHidden();
+
+    page.locator("body").click(new Locator.ClickOptions().setPosition(1, 1));
+    page.keyboard().press("/");
+
+    var dialog = page.getByRole(AriaRole.DIALOG);
+    assertThat(dialog).isVisible();
+    assertThat(dialog.getByRole(AriaRole.SEARCHBOX)).hasValue("");
   }
 
   @BrowserTest

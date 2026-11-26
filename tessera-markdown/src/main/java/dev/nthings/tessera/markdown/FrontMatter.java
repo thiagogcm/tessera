@@ -1,5 +1,7 @@
 package dev.nthings.tessera.markdown;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,7 +20,9 @@ public record FrontMatter(String yaml, Map<String, List<String>> values) {
   public static final FrontMatter NONE = new FrontMatter("", Map.of());
 
   public FrontMatter {
-    values = Map.copyOf(values);
+    var copy = new LinkedHashMap<String, List<String>>();
+    values.forEach((key, list) -> copy.put(key, List.copyOf(list)));
+    values = Collections.unmodifiableMap(copy);
   }
 
   /// The first value of `key`, or empty when the key is absent or has no value.

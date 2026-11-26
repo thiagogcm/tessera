@@ -24,7 +24,8 @@ Special tags and namespaces follow strict validation rules:
 - **Other HTML tags**: Use `Elements.el(HtmlTag.TIME)` for standard tags without a dedicated factory.
 - **Custom elements**: Use `Elements.custom("my-widget")`. Names must begin with a lowercase ASCII letter, include a hyphen, and use only lowercase ASCII letters, digits, `.`, `_`, and `-`. Check additional reserved names against the HTML specification. Contribute its ES module from a document component as described in [Documents](documents.md#contribute-a-page-script).
 - **Generic attributes**: Attribute names allow only ASCII letters, digits, `-`, `_`, `.`, and `:`.
-- **Inline SVG**: Use `Elements.svgIcon(width, height)` and `Elements.svg(SvgTag.PATH)` to build structured SVG nodes that work in both static HTML and DOM reconciliation. Place SVG shapes inside an `svg` root and keep HTML tags outside SVG; mismatches report `svg-namespace`.
+- **Inline SVG**: Use `Elements.svgIcon(width, height)` and `Elements.svg(SvgTag.PATH)` to build structured SVG nodes that work in both static HTML and DOM reconciliation. Place SVG shapes inside an `svg` root and keep HTML tags outside SVG; mismatches report `svg-namespace`. `SvgTag` covers shapes, `text` and `tspan`, `title` and `desc`, `defs`, `symbol` and `use`, gradients and `stop`, `clipPath`, `mask`, `pattern`, and `marker`.
+- **Line icons**: `Icon.stroked(size, shapes...)` builds a Lucide-style icon on a 24-unit grid, stroked in `currentColor` and hidden from assistive technology, from `Icon.path`, `circle`, `ellipse`, `line`, `rect`, `polyline`, and `polygon`. Pass a Lucide icon's shapes to define your own set. Name an icon that carries meaning with `.ariaHidden(false).role(Role.IMG).ariaLabel(...)`.
 - **Script safety**: Portable builders have no `<script>` factory, reject inline event handlers (`on*`) and `srcdoc` attributes in any letter case, and report `javascript:` URLs as `script-url`.
 
 ## Choose a component contract
@@ -108,7 +109,7 @@ Across built-in components, shared conventions apply:
 - `Size` (`SM`, `MD`, `LG`) scales buttons and badges.
 - `Link(href, label)` represents navigation entries.
 - `label` sets an accessible name, `title` sets a visible heading, `description` supplies secondary text, and `actions(...)` adds footer actions.
-- Bundled icons are structured SVG; pass portable icons such as `Elements.svgIcon(...)` to slots like `Badge.icon(...)`.
+- Bundled icons are structured SVG; pass portable icons such as `Icon.stroked(...)` to slots like `Badge.icon(...)`.
 - Components that own a tag, such as `Image`, expose it through `element(...)` for custom styles, ARIA, or references.
 
 ## Set form defaults

@@ -24,7 +24,7 @@ flowchart LR
 
 ## Module and package boundaries
 
-The reactor defines three library artifacts and JPMS modules, plus two showcase projects. Tessera 1.0.0 publishes `tessera` and `tessera-compiler` to Maven Central. The experimental `tessera-wasm` backend builds from source. Both backends require `dev.nthings.tessera` transitively.
+The reactor defines four library artifacts and JPMS modules, plus two showcase projects. Tessera publishes `tessera`, `tessera-compiler`, and `tessera-markdown` to Maven Central. The experimental `tessera-wasm` backend builds from source. Both backends require `dev.nthings.tessera` transitively.
 
 | Module and artifact | Package | Visibility and responsibility |
 | --- | --- | --- |
@@ -39,6 +39,7 @@ The reactor defines three library artifacts and JPMS modules, plus two showcase 
 | `dev.nthings.tessera.compiler` | `compiler` | Public `Compiler`, `SiteDefinition`, `GraalWebImage`, `SiteWriter`, `SitePreviewServer`, and `SourceTracking`; pass coordinators stay package-private |
 | `dev.nthings.tessera.compiler` | `navigation` | Public route-derived `SiteNavigation` |
 | `dev.nthings.tessera.compiler` | `internal.document` | Unexported document node data and cross-package builder access |
+| `dev.nthings.tessera.markdown` (`tessera-markdown`) | `markdown` | Public `Markdown` parser and `MarkdownPage`; converts commonmark-java syntax trees to document content |
 | `dev.nthings.tessera.wasm` (`tessera-wasm`) | `wasm` | Public live authoring (`LiveContent`, `LiveElement`, `Live`, `BrowserEntry`, `BrowserRoot`, `Host`, live adapters); reconciliation, control sync, and Web Image DOM bridge stay package-private |
 | `tessera-showcase`, `tessera-wasm-showcase` | Showcase projects | Public-API examples and HTTP-served Playwright integration suites |
 

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.core;
 
-/// SVG element names for structured inline graphics, created with [Elements#svg(SvgTag)]. Their
+/// SVG element names for structured inline graphics, created with [Elements#el(TagName)]. Their
 /// namespace is SVG: static output writes them inside `<svg>` and a browser root creates them with
 /// `createElementNS`, so attribute names such as `viewBox` keep their case.
 public enum SvgTag implements TagName {

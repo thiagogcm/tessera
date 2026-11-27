@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.components.Icon;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.InputType;
@@ -165,10 +166,10 @@ class AuthoringDiagnosticsTest {
   @DisplayName("SVG shapes outside an svg root, and HTML inside one, are rejected")
   void svgNamespaceTransitionsAreValidated() {
     assertBothReport(
-        main().child(div().child(Elements.svg(SvgTag.CIRCLE))), "svg-namespace", "circle");
-    assertBothReport(main().child(Elements.svgIcon(16, 16).child(div())), "svg-namespace", "div");
+        main().child(div().child(Elements.el(SvgTag.CIRCLE))), "svg-namespace", "circle");
+    assertBothReport(main().child(Icon.svg(16, 16).child(div())), "svg-namespace", "div");
 
-    var valid = main().child(Elements.svgIcon(16, 16).child(Elements.svg(SvgTag.CIRCLE)));
+    var valid = main().child(Icon.svg(16, 16).child(Elements.el(SvgTag.CIRCLE)));
     page(valid);
     render(valid);
   }
@@ -177,10 +178,10 @@ class AuthoringDiagnosticsTest {
   @DisplayName("deferred content is checked against the body it moves to, not its SVG parent")
   void deferredContentIsCheckedWhereItMoves() {
     var deferredShape =
-        DocumentElement.of(Elements.svgIcon(16, 16))
-            .child(Documents.deferred(Elements.svg(SvgTag.PATH).attr("d", "M0 0")));
+        DocumentElement.of(Icon.svg(16, 16))
+            .child(Documents.deferred(Elements.el(SvgTag.PATH).attr("d", "M0 0")));
     var deferredHtml =
-        DocumentElement.of(Elements.svgIcon(16, 16))
+        DocumentElement.of(Icon.svg(16, 16))
             .child(Documents.deferred(p().text("Moved to the body")));
 
     assertThat(Diagnostics.rules(() -> page(deferredShape))).containsExactly("svg-namespace");

@@ -396,7 +396,7 @@ public abstract class ViewExpansion<M> {
           location,
           "svg-namespace",
           "SVG <" + tag.tagName() + "> is placed outside an svg element",
-          "Place SVG shapes inside Elements.svg(SvgTag.SVG) or Elements.svgIcon(...).");
+          "Place SVG shapes inside an <svg> root, such as Icon.svg(...) or Icon.stroked(...).");
     }
   }
 

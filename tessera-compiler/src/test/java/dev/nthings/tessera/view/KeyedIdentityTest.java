@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
@@ -40,7 +41,9 @@ class KeyedIdentityTest {
     var container = main();
     names.forEach(name ->
         container.child(
-            Field.of("Field " + name, Forms.text(name)).hint("About " + name).key(name)));
+            Field.of("Field " + name, Forms.input(name, InputType.TEXT))
+                .hint("About " + name)
+                .key(name)));
     return container;
   }
 
@@ -110,7 +113,9 @@ class KeyedIdentityTest {
   }
 
   private static IntoElement keyed(String label) {
-    return Field.of(label, Forms.text(label.toLowerCase())).hint(label + " hint").key("same");
+    return Field.of(label, Forms.input(label.toLowerCase(), InputType.TEXT))
+        .hint(label + " hint")
+        .key("same");
   }
 
   @Test

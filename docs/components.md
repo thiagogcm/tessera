@@ -117,7 +117,7 @@ Across built-in components, shared conventions apply:
 Declare initial form state directly on portable controls. Static pages emit matching HTML defaults, browser roots initialize native defaults on first mount, and native form reset returns each control to those defaults.
 
 ```java
-var name = Forms.text("name").initialValue("Ada");
+var name = Forms.input("name", InputType.TEXT).initialValue("Ada");
 var notes = Forms.textarea("notes", 3).initialValue("Draft notes");
 var updates = Forms.switchInput("updates").initialChecked(true);
 var region =

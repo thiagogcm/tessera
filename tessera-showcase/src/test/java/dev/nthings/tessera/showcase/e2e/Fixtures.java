@@ -26,6 +26,7 @@ import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.CssNumber;
@@ -142,7 +143,8 @@ final class Fixtures {
                 h1().text("Fragment links"),
                 Field.of(
                         "Contact email",
-                        Forms.email("contact").id(ElementRef.page("contact.email")))
+                        Forms.input("contact", InputType.EMAIL)
+                            .id(ElementRef.page("contact.email")))
                     .tooltip("A work address is best"),
                 links);
     for (var i = 0; i < refs.size(); i++) {
@@ -162,7 +164,7 @@ final class Fixtures {
                     .headingLevel(2)
                     .bodyText("Ready to publish.")
                     .actions(Button.of("Publish")),
-                Field.of("Release name", Forms.text("release"))));
+                Field.of("Release name", Forms.input("release", InputType.TEXT))));
   }
 
   private static TagElement tallSection(ElementRef ref, String title) {

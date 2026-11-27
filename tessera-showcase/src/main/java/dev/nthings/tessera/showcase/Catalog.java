@@ -168,8 +168,8 @@ public final class Catalog {
             + "appearance: none and a :checked state.",
         List.of("role=\"switch\"", "appearance: none", ":checked"),
         List.of(
-            "Forms.switchField(\"Weekly digest\", \"notify_digest\");",
-            "Forms.checkedSwitchField(\"Weekly digest\", \"notify_digest\");"),
+            "Forms.switchField(\"Weekly digest\", Forms.switchInput(\"notify_digest\"));",
+            "Forms.switchField(\"Weekly digest\", Forms.switchInput(\"notify_digest\").initialChecked(true));"),
         List.of(
             variant("off", "Off", true, Catalog::digestOff),
             variant("on", "On", false, Catalog::digestOn)));
@@ -265,11 +265,12 @@ public final class Catalog {
   }
 
   private static IntoElement digestOff() {
-    return Forms.switchField("Weekly digest", "notify_digest");
+    return Forms.switchField("Weekly digest", Forms.switchInput("notify_digest"));
   }
 
   private static IntoElement digestOn() {
-    return Forms.checkedSwitchField("Weekly digest", "notify_digest");
+    return Forms.switchField(
+        "Weekly digest", Forms.switchInput("notify_digest").initialChecked(true));
   }
 
   private static IntoElement overflowRow() {

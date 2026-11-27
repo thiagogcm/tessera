@@ -14,6 +14,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
@@ -78,7 +79,7 @@ class PlacementIsolationTest {
         placed(
             "field",
             _ ->
-                Field.of("Email", Forms.email("email"))
+                Field.of("Email", Forms.input("email", InputType.EMAIL))
                     .id("email")
                     .hint("Work address")
                     .error("Required")),

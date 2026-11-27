@@ -3,6 +3,7 @@ package dev.nthings.tessera.wasm.example;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
@@ -56,11 +57,15 @@ public final class HandoffDemo {
   }
 
   private static TagElement note() {
-    return Forms.text("note").id(ElementRef.scoped("reader-note")).ariaLabel("Reader note");
+    return Forms.input("note", InputType.TEXT)
+        .id(ElementRef.scoped("reader-note"))
+        .ariaLabel("Reader note");
   }
 
   private static TagElement bookmark() {
-    return Forms.text("bookmark").id(ElementRef.scoped("reader-bookmark")).ariaLabel("Bookmark");
+    return Forms.input("bookmark", InputType.TEXT)
+        .id(ElementRef.scoped("reader-bookmark"))
+        .ariaLabel("Bookmark");
   }
 
   private static List<TagElement> chapters() {

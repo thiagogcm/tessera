@@ -2,7 +2,6 @@ package dev.nthings.tessera.components;
 
 import static dev.nthings.tessera.core.Elements.div;
 
-import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.Role;
@@ -26,18 +25,17 @@ import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.css.Typography;
 import dev.nthings.tessera.internal.css.Tint;
 
-/// Form control functions: styled text-like inputs, a textarea and a switch, returned as plain
-/// elements you can refine further. The controls are bare: wrap one with [Field#of(String,
-/// TagElement)] to add a visible label, hint and error text. [#switchField(String, String)] and
-/// [#checkedSwitchField(String, String)] are labelled switches and need no wrapper; [Select] is the
-/// customizable select. Validation styling follows the browser's `:user-invalid` and `:user-valid`
-/// states.
+/// Form control functions: styled inputs, a textarea and a switch, returned as plain elements you
+/// can refine further. The controls are bare: wrap one with [Field#of(String, TagElement)] to add a
+/// visible label, hint and error text. [#switchField(String, TagElement)] is a labelled switch row
+/// and needs no wrapper; [Select] is the customizable select. Validation styling follows the
+/// browser's `:user-invalid` and `:user-valid` states.
 public final class Forms {
 
   private Forms() {}
 
-  /// Styled `<input>` of `type` submitted as `name`. Wrap it with [Field#of(String, TagElement)] to
-  /// label it.
+  /// Styled `<input>` of `type` submitted as `name`, such as `input("email", InputType.EMAIL)`.
+  /// Wrap it with [Field#of(String, TagElement)] to label it.
   public static TagElement input(String name, InputType type) {
     return controlChrome(Elements.input(type).attr("name", name))
         .on(State.FOCUS_VISIBLE, Forms::controlFocusRing)
@@ -47,31 +45,6 @@ public final class Forms {
                 // A tint of the field's own surface, so the text stays legible in dark mode.
                 s.borderColor(Tokens.STATUS_DANGER).bg(Tint.INVALID_FIELD.fill(Tone.DANGER)))
         .on(State.USER_VALID, s -> s.borderColor(Tokens.STATUS_SUCCESS));
-  }
-
-  /// Styled `<input type="text">` submitted as `name`.
-  public static TagElement text(String name) {
-    return input(name, InputType.TEXT);
-  }
-
-  /// Styled `<input type="email">` submitted as `name`.
-  public static TagElement email(String name) {
-    return input(name, InputType.EMAIL);
-  }
-
-  /// Styled `<input type="password">` submitted as `name`.
-  public static TagElement password(String name) {
-    return input(name, InputType.PASSWORD);
-  }
-
-  /// Styled `<input type="number">` submitted as `name`.
-  public static TagElement number(String name) {
-    return input(name, InputType.NUMBER);
-  }
-
-  /// Styled `<input type="search">` submitted as `name`.
-  public static TagElement search(String name) {
-    return input(name, InputType.SEARCH);
   }
 
   /// Styled `<textarea>` submitted as `name` with a minimum height of `minRows` lines plus 1rem. It
@@ -93,7 +66,7 @@ public final class Forms {
   /// Chromium and Firefox have no native switch, so the checkbox is restyled and the thumb is a
   /// background layer that slides when checked. In forced colors, which would hide that drawing, it
   /// renders as the native checkbox. It starts off; add `initialChecked(true)` to start it on. Use
-  /// [#switchField(String, String)] to add a label.
+  /// [#switchField(String, TagElement)] to add a label.
   public static TagElement switchInput(String name) {
     return Elements.input(InputType.CHECKBOX)
         .attr("name", name)
@@ -130,21 +103,9 @@ public final class Forms {
         trackColor);
   }
 
-  /// Labelled switch row, off on load: the visible `label` names the switch. The switch's id is
-  /// `switch-<name>` in the enclosing id scope, so two switches with the same name in one id scope
-  /// report `duplicate-id`.
-  public static TagElement switchField(String label, String name) {
-    return switchRow(label, name, switchInput(name));
-  }
-
-  /// Labelled switch row that is on (checked) on load; otherwise the same as [#switchField(String,
-  /// String)].
-  public static TagElement checkedSwitchField(String label, String name) {
-    return switchRow(label, name, switchInput(name).initialChecked(true));
-  }
-
-  private static TagElement switchRow(String label, String name, TagElement input) {
-    var sw = input.id(ElementRef.scoped("switch-" + name));
+  /// Labelled switch row: the visible `label` names `switchInput`, a [#switchInput(String)] such as
+  /// `switchInput("digest").initialChecked(true)`.
+  public static TagElement switchField(String label, TagElement switchInput) {
     return div()
         .flex()
         .itemsCenter()
@@ -153,12 +114,12 @@ public final class Forms {
         .py(Tokens.SPACE_1)
         .child(
             Elements.label()
-                .labelFor(sw.ref())
+                .labelFor(switchInput.ref())
                 .typography(Typography.LABEL)
                 .textColor(Tokens.CONTROL_FG)
                 .cursor(Cursor.POINTER)
                 .text(label))
-        .child(sw);
+        .child(switchInput);
   }
 
   /// Shared padding, border, surface and type styling for text-like form controls.

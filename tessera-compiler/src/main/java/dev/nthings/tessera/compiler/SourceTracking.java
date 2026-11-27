@@ -19,8 +19,8 @@ import org.jspecify.annotations.Nullable;
 /// `data-src="File.java:42"`, into the emitted HTML. Tracking costs a stack walk per element; leave
 /// it off in production.
 ///
-/// Use [#enabled(Supplier)] for tracked authoring and compilation. Component-generated elements
-/// point to the line that placed the component.
+/// Wrap tracked authoring and compilation in [#run(boolean, Supplier)]. Component-generated
+/// elements point to the line that placed the component.
 public final class SourceTracking {
 
   private static final StackWalker WALKER =
@@ -65,15 +65,10 @@ public final class SourceTracking {
 
   private SourceTracking() {}
 
-  /// Runs `work` with tracking on; elements it builds or compiles carry their call sites.
-  public static <R> R enabled(Supplier<R> work) {
-    return SourceProvenance.with(SourceTracking::capture, work);
-  }
-
-  /// Runs `work` with tracking on when `condition` holds, e.g. a command-line flag, and with
-  /// tracking off otherwise.
-  public static <R> R enabledIf(boolean condition, Supplier<R> work) {
-    return condition ? enabled(work) : SourceProvenance.with(SourceCapture.NONE, work);
+  /// Runs `work` with tracking on when `enabled` holds, such as from a command-line flag, and off
+  /// otherwise. With tracking on, elements `work` builds or compiles carry their call sites.
+  public static <R> R run(boolean enabled, Supplier<R> work) {
+    return SourceProvenance.with(enabled ? SourceTracking::capture : SourceCapture.NONE, work);
   }
 
   private static @Nullable SourceLocation capture() {

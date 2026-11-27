@@ -42,11 +42,7 @@ class SiteArtifactsTest {
     var routes = List.of(page("/"), page("/guide"), page("/guides/café"), page("/notes.html"));
     var site =
         Compiler.forSite()
-            .compile(
-                SiteDefinition.builder()
-                    .baseUrl(URI.create("https://tessera.dev/"))
-                    .routes(routes)
-                    .build());
+            .compile(SiteDefinition.of(routes).withBaseUrl(URI.create("https://tessera.dev/")));
 
     var sitemap = Jsoup.parse(site.sitemapXml(), Parser.xmlParser());
     assertThat(sitemap.select("urlset > url > loc"))
@@ -66,15 +62,13 @@ class SiteArtifactsTest {
     var site =
         Compiler.forSite()
             .compile(
-                SiteDefinition.builder()
-                    .baseUrl(URI.create("https://tessera.dev/"))
-                    .route(page("/"))
-                    .route(page("/guides/café"))
-                    .route(
+                SiteDefinition.of(
+                        page("/"),
+                        page("/guides/café"),
                         SiteRoute.of(
                             "/copy",
                             PageDocument.of("Copy", main().text("copy")).withCanonicalUrl(own)))
-                    .build());
+                    .withBaseUrl(URI.create("https://tessera.dev/")));
 
     assertThat(canonicalHref(site, "/")).isEqualTo("https://tessera.dev/");
     assertThat(canonicalHref(site, "/guides/café"))

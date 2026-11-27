@@ -3,6 +3,7 @@ package dev.nthings.tessera.compiler;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.SiteFixtures.docsSite;
+import static dev.nthings.tessera.support.SiteFixtures.logo;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -13,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -39,7 +41,9 @@ class SitePreviewServerTest {
     site =
         Compiler.forSite()
             .compile(
-                docsSite().asset(Asset.of("/assets/manual v1.pdf", new byte[] {1, 2})).build());
+                docsSite()
+                    .withAssets(
+                        List.of(logo(), Asset.of("/assets/manual v1.pdf", new byte[] {1, 2}))));
     server = SitePreviewServer.start(site, 0);
     client = HttpClient.newHttpClient();
   }

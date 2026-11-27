@@ -51,13 +51,7 @@ public final class GuideSite {
   }
 
   public static SiteDefinition createDefinition() {
-    return SiteDefinition.builder()
-        .asset(
-            Asset.text(
-                "/assets/logo.svg",
-                "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\">"
-                    + "<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"seagreen\"/></svg>"))
-        .route(
+    return SiteDefinition.of(
             SiteRoute.of(
                 "/",
                 PageDocument.of(
@@ -66,8 +60,7 @@ public final class GuideSite {
                         "My Tessera site",
                         Image.of("assets/logo.svg", "Site logo").dimensions(64, 64),
                         new MetricCard("builds", "Successful builds", "128"),
-                        a("guide/?source=home#installation", "Read the installation guide")))))
-        .route(
+                        a("guide/?source=home#installation", "Read the installation guide")))),
             SiteRoute.of(
                 "/guide",
                 PageDocument.of(
@@ -83,7 +76,12 @@ public final class GuideSite {
                                 Section.of("publishing", "Publishing")
                                     .child(
                                         p("Upload the generated directory to a static host."))))))))
-        .build();
+        .withAssets(
+            List.of(
+                Asset.text(
+                    "/assets/logo.svg",
+                    "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 64 64\">"
+                        + "<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"seagreen\"/></svg>")));
   }
 
   private static DocumentContent page(String title, IntoElement... body) {

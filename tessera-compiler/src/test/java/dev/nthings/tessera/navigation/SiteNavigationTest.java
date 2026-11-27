@@ -89,11 +89,12 @@ class SiteNavigationTest {
                     .children(
                         SiteNavigation.searchPalette(site),
                         SiteNavigation.docPager(site, context.address().orElseThrow())));
-    var builder = SiteDefinition.builder();
-    for (var route : site.routes()) {
-      builder.route(SiteRoute.of(route.path(), PageDocument.of(route.document().title(), layout)));
-    }
-    var withNavigation = builder.build();
+    var withNavigation =
+        SiteDefinition.of(
+            site.routes().stream()
+                .map(route ->
+                    SiteRoute.of(route.path(), PageDocument.of(route.document().title(), layout)))
+                .toList());
 
     var compiled = Compiler.forSite().compile(withNavigation);
     assertThat(Jsoup.parse(compiled.pages().get("/guide")).select("nav a"))

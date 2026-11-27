@@ -39,7 +39,7 @@ public final class SiteFixtures {
 
   /// A small documentation site: a home page showing [#logo()], a directory route, a nested route
   /// and an `.html` route, all linked from home.
-  public static SiteDefinition.Builder docsSite() {
+  public static SiteDefinition docsSite() {
     var home =
         main()
             .children(
@@ -47,12 +47,12 @@ public final class SiteFixtures {
                 a("/guide").text("Guide"),
                 a("guide/install/").text("Install"),
                 a("/notes.html").text("Notes"));
-    return SiteDefinition.builder()
-        .route(SiteRoute.of("/", PageDocument.of("Home", home)))
-        .route(SiteRoute.of("/guide", PageDocument.of("Guide", main().text("Guide"))))
-        .route(SiteRoute.of("/guide/install", PageDocument.of("Install", main().text("Install"))))
-        .route(SiteRoute.of("/notes.html", PageDocument.of("Notes", main().text("Notes"))))
-        .asset(logo());
+    return SiteDefinition.of(
+            SiteRoute.of("/", PageDocument.of("Home", home)),
+            SiteRoute.of("/guide", PageDocument.of("Guide", main().text("Guide"))),
+            SiteRoute.of("/guide/install", PageDocument.of("Install", main().text("Install"))),
+            SiteRoute.of("/notes.html", PageDocument.of("Notes", main().text("Notes"))))
+        .withAssets(List.of(logo()));
   }
 
   /// Three documentation routes; the untitled FAQ falls back to its document title.

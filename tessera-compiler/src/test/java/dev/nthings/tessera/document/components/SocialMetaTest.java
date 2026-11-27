@@ -21,10 +21,9 @@ import org.junit.jupiter.api.Test;
 @DisplayName("SocialMeta")
 class SocialMetaTest {
 
-  private static SiteDefinition.Builder site(SocialMeta meta) {
+  private static SiteDefinition site(SocialMeta meta) {
     var body = Documents.fragment(DocumentContent.of(main().text("Post")), meta);
-    return SiteDefinition.builder()
-        .route(SiteRoute.of("/blog/hello", PageDocument.of("Hello", body)));
+    return SiteDefinition.of(SiteRoute.of("/blog/hello", PageDocument.of("Hello", body)));
   }
 
   /// Each `property` or `name` meta in the head, mapped to its content.
@@ -49,8 +48,7 @@ class SocialMetaTest {
                         .image("/og.png")
                         .siteName("nthings.dev")
                         .article())
-                    .baseUrl(URI.create("https://nthings.dev"))
-                    .build());
+                    .withBaseUrl(URI.create("https://nthings.dev")));
 
     assertThat(tags(RenderedPage.of(compiled, "/blog/hello")))
         .containsExactly(
@@ -69,7 +67,7 @@ class SocialMetaTest {
   @Test
   @DisplayName("a page without an image is a website summary card, without og:url off-site")
   void pageWithoutImage() {
-    var compiled = Compiler.forSite().compile(site(SocialMeta.of("Hello")).build());
+    var compiled = Compiler.forSite().compile(site(SocialMeta.of("Hello")));
 
     assertThat(tags(RenderedPage.of(compiled, "/blog/hello")))
         .containsExactly(
@@ -82,7 +80,7 @@ class SocialMetaTest {
   @Test
   @DisplayName("a relative image without a base URL is reported")
   void relativeImageNeedsBaseUrl() {
-    var site = site(SocialMeta.of("Hello").image("/og.png")).build();
+    var site = site(SocialMeta.of("Hello").image("/og.png"));
 
     assertThatThrownBy(() -> Compiler.forSite().compile(site))
         .isInstanceOfSatisfying(

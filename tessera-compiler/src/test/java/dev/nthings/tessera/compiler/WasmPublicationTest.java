@@ -142,14 +142,12 @@ class WasmPublicationTest {
         Compiler.forSite()
             .withOutputMode(OutputMode.external("/"))
             .compile(
-                SiteDefinition.builder()
-                    .route(SiteRoute.of("/", PageDocument.of("Mount", home)))
-                    .route(
-                        SiteRoute.of(
-                            "/share",
-                            PageDocument.of("Share", wasmMount("one", "a", bundle(), p("Share")))))
-                    .route(SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain"))))
-                    .build());
+                SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Mount", home)),
+                    SiteRoute.of(
+                        "/share",
+                        PageDocument.of("Share", wasmMount("one", "a", bundle(), p("Share")))),
+                    SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain")))));
 
     assertThat(site.files().keySet()).filteredOn(path -> path.startsWith("/wasm/")).hasSize(4);
     assertThat(site.pageHeaders().keySet()).containsExactly("/", "/share");

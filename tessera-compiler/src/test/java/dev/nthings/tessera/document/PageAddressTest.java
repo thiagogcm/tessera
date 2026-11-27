@@ -116,11 +116,10 @@ class PageAddressTest {
     var site =
         Compiler.forSite()
             .compile(
-                SiteDefinition.builder()
-                    .baseUrl(BASE)
-                    .route(SiteRoute.of("/", PageDocument.of("Home", layout)))
-                    .route(SiteRoute.of("/guide", PageDocument.of("Guide", layout)))
-                    .build());
+                SiteDefinition.of(
+                        SiteRoute.of("/", PageDocument.of("Home", layout)),
+                        SiteRoute.of("/guide", PageDocument.of("Guide", layout)))
+                    .withBaseUrl(BASE));
 
     var guide = RenderedPage.of(site, "/guide");
     assertThat(guide.element("#url").text()).isEqualTo("https://tessera.dev/guide/");

@@ -4,7 +4,6 @@ import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.AccessibleText;
 import dev.nthings.tessera.support.RenderedPage;
 import org.junit.jupiter.api.BeforeAll;
@@ -30,7 +29,7 @@ class SearchPaletteTest {
                 SearchPalette.Item.of("/theme", "Toggle Dark Mode")
                     .description("Switch themes")
                     .badge("Action"));
-    page = renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50));
+    page = renderDocumentMain(palette.triggerButton(), deferred(palette, 50));
   }
 
   @Test
@@ -89,8 +88,7 @@ class SearchPaletteTest {
   void altKShortcut() {
     var palette = SearchPalette.of().shortcuts(SearchPalette.Shortcut.ALT_K);
     var trigger =
-        renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50))
-            .element("main > button");
+        renderDocumentMain(palette.triggerButton(), deferred(palette, 50)).element("main > button");
 
     assertThat(trigger).hasAttribute("aria-keyshortcuts", "Alt+K");
     assertThat(trigger).hasAttribute("accesskey", "k");
@@ -102,8 +100,7 @@ class SearchPaletteTest {
   void noShortcuts() {
     var palette = SearchPalette.of().shortcuts();
     var trigger =
-        renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50))
-            .element("main > button");
+        renderDocumentMain(palette.triggerButton(), deferred(palette, 50)).element("main > button");
 
     assertThat(trigger.hasAttr("aria-keyshortcuts")).isFalse();
     assertThat(trigger.hasAttr("accesskey")).isFalse();

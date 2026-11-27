@@ -5,13 +5,12 @@ import static dev.nthings.tessera.core.Elements.div;
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.components.Section;
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.components.DocumentSection;
@@ -51,14 +50,7 @@ final class Demo implements DocumentComponent {
     return this;
   }
 
-  Demo example(IntoElement... content) {
-    for (var item : content) {
-      examples.add(DocumentContent.of(item));
-    }
-    return this;
-  }
-
-  /// Adds document examples, such as deferred dialogs or paragraphs with footnotes.
+  /// Adds examples, portable or document content such as deferred dialogs or footnotes.
   Demo example(DocumentContent... content) {
     examples.addAll(List.of(content));
     return this;
@@ -135,7 +127,6 @@ final class Demo implements DocumentComponent {
     return DocumentSection.of(
         section,
         stageElement,
-        DocumentContent.of(
-            CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java")));
+        CodeBlock.ofLines(code.toArray(String[]::new)).filename("Usage").language("java"));
   }
 }

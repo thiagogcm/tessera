@@ -1,9 +1,9 @@
 package dev.nthings.tessera.document.components;
 
 import dev.nthings.tessera.components.Image;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.ViewKey;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.internal.components.WidgetBridge;
 import dev.nthings.tessera.internal.document.DocumentNode;
@@ -43,7 +43,7 @@ public final class HeroImage {
               + parts.src()
               + "' cannot be",
           "Place one hero image per page; load the others lazily.");
-      return DocumentContent.of(parts.eagerElement());
+      return parts.eagerElement();
     }
     slot.src = parts.src();
     context.contributeHead(
@@ -52,6 +52,6 @@ public final class HeroImage {
             .attr("as", "image")
             .attr("href", parts.src())
             .attr("fetchpriority", "high"));
-    return DocumentContent.of(parts.eagerElement());
+    return parts.eagerElement();
   }
 }

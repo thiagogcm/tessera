@@ -8,6 +8,7 @@ import static dev.nthings.tessera.core.Elements.ol;
 import static dev.nthings.tessera.core.Elements.span;
 import static dev.nthings.tessera.core.Elements.summary;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
@@ -26,7 +27,6 @@ import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Transform;
 import dev.nthings.tessera.css.Transition;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -96,11 +96,11 @@ public final class TableOfContents extends BuiltinDocumentComponent
     var max = maxLevel;
     var fixed = headings;
     if (fixed != null) {
-      return DocumentContent.of(new Links(title, id, filterLevels(fixed, min, max)));
+      return new Links(title, id, filterLevels(fixed, min, max));
     }
     var instance = id;
-    return Documents.late(late ->
-        DocumentContent.of(new Links(title, instance, filterLevels(late.headings(), min, max))));
+    return Documents.late(
+        late -> new Links(title, instance, filterLevels(late.headings(), min, max)));
   }
 
   private static List<OutlineHeading> filterLevels(

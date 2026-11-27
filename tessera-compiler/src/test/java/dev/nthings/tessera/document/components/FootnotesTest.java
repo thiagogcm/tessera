@@ -6,8 +6,8 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
 import dev.nthings.tessera.components.Section;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -130,7 +130,7 @@ class FootnotesTest {
   @Test
   @DisplayName("a list without references renders nothing")
   void emptyListRendersNothing() {
-    var page = renderDocumentMain(Footnotes.of(), DocumentContent.of(p().text("No notes here.")));
+    var page = renderDocumentMain(Footnotes.of(), p().text("No notes here."));
 
     assertThat(page.elements("[role=doc-endnotes], [role=doc-footnote]")).isEmpty();
   }

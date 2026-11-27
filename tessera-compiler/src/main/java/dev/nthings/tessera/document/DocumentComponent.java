@@ -1,6 +1,6 @@
 package dev.nthings.tessera.document;
 
-import dev.nthings.tessera.internal.authoring.SourceProvenance;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.internal.document.DocumentNode;
 
 /// Component that needs document assembly: head contributions, page scripts, late or document-end
@@ -15,8 +15,7 @@ public interface DocumentComponent extends DocumentContent {
   DocumentContent expand(DocumentContext context);
 
   @Override
-  default DocumentTree intoDocumentTree() {
-    return new DocumentPlacement(
-        new DocumentNode.ComponentPlacement(getClass(), SourceProvenance.capture(), this::expand));
+  default DocumentTree key(String key) {
+    return new DocumentPlacement(DocumentNode.capture(this).withKey(key));
   }
 }

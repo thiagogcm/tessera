@@ -2,8 +2,8 @@ package dev.nthings.tessera.view;
 
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.internal.view.LinkedNode;
 import java.util.HashMap;
 import java.util.List;

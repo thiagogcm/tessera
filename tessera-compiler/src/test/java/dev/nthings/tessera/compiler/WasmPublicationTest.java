@@ -12,9 +12,9 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.InputType;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.WasmBundle;
 import dev.nthings.tessera.document.WasmBundle.Kind;

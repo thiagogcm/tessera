@@ -1,17 +1,16 @@
 package dev.nthings.tessera.compiler;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 
 /// An HTML document to compile with [Compiler]: its BCP 47 `lang` [Locale], its `<title>`, the
-/// content of its `<body>`, and its page metadata. Create one with [#of(String, IntoElement)] or
-/// [#of(String, DocumentContent)] (defaulting to [Locale#ENGLISH]) and refine it with the `with`
-/// methods, each of which returns a new document.
+/// content of its `<body>`, and its page metadata. Create one with [#of(String, DocumentContent)]
+/// (defaulting to [Locale#ENGLISH]) and refine it with the `with` methods, each of which returns a
+/// new document.
 ///
 /// - [#withLang(Locale)] sets `<html lang>`.
 /// - [#withDescription(String)] emits `<meta name="description">` and feeds `search-index.json` and
@@ -54,12 +53,7 @@ public record PageDocument(
         && url.getRawFragment() == null;
   }
 
-  /// Creates an English document whose body is portable `bodyRoot`.
-  public static PageDocument of(String title, IntoElement bodyRoot) {
-    return of(title, DocumentContent.of(bodyRoot));
-  }
-
-  /// Creates an English document whose body is document `bodyRoot`.
+  /// Creates an English document whose body is `bodyRoot`.
   public static PageDocument of(String title, DocumentContent bodyRoot) {
     return new PageDocument(Locale.ENGLISH, title, bodyRoot, null, null);
   }

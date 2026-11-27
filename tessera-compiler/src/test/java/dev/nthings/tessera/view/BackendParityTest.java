@@ -23,6 +23,7 @@ import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
@@ -43,7 +44,6 @@ import dev.nthings.tessera.css.State;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Transition;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.internal.css.StyleSheet;
@@ -281,7 +281,7 @@ class BackendParityTest {
     @Override
     public DocumentContent expand(DocumentContext context) {
       var titles = context.headings().stream().map(OutlineHeading::title).toList();
-      return DocumentContent.of(p().text(String.join(",", titles)));
+      return p().text(String.join(",", titles));
     }
   }
 

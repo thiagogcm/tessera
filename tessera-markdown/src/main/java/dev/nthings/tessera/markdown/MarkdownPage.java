@@ -1,6 +1,6 @@
 package dev.nthings.tessera.markdown;
 
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 
 /// A parsed Markdown page: its front matter and its body as document content. Place the body in a
 /// [dev.nthings.tessera.compiler.PageDocument], usually inside a layout such as

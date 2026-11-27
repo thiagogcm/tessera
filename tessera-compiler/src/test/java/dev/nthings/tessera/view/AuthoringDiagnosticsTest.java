@@ -20,7 +20,6 @@ import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.Diagnostics;
@@ -147,13 +146,12 @@ class AuthoringDiagnosticsTest {
         DocumentElement.of(Elements.select().initialValue("Blue sky"))
             .child(
                 Documents.late(_ ->
-                    DocumentContent.of(
-                        fragment()
-                            .children(
-                                Elements.option("red", "Red"),
-                                Elements.optgroup("Group")
-                                    .child(Elements.option().text("  Blue\t sky  ")),
-                                Elements.option("Blue sky", "Duplicate")))));
+                    fragment()
+                        .children(
+                            Elements.option("red", "Red"),
+                            Elements.optgroup("Group")
+                                .child(Elements.option().text("  Blue\t sky  ")),
+                            Elements.option("Blue sky", "Duplicate"))));
 
     assertThat(
             page(DocumentElement.of(main()).child(select))

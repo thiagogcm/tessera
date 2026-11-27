@@ -10,7 +10,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.document.components.Footnotes;
@@ -38,10 +37,9 @@ class OutlineTest {
     var page =
         renderDocumentMain(
             TableOfContents.of("Contents"),
-            DocumentContent.of(
-                Heading.of(2, "Install", code().text("mvn"), text(" verify"))
-                    .id(install)
-                    .outline(install)));
+            Heading.of(2, "Install", code().text("mvn"), text(" verify"))
+                .id(install)
+                .outline(install));
 
     var link = page.element("nav[aria-label=Contents] a");
     assertThat(link).hasText("Install");
@@ -57,12 +55,12 @@ class OutlineTest {
     var page =
         renderDocumentMain(
             TableOfContents.of("Contents"),
-            DocumentContent.of(h2().text("Toolbar")),
-            DocumentContent.of(Card.of("Widget").headingLevel(2)),
+            h2().text("Toolbar"),
+            Card.of("Widget").headingLevel(2),
             Footnotes.of().title("Notes"),
             DocumentElement.of(p()).child(Footnote.of("A detail.").reference()),
-            DocumentContent.of(Heading.of(2, "Real").id(real).outline(real)),
-            DocumentContent.of(Section.of("sec", "Section")));
+            Heading.of(2, "Real").id(real).outline(real),
+            Section.of("sec", "Section"));
 
     assertThat(page.elements("nav[aria-label=Contents] a"))
         .extracting(a -> a.text() + " -> " + page.elementById(a.attr("href").substring(1)).text())
@@ -75,9 +73,7 @@ class OutlineTest {
     var page =
         renderDocumentMain(
             TableOfContents.of("Contents"),
-            DocumentContent.of(
-                Prose.of(Section.of("install", "Install").child(p().text("Run it.")))
-                    .scopeId("docs")));
+            Prose.of(Section.of("install", "Install").child(p().text("Run it."))).scopeId("docs"));
 
     var link = page.element("nav[aria-label=Contents] a");
     assertThat(link).hasAttribute("href", "#install").hasText("Install");

@@ -1,7 +1,7 @@
 package dev.nthings.tessera.markdown;
 
 import com.google.errorprone.annotations.CheckReturnValue;
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

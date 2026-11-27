@@ -8,7 +8,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.document.DocumentContent;
 import java.util.stream.Stream;
 import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +39,7 @@ class DialogTest {
   @MethodSource("dialogs")
   @DisplayName("its trigger opens a dialog named by its title, which its close button closes")
   void triggerAndCloseTargetTheDialog(IntoElement dialog, Button trigger) {
-    var page = renderDocumentMain(DocumentContent.of(trigger), deferred(dialog, 10));
+    var page = renderDocumentMain(trigger, deferred(dialog, 10));
 
     var open = page.element("main button");
     assertThat(open).hasText("Deploy").hasAttribute("command", "show-modal");

@@ -1,10 +1,11 @@
 package dev.nthings.tessera.internal.document;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
+import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.SourceLocation;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -74,16 +75,33 @@ public sealed interface DocumentNode {
   record ScopePlacement(DocumentScope scope, @Nullable SourceLocation source)
       implements DocumentNode {}
 
-  static DocumentTree namedComponent(Class<?> type, DocumentComponent body) {
-    return DocumentAccess.wrap(
-        new ComponentPlacement(type, SourceProvenance.capture(), body::expand));
+  static DocumentTree namedComponent(
+      Class<?> type, Function<DocumentContext, ? extends DocumentContent> expand) {
+    return DocumentAccess.wrap(component(type, expand));
   }
 
+  static DocumentNode component(
+      Class<?> type, Function<DocumentContext, ? extends DocumentContent> expand) {
+    return new ComponentPlacement(type, SourceProvenance.capture(), expand);
+  }
+
+  /// Lowers content at the moment it is placed, so source tracking records the placing call.
   static DocumentNode capture(DocumentContent content) {
-    var tree = content.intoDocumentTree();
-    return switch (tree) {
+    return switch (content) {
+      case IntoElement portable -> new Portable(portable.intoElement());
       case DocumentElement element -> DocumentAccess.host(element);
-      default -> DocumentAccess.unwrap(tree);
+      case DocumentTree tree -> DocumentAccess.unwrap(tree);
+      case DocumentComponent component -> component(component.getClass(), component::expand);
+      case DocumentScope scope -> new ScopePlacement(scope, SourceProvenance.capture());
+      default -> {
+        var builtin = DocumentAccess.builtin(content);
+        if (builtin == null) {
+          throw new IllegalArgumentException(
+              content.getClass().getName()
+                  + " is not placeable: implement DocumentComponent or DocumentScope");
+        }
+        yield builtin;
+      }
     };
   }
 }

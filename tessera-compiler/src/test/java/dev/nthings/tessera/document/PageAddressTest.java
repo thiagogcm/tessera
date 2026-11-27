@@ -106,12 +106,9 @@ class PageAddressTest {
                     return address.isCurrent(href) ? link.ariaCurrent(AriaCurrent.PAGE) : link;
                   })
                   .toList();
-          return DocumentContent.of(
-              main()
-                  .children(nav)
-                  .child(
-                      p(address.absoluteUrl().orElseThrow().toString())
-                          .id(ElementRef.page("url"))));
+          return main()
+              .children(nav)
+              .child(p(address.absoluteUrl().orElseThrow().toString()).id(ElementRef.page("url")));
         };
     var site =
         Compiler.forSite()
@@ -132,8 +129,7 @@ class PageAddressTest {
   @DisplayName("a page compiled on its own has no address")
   void standalonePagesHaveNoAddress() {
     DocumentComponent probe =
-        context ->
-            DocumentContent.of(main(p(context.address().isPresent() ? "routed" : "standalone")));
+        context -> main(p(context.address().isPresent() ? "routed" : "standalone"));
 
     var page = RenderedPage.of(PageDocument.of("Alone", probe));
 

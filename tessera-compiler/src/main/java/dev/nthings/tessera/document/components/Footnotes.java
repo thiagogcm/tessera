@@ -1,5 +1,6 @@
 package dev.nthings.tessera.document.components;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -13,7 +14,6 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -109,8 +109,7 @@ public final class Footnotes extends BuiltinDocumentComponent implements FluentB
     var marker = ElementRef.anonymous();
     entry.markers().add(marker);
     context.atDocumentEnd(
-        REGISTRY,
-        _ -> registry.sectionPlaced ? DocumentContent.of(Elements.empty()) : new Footnotes());
+        REGISTRY, _ -> registry.sectionPlaced ? Elements.empty() : new Footnotes());
     return new Placed(entry, marker);
   }
 
@@ -120,10 +119,9 @@ public final class Footnotes extends BuiltinDocumentComponent implements FluentB
     registry.sectionPlaced = true;
     var heading = title;
     return Documents.late(_ ->
-        DocumentContent.of(
-            registry.entries.isEmpty()
-                ? Elements.empty()
-                : new EndnotesView(heading, List.copyOf(registry.entries))));
+        registry.entries.isEmpty()
+            ? Elements.empty()
+            : new EndnotesView(heading, List.copyOf(registry.entries)));
   }
 
   /// The endnotes list, a scope for its scoped styles.

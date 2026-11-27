@@ -9,7 +9,6 @@ import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
 import dev.nthings.tessera.compiler.SiteRoute;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.RenderedPage;
 import java.net.URI;
@@ -22,7 +21,7 @@ import org.junit.jupiter.api.Test;
 class SocialMetaTest {
 
   private static SiteDefinition site(SocialMeta meta) {
-    var body = Documents.fragment(DocumentContent.of(main().text("Post")), meta);
+    var body = Documents.fragment(main().text("Post"), meta);
     return SiteDefinition.of(SiteRoute.of("/blog/hello", PageDocument.of("Hello", body)));
   }
 

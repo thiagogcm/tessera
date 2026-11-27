@@ -8,9 +8,9 @@ import static dev.nthings.tessera.support.RenderedPage.renderDocumentMain;
 
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.components.Section;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.OutlineHeading;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.CssBlocks;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.RenderedPage;
@@ -32,7 +32,7 @@ class TableOfContentsTest {
 
   private static DocumentContent outlined(OutlineHeading heading) {
     var ref = heading.target();
-    return DocumentContent.of(Heading.of(heading.level(), heading.title()).id(ref).outline(ref));
+    return Heading.of(heading.level(), heading.title()).id(ref).outline(ref);
   }
 
   private static List<String> outline(RenderedPage page, Element nav) {
@@ -60,9 +60,7 @@ class TableOfContentsTest {
 
     var page =
         renderDocumentMain(
-            DocumentContent.of(div().id(intro).text("Intro body")),
-            DocumentContent.of(div().id(sub).text("Detail body")),
-            toc);
+            div().id(intro).text("Intro body"), div().id(sub).text("Detail body"), toc);
 
     assertThat(outline(page, page.element("nav[aria-label=On This Page]")))
         .containsExactly("2 Introduction -> Intro body", "3 Details -> Detail body");
@@ -91,8 +89,8 @@ class TableOfContentsTest {
     var page =
         renderDocumentMain(
             TableOfContents.of("On this page"),
-            DocumentContent.of(Section.of("intro", "Introduction").child(p().text("a"))),
-            DocumentContent.of(Section.of("usage", "Usage").level(3).child(p().text("b"))));
+            Section.of("intro", "Introduction").child(p().text("a")),
+            Section.of("usage", "Usage").level(3).child(p().text("b")));
 
     assertThat(outline(page, page.element("nav[aria-label=On this page]")))
         .containsExactly("2 Introduction -> Introduction a", "3 Usage -> Usage b");

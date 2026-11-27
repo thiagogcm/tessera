@@ -27,7 +27,6 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -244,15 +243,15 @@ class PageOutputTest {
               sectionOwner,
               end -> {
                 end.contributeHead(el(HtmlTag.META).attr("name", "from-section"));
-                return DocumentContent.of(p().attr("data-from-head", "").text("End section"));
+                return p().attr("data-from-head", "").text("End section");
               });
-          return DocumentContent.of(el(HtmlTag.META).attr("name", "from-head"));
+          return el(HtmlTag.META).attr("name", "from-head");
         };
     DocumentComponent body =
         context -> {
           context.contributeHead(head);
-          context.atDocumentEnd(headOwner, _ -> DocumentContent.of(Elements.empty()));
-          return DocumentContent.of(main().child(p().text("Body")));
+          context.atDocumentEnd(headOwner, _ -> Elements.empty());
+          return main().child(p().text("Body"));
         };
 
     var rendered = RenderedPage.of(PageDocument.of("Order", body));
@@ -271,7 +270,7 @@ class PageOutputTest {
           for (var script : scripts) {
             context.contributeScript(script);
           }
-          return DocumentContent.of(custom("test-widget"));
+          return custom("test-widget");
         };
     return PageDocument.of("Scripts", DocumentElement.of(main()).child(component));
   }
@@ -355,7 +354,7 @@ class PageOutputTest {
     DocumentComponent styled =
         context -> {
           context.contributeHead(el(HtmlTag.STYLE).attr("data-own", "").text(css));
-          return DocumentContent.of(main().child(p().text("Body")));
+          return main().child(p().text("Body"));
         };
 
     var page = RenderedPage.of(PageDocument.of("Styled", styled));

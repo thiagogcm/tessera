@@ -3,8 +3,8 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.a;
 import static dev.nthings.tessera.core.Elements.p;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.document.DocumentContent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -41,7 +41,7 @@ record Story(
     var items = new ArrayList<DocumentContent>();
     for (var variant : variants) {
       if (variant.inDocs()) {
-        items.add(DocumentContent.of(caseLink(variant)));
+        items.add(caseLink(variant));
         items.add(variant.create());
       }
     }

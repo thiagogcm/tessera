@@ -21,7 +21,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.support.Diagnostics;
@@ -103,9 +102,9 @@ class KeyedIdentityTest {
         DocumentElement.of(main())
             .children(
                 DocumentElement.of(div().id(ElementRef.scoped("left")))
-                    .child(Documents.late(_ -> DocumentContent.of(keyed("Left")))),
+                    .child(Documents.late(_ -> keyed("Left"))),
                 DocumentElement.of(div().id(ElementRef.scoped("right")))
-                    .child(Documents.late(_ -> DocumentContent.of(keyed("Right")))));
+                    .child(Documents.late(_ -> keyed("Right"))));
 
     for (var document : List.of(dom(render(content)), page(content), page(late))) {
       assertThat(fieldIds(document).values()).hasSize(2).doesNotHaveDuplicates();

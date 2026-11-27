@@ -2,11 +2,11 @@
 
 Compose static HTML pages that need document-level capabilities: head contributions, deferred overlays, late callbacks, document outlines, footnotes, hero image preloads, and page scripts.
 
-Document APIs live in `tessera-compiler` under `dev.nthings.tessera.document` and `dev.nthings.tessera.document.components`. Portable builders in `dev.nthings.tessera.core` never accept `DocumentContent`, keeping portable components reusable in [browser roots](browser-rendering.md).
+Document APIs live in `tessera-compiler` under `dev.nthings.tessera.document` and `dev.nthings.tessera.document.components`. Every document builder takes one content type, `dev.nthings.tessera.core.DocumentContent`, and portable `IntoElement` content is already `DocumentContent`, so elements, components and scopes go into document builders as they are. Portable builders never accept `DocumentContent`, keeping portable components reusable in [browser roots](browser-rendering.md).
 
 ## Mix portable and document content
 
-A `PageDocument` body accepts either portable `IntoElement` or `DocumentContent`. To mix portable markup with document-only children, wrap a portable `TagElement` with `DocumentElement.of(...)`:
+A `PageDocument` body is any `DocumentContent`, portable or not. To mix portable markup with document-only children, wrap a portable `TagElement` with `DocumentElement.of(...)`:
 
 ```java
 var engine = Footnote.of("latest Chromium and Firefox.");
@@ -20,7 +20,6 @@ var body =
 | --- | --- |
 | Wrap a portable element to hold document children | `DocumentElement.of(tag).child(...)` |
 | Group document siblings without a wrapper | `Documents.fragment(...)` |
-| Convert portable content where a `DocumentContent` value is required | `DocumentContent.of(content)` (builders accept `IntoElement` directly) |
 | Move content to the end of `<body>` while keeping its lexical ID scope | `Documents.deferred(content, priority)` |
 | Resolve content after body expansion finishes | `Documents.late(context -> ...)` |
 | Emit pre-sanitized HTML verbatim | `Documents.rawHtml(trustedHtml)` |
@@ -104,7 +103,7 @@ A `PageScript` represents an ES module with a stable ID. Contribute application 
 DocumentComponent widget =
     context -> {
       context.contributeScript(new PageScript("my-widget", moduleSource));
-      return DocumentContent.of(Elements.custom("my-widget"));
+      return Elements.custom("my-widget");
     };
 ```
 

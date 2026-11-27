@@ -14,6 +14,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -21,7 +22,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -84,6 +84,29 @@ class ExpansionTest {
   }
 
   @Test
+  @DisplayName("portable content goes into document builders as it is, keyed or not")
+  void placesPortableContentDirectly() {
+    var page =
+        RenderedPage.renderDocumentMain(
+            DocumentElement.of(div()).child(p().text("Plain")).child(p().text("Keyed").key("k")));
+
+    assertThat(page.elements("main p")).extracting(p -> p.text()).containsExactly("Plain", "Keyed");
+  }
+
+  @Test
+  @DisplayName("content that implements DocumentContent directly is rejected where it is placed")
+  void rejectsForeignDocumentContent() {
+    DocumentContent foreign =
+        key -> {
+          throw new AssertionError("not called");
+        };
+
+    assertThat(catchThrowable(() -> DocumentElement.of(div()).child(foreign)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("implement DocumentComponent or DocumentScope");
+  }
+
+  @Test
   @DisplayName("generated ids in one scope do not shift when an earlier scope grows")
   void numbersGeneratedIdsPerScope() {
     var single =
@@ -122,8 +145,7 @@ class ExpansionTest {
         argumentSet(
             "a late callback",
             DocumentElement.of(main())
-                .child(
-                    new DocBox("outer", Documents.late(_ -> DocumentContent.of(brokenConversion)))),
+                .child(new DocBox("outer", Documents.late(_ -> brokenConversion))),
             List.of("doc-box[outer]")));
   }
 

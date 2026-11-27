@@ -79,8 +79,7 @@ Raw HTML bypasses escaping and validation, so parse only Markdown you trust. Hea
 ```java
 var markdown =
     Markdown.of()
-        .withFence("mermaid", fence -> DocumentContent.of(
-            Elements.custom("mermaid-diagram").text(fence.code())));
+        .withFence("mermaid", fence -> Elements.custom("mermaid-diagram").text(fence.code()));
 ```
 
 Languages match case-insensitively on the first word of the info string. Register the element's script with a document component as described in [Documents](documents.md#contribute-a-page-script).

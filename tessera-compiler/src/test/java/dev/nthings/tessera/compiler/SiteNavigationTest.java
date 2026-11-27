@@ -8,7 +8,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.PageAddress;
 import java.util.List;
 import org.jsoup.Jsoup;
@@ -82,11 +81,10 @@ class SiteNavigationTest {
   void navigationPassesSiteLinkValidation() {
     DocumentComponent layout =
         context ->
-            DocumentContent.of(
-                main()
-                    .children(
-                        SiteNavigation.searchPalette(site.routes(), "Pages"),
-                        SiteNavigation.docPager(site.routes(), context.address().orElseThrow())));
+            main()
+                .children(
+                    SiteNavigation.searchPalette(site.routes(), "Pages"),
+                    SiteNavigation.docPager(site.routes(), context.address().orElseThrow()));
     var withNavigation =
         SiteDefinition.of(
             site.routes().stream()

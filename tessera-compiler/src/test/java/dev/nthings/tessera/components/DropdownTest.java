@@ -7,7 +7,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.AccessibleText;
 import dev.nthings.tessera.support.RenderedPage;
 import org.jsoup.nodes.Element;
@@ -32,7 +31,7 @@ class DropdownTest {
             .item(
                 Dropdown.Item.command(
                     "open-deploy", modal.dialogRef(), BuiltinCommand.SHOW_MODAL, "Deploy Now"));
-    page = renderDocumentMain(DocumentContent.of(dropdown), deferred(modal, 10));
+    page = renderDocumentMain(dropdown, deferred(modal, 10));
   }
 
   private static Element named(RenderedPage page, String selector, String name) {

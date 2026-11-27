@@ -4,9 +4,9 @@ import dev.nthings.tessera.internal.authoring.PortableNode;
 
 /// Portable content, placeable as a child of any portable builder: an [Element], a [Component], a
 /// [Scope], or a built-in component. Expand callbacks return it too, so a component can return
-/// another component directly. Document and live builders accept it as well; it never accepts their
-/// content in return.
-public interface IntoElement {
+/// another component directly. It is also [DocumentContent], and live builders accept it as well;
+/// portable builders never accept document or live content in return.
+public interface IntoElement extends DocumentContent {
 
   /// Lowers this value to an [Element]. Builders call it when the value is added to a parent.
   Element intoElement();
@@ -21,6 +21,7 @@ public interface IntoElement {
   /// Keys are compared exactly and only among the children of one parent: give each sibling a
   /// distinct key, or the page fails with `duplicate-key`. Calling `key` again replaces the key.
   /// Throws IllegalArgumentException if `key` is blank.
+  @Override
   default Element key(String key) {
     return new PortablePlacement(new PortableNode.Keyed(key, intoElement()));
   }

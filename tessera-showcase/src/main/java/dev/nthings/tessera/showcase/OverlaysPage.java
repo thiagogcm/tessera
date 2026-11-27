@@ -11,7 +11,6 @@ import dev.nthings.tessera.components.Formatting;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.Documents;
 
 /// Modal dialogs, drawers, popovers, interest tooltips, and the search palette.
@@ -49,16 +48,15 @@ final class OverlaysPage {
         .summary("Edge-docked dialogs that slide in with translate transitions and allow-discrete.")
         .features("transition-behavior: allow-discrete", "overlay", "translate")
         .example(
-            DocumentContent.of(
-                div()
-                    .flex()
-                    .flexWrap()
-                    .gap(CssLength.rem(0.75))
-                    .children(
-                        Button.of("Open start drawer")
-                            .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
-                        Button.of("Open end drawer")
-                            .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL))),
+            div()
+                .flex()
+                .flexWrap()
+                .gap(CssLength.rem(0.75))
+                .children(
+                    Button.of("Open start drawer")
+                        .command(start.dialogRef(), BuiltinCommand.SHOW_MODAL),
+                    Button.of("Open end drawer")
+                        .command(end.dialogRef(), BuiltinCommand.SHOW_MODAL)),
             Documents.deferred(start, 10),
             Documents.deferred(end, 10))
         .code(

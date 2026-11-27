@@ -13,7 +13,6 @@ import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.Diagnostics.Found;
 import java.net.URI;
@@ -135,7 +134,7 @@ class SiteLinkValidationTest {
     DocumentComponent icon =
         context -> {
           context.contributeHead(el(HtmlTag.LINK).attr("rel", "icon").attr("href", "/favicon.ico"));
-          return DocumentContent.of(main().text("Home"));
+          return main().text("Home");
         };
     var site = SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", icon)));
 

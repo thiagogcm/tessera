@@ -1,9 +1,9 @@
 package dev.nthings.tessera.document.components;
 
 import com.google.errorprone.annotations.CheckReturnValue;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
 import java.net.URI;

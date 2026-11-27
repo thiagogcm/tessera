@@ -16,8 +16,8 @@ import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.SearchPalette;
 import dev.nthings.tessera.components.Section;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.ViewContext;
@@ -29,12 +29,10 @@ import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.components.TableOfContents;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 /// Runnable two-page site example using only public library APIs.
@@ -67,15 +65,11 @@ public final class GuideSite {
                     "Guide",
                     page(
                         "Guide",
-                        List.of(
-                            TableOfContents.of("On this page"),
-                            DocumentContent.of(
-                                Section.of("installation", "Installation")
-                                    .child(p("Build with JDK 25 and Maven."))),
-                            DocumentContent.of(
-                                Section.of("publishing", "Publishing")
-                                    .child(
-                                        p("Upload the generated directory to a static host."))))))))
+                        TableOfContents.of("On this page"),
+                        Section.of("installation", "Installation")
+                            .child(p("Build with JDK 25 and Maven.")),
+                        Section.of("publishing", "Publishing")
+                            .child(p("Upload the generated directory to a static host."))))))
         .withAssets(
             List.of(
                 Asset.text(
@@ -84,15 +78,7 @@ public final class GuideSite {
                         + "<rect width=\"64\" height=\"64\" rx=\"12\" fill=\"seagreen\"/></svg>")));
   }
 
-  private static DocumentContent page(String title, IntoElement... body) {
-    var content = new ArrayList<DocumentContent>();
-    for (var item : body) {
-      content.add(DocumentContent.of(item));
-    }
-    return page(title, content);
-  }
-
-  private static DocumentContent page(String title, List<DocumentContent> body) {
+  private static DocumentContent page(String title, DocumentContent... body) {
     var search =
         SearchPalette.of()
             .scopeId("guide-search")

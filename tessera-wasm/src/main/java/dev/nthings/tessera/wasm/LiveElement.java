@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// ```java
 /// LiveElement.of(Button.of("Save")).onClick(root.update(this::save));
-/// LiveElement.of(Forms.text("name")).bindValue(name).onValueChange(value -> name = value);
+/// LiveElement.of(Forms.input("name", InputType.TEXT)).bindValue(name).onValueChange(value -> name = value);
 /// ```
 public final class LiveElement implements LiveTree, FluentBuilder<LiveElement> {
 

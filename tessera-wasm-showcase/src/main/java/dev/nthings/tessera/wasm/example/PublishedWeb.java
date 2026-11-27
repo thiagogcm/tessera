@@ -16,6 +16,7 @@ import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
@@ -52,7 +53,11 @@ public final class PublishedWeb {
                     "/",
                     "Published Web Images",
                     mount("app", "app", demo, a("/guide/", "Open the static guide")),
-                    mount("notes", "notes", demo, Field.of("Fallback notes", Forms.text("notes"))),
+                    mount(
+                        "notes",
+                        "notes",
+                        demo,
+                        Field.of("Fallback notes", Forms.input("notes", InputType.TEXT))),
                     counter),
                 page(
                     "/guide",

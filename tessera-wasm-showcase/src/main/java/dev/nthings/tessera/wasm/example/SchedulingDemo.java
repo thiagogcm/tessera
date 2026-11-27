@@ -4,6 +4,7 @@ import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.ViewContext;
@@ -54,7 +55,7 @@ final class SchedulingDemo {
                         Elements.p().role(Role.STATUS).text("Renders: " + renders),
                         Elements.p().text("Effects started: " + effectStarts),
                         Elements.p().text("Changes before a failure: " + partialUpdates),
-                        Field.of("Draft", Forms.text("draft"))))
+                        Field.of("Draft", Forms.input("draft", InputType.TEXT))))
             .child(list);
     if (fail) {
       fail = false;

@@ -33,7 +33,7 @@ import java.util.List;
 ///
 /// An exclusive accordion's `<details name>` group is the DOM id of its root, `<scoped id>--group`,
 /// so separate accordions never share a group, even when they have one [#scopeId(String)] in
-/// different scopes. Without an id, the compiler numbers instances `accordion-<n>`.
+/// different scopes. Without a scope id, the compiler numbers instances `accordion-<n>`.
 public final class Accordion extends BuiltinScope<Accordion> {
 
   private record Item(String title, Element content, boolean open) {}

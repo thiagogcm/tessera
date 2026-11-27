@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// - [#withLang(Locale)] sets `<html lang>`.
 /// - [#withDescription(String)] emits `<meta name="description">` and feeds `search-index.json` and
-///   [dev.nthings.tessera.navigation.SiteNavigation] search items.
+///   [SiteNavigation] search items.
 /// - [#withCanonicalUrl(URI)] emits `<link rel="canonical">`. In a site with a base URL the
 ///   canonical URL defaults to the route's absolute URL.
 ///

@@ -21,7 +21,7 @@ import org.jspecify.annotations.Nullable;
 /// the link whose `href` equals [#active(String)] is marked with `aria-current="page"` and an
 /// underline that slides between links.
 ///
-/// Without an [#id(String)], the compiler numbers instances `nav-tabs-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `nav-tabs-<n>`.
 public final class NavTabs extends BuiltinScope<NavTabs> {
 
   /// The active link's anchor; each bar's underline is positioned inside its own list.

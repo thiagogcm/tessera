@@ -31,7 +31,7 @@ class ButtonTest {
   @Test
   @DisplayName("commands reach a dialog or popover placed later, even from a disabled button")
   void bindsCommandsToDeferredTargets() {
-    var dialog = Modal.of("Confirm").id("confirm");
+    var dialog = Modal.of("Confirm").scopeId("confirm");
     var hint = ElementRef.scoped("hint");
     var page =
         renderDocumentMain(
@@ -89,7 +89,7 @@ class ButtonTest {
   private static Card toolbar(String id) {
     var panel = ElementRef.scoped("panel");
     return Card.of("Toolbar")
-        .id(id)
+        .scopeId(id)
         .body(
             Button.of("Save")
                 .id(ElementRef.scoped("save"))

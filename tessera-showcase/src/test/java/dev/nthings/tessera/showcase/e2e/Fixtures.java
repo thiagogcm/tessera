@@ -105,10 +105,10 @@ final class Fixtures {
   private static DocumentElement rtlPage() {
     var drawer =
         Drawer.of("Filters")
-            .id("filters")
+            .scopeId("filters")
             .side(Drawer.Side.INLINE_START)
             .body(p().text("Status, owner and region."));
-    var carousel = Carousel.of("Highlights").id("highlights");
+    var carousel = Carousel.of("Highlights").scopeId("highlights");
     for (var i = 1; i <= 5; i++) {
       carousel.slide("Slide " + i, "Highlight number " + i + ".");
     }
@@ -118,7 +118,7 @@ final class Fixtures {
             .children(
                 h1().text("Right to left"),
                 ContentTabs.of("Stages")
-                    .id("stages")
+                    .scopeId("stages")
                     .tab("first", "First", p().text("First stage."))
                     .tab("second", "Second", p().text("Second stage."))
                     .tab("third", "Third", p().text("Third stage.")),

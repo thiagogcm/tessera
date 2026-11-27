@@ -51,9 +51,9 @@ import org.jspecify.annotations.Nullable;
 /// `Documents.deferred`. A static document loads the palette's script once, shared by every palette
 /// on the page; without it, the dialog opens and closes and lists every link unfiltered.
 ///
-/// The dialog, input, no-results status and result ids are prefixed with its [#id(String)], as in
-/// `<id>--dialog`, `<id>--input`, `<id>--empty` and `<id>--result-<n>`, numbering results from 1 in
-/// order. Without an id, the compiler numbers instances `search-palette-<n>`.
+/// The dialog, input, no-results status and result ids are prefixed with its [#scopeId(String)], as
+/// in `<id>--dialog`, `<id>--input`, `<id>--empty` and `<id>--result-<n>`, numbering results from 1
+/// in order. Without an id, the compiler numbers instances `search-palette-<n>`.
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   static {

@@ -25,7 +25,7 @@ import dev.nthings.tessera.css.Transition;
 /// scroll-state support still keep the header at the top, with the plain surface. Create one with
 /// [#of(IntoElement)]; the content is placed inside a `<header>` element.
 ///
-/// Without an [#id(String)], the compiler numbers instances `sticky-header-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `sticky-header-<n>`.
 public final class StickyHeader extends BuiltinScope<StickyHeader> {
 
   /// Scroll-state container queried by the header's own surface.

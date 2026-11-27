@@ -106,7 +106,7 @@ final class DataPage {
                 .stackBelow(CssLength.rem(36))
                 .stickyHead()
                 .stickyFirstColumn()
-                .id("services"))
+                .scopeId("services"))
         .code(
             "DataTable.of(\"Service health\", TableGrid.of(",
             "    head(row(columnHeader(\"Service\"), columnHeader(\"Latency\"))),",
@@ -151,7 +151,7 @@ final class DataPage {
                                 data("$11,600").align(NUMERIC), data("$22,400").align(NUMERIC)))))
                 .stickyHead()
                 .stickyFirstColumn()
-                .id("quarterly-spend"))
+                .scopeId("quarterly-spend"))
         .code(
             "TableGrid.of(",
             "    head(row(columnHeader(\"Region\"), columnHeader(\"2026\"), LEFT),",

@@ -22,10 +22,10 @@ class DropdownTest {
 
   @BeforeAll
   static void renderDropdownWithModal() {
-    var modal = Modal.of("Confirm Deployment").id("confirm-deploy");
+    var modal = Modal.of("Confirm Deployment").scopeId("confirm-deploy");
     var dropdown =
         Dropdown.of("Actions")
-            .id("actions-menu")
+            .scopeId("actions-menu")
             .item(Dropdown.Item.link("/logs", "Scope Logs").shortcut("G L"))
             .item(Dropdown.Item.link("/status", "Status"))
             .separator()

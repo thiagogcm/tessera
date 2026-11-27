@@ -1,5 +1,6 @@
 package dev.nthings.tessera.document.components;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.IntoElement;
@@ -8,7 +9,6 @@ import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import org.jspecify.annotations.Nullable;
@@ -137,8 +137,10 @@ public final class Footnote implements FluentBuilder<Footnote> {
                 .rounded(Tokens.RADIUS_LG)
                 .child(preview));
       }
-      return DocumentContent.of(
-          Elements.sup().id(placed.marker()).scrollMarginBlockStart(CssLength.rem(7)).child(link));
+      return Elements.sup()
+          .id(placed.marker())
+          .scrollMarginBlockStart(CssLength.rem(7))
+          .child(link);
     }
   }
 }

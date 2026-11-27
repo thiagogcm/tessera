@@ -1,7 +1,7 @@
 package dev.nthings.tessera.document.components;
 
 import dev.nthings.tessera.components.Section;
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.internal.components.WidgetBridge;
 import dev.nthings.tessera.internal.document.DocumentNode;

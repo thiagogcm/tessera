@@ -5,11 +5,11 @@ import static dev.nthings.tessera.core.Elements.p;
 
 import dev.nthings.tessera.components.Image;
 import dev.nthings.tessera.components.StepList;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.TextWrap;
 import dev.nthings.tessera.css.Tokens;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.components.Footnote;
 import dev.nthings.tessera.document.components.Footnotes;

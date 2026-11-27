@@ -1,13 +1,13 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.core.Diagnostic;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagName;
 import dev.nthings.tessera.css.Declarations;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.PageScript;

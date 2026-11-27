@@ -11,7 +11,6 @@ import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.PopoverMode;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.AccessibleText;
 import dev.nthings.tessera.support.RenderedPage;
 import org.jsoup.nodes.Element;
@@ -35,13 +34,11 @@ class ButtonTest {
     var hint = ElementRef.scoped("hint");
     var page =
         renderDocumentMain(
-            DocumentContent.of(
-                Button.of("Review").command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)),
-            DocumentContent.of(
-                Button.of("Review later")
-                    .command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)
-                    .disabled()),
-            DocumentContent.of(Button.of("Peek").command(hint, BuiltinCommand.TOGGLE_POPOVER)),
+            Button.of("Review").command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL),
+            Button.of("Review later")
+                .command(dialog.dialogRef(), BuiltinCommand.SHOW_MODAL)
+                .disabled(),
+            Button.of("Peek").command(hint, BuiltinCommand.TOGGLE_POPOVER),
             deferred(dialog, 1),
             deferred(div().id(hint).popover(PopoverMode.AUTO).text("Details"), 2));
 

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.showcase;
 
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.document.components.DocLayout;
 import java.util.List;
 import java.util.function.Supplier;

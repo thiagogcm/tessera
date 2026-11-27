@@ -11,6 +11,7 @@ import dev.nthings.tessera.components.IconButton;
 import dev.nthings.tessera.components.Modal;
 import dev.nthings.tessera.components.Size;
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
@@ -18,7 +19,6 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.FlexLayout;
 import dev.nthings.tessera.css.Overflow;
 import dev.nthings.tessera.css.Tone;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import java.util.ArrayList;
@@ -191,7 +191,7 @@ public final class Catalog {
 
   private static Story.Variant variant(
       String name, String label, boolean inDocs, Supplier<? extends IntoElement> content) {
-    return new Story.Variant(name, label, inDocs, () -> DocumentContent.of(content.get()));
+    return new Story.Variant(name, label, inDocs, () -> content.get());
   }
 
   /// A variant whose content needs document placement, such as a deferred dialog.

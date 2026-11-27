@@ -1,6 +1,6 @@
 package dev.nthings.tessera.document;
 
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewContext;
 import dev.nthings.tessera.core.ViewKey;
@@ -19,11 +19,6 @@ public interface DocumentContext extends ViewContext {
   /// deduplicated: N placements add N elements, so guard shared head content with
   /// [#state(ViewKey)].
   void contributeHead(DocumentContent content);
-
-  /// Adds portable `element` to the page's `<head>`, as [#contributeHead(DocumentContent)] does.
-  default void contributeHead(IntoElement element) {
-    contributeHead(DocumentContent.of(element));
-  }
 
   /// Adds `section` to the end of `<body>`, after the page's late elements. Only the first
   /// registration per `owner` counts; later ones are ignored.

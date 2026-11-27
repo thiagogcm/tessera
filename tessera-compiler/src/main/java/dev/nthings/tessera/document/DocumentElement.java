@@ -1,7 +1,7 @@
 package dev.nthings.tessera.document;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.core.TagHost;
 import dev.nthings.tessera.foundation.FluentBuilder;
@@ -53,12 +53,7 @@ public final class DocumentElement implements DocumentTree, FluentBuilder<Docume
     return this;
   }
 
-  /// Adds portable `child` as the next child. Throws IllegalStateException for a void host.
-  public DocumentElement child(IntoElement child) {
-    return append(new DocumentNode.Portable(child.intoElement()));
-  }
-
-  /// Adds document `child` as the next child. Throws IllegalStateException for a void host.
+  /// Adds `child` as the next child. Throws IllegalStateException for a void host.
   public DocumentElement child(DocumentContent child) {
     return append(DocumentNode.capture(child));
   }
@@ -68,16 +63,7 @@ public final class DocumentElement implements DocumentTree, FluentBuilder<Docume
     return child(Elements.text(text));
   }
 
-  /// Adds portable children in order.
-  public DocumentElement children(IntoElement first, IntoElement... rest) {
-    child(first);
-    for (var child : rest) {
-      child(child);
-    }
-    return this;
-  }
-
-  /// Adds each document child in order.
+  /// Adds each child in order.
   public DocumentElement children(DocumentContent... children) {
     for (var child : children) {
       append(DocumentNode.capture(child));
@@ -85,7 +71,7 @@ public final class DocumentElement implements DocumentTree, FluentBuilder<Docume
     return this;
   }
 
-  /// Adds each document child in iteration order.
+  /// Adds each child in iteration order.
   public DocumentElement children(Collection<? extends DocumentContent> children) {
     for (var child : children) {
       append(DocumentNode.capture(child));
@@ -93,7 +79,7 @@ public final class DocumentElement implements DocumentTree, FluentBuilder<Docume
     return this;
   }
 
-  /// Adds each document child from `stream` in order. The stream is consumed.
+  /// Adds each child from `stream` in order. The stream is consumed.
   public DocumentElement children(Stream<? extends DocumentContent> stream) {
     stream.forEach(this::child);
     return this;

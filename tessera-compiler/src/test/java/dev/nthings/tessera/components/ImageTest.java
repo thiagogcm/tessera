@@ -12,7 +12,6 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.css.AspectRatio;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.components.HeroImage;
 import dev.nthings.tessera.support.Diagnostics;
 import java.util.stream.Stream;
@@ -35,8 +34,7 @@ class ImageTest {
                 Image.of("/assets/hero-banner.webp", "Hero Banner")
                     .dimensions(1280, 720)
                     .element(img -> img.aspectRatio(AspectRatio.of(16, 9)))),
-            DocumentContent.of(
-                Image.of("/assets/thumbnail.webp", "Thumbnail").dimensions(400, 300)));
+            Image.of("/assets/thumbnail.webp", "Thumbnail").dimensions(400, 300));
 
     var hero = page.element("img[alt=\"Hero Banner\"]");
     assertThat(hero).hasAttribute("fetchpriority", "high").doesNotHaveAttribute("loading");
@@ -118,10 +116,8 @@ class ImageTest {
     var page =
         renderDocumentMain(
             HeroImage.of(Image.of("https://example.com/hero.jpg", "Hero").unknownDimensions()),
-            DocumentContent.of(
-                Image.of("https://example.com/photo.jpg", "Photo").unknownDimensions()),
-            DocumentContent.of(
-                img("https://example.com/inline.png", "Inline").unknownDimensions()));
+            Image.of("https://example.com/photo.jpg", "Photo").unknownDimensions(),
+            img("https://example.com/inline.png", "Inline").unknownDimensions());
 
     assertThat(page.elements("img")).hasSize(3);
   }

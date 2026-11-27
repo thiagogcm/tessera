@@ -26,6 +26,7 @@ import dev.nthings.tessera.components.Callout;
 import dev.nthings.tessera.components.CodeBlock;
 import dev.nthings.tessera.components.Heading;
 import dev.nthings.tessera.components.Image;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -34,7 +35,6 @@ import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.TextAlign;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.components.Footnote;
@@ -97,7 +97,7 @@ final class MarkdownConverter {
 
     default DocumentContent document() {
       return switch (this) {
-        case Portable portable -> DocumentContent.of(portable.element());
+        case Portable portable -> portable.element();
         case Document document -> document.content();
       };
     }

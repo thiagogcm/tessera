@@ -1,6 +1,6 @@
 package dev.nthings.tessera.document;
 
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.internal.document.DocumentNode;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,22 +46,12 @@ public final class Documents {
   /// Moves `child` to the end of `<body>` at priority 0, for content that cannot sit in its
   /// parent's content model, such as a dialog or popover inside a parent that does not allow it.
   /// The child keeps its id scope and DOM ids.
-  public static DocumentContent deferred(IntoElement child) {
-    return deferred(DocumentContent.of(child), 0);
-  }
-
-  /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
-  /// equal priorities keep placement order. The child keeps its id scope and DOM ids.
-  public static DocumentContent deferred(IntoElement child, int priority) {
-    return deferred(DocumentContent.of(child), priority);
-  }
-
-  /// Moves document `child` to the end of `<body>` at priority 0.
   public static DocumentContent deferred(DocumentContent child) {
     return deferred(child, 0);
   }
 
-  /// Moves document `child` to the end of `<body>` with `priority`.
+  /// Moves `child` to the end of `<body>` with `priority`. Lower priorities are placed first, and
+  /// equal priorities keep placement order. The child keeps its id scope and DOM ids.
   public static DocumentContent deferred(DocumentContent child, int priority) {
     return new DocumentPlacement(new DocumentNode.Deferred(DocumentNode.capture(child), priority));
   }
@@ -91,12 +81,6 @@ public final class Documents {
     }
     return new DocumentPlacement(
         new DocumentNode.Mount(id, view, bundle, DocumentNode.capture(fallback)));
-  }
-
-  /// Declares a Wasm host with portable fallback content.
-  public static DocumentContent wasmMount(
-      String id, String view, WasmBundle bundle, IntoElement fallback) {
-    return wasmMount(id, view, bundle, DocumentContent.of(fallback));
   }
 
   /// Groups document `children` as siblings without wrapper markup.

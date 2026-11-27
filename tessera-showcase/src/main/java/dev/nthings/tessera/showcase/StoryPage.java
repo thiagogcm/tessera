@@ -3,12 +3,12 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.h1;
 import static dev.nthings.tessera.core.Elements.main;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 

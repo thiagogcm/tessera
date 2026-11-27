@@ -1,7 +1,7 @@
 package dev.nthings.tessera.document;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ScopeDefinition;
-import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.document.DocumentNode;
 
 /// Styled scope whose host holds document content, such as a layout around late or end-of-page
@@ -13,7 +13,7 @@ public interface DocumentScope extends ScopeDefinition, DocumentContent {
   DocumentElement expand(DocumentContext context);
 
   @Override
-  default DocumentTree intoDocumentTree() {
-    return new DocumentPlacement(new DocumentNode.ScopePlacement(this, SourceProvenance.capture()));
+  default DocumentTree key(String key) {
+    return new DocumentPlacement(DocumentNode.capture(this).withKey(key));
   }
 }

@@ -3,7 +3,7 @@ package dev.nthings.tessera.document.components;
 import static dev.nthings.tessera.core.Elements.aside;
 import static dev.nthings.tessera.core.Elements.div;
 
-import dev.nthings.tessera.core.IntoElement;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.Container;
 import dev.nthings.tessera.css.CssColor;
@@ -13,7 +13,6 @@ import dev.nthings.tessera.css.GridTrack;
 import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.TrackList;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -27,9 +26,9 @@ import org.jspecify.annotations.Nullable;
 /// Two-column documentation layout: sections on the left and, on the right, a sticky
 /// [TableOfContents] listing every heading on the page. In a container narrower than 48rem, the
 /// table of contents stacks above the sections. The table of contents is collected from the
-/// document, so the layout is document content. Create one with [#of(DocumentContent...)] or
-/// [#of(IntoElement...)] and add more sections as children; they keep their page-level ids, so
-/// links to them do not depend on the layout.
+/// document, so the layout is document content. Create one with [#of(DocumentContent...)] and add
+/// more sections as children; they keep their page-level ids, so links to them do not depend on the
+/// layout.
 ///
 /// Without a [#scopeId(String)], the compiler numbers instances `doc-layout-<n>`.
 public final class DocLayout extends BuiltinDocumentComponent implements FluentBuilder<DocLayout> {
@@ -47,16 +46,7 @@ public final class DocLayout extends BuiltinDocumentComponent implements FluentB
     return new DocLayout();
   }
 
-  /// Creates a layout around portable `sections`.
-  public static DocLayout of(IntoElement... sections) {
-    var layout = new DocLayout();
-    for (var section : sections) {
-      layout.child(section);
-    }
-    return layout;
-  }
-
-  /// Creates a layout around document `sections`.
+  /// Creates a layout around `sections`.
   public static DocLayout of(DocumentContent... sections) {
     return new DocLayout().children(List.of(sections));
   }
@@ -72,39 +62,24 @@ public final class DocLayout extends BuiltinDocumentComponent implements FluentB
     return this;
   }
 
-  /// Adds portable `section` after the existing sections.
-  public DocLayout child(IntoElement section) {
-    sections.add(DocumentContent.of(section));
-    return this;
-  }
-
-  /// Adds document `section` after the existing sections.
+  /// Adds `section` after the existing sections.
   public DocLayout child(DocumentContent section) {
     sections.add(section);
     return this;
   }
 
-  /// Adds portable sections in order.
-  public DocLayout children(IntoElement first, IntoElement... rest) {
-    child(first);
-    for (var section : rest) {
-      child(section);
-    }
-    return this;
-  }
-
-  /// Adds each document section in order.
+  /// Adds each section in order.
   public DocLayout children(DocumentContent... sections) {
     return children(List.of(sections));
   }
 
-  /// Adds each document section in iteration order.
+  /// Adds each section in iteration order.
   public DocLayout children(Collection<? extends DocumentContent> sections) {
     this.sections.addAll(sections);
     return this;
   }
 
-  /// Adds each document section from `stream` in order. The stream is consumed.
+  /// Adds each section from `stream` in order. The stream is consumed.
   public DocLayout children(Stream<? extends DocumentContent> stream) {
     stream.forEach(this::child);
     return this;

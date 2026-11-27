@@ -1,9 +1,9 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.compiler.BundlePublication.File;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Location;
 import dev.nthings.tessera.core.ViewKey;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.document.DocumentNode;

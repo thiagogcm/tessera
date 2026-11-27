@@ -1,8 +1,8 @@
 package dev.nthings.tessera.compiler;
 
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.ViewKey;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.PageAddress;
 import dev.nthings.tessera.document.PageScript;

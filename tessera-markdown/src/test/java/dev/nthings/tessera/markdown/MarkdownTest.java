@@ -10,7 +10,7 @@ import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.Diagnostic;
-import dev.nthings.tessera.document.DocumentContent;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import java.util.List;
@@ -94,11 +94,10 @@ class MarkdownTest {
       var body = MARKDOWN.parse("# Hello *world*\n\n## Setup `mvn`\n\n## Hello world\n").body();
       var outline =
           Documents.late(context ->
-              DocumentContent.of(
-                  p(context.headings().stream()
-                          .map(h -> h.level() + ":" + h.title())
-                          .collect(Collectors.joining("|")))
-                      .attr("class", "outline")));
+              p(context.headings().stream()
+                      .map(h -> h.level() + ":" + h.title())
+                      .collect(Collectors.joining("|")))
+                  .attr("class", "outline"));
 
       var dom = render(Documents.fragment(body, outline));
 

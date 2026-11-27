@@ -14,11 +14,11 @@ import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.compiler.SiteWriter;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
 import dev.nthings.tessera.document.WasmBundle;
@@ -59,11 +59,7 @@ public final class PublishedWeb {
                         demo,
                         Field.of("Fallback notes", Forms.input("notes", InputType.TEXT))),
                     counter),
-                page(
-                    "/guide",
-                    "Static guide",
-                    DocumentContent.of(a("/", "Return to the static home")),
-                    counter),
+                page("/guide", "Static guide", a("/", "Return to the static home"), counter),
                 page(
                     "/broken",
                     "Failed initial render",
@@ -75,18 +71,14 @@ public final class PublishedWeb {
                     mount("forms", "forms", demo, p("The profile form is loading.")),
                     mount("defaults", "defaults", demo, p("The defaults form is loading.")),
                     mount("shipping", "shipping", demo, p("Shipping is loading."))),
-                page(
-                    "/forms/static", "Static forms", DocumentContent.of(DefaultsDemo.staticForm())),
+                page("/forms/static", "Static forms", DefaultsDemo.staticForm()),
                 page("/lists", "Lists", mount("lists", "lists", demo, p("Loading."))),
                 page(
                     "/lists/static",
                     "Static lists",
-                    DocumentContent.of(KeyedListDemo.content(List.of("a", "b", "c"), true, false))),
+                    KeyedListDemo.content(List.of("a", "b", "c"), true, false)),
                 page("/tabs", "Tabs", mount("tabs", "tabs", demo, p("Loading."))),
-                page(
-                    "/tabs/static",
-                    "Static tabs",
-                    DocumentContent.of(TabsDemo.mailboxes(TabsDemo.MAILBOXES))),
+                page("/tabs/static", "Static tabs", TabsDemo.mailboxes(TabsDemo.MAILBOXES)),
                 page("/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p("Loading."))),
                 page("/search", "Search", mount("search", "search", demo, p("Loading."))),
                 page("/events", "Events", mount("events", "events", demo, p("Loading."))),
@@ -105,8 +97,7 @@ public final class PublishedWeb {
                 page(
                     "/failures",
                     "Failures",
-                    DocumentContent.of(
-                        p("A note owned by the page").id(ElementRef.page("page-note"))),
+                    p("A note owned by the page").id(ElementRef.page("page-note")),
                     mount("schedule", "schedule", demo, p("Loading.")),
                     mount("collisions", "collisions", demo, p("Loading.")),
                     counter),
@@ -114,8 +105,7 @@ public final class PublishedWeb {
                     "/failures/shadowed",
                     "Shadowed ids",
                     mount("claim", "claim", demo, p("The claim is loading.")),
-                    DocumentContent.of(
-                        p("A footer owned by the page").id(ElementRef.page("page-footer"))))));
+                    p("A footer owned by the page").id(ElementRef.page("page-footer")))));
   }
 
   private static DocumentContent mount(

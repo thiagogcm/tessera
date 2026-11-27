@@ -23,15 +23,14 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
 import dev.nthings.tessera.core.AriaChecked;
 import dev.nthings.tessera.core.BuiltinCommand;
+import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.Element;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.HtmlTag;
 import dev.nthings.tessera.core.InputType;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.PopoverMode;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.ViewKey;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.DocumentScope;
@@ -269,10 +268,6 @@ class AuthoringDiagnosticsTest {
   }
 
   record Panel(String id, DocumentContent content) implements DocumentScope {
-    Panel(String id, IntoElement content) {
-      this(id, DocumentContent.of(content));
-    }
-
     @Override
     public String scopeId() {
       return id;
@@ -306,15 +301,13 @@ class AuthoringDiagnosticsTest {
                             DocumentElement.of(div())
                                 .children(
                                     Documents.late(_ ->
-                                        DocumentContent.of(
-                                            button()
-                                                .id(ElementRef.scoped("save"))
-                                                .command(missing, BuiltinCommand.SHOW_MODAL)
-                                                .text("Save"))),
-                                    DocumentContent.of(
-                                        a("#details%ZZ")
-                                            .id(ElementRef.scoped("details"))
-                                            .text("Details")),
+                                        button()
+                                            .id(ElementRef.scoped("save"))
+                                            .command(missing, BuiltinCommand.SHOW_MODAL)
+                                            .text("Save")),
+                                    a("#details%ZZ")
+                                        .id(ElementRef.scoped("details"))
+                                        .text("Details"),
                                     Documents.deferred(
                                         button().id(ElementRef.scoped("cancel")), 10))))));
 
@@ -342,8 +335,7 @@ class AuthoringDiagnosticsTest {
     public DocumentElement expand(DocumentContext context) {
       context.contributeHead(
           el(HtmlTag.LINK).attr("rel", "stylesheet").attr("href", "/styles%ZZ.css"));
-      context.atDocumentEnd(
-          ACTIONS, _ -> DocumentContent.of(button().id(ElementRef.scoped("subscribe"))));
+      context.atDocumentEnd(ACTIONS, _ -> button().id(ElementRef.scoped("subscribe")));
       return DocumentElement.of(div());
     }
   }

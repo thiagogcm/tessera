@@ -22,7 +22,6 @@ import dev.nthings.tessera.css.CssLength;
 import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Theme;
 import dev.nthings.tessera.document.DocumentComponent;
-import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.support.CssBlocks;
 import dev.nthings.tessera.support.Diagnostics;
@@ -81,7 +80,7 @@ class SiteCompilationTest {
   private static DocumentComponent widget(PageScript script) {
     return context -> {
       context.contributeScript(script);
-      return DocumentContent.of(main().child(custom("test-widget")));
+      return main().child(custom("test-widget"));
     };
   }
 

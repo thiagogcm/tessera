@@ -3,9 +3,12 @@ package dev.nthings.tessera.showcase;
 import static dev.nthings.tessera.core.Elements.div;
 import static dev.nthings.tessera.core.Elements.h2;
 import static dev.nthings.tessera.core.Elements.h3;
+import static dev.nthings.tessera.core.Elements.mark;
 import static dev.nthings.tessera.core.Elements.p;
+import static dev.nthings.tessera.core.Elements.s;
 import static dev.nthings.tessera.core.Elements.section;
 import static dev.nthings.tessera.core.Elements.text;
+import static dev.nthings.tessera.core.Elements.u;
 
 import dev.nthings.tessera.components.Badge;
 import dev.nthings.tessera.components.BulletList;
@@ -238,12 +241,12 @@ final class LayoutPage {
             p().textWrap(TextWrap.PRETTY)
                 .children(
                     text("Text can be "),
-                    Formatting.highlight("highlighted", Tone.ACCENT),
+                    mark("highlighted").highlight(Tone.ACCENT),
                     text(", "),
-                    Formatting.underline(
-                        "underlined with a wavy line", UnderlineStyle.WAVY, Tokens.STATUS_WARNING),
+                    u("underlined with a wavy line")
+                        .underline(UnderlineStyle.WAVY, Tokens.STATUS_WARNING),
                     text(", "),
-                    Formatting.strikethrough("struck through", Tokens.TEXT_MUTED),
+                    s("struck through").strikethrough(Tokens.TEXT_MUTED),
                     text(", shown as a diff ("),
                     Formatting.deleted("old()"),
                     text(" → "),
@@ -254,8 +257,8 @@ final class LayoutPage {
                     Formatting.keybinding("Ctrl+K"),
                     text(".")))
         .code(
-            "Formatting.highlight(\"highlighted\", Tone.ACCENT);",
-            "Formatting.underline(\"wavy\", UnderlineStyle.WAVY, Tokens.STATUS_WARNING);",
+            "mark(\"highlighted\").highlight(Tone.ACCENT);",
+            "u(\"wavy\").underline(UnderlineStyle.WAVY, Tokens.STATUS_WARNING);",
             "Formatting.keybinding(\"Ctrl+K\");");
   }
 }

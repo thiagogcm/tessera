@@ -1,53 +1,21 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Elements;
-import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.Border;
 import dev.nthings.tessera.css.CssLength;
-import dev.nthings.tessera.css.DesignToken;
 import dev.nthings.tessera.css.Shadow;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.UnderlineStyle;
 
-/// Inline text formatting functions. Each returns an element with a semantic tag (`mark`, `u`, `s`,
-/// `del`, `ins`, `code`, `kbd`) styled with the theme's colors, to place anywhere an inline element
-/// fits. Methods that take a style come as a text and a markup overload.
+/// Inline text presets. Each returns an element with a semantic tag (`del`, `ins`, `code`, `kbd`)
+/// styled with the theme's colors, to place anywhere an inline element fits. For a highlight,
+/// underline or strikethrough, style any element directly, such as
+/// `mark("new").highlight(Tone.ACCENT)` or `s("old").strikethrough(Tokens.TEXT_MUTED)`.
 public final class Formatting {
 
   private Formatting() {}
-
-  /// Highlights `text` with `tone`.
-  public static TagElement highlight(String text, Tone tone) {
-    return highlight(Elements.text(text), tone);
-  }
-
-  /// Highlights `content`, which may contain markup, with `tone`.
-  public static TagElement highlight(IntoElement content, Tone tone) {
-    return Elements.mark().highlight(tone).textColor(Tokens.TEXT_PRIMARY).child(content);
-  }
-
-  /// Underlines `text` in `style` and `color`.
-  public static TagElement underline(String text, UnderlineStyle style, DesignToken.Color color) {
-    return underline(Elements.text(text), style, color);
-  }
-
-  /// Underlines `content`, which may contain markup, in `style` and `color`.
-  public static TagElement underline(
-      IntoElement content, UnderlineStyle style, DesignToken.Color color) {
-    return Elements.u().underline(style, color).child(content);
-  }
-
-  /// Strikes through `text` with a line in `color`.
-  public static TagElement strikethrough(String text, DesignToken.Color color) {
-    return strikethrough(Elements.text(text), color);
-  }
-
-  /// Strikes through `content`, which may contain markup, with a line in `color`.
-  public static TagElement strikethrough(IntoElement content, DesignToken.Color color) {
-    return Elements.s().strikethrough(color).child(content);
-  }
 
   /// Marks removed text: a danger strikethrough on a danger highlight.
   public static TagElement deleted(String text) {

@@ -1,6 +1,6 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.svg;
+import static dev.nthings.tessera.core.Elements.el;
 
 import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.core.TagElement;
@@ -25,6 +25,16 @@ public final class Icon {
 
   private Icon() {}
 
+  /// An `<svg>` root with `viewBox="0 0 <width> <height>"` and `width` and `height` set, hidden
+  /// from assistive technology, for graphics that [#stroked] does not fit, such as filled marks or
+  /// gradients. Add children made with `Elements.el(SvgTag...)`.
+  public static TagElement svg(int width, int height) {
+    return el(SvgTag.SVG)
+        .attr("viewBox", "0 0 " + width + " " + height)
+        .dimensions(width, height)
+        .ariaHidden(true);
+  }
+
   /// A `size`-pixel icon drawn on a 24-unit grid with a stroke 2 units wide.
   public static TagElement stroked(int size, TagElement... shapes) {
     return stroked(size, 24, 2, shapes);
@@ -32,7 +42,7 @@ public final class Icon {
 
   /// A `size`-pixel icon drawn on a `box`-unit square grid with a stroke `strokeWidth` units wide.
   public static TagElement stroked(int size, int box, double strokeWidth, TagElement... shapes) {
-    return svg(SvgTag.SVG)
+    return el(SvgTag.SVG)
         .attr("width", Integer.toString(size))
         .attr("height", Integer.toString(size))
         .attr("viewBox", "0 0 " + box + " " + box)
@@ -47,18 +57,18 @@ public final class Icon {
 
   /// A `<path>` with path data `d`.
   public static TagElement path(String d) {
-    return svg(SvgTag.PATH).attr("d", d);
+    return el(SvgTag.PATH).attr("d", d);
   }
 
   public static TagElement circle(double cx, double cy, double r) {
-    return svg(SvgTag.CIRCLE)
+    return el(SvgTag.CIRCLE)
         .attr("cx", Decimals.format(cx))
         .attr("cy", Decimals.format(cy))
         .attr("r", Decimals.format(r));
   }
 
   public static TagElement ellipse(double cx, double cy, double rx, double ry) {
-    return svg(SvgTag.ELLIPSE)
+    return el(SvgTag.ELLIPSE)
         .attr("cx", Decimals.format(cx))
         .attr("cy", Decimals.format(cy))
         .attr("rx", Decimals.format(rx))
@@ -66,7 +76,7 @@ public final class Icon {
   }
 
   public static TagElement line(double x1, double y1, double x2, double y2) {
-    return svg(SvgTag.LINE)
+    return el(SvgTag.LINE)
         .attr("x1", Decimals.format(x1))
         .attr("y1", Decimals.format(y1))
         .attr("x2", Decimals.format(x2))
@@ -76,7 +86,7 @@ public final class Icon {
   /// A rectangle with corners rounded by `radius` (0 for square corners).
   public static TagElement rect(double x, double y, double width, double height, double radius) {
     var rect =
-        svg(SvgTag.RECT)
+        el(SvgTag.RECT)
             .attr("x", Decimals.format(x))
             .attr("y", Decimals.format(y))
             .attr("width", Decimals.format(width))
@@ -86,11 +96,11 @@ public final class Icon {
 
   /// A `<polyline>` through `points`, such as `"9 18 15 12 9 6"`.
   public static TagElement polyline(String points) {
-    return svg(SvgTag.POLYLINE).attr("points", points);
+    return el(SvgTag.POLYLINE).attr("points", points);
   }
 
   /// A closed `<polygon>` through `points`.
   public static TagElement polygon(String points) {
-    return svg(SvgTag.POLYGON).attr("points", points);
+    return el(SvgTag.POLYGON).attr("points", points);
   }
 }

@@ -5,9 +5,9 @@ import dev.nthings.tessera.internal.authoring.PortableNode;
 /// Static factories for portable element trees, usually imported statically. Most [HtmlTag] values
 /// have a zero-arg factory returning a mutable [TagElement], plus overloads accepting child nodes
 /// (`IntoElement...`) or text (`String`) for concise authoring. Tags without a dedicated factory,
-/// such as `time`, are built with [#el(TagName)]. Also [#fragment()], [#custom], [#svg(SvgTag)],
-/// and [#text] and [#empty], which return a plain [Element]. Content that only a static document
-/// places comes from `Documents`.
+/// such as `time`, are built with [#el(TagName)]. Also [#fragment()], [#custom], and [#text] and
+/// [#empty], which return a plain [Element]. Content that only a static document places comes from
+/// `Documents`.
 public final class Elements {
 
   private Elements() {}
@@ -16,8 +16,10 @@ public final class Elements {
     return tag.child(first).children(rest);
   }
 
-  /// Creates an element for any tag, including those without a factory here, such as
-  /// `HtmlTag.TIME`. Text children are HTML-escaped. Scripts are document content: create them with
+  /// Creates an element for any tag, including those without a factory here, such as `HtmlTag.TIME`
+  /// or an SVG element such as `SvgTag.PATH`. An SVG element is written as inline SVG in static
+  /// output and created with its namespace in a browser root; start an icon with `Icon.svg(width,
+  /// height)`. Text children are HTML-escaped. Scripts are document content: create them with
   /// `Documents.script`.
   public static TagElement el(TagName tag) {
     return new TagElement(tag);
@@ -766,23 +768,6 @@ public final class Elements {
   /// Returns an element that emits no markup.
   public static Element empty() {
     return PortablePlacement.EMPTY;
-  }
-
-  /// Creates an element in the SVG namespace, such as `svg` or `path`. Static output writes it as
-  /// inline SVG and a browser root creates it with its namespace, so bundled icons render the same
-  /// in both. Set geometry with [TagElement#attr(String, String)], such as `viewBox` or `d`.
-  public static TagElement svg(SvgTag tag) {
-    return new TagElement(tag);
-  }
-
-  /// Creates an `<svg>` root with `viewBox="0 0 <width> <height>"` and `width` and `height` set,
-  /// hidden from assistive technology. Name a meaningful graphic with
-  /// [TagElement#ariaHidden(boolean)] `false` plus a [TagElement#role(Role)] and label.
-  public static TagElement svgIcon(int width, int height) {
-    return new TagElement(SvgTag.SVG)
-        .attr("viewBox", "0 0 " + width + " " + height)
-        .dimensions(width, height)
-        .ariaHidden(true);
   }
 
   public static TagElement link() {

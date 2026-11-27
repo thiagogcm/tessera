@@ -73,7 +73,7 @@ class AttributeAuthoringTest {
           .isThrownBy(() -> Elements.el(HtmlTag.IFRAME).idRef(name, target));
     }
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> Elements.svg(SvgTag.SVG).idRef("xlink:href", target));
+        .isThrownBy(() -> Elements.el(SvgTag.SVG).idRef("xlink:href", target));
   }
 
   @Test
@@ -81,7 +81,7 @@ class AttributeAuthoringTest {
   void attributeNamesFollowTheirNamespaceCaseRules() {
     var page =
         renderMain(
-            div().attr("Data-Mode", "on"), Elements.svg(SvgTag.SVG).attr("viewBox", "0 0 1 1"));
+            div().attr("Data-Mode", "on"), Elements.el(SvgTag.SVG).attr("viewBox", "0 0 1 1"));
 
     assertThat(page.element("main > div")).hasAttribute("data-mode", "on");
     assertThat(page.html()).contains("viewBox=\"0 0 1 1\"");

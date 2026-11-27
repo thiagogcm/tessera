@@ -61,7 +61,7 @@ final class FixtureServer implements AutoCloseable {
   }
 
   private void published(HttpExchange exchange, String path) throws IOException {
-    var file = site.files().get(path);
+    var file = site.assets().get(path);
     if (file != null) {
       send(exchange, 200, file.contentType(), file.content());
       return;
@@ -76,7 +76,7 @@ final class FixtureServer implements AutoCloseable {
           exchange, 404, "text/plain; charset=utf-8", "Not found".getBytes(StandardCharsets.UTF_8));
       return;
     }
-    site.pageHeaders().getOrDefault(route, Map.of()).forEach(exchange.getResponseHeaders()::set);
+    site.headers().getOrDefault(route, Map.of()).forEach(exchange.getResponseHeaders()::set);
     send(exchange, 200, "text/html; charset=utf-8", page.getBytes(StandardCharsets.UTF_8));
   }
 

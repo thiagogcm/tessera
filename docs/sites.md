@@ -76,14 +76,14 @@ erDiagram
     SITE_ROUTE ||--|| PAGE_DOCUMENT : wraps
     SITE_DEFINITION ||--|| COMPILED_SITE : "Compiler.forSite().compile()"
     COMPILED_SITE ||--|{ HTML_PAGE : "pages() in route order"
-    COMPILED_SITE ||--|{ PUBLISHED_FILE : "files(): assets, CSS, JS, wasm, search-index.json, sitemap.xml"
-    COMPILED_SITE ||--o{ PAGE_HEADERS : "pageHeaders() by route"
+    COMPILED_SITE ||--|{ PUBLISHED_FILE : "assets(): files, CSS, JS, wasm, search-index.json, sitemap.xml"
+    COMPILED_SITE ||--o{ PAGE_HEADERS : "headers() by route"
 ```
 
 | Result type | Accessors |
 | --- | --- |
-| `CompiledPage` | `html()`, `css()`, `assets()`, `responseHeaders()` |
-| `CompiledSite` | `pages()` (in route order), `css()`, `files()`, `pageHeaders()`, `searchIndexJson()`, `sitemapXml()` |
+| `CompiledPage` | `html()`, `css()`, `assets()`, `headers()` |
+| `CompiledSite` | `pages()` (in route order), `css()`, `assets()`, `headers()`, `searchIndexJson()`, `sitemapXml()` |
 
 ## Register assets and images
 
@@ -224,7 +224,7 @@ See [Browser support](browser-support.md#component-scripts) for the bundled modu
 Write a compiled site to disk with `SiteWriter.writeToDirectory(compiled, output)` and upload the entire directory to your static host:
 
 - Enable directory indexes and redirect extensionless directory paths (such as `/guide`) to trailing slashes (`/guide/`).
-- Apply `compiled.pageHeaders()` on your host for routes that mount [browser bundles](browser-rendering.md#publish-a-browser-bundle).
+- Apply `compiled.headers()` on your host for routes that mount [browser bundles](browser-rendering.md#publish-a-browser-bundle).
 - Setting an external asset base relocates generated assets; it does not rewrite route paths or authored links for subdirectory hosting.
 
 To preview a compiled site in memory with accurate headers and redirects:
@@ -235,7 +235,7 @@ try (var server = SitePreviewServer.start(compiled, 8080)) {
 }
 ```
 
-`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`.
+`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `headers()`.
 
 To rebuild while you write, pass a build function and the directories to watch instead of a compiled site:
 

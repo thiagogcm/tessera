@@ -37,12 +37,12 @@ class SiteWriterTest {
     pageFiles.forEach((route, file) ->
         assertThat(root.resolve(file))
             .hasBinaryContent(site.pages().get(route).getBytes(StandardCharsets.UTF_8)));
-    site.files()
+    site.assets()
         .forEach((path, file) ->
             assertThat(root.resolve(path.substring(1))).hasBinaryContent(file.content()));
     try (var written = Files.walk(root)) {
       assertThat(written.filter(Files::isRegularFile))
-          .hasSize(site.pages().size() + site.files().size());
+          .hasSize(site.pages().size() + site.assets().size());
     }
   }
 

@@ -56,8 +56,8 @@ class SitePreviewServerTest {
   @Test
   @DisplayName("serves every published file at its URL with its content type and bytes")
   void servesEveryFile() throws Exception {
-    assertThat(site.files()).hasSizeGreaterThan(3);
-    for (var file : site.files().values()) {
+    assertThat(site.assets()).hasSizeGreaterThan(3);
+    for (var file : site.assets().values()) {
       var response = get(new URI(null, null, file.path(), null).toASCIIString());
 
       assertThat(response.statusCode()).as(file.path()).isEqualTo(200);

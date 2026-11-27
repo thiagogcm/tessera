@@ -43,7 +43,7 @@ class FontFaceTest {
   @Test
   @DisplayName("the site publishes each font file at its path")
   void publishesFiles() {
-    var files = site(OutputMode.external("/assets")).files();
+    var files = site(OutputMode.external("/assets")).assets();
 
     assertThat(files).containsKeys("/fonts/inter.woff2", "/fonts/inter-italic.woff2");
     assertThat(files.get("/fonts/inter.woff2").content()).containsExactly(1, 2, 3);

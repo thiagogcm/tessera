@@ -52,7 +52,7 @@ public record RenderedPage(CompiledPage compiled, Document dom) {
     }
     return of(
         new CompiledPage(
-            html, site.css(), List.of(), site.pageHeaders().getOrDefault(route, Map.of())));
+            html, site.css(), List.of(), site.headers().getOrDefault(route, Map.of())));
   }
 
   public static RenderedPage of(CompiledPage compiled) {

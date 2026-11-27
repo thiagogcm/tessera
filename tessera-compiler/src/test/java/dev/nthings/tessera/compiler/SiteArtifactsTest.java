@@ -52,7 +52,7 @@ class SiteArtifactsTest {
             "https://tessera.dev/guide/",
             "https://tessera.dev/guides/caf%C3%A9/",
             "https://tessera.dev/notes.html");
-    assertThat(site.files().get("/sitemap.xml").textContent()).isEqualTo(site.sitemapXml());
+    assertThat(site.assets().get("/sitemap.xml").textContent()).isEqualTo(site.sitemapXml());
   }
 
   @Test
@@ -112,7 +112,7 @@ class SiteArtifactsTest {
     var site = Compiler.forSite().compile(SiteDefinition.of(documentationRoutes()));
 
     assertThat(site.sitemapXml()).isNull();
-    assertThat(site.files()).doesNotContainKey("/sitemap.xml");
+    assertThat(site.assets()).doesNotContainKey("/sitemap.xml");
   }
 
   @Test

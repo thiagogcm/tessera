@@ -53,7 +53,7 @@ class SiteCompilationTest {
                 SiteDefinition.of(
                     SiteRoute.of("/", PageDocument.of("Home", main().p(CssLength.rem(2)))),
                     SiteRoute.of("/about", PageDocument.of("About", main().m(CssLength.rem(3))))));
-    var stylesheet = site.files().get(stylesheetPath(site)).textContent();
+    var stylesheet = site.assets().get(stylesheetPath(site)).textContent();
 
     for (var route : site.pages().keySet()) {
       var page = RenderedPage.of(site, route);
@@ -75,7 +75,7 @@ class SiteCompilationTest {
             .withTheme(Theme.defaults().with(brand, brand.defaultValue()))
             .compile(SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", main(p("x"))))));
 
-    assertThat(site.files().get(stylesheetPath(site)).textContent()).contains("--brand-hue:");
+    assertThat(site.assets().get(stylesheetPath(site)).textContent()).contains("--brand-hue:");
   }
 
   private static DocumentComponent widget(PageScript script) {
@@ -97,7 +97,7 @@ class SiteCompilationTest {
                     SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain")))));
 
     var loaded = RenderedPage.of(site, "/").element("script[type=module]");
-    assertThat(site.files().get(loaded.attr("src")).textContent()).isEqualTo(script.module());
+    assertThat(site.assets().get(loaded.attr("src")).textContent()).isEqualTo(script.module());
     assertThat(RenderedPage.of(site, "/plain").elements("script[type=module]")).isEmpty();
   }
 
@@ -120,11 +120,11 @@ class SiteCompilationTest {
                     SiteRoute.of("/about", PageDocument.of("About", main().p(CssLength.rem(2))))));
 
     assertThat(second.pages()).isEqualTo(first.pages());
-    assertThat(second.files().keySet()).isEqualTo(first.files().keySet());
+    assertThat(second.assets().keySet()).isEqualTo(first.assets().keySet());
     first
-        .files()
+        .assets()
         .forEach((path, file) ->
-            assertThat(second.files().get(path).content()).isEqualTo(file.content()));
+            assertThat(second.assets().get(path).content()).isEqualTo(file.content()));
     var home = RenderedPage.of(first, "/");
     var restyledHome = RenderedPage.of(restyled, "/");
     assertThat(restyledHome.element("link[rel=stylesheet]").attr("href"))
@@ -311,7 +311,7 @@ class SiteCompilationTest {
   @Test
   @DisplayName("a registered asset is published with its bytes and inferred content type")
   void publishesRegisteredAsset() {
-    var file = Compiler.forSite().compile(docsSite()).files().get(logo().path());
+    var file = Compiler.forSite().compile(docsSite()).assets().get(logo().path());
 
     assertThat(file.contentType()).isEqualTo("image/png");
     assertThat(file.content()).isEqualTo(logo().content());

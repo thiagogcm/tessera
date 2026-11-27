@@ -104,7 +104,7 @@ public final class ShowcaseSite {
         "Compiled "
             + compiled.pages().size()
             + " routes and "
-            + compiled.files().size()
+            + compiled.assets().size()
             + " files to "
             + outputDir.toAbsolutePath());
 

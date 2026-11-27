@@ -151,7 +151,7 @@ public final class WidgetBridge {
   /// Splits a trigger configured with `interestTooltip` into a copy of the trigger, anchored and
   /// described by the popup, and the popup anchored to it.
   public static TooltipParts tooltip(TagElement source) {
-    var trigger = source.copy().anchorName();
+    var trigger = source.copy().anchor();
     var data = AuthoringAccess.tag(trigger);
     var popup =
         Objects.requireNonNull(

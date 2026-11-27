@@ -259,7 +259,7 @@ public final class Dropdown extends BuiltinScope<Dropdown> {
 
   /// Binds the panel to `panel` instead of a generated ref. Refs compare by identity, so pass the
   /// same ref in every render that targets the panel.
-  public Dropdown panelRef(ElementRef panel) {
+  public Dropdown bindPanel(ElementRef panel) {
     this.panel = panel;
     return this;
   }

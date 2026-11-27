@@ -44,7 +44,7 @@ final class ServicesDemo {
     var owned =
         Modal.of("Confirm later")
             .scopeId("confirm")
-            .dialogRef(confirm)
+            .bindDialog(confirm)
             .bodyText("Opened by a timer");
     var rebuilt = Modal.of("Stale later").scopeId("stale").bodyText("Never opened");
     return LiveElement.of(

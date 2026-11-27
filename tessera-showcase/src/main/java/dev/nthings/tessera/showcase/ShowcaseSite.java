@@ -43,11 +43,9 @@ public final class ShowcaseSite {
               .withTitle(page.title()));
     }
     routes.addAll(Catalog.routes());
-    return SiteDefinition.builder()
-        .routes(routes)
-        .baseUrl(URI.create("http://localhost:8188"))
-        .assets(Art.assets())
-        .build();
+    return SiteDefinition.of(routes)
+        .withBaseUrl(URI.create("http://localhost:8188"))
+        .withAssets(Art.assets());
   }
 
   /// The element tree of one route, with the Java line that built each element.

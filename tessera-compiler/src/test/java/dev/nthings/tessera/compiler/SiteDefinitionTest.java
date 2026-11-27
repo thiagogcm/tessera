@@ -36,9 +36,8 @@ class SiteDefinitionTest {
       })
   @DisplayName("a base URL must be an absolute origin")
   void rejectsBaseUrlWithoutOrigin(String baseUrl) {
-    var builder =
-        SiteDefinition.builder().routes(documentationRoutes()).baseUrl(URI.create(baseUrl));
+    var site = SiteDefinition.of(documentationRoutes());
 
-    assertThatIllegalArgumentException().isThrownBy(builder::build);
+    assertThatIllegalArgumentException().isThrownBy(() -> site.withBaseUrl(URI.create(baseUrl)));
   }
 }

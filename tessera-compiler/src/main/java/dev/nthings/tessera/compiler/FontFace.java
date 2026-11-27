@@ -5,17 +5,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.owasp.encoder.Encode;
 
-/// A self-hosted font file, registered on a site with [SiteDefinition.Builder#font(FontFace)]. The
-/// site publishes the file, its stylesheet declares the `@font-face` rule with `font-display:
-/// swap`, and with [#preload()] every page links the file with `<link rel="preload" as="font">`.
-/// Point a font token at the family to use it, such as `theme.with(Tokens.FONT_BODY,
+/// A self-hosted font file, registered on a site with [SiteDefinition#withFonts(List)]. The site
+/// publishes the file, its stylesheet declares the `@font-face` rule with `font-display: swap`, and
+/// with [#preload()] every page links the file with `<link rel="preload" as="font">`. Point a font
+/// token at the family to use it, such as `theme.with(Tokens.FONT_BODY,
 /// FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI))`.
 ///
 /// ```java
-/// SiteDefinition.builder()
-///     .font(FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
-///         .weight(100, 900)
-///         .preload())
+/// site.withFonts(
+///     List.of(
+///         FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
+///             .weight(100, 900)
+///             .preload()))
 /// ```
 ///
 /// @param family the `font-family` name the rule declares

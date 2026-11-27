@@ -17,6 +17,8 @@ import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.support.Diagnostics;
 import dev.nthings.tessera.support.Diagnostics.Found;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,10 +34,7 @@ class SiteLinkValidationTest {
   /// A docs site whose route at `source` also holds `link`: `/guide` has an `install` anchor and
   /// `/guides/café` a `café+intro` anchor, and one PDF is registered.
   private static SiteDefinition site(String source, IntoElement link) {
-    var builder =
-        SiteDefinition.builder()
-            .baseUrl(URI.create("https://example.com"))
-            .asset(Asset.of("/assets/manual v1.pdf", new byte[] {1}));
+    var routes = new ArrayList<SiteRoute>();
     for (var path : PATHS) {
       var body = main();
       if (path.equals("/guide")) {
@@ -46,9 +45,11 @@ class SiteLinkValidationTest {
       if (path.equals(source)) {
         body.child(link);
       }
-      builder.route(SiteRoute.of(path, PageDocument.of(path, body)));
+      routes.add(SiteRoute.of(path, PageDocument.of(path, body)));
     }
-    return builder.build();
+    return SiteDefinition.of(routes)
+        .withBaseUrl(URI.create("https://example.com"))
+        .withAssets(List.of(Asset.of("/assets/manual v1.pdf", new byte[] {1})));
   }
 
   static Stream<Arguments> resolvableLinks() {

@@ -22,7 +22,7 @@ class SiteWriterTest {
   @DisplayName("every page and file lands at its URL path with its exact bytes, and nothing else")
   void writesEveryPageAndFileAtItsUrlPath() throws IOException {
     var site =
-        Compiler.forSite().compile(docsSite().baseUrl(URI.create("https://example.com")).build());
+        Compiler.forSite().compile(docsSite().withBaseUrl(URI.create("https://example.com")));
 
     SiteWriter.writeToDirectory(site, out.resolve("site"));
 
@@ -49,7 +49,7 @@ class SiteWriterTest {
   @Test
   @DisplayName("writing over an earlier build replaces its files")
   void overwritesAnEarlierBuild() throws IOException {
-    var site = Compiler.forSite().compile(docsSite().build());
+    var site = Compiler.forSite().compile(docsSite());
     Files.writeString(out.resolve("index.html"), "stale");
 
     SiteWriter.writeToDirectory(site, out);
@@ -60,7 +60,7 @@ class SiteWriterTest {
   @Test
   @DisplayName("a relative output directory with dot segments resolves cleanly")
   void writesToARelativeDirectory() {
-    var site = Compiler.forSite().compile(docsSite().build());
+    var site = Compiler.forSite().compile(docsSite());
     var target = out.resolve("nested").resolve(".").resolve("site");
     var relative = Path.of("").toAbsolutePath().relativize(target);
 

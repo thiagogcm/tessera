@@ -20,12 +20,13 @@ class FontFaceTest {
     return Compiler.forSite()
         .withOutputMode(output)
         .compile(
-            SiteDefinition.builder()
-                .route(SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))))
-                .route(SiteRoute.of("/about", PageDocument.of("About", main().text("About"))))
-                .font(FontFace.of("Inter", INTER).weight(100, 900).preload())
-                .font(FontFace.of("Inter", INTER_ITALIC).weight(400).italic())
-                .build());
+            SiteDefinition.of(
+                    SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))),
+                    SiteRoute.of("/about", PageDocument.of("About", main().text("About"))))
+                .withFonts(
+                    List.of(
+                        FontFace.of("Inter", INTER).weight(100, 900).preload(),
+                        FontFace.of("Inter", INTER_ITALIC).weight(400).italic())));
   }
 
   @Test
@@ -70,11 +71,9 @@ class FontFaceTest {
   @DisplayName("a font file that shares a path with another file is reported")
   void reportsCollisions() {
     var site =
-        SiteDefinition.builder()
-            .route(SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))))
-            .asset(INTER)
-            .font(FontFace.of("Inter", INTER))
-            .build();
+        SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))))
+            .withAssets(List.of(INTER))
+            .withFonts(List.of(FontFace.of("Inter", INTER)));
 
     assertThatThrownBy(() -> Compiler.forSite().compile(site))
         .isInstanceOfSatisfying(

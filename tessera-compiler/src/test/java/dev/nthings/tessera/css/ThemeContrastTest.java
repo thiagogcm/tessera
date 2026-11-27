@@ -429,10 +429,7 @@ class ThemeContrastTest {
     void passing() {
       var compiler =
           Compiler.forSite().withTheme(Theme.defaults().with(Tokens.DENSITY, CssNumber.of(0.9)));
-      var site =
-          SiteDefinition.builder()
-              .route(SiteRoute.of("/", PageDocument.of("Home", main(p("x")))))
-              .build();
+      var site = SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", main(p("x")))));
       assertThat(compiler.compile(site).pages()).hasSize(1);
     }
   }

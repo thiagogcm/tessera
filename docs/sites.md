@@ -8,14 +8,12 @@ Compile routes and static assets together into a validated, publishable site. Th
 
 ```java
 var site =
-    SiteDefinition.builder()
-        .route(SiteRoute.of("/", PageDocument.of("Home", Elements.main(Elements.h1("Home")))))
-        .route(
-            SiteRoute.of(
-                "/guide",
-                PageDocument.of("Guide", Elements.main(Elements.h1("Guide")))
-                    .withDescription("Publishing guide")))
-        .build();
+    SiteDefinition.of(
+        SiteRoute.of("/", PageDocument.of("Home", Elements.main(Elements.h1("Home")))),
+        SiteRoute.of(
+            "/guide",
+            PageDocument.of("Guide", Elements.main(Elements.h1("Guide")))
+                .withDescription("Publishing guide")));
 
 var compiled = Compiler.forSite().compile(site);
 SiteWriter.writeToDirectory(compiled, Path.of("target/site"));
@@ -39,11 +37,12 @@ On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels with
 
 `site.route("/guide")` returns `Optional<SiteRoute>` using the same path normalization as route construction.
 
-`SiteDefinition.builder()` also accepts:
+`SiteDefinition` is a record; each `with...` call returns a new site:
 
-- `asset(Asset)` / `assets(...)`: Static files published alongside pages.
-- `baseUrl(URI.create("https://example.com"))`: Takes a site origin (no path). Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
-- `linkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
+- `withAssets(List<Asset>)`: Static files published alongside pages.
+- `withFonts(List<FontFace>)`: Self-hosted font faces (see [Styling](styling.md)).
+- `withBaseUrl(URI.create("https://example.com"))`: Takes a site origin (no path). Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
+- `withLinkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
 Configure themes and output modes on the immutable [`Compiler`](#choose-an-output-mode) value (`Compiler.forSite().withTheme(theme).withOutputMode(mode)`).
 
@@ -91,8 +90,11 @@ erDiagram
 Register static files with absolute logical paths so site validation recognizes them as valid link and media destinations:
 
 ```java
-builder.asset(Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")));
-builder.asset(Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n"));
+var withAssets =
+    site.withAssets(
+        List.of(
+            Asset.file("/assets/logo.svg", Path.of("assets/logo.svg")),
+            Asset.text("/assets/robots.txt", "User-agent: *\nAllow: /\n")));
 ```
 
 `Asset.file(...)` reads bytes explicitly at registration time. Byte-backed assets flow through compilation and publishing together.
@@ -114,13 +116,15 @@ The compiler requires non-empty `alt` text and explicit dimensions or an aspect 
 Register each font file as a `FontFace`. The site publishes the file, the stylesheet declares its `@font-face` rule with `font-display: swap`, and a preloaded face gets a `<link rel="preload" as="font">` on every page. Point a font token at the family to use it:
 
 ```java
-builder
-    .font(FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
-        .weight(100, 900)
-        .preload())
-    .font(FontFace.of("Inter", Asset.file("/fonts/inter-italic.woff2", Path.of("fonts/inter-italic.woff2")))
-        .weight(100, 900)
-        .italic());
+var withFonts =
+    site.withFonts(
+        List.of(
+            FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
+                .weight(100, 900)
+                .preload(),
+            FontFace.of("Inter", Asset.file("/fonts/inter-italic.woff2", Path.of("fonts/inter-italic.woff2")))
+                .weight(100, 900)
+                .italic()));
 
 var theme = Theme.defaults()
     .with(Tokens.FONT_BODY, FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI));

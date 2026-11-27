@@ -73,10 +73,7 @@ class SiteCompilationTest {
     var site =
         Compiler.forSite()
             .withTheme(Theme.defaults().with(brand, brand.defaultValue()))
-            .compile(
-                SiteDefinition.builder()
-                    .route(SiteRoute.of("/", PageDocument.of("Home", main(p("x")))))
-                    .build());
+            .compile(SiteDefinition.of(SiteRoute.of("/", PageDocument.of("Home", main(p("x"))))));
 
     assertThat(site.files().get(stylesheetPath(site)).textContent()).contains("--brand-hue:");
   }
@@ -190,7 +187,7 @@ class SiteCompilationTest {
   @DisplayName("path conflicts are reported before any page renders")
   void reportsPathConflictsBeforeRendering(
       List<SiteRoute> routes, List<Asset> assets, Tuple expected) {
-    var site = SiteDefinition.builder().routes(routes).assets(assets).build();
+    var site = SiteDefinition.of(routes).withAssets(assets);
 
     assertThat(Diagnostics.of(() -> Compiler.forSite().compile(site)))
         .extracting(Found::rule, Found::route)
@@ -296,7 +293,7 @@ class SiteCompilationTest {
   @EnumSource(LinkSpeculation.class)
   @DisplayName("pages declare same-site speculation rules for the chosen action")
   void declaresSpeculationRules(LinkSpeculation speculation) {
-    var site = Compiler.forSite().compile(docsSite().linkSpeculation(speculation).build());
+    var site = Compiler.forSite().compile(docsSite().withLinkSpeculation(speculation));
     var rules = RenderedPage.of(site, "/").elements("script[type=speculationrules]");
 
     if (speculation == LinkSpeculation.NONE) {
@@ -314,7 +311,7 @@ class SiteCompilationTest {
   @Test
   @DisplayName("a registered asset is published with its bytes and inferred content type")
   void publishesRegisteredAsset() {
-    var file = Compiler.forSite().compile(docsSite().build()).files().get(logo().path());
+    var file = Compiler.forSite().compile(docsSite()).files().get(logo().path());
 
     assertThat(file.contentType()).isEqualTo("image/png");
     assertThat(file.content()).isEqualTo(logo().content());

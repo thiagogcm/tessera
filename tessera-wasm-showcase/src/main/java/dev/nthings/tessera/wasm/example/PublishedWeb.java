@@ -47,94 +47,70 @@ public final class PublishedWeb {
     return Compiler.forSite()
         .withOutputMode(OutputMode.external(assetBase))
         .compile(
-            SiteDefinition.builder()
-                .route(
-                    page(
-                        "/",
-                        "Published Web Images",
-                        mount("app", "app", demo, a("/guide/", "Open the static guide")),
-                        mount(
-                            "notes",
-                            "notes",
-                            demo,
-                            Field.of("Fallback notes", Forms.text("notes"))),
-                        counter))
-                .route(
-                    page(
-                        "/guide",
-                        "Static guide",
-                        DocumentContent.of(a("/", "Return to the static home")),
-                        counter))
-                .route(
-                    page(
-                        "/broken",
-                        "Failed initial render",
-                        mount("broken", "broken", demo, a("/", "Return to the static home")),
-                        counter))
-                .route(
-                    page(
-                        "/forms",
-                        "Forms",
-                        mount("forms", "forms", demo, p("The profile form is loading.")),
-                        mount("defaults", "defaults", demo, p("The defaults form is loading.")),
-                        mount("shipping", "shipping", demo, p("Shipping is loading."))))
-                .route(
-                    page(
-                        "/forms/static",
-                        "Static forms",
-                        DocumentContent.of(DefaultsDemo.staticForm())))
-                .route(page("/lists", "Lists", mount("lists", "lists", demo, p("Loading."))))
-                .route(
-                    page(
-                        "/lists/static",
-                        "Static lists",
-                        DocumentContent.of(
-                            KeyedListDemo.content(List.of("a", "b", "c"), true, false))))
-                .route(page("/tabs", "Tabs", mount("tabs", "tabs", demo, p("Loading."))))
-                .route(
-                    page(
-                        "/tabs/static",
-                        "Static tabs",
-                        DocumentContent.of(TabsDemo.mailboxes(TabsDemo.MAILBOXES))))
-                .route(
-                    page("/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p("Loading."))))
-                .route(page("/search", "Search", mount("search", "search", demo, p("Loading."))))
-                .route(page("/events", "Events", mount("events", "events", demo, p("Loading."))))
-                .route(
-                    page(
-                        "/services",
-                        "Services",
-                        mount("services", "services", demo, p("Loading."))))
-                .route(
-                    page(
-                        "/lifecycle",
-                        "Lifecycle",
-                        mount("toolbar", "toolbar", demo, p("Loading.")),
-                        mount("lifetime", "lifetime", demo, p("Loading.")),
-                        mount("closure", "closure", demo, p("Loading.")),
-                        mount("activity", "activity", demo, p("Loading."))))
-                .route(
-                    page(
-                        "/handoff",
-                        "Handoff",
-                        mount("handoff", "handoff", demo, HandoffDemo.fallback())))
-                .route(
-                    page(
-                        "/failures",
-                        "Failures",
-                        DocumentContent.of(
-                            p("A note owned by the page").id(ElementRef.page("page-note"))),
-                        mount("schedule", "schedule", demo, p("Loading.")),
-                        mount("collisions", "collisions", demo, p("Loading.")),
-                        counter))
-                .route(
-                    page(
-                        "/failures/shadowed",
-                        "Shadowed ids",
-                        mount("claim", "claim", demo, p("The claim is loading.")),
-                        DocumentContent.of(
-                            p("A footer owned by the page").id(ElementRef.page("page-footer")))))
-                .build());
+            SiteDefinition.of(
+                page(
+                    "/",
+                    "Published Web Images",
+                    mount("app", "app", demo, a("/guide/", "Open the static guide")),
+                    mount("notes", "notes", demo, Field.of("Fallback notes", Forms.text("notes"))),
+                    counter),
+                page(
+                    "/guide",
+                    "Static guide",
+                    DocumentContent.of(a("/", "Return to the static home")),
+                    counter),
+                page(
+                    "/broken",
+                    "Failed initial render",
+                    mount("broken", "broken", demo, a("/", "Return to the static home")),
+                    counter),
+                page(
+                    "/forms",
+                    "Forms",
+                    mount("forms", "forms", demo, p("The profile form is loading.")),
+                    mount("defaults", "defaults", demo, p("The defaults form is loading.")),
+                    mount("shipping", "shipping", demo, p("Shipping is loading."))),
+                page(
+                    "/forms/static", "Static forms", DocumentContent.of(DefaultsDemo.staticForm())),
+                page("/lists", "Lists", mount("lists", "lists", demo, p("Loading."))),
+                page(
+                    "/lists/static",
+                    "Static lists",
+                    DocumentContent.of(KeyedListDemo.content(List.of("a", "b", "c"), true, false))),
+                page("/tabs", "Tabs", mount("tabs", "tabs", demo, p("Loading."))),
+                page(
+                    "/tabs/static",
+                    "Static tabs",
+                    DocumentContent.of(TabsDemo.mailboxes(TabsDemo.MAILBOXES))),
+                page("/dialogs", "Dialogs", mount("dialogs", "dialogs", demo, p("Loading."))),
+                page("/search", "Search", mount("search", "search", demo, p("Loading."))),
+                page("/events", "Events", mount("events", "events", demo, p("Loading."))),
+                page("/services", "Services", mount("services", "services", demo, p("Loading."))),
+                page(
+                    "/lifecycle",
+                    "Lifecycle",
+                    mount("toolbar", "toolbar", demo, p("Loading.")),
+                    mount("lifetime", "lifetime", demo, p("Loading.")),
+                    mount("closure", "closure", demo, p("Loading.")),
+                    mount("activity", "activity", demo, p("Loading."))),
+                page(
+                    "/handoff",
+                    "Handoff",
+                    mount("handoff", "handoff", demo, HandoffDemo.fallback())),
+                page(
+                    "/failures",
+                    "Failures",
+                    DocumentContent.of(
+                        p("A note owned by the page").id(ElementRef.page("page-note"))),
+                    mount("schedule", "schedule", demo, p("Loading.")),
+                    mount("collisions", "collisions", demo, p("Loading.")),
+                    counter),
+                page(
+                    "/failures/shadowed",
+                    "Shadowed ids",
+                    mount("claim", "claim", demo, p("The claim is loading.")),
+                    DocumentContent.of(
+                        p("A footer owned by the page").id(ElementRef.page("page-footer"))))));
   }
 
   private static DocumentContent mount(

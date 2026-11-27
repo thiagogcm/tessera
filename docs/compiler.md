@@ -94,7 +94,7 @@ stateDiagram-v2
 
 `HtmlWriter` handles context-sensitive OWASP encoding and the HTML envelope. Its `Resources` helper hashes and encodes the final stylesheet once and each distinct `PageScript` once per compilation, and publishes the vendored `ScriptModule`s those scripts import under `<assetBase>/modules/` with a per-page import map (`ScriptModules`). `BundlePublication` resolves `WasmBundle` graphs into content-hashed files under `<assetBase>/wasm/`, publishes the shared `wasm-bootstrap.js`, and supplies deployment CSP headers.
 
-`SiteArtifacts` generates `search-index.json` (from routes and prepared outline headings) and optional `sitemap.xml` (when `baseUrl` is configured).
+`SiteArtifacts` generates `search-index.json` (from routes and prepared outline headings), optional `sitemap.xml` (when `baseUrl` is configured), and `_headers` (site headers, immutable caching for the content-hashed files the compilation generated, and per-route deployment headers). A `withNotFoundPage` document is prepared, validated and painted as one more page after the routes, then returned as `notFoundPage()` instead of a route.
 
 ## Preserve diagnostic and source provenance
 

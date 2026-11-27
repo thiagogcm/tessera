@@ -96,6 +96,34 @@ class SitePreviewServerTest {
   }
 
   @Test
+  @DisplayName("sends the site headers with every response")
+  void sendsSiteHeaders() throws Exception {
+    for (var url : List.of("/", "/guide/", "/search-index.json", "/missing")) {
+      assertThat(get(url).headers().firstValue("X-Content-Type-Options"))
+          .as(url)
+          .hasValue("nosniff");
+    }
+  }
+
+  @Test
+  @DisplayName("serves the not-found page with status 404 for an unknown path")
+  void servesNotFoundPage() throws Exception {
+    var withPage =
+        Compiler.forSite()
+            .compile(
+                docsSite().withNotFoundPage(PageDocument.of("Not found", main().text("Gone"))));
+    try (var preview = SitePreviewServer.start(withPage, 0)) {
+      var request = HttpRequest.newBuilder(URI.create(preview.baseUrl() + "/deep/missing")).build();
+      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+      assertThat(response.statusCode()).isEqualTo(404);
+      assertThat(response.headers().firstValue("Content-Type"))
+          .hasValue("text/html; charset=utf-8");
+      assertThat(response.body()).isEqualTo(withPage.notFoundPage());
+    }
+  }
+
+  @Test
   @DisplayName("watch mode rebuilds on a file change, keeps the last good site, and reloads pages")
   void rebuildsWatchedSources(@TempDir Path sources) throws Exception {
     var content = Files.writeString(sources.resolve("home.txt"), "first");

@@ -1,7 +1,10 @@
 package dev.nthings.tessera.compiler;
 
 import dev.nthings.tessera.document.PageAddress;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.owasp.encoder.Encode;
 
 /// Serializes sitemap and search metadata.
@@ -10,6 +13,51 @@ final class SiteArtifacts {
 
   static final String SITEMAP_PATH = "/sitemap.xml";
   static final String SEARCH_INDEX_PATH = "/search-index.json";
+  static final String HEADERS_PATH = "/_headers";
+  static final String NOT_FOUND_PATH = "/404.html";
+  static final String IMMUTABLE = "public, max-age=31536000, immutable";
+
+  /// The `_headers` rules: `siteHeaders` for `/*`, a year-long immutable cache for each of
+  /// `hashedFiles`, and each page's own `pageHeaders`, keyed by URL path. A directory holding only
+  /// hashed files gets one `dir/*` rule, keeping the file under host rule limits; a hashed file
+  /// beside other published files gets its own rule. `publishedFiles` lists every published URL
+  /// path, pages included.
+  static String generateHeadersFile(
+      Map<String, String> siteHeaders,
+      Set<String> hashedFiles,
+      Set<String> publishedFiles,
+      Map<String, Map<String, String>> pageHeaders) {
+    var sb = new StringBuilder(512);
+    if (!siteHeaders.isEmpty()) {
+      rule(sb, "/*", siteHeaders);
+    }
+    var cache = Map.of("Cache-Control", IMMUTABLE);
+    var directories = new LinkedHashSet<String>();
+    for (var file : hashedFiles) {
+      var directory = file.substring(0, file.lastIndexOf('/'));
+      var prefix = directory + "/";
+      var onlyHashed =
+          !directory.isEmpty()
+              && publishedFiles.stream()
+                  .filter(path -> path.startsWith(prefix))
+                  .allMatch(hashedFiles::contains);
+      if (onlyHashed) {
+        if (directories.add(directory)) {
+          rule(sb, prefix + "*", cache);
+        }
+      } else {
+        rule(sb, file, cache);
+      }
+    }
+    pageHeaders.forEach((path, headers) -> rule(sb, path, headers));
+    return sb.toString();
+  }
+
+  private static void rule(StringBuilder sb, String path, Map<String, String> headers) {
+    sb.append(path).append('\n');
+    headers.forEach(
+        (name, value) -> sb.append("  ").append(name).append(": ").append(value).append('\n'));
+  }
 
   /// Lists the absolute URL of each of `addresses`, which all carry one.
   static String generateSitemapXml(List<PageAddress> addresses) {

@@ -1,5 +1,7 @@
 package dev.nthings.tessera.compiler;
 
+import static dev.nthings.tessera.compiler.SiteArtifacts.HEADERS_PATH;
+import static dev.nthings.tessera.compiler.SiteArtifacts.NOT_FOUND_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SEARCH_INDEX_PATH;
 import static dev.nthings.tessera.compiler.SiteArtifacts.SITEMAP_PATH;
 
@@ -11,11 +13,13 @@ import dev.nthings.tessera.document.PageScript;
 import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.css.StyleSheet;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.SequencedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -48,6 +52,11 @@ final class SiteCompiler {
     var baseUrl = site.baseUrl();
     // Generated later; a route or registered file must not take their paths.
     collides(files, routePaths, SEARCH_INDEX_PATH, "Generated file", diagnostics);
+    collides(files, routePaths, HEADERS_PATH, "Generated file", diagnostics);
+    var notFound = site.notFoundPage();
+    if (notFound != null) {
+      collides(files, routePaths, NOT_FOUND_PATH, "Not-found page", diagnostics);
+    }
     if (baseUrl != null) {
       collides(files, routePaths, SITEMAP_PATH, "Generated file", diagnostics);
     }
@@ -57,20 +66,29 @@ final class SiteCompiler {
 
     var speculation = site.linkSpeculation();
     var addresses = routes.stream().map(route -> address(route, baseUrl)).toList();
-    var preparedPages = preparePages(routes, addresses, new BundlePublication(output));
-    var preparedByRoute = new LinkedHashMap<String, PreparedPage>(routes.size());
-    for (var i = 0; i < routes.size(); i++) {
-      preparedByRoute.put(routes.get(i).path(), preparedPages.get(i));
+    // The not-found page is prepared, validated and painted as one more page after the routes.
+    var pageRoutes = new ArrayList<>(routes);
+    var pageAddresses = new ArrayList<>(addresses);
+    if (notFound != null) {
+      var route = SiteRoute.of(NOT_FOUND_PATH, notFound);
+      pageRoutes.add(route);
+      pageAddresses.add(address(route, baseUrl));
+    }
+    var allPages = preparePages(pageRoutes, pageAddresses, new BundlePublication(output));
+    var preparedPages = allPages.subList(0, routes.size());
+    var preparedByRoute = new LinkedHashMap<String, PreparedPage>(allPages.size());
+    for (var i = 0; i < pageRoutes.size(); i++) {
+      preparedByRoute.put(pageRoutes.get(i).path(), allPages.get(i));
     }
 
     // Merge route stylesheets in route order so output is deterministic.
     var sharedStyles = new StyleSheet();
-    for (var prepared : preparedPages) {
+    for (var prepared : allPages) {
       prepared.contributeStylesTo(sharedStyles);
     }
     var css = FontFace.css(site.fonts()) + sharedStyles.render(theme);
     var behaviors = new LinkedHashSet<PageScript>();
-    for (var prepared : preparedPages) {
+    for (var prepared : allPages) {
       behaviors.addAll(prepared.scripts());
     }
     var moduleConflicts = ScriptModules.conflicts(behaviors);
@@ -81,14 +99,14 @@ final class SiteCompiler {
     var resources = new HtmlWriter.Resources(css, output, behaviors);
     var externalRules =
         output instanceof OutputMode.External(var externalBase)
-                && preparedPages.stream().anyMatch(page -> page.bundleBootstrap() != null)
+                && allPages.stream().anyMatch(page -> page.bundleBootstrap() != null)
             ? speculation.externalRules(externalBase)
             : null;
     var linkedFiles = new LinkedHashMap<String, Asset>();
     for (var asset : resources.assets()) {
       linkedFiles.putIfAbsent(asset.path(), asset);
     }
-    for (var page : preparedPages) {
+    for (var page : allPages) {
       for (var asset : page.bundleAssets()) {
         linkedFiles.putIfAbsent(asset.path(), asset);
       }
@@ -100,10 +118,14 @@ final class SiteCompiler {
     var publishedFiles = new LinkedHashSet<>(files.keySet());
     publishedFiles.addAll(linkedFiles.keySet());
     publishedFiles.add(SEARCH_INDEX_PATH);
+    publishedFiles.add(HEADERS_PATH);
     if (baseUrl != null) {
       publishedFiles.add(SITEMAP_PATH);
     }
     SiteValidator.validateSiteLinks(preparedByRoute, publishedFiles, diagnostics);
+    if (notFound != null) {
+      SiteValidator.validateNotFoundLinks(allPages.getLast(), diagnostics);
+    }
     SiteValidator.validateViewTransitions(preparedByRoute, diagnostics);
     for (var asset : linkedFiles.values()) {
       addFile(files, routePaths, asset, "Generated file", diagnostics);
@@ -115,15 +137,15 @@ final class SiteCompiler {
     var preloads = site.fonts().stream().filter(FontFace::preloaded).toList();
     var emitted =
         parallelMap(
-            IntStream.range(0, routes.size()).boxed().toList(),
+            IntStream.range(0, pageRoutes.size()).boxed().toList(),
             i -> {
-              var page = preparedPages.get(i);
+              var page = allPages.get(i);
               return PageCompiler.emit(
                   page,
                   resources,
                   preloads,
                   page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null,
-                  canonicalUrl(routes.get(i), addresses.get(i)));
+                  i < routes.size() ? canonicalUrl(routes.get(i), addresses.get(i)) : null);
             });
     var pages = new LinkedHashMap<String, String>(routes.size());
     for (var i = 0; i < routes.size(); i++) {
@@ -138,6 +160,7 @@ final class SiteCompiler {
         Asset.text(
             SEARCH_INDEX_PATH, SiteArtifacts.generateSearchIndexJson(routes, preparedPages)));
     var pageHeaders = new LinkedHashMap<String, Map<String, String>>();
+    var ruleHeaders = new LinkedHashMap<String, Map<String, String>>();
     preparedByRoute.forEach((route, page) -> {
       var headers = page.responseHeaders(output);
       if (!headers.isEmpty()) {
@@ -146,9 +169,30 @@ final class SiteCompiler {
           published.put("Speculation-Rules", '"' + externalRules.path() + '"');
         }
         pageHeaders.put(route, published);
+        // The host serves the not-found page at unknown URLs, where no path rule can reach it.
+        if (!route.equals(NOT_FOUND_PATH)) {
+          ruleHeaders.put(
+              Objects.requireNonNull(SiteRoute.documentUriFor(route).getPath()), published);
+        }
       }
     });
-    return new CompiledSite(pages, css, files, pageHeaders);
+    var allFiles = new LinkedHashSet<>(publishedFiles);
+    pageRoutes.forEach(route -> allFiles.add(SiteRoute.outputUrlPathFor(route.path())));
+    files.put(
+        HEADERS_PATH,
+        new Asset(
+            HEADERS_PATH,
+            "text/plain; charset=utf-8",
+            SiteArtifacts.generateHeadersFile(
+                    site.headers(), linkedFiles.keySet(), allFiles, ruleHeaders)
+                .getBytes(StandardCharsets.UTF_8)));
+    return new CompiledSite(
+        pages,
+        notFound != null ? emitted.getLast() : null,
+        css,
+        files,
+        pageHeaders,
+        site.headers());
   }
 
   /// The URL paths and output files taken by routes.

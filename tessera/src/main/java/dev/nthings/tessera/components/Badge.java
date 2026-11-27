@@ -27,13 +27,6 @@ import org.jspecify.annotations.Nullable;
 /// Without a [#scopeId(String)], the compiler numbers instances `tessera-badge-<n>`.
 public final class Badge extends BuiltinScope<Badge> {
 
-  /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.
-  public enum Variant {
-    TINTED,
-    OUTLINE,
-    SOLID
-  }
-
   private final String text;
   private Tone tone = Tone.NEUTRAL;
   private Variant variant = Variant.TINTED;
@@ -175,6 +168,12 @@ public final class Badge extends BuiltinScope<Badge> {
               s ->
                   s.bg(token)
                       .textColor(tone.onSolid())
+                      .border(Border.hairline(CssColor.transparent())))
+          .select(
+              selector + CssNames.of(Variant.GHOST),
+              s ->
+                  s.bg(CssColor.transparent())
+                      .textColor(tone.textColor())
                       .border(Border.hairline(CssColor.transparent())));
     }
 

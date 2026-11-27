@@ -14,7 +14,7 @@ public final class IconButton extends ButtonBase<IconButton> {
   private final IntoElement icon;
 
   private IconButton(String label, IntoElement icon) {
-    super(Tone.NEUTRAL, Button.Variant.GHOST);
+    super(Tone.NEUTRAL, Variant.GHOST);
     this.label = label;
     this.icon = icon;
   }

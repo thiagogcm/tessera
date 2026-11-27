@@ -134,7 +134,7 @@ public final class Drawer extends DialogView<Drawer> {
   @Override
   TagElement closedDialog(ViewContext context) {
     var titleRef = ElementRef.scoped("title");
-    var closeBtn = closeButton().tone(Tone.NEUTRAL).variant(Button.Variant.OUTLINE).size(Size.SM);
+    var closeBtn = closeButton().tone(Tone.NEUTRAL).variant(Variant.OUTLINE).size(Size.SM);
 
     var headerEl =
         header()

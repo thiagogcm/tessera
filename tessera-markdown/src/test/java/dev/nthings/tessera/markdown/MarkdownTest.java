@@ -3,10 +3,10 @@ package dev.nthings.tessera.markdown;
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.core.Elements.p;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-import dev.nthings.tessera.compiler.CompilationResult;
-import dev.nthings.tessera.compiler.CompiledPage;
+import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.core.Diagnostic;
@@ -315,11 +315,13 @@ class MarkdownTest {
     void reportsHtmlInHeadings() {
       var body = MARKDOWN.parse("Intro\n\n# Title <small>beta</small>\n").body();
 
-      var result = Compiler.forPage().tryCompile(PageDocument.of("Test", inMain(body)));
+      var page = PageDocument.of("Test", inMain(body));
 
-      assertThat(result).isInstanceOf(CompilationResult.Failed.class);
       List<Diagnostic> diagnostics =
-          ((CompilationResult.Failed<CompiledPage>) result).diagnostics();
+          assertThatExceptionOfType(CompilationException.class)
+              .isThrownBy(() -> Compiler.forPage().compile(page))
+              .actual()
+              .diagnostics();
       assertThat(diagnostics).extracting(Diagnostic::rule).contains("markdown-unplaceable-content");
       assertThat(diagnostics).extracting(Diagnostic::message).anyMatch(m -> m.contains("line 3"));
     }

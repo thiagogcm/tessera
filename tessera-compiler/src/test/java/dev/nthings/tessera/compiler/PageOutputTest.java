@@ -11,6 +11,7 @@ import static dev.nthings.tessera.core.Elements.pre;
 import static dev.nthings.tessera.document.Documents.deferred;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThatIllegalArgumentException;
+import static dev.nthings.tessera.support.HtmlAssertions.assertThatThrownBy;
 import static dev.nthings.tessera.support.RenderedPage.render;
 
 import dev.nthings.tessera.components.ContentTabs;
@@ -143,8 +144,8 @@ class PageOutputTest {
   }
 
   @Test
-  @DisplayName("page language, theme overrides, and tryCompile results reflect the document")
-  void pageLanguageThemeAndTryCompile() {
+  @DisplayName("page language, theme overrides, and compile failures reflect the document")
+  void pageLanguageThemeAndFailures() {
     var theme =
         Theme.defaults()
             .with(
@@ -152,18 +153,14 @@ class PageOutputTest {
                 CssColor.lightDark(CssColor.oklch(50, 0.16, 150), CssColor.oklch(72, 0.16, 150)));
     var doc = PageDocument.of("Localized", main(p("Hi"))).withLang(Locale.forLanguageTag("pt-BR"));
 
-    var ok = Compiler.forPage().withTheme(theme).tryCompile(doc);
-    var compiled = ok.orThrow();
+    var compiled = Compiler.forPage().withTheme(theme).compile(doc);
     assertThat(compiled.html()).contains("lang=\"pt-BR\"", "Hi");
     assertThat(compiled.css()).contains("light-dark(oklch(50% 0.16 150), oklch(72% 0.16 150))");
 
-    var failed = Compiler.forPage().tryCompile(PageDocument.of("Bad", main(button())));
-    switch (failed) {
-      case CompilationResult.Compiled<CompiledPage> _ ->
-          throw new AssertionError("Expected failure");
-      case CompilationResult.Failed<CompiledPage>(var diagnostics) ->
-          assertThat(diagnostics).isNotEmpty();
-    }
+    var bad = PageDocument.of("Bad", main(button()));
+    assertThatThrownBy(() -> Compiler.forPage().compile(bad))
+        .isInstanceOfSatisfying(
+            CompilationException.class, failure -> assertThat(failure.diagnostics()).isNotEmpty());
   }
 
   @Test

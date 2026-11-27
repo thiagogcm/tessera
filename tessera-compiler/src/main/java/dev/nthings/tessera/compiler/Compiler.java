@@ -13,8 +13,8 @@ import dev.nthings.tessera.css.Theme;
 /// `theme-contrast` diagnostics, before any page is compiled.
 ///
 /// [#compile(PageDocument)] and [#compile(SiteDefinition)] throw [CompilationException] on
-/// authoring errors; [#tryCompile(PageDocument)] and [#tryCompile(SiteDefinition)] return a
-/// [CompilationResult] instead. Exceptions thrown by expand callbacks propagate unchanged.
+/// authoring errors, carrying every collected diagnostic. Exceptions thrown by expand callbacks
+/// propagate unchanged.
 public record Compiler(Theme theme, OutputMode outputMode) {
 
   private static final Compiler FOR_PAGE = new Compiler(Theme.defaults(), OutputMode.inline());
@@ -60,30 +60,10 @@ public record Compiler(Theme theme, OutputMode outputMode) {
     return PageCompiler.compile(document, theme, outputMode);
   }
 
-  /// Compiles `document` and returns [CompilationResult.Compiled] or [CompilationResult.Failed]
-  /// without throwing on authoring errors.
-  public CompilationResult<CompiledPage> tryCompile(PageDocument document) {
-    try {
-      return new CompilationResult.Compiled<>(compile(document));
-    } catch (CompilationException failure) {
-      return new CompilationResult.Failed<>(failure.diagnostics());
-    }
-  }
-
   /// Compiles every route of `site` into one [CompiledSite] using this compiler's theme and output
   /// mode, throwing [CompilationException] on authoring errors.
   public CompiledSite compile(SiteDefinition site) {
     return SiteCompiler.compile(site, theme, outputMode);
-  }
-
-  /// Compiles every route of `site` and returns [CompilationResult.Compiled] or
-  /// [CompilationResult.Failed] without throwing on authoring errors.
-  public CompilationResult<CompiledSite> tryCompile(SiteDefinition site) {
-    try {
-      return new CompilationResult.Compiled<>(compile(site));
-    } catch (CompilationException failure) {
-      return new CompilationResult.Failed<>(failure.diagnostics());
-    }
   }
 
   /// Lays out and validates `document` and returns its element tree instead of HTML. The theme and

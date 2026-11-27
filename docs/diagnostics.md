@@ -4,13 +4,13 @@ Tessera validates theme contrast, markup, references, form controls, accessibili
 
 ## Read a diagnostic
 
-Inspect collected errors without exceptions using `tryCompile(...)` (returning a sealed `CompilationResult`), or catch `CompilationException` from `compile(...)`:
+`compile(...)` collects every error before throwing `CompilationException`. Read the collected diagnostics from the exception:
 
 ```java
-switch (Compiler.forSite().tryCompile(site)) {
-  case CompilationResult.Compiled(var compiled) -> SiteWriter.writeToDirectory(compiled, out);
-  case CompilationResult.Failed(var diagnostics) ->
-      diagnostics.forEach(d -> System.err.println(d.format()));
+try {
+  SiteWriter.writeToDirectory(Compiler.forSite().compile(site), out);
+} catch (CompilationException failure) {
+  failure.diagnostics().forEach(d -> System.err.println(d.format()));
 }
 ```
 
@@ -103,7 +103,7 @@ A backend checks a `Theme` once, where it accepts it, before anything renders:
 
 | Backend | Entry point | A failing theme |
 | --- | --- | --- |
-| Static compiler | `Compiler.withTheme(theme)` (the `Compiler` constructor) | Throws `CompilationException` with one `theme-contrast` diagnostic per failing pair and scheme. `tryCompile(...)` never sees it, because no `Compiler` holds a failing theme. |
+| Static compiler | `Compiler.withTheme(theme)` (the `Compiler` constructor) | Throws `CompilationException` with one `theme-contrast` diagnostic per failing pair and scheme. `compile(...)` never sees it, because no `Compiler` holds a failing theme. |
 | Browser root | `MountOptions.withTheme(theme)` (the `MountOptions` constructor) | Throws `IllegalArgumentException` listing the same diagnostics. Inside a `BrowserEntry` mount it is reported as a failed mount in the browser console, and the host keeps its fallback content. |
 
 ```text

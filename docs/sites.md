@@ -61,6 +61,8 @@ Compile a standalone page with external assets:
 var page = Compiler.forPage().withOutputMode(OutputMode.external("/assets")).compile(document);
 ```
 
+Vendored modules that page scripts import are published as `<assetBase>/modules/<sanitized-name>-<hash>.js` in both modes, under `/assets` for inline output; see [Import a vendored module](documents.md#import-a-vendored-module).
+
 Asset base paths must be absolute URL paths; relative paths, `//`, and `..` are rejected. Because filenames include content hashes, changing a resource produces a new URL.
 
 ### Understand compiled outputs

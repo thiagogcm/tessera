@@ -73,6 +73,10 @@ final class SiteCompiler {
     for (var prepared : preparedPages) {
       behaviors.addAll(prepared.scripts());
     }
+    var moduleConflicts = ScriptModules.conflicts(behaviors);
+    if (!moduleConflicts.isEmpty()) {
+      throw new CompilationException(moduleConflicts);
+    }
     // One stylesheet and one file per distinct module, hashed and encoded once for every page.
     var resources = new HtmlWriter.Resources(css, output, behaviors);
     var externalRules =

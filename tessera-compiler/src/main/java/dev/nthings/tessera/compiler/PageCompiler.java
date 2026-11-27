@@ -32,6 +32,10 @@ final class PageCompiler {
 
   static CompiledPage compile(PageDocument document, Theme theme, OutputMode outputMode) {
     var prepared = prepare(document, null, new BundlePublication(outputMode));
+    var moduleConflicts = ScriptModules.conflicts(prepared.scripts());
+    if (!moduleConflicts.isEmpty()) {
+      throw new CompilationException(moduleConflicts);
+    }
     var css = prepared.stylesheet(theme);
     var resources = new HtmlWriter.Resources(css, outputMode, prepared.scripts());
     var assets = new ArrayList<>(resources.assets());

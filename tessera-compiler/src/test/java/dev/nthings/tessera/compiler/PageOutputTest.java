@@ -281,8 +281,8 @@ class PageOutputTest {
     var page =
         RenderedPage.of(
             withScripts(
-                new PageScript("test-widget", WIDGET),
-                new PageScript("test-widget", "console.log('second');")));
+                PageScript.of("test-widget", WIDGET),
+                PageScript.of("test-widget", "console.log('second');")));
 
     assertThat(page.elements("script"))
         .singleElement()
@@ -309,7 +309,7 @@ class PageOutputTest {
     var compiled =
         Compiler.forPage()
             .withOutputMode(OutputMode.external("/assets"))
-            .compile(withScripts(new PageScript("test-widget", WIDGET)));
+            .compile(withScripts(PageScript.of("test-widget", WIDGET)));
     var script = RenderedPage.of(compiled).element("script[type=module]");
 
     assertThat(script.data()).isEmpty();
@@ -326,7 +326,7 @@ class PageOutputTest {
   @DisplayName("an inline page script cannot close its script element early")
   void inlinePageScriptKeepsItsBodyInsideOneScriptElement() {
     var module = "document.body.innerHTML = '<script></script><b>x</b>';";
-    var page = RenderedPage.of(withScripts(new PageScript("injector", module)));
+    var page = RenderedPage.of(withScripts(PageScript.of("injector", module)));
 
     assertThat(page.elements("script")).hasSize(1);
     assertThat(page.element("script").data().strip())

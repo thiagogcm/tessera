@@ -69,19 +69,20 @@ class FontFaceTest {
   @Test
   @DisplayName("a font file that shares a path with another file is reported")
   void reportsCollisions() {
-    var result =
-        Compiler.forSite()
-            .tryCompile(
-                SiteDefinition.builder()
-                    .route(SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))))
-                    .asset(INTER)
-                    .font(FontFace.of("Inter", INTER))
-                    .build());
+    var site =
+        SiteDefinition.builder()
+            .route(SiteRoute.of("/", PageDocument.of("Home", main().text("Home"))))
+            .asset(INTER)
+            .font(FontFace.of("Inter", INTER))
+            .build();
 
-    assertThat(result).isInstanceOf(CompilationResult.Failed.class);
-    assertThat(((CompilationResult.Failed<?>) result).diagnostics())
-        .extracting(diagnostic -> diagnostic.rule())
-        .contains("file-path-collision");
+    assertThatThrownBy(() -> Compiler.forSite().compile(site))
+        .isInstanceOfSatisfying(
+            CompilationException.class,
+            failure ->
+                assertThat(failure.diagnostics())
+                    .extracting(diagnostic -> diagnostic.rule())
+                    .contains("file-path-collision"));
   }
 
   @Test

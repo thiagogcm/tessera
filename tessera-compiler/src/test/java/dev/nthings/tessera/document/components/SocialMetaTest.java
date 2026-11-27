@@ -2,8 +2,9 @@ package dev.nthings.tessera.document.components;
 
 import static dev.nthings.tessera.core.Elements.main;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import dev.nthings.tessera.compiler.CompilationResult;
+import dev.nthings.tessera.compiler.CompilationException;
 import dev.nthings.tessera.compiler.Compiler;
 import dev.nthings.tessera.compiler.PageDocument;
 import dev.nthings.tessera.compiler.SiteDefinition;
@@ -81,12 +82,14 @@ class SocialMetaTest {
   @Test
   @DisplayName("a relative image without a base URL is reported")
   void relativeImageNeedsBaseUrl() {
-    var result =
-        Compiler.forSite().tryCompile(site(SocialMeta.of("Hello").image("/og.png")).build());
+    var site = site(SocialMeta.of("Hello").image("/og.png")).build();
 
-    assertThat(result).isInstanceOf(CompilationResult.Failed.class);
-    assertThat(((CompilationResult.Failed<?>) result).diagnostics())
-        .extracting(diagnostic -> diagnostic.rule())
-        .containsExactly("social-meta-url");
+    assertThatThrownBy(() -> Compiler.forSite().compile(site))
+        .isInstanceOfSatisfying(
+            CompilationException.class,
+            failure ->
+                assertThat(failure.diagnostics())
+                    .extracting(diagnostic -> diagnostic.rule())
+                    .containsExactly("social-meta-url"));
   }
 }

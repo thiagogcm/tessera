@@ -41,7 +41,6 @@ public final class SourceTracking {
           "dev.nthings.tessera.internal.document",
           "dev.nthings.tessera.internal.foundation",
           "dev.nthings.tessera.internal.view",
-          "dev.nthings.tessera.navigation",
           "dev.nthings.tessera.view");
   private static final ClassValue<Boolean> LIBRARY_CLASSES =
       new ClassValue<>() {

@@ -1,4 +1,4 @@
-package dev.nthings.tessera.navigation;
+package dev.nthings.tessera.compiler;
 
 import static dev.nthings.tessera.core.Elements.main;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
@@ -7,10 +7,6 @@ import static dev.nthings.tessera.support.HtmlAssertions.tuple;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static dev.nthings.tessera.support.SiteFixtures.documentationRoutes;
 
-import dev.nthings.tessera.compiler.Compiler;
-import dev.nthings.tessera.compiler.PageDocument;
-import dev.nthings.tessera.compiler.SiteDefinition;
-import dev.nthings.tessera.compiler.SiteRoute;
 import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.PageAddress;
@@ -32,7 +28,8 @@ class SiteNavigationTest {
   }
 
   private Elements pagerLinks(String path) {
-    return renderMain(SiteNavigation.docPager(site, PageAddress.of(path))).elements("nav a");
+    return renderMain(SiteNavigation.docPager(site.routes(), PageAddress.of(path)))
+        .elements("nav a");
   }
 
   @Test
@@ -65,13 +62,14 @@ class SiteNavigationTest {
   @DisplayName("the pager rejects an unknown route")
   void pagerRejectsUnknownRoute() {
     assertThatIllegalArgumentException()
-        .isThrownBy(() -> SiteNavigation.docPager(site, PageAddress.of("/missing")));
+        .isThrownBy(() -> SiteNavigation.docPager(site.routes(), PageAddress.of("/missing")));
   }
 
   @Test
   @DisplayName("the search palette links every route with its title and description")
   void paletteLinksEveryRoute() {
-    var links = renderMain(SiteNavigation.searchPalette(site)).elements("a[href]");
+    var links =
+        renderMain(SiteNavigation.searchPalette(site.routes(), "Pages")).elements("a[href]");
 
     assertThat(links).extracting(this::routeOf).containsExactly("/", "/guide", "/faq");
     assertThat(links.get(0).text()).contains("Tessera Home", "Static HTML/CSS compiler");
@@ -87,8 +85,8 @@ class SiteNavigationTest {
             DocumentContent.of(
                 main()
                     .children(
-                        SiteNavigation.searchPalette(site),
-                        SiteNavigation.docPager(site, context.address().orElseThrow())));
+                        SiteNavigation.searchPalette(site.routes(), "Pages"),
+                        SiteNavigation.docPager(site.routes(), context.address().orElseThrow())));
     var withNavigation =
         SiteDefinition.of(
             site.routes().stream()

@@ -154,10 +154,10 @@ Define route and asset paths in unescaped logical form (such as `/guides/café`)
 
 The compiler builds `search-index.json` automatically from routes and [outlined headings](documents.md#outline-headings-and-build-a-table-of-contents) (`Section` and outlined `Heading` elements), independent of `TableOfContents`.
 
-`SiteNavigation` (in `dev.nthings.tessera.navigation`) derives navigation components directly from your routes:
+`SiteNavigation` (in `dev.nthings.tessera.compiler`) derives navigation components directly from your routes:
 
-- `SiteNavigation.searchPalette(site)` builds a `SearchPalette` pre-populated with every route.
-- `SiteNavigation.docPager(site, current)` builds a previous/next `DocPager` around the page at a `PageAddress`, in route declaration order.
+- `SiteNavigation.searchPalette(site.routes(), "Pages")` builds a `SearchPalette` pre-populated with every route under one group.
+- `SiteNavigation.docPager(site.routes(), current)` builds a previous/next `DocPager` around the page at a `PageAddress`, in route declaration order.
 
 ### Know the current page in a shared layout
 
@@ -172,7 +172,7 @@ DocumentComponent layout =
               .map(href -> here.isCurrent(href) ? a(href, href).ariaCurrent(AriaCurrent.PAGE) : a(href, href))
               .toList();
       return DocumentElement.of(Elements.main().children(nav))
-          .child(SiteNavigation.docPager(site, here));
+          .child(SiteNavigation.docPager(site.routes(), here));
     };
 ```
 

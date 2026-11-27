@@ -36,8 +36,7 @@ The reactor defines four library artifacts and JPMS modules, plus two showcase p
 | `dev.nthings.tessera` | `internal.css`, `internal.components`, `internal.view` | Shared `StyleSheet`, structured SVG icons, widget bridges, `ViewExpansion`, `ReferenceLinker`, `LinkedNode`, and `ViewValidation`; qualified-exported to `dev.nthings.tessera.compiler` and `dev.nthings.tessera.wasm` |
 | `dev.nthings.tessera` | `view` | Live rendering entry point (`ViewRenderer`, `LiveNode`, `ViewSnapshot`, `ViewException`); qualified-exported only to `dev.nthings.tessera.wasm` |
 | `dev.nthings.tessera.compiler` (`tessera-compiler`) | `document`, `document.components` | Public document placement (`DocumentContent`, `DocumentElement`, `Documents`), `WasmBundle`, and document-only components |
-| `dev.nthings.tessera.compiler` | `compiler` | Public `Compiler`, `SiteDefinition`, `GraalWebImage`, `SiteWriter`, `SitePreviewServer`, and `SourceTracking`; pass coordinators stay package-private |
-| `dev.nthings.tessera.compiler` | `navigation` | Public route-derived `SiteNavigation` |
+| `dev.nthings.tessera.compiler` | `compiler` | Public `Compiler`, `SiteDefinition`, route-derived `SiteNavigation`, `GraalWebImage`, `SiteWriter`, `SitePreviewServer`, and `SourceTracking`; pass coordinators stay package-private |
 | `dev.nthings.tessera.compiler` | `internal.document` | Unexported document node data and cross-package builder access |
 | `dev.nthings.tessera.markdown` (`tessera-markdown`) | `markdown` | Public `Markdown` parser and `MarkdownPage`; converts commonmark-java syntax trees to document content |
 | `dev.nthings.tessera.wasm` (`tessera-wasm`) | `wasm` | Public live authoring (`LiveContent`, `LiveElement`, `Live`, `BrowserEntry`, `BrowserRoot`, `Host`, live adapters); reconciliation, control sync, and Web Image DOM bridge stay package-private |

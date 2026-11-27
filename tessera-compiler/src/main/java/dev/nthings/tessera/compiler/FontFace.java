@@ -7,16 +7,16 @@ import org.owasp.encoder.Encode;
 
 /// A self-hosted font file, registered on a site with [SiteDefinition#withFonts(List)]. The site
 /// publishes the file, its stylesheet declares the `@font-face` rule with `font-display: swap`, and
-/// with [#preload()] every page links the file with `<link rel="preload" as="font">`. Point a font
-/// token at the family to use it, such as `theme.with(Tokens.FONT_BODY,
+/// with [#withPreload()] every page links the file with `<link rel="preload" as="font">`. Point a
+/// font token at the family to use it, such as `theme.with(Tokens.FONT_BODY,
 /// FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI))`.
 ///
 /// ```java
 /// site.withFonts(
 ///     List.of(
 ///         FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
-///             .weight(100, 900)
-///             .preload()))
+///             .withWeight(100, 900)
+///             .withPreload()))
 /// ```
 ///
 /// @param family the `font-family` name the rule declares
@@ -44,14 +44,16 @@ public record FontFace(String family, Asset file, String weight, String style, b
   }
 
   /// The same face at `weight`, such as 600. Throws IllegalArgumentException outside 1 to 1000.
-  public FontFace weight(int weight) {
+  @CheckReturnValue
+  public FontFace withWeight(int weight) {
     checkWeight(weight);
     return new FontFace(family, file, Integer.toString(weight), style, preloaded);
   }
 
   /// The same face covering weights `min` to `max`, for a variable font. Throws
   /// IllegalArgumentException outside 1 to 1000 or when `min` is above `max`.
-  public FontFace weight(int min, int max) {
+  @CheckReturnValue
+  public FontFace withWeight(int min, int max) {
     checkWeight(min);
     checkWeight(max);
     if (min > max) {
@@ -67,12 +69,14 @@ public record FontFace(String family, Asset file, String weight, String style, b
   }
 
   /// The same face as the italic style.
-  public FontFace italic() {
+  @CheckReturnValue
+  public FontFace withItalic() {
     return new FontFace(family, file, weight, "italic", preloaded);
   }
 
   /// The same face, preloaded by every page. Preload only the faces the first screen uses.
-  public FontFace preload() {
+  @CheckReturnValue
+  public FontFace withPreload() {
     return new FontFace(family, file, weight, style, true);
   }
 

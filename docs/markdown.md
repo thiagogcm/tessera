@@ -15,7 +15,7 @@ On the module path, require `dev.nthings.tessera.markdown`. It requires `dev.nth
 ## Parse a page
 
 ```java
-var markdown = Markdown.create();
+var markdown = Markdown.of();
 var page = markdown.parse(Files.readString(Path.of("content/guide.md")));
 
 var title = page.frontMatter().value("title").orElseThrow();
@@ -78,7 +78,7 @@ Raw HTML bypasses escaping and validation, so parse only Markdown you trust. Hea
 
 ```java
 var markdown =
-    Markdown.create()
+    Markdown.of()
         .withFence("mermaid", fence -> DocumentContent.of(
             Elements.custom("mermaid-diagram").text(fence.code())));
 ```
@@ -91,7 +91,7 @@ Markdown often links to other `.md` files. `withUrlResolver` rewrites every link
 
 ```java
 var markdown =
-    Markdown.create()
+    Markdown.of()
         .withUrlResolver(url -> url.replaceFirst("\\.md(#|$)", "/$1"));
 ```
 
@@ -100,7 +100,7 @@ var markdown =
 Two options adjust how prose renders:
 
 ```java
-var markdown = Markdown.create().withHeadingPermalinks().withSmartPunctuation();
+var markdown = Markdown.of().withHeadingPermalinks().withSmartPunctuation();
 ```
 
 - `withHeadingPermalinks()` calls `Heading.permalink()` on every heading from level 2 down, so each one ends with a link to its own anchor.

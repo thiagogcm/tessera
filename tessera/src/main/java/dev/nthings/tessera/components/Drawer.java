@@ -23,8 +23,8 @@ import dev.nthings.tessera.css.Translation;
 /// a close button in its header. Create one with [#of(String)]; it docks to the inline-end edge
 /// unless [#side(Side)] changes it. Place it and open it as a [Modal].
 ///
-/// The dialog, title and close button ids are prefixed with its [#scopeId(String)]. Without an id,
-/// the compiler numbers instances `drawer-start-<n>` or `drawer-end-<n>`.
+/// The dialog, title and close button ids are prefixed with its [#scopeId(String)]. Without a scope
+/// id, the compiler numbers instances `drawer-start-<n>` or `drawer-end-<n>`.
 public final class Drawer extends DialogView<Drawer> {
 
   /// Edge a drawer docks to and slides in from. `INLINE_START` is the left edge in left-to-right

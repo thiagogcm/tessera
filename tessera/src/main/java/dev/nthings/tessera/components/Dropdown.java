@@ -54,8 +54,8 @@ import org.jspecify.annotations.Nullable;
 /// trigger: a static document then emits the menu as a `tessera-menu` element and loads its script
 /// once.
 ///
-/// The trigger, panel and command item ids are prefixed with its [#scopeId(String)]. Without an id,
-/// the compiler numbers instances `dropdown-<n>`.
+/// The trigger, panel and command item ids are prefixed with its [#scopeId(String)]. Without a
+/// scope id, the compiler numbers instances `dropdown-<n>`.
 public final class Dropdown extends BuiltinScope<Dropdown> {
 
   /// One link or command entry of a [Dropdown], added with [Dropdown#item(Item)]. The value is

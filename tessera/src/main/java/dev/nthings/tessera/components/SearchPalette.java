@@ -53,7 +53,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// The dialog, input, no-results status and result ids are prefixed with its [#scopeId(String)], as
 /// in `<id>--dialog`, `<id>--input`, `<id>--empty` and `<id>--result-<n>`, numbering results from 1
-/// in order. Without an id, the compiler numbers instances `search-palette-<n>`.
+/// in order. Without a scope id, the compiler numbers instances `search-palette-<n>`.
 public final class SearchPalette extends BuiltinScope<SearchPalette> {
 
   static {

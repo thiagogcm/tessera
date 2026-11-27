@@ -31,7 +31,7 @@ import java.util.List;
 /// button that targets its [#dialogRef()]. Escape or a click outside dismisses it.
 ///
 /// The dialog, title and close button ids are prefixed with its [#scopeId(String)], as in
-/// `<id>--dialog`. Without an id, the compiler numbers instances `modal-<n>`.
+/// `<id>--dialog`. Without a scope id, the compiler numbers instances `modal-<n>`.
 public final class Modal extends DialogView<Modal> {
 
   private final List<Element> actions = new ArrayList<>();

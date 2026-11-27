@@ -42,6 +42,8 @@ On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels with
 - `withAssets(List<Asset>)`: Static files published alongside pages.
 - `withFonts(List<FontFace>)`: Self-hosted font faces (see [Self-host fonts](#self-host-fonts)).
 - `withBaseUrl(URI.create("https://example.com"))`: Takes a site origin (no path). Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
+- `withNotFoundPage(PageDocument)`: Publishes `/404.html` (see [Host integration](#host-integration)).
+- `withHeaders(SequencedMap<String, String>)`: Response headers for every page and file; defaults to `SiteDefinition.DEFAULT_HEADERS`.
 - `withLinkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
 Configure themes and output modes on the immutable [`Compiler`](#choose-an-output-mode) value (`Compiler.forSite().withTheme(theme).withOutputMode(mode)`).
@@ -85,7 +87,7 @@ erDiagram
 | Result type | Accessors |
 | --- | --- |
 | `CompiledPage` | `html()`, `css()`, `assets()`, `headers()` |
-| `CompiledSite` | `pages()` (in route order), `css()`, `assets()`, `headers()`, `searchIndexJson()`, `sitemapXml()` |
+| `CompiledSite` | `pages()` (in route order), `notFoundPage()`, `css()`, `assets()`, `headers()`, `siteHeaders()`, `headersFile()`, `searchIndexJson()`, `sitemapXml()` |
 
 ## Register assets and images
 
@@ -221,12 +223,38 @@ The trigger lists the palette's shortcuts in `aria-keyshortcuts` and shows a hin
 
 See [Browser support](browser-support.md#component-scripts) for the bundled module lifecycle.
 
+## Host integration
+
+Every compiled site publishes `/_headers`, the header rules file Cloudflare Pages and Netlify read:
+
+```text
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/editor/
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; ...
+```
+
+- `/*` carries the site headers. Replace the defaults with `withHeaders`, for example to add a `Content-Security-Policy` or `Permissions-Policy`, or pass an empty map to send none.
+- Files the compiler names by content hash (the stylesheet, page scripts, vendored modules, browser bundles and speculation rules) are cached for a year as `immutable`. A directory holding only such files gets one `dir/*` rule; a hashed file beside your own assets gets its own rule, so registered files keep the host's default caching.
+- Routes with their own deployment headers, such as browser-bundle pages, get a rule at their public URL.
+
+Register a not-found page to replace the host's generic error page:
+
+```java
+site.withNotFoundPage(PageDocument.of("Not found", layout(h1("Page not found"), a("/").text("Home"))));
+```
+
+It is compiled with the site's stylesheet and scripts and written as `/404.html`, which Cloudflare Pages, Netlify and GitHub Pages serve with status 404 for a URL that matches nothing. It gets no canonical link and stays out of `sitemap.xml` and `search-index.json`. Because the host serves it at any depth, a relative link on it reports `not-found-relative-link`; start links with `/`. A route or asset at `/404.html` or `/_headers` reports `file-path-collision`.
+
 ## Publish and preview
 
-Write a compiled site to disk with `SiteWriter.writeToDirectory(compiled, output)` and upload the entire directory to your static host:
+Write a compiled site to disk with `SiteWriter.writeToDirectory(compiled, output)` and upload the entire directory to your static host. The writer deletes every file and empty directory a previous build left in `output`, so a removed or renamed page is not deployed; top-level dot entries such as `.git` are kept. It refuses a file system root, the home directory, and the working directory or its parents, so point it at a dedicated directory such as `target/site`.
 
-- Enable directory indexes and redirect extensionless directory paths (such as `/guide`) to trailing slashes (`/guide/`).
-- Apply `compiled.headers()` on your host for routes that mount [browser bundles](browser-rendering.md#publish-a-browser-bundle).
+- Enable directory indexes and redirect extensionless directory paths (such as `/guide`) to trailing slashes (`/guide/`). Cloudflare Pages and Netlify do this by default.
+- On a host that does not read `_headers`, apply `compiled.siteHeaders()` to every response and `compiled.headers()` to the routes that mount [browser bundles](browser-rendering.md#publish-a-browser-bundle).
 - Setting an external asset base relocates generated assets; it does not rewrite route paths or authored links for subdirectory hosting.
 
 To preview a compiled site in memory with accurate headers and redirects:
@@ -237,7 +265,7 @@ try (var server = SitePreviewServer.start(compiled, 8080)) {
 }
 ```
 
-`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `headers()`.
+`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, applies `siteHeaders()` and compiled `headers()`, and answers unknown paths with the not-found page and status 404.
 
 To rebuild while you write, pass a build function and the directories to watch instead of a compiled site:
 

@@ -59,6 +59,28 @@ final class SiteValidator {
     }
   }
 
+  /// Reports each relative link of `page`, the not-found page: the host serves it at any unknown
+  /// URL, so a link relative to `/404.html` breaks at every other depth.
+  static void validateNotFoundLinks(PreparedPage page, List<Diagnostic> diagnostics) {
+    for (var link : page.outgoingLinks().entrySet()) {
+      var href = link.getKey();
+      var reference = URI.create(href);
+      var path = reference.getRawPath();
+      if (!reference.isAbsolute()
+          && reference.getRawAuthority() == null
+          && path != null
+          && !path.isEmpty()
+          && !path.startsWith("/")) {
+        diagnostics.add(
+            new Diagnostic(
+                "not-found-relative-link",
+                "The not-found page links to \"" + href + "\" relative to its own URL",
+                "Start the link with / so it resolves from any URL the host serves the page at.",
+                CompilationState.atRoute(link.getValue(), SiteArtifacts.NOT_FOUND_PATH)));
+      }
+    }
+  }
+
   static void validateSiteLinks(
       Map<String, PreparedPage> preparedByRoute,
       Set<String> assetPaths,

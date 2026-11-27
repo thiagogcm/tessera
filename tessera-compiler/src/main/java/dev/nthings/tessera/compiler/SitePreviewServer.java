@@ -22,7 +22,9 @@ import org.jspecify.annotations.Nullable;
 /// Local preview server for a [CompiledSite], built on the JDK's `HttpServer` with virtual threads.
 /// It listens on `127.0.0.1` only. Responses carry `Cache-Control: no-store`. A route requested
 /// without its trailing slash gets a 308 redirect to its directory URL, keeping the query string,
-/// and `index.html` aliases are accepted. Other paths return 404.
+/// and `index.html` aliases are accepted. Every response carries the site's
+/// [CompiledSite#siteHeaders()], and each page its route's [CompiledSite#headers()]. Other paths
+/// return 404 with the site's not-found page when it has one.
 ///
 /// [#start(CompiledSite, int)] serves a fixed snapshot. [#watch(int, Supplier, Path...)] rebuilds
 /// the site when files under the watched paths change and reloads open pages.
@@ -187,6 +189,7 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
+    site.siteHeaders().forEach(exchange.getResponseHeaders()::set);
     var file = site.assets().get(requestPath);
     if (file != null) {
       sendBytes(exchange, 200, file.contentType(), file.contentView());
@@ -223,6 +226,17 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
+    var notFound = site.notFoundPage();
+    if (notFound != null) {
+      var headers = exchange.getResponseHeaders();
+      site.headers().getOrDefault(SiteArtifacts.NOT_FOUND_PATH, Map.of()).forEach(headers::set);
+      sendResponse(
+          exchange,
+          404,
+          "text/html; charset=utf-8",
+          live ? withLiveScript(notFound, snapshot.version()) : notFound);
+      return;
+    }
     sendResponse(exchange, 404, "text/plain; charset=utf-8", "404 Not Found: " + requestPath);
   }
 

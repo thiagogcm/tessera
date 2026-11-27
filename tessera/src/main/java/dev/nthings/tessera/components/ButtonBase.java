@@ -20,7 +20,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     implements TagHost, FluentBuilder<B> {
 
   Tone tone;
-  Button.Variant variant;
+  Variant variant;
   Size size = Size.MD;
   boolean submit;
   boolean disabled;
@@ -30,7 +30,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   @Nullable Command command;
   @Nullable ElementBlock tooltip;
 
-  ButtonBase(Tone tone, Button.Variant variant) {
+  ButtonBase(Tone tone, Variant variant) {
     this.tone = tone;
     this.variant = variant;
   }
@@ -42,9 +42,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
     return self();
   }
 
-  /// Sets the surface: `SOLID`, `OUTLINE`, or `GHOST`. The default is `SOLID` for [Button] and
-  /// `GHOST` for [IconButton].
-  public B variant(Button.Variant variant) {
+  /// Sets the surface. The default is `SOLID` for [Button] and `GHOST` for [IconButton].
+  public B variant(Variant variant) {
     this.variant = variant;
     return self();
   }

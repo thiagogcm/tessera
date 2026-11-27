@@ -124,7 +124,7 @@ final class ButtonFace {
     return icon ? classes + " button--icon" : classes;
   }
 
-  private static Declarations paint(Declarations style, Tone tone, Button.Variant variant) {
+  private static Declarations paint(Declarations style, Tone tone, Variant variant) {
     var ink = ink(tone);
     return switch (variant) {
       case SOLID -> style.bg(ink).textColor(tone.onSolid());
@@ -134,12 +134,16 @@ final class ButtonFace {
               .textColor(label(tone))
               .border(Border.hairline(tone == Tone.NEUTRAL ? Tokens.BORDER_SUBTLE : ink));
       case GHOST -> style.bg(CssColor.transparent()).textColor(label(tone));
+      case TINTED ->
+          tone == Tone.NEUTRAL
+              ? style.bg(Tokens.SURFACE_SUBTLE).textColor(Tokens.TEXT_PRIMARY)
+              : style.bg(Tint.BADGE.fill(tone)).textColor(Tint.BADGE.text(tone));
     };
   }
 
-  private static Declarations hover(Declarations style, Tone tone, Button.Variant variant) {
+  private static Declarations hover(Declarations style, Tone tone, Variant variant) {
     return switch (variant) {
-      case SOLID -> style.opacity(0.92);
+      case SOLID, TINTED -> style.opacity(0.92);
       case OUTLINE, GHOST ->
           style.bg(tone == Tone.NEUTRAL ? Tokens.SURFACE_SUBTLE : Tint.BUTTON_HOVER.fill(tone));
     };

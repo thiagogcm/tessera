@@ -24,6 +24,7 @@ import dev.nthings.tessera.components.NumberedList;
 import dev.nthings.tessera.components.Prose;
 import dev.nthings.tessera.components.Section;
 import dev.nthings.tessera.components.StepList;
+import dev.nthings.tessera.components.Variant;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
 import dev.nthings.tessera.css.CssLength;
@@ -215,16 +216,16 @@ final class LayoutPage {
                 Badge.of("Danger").tone(Tone.DANGER),
                 Badge.of("Info").tone(Tone.INFO)),
             badgeRow(
-                Badge.of("Pill").tone(Tone.ACCENT).variant(Badge.Variant.OUTLINE).pill(),
+                Badge.of("Pill").tone(Tone.ACCENT).variant(Variant.OUTLINE).pill(),
                 Badge.of("Live").tone(Tone.SUCCESS).pill().dot(),
                 Badge.of("Beta").tone(Tone.WARNING).pill(),
-                Badge.of("Critical").tone(Tone.DANGER).variant(Badge.Variant.SOLID).pill(),
+                Badge.of("Critical").tone(Tone.DANGER).variant(Variant.SOLID).pill(),
                 Badge.of("v0.1.0").tone(Tone.INFO).pill(),
                 Badge.of("Interactive link →").tone(Tone.ACCENT).pill().href("/docs")))
         .code(
             "Badge.of(\"Accent\").tone(Tone.ACCENT);",
             "Badge.of(\"Live\").tone(Tone.SUCCESS).pill().dot();",
-            "Badge.of(\"Beta\").tone(Tone.WARNING).variant(Badge.Variant.OUTLINE).pill();",
+            "Badge.of(\"Beta\").tone(Tone.WARNING).variant(Variant.OUTLINE).pill();",
             "Badge.of(\"Link\").tone(Tone.ACCENT).pill().href(\"/docs\");");
   }
 

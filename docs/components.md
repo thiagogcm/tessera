@@ -144,7 +144,7 @@ In a browser root, retained controls keep user edits across re-renders. Change a
 ```java
 var confirm = Modal.of("Confirm");
 var open = Button.of("Review").command(confirm.dialogRef(), BuiltinCommand.SHOW_MODAL);
-var save = Button.of("Save").submit().variant(Button.Variant.OUTLINE);
+var save = Button.of("Save").submit().variant(Variant.OUTLINE);
 var close =
     IconButton.of("Close", Elements.span().text("x"))
         .command(confirm.dialogRef(), BuiltinCommand.CLOSE);

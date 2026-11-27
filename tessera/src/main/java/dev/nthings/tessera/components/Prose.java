@@ -20,7 +20,7 @@ import java.util.List;
 /// their own styling. Heading rules cover native levels 1 through 6, including headings inside a
 /// nested `<section>`. They stop at nested component scopes.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `prose-container-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `prose-container-<n>`.
 public final class Prose extends BuiltinScope<Prose> implements ParentElement<Prose> {
 
   private final List<Element> children = new ArrayList<>();

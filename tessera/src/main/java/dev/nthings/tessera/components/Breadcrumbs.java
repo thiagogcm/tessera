@@ -16,10 +16,10 @@ import dev.nthings.tessera.css.Tokens;
 import java.util.List;
 
 /// Breadcrumb trail, first link to last, rendered as a `<nav>` around an ordered list. Create one
-/// with [#of(Link...)]. The last link gets `aria-current="page"`, and every crumb stays a link.
+/// with [#of(List)]. The last link gets `aria-current="page"`, and every crumb stays a link.
 /// Separators are decorative, so screen readers skip them.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `breadcrumbs-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `breadcrumbs-<n>`.
 public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
 
   private final List<Link> links;
@@ -33,8 +33,8 @@ public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
   }
 
   /// Creates a trail of `links`, first to last. Throws IllegalArgumentException if none are given.
-  public static Breadcrumbs of(Link... links) {
-    return new Breadcrumbs(List.of(links));
+  public static Breadcrumbs of(List<Link> links) {
+    return new Breadcrumbs(List.copyOf(links));
   }
 
   /// Sets the accessible name of the landmark; make it distinct when a page has several trails. The

@@ -24,7 +24,7 @@ import org.jspecify.annotations.Nullable;
 /// tinted, medium badge until [#tone(Tone)], [#variant(Variant)] or [#size(Size)] change it. It
 /// renders a `<span>`, or an `<a>` when given an [#href(String)].
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `tessera-badge-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `tessera-badge-<n>`.
 public final class Badge extends BuiltinScope<Badge> {
 
   /// Fill style: `TINTED` (a light fill, the default), `OUTLINE` (a border only), or `SOLID`.

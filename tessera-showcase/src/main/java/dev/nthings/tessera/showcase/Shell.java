@@ -38,6 +38,7 @@ import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentContext;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.Documents;
+import java.util.List;
 
 /// Chrome shared by every route: header, search, quick actions, inspector, heading, pager and
 /// footer.
@@ -89,10 +90,10 @@ record Shell(Page page) implements DocumentComponent {
             .triggerLabel("Search");
     var quickActions = Dropdown.of("Pages").scopeId("quick-actions");
     for (var p : pages) {
-      search.item("Pages", SearchPalette.Item.of(p.navLabel(), p.path()).description(p.summary()));
+      search.item("Pages", SearchPalette.Item.of(p.path(), p.navLabel()).description(p.summary()));
       quickActions.item(Dropdown.Item.link(p.path(), p.navLabel()));
       for (var demo : p.demos()) {
-        search.item(p.navLabel(), demo.title(), p.sectionHref(demo));
+        search.item(p.navLabel(), p.sectionHref(demo), demo.title());
       }
     }
     quickActions
@@ -169,7 +170,8 @@ record Shell(Page page) implements DocumentComponent {
                 s ->
                     s.child(
                         Breadcrumbs.of(
-                            new Link("/", "Tessera"), new Link(page.path(), page.navLabel()))))
+                            List.of(
+                                new Link("/", "Tessera"), new Link(page.path(), page.navLabel())))))
             .children(
                 h1().fontSize(
                         CssLength.fluid(CssLength.rem(1.75), CssLength.cqi(4), CssLength.rem(2.6)))

@@ -99,7 +99,7 @@ final class OverlaysPage {
                     text("). Every page and demo on this site is indexed.")))
         .code(
             "var search = SearchPalette.of().placeholder(\"Search…\").triggerLabel(\"Search\")",
-            "    .item(\"Pages\", \"Forms\", \"/forms\");",
+            "    .item(\"Pages\", \"/forms\", \"Forms\");",
             "header.children(search.triggerButton(), Documents.deferred(search, 30));");
   }
 }

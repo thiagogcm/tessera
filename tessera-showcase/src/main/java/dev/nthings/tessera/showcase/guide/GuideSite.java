@@ -96,9 +96,9 @@ public final class GuideSite {
     var search =
         SearchPalette.of()
             .scopeId("guide-search")
-            .item("Pages", "Home", "/")
-            .item("Guide", "Installation", "/guide/#installation")
-            .item("Guide", "Publishing", "/guide/#publishing");
+            .item("Pages", "/", "Home")
+            .item("Guide", "/guide/#installation", "Installation")
+            .item("Guide", "/guide/#publishing", "Publishing");
     return DocumentElement.of(
             Elements.main()
                 .p(Tokens.SPACE_8)

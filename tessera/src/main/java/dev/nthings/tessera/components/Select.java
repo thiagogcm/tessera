@@ -23,7 +23,7 @@ import java.util.List;
 /// button and open list; other browsers show their native list. Create one with [#of(String)], add
 /// options, and wrap it with [Field#of(String, Select)] to label it.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `custom-select-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `custom-select-<n>`.
 public final class Select extends BuiltinScope<Select> {
 
   /// An option's submitted value and visible label for [Select#optgroup(String, List)].

@@ -18,7 +18,7 @@ public final class SiteNavigation {
     var palette = SearchPalette.of();
     for (var route : routes) {
       var href = route.documentUri().toASCIIString();
-      var item = SearchPalette.Item.of(route.displayTitle(), href).badge(route.path());
+      var item = SearchPalette.Item.of(href, route.displayTitle()).badge(route.path());
       var description = route.document().description();
       palette.item(group, description != null ? item.description(description) : item);
     }

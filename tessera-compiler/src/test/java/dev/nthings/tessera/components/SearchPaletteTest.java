@@ -23,11 +23,11 @@ class SearchPaletteTest {
             .triggerLabel("Search")
             .item(
                 "Routes",
-                SearchPalette.Item.of("Telemetry", "/telemetry").description("Real-time metrics"))
-            .item("Routes", "Typography", "/typography")
+                SearchPalette.Item.of("/telemetry", "Telemetry").description("Real-time metrics"))
+            .item("Routes", "/typography", "Typography")
             .item(
                 "Actions",
-                SearchPalette.Item.of("Toggle Dark Mode", "/theme")
+                SearchPalette.Item.of("/theme", "Toggle Dark Mode")
                     .description("Switch themes")
                     .badge("Action"));
     page = renderDocumentMain(DocumentContent.of(palette.triggerButton()), deferred(palette, 50));

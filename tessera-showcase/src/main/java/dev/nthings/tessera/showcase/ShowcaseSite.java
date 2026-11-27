@@ -52,7 +52,7 @@ public final class ShowcaseSite {
   static String explain(SiteDefinition definition, String path) {
     var route =
         definition.route(path).orElseThrow(() -> new IllegalArgumentException("No route " + path));
-    return SourceTracking.enabled(() -> Compiler.explain(route.document())).toText();
+    return SourceTracking.run(true, () -> Compiler.explain(route.document())).toText();
   }
 
   public static void main(String[] args) throws InterruptedException {
@@ -92,13 +92,13 @@ public final class ShowcaseSite {
     }
 
     var tracking = sources || explain != null;
-    var definition = SourceTracking.enabledIf(tracking, ShowcaseSite::createDefinition);
+    var definition = SourceTracking.run(tracking, ShowcaseSite::createDefinition);
     if (explain != null) {
       System.out.print(explain(definition, explain));
       return;
     }
 
-    var compiled = SourceTracking.enabledIf(tracking, () -> Compiler.forSite().compile(definition));
+    var compiled = SourceTracking.run(tracking, () -> Compiler.forSite().compile(definition));
     SiteWriter.writeToDirectory(compiled, outputDir);
     System.out.println(
         "Compiled "

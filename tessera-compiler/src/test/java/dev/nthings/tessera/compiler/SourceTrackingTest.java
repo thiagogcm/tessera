@@ -69,7 +69,7 @@ class SourceTrackingTest {
   @Test
   @DisplayName("an element records the line that built it and emits it as data-src")
   void elementCarriesItsCallSite() {
-    var built = SourceTracking.enabled(() -> div().text("hello"));
+    var built = SourceTracking.run(true, () -> div().text("hello"));
     var line = here() - 1;
 
     var page = RenderedPage.renderMain(built);
@@ -82,7 +82,7 @@ class SourceTrackingTest {
   @DisplayName("a user component's elements point into the component's own code")
   void userComponentKeepsSource() {
     var panel = new Panel("hi");
-    var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(panel)));
+    var page = SourceTracking.run(true, () -> RenderedPage.render(main().child(panel)));
 
     assertThat(page.element("p")).hasAttribute("data-src", sourceAt(panel.elementLine).toString());
     assertSourcesPointHere(page);
@@ -91,7 +91,7 @@ class SourceTrackingTest {
   @Test
   @DisplayName("a library component's elements point at the line that placed the component")
   void libraryComponentKeepsPlacement() {
-    var page = SourceTracking.enabled(() -> RenderedPage.render(main().child(Button.of("Save"))));
+    var page = SourceTracking.run(true, () -> RenderedPage.render(main().child(Button.of("Save"))));
     var line = here() - 1;
 
     assertThat(page.element("button")).hasAttribute("data-src", sourceAt(line).toString());
@@ -101,7 +101,7 @@ class SourceTrackingTest {
   @Test
   @DisplayName("a diagnostic is located at the line of the offending element")
   void diagnosticsNameTheSourceLine() {
-    var page = SourceTracking.enabled(() -> PageDocument.of("Bad", main(button())));
+    var page = SourceTracking.run(true, () -> PageDocument.of("Bad", main(button())));
     var line = here() - 1;
 
     var failure =
@@ -116,12 +116,14 @@ class SourceTrackingTest {
     var first = new Panel("a");
     var second = new Panel("b");
     var compiled =
-        SourceTracking.enabled(() ->
-            Compiler.forSite()
-                .compile(
-                    SiteDefinition.of(
-                        SiteRoute.of("/", PageDocument.of("Home", main(first))),
-                        SiteRoute.of("/b", PageDocument.of("B", main(second))))));
+        SourceTracking.run(
+            true,
+            () ->
+                Compiler.forSite()
+                    .compile(
+                        SiteDefinition.of(
+                            SiteRoute.of("/", PageDocument.of("Home", main(first))),
+                            SiteRoute.of("/b", PageDocument.of("B", main(second))))));
 
     var home = RenderedPage.of(compiled, "/");
     var other = RenderedPage.of(compiled, "/b");
@@ -139,10 +141,12 @@ class SourceTrackingTest {
     var panel = new Panel("hi");
     var svg = "<svg viewBox=\"0 0 10 10\"><circle cx=\"5\" cy=\"5\" r=\"4\"/></svg>";
     var tree =
-        SourceTracking.enabled(() ->
-            Compiler.explain(
-                PageDocument.of(
-                    "Tree", DocumentElement.of(main()).child(panel).child(rawHtml(svg)))));
+        SourceTracking.run(
+            true,
+            () ->
+                Compiler.explain(
+                    PageDocument.of(
+                        "Tree", DocumentElement.of(main()).child(panel).child(rawHtml(svg)))));
 
     var body = (PageTree.Tag) tree.body().getFirst();
     assertThat(body.tag()).isEqualTo("main");

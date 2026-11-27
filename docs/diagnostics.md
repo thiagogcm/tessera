@@ -168,11 +168,12 @@ Use [typed roles and states](components.md#declare-roles-and-accessibility-state
 
 ## Trace elements to Java source
 
-Wrap authoring and compilation in `SourceTracking.enabled(...)` to record Java file and line origins:
+Wrap authoring and compilation in `SourceTracking.run(enabled, work)` to record Java file and line origins while `enabled` is true:
 
 ```java
 var page =
-    SourceTracking.enabled(
+    SourceTracking.run(
+        true,
         () -> Compiler.forPage().compile(PageDocument.of("Home", Elements.main(Elements.h1("Home")))));
 ```
 
@@ -185,4 +186,4 @@ just demo
 just explain /overlays/
 ```
 
-`just demo` enables source tracking automatically. Stack walking adds per-element overhead, so keep tracking off in production or gate it with `SourceTracking.enabledIf(flag, callback)`.
+`just demo` enables source tracking automatically. Stack walking adds per-element overhead, so keep tracking off in production, for example by passing a command-line flag as `enabled`.

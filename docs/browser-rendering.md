@@ -88,7 +88,7 @@ public final class Editor {
 
   private LiveContent view(LiveContext context) {
     var root = context.root();
-    var input = Forms.text("name");
+    var input = Forms.input("name", InputType.TEXT);
     return LiveElement.of(Elements.main().child(Elements.label().labelFor(input.ref()).text("Name")))
         .child(
             LiveElement.of(input)
@@ -238,7 +238,7 @@ var entries = LiveElement.of(Elements.div());
 for (var item : items) {
   entries.child(
       Live.fragment(
-              LiveContent.of(Field.of(item.label(), Forms.text(item.id()))),
+              LiveContent.of(Field.of(item.label(), Forms.input(item.id(), InputType.TEXT))),
               LiveElement.of(Button.of("Choose " + item.label()))
                   .onClick(() -> choose(item)))
           .key(item.id()));

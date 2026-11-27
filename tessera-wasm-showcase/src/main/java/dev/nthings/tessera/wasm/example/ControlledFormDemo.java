@@ -76,7 +76,7 @@ final class ControlledFormDemo {
   }
 
   private LiveContent fields(BrowserRoot root) {
-    var input = Forms.text("controlled-text").initialValue("Default text");
+    var input = Forms.input("controlled-text", InputType.TEXT).initialValue("Default text");
     var text =
         LiveElement.of(input).on(Events.INPUT, edit(root, state -> this.text = state.value()));
     var textarea =
@@ -103,7 +103,8 @@ final class ControlledFormDemo {
     }
     var username =
         LiveField.of(
-                Field.of("Username", Forms.text("username")).hint("Shown on your public profile"),
+                Field.of("Username", Forms.input("username", InputType.TEXT))
+                    .hint("Shown on your public profile"),
                 control ->
                     control.on(
                         Events.INPUT,

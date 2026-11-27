@@ -4,6 +4,7 @@ import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import java.util.List;
 import java.util.stream.Stream;
@@ -19,10 +20,10 @@ class FieldTest {
 
   static Stream<Arguments> labelledControls() {
     return Stream.of(
-        argumentSet("text input", Field.of("Username", Forms.text("username"))),
+        argumentSet("text input", Field.of("Username", Forms.input("username", InputType.TEXT))),
         argumentSet("textarea", Field.of("Username", Forms.textarea("username", 3))),
         argumentSet("select", Field.of("Username", Select.of("username").option("ada", "Ada"))),
-        argumentSet("switch", Forms.switchField("Username", "username")));
+        argumentSet("switch", Forms.switchField("Username", Forms.switchInput("username"))));
   }
 
   @ParameterizedTest
@@ -40,7 +41,7 @@ class FieldTest {
   void hintAndErrorDescribeTheControl() {
     var page =
         renderMain(
-            Field.of("Username", Forms.text("username"))
+            Field.of("Username", Forms.input("username", InputType.TEXT))
                 .hint("3-20 characters.")
                 .error("Username is taken.")
                 .tooltip("Alphanumeric only"));
@@ -55,7 +56,7 @@ class FieldTest {
   void explicitInvalidity() {
     var page =
         renderMain(
-            Field.of("Email", Forms.email("email"))
+            Field.of("Email", Forms.input("email", InputType.EMAIL))
                 .error("Enter an email.")
                 .validation(new Field.Validation(true, "Already registered.")));
 
@@ -71,7 +72,7 @@ class FieldTest {
   void explicitValidity() {
     var page =
         renderMain(
-            Field.of("Email", Forms.email("email"))
+            Field.of("Email", Forms.input("email", InputType.EMAIL))
                 .error("Enter an email.")
                 .validation(new Field.Validation(false, "Already registered.")));
 
@@ -95,8 +96,12 @@ class FieldTest {
 
   static Stream<Arguments> switches() {
     return Stream.of(
-        argumentSet("off", Forms.switchField("Receive updates", "updates"), false),
-        argumentSet("on", Forms.checkedSwitchField("Receive updates", "updates"), true));
+        argumentSet(
+            "off", Forms.switchField("Receive updates", Forms.switchInput("updates")), false),
+        argumentSet(
+            "on",
+            Forms.switchField("Receive updates", Forms.switchInput("updates").initialChecked(true)),
+            true));
   }
 
   @Test
@@ -104,8 +109,8 @@ class FieldTest {
   void sameNamedFieldsGetDistinctIds() {
     var page =
         renderMain(
-            Field.of("Email", Forms.email("email")),
-            Field.of("Newsletter email", Forms.email("email")));
+            Field.of("Email", Forms.input("email", InputType.EMAIL)),
+            Field.of("Newsletter email", Forms.input("email", InputType.EMAIL)));
 
     var inputs = page.elements("input[name=email]");
     assertThat(page.elements("label"))
@@ -116,7 +121,7 @@ class FieldTest {
   @Test
   @DisplayName("one control reused across fields follows each field's hint and error")
   void reusedControlFollowsEachField() {
-    var control = Forms.text("name");
+    var control = Forms.input("name", InputType.TEXT);
     var described = Field.of("Name", control).hint("Full name").error("Name is required");
     var plain = Field.of("Name", control);
 

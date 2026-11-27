@@ -172,7 +172,7 @@ public final class KeyedListDemo {
         .flexCol()
         .gap(Tokens.SPACE_2)
         .child(
-            Field.of("Collection name", Forms.text("collection-name"))
+            Field.of("Collection name", Forms.input("collection-name", InputType.TEXT))
                 .hint("A shared labelled field"))
         // A bundled icon: structured SVG in the static page and in the browser root alike.
         .child(Callout.of(Callout.Kind.NOTE, Elements.p().text("Entries keep their state")));
@@ -237,7 +237,7 @@ public final class KeyedListDemo {
     }
 
     TagElement input() {
-      return Forms.text("entry-" + key).id(value).ariaDescribedBy(description);
+      return Forms.input("entry-" + key, InputType.TEXT).id(value).ariaDescribedBy(description);
     }
 
     TagElement hint() {

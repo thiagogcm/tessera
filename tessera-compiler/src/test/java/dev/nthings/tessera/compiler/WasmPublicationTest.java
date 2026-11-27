@@ -13,6 +13,7 @@ import static org.junit.jupiter.params.provider.Arguments.argumentSet;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.ElementRef;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.document.DocumentContent;
 import dev.nthings.tessera.document.DocumentElement;
 import dev.nthings.tessera.document.WasmBundle;
@@ -167,7 +168,7 @@ class WasmPublicationTest {
     var content =
         main()
             .children(
-                Field.of("Notes", Forms.text("notes")),
+                Field.of("Notes", Forms.input("notes", InputType.TEXT)),
                 p("Intro").id(ElementRef.scoped("intro")),
                 p("Pinned").id(ElementRef.page("pinned")));
     var page =

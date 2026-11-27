@@ -107,7 +107,7 @@ class ElementIdentityTest {
     var page =
         renderMain(
             label().labelFor(name).text("Name"),
-            Forms.text("name").id(name),
+            Forms.input("name", InputType.TEXT).id(name),
             button().command(confirm, BuiltinCommand.SHOW_MODAL).text("Save"),
             dialog().id(confirm).ariaLabel("Save draft").text("Saved"));
 

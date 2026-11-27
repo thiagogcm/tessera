@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Component;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Scope;
 import dev.nthings.tessera.core.TagElement;
@@ -77,7 +78,7 @@ class RenderIsolationTest {
   @Test
   @DisplayName("independent renders of one component keep their reference scopes apart")
   void independentRendersKeepReferenceScopesSeparate() {
-    var field = Field.of("Name", Forms.text("name")).hint("Full name");
+    var field = Field.of("Name", Forms.input("name", InputType.TEXT)).hint("Full name");
     var left = dom(render(field, "left"));
     var right = dom(render(field, "right"));
 

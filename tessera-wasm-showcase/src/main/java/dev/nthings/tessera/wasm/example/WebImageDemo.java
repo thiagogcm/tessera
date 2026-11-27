@@ -10,6 +10,7 @@ import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.Scope;
@@ -34,7 +35,7 @@ public final class WebImageDemo {
   private int count;
   private boolean badge;
   private int liveMeter;
-  private final TagElement name = Forms.text("name");
+  private final TagElement name = Forms.input("name", InputType.TEXT);
 
   private WebImageDemo() {}
 
@@ -61,7 +62,7 @@ public final class WebImageDemo {
                         host,
                         _ ->
                             LiveContent.of(
-                                Field.of("Notes", Forms.text("notes"))
+                                Field.of("Notes", Forms.input("notes", InputType.TEXT))
                                     .hint("An independent mounted root")))),
             Map.entry("forms", ControlledFormDemo::mount),
             Map.entry("defaults", DefaultsDemo::mount),

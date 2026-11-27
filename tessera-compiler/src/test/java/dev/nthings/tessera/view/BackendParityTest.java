@@ -26,6 +26,7 @@ import dev.nthings.tessera.core.BuiltinCommand;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.HtmlTag;
+import dev.nthings.tessera.core.InputType;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.OutlineHeading;
 import dev.nthings.tessera.core.Role;
@@ -68,7 +69,7 @@ class BackendParityTest {
         main()
             .children(
                 Button.of("Save"),
-                Field.of("Name", Forms.text("name")).hint("Full name"),
+                Field.of("Name", Forms.input("name", InputType.TEXT)).hint("Full name"),
                 fragment().children(p().text("Visible"), p().text("Details")),
                 ul().role(Role.LIST)
                     .child(fragment().child(li().role(Role.LISTITEM).text("Entry"))));

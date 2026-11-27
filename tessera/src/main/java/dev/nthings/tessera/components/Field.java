@@ -56,8 +56,8 @@ public final class Field extends BuiltinScope<Field> {
     this.select = select;
   }
 
-  /// Wraps `control`, such as [Forms#text(String)], in a field labelled `label`. The control gets
-  /// an assigned id unless you bind one with `control.id(ref)`.
+  /// Wraps `control`, such as [Forms#input], in a field labelled `label`. The control gets an
+  /// assigned id unless you bind one with `control.id(ref)`.
   public static Field of(String label, TagElement control) {
     return new Field(label, control, null);
   }

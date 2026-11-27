@@ -100,9 +100,12 @@ interface TextStyled<SELF extends TextStyled<SELF>> extends StyleTarget<SELF> {
 
   /// Sets a highlight background, a translucent tint of the tone's color (so it follows the light
   /// or dark scheme), with `padding-inline: var(--space-1)` and `border-radius: var(--radius-sm)`.
+  /// The text takes `TEXT_PRIMARY`, the color the theme contrast check measures on the tint, so a
+  /// highlighted `<mark>` does not keep the browser's fixed mark color.
   default SELF highlight(Tone tone) {
     StyleTarget.declarations(this)
         .put(CssProperty.BACKGROUND, Tint.HIGHLIGHT.fill(tone))
+        .put(CssProperty.COLOR, Tokens.TEXT_PRIMARY)
         .put(CssProperty.PADDING_INLINE, Tokens.SPACE_1)
         .put(CssProperty.BORDER_RADIUS, Tokens.RADIUS_SM);
     return self();

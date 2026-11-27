@@ -69,7 +69,7 @@ public final class Markdown {
   }
 
   /// Markdown with no fence renderers and URLs kept as written.
-  public static Markdown create() {
+  public static Markdown of() {
     return new Markdown(Map.of(), UnaryOperator.identity(), false, false);
   }
 

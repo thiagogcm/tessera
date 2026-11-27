@@ -25,8 +25,8 @@ class FontFaceTest {
                     SiteRoute.of("/about", PageDocument.of("About", main().text("About"))))
                 .withFonts(
                     List.of(
-                        FontFace.of("Inter", INTER).weight(100, 900).preload(),
-                        FontFace.of("Inter", INTER_ITALIC).weight(400).italic())));
+                        FontFace.of("Inter", INTER).withWeight(100, 900).withPreload(),
+                        FontFace.of("Inter", INTER_ITALIC).withWeight(400).withItalic())));
   }
 
   @Test
@@ -95,9 +95,11 @@ class FontFaceTest {
   void rejectsInvalidWeights() {
     var face = FontFace.of("Inter", Asset.of("/fonts/inter.woff2", new byte[] {1}));
 
-    assertThatThrownBy(() -> face.weight(0)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> face.weight(100, 1001)).isInstanceOf(IllegalArgumentException.class);
-    assertThatThrownBy(() -> face.weight(900, 100)).isInstanceOf(IllegalArgumentException.class);
-    assertThat(face.weight(100, 900).weight()).isEqualTo("100 900");
+    assertThatThrownBy(() -> face.withWeight(0)).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> face.withWeight(100, 1001))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> face.withWeight(900, 100))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThat(face.withWeight(100, 900).weight()).isEqualTo("100 900");
   }
 }

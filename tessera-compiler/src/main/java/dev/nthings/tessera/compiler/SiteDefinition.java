@@ -90,7 +90,7 @@ public record SiteDefinition(
 
   /// Returns a copy with the self-hosted `fonts`, replacing any earlier fonts. Each file is
   /// published like an asset, every page's stylesheet declares each face, and a preloaded face
-  /// ([FontFace#preload()]) is preloaded by every page.
+  /// ([FontFace#withPreload()]) is preloaded by every page.
   @CheckReturnValue
   public SiteDefinition withFonts(List<FontFace> fonts) {
     return new SiteDefinition(routes, baseUrl, linkSpeculation, assets, fonts);

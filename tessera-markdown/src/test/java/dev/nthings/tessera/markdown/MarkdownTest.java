@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("Markdown")
 class MarkdownTest {
 
-  private static final Markdown MARKDOWN = Markdown.create();
+  private static final Markdown MARKDOWN = Markdown.of();
 
   private static Document render(Markdown markdown, String source) {
     return render(markdown.parse(source).body());
@@ -131,8 +131,7 @@ class MarkdownTest {
     @Test
     @DisplayName("passes link and image URLs through the resolver")
     void resolvesUrls() {
-      var markdown =
-          Markdown.create().withUrlResolver(url -> url.replaceFirst("\\.md(#|$)", "/$1"));
+      var markdown = Markdown.of().withUrlResolver(url -> url.replaceFirst("\\.md(#|$)", "/$1"));
 
       var dom = render(markdown, "[Guide](guide.md#install \"Install\") ![Logo](logo.svg)");
 
@@ -241,7 +240,7 @@ class MarkdownTest {
     @DisplayName("hands fences of a registered language to its renderer")
     void rendersRegisteredFences() {
       var markdown =
-          Markdown.create()
+          Markdown.of()
               .withFence(
                   "Mermaid",
                   fence ->
@@ -263,7 +262,7 @@ class MarkdownTest {
     @DisplayName("rejects a blank fence language")
     void rejectsBlankFenceLanguage() {
       assertThatIllegalArgumentException()
-          .isThrownBy(() -> Markdown.create().withFence(" ", fence -> Documents.fragment()));
+          .isThrownBy(() -> Markdown.of().withFence(" ", fence -> Documents.fragment()));
     }
   }
 

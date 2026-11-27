@@ -40,7 +40,7 @@ On `SiteRoute`, `.withTitle(String)` overrides navigation and search labels with
 `SiteDefinition` is a record; each `with...` call returns a new site:
 
 - `withAssets(List<Asset>)`: Static files published alongside pages.
-- `withFonts(List<FontFace>)`: Self-hosted font faces (see [Styling](styling.md)).
+- `withFonts(List<FontFace>)`: Self-hosted font faces (see [Self-host fonts](#self-host-fonts)).
 - `withBaseUrl(URI.create("https://example.com"))`: Takes a site origin (no path). Generates `sitemap.xml` and gives each page a `<link rel="canonical">` to its absolute URL, such as `https://example.com/guide/`. Omit it to skip both.
 - `withLinkSpeculation(LinkSpeculation)`: Defaults to `PRERENDER`. Pages with a browser-bundle deployment policy publish rules via a `Speculation-Rules` response header; other pages embed them in `<head>`.
 
@@ -120,11 +120,11 @@ var withFonts =
     site.withFonts(
         List.of(
             FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
-                .weight(100, 900)
-                .preload(),
+                .withWeight(100, 900)
+                .withPreload(),
             FontFace.of("Inter", Asset.file("/fonts/inter-italic.woff2", Path.of("fonts/inter-italic.woff2")))
-                .weight(100, 900)
-                .italic()));
+                .withWeight(100, 900)
+                .withItalic()));
 
 var theme = Theme.defaults()
     .with(Tokens.FONT_BODY, FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI));

@@ -100,10 +100,19 @@ final class PreparedPage {
     return bundleBootstrap;
   }
 
+  /// The deployment headers of this page: the bundle CSP under external output, allowing the page's
+  /// import map by hash; otherwise none.
   Map<String, String> responseHeaders(OutputMode mode) {
-    return bundleBootstrap != null && mode instanceof OutputMode.External
+    if (bundleBootstrap == null || !(mode instanceof OutputMode.External)) {
+      return Map.of();
+    }
+    var importMap = ScriptModules.importMap(behaviors, ScriptModules.base(mode));
+    return importMap == null
         ? BundlePublication.HEADERS
-        : Map.of();
+        : Map.of(
+            "Content-Security-Policy",
+            BundlePublication.CSP.replace(
+                "script-src 'self'", "script-src 'self' " + ScriptModules.cspHash(importMap)));
   }
 
   /// An inspection snapshot of this page's element tree.

@@ -92,7 +92,7 @@ stateDiagram-v2
 
 ## Emit resources
 
-`HtmlWriter` handles context-sensitive OWASP encoding and the HTML envelope. Its `Resources` helper hashes and encodes the final stylesheet once and each distinct `PageScript` once per compilation. `BundlePublication` resolves `WasmBundle` graphs into content-hashed files under `<assetBase>/wasm/`, publishes the shared `wasm-bootstrap.js`, and supplies deployment CSP headers.
+`HtmlWriter` handles context-sensitive OWASP encoding and the HTML envelope. Its `Resources` helper hashes and encodes the final stylesheet once and each distinct `PageScript` once per compilation, and publishes the vendored `ScriptModule`s those scripts import under `<assetBase>/modules/` with a per-page import map (`ScriptModules`). `BundlePublication` resolves `WasmBundle` graphs into content-hashed files under `<assetBase>/wasm/`, publishes the shared `wasm-bootstrap.js`, and supplies deployment CSP headers.
 
 `SiteArtifacts` generates `search-index.json` (from routes and prepared outline headings) and optional `sitemap.xml` (when `baseUrl` is configured).
 

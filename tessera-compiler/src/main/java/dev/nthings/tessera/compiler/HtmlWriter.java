@@ -34,11 +34,17 @@ final class HtmlWriter {
     // Null for inline output.
     private final @Nullable Asset stylesheet;
     private final Map<PageScript, Asset> modules = new LinkedHashMap<>();
+    private final String moduleBase;
+    private final List<Asset> vendored = new ArrayList<>();
 
     /// Resources for `css` and every module in `behaviors`, in order; a repeated behavior is
     /// encoded once.
     Resources(String css, OutputMode outputMode, Iterable<PageScript> behaviors) {
       this.css = css;
+      moduleBase = ScriptModules.base(outputMode);
+      for (var module : ScriptModules.imported(behaviors)) {
+        vendored.add(Asset.text(ScriptModules.path(moduleBase, module), module.source()));
+      }
       switch (outputMode) {
         case OutputMode.External(var base) -> {
           stylesheet = Asset.text(stylesheetPath(base, css), css);
@@ -50,17 +56,22 @@ final class HtmlWriter {
       }
     }
 
-    /// The files the pages link: none inline; otherwise the stylesheet, then each module in
-    /// first-use order.
+    /// The files the pages link: under external output the stylesheet, then each module in
+    /// first-use order; then, in any mode, each vendored module the scripts import.
     List<Asset> assets() {
+      var assets = new ArrayList<Asset>(modules.size() + vendored.size() + 1);
       var linked = stylesheet;
-      if (linked == null) {
-        return List.of();
+      if (linked != null) {
+        assets.add(linked);
+        assets.addAll(modules.values());
       }
-      var assets = new ArrayList<Asset>(modules.size() + 1);
-      assets.add(linked);
-      assets.addAll(modules.values());
+      assets.addAll(vendored);
       return assets;
+    }
+
+    /// The import map resolving the vendored modules `behaviors` import, or null for none.
+    private @Nullable String importMap(List<PageScript> behaviors) {
+      return ScriptModules.importMap(behaviors, moduleBase);
     }
 
     /// The path of `behavior`'s module, which must be one these resources were built with.
@@ -105,6 +116,13 @@ final class HtmlWriter {
     if (speculationRules != null) {
       out.append("<script type=\"speculationrules\">")
           .append(inlineModule(speculationRules))
+          .append("</script>\n");
+    }
+    // Precedes every module script, as an import map must.
+    var importMap = resources.importMap(behaviors);
+    if (importMap != null) {
+      out.append("<script type=\"importmap\">")
+          .append(inlineModule(importMap))
           .append("</script>\n");
     }
     for (var head : headNodes) {

@@ -91,6 +91,7 @@ See [Set form defaults](components.md#set-form-defaults) and [Bind form values](
 | `duplicate-tab` | Two tabs in one `ContentTabs` share a key |
 | `tab-selection` | A static or live tab selection names an absent or disabled tab, or a live binding is empty while an enabled tab exists |
 | `wasm-mount-placement` | A `Documents.wasmMount(...)` sits in `<head>`, inside another mount, or inside a non-host container |
+| `script-module-conflict` | Page scripts import two different `ScriptModule` sources under one name |
 | `duplicate-route` | Two `SiteRoute` entries declare the same normalized path |
 | `file-path-collision` | Two routes, registered assets, or generated files map to the same URL or output path |
 | `missing-route-or-asset`, `missing-route-fragment` | A local site link targets a missing route, asset, or target-page fragment |

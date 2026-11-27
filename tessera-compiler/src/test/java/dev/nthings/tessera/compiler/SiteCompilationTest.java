@@ -87,7 +87,7 @@ class SiteCompilationTest {
   @Test
   @DisplayName("a route's page script is published once and loaded only by that route")
   void linksPageScriptsOnlyWhereUsed() {
-    var script = new PageScript("test-widget", "customElements.define('test-widget', class {});");
+    var script = PageScript.of("test-widget", "customElements.define('test-widget', class {});");
     var site =
         Compiler.forSite()
             .compile(
@@ -103,7 +103,7 @@ class SiteCompilationTest {
   @Test
   @DisplayName("compiling twice gives identical output, and a style change renames the stylesheet")
   void outputIsDeterministicAndCacheBusted() {
-    var script = new PageScript("test-widget", "customElements.define('test-widget', class {});");
+    var script = PageScript.of("test-widget", "customElements.define('test-widget', class {});");
     Supplier<SiteDefinition> site =
         () ->
             SiteDefinition.of(

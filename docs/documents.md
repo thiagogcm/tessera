@@ -102,7 +102,7 @@ A `PageScript` represents an ES module with a stable ID. Contribute application 
 ```java
 DocumentComponent widget =
     context -> {
-      context.contributeScript(new PageScript("my-widget", moduleSource));
+      context.contributeScript(PageScript.of("my-widget", moduleSource));
       return Elements.custom("my-widget");
     };
 ```
@@ -110,3 +110,21 @@ DocumentComponent widget =
 Each page emits a script ID at most once, keeping the first registration. Keep the module source identical across all registrations of the same ID. Built-in portable widgets such as `ContentTabs` and `SearchPalette` declare their bundled modules automatically during document compilation; see [Browser support](browser-support.md#component-scripts).
 
 How scripts are packaged (embedded or external hashed files) is governed by the [output mode](sites.md#choose-an-output-mode).
+
+### Import a vendored module
+
+To use a third-party ES module, such as a small chart or date library, copy its ESM build into your project and declare it on the script with `withImports`. The script then imports it by name:
+
+```java
+var chart = ScriptModule.file("chart", Path.of("vendor/chart.mjs"));
+var script =
+    PageScript.of("sales-chart", "import { draw } from \"chart\"; draw(document.body);")
+        .withImports(chart);
+```
+
+Tessera publishes each imported module from your own origin at `<assetBase>/modules/<sanitized-name>-<hash>.js`, in every output mode, and gives each page that runs an importing script a `<script type="importmap">` mapping the name to that file. A changed source gets a new URL, so the file can be cached forever. `ScriptModule.of(name, source)` and `ScriptModule.fromResource(name, anchor, resource)` build a module from a string or a classpath resource.
+
+- The name is a bare import specifier such as `chart` or `@scope/dates`; relative paths and URLs are rejected.
+- A vendored module that imports another vendored module by name works when the page script declares both, since the import map covers every module on the page.
+- Two different sources under one name in one compilation report `script-module-conflict`.
+- On a page with a [browser bundle](browser-rendering.md) under external output, the deployment `Content-Security-Policy` allows the inline import map by its SHA-256 hash.

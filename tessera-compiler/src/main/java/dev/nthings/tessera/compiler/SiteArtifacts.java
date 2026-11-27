@@ -65,7 +65,7 @@ final class SiteArtifacts {
     return sb.toString();
   }
 
-  private static String escapeJson(String s) {
+  static String escapeJson(String s) {
     var out = new StringBuilder(s.length() + 8);
     for (var i = 0; i < s.length(); i++) {
       var c = s.charAt(i);

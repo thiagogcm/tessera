@@ -15,7 +15,10 @@ import dev.nthings.tessera.components.Forms;
 import dev.nthings.tessera.core.DocumentContent;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.InputType;
+import dev.nthings.tessera.document.DocumentComponent;
 import dev.nthings.tessera.document.DocumentElement;
+import dev.nthings.tessera.document.PageScript;
+import dev.nthings.tessera.document.ScriptModule;
 import dev.nthings.tessera.document.WasmBundle;
 import dev.nthings.tessera.document.WasmBundle.Kind;
 import dev.nthings.tessera.document.WasmBundle.Resource;
@@ -130,6 +133,31 @@ class WasmPublicationTest {
       assertThat(sha384(assets.get(entry.getKey()).content())).isEqualTo(entry.getValue());
     }
     assertThat(compiled.headers()).containsKey("Content-Security-Policy");
+  }
+
+  @Test
+  @DisplayName("a mount page's policy allows its import map by hash")
+  void policyAllowsImportMapByHash() throws NoSuchAlgorithmException {
+    var script =
+        PageScript.of("chart-view", "import \"chart\";")
+            .withImports(ScriptModule.of("chart", "export {};"));
+    DocumentComponent page =
+        context -> {
+          context.contributeScript(script);
+          return DocumentElement.of(main()).child(wasmMount("one", "a", bundle(), p("Fallback")));
+        };
+    var compiled =
+        Compiler.forPage()
+            .withOutputMode(OutputMode.external("/assets"))
+            .compile(PageDocument.of("Mount", page));
+
+    var map = RenderedPage.of(compiled).element("script[type=importmap]").data();
+    var hash =
+        Base64.getEncoder()
+            .encodeToString(
+                MessageDigest.getInstance("SHA-256").digest(map.getBytes(StandardCharsets.UTF_8)));
+    assertThat(compiled.headers().get("Content-Security-Policy"))
+        .contains("script-src 'self' 'sha256-" + hash + "'");
   }
 
   @Test

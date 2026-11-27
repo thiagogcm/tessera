@@ -124,7 +124,7 @@ final class DocsPage {
         .features("sibling-index()", "sibling-count()", "counter()")
         .example(
             StepList.of("Run just verify", "Run just site", "Upload target/site to any static host")
-                .id("publish-steps"))
+                .scopeId("publish-steps"))
         .code("StepList.of(\"Run just verify\", \"Run just site\", \"Upload\");");
   }
 }

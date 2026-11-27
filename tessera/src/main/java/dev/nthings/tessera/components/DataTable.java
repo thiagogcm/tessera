@@ -23,7 +23,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// Scrolling is the default narrow layout. [#stackBelow] enables labelled cards for flat grids.
 /// Sticky head groups and the first row-header column are opt-in. All generated ids are local to
-/// the table's [#id(String)]; unnamed instances use `data-table-<n>`.
+/// the table's [#scopeId(String)]; unnamed instances use `data-table-<n>`.
 public final class DataTable extends BuiltinScope<DataTable> {
 
   private static final Container TABLE = Container.unnamed(Container.Type.INLINE_SIZE);

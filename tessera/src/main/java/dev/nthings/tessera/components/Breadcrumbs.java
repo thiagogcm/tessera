@@ -19,7 +19,7 @@ import java.util.List;
 /// with [#of(Link...)]. The last link gets `aria-current="page"`, and every crumb stays a link.
 /// Separators are decorative, so screen readers skip them.
 ///
-/// Without an [#id(String)], the compiler numbers instances `breadcrumbs-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `breadcrumbs-<n>`.
 public final class Breadcrumbs extends BuiltinScope<Breadcrumbs> {
 
   private final List<Link> links;

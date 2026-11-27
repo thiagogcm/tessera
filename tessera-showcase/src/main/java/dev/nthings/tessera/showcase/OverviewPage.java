@@ -51,7 +51,7 @@ final class OverviewPage {
     for (var target : pages.subList(1, pages.size())) {
       var card =
           Card.of(target.navLabel())
-              .id("area-" + target.navLabel().toLowerCase(java.util.Locale.ROOT))
+              .scopeId("area-" + target.navLabel().toLowerCase(java.util.Locale.ROOT))
               .headingLevel(2)
               .description(target.demos().size() + " demos")
               .bodyText(target.summary())
@@ -67,7 +67,7 @@ final class OverviewPage {
 
     var pipeline =
         ContentTabs.of("Compiler phases")
-            .id("pipeline")
+            .scopeId("pipeline")
             .tab(
                 "expand",
                 "1. Expand",

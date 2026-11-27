@@ -23,7 +23,7 @@ class ContentTabsTest {
 
   private static ContentTabs stages() {
     return ContentTabs.of("Build & test")
-        .id("stages")
+        .scopeId("stages")
         .tab("java", "Java", p().text("Builders"))
         .tab("html", "HTML", p().text("Markup"))
         .tab("css", "CSS", p().text("Styles"));
@@ -76,7 +76,7 @@ class ContentTabsTest {
   void reportsUnselectableInitialTab(String key) {
     var tabs =
         ContentTabs.of("Stages")
-            .id("stages")
+            .scopeId("stages")
             .disabledTab("java", "Java", p().text("Builders"))
             .tab("html", "HTML", p().text("Markup"))
             .initialSelected(key);
@@ -149,7 +149,7 @@ class ContentTabsTest {
   void reportsDuplicateTabKey(String first, String second) {
     var tabs =
         ContentTabs.of("Languages")
-            .id("languages")
+            .scopeId("languages")
             .tab(first, "First", p().text("One"))
             .tab(second, "Second", p().text("Two"));
 

@@ -223,7 +223,7 @@ public final class Catalog {
   private static DocumentContent closedModal() {
     var modal =
         Modal.of("Publish release?")
-            .id("publish")
+            .scopeId("publish")
             .description("A native <dialog> opened with command=\"show-modal\".")
             .bodyText(
                 "Press Escape or click the backdrop to dismiss — closedby=\"any\" handles both.")
@@ -240,7 +240,7 @@ public final class Catalog {
 
   private static IntoElement openModal() {
     return Modal.of("Publish release?")
-        .id("publish")
+        .scopeId("publish")
         .description("Shown open, without a second trigger.")
         .bodyText(
             "This note is long enough to wrap onto several lines in a narrow window. The dialog "

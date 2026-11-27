@@ -51,7 +51,8 @@ class DataTableTest {
             foot(row(rowHeader("Total"), LEFT, data("20"), data("35"))));
     page =
         renderMain(
-            DataTable.of("Sales", sales).id("sales"), DataTable.of("Sales copy", sales).id("copy"));
+            DataTable.of("Sales", sales).scopeId("sales"),
+            DataTable.of("Sales copy", sales).scopeId("copy"));
   }
 
   private static Element firstTable() {

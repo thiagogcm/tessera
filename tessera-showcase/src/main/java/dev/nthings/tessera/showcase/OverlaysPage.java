@@ -36,13 +36,13 @@ final class OverlaysPage {
   private static Demo drawer() {
     var start =
         Drawer.of("Filters")
-            .id("demo-drawer-start")
+            .scopeId("demo-drawer-start")
             .side(Drawer.Side.INLINE_START)
             .description("Slides in from the start edge")
             .body(BulletList.of("Status", "Owner", "Region"));
     var end =
         Drawer.of("Details")
-            .id("demo-drawer-end")
+            .scopeId("demo-drawer-end")
             .description("Slides in from the end edge")
             .body(p().text("Drawers are modal dialogs docked to an edge."));
     return Demo.of("drawer", "Drawer")

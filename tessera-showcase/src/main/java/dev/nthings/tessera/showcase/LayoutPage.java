@@ -107,7 +107,7 @@ final class LayoutPage {
                         .description("Card with actions")
                         .bodyText("A short body.")
                         .actions(Button.of("Open")))
-                .id("card-variants")
+                .scopeId("card-variants")
                 .gap(CssLength.rem(1)),
             CardGrid.of(
                     CssLength.rem(15),
@@ -120,7 +120,7 @@ final class LayoutPage {
                         .description("Choice card (radio)")
                         .bodyText("Only one plan can be selected.")
                         .radio("plan", "org"))
-                .id("plan-choice")
+                .scopeId("plan-choice")
                 .gap(CssLength.rem(1)),
             Card.of("Media card")
                 .media(Image.of(Art.MEDIA_BANNER, "Media card banner").dimensions(600, 240))
@@ -177,7 +177,7 @@ final class LayoutPage {
                         .term("Language", "Java 25"))
                 .gap(CssLength.rem(1.5)),
             StepList.of("Write components", "Compile the site", "Serve static files")
-                .id("release-steps"))
+                .scopeId("release-steps"))
         .code(
             "BulletList.of(\"Zero JavaScript\", \"Scoped styles\");",
             "StepList.of(\"Write\", \"Compile\", \"Serve\");");

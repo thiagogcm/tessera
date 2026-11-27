@@ -13,7 +13,7 @@ var engine = Footnote.of("latest Chromium and Firefox.");
 var body =
     DocumentElement.of(Elements.main().child(Elements.h1().text("Guide")))
         .child(DocumentElement.of(Elements.p().text("Supported engines")).child(engine.reference()))
-        .child(Documents.deferred(Modal.of("Help").id("help"), 10));
+        .child(Documents.deferred(Modal.of("Help").scopeId("help"), 10));
 ```
 
 | Need | Document API |

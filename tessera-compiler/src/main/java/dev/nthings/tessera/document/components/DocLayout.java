@@ -31,7 +31,7 @@ import org.jspecify.annotations.Nullable;
 /// [#of(IntoElement...)] and add more sections as children; they keep their page-level ids, so
 /// links to them do not depend on the layout.
 ///
-/// Without an [#id(String)], the compiler numbers instances `doc-layout-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `doc-layout-<n>`.
 public final class DocLayout extends BuiltinDocumentComponent implements FluentBuilder<DocLayout> {
 
   private static final Container LAYOUT = Container.unnamed(Container.Type.INLINE_SIZE);
@@ -67,7 +67,7 @@ public final class DocLayout extends BuiltinDocumentComponent implements FluentB
   }
 
   /// Names this instance in the enclosing id scope.
-  public DocLayout id(String id) {
+  public DocLayout scopeId(String id) {
     this.id = id;
     return this;
   }

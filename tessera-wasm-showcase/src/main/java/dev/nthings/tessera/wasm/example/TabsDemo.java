@@ -42,7 +42,7 @@ public final class TabsDemo {
     var settings =
         LiveTabs.of(
                 ContentTabs.of("Settings")
-                    .id("settings")
+                    .scopeId("settings")
                     .activation(Activation.MANUAL)
                     .tab("account", "Account", p().text("Account settings"))
                     .tab("billing", "Billing", p().text("Billing settings")))
@@ -93,7 +93,7 @@ public final class TabsDemo {
   /// The mailbox tabs, browser-owned with Drafts selected first; the static tabs route compiles
   /// them as the live root renders them.
   public static ContentTabs mailboxes(List<String> mailboxes) {
-    var tabs = ContentTabs.of("Mailboxes").id("mailboxes").initialSelected("Drafts");
+    var tabs = ContentTabs.of("Mailboxes").scopeId("mailboxes").initialSelected("Drafts");
     for (var mailbox : mailboxes) {
       if (mailbox.equals("Archive")) {
         tabs.disabledTab(mailbox, mailbox, p().text("The archive is read-only"));

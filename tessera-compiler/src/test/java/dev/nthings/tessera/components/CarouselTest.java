@@ -38,11 +38,11 @@ class CarouselTest {
         argumentSet(
             "one id in two cards",
             Card.of("Pricing")
-                .id("pricing")
-                .body(Carousel.of("Pricing shots").id("gallery").slide(p().text("1"))),
+                .scopeId("pricing")
+                .body(Carousel.of("Pricing shots").scopeId("gallery").slide(p().text("1"))),
             Card.of("Support")
-                .id("support")
-                .body(Carousel.of("Support shots").id("gallery").slide(p().text("2")))),
+                .scopeId("support")
+                .body(Carousel.of("Support shots").scopeId("gallery").slide(p().text("2")))),
         argumentSet(
             "non-ASCII labels",
             Carousel.of("写真").slide(p().text("1")),

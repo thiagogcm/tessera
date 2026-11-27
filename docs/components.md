@@ -185,7 +185,7 @@ var body = Elements.main().children(trigger, dialog);
 
 References use object identity: two separate `ElementRef.scoped("help")` calls do not target the same element. Unbound references report `unbound-reference`. Multiple references may alias one element, but named references requesting different IDs report `conflicting-element-id`.
 
-Use `id(ElementRef)` on elements and scope-free components such as `Button`. Scoped built-in components take `id(String)` for their instance namespace: `Modal.of("Help").id("help")` binds its dialog to `help--dialog` at the root.
+Use `id(ElementRef)` on elements and scope-free components such as `Button`. Scoped built-in components take `scopeId(String)` for their instance namespace: `Modal.of("Help").scopeId("help")` binds its dialog to `help--dialog` at the root.
 
 ## Key list items that move
 

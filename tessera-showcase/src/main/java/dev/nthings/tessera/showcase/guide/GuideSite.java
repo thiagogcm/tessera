@@ -95,7 +95,7 @@ public final class GuideSite {
   private static DocumentContent page(String title, List<DocumentContent> body) {
     var search =
         SearchPalette.of()
-            .id("guide-search")
+            .scopeId("guide-search")
             .item("Pages", "Home", "/")
             .item("Guide", "Installation", "/guide/#installation")
             .item("Guide", "Publishing", "/guide/#publishing");

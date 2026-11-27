@@ -52,7 +52,7 @@ record Shell(Page page) implements DocumentComponent {
     var pages = ShowcaseSite.pages();
     var inspector =
         Drawer.of("Compiler & Cascade Inspector")
-            .id("inspector")
+            .scopeId("inspector")
             .description("What every page compiles to")
             .body(
                 DescriptionList.of()
@@ -84,10 +84,10 @@ record Shell(Page page) implements DocumentComponent {
 
     var search =
         SearchPalette.of()
-            .id("search")
+            .scopeId("search")
             .placeholder("Search components and pages...")
             .triggerLabel("Search");
-    var quickActions = Dropdown.of("Pages").id("quick-actions");
+    var quickActions = Dropdown.of("Pages").scopeId("quick-actions");
     for (var p : pages) {
       search.item("Pages", SearchPalette.Item.of(p.navLabel(), p.path()).description(p.summary()));
       quickActions.item(Dropdown.Item.link(p.path(), p.navLabel()));
@@ -108,7 +108,7 @@ record Shell(Page page) implements DocumentComponent {
         NavTabs.of(
                 "Primary navigation",
                 pages.stream().map(p -> new Link(p.path(), p.navLabel())).toList())
-            .id("primary-nav")
+            .scopeId("primary-nav")
             .active(page.path());
 
     var header =
@@ -148,7 +148,7 @@ record Shell(Page page) implements DocumentComponent {
                                         inspector.triggerButton("Inspector"),
                                         ColorSchemeToggle.of())),
                         div().overflowX(Overflow.AUTO).child(nav)))
-            .id("site-header");
+            .scopeId("site-header");
 
     var index = pages.indexOf(page);
     var pager = DocPager.of();

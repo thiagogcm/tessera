@@ -40,7 +40,7 @@ var grid =
             row(rowHeader("East"), data("12"), data("15")),
             row(rowHeader("West"), data("9"), data("11"))));
 
-var table = DataTable.of("Quarterly sales", grid).id("sales").stickyHead().stickyFirstColumn();
+var table = DataTable.of("Quarterly sales", grid).scopeId("sales").stickyHead().stickyFirstColumn();
 ```
 
 | Slot | Meaning |

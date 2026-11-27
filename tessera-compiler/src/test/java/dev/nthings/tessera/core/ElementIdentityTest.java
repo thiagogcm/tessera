@@ -200,7 +200,7 @@ class ElementIdentityTest {
     var target = ElementRef.page(name);
     var page =
         renderMain(
-            div().id(target).anchorName().text("Anchor"),
+            div().id(target).anchor().text("Anchor"),
             p().id(ElementRef.page("floating"))
                 .anchoredTo(
                     target,
@@ -218,9 +218,9 @@ class ElementIdentityTest {
   void distinctPageNamesKeepDistinctAnchors() {
     var page =
         renderMain(
-            div().id(ElementRef.page("a.b")).anchorName().text("dot"),
-            div().id(ElementRef.page("a:b")).anchorName().text("colon"),
-            div().id(ElementRef.page("a-b")).anchorName().text("dash"));
+            div().id(ElementRef.page("a.b")).anchor().text("dot"),
+            div().id(ElementRef.page("a:b")).anchor().text("colon"),
+            div().id(ElementRef.page("a-b")).anchor().text("dash"));
 
     assertThat(
             Stream.of("a.b", "a:b", "a-b")

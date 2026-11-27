@@ -72,7 +72,7 @@ class DropdownTest {
     var reference = ElementRef.scoped("tools-panel");
     var outside =
         renderMain(
-            Dropdown.of("Tools").panelRef(reference).item(Dropdown.Item.link("/logs", "Logs")),
+            Dropdown.of("Tools").bindPanel(reference).item(Dropdown.Item.link("/logs", "Logs")),
             Button.of("Toggle tools").command(reference, BuiltinCommand.TOGGLE_POPOVER));
 
     assertThat(outside.target(named(outside, "button", "Toggle tools"), "commandfor"))

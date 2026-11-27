@@ -1,6 +1,7 @@
 package dev.nthings.tessera.components;
 
 import dev.nthings.tessera.core.Command;
+import dev.nthings.tessera.core.ElementBlock;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.IntoElement;
 import dev.nthings.tessera.core.TagElement;
@@ -10,7 +11,6 @@ import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.foundation.FluentBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// Options shared by [Button] and [IconButton]. Each setter returns the same button, for chaining.
@@ -28,7 +28,7 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   final List<ElementRef> domRefs = new ArrayList<>(1);
   @Nullable ElementRef commandTarget;
   @Nullable Command command;
-  @Nullable UnaryOperator<TagElement> tooltip;
+  @Nullable ElementBlock tooltip;
 
   ButtonBase(Tone tone, Button.Variant variant) {
     this.tone = tone;
@@ -95,8 +95,8 @@ abstract class ButtonBase<B extends ButtonBase<B>> extends BuiltinComponent
   }
 
   /// Adds a hint popover shown while the button is hovered or focused (`interestfor`); `tooltip`
-  /// fills and styles the popover element.
-  public B interestTooltip(UnaryOperator<TagElement> tooltip) {
+  /// fills and styles the popover element, as [TagElement#interestTooltip(ElementBlock)] does.
+  public B interestTooltip(ElementBlock tooltip) {
     this.tooltip = tooltip;
     return self();
   }

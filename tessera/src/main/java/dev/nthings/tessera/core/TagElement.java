@@ -15,7 +15,6 @@ import dev.nthings.tessera.internal.authoring.SourceProvenance;
 import dev.nthings.tessera.internal.authoring.TagData;
 import dev.nthings.tessera.internal.foundation.Decimals;
 import java.util.List;
-import java.util.function.UnaryOperator;
 import org.jspecify.annotations.Nullable;
 
 /// HTML element node backed by a [TagName] and a [Declarations]. Authors usually create one through
@@ -402,10 +401,10 @@ public final class TagElement
 
   /// Adds a hint tooltip that this element's `interestfor` points at, shown on hover or focus. The
   /// tooltip is emitted right after this element and positioned above it, with flip fallbacks.
-  /// `tooltipBuilder` receives the default tooltip, a `<span>` with `popover="hint"` and
-  /// `role="tooltip"`, and returns the one to emit. Its DOM id is this element's id followed by
+  /// `tooltip` configures the tooltip element, a `<span>` with `popover="hint"` and
+  /// `role="tooltip"`: its text, children and styles. Its DOM id is this element's id followed by
   /// `--tooltip`. Binds an anonymous ref when this element has none.
-  public TagElement interestTooltip(UnaryOperator<TagElement> tooltipBuilder) {
+  public TagElement interestTooltip(ElementBlock tooltip) {
     ref();
     var base =
         Elements.span()
@@ -415,7 +414,8 @@ public final class TagElement
             .positionTryFallbacks(
                 PositionTry.flip(PositionTry.Flip.BLOCK), PositionTry.flip(PositionTry.Flip.INLINE))
             .m(CssLength.rem(0.25));
-    data.interestTooltip = tooltipBuilder.apply(base);
+    tooltip.configure(base);
+    data.interestTooltip = base;
     return this;
   }
 

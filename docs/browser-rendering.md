@@ -66,8 +66,8 @@ sequenceDiagram
 
 Follow these deployment rules when publishing pages with mounts:
 
-- Publish every asset in `page.assets()` (or `site.files()`) at its path with matching media types (`.wasm` as `application/wasm`).
-- Apply `page.responseHeaders()` (or `site.pageHeaders()`) to the HTML response. External output enables the full Content Security Policy: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'`.
+- Publish every asset in `page.assets()` (or `site.assets()`) at its path with matching media types (`.wasm` as `application/wasm`).
+- Apply `page.headers()` (or `site.headers()`) to the HTML response. External output enables the full Content Security Policy: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; object-src 'none'`.
 - Bundle files always publish as external assets; under `OutputMode.inline()`, they default to `/assets/wasm/`.
 - Prepared `WasmBundle` values can also declare supplementary binary resources, which compatible launchers receive by logical name via `config.tesseraResources` after SHA-384 verification.
 - See [Sites](sites.md#publish-and-preview) for `SiteWriter` and `SitePreviewServer`, which apply compiled headers automatically.

@@ -128,7 +128,7 @@ class WasmPublicationTest {
       assertThat(assets).containsKey(entry.getKey());
       assertThat(sha384(assets.get(entry.getKey()).content())).isEqualTo(entry.getValue());
     }
-    assertThat(compiled.responseHeaders()).containsKey("Content-Security-Policy");
+    assertThat(compiled.headers()).containsKey("Content-Security-Policy");
   }
 
   @Test
@@ -149,11 +149,11 @@ class WasmPublicationTest {
                         PageDocument.of("Share", wasmMount("one", "a", bundle(), p("Share")))),
                     SiteRoute.of("/plain", PageDocument.of("Plain", main().text("Plain")))));
 
-    assertThat(site.files().keySet()).filteredOn(path -> path.startsWith("/wasm/")).hasSize(4);
-    assertThat(site.pageHeaders().keySet()).containsExactly("/", "/share");
-    var rulesHeader = site.pageHeaders().get("/").get("Speculation-Rules");
+    assertThat(site.assets().keySet()).filteredOn(path -> path.startsWith("/wasm/")).hasSize(4);
+    assertThat(site.headers().keySet()).containsExactly("/", "/share");
+    var rulesHeader = site.headers().get("/").get("Speculation-Rules");
     assertThat(rulesHeader).isNotNull();
-    assertThat(site.files()).containsKey(rulesHeader.replace("\"", ""));
+    assertThat(site.assets()).containsKey(rulesHeader.replace("\"", ""));
     var mounted = RenderedPage.of(site, "/");
     assertThat(mounted.elements("script[integrity]")).hasSize(1);
     assertThat(mounted.elements("script[type=speculationrules]")).isEmpty();

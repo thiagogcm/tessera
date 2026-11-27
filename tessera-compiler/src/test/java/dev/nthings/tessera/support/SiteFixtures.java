@@ -31,7 +31,7 @@ public final class SiteFixtures {
 
   /// URL path of the shared stylesheet of a site compiled with external output.
   public static String stylesheetPath(CompiledSite site) {
-    return site.files().keySet().stream()
+    return site.assets().keySet().stream()
         .filter(path -> path.endsWith(".css"))
         .findFirst()
         .orElseThrow(() -> new AssertionError("No stylesheet published"));

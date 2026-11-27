@@ -187,7 +187,7 @@ public final class SitePreviewServer implements AutoCloseable {
       return;
     }
 
-    var file = site.files().get(requestPath);
+    var file = site.assets().get(requestPath);
     if (file != null) {
       sendBytes(exchange, 200, file.contentType(), file.contentView());
       return;
@@ -214,7 +214,7 @@ public final class SitePreviewServer implements AutoCloseable {
         return;
       }
       var headers = exchange.getResponseHeaders();
-      site.pageHeaders().getOrDefault(normalized, Map.of()).forEach(headers::set);
+      site.headers().getOrDefault(normalized, Map.of()).forEach(headers::set);
       sendResponse(
           exchange,
           200,

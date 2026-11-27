@@ -53,7 +53,7 @@ class BundleDistributionIT {
     }
     // Response headers a deployment applies to the pages can reference files too.
     var compiled = PublishedWeb.compile(build, "/assets/demo");
-    for (var route : compiled.pageHeaders().entrySet()) {
+    for (var route : compiled.headers().entrySet()) {
       var page = site.resolve(route.getKey().substring(1)).resolve("index.html");
       var rules = route.getValue().get("Speculation-Rules");
       if (rules != null) {

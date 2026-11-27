@@ -23,7 +23,7 @@ public final class SiteWriter {
             SiteRoute.outputPathFor(entry.getKey()),
             entry.getValue().getBytes(StandardCharsets.UTF_8));
       }
-      for (var file : compiledSite.files().values()) {
+      for (var file : compiledSite.assets().values()) {
         writeFile(root, file.relativeOutputPath(), file.contentView());
       }
     } catch (IOException e) {

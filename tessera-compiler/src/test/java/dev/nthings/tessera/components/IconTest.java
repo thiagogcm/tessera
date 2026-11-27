@@ -1,12 +1,11 @@
 package dev.nthings.tessera.components;
 
-import static dev.nthings.tessera.core.Elements.svg;
+import static dev.nthings.tessera.core.Elements.el;
 import static dev.nthings.tessera.core.Elements.text;
 import static dev.nthings.tessera.support.HtmlAssertions.assertThat;
 import static dev.nthings.tessera.support.RenderedPage.renderMain;
 
 import dev.nthings.tessera.core.ElementRef;
-import dev.nthings.tessera.core.Elements;
 import dev.nthings.tessera.core.Role;
 import dev.nthings.tessera.core.SvgTag;
 import dev.nthings.tessera.support.Diagnostics;
@@ -66,36 +65,36 @@ class IconTest {
   void writesDiagramTags() {
     var page =
         renderMain(
-            Elements.svgIcon(100, 40)
+            Icon.svg(100, 40)
                 .ariaHidden(false)
                 .role(Role.IMG)
                 .ariaLabel("Logo")
                 .children(
-                    svg(SvgTag.TITLE).child(text("Logo")),
-                    svg(SvgTag.DESC).child(text("A mark and a word")),
-                    svg(SvgTag.DEFS)
+                    el(SvgTag.TITLE).child(text("Logo")),
+                    el(SvgTag.DESC).child(text("A mark and a word")),
+                    el(SvgTag.DEFS)
                         .children(
-                            svg(SvgTag.LINEAR_GRADIENT)
+                            el(SvgTag.LINEAR_GRADIENT)
                                 .id(ElementRef.page("fade"))
                                 .children(
-                                    svg(SvgTag.STOP).attr("offset", "0"),
-                                    svg(SvgTag.STOP).attr("offset", "1")),
-                            svg(SvgTag.RADIAL_GRADIENT).id(ElementRef.page("glow")),
-                            svg(SvgTag.CLIP_PATH)
+                                    el(SvgTag.STOP).attr("offset", "0"),
+                                    el(SvgTag.STOP).attr("offset", "1")),
+                            el(SvgTag.RADIAL_GRADIENT).id(ElementRef.page("glow")),
+                            el(SvgTag.CLIP_PATH)
                                 .id(ElementRef.page("clip"))
                                 .child(Icon.rect(0, 0, 40, 40, 4)),
-                            svg(SvgTag.MASK).id(ElementRef.page("mask")),
-                            svg(SvgTag.PATTERN).id(ElementRef.page("dots")),
-                            svg(SvgTag.MARKER).id(ElementRef.page("arrow")),
-                            svg(SvgTag.SYMBOL)
+                            el(SvgTag.MASK).id(ElementRef.page("mask")),
+                            el(SvgTag.PATTERN).id(ElementRef.page("dots")),
+                            el(SvgTag.MARKER).id(ElementRef.page("arrow")),
+                            el(SvgTag.SYMBOL)
                                 .id(ElementRef.page("mark"))
                                 .attr("viewBox", "0 0 24 24")
                                 .child(Icon.circle(12, 12, 10))),
-                    svg(SvgTag.USE).attr("href", "#mark").attr("width", "40"),
-                    svg(SvgTag.TEXT)
+                    el(SvgTag.USE).attr("href", "#mark").attr("width", "40"),
+                    el(SvgTag.TEXT)
                         .attr("x", "48")
                         .attr("y", "26")
-                        .children(text("tess"), svg(SvgTag.TSPAN).child(text("era")))));
+                        .children(text("tess"), el(SvgTag.TSPAN).child(text("era")))));
 
     var html = page.dom().selectFirst("main").html();
     assertThat(html)
@@ -107,7 +106,7 @@ class IconTest {
   @Test
   @DisplayName("the new SVG tags stay inside svg")
   void reportsDiagramTagsOutsideSvg() {
-    assertThat(Diagnostics.rules(() -> renderMain(svg(SvgTag.LINEAR_GRADIENT))))
+    assertThat(Diagnostics.rules(() -> renderMain(el(SvgTag.LINEAR_GRADIENT))))
         .containsExactly("svg-namespace");
   }
 }

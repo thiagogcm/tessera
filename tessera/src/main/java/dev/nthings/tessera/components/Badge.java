@@ -87,8 +87,7 @@ public final class Badge extends BuiltinScope<Badge> {
     return this;
   }
 
-  /// Adds `icon`, such as structured SVG from `Elements.svg`, in an `aria-hidden` span before the
-  /// text.
+  /// Adds `icon`, such as structured SVG from [Icon], in an `aria-hidden` span before the text.
   public Badge icon(IntoElement icon) {
     this.icon = icon.intoElement();
     return this;

@@ -76,7 +76,7 @@ final class DialogDemo {
             })
             .focusFallback(entries);
     var filters =
-        LiveDialog.of(Drawer.of("Filters").dialogRef(filtersRef).body(p().text("Filter options")))
+        LiveDialog.of(Drawer.of("Filters").bindDialog(filtersRef).body(p().text("Filter options")))
             .mode(Mode.NON_MODAL);
     var tour = LiveDialog.of(Modal.of("Welcome tour").opened().body(p().text("Take the tour")));
     var help = LiveDialog.of(Drawer.of("Help").body(p().text("Help topics")));

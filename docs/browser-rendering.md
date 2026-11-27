@@ -283,7 +283,7 @@ final class Discard {
     return LiveElement.of(
             Elements.main(
                 Elements.input(InputType.TEXT).id(draft).ariaLabel("Draft"),
-                Modal.of("Discard changes?").dialogRef(confirm)))
+                Modal.of("Discard changes?").bindDialog(confirm)))
         .children(
             LiveElement.of(Button.of("Discard"))
                 .onClick(
@@ -319,7 +319,7 @@ final class Discard {
 
 Call `host.within(lifetime)` inside an effect so all timers and requests started through that handle cancel automatically when the effect disposes.
 
-References resolve against the latest committed tree. Synchronous event handlers may use refs created during that render; asynchronous work (timers, requests, effects, `afterRender`) must use a ref stored in application state and passed to the component on every render (such as `Modal.dialogRef(ref)`, `Drawer.dialogRef(ref)`, or `Dropdown.panelRef(ref)`).
+References resolve against the latest committed tree. Synchronous event handlers may use refs created during that render; asynchronous work (timers, requests, effects, `afterRender`) must use a ref stored in application state and passed to the component on every render (such as `Modal.bindDialog(ref)`, `Drawer.bindDialog(ref)`, or `Dropdown.bindPanel(ref)`).
 
 ## Animate values without new rules
 

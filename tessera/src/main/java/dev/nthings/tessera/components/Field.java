@@ -133,7 +133,7 @@ public final class Field extends BuiltinScope<Field> {
     }
 
     if (tooltip != null) {
-      control.anchorName();
+      control.anchor();
     }
 
     if (state != null) {

@@ -32,9 +32,9 @@ import org.jspecify.annotations.Nullable;
 ///   requirements.
 ///
 /// Give the element an id with [#id(ElementRef)]. Features that need the element's own id
-/// ([#ref()], [#interestTooltip], [#anchorName()]) bind an anonymous ref when none is bound; a
-/// named ref bound before or after them gives the element its id, and every ref names the same
-/// element. Two named refs asking for different ids report `conflicting-element-id`.
+/// ([#ref()], [#interestTooltip], [#anchor()]) bind an anonymous ref when none is bound; a named
+/// ref bound before or after them gives the element its id, and every ref names the same element.
+/// Two named refs asking for different ids report `conflicting-element-id`.
 ///
 /// An element is portable: it holds nothing that only one backend executes. Continuously changing
 /// styles ([#live(StyleBlock)]) compile to ordinary declarations in a document and to one stable
@@ -421,15 +421,15 @@ public final class TagElement
 
   /// Declares an anchor named after this element's DOM id, so [#anchoredTo] elements can position
   /// against it. Binds an anonymous ref when this element has none.
-  public TagElement anchorName() {
+  public TagElement anchor() {
     ref();
     data.anchorSelf = true;
     return this;
   }
 
   /// Positions this element against `anchor`, with `area` and the given fallbacks. The anchor must
-  /// call [#anchorName()] and be laid out earlier on the page. Otherwise the position names
-  /// nothing, and no error is reported. An unbound `anchor` is reported as `unbound-reference`.
+  /// call [#anchor()] and be laid out earlier on the page. Otherwise the position names nothing,
+  /// and no error is reported. An unbound `anchor` is reported as `unbound-reference`.
   public TagElement anchoredTo(
       ElementRef anchor, PositionArea area, PositionTry firstFallback, PositionTry... fallbacks) {
     data.anchorTarget = anchor;

@@ -88,7 +88,7 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
 
   /// Binds the `<dialog>` to `dialog` instead of a generated ref, so a callback that outlives the
   /// render can still target it. Reuse the same ref on every render.
-  public D dialogRef(ElementRef dialog) {
+  public D bindDialog(ElementRef dialog) {
     this.dialog = dialog;
     return self();
   }

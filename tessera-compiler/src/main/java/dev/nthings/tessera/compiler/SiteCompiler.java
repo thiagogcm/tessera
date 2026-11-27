@@ -42,6 +42,9 @@ final class SiteCompiler {
     for (var asset : site.assets()) {
       addFile(files, routePaths, asset, "File", diagnostics);
     }
+    for (var font : site.fonts()) {
+      addFile(files, routePaths, font.file(), "Font file", diagnostics);
+    }
     var baseUrl = site.baseUrl();
     // Generated later; a route or registered file must not take their paths.
     collides(files, routePaths, SEARCH_INDEX_PATH, "Generated file", diagnostics);
@@ -65,7 +68,7 @@ final class SiteCompiler {
     for (var prepared : preparedPages) {
       prepared.contributeStylesTo(sharedStyles);
     }
-    var css = sharedStyles.render(theme);
+    var css = FontFace.css(site.fonts()) + sharedStyles.render(theme);
     var behaviors = new LinkedHashSet<PageScript>();
     for (var prepared : preparedPages) {
       behaviors.addAll(prepared.scripts());
@@ -105,6 +108,7 @@ final class SiteCompiler {
       throw new CompilationException(diagnostics);
     }
 
+    var preloads = site.fonts().stream().filter(FontFace::preloaded).toList();
     var emitted =
         parallelMap(
             IntStream.range(0, routes.size()).boxed().toList(),
@@ -113,6 +117,7 @@ final class SiteCompiler {
               return PageCompiler.emit(
                   page,
                   resources,
+                  preloads,
                   page.responseHeaders(output).isEmpty() ? speculation.inlineRules() : null,
                   canonicalUrl(routes.get(i), addresses.get(i)));
             });

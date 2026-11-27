@@ -106,6 +106,8 @@ final class MarkdownConverter {
   private final String source;
   private final Map<String, Function<Fence, ? extends DocumentContent>> fences;
   private final UnaryOperator<String> urlResolver;
+  private final boolean permalinks;
+  private final boolean smartPunctuation;
   private final IdGenerator headingIds = IdGenerator.builder().build();
   private final Map<String, FootnoteDefinition> definitions = new HashMap<>();
   private final Map<String, Footnote> footnotes = new HashMap<>();
@@ -115,10 +117,14 @@ final class MarkdownConverter {
   MarkdownConverter(
       String source,
       Map<String, Function<Fence, ? extends DocumentContent>> fences,
-      UnaryOperator<String> urlResolver) {
+      UnaryOperator<String> urlResolver,
+      boolean permalinks,
+      boolean smartPunctuation) {
     this.source = source;
     this.fences = fences;
     this.urlResolver = urlResolver;
+    this.permalinks = permalinks;
+    this.smartPunctuation = smartPunctuation;
   }
 
   FrontMatter frontMatter(Node document) {
@@ -189,13 +195,15 @@ final class MarkdownConverter {
   }
 
   private Out heading(org.commonmark.node.Heading heading) {
-    var label = plainText(heading).strip();
-    var ref = ElementRef.page(headingIds.generateId(label.isEmpty() ? "section" : label));
+    var plain = plainText(heading).strip();
+    var ref = ElementRef.page(headingIds.generateId(plain.isEmpty() ? "section" : plain));
+    var label = smart(plain);
     var content = portableOnly(inlines(heading), "a heading", heading);
-    return portable(
+    var element =
         Heading.of(heading.getLevel(), label, content.toArray(IntoElement[]::new))
             .id(ref)
-            .outline(ref));
+            .outline(ref);
+    return portable(permalinks && heading.getLevel() > 1 ? element.permalink() : element);
   }
 
   private TagElement orderedList(OrderedList list) {
@@ -285,7 +293,7 @@ final class MarkdownConverter {
     String title = null;
     for (var child = alert.getFirstChild(); child != null; child = child.getNext()) {
       if (child instanceof AlertTitle alertTitle) {
-        title = plainText(alertTitle).strip();
+        title = smart(plainText(alertTitle).strip());
       } else {
         var converted = block(child);
         if (converted != null) {
@@ -313,7 +321,7 @@ final class MarkdownConverter {
 
   private @Nullable Out inline(Node node) {
     return switch (node) {
-      case Text text -> portable(text(text.getLiteral()));
+      case Text text -> portable(text(smartText(text)));
       case SoftLineBreak ignored -> portable(text("\n"));
       case HardLineBreak ignored -> portable(br());
       case Code code -> portable(code(code.getLiteral()));
@@ -339,7 +347,7 @@ final class MarkdownConverter {
   }
 
   private Out image(org.commonmark.node.Image node) {
-    var image = Image.of(urlResolver.apply(node.getDestination()), plainText(node));
+    var image = Image.of(urlResolver.apply(node.getDestination()), smart(plainText(node)));
     var attributes = imageAttributes(node);
     var width = parsePositive(attributes.get("width"));
     var height = parsePositive(attributes.get("height"));
@@ -480,6 +488,22 @@ final class MarkdownConverter {
   private static String at(Node node) {
     var spans = node.getSourceSpans();
     return spans.isEmpty() ? "" : " on line " + (spans.getFirst().getLineIndex() + 1);
+  }
+
+  private String smart(String text) {
+    return smartPunctuation ? SmartPunctuation.apply(text, false) : text;
+  }
+
+  /// A text run that follows inline content, such as the `'s` after `*word*`, starts mid-word.
+  private String smartText(Text text) {
+    if (!smartPunctuation) {
+      return text.getLiteral();
+    }
+    var previous = text.getPrevious();
+    boolean midWord =
+        previous != null
+            && !(previous instanceof SoftLineBreak || previous instanceof HardLineBreak);
+    return SmartPunctuation.apply(text.getLiteral(), midWord);
   }
 
   private static String plainText(Node node) {

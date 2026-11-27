@@ -324,4 +324,49 @@ class MarkdownTest {
       assertThat(diagnostics).extracting(Diagnostic::message).anyMatch(m -> m.contains("line 3"));
     }
   }
+
+  @Nested
+  @DisplayName("typography options")
+  class TypographyTest {
+
+    @Test
+    @DisplayName("permalinks link every heading but the title to itself")
+    void addsHeadingPermalinks() {
+      var dom = render(MARKDOWN.withHeadingPermalinks(), "# Title\n\n## Install\n\n### Run it\n");
+
+      assertThat(dom.select("h1 a")).isEmpty();
+      assertThat(first(dom, "h2 a").attr("href")).isEqualTo("#install");
+      assertThat(first(dom, "h2 a").attr("aria-label")).isEqualTo("Link to Install");
+      assertThat(first(dom, "h3 a").attr("href")).isEqualTo("#run-it");
+    }
+
+    @Test
+    @DisplayName("smart punctuation curls quotes and joins dashes and dots outside code")
+    void convertsPunctuation() {
+      var dom =
+          render(
+              MARKDOWN.withSmartPunctuation(),
+              """
+              "Hi," she said -- it's 1990--1995... and *that*'s all --- `"raw" -- ...`
+
+              ('quoted' text)
+              """);
+
+      var paragraphs = dom.select("main > p");
+      assertThat(paragraphs.get(0).text())
+          .isEqualTo(
+              "\u201cHi,\u201d she said \u2013 it\u2019s 1990\u20131995\u2026 and"
+                  + " that\u2019s all \u2014 \"raw\" -- ...");
+      assertThat(paragraphs.get(1).text()).isEqualTo("(\u2018quoted\u2019 text)");
+    }
+
+    @Test
+    @DisplayName("smart headings keep ids from the plain text")
+    void keepsPlainHeadingIds() {
+      var dom = render(MARKDOWN.withSmartPunctuation(), "## Don't panic\n");
+
+      assertThat(first(dom, "h2").text()).isEqualTo("Don\u2019t panic");
+      assertThat(first(dom, "h2").id()).isEqualTo("dont-panic");
+    }
+  }
 }

@@ -16,11 +16,13 @@ import org.jspecify.annotations.Nullable;
 ///
 /// @param baseUrl the site origin without a trailing `/`, or `null`; it enables `sitemap.xml` and
 ///   the default canonical URL of each page
+/// @param fonts the self-hosted font faces, whose files are published beside the assets
 public record SiteDefinition(
     List<SiteRoute> routes,
     @Nullable URI baseUrl,
     LinkSpeculation linkSpeculation,
-    List<Asset> assets) {
+    List<Asset> assets,
+    List<FontFace> fonts) {
 
   public SiteDefinition {
     if (routes.isEmpty()) {
@@ -28,6 +30,7 @@ public record SiteDefinition(
     }
     routes = List.copyOf(routes);
     assets = List.copyOf(assets);
+    fonts = List.copyOf(fonts);
     if (baseUrl != null) {
       baseUrl = normalizeBaseUrl(baseUrl);
     }
@@ -69,6 +72,7 @@ public record SiteDefinition(
     private @Nullable URI baseUrl;
     private LinkSpeculation linkSpeculation = LinkSpeculation.PRERENDER;
     private final List<Asset> assets = new ArrayList<>();
+    private final List<FontFace> fonts = new ArrayList<>();
 
     private Builder() {}
 
@@ -116,10 +120,18 @@ public record SiteDefinition(
       return this;
     }
 
+    /// Adds a self-hosted font face. Its file is published like an [#asset(Asset)], every page's
+    /// stylesheet declares it, and a preloaded face ([FontFace#preload()]) is preloaded by every
+    /// page.
+    public Builder font(FontFace font) {
+      fonts.add(font);
+      return this;
+    }
+
     /// Builds the site. Throws IllegalArgumentException if no route was added, or if the base URL
     /// is not an absolute `http` or `https` URI.
     public SiteDefinition build() {
-      return new SiteDefinition(routes, baseUrl, linkSpeculation, assets);
+      return new SiteDefinition(routes, baseUrl, linkSpeculation, assets, fonts);
     }
   }
 }

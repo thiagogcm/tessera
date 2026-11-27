@@ -17,7 +17,6 @@ import dev.nthings.tessera.css.ScopeStyle;
 import dev.nthings.tessera.css.Tokens;
 import dev.nthings.tessera.css.Tone;
 import dev.nthings.tessera.css.Typography;
-import dev.nthings.tessera.internal.components.Icons;
 import dev.nthings.tessera.internal.css.Tint;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,53 +37,51 @@ public final class Callout extends BuiltinScope<Callout> implements ParentElemen
         "Note",
         Tone.INFO,
         () ->
-            Icons.stroked(
+            Icon.stroked(
                 16,
                 16,
                 1.75,
-                Icons.circle(8, 8, 7),
-                Icons.line(8, 8, 8, 12),
-                Icons.line(8, 4.5, 8, 5))),
+                Icon.circle(8, 8, 7),
+                Icon.line(8, 8, 8, 12),
+                Icon.line(8, 4.5, 8, 5))),
     TIP(
         "Tip",
         Tone.SUCCESS,
         () ->
-            Icons.stroked(
+            Icon.stroked(
                 16,
                 16,
                 1.75,
-                Icons.path(
+                Icon.path(
                     "M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 1.8 1.1 3.4 2.5 4.1v1.9h4v-1.9c1.4-.7 2.5-2.3"
                         + " 2.5-4.1A4.5 4.5 0 0 0 8 1.5z"),
-                Icons.line(6, 14.5, 10, 14.5))),
+                Icon.line(6, 14.5, 10, 14.5))),
     IMPORTANT(
         "Important",
         Tone.ACCENT,
-        () ->
-            Icons.stroked(
-                16, 16, 1.75, Icons.path("M3 2h10l-2 5 2 5H3z"), Icons.line(3, 2, 3, 15))),
+        () -> Icon.stroked(16, 16, 1.75, Icon.path("M3 2h10l-2 5 2 5H3z"), Icon.line(3, 2, 3, 15))),
     WARNING(
         "Warning",
         Tone.WARNING,
         () ->
-            Icons.stroked(
+            Icon.stroked(
                 16,
                 16,
                 1.75,
-                Icons.path("M8 1.5l6.5 12H1.5L8 1.5z"),
-                Icons.line(8, 6, 8, 9.5),
-                Icons.line(8, 11.5, 8, 12))),
+                Icon.path("M8 1.5l6.5 12H1.5L8 1.5z"),
+                Icon.line(8, 6, 8, 9.5),
+                Icon.line(8, 11.5, 8, 12))),
     CAUTION(
         "Caution",
         Tone.DANGER,
         () ->
-            Icons.stroked(
+            Icon.stroked(
                 16,
                 16,
                 1.75,
-                Icons.polygon("5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5"),
-                Icons.line(8, 5, 8, 9),
-                Icons.line(8, 11, 8, 11.5)));
+                Icon.polygon("5 1.5 11 1.5 14.5 5 14.5 11 11 14.5 5 14.5 1.5 11 1.5 5 5 1.5"),
+                Icon.line(8, 5, 8, 9),
+                Icon.line(8, 11, 8, 11.5)));
 
     private final String defaultTitle;
     private final Tone tone;

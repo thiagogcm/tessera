@@ -1,22 +1,38 @@
 package dev.nthings.tessera.core;
 
-import java.util.Locale;
-
 /// SVG element names for structured inline graphics, created with [Elements#svg(SvgTag)]. Their
 /// namespace is SVG: static output writes them inside `<svg>` and a browser root creates them with
 /// `createElementNS`, so attribute names such as `viewBox` keep their case.
 public enum SvgTag implements TagName {
-  SVG,
-  G,
-  PATH,
-  CIRCLE,
-  ELLIPSE,
-  LINE,
-  POLYLINE,
-  POLYGON,
-  RECT;
+  SVG("svg"),
+  G("g"),
+  PATH("path"),
+  CIRCLE("circle"),
+  ELLIPSE("ellipse"),
+  LINE("line"),
+  POLYLINE("polyline"),
+  POLYGON("polygon"),
+  RECT("rect"),
+  TEXT("text"),
+  TSPAN("tspan"),
+  TITLE("title"),
+  DESC("desc"),
+  DEFS("defs"),
+  SYMBOL("symbol"),
+  USE("use"),
+  LINEAR_GRADIENT("linearGradient"),
+  RADIAL_GRADIENT("radialGradient"),
+  STOP("stop"),
+  CLIP_PATH("clipPath"),
+  MASK("mask"),
+  PATTERN("pattern"),
+  MARKER("marker");
 
-  private final String tagName = name().toLowerCase(Locale.ROOT);
+  private final String tagName;
+
+  SvgTag(String tagName) {
+    this.tagName = tagName;
+  }
 
   @Override
   public String tagName() {

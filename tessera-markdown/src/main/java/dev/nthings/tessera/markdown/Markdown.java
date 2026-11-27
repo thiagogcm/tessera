@@ -54,17 +54,23 @@ public final class Markdown {
 
   private final Map<String, Function<Fence, ? extends DocumentContent>> fences;
   private final UnaryOperator<String> urlResolver;
+  private final boolean permalinks;
+  private final boolean smartPunctuation;
 
   private Markdown(
       Map<String, Function<Fence, ? extends DocumentContent>> fences,
-      UnaryOperator<String> urlResolver) {
+      UnaryOperator<String> urlResolver,
+      boolean permalinks,
+      boolean smartPunctuation) {
     this.fences = Map.copyOf(fences);
     this.urlResolver = urlResolver;
+    this.permalinks = permalinks;
+    this.smartPunctuation = smartPunctuation;
   }
 
   /// Markdown with no fence renderers and URLs kept as written.
   public static Markdown create() {
-    return new Markdown(Map.of(), UnaryOperator.identity());
+    return new Markdown(Map.of(), UnaryOperator.identity(), false, false);
   }
 
   /// Returns a copy that renders fenced code blocks of `language`, such as `mermaid`, with
@@ -78,21 +84,37 @@ public final class Markdown {
     }
     var copy = new HashMap<>(fences);
     copy.put(language.strip().toLowerCase(java.util.Locale.ROOT), renderer);
-    return new Markdown(copy, urlResolver);
+    return new Markdown(copy, urlResolver, permalinks, smartPunctuation);
   }
 
   /// Returns a copy that passes every link and image URL through `resolver` before it is placed,
   /// such as to turn `../guide.md#install` into `/guide/#install`.
   @CheckReturnValue
   public Markdown withUrlResolver(UnaryOperator<String> resolver) {
-    return new Markdown(fences, resolver);
+    return new Markdown(fences, resolver, permalinks, smartPunctuation);
+  }
+
+  /// Returns a copy that ends each heading below the first level with a link to itself; see
+  /// [dev.nthings.tessera.components.Heading#permalink()].
+  @CheckReturnValue
+  public Markdown withHeadingPermalinks() {
+    return new Markdown(fences, urlResolver, true, smartPunctuation);
+  }
+
+  /// Returns a copy that turns straight quotes into curly ones, `--` into an en dash, `---` into an
+  /// em dash, and `...` into an ellipsis, in text outside code. Heading ids keep the plain
+  /// punctuation, so links to them stay the same.
+  @CheckReturnValue
+  public Markdown withSmartPunctuation() {
+    return new Markdown(fences, urlResolver, permalinks, true);
   }
 
   /// Parses `source` into its front matter and document body. Parsing never fails: text that is not
   /// valid Markdown syntax stays text.
   public MarkdownPage parse(String source) {
     var document = (Document) PARSER.parse(source);
-    var converter = new MarkdownConverter(source, fences, urlResolver);
+    var converter =
+        new MarkdownConverter(source, fences, urlResolver, permalinks, smartPunctuation);
     return new MarkdownPage(converter.frontMatter(document), converter.body(document));
   }
 

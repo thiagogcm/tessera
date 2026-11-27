@@ -67,6 +67,8 @@ Exceptions thrown inside application callbacks (`expand`, `configureScope`, `lat
 | `missing-interest-target` | An `interestTooltip` trigger targets a missing ID |
 | `image-alt`, `decorative-image`, `image-dimensions` | An image lacks `alt` text, mixes empty `alt` without decorative ARIA, or lacks dimensions, an aspect ratio, or `.unknownDimensions()` |
 | `duplicate-hero-image` | More than one `HeroImage` is placed on the same page |
+| `social-meta-url` | A `SocialMeta` image is not a valid URL, or is relative on a page without an absolute URL |
+| `heading-permalink` | A `Heading` asks for a permalink without an anchor set by `id(...)` |
 | `callback-failure` | An expansion or styling callback throws during live rendering |
 
 ### Form controls

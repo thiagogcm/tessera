@@ -111,4 +111,25 @@ class OutlineTest {
           assertThat(found.components()).containsExactly("Section");
         });
   }
+
+  @Test
+  @DisplayName("a permalink links the heading to its own anchor with an accessible name")
+  void linksHeadingToItself() {
+    var install = ElementRef.page("install");
+    var page = renderMain(Heading.of(2, "Install").id(install).permalink());
+
+    var heading = page.element("h2");
+    var link = heading.selectFirst("a");
+    assertThat(link).isNotNull();
+    assertThat(link.attr("href")).isEqualTo("#" + heading.id());
+    assertThat(link.attr("aria-label")).isEqualTo("Link to Install");
+    assertThat(link.selectFirst("svg").attr("aria-hidden")).isEqualTo("true");
+  }
+
+  @Test
+  @DisplayName("a permalink without an anchor is reported")
+  void reportsPermalinkWithoutAnchor() {
+    assertThat(Diagnostics.rules(() -> renderMain(Heading.of(2, "Install").permalink())))
+        .containsExactly("heading-permalink");
+  }
 }

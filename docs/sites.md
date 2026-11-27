@@ -109,6 +109,25 @@ Image.of("/assets/divider.svg", "")
 
 The compiler requires non-empty `alt` text and explicit dimensions or an aspect ratio. When an image comes from an external or user-supplied source whose intrinsic dimensions are unknown at authoring time, opt out of `image-dimensions` explicitly with `.unknownDimensions()` on `Image` or `Elements.img(...)` rather than guessing a fixed ratio. Decorative images must use empty `alt` text paired with `role(Role.PRESENTATION)` or `ariaHidden(true)`.
 
+### Self-host fonts
+
+Register each font file as a `FontFace`. The site publishes the file, the stylesheet declares its `@font-face` rule with `font-display: swap`, and a preloaded face gets a `<link rel="preload" as="font">` on every page. Point a font token at the family to use it:
+
+```java
+builder
+    .font(FontFace.of("Inter", Asset.file("/fonts/inter.woff2", Path.of("fonts/inter.woff2")))
+        .weight(100, 900)
+        .preload())
+    .font(FontFace.of("Inter", Asset.file("/fonts/inter-italic.woff2", Path.of("fonts/inter-italic.woff2")))
+        .weight(100, 900)
+        .italic());
+
+var theme = Theme.defaults()
+    .with(Tokens.FONT_BODY, FontStack.of(FontStack.named("Inter"), FontStack.Generic.SYSTEM_UI));
+```
+
+Preload only the faces the first screen draws with; each preload competes with the page for bandwidth.
+
 ## Write links as browser URLs
 
 Site validation resolves local `href`, `src`, and `poster` attributes against the source route's public `documentUri()`:
@@ -212,7 +231,17 @@ try (var server = SitePreviewServer.start(compiled, 8080)) {
 }
 ```
 
-`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`. Recompile and restart the server after changes.
+`SitePreviewServer` binds to loopback, serves the fixed compiled snapshot with `Cache-Control: no-store`, redirects directory paths while preserving query strings, accepts `index.html` aliases, and applies compiled `pageHeaders()`.
+
+To rebuild while you write, pass a build function and the directories to watch instead of a compiled site:
+
+```java
+try (var server = SitePreviewServer.watch(8080, () -> compiler.compile(site()), Path.of("content"))) {
+  // Rebuilds when a file under content/ changes, and reloads open pages
+}
+```
+
+Changes within 100 ms of each other cause one rebuild. A failed rebuild prints its stack trace and keeps serving the last good site. Pages load a small script from `/_tessera/live.js` that checks `/_tessera/version` and reloads after a rebuild. Java classes are not reloaded, so restart after changing code.
 
 To inspect the written showcase directory as a static host sees it:
 

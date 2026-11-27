@@ -76,6 +76,7 @@ final class HtmlWriter {
       List<LinkedNode<String>> bodyNodes,
       List<LinkedNode<String>> headNodes,
       Resources resources,
+      List<FontFace> preloads,
       List<PageScript> behaviors,
       @Nullable File bootstrap,
       @Nullable String speculationRules,
@@ -111,6 +112,9 @@ final class HtmlWriter {
       out.append('\n');
     }
 
+    for (var font : preloads) {
+      out.append(font.preloadLink()).append('\n');
+    }
     var stylesheet = resources.stylesheet;
     if (stylesheet == null) {
       out.append("<style>\n");

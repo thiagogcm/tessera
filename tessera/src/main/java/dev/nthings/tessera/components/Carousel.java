@@ -45,7 +45,7 @@ import org.jspecify.annotations.Nullable;
 /// also shows native previous and next buttons and slide markers; other browsers keep the
 /// scrollable track.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `carousel-<n>`. Each placement
+/// Without a [#scopeId(String)], the compiler numbers instances `carousel-<n>`. Each placement
 /// anchors its scroll buttons by a name numbered per page, so carousels never take each other's
 /// buttons.
 public final class Carousel extends BuiltinComponent implements FluentBuilder<Carousel> {

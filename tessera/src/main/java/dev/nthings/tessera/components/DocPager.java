@@ -25,7 +25,7 @@ import org.jspecify.annotations.Nullable;
 /// sit side by side when the nearest ancestor container, such as the one `DocLayout` sets, is 36rem
 /// or wider. Otherwise they stack.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `tessera-doc-pager-<n>`.
 public final class DocPager extends BuiltinScope<DocPager> {
 
   private @Nullable Link previous;

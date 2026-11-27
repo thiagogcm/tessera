@@ -27,7 +27,7 @@ class NavigationComponentsTest {
   @Test
   @DisplayName("breadcrumbs list every crumb as a link and mark only the last as current")
   void breadcrumbsMarkOnlyLastCrumbAsCurrent() {
-    var nav = renderMain(Breadcrumbs.of(HOME, GUIDE)).element("nav");
+    var nav = renderMain(Breadcrumbs.of(List.of(HOME, GUIDE))).element("nav");
 
     assertThat(nav).hasAttribute("aria-label", "Breadcrumb");
     assertThat(nav.select("a"))
@@ -38,7 +38,7 @@ class NavigationComponentsTest {
   @Test
   @DisplayName("breadcrumbs need at least one link")
   void breadcrumbsRejectEmptyTrail() {
-    assertThatIllegalArgumentException().isThrownBy(Breadcrumbs::of);
+    assertThatIllegalArgumentException().isThrownBy(() -> Breadcrumbs.of(List.of()));
   }
 
   @ParameterizedTest
@@ -80,7 +80,7 @@ class NavigationComponentsTest {
 
   static Stream<Arguments> repeatedLandmarks() {
     return Stream.of(
-        argumentSet("breadcrumbs", Breadcrumbs.of(HOME), Breadcrumbs.of(HOME)),
+        argumentSet("breadcrumbs", Breadcrumbs.of(List.of(HOME)), Breadcrumbs.of(List.of(HOME))),
         argumentSet(
             "nav tabs",
             NavTabs.of("Sections", List.of(HOME)),
@@ -105,8 +105,8 @@ class NavigationComponentsTest {
   void distinctLabelsAreAccepted() {
     var page =
         renderMain(
-            Breadcrumbs.of(HOME).label("Primary trail"),
-            Breadcrumbs.of(HOME).label("Mobile trail"));
+            Breadcrumbs.of(List.of(HOME)).label("Primary trail"),
+            Breadcrumbs.of(List.of(HOME)).label("Mobile trail"));
 
     assertThat(page.elements("nav"))
         .extracting(nav -> nav.attr("aria-label"))

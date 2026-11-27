@@ -45,11 +45,12 @@ final class NavigationPage {
         .features("content: \"/\" / \"\"", "aria-current=\"page\"")
         .example(
             Breadcrumbs.of(
-                    new Link("/", "Tessera"),
-                    new Link("/navigation", "Navigation"),
-                    new Link("/navigation#breadcrumbs", "Breadcrumbs"))
+                    List.of(
+                        new Link("/", "Tessera"),
+                        new Link("/navigation", "Navigation"),
+                        new Link("/navigation#breadcrumbs", "Breadcrumbs")))
                 .label("Breadcrumb example"))
-        .code("Breadcrumbs.of(new Link(\"/\", \"Home\"), new Link(\"/docs\", \"Docs\"));");
+        .code("Breadcrumbs.of(List.of(new Link(\"/\", \"Home\"), new Link(\"/docs\", \"Docs\")));");
   }
 
   private static Demo navTabs() {

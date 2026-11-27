@@ -80,13 +80,13 @@ final class Fixtures {
     var articles =
         SearchPalette.of()
             .triggerLabel("Find articles")
-            .item("Guides", "Café guide", "#cafe")
-            .item("Guides", "Tea notes", "#tea");
+            .item("Guides", "#cafe", "Café guide")
+            .item("Guides", "#tea", "Tea notes");
     var guides =
         SearchPalette.of()
             .triggerLabel("Find guides")
-            .item("Guides", "Layout guide", "#layout")
-            .item("Guides", "Forms guide", "#forms");
+            .item("Guides", "#layout", "Layout guide")
+            .item("Guides", "#forms", "Forms guide");
     var content =
         main()
             .children(

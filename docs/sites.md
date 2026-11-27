@@ -192,10 +192,10 @@ var search =
     SearchPalette.of()
         .scopeId("guide-search")
         .placeholder("Search pages and sections...")
-        .item("Guide", "Installation", "/guide/#installation")
+        .item("Guide", "/guide/#installation", "Installation")
         .item(
             "Guide",
-            SearchPalette.Item.of("Publishing", "/guide/#publishing")
+            SearchPalette.Item.of("/guide/#publishing", "Publishing")
                 .description("Upload the generated site")
                 .badge("New"));
 

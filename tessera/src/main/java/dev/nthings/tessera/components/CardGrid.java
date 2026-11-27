@@ -16,7 +16,7 @@ import java.util.List;
 /// columns as are at least the minimum card width. Cards in the same row align their media, header,
 /// body, and footer regions, so their footers line up.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `card-grid-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `card-grid-<n>`.
 public final class CardGrid extends BuiltinScope<CardGrid> implements ParentElement<CardGrid> {
 
   private final CssLength minCardWidth;

@@ -76,8 +76,8 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
       this.badge = badge;
     }
 
-    /// A link titled `title`, pointing to `href`.
-    public static Item of(String title, String href) {
+    /// A link to `href`, titled `title`.
+    public static Item of(String href, String title) {
       return new Item(title, href, null, null);
     }
 
@@ -145,14 +145,14 @@ public final class SearchPalette extends BuiltinScope<SearchPalette> {
     return this;
   }
 
-  /// Adds a link titled `title`, pointing to `href`, under `group`. Groups appear in the order they
-  /// are first used, and links keep their insertion order.
-  public SearchPalette item(String group, String title, String href) {
-    return item(group, Item.of(title, href));
+  /// Adds a link to `href`, titled `title`, under `group`. Groups appear in the order they are
+  /// first used, and links keep their insertion order.
+  public SearchPalette item(String group, String href, String title) {
+    return item(group, Item.of(href, title));
   }
 
   /// Adds `item` under `group`, for a link with a description or a badge: `item("Guides",
-  /// SearchPalette.Item.of("Install", "/install").description("Set up"))`.
+  /// SearchPalette.Item.of("/install", "Install").description("Set up"))`.
   public SearchPalette item(String group, Item item) {
     groupedItems.computeIfAbsent(group, _ -> new ArrayList<>()).add(item);
     return this;

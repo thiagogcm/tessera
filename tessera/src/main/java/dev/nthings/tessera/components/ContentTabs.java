@@ -40,7 +40,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// Each tab's key becomes the id suffix, `<id>--tab-<key>` and `<id>--panel-<key>`, so inserting a
 /// tab does not rename the others. Characters outside `[A-Za-z0-9_-]` become `-` and runs of `-`
-/// collapse to one, so `c++` and `c#` collide. Without an [#scopeId(String)], the compiler numbers
+/// collapse to one, so `c++` and `c#` collide. Without a [#scopeId(String)], the compiler numbers
 /// instances `content-tabs-<n>`.
 public final class ContentTabs extends BuiltinScope<ContentTabs> {
 

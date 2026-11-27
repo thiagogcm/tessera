@@ -25,13 +25,13 @@ final class SearchDemo {
     var root = context.root();
     var palette = SearchPalette.of().triggerLabel("Find pages");
     if (synced) {
-      palette.item("Guides", "Café three", "#cafe-three");
+      palette.item("Guides", "#cafe-three", "Café three");
     }
-    palette.item("Guides", "Café one", "#cafe-one");
+    palette.item("Guides", "#cafe-one", "Café one");
     if (!synced) {
-      palette.item("Guides", "Café two", "#cafe-two");
+      palette.item("Guides", "#cafe-two", "Café two");
     }
-    palette.item("Reference", "API", "#api");
+    palette.item("Reference", "#api", "API");
     var search = LiveSearchPalette.of(palette);
     var section =
         LiveElement.of(Elements.section().ariaLabel("Search"))

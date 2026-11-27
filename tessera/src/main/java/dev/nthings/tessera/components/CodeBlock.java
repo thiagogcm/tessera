@@ -32,7 +32,7 @@ import org.jspecify.annotations.Nullable;
 /// text. Create one with [#of(String)] for a source string or [#ofLines(String...)] for lines you
 /// already have.
 ///
-/// Without an [#scopeId(String)], the compiler numbers instances `tessera-code-block-<n>`.
+/// Without a [#scopeId(String)], the compiler numbers instances `tessera-code-block-<n>`.
 public final class CodeBlock extends BuiltinScope<CodeBlock> {
 
   private static final Counter LINE_COUNTER = Counter.named("code-line");

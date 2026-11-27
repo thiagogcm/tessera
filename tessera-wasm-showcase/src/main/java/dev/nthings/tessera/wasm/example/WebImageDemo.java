@@ -7,6 +7,7 @@ import dev.nthings.tessera.components.Badge;
 import dev.nthings.tessera.components.Button;
 import dev.nthings.tessera.components.Field;
 import dev.nthings.tessera.components.Forms;
+import dev.nthings.tessera.components.Variant;
 import dev.nthings.tessera.core.Component;
 import dev.nthings.tessera.core.ElementRef;
 import dev.nthings.tessera.core.Elements;
@@ -118,7 +119,7 @@ public final class WebImageDemo {
                 .blockSize(CssLength.px(4))
                 .bg(Tokens.ACCENT_PRIMARY))
         .child(Ui.button("Animate progress", () -> animate(root.host(), 120)))
-        .child(Ui.button(Button.of("Unmount").variant(Button.Variant.OUTLINE), root::close));
+        .child(Ui.button(Button.of("Unmount").variant(Variant.OUTLINE), root::close));
   }
 
   /// Advances the live meter once per frame for `frames` frames.

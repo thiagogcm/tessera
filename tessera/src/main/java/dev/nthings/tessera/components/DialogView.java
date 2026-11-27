@@ -75,7 +75,7 @@ abstract class DialogView<D extends DialogView<D>> extends BuiltinScope<D> {
   public Button triggerButton(String label) {
     return Button.of(label)
         .tone(Tone.NEUTRAL)
-        .variant(Button.Variant.OUTLINE)
+        .variant(Variant.OUTLINE)
         .command(dialog, BuiltinCommand.SHOW_MODAL);
   }
 

@@ -9,14 +9,6 @@ import java.util.List;
 /// IntoElement...)]; it is an accent, solid, medium button by default. Use a link for navigation.
 public final class Button extends ButtonBase<Button> {
 
-  /// Surface: `SOLID` (filled with the tone, the default), `OUTLINE` (transparent with a tone
-  /// border), or `GHOST` (transparent with tone text).
-  public enum Variant {
-    SOLID,
-    OUTLINE,
-    GHOST
-  }
-
   private final String label;
   private final List<IntoElement> content;
 

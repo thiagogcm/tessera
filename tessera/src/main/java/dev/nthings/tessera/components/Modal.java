@@ -30,7 +30,7 @@ import java.util.List;
 /// on the page (directly or with `Documents.deferred`), and open it with its [#triggerButton] or a
 /// button that targets its [#dialogRef()]. Escape or a click outside dismisses it.
 ///
-/// The dialog, title and close button ids are prefixed with its [#id(String)], as in
+/// The dialog, title and close button ids are prefixed with its [#scopeId(String)], as in
 /// `<id>--dialog`. Without an id, the compiler numbers instances `modal-<n>`.
 public final class Modal extends DialogView<Modal> {
 

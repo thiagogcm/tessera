@@ -27,8 +27,8 @@ import org.jspecify.annotations.Nullable;
 /// tooltip. Create one with [#of(String, TagElement)] for a control from [Forms] or [#of(String,
 /// Select)].
 ///
-/// The control, hint and error ids are prefixed with its [#id(String)]. Without an id, the compiler
-/// numbers instances `form-field-<n>`.
+/// The control, hint and error ids are prefixed with its [#scopeId(String)]. Without an id, the
+/// compiler numbers instances `form-field-<n>`.
 public final class Field extends BuiltinScope<Field> {
 
   static {

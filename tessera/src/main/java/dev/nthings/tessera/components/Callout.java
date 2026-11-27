@@ -28,7 +28,7 @@ import org.jspecify.annotations.Nullable;
 /// content as children. The title defaults to the English name of the [Kind]; [#title(String)]
 /// replaces it.
 ///
-/// Without an [#id(String)], the compiler numbers instances `tessera-callout-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `tessera-callout-<n>`.
 public final class Callout extends BuiltinScope<Callout> implements ParentElement<Callout> {
 
   /// Admonition kind, each with its own icon, [Tone] and default title.

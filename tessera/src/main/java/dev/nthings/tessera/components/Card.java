@@ -34,7 +34,7 @@ import org.jspecify.annotations.Nullable;
 /// - Only one of `stretchedLink`, `radio`, and `checkbox` applies; the last call wins. [#checked()]
 ///   starts a radio or checkbox card checked, in any call order.
 ///
-/// Without an [#id(String)], the compiler numbers instances `card-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `card-<n>`.
 public final class Card extends BuiltinScope<Card> {
 
   /// How a card responds to interaction; a card without one has only its own content.

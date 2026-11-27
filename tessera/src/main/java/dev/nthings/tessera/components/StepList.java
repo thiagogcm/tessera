@@ -20,7 +20,7 @@ import java.util.List;
 /// progress. Create one with [#of(String...)] for plain text steps or [#of(IntoElement...)] for
 /// steps with markup.
 ///
-/// Without an [#id(String)], the compiler numbers instances `step-list-<n>`.
+/// Without an [#scopeId(String)], the compiler numbers instances `step-list-<n>`.
 public final class StepList extends BuiltinScope<StepList> {
 
   private static final Counter STEP = Counter.named("step");

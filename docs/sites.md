@@ -190,7 +190,7 @@ You can also populate `SearchPalette` manually with custom groups, descriptions,
 ```java
 var search =
     SearchPalette.of()
-        .id("guide-search")
+        .scopeId("guide-search")
         .placeholder("Search pages and sections...")
         .item("Guide", "Installation", "/guide/#installation")
         .item(

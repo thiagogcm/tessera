@@ -115,9 +115,9 @@ class CardTest {
   private static CardGrid plans(String id) {
     return CardGrid.of(
             CssLength.rem(18),
-            plan("Pro", "Isolated workers.").id("pro"),
+            plan("Pro", "Isolated workers.").scopeId("pro"),
             plan("Team", "Shared workers."))
-        .id(id);
+        .scopeId(id);
   }
 
   @Test

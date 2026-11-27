@@ -21,7 +21,7 @@ class AccordionTest {
     var page =
         renderMain(
             Accordion.of()
-                .id("faq")
+                .scopeId("faq")
                 .exclusive()
                 .openItem("Question 1", "Answer 1")
                 .item("Question 2", "Answer 2"));
@@ -43,7 +43,7 @@ class AccordionTest {
   }
 
   static Stream<Arguments> separateAccordions() {
-    var shared = Accordion.of().id("faq").exclusive().item("Refunds?", "Within 30 days.");
+    var shared = Accordion.of().scopeId("faq").exclusive().item("Refunds?", "Within 30 days.");
     return Stream.of(
         argumentSet(
             "two unnamed accordions",
@@ -52,15 +52,15 @@ class AccordionTest {
         argumentSet(
             "one id in two cards",
             Card.of("Pricing")
-                .id("pricing")
-                .body(Accordion.of().id("faq").exclusive().item("A", "a")),
+                .scopeId("pricing")
+                .body(Accordion.of().scopeId("faq").exclusive().item("A", "a")),
             Card.of("Support")
-                .id("support")
-                .body(Accordion.of().id("faq").exclusive().item("B", "b"))),
+                .scopeId("support")
+                .body(Accordion.of().scopeId("faq").exclusive().item("B", "b"))),
         argumentSet(
             "one instance placed in two cards",
-            Card.of("Pricing").id("pricing").body(shared),
-            Card.of("Support").id("support").body(shared)));
+            Card.of("Pricing").scopeId("pricing").body(shared),
+            Card.of("Support").scopeId("support").body(shared)));
   }
 
   @ParameterizedTest

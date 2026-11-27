@@ -45,8 +45,9 @@ import org.jspecify.annotations.Nullable;
 /// also shows native previous and next buttons and slide markers; other browsers keep the
 /// scrollable track.
 ///
-/// Without an [#id(String)], the compiler numbers instances `carousel-<n>`. Each placement anchors
-/// its scroll buttons by a name numbered per page, so carousels never take each other's buttons.
+/// Without an [#scopeId(String)], the compiler numbers instances `carousel-<n>`. Each placement
+/// anchors its scroll buttons by a name numbered per page, so carousels never take each other's
+/// buttons.
 public final class Carousel extends BuiltinComponent implements FluentBuilder<Carousel> {
 
   private static final Counter ITEM_COUNTER = Counter.named("carousel-item");
@@ -77,7 +78,7 @@ public final class Carousel extends BuiltinComponent implements FluentBuilder<Ca
 
   /// Names this instance in the enclosing id scope; ids bound inside it are prefixed with it, as in
   /// `<id>--name`. Characters outside `[A-Za-z0-9_-]` become `-` and runs of `-` collapse to one.
-  public Carousel id(String id) {
+  public Carousel scopeId(String id) {
     this.id = id;
     return this;
   }

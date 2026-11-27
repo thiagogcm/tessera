@@ -56,7 +56,7 @@ class PlacementIsolationTest {
   }
 
   private static IntoElement modalWithTrigger() {
-    var modal = Modal.of("Confirm").id("confirm").bodyText("Deploy?");
+    var modal = Modal.of("Confirm").scopeId("confirm").bodyText("Deploy?");
     return div().children(modal.triggerButton("Open"), modal);
   }
 
@@ -70,17 +70,20 @@ class PlacementIsolationTest {
             "content tabs",
             _ ->
                 ContentTabs.of("Languages")
-                    .id("languages")
+                    .scopeId("languages")
                     .tab("java", "Java", p().text("Builders"))
                     .tab("html", "HTML", p().text("Markup"))),
         placed(
             "dropdown",
-            _ -> Dropdown.of("Actions").id("actions").item(Dropdown.Item.link("/logs", "Logs"))),
+            _ ->
+                Dropdown.of("Actions")
+                    .scopeId("actions")
+                    .item(Dropdown.Item.link("/logs", "Logs"))),
         placed(
             "field",
             _ ->
                 Field.of("Email", Forms.input("email", InputType.EMAIL))
-                    .id("email")
+                    .scopeId("email")
                     .hint("Work address")
                     .error("Required")),
         placed(
@@ -91,7 +94,7 @@ class PlacementIsolationTest {
                         TableGrid.of(
                             head(row(columnHeader("Area"), columnHeader("Q1"))),
                             body(row(rowHeader("US"), data("12")))))
-                    .id("sales")),
+                    .scopeId("sales")),
         placed("modal and its trigger", _ -> modalWithTrigger()),
         placed(
             "button with a tooltip",
@@ -105,8 +108,8 @@ class PlacementIsolationTest {
   void placementsStayIsolated(Function<String, IntoElement> component) {
     var page =
         renderMain(
-            Card.of("Pricing").id("pricing").body(component.apply("pricing")),
-            Card.of("Support").id("support").body(component.apply("support")),
+            Card.of("Pricing").scopeId("pricing").body(component.apply("pricing")),
+            Card.of("Support").scopeId("support").body(component.apply("support")),
             new Region("left", component.apply("left")),
             new Region("right", component.apply("right")));
 

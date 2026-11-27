@@ -22,12 +22,12 @@ class DialogTest {
   static Stream<Arguments> dialogs() {
     var modal =
         Modal.of("Confirm Deployment")
-            .id("confirm-deploy")
+            .scopeId("confirm-deploy")
             .description("Production rollout")
             .bodyText("Deploy to all 4 regions?");
     var drawer =
         Drawer.of("Confirm Deployment")
-            .id("confirm-deploy")
+            .scopeId("confirm-deploy")
             .side(Drawer.Side.INLINE_START)
             .description("Production rollout")
             .body(p().text("Deploy to all 4 regions?"));

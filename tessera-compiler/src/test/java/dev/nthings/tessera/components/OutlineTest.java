@@ -76,7 +76,8 @@ class OutlineTest {
         renderDocumentMain(
             TableOfContents.of("Contents"),
             DocumentContent.of(
-                Prose.of(Section.of("install", "Install").child(p().text("Run it."))).id("docs")));
+                Prose.of(Section.of("install", "Install").child(p().text("Run it.")))
+                    .scopeId("docs")));
 
     var link = page.element("nav[aria-label=Contents] a");
     assertThat(link).hasAttribute("href", "#install").hasText("Install");

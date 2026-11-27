@@ -42,8 +42,11 @@ final class ServicesDemo {
     // Rebuilt on every render, as declarative views do. The first takes an application-owned
     // reference; the second keeps the reference it creates, which the next render replaces.
     var owned =
-        Modal.of("Confirm later").id("confirm").dialogRef(confirm).bodyText("Opened by a timer");
-    var rebuilt = Modal.of("Stale later").id("stale").bodyText("Never opened");
+        Modal.of("Confirm later")
+            .scopeId("confirm")
+            .dialogRef(confirm)
+            .bodyText("Opened by a timer");
+    var rebuilt = Modal.of("Stale later").scopeId("stale").bodyText("Never opened");
     return LiveElement.of(
             Elements.section()
                 .ariaLabel("Host services")

@@ -80,7 +80,7 @@ final class NavigationPage {
         .features("role=tablist", "roving tabindex", "Arrow keys")
         .example(
             ContentTabs.of("Pipeline stages")
-                .id("demo-tabs")
+                .scopeId("demo-tabs")
                 .tab("java", "Java", p().text("Components are plain Java records and builders."))
                 .tab("html", "HTML", p().text("Output is semantic, validated HTML."))
                 .tab("css", "CSS", p().text("Styles compile into one layered stylesheet.")))
@@ -124,13 +124,13 @@ final class NavigationPage {
 
   /// An exclusive FAQ; every card calls this, so the ids repeat and their scopes keep them apart.
   private static Accordion faq() {
-    return Accordion.of().id("faq").exclusive();
+    return Accordion.of().scopeId("faq").exclusive();
   }
 
   private static Demo carousel() {
     var platform =
         Carousel.of("Platform highlights")
-            .id("slides")
+            .scopeId("slides")
             .slide("Scroll snapping", "Slides snap to the center of the track.")
             .slide("Scroll markers", "The dots are ::scroll-marker pseudo-elements.")
             .slide("Scroll buttons", "Previous and next are ::scroll-button() pseudo-elements.")
@@ -140,7 +140,7 @@ final class NavigationPage {
             .slide("Keyboard", "Markers and buttons are focusable and work with the keyboard.");
     var specials =
         Carousel.of("Café specials")
-            .id("slides")
+            .scopeId("slides")
             .slide("Crème brûlée", "Caramelized sugar over vanilla custard.")
             .slide("Thé à la menthe", "Green tea with fresh mint.")
             .slide("Pão de queijo", "Cheese bread, warm from the oven.")
@@ -177,7 +177,7 @@ final class NavigationPage {
             "popover", "command=\"toggle-popover\"", "position-area", "position-try-fallbacks")
         .example(
             Dropdown.of("Jump to")
-                .id("demo-menu")
+                .scopeId("demo-menu")
                 .item(Dropdown.Item.link("/forms", "Forms").shortcut("G F"))
                 .item(Dropdown.Item.link("/data", "Data & code").shortcut("G D"))
                 .separator()

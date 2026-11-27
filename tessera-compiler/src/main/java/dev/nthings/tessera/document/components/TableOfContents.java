@@ -66,7 +66,7 @@ public final class TableOfContents extends BuiltinDocumentComponent
 
   /// Names this instance in the enclosing id scope. Without it, the compiler assigns
   /// `table-of-contents-<n>`.
-  public TableOfContents id(String id) {
+  public TableOfContents scopeId(String id) {
     this.id = id;
     return this;
   }
